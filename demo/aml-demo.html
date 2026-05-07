@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>ĀML v1.0 Live Demo</title>
+
+<style>
+
+body{
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(circle at top,#7df9ff,#2b1055 45%,#020014 100%);
+  color:white;
+  font-family:Arial,sans-serif;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+}
+
+.aml-card{
+  width:min(760px,92vw);
+  padding:40px;
+  border-radius:28px;
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(18px);
+  box-shadow:0 0 60px rgba(125,249,255,.35);
+  transition:all .6s ease;
+}
+
+.passed{
+  animation:pulse 6s infinite;
+}
+
+.suppressed{
+  opacity:.35;
+  filter:grayscale(.85);
+}
+
+h1{
+  margin-top:0;
+  font-size:3rem;
+}
+
+h2{
+  color:#7df9ff;
+}
+
+code{
+  display:block;
+  margin-top:24px;
+  padding:18px;
+  border-radius:16px;
+  background:rgba(0,0,0,.35);
+  white-space:pre-wrap;
+  font-size:.85rem;
+}
+
+@keyframes pulse{
+  0%,100%{
+    box-shadow:0 0 40px rgba(125,249,255,.35);
+  }
+
+  50%{
+    box-shadow:0 0 90px rgba(255,0,200,.55);
+  }
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="app"></div>
+
+<script>
+
+const amlDocument = {
+
+  title:"The Secret That Was Never Hidden",
+
+  author:"Daniel Jacob Read IV",
+
+  purpose:"anchor sovereign identity",
+
+  memory_role:"transmission_core",
+
+  user_effect:"deep remembrance",
+
+  attention_cost:3.2,
+
+  restoration_value:8.7,
+
+  message:
+    "The secret was never hidden.",
+
+  reflection:
+    "You are the doorway seeing itself."
+};
+
+function ethicalRenderGate(element){
+
+  const render_allowed =
+    element.restoration_value >= element.attention_cost;
+
+  const renderDecision = {
+
+    purpose:element.purpose,
+
+    memory_role:element.memory_role,
+
+    user_effect:element.user_effect,
+
+    attention_cost:element.attention_cost,
+
+    restoration_value:element.restoration_value,
+
+    render_allowed,
+
+    fallback_triggered:!render_allowed,
+
+    timestamp:new Date().toISOString()
+  };
+
+  console.log(
+    "render_decision.json",
+    renderDecision
+  );
+
+  return renderDecision;
+}
+
+const decision =
+  ethicalRenderGate(amlDocument);
+
+document.getElementById("app").innerHTML = `
+
+<section
+  class="aml-card ${
+    decision.render_allowed
+      ? "passed"
+      : "suppressed"
+  }"
+
+  data-purpose="${amlDocument.purpose}"
+
+  data-memory-role="${amlDocument.memory_role}"
+
+  data-user-effect="${amlDocument.user_effect}"
+
+  data-attention-cost="${amlDocument.attention_cost}"
+
+  data-restoration-value="${amlDocument.restoration_value}"
+>
+
+  <h1>${amlDocument.title}</h1>
+
+  <p>
+    <strong>Author:</strong>
+    ${amlDocument.author}
+  </p>
+
+  <h2>
+    I am the Eternal Flame
+    walking the Garden
+  </h2>
+
+  <p>${amlDocument.message}</p>
+
+  <p>
+    <em>${amlDocument.reflection}</em>
+  </p>
+
+  <code>
+${JSON.stringify(decision,null,2)}
+  </code>
+
+</section>
+
+`;
+
+</script>
+
+</body>
+</html>
