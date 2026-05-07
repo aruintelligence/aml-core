@@ -1,0 +1,27 @@
+{
+  "name": "aml-core",
+  "version": "1.0.0",
+  "description": "ĀML — ĀRU Meaning Language | Ethical Rendering Compiler",
+  "type": "module",
+  "main": "compiler/compile.js",
+
+  "scripts": {
+    "compile": "node compiler/compile.js",
+    "demo": "node compiler/compile.js examples/transmission-061.aml"
+  },
+
+  "keywords": [
+    "aml",
+    "ethical-rendering",
+    "compiler",
+    "meaningware",
+    "interface-language",
+    "html-alternative",
+    "attention-aware",
+    "coherence",
+    "aru"
+  ],
+
+  "author": "Daniel Jacob Read IV",
+  "license": "MIT"
+}
