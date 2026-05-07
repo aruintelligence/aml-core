@@ -1,27 +1,42 @@
 {
   "name": "aml-core",
   "version": "1.0.0",
-  "description": "ĀML — ĀRU Meaning Language | Ethical Rendering Compiler",
+  "description": "ĀML — ĀRU Meaning Language. A meaning-native interface language with ethical rendering and restoration-aware computation.",
+  "main": "compiler/compiler.js",
   "type": "module",
-  "main": "compiler/compile.js",
-
   "scripts": {
-    "compile": "node compiler/compile.js",
-    "demo": "node compiler/compile.js examples/transmission-061.aml"
+    "compile": "node compiler/compiler.js",
+    "demo": "node compiler/compiler.js && echo 'AML compilation complete.'",
+    "start": "node compiler/compiler.js",
+    "build": "node compiler/compiler.js",
+    "lint": "echo 'No linter configured yet.'",
+    "test": "echo 'No tests implemented yet.'"
   },
-
   "keywords": [
     "aml",
+    "aru",
+    "meaning-language",
     "ethical-rendering",
+    "semantic-rendering",
     "compiler",
-    "meaningware",
-    "interface-language",
-    "html-alternative",
-    "attention-aware",
-    "coherence",
-    "aru"
+    "runtime",
+    "attention-economics",
+    "restoration",
+    "human-centered-computing",
+    "semantic-web",
+    "coherence"
   ],
-
   "author": "Daniel Jacob Read IV",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aruintelligence/aml-core.git"
+  },
+  "homepage": "https://aruintelligence.github.io/aml-core/",
+  "bugs": {
+    "url": "https://github.com/aruintelligence/aml-core/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
