@@ -4,6 +4,9 @@
   "description": "ĀML — ĀRU Meaning Language. A meaning-native interface language with ethical rendering and restoration-aware computation.",
   "main": "compiler/compiler.js",
   "type": "module",
+  "bin": {
+    "aml": "./bin/aml.js"
+  },
   "scripts": {
     "compile": "node compiler/compiler.js",
     "demo": "node compiler/compiler.js && echo 'AML compilation complete.'",
