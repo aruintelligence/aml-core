@@ -1,50 +1,148 @@
+# ARCHITECTURE.md
+
 # ĀML Architecture
 
-## System Overview
+ĀML is structured as a meaning-native compiler and runtime system.
 
-ĀML is composed of five primary layers:
-
-1. Parser Layer
-2. Compiler Layer
-3. Ethical Rendering Runtime
-4. Decision Audit Layer
-5. Output Generation Layer
-
----
-
-# 1. Parser Layer
-
-Responsible for:
-- parsing `.aml` syntax
-- extracting metadata
-- validating semantic structures
-- constructing the render tree
-
-Outputs:
-- Abstract Meaning Tree (AMT)
+The architecture is designed to transform `.aml` source files into:
+- semantic HTML
+- compiler artifacts
+- Abstract Meaning Trees
+- render accountability logs
+- EthicalRenderGate decisions
 
 ---
 
-# 2. Compiler Layer
+# High-Level System Flow
 
-Responsible for:
-- semantic transformation
-- render planning
-- ethical evaluation preparation
-- output generation
-
-Outputs:
-- HTML
-- CSS
-- JavaScript
-- memory.json
-- render_decision.json
+```text
+AML Source (.aml)
+   ↓
+Lexer
+   ↓
+Parser
+   ↓
+Abstract Syntax Tree (AST)
+   ↓
+Abstract Meaning Tree (AMT)
+   ↓
+Render Evaluator
+   ↓
+EthicalRenderGate
+   ↓
+HTML Generator
+   ↓
+Generated Output
+```
 
 ---
 
-# 3. Ethical Rendering Runtime
+# Core Architectural Layers
 
-The runtime evaluates:
+## 1. Source Layer
+
+The source layer contains human-readable AML files.
+
+Example:
 
 ```aml
-render_allowed = restoration_value >= attention_cost
+transmission "061" {
+
+  engram eternalFlame {
+
+    purpose:
+      "anchor sovereign identity"
+
+    attention_cost:
+      3
+
+    restoration_value:
+      9
+
+  }
+
+}
+```
+
+The source layer is designed to prioritize:
+- semantic readability
+- low syntactic noise
+- clear purpose declarations
+- restoration-aware metadata
+
+---
+
+## 2. Lexer Layer
+
+File:
+
+```text
+compiler/lexer.js
+```
+
+The lexer converts AML source text into tokens.
+
+Responsibilities:
+- identify keywords
+- identify identifiers
+- detect braces
+- parse strings
+- parse numbers
+- preserve line and column metadata
+
+Example token:
+
+```json
+{
+  "type": "KEYWORD",
+  "value": "engram",
+  "line": 9,
+  "column": 3
+}
+```
+
+The lexer is the first deterministic transformation stage.
+
+---
+
+## 3. Parser Layer
+
+File:
+
+```text
+compiler/parser.js
+```
+
+The parser converts tokens into an Abstract Syntax Tree.
+
+Responsibilities:
+- parse blocks
+- parse properties
+- preserve nested hierarchy
+- validate structural relationships
+- produce predictable AST output
+
+Example AST node:
+
+```json
+{
+  "type": "Block",
+  "name": "engram",
+  "identifier": "eternalFlame",
+  "children": []
+}
+```
+
+The parser captures structure before semantic interpretation.
+
+---
+
+## 4. Abstract Syntax Tree
+
+Generated file:
+
+```text
+dist/ast.json
+```
+
+The AST represents syntactic
