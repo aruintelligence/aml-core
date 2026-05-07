@@ -120,6 +120,17 @@ Every render decision becomes:
 ---
 
 # Live Demo
+### Public GitHub Pages Demo
+
+https://aruintelligence.github.io/aml-core/
+
+The live demo showcases:
+- EthicalRenderGate runtime evaluation
+- element suppression
+- degraded rendering states
+- accountability metadata
+- live render_decision.json output
+- restoration vs attention-cost scoring
 
 ### EthicalRenderGate Demo
 
