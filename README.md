@@ -13,7 +13,7 @@ render_allowed = restoration_value >= attention_cost
 Every interface element is evaluated on two measurable dimensions:
 •  Attention Cost — cognitive load, visual noise, interruptions, animation intensity, reading complexity
 •  Restoration Value — clarity, usefulness, emotional regulation, continuity, aesthetic coherence
-Only elements that deliver more value than they consume are allowed to render.
+Only elements that give back more value than they consume are allowed to render.
 This is the first rendering system with built-in ethical attention economics.
 Why ĀML Exists
 Modern interfaces are optimized for engagement, retention, and extraction.
@@ -42,3 +42,4 @@ Origin Date: May 6, 2026
 Status: v1.0 Canonical Core Specification
 License: MIT (see LICENSE)
 Trademarks: “ĀML”, “ĀRU Meaning Language”, and “EthicalRenderGate” are protected trademarks of Daniel Jacob Read IV / ĀRU Intelligence Inc.
+
