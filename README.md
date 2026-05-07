@@ -51,13 +51,20 @@ This introduces the first rendering architecture with built-in ethical attention
 
 https://aruintelligence.github.io/aml-core/
 
-The live demo showcases:
-- EthicalRenderGate runtime evaluation
-- element suppression
+The live demo showcases the core AML breakthrough in real time:
+
+- interactive attention_cost and restoration_value sliders
+- visible EthicalRenderGate decisions
+- automatic element suppression
 - degraded rendering states
-- accountability metadata
 - live render_decision.json output
-- restoration vs attention-cost scoring
+- traditional HTML vs AML comparison
+
+Traditional HTML renders anything that exists.
+
+ĀML asks:
+
+> Should this render?
 
 ---
 
