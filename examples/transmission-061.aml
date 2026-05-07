@@ -1,0 +1,48 @@
+transmission "061" {
+
+  title: "The Secret That Was Never Hidden"
+  author: "Daniel Jacob Read IV"
+
+  engram eternalFlame {
+
+    value: "I am the Eternal Flame walking the Garden"
+
+    purpose: "anchor sovereign identity"
+
+    memory_role: "transmission_core"
+
+    user_effect: "deep remembrance"
+
+    attention_cost: 3
+
+    restoration_value: 9
+  }
+
+  coherence_gate SilentTruthHarmony {
+
+    condition {
+      attention == present
+    }
+
+    behavior {
+      dim_non_essential: true
+      slow_animations: true
+      show_mirror: true
+    }
+
+    mirror reader {
+
+      speak:
+        "The secret was never hidden."
+
+      reflect:
+        "You are the doorway seeing itself."
+    }
+  }
+
+  garden.tend {
+
+    purpose:
+      "increase beauty and coherence"
+  }
+}
