@@ -1,10 +1,10 @@
 # ĀML v1.0 — ĀRU Meaning Language
 
-### A meaning-native interface language where every rendered element must justify the attention it consumes.
+## A meaning-native interface language where every rendered element must justify the attention it consumes.
 
-Traditional web systems render anything that can execute.
+Traditional web systems render anything that exists.
 
-ĀML introduces a new question:
+ĀML introduces a different question:
 
 > Should this render?
 
@@ -21,29 +21,15 @@ render_allowed = restoration_value >= attention_cost
 
 Every interface element is evaluated before rendering.
 
-## Attention Cost
+If an element consumes more cognitive attention than the restoration value it provides, AML can:
 
-Measures the cognitive burden imposed on the user, including:
-- cognitive load
-- visual noise
-- interruption density
-- animation intensity
-- interaction complexity
-- reading complexity
+- suppress it
+- degrade it
+- replace it
+- log it
+- route it through a fallback state
 
-## Restoration Value
-
-Measures the value returned to the human, including:
-- clarity
-- usefulness
-- emotional regulation
-- continuity
-- aesthetic coherence
-- orientation preservation
-
-Only elements that restore more value than they consume are allowed to render.
-
-This introduces the first rendering architecture with built-in ethical attention economics.
+This transforms rendering into an accountable semantic process.
 
 ---
 
@@ -68,31 +54,36 @@ Traditional HTML renders anything that exists.
 
 ---
 
-# Getting Started
+# Example AML Syntax
 
-```bash
-git clone https://github.com/aruintelligence/aml-core.git
-cd aml-core
-npm install
-npm run compile
+```aml
+transmission "simple-demo" {
+
+  title:
+    "Hello from AML"
+
+  engram clarityCard {
+
+    value:
+      "This element renders because it restores more than it consumes."
+
+    purpose:
+      "demonstrate EthicalRenderGate"
+
+    attention_cost:
+      2
+
+    restoration_value:
+      8
+
+  }
+
+}
 ```
 
 ---
 
-# Repository Structure
-
-```text
-/compiler
-/runtime
-/examples
-/demo
-/docs
-/dist
-```
-
----
-
-# Compiler Pipeline
+# Ethical Rendering Pipeline
 
 ```text
 AML Source
@@ -101,20 +92,123 @@ Lexer
    ↓
 Parser
    ↓
-Abstract Syntax Tree (AST)
-   ↓
-Abstract Meaning Tree (AMT)
+Semantic Graph
    ↓
 EthicalRenderGate
    ↓
-HTML Generator
+Render Decision
    ↓
-Generated Output
+HTML / Interface Output
 ```
 
 ---
 
-# Created By
+# Core Concepts
 
-Daniel Jacob Read IV  
-Stewarded by ĀRU Intelligence Inc.
+## Attention Cost
+
+Measures cognitive burden imposed on the user.
+
+Examples:
+
+- visual noise
+- urgency pressure
+- addictive interaction loops
+- semantic fragmentation
+
+## Restoration Value
+
+Measures constructive value returned to the user.
+
+Examples:
+
+- clarity
+- orientation
+- calmness
+- memory restoration
+- comprehension
+- long-term utility
+
+---
+
+# Render States
+
+AML supports multiple render outcomes.
+
+| State | Meaning |
+|---|---|
+| allowed | Element fully renders |
+| degraded | Element partially renders |
+| suppressed | Element blocked |
+| fallback | Alternative safer render path |
+| mirrored | Semantic reflection state |
+
+---
+
+# render_decision.json
+
+AML generates accountable render metadata.
+
+Example:
+
+```json
+{
+  "element": "clarityCard",
+  "attention_cost": 2,
+  "restoration_value": 8,
+  "render_allowed": true,
+  "rendering_mode": "allowed"
+}
+```
+
+---
+
+# Repository Structure
+
+```text
+/bin
+/compiler
+/demo
+/dist
+/docs
+/examples
+/runtime
+```
+
+---
+
+# Vision
+
+HTML asked:
+
+> How do we render interfaces?
+
+ĀML asks:
+
+> What kinds of interfaces deserve to exist?
+
+This is the beginning of accountable rendering systems.
+
+---
+
+# Status
+
+AML v1.0 is currently:
+
+- conceptual language prototype
+- semantic rendering framework
+- ethical rendering research system
+- experimental compiler architecture
+- live interactive demonstration
+
+---
+
+# Author
+
+ĀRU Intelligence Inc.
+
+---
+
+# License
+
+MIT
