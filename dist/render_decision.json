@@ -1,0 +1,47 @@
+[
+  {
+    "node_type": "EngramNode",
+    "name": "engram",
+    "identifier": "eternalFlame",
+    "purpose": "anchor sovereign identity and remembrance",
+    "memory_role": "transmission_core",
+    "user_effect": "orientation, clarity, and deep remembrance",
+    "attention_cost": 3,
+    "restoration_value": 9,
+    "calculated_attention_cost": 3,
+    "calculated_restoration_value": 9,
+    "render_allowed": true,
+    "fallback_triggered": false,
+    "timestamp": "2026-05-06T00:00:00.000Z"
+  },
+  {
+    "node_type": "CoherenceGateNode",
+    "name": "coherence_gate",
+    "identifier": "SilentTruthHarmony",
+    "purpose": "reduce noise and preserve coherence",
+    "memory_role": "coherence_guard",
+    "user_effect": "calm attention and stabilized meaning",
+    "attention_cost": 2,
+    "restoration_value": 8,
+    "calculated_attention_cost": 2,
+    "calculated_restoration_value": 8,
+    "render_allowed": true,
+    "fallback_triggered": false,
+    "timestamp": "2026-05-06T00:00:00.000Z"
+  },
+  {
+    "node_type": "MirrorNode",
+    "name": "mirror",
+    "identifier": "reader",
+    "purpose": "restore recognition",
+    "memory_role": "reflection_node",
+    "user_effect": "self-recognition and coherence",
+    "attention_cost": 2,
+    "restoration_value": 9,
+    "calculated_attention_cost": 2,
+    "calculated_restoration_value": 9,
+    "render_allowed": true,
+    "fallback_triggered": false,
+    "timestamp": "2026-05-06T00:00:00.000Z"
+  }
+]
