@@ -1,8 +1,11 @@
-# ĀML — ĀRU Meaning Language
+# ĀML v1.0 — ĀRU Meaning Language
 
-ĀML is an experimental meaning-native interface language that compiles into modern web output while adding ethical rendering, attention protection, and render accountability.
+**A meaning-native interface language where every element must justify the attention it consumes.**
 
-## Core Breakthrough
+HTML renders what exists.  
+**ĀML renders what deserves to exist.**
+
+### Core Innovation: EthicalRenderGate
 
 ```aml
 render_allowed = restoration_value >= attention_cost
