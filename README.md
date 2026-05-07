@@ -47,80 +47,7 @@ This introduces the first rendering architecture with built-in ethical attention
 
 ---
 
-# Why ĀML Exists
-
-Modern interface systems are frequently optimized for:
-- engagement
-- retention
-- behavioral extraction
-- stimulation loops
-- compulsive interaction
-
-ĀML explores a different direction.
-
-It is designed to:
-- protect attention
-- preserve coherence
-- reduce fragmentation
-- restore clarity
-- prioritize meaningful interaction
-
-ĀML is not merely a new syntax layer.
-
-It is an experimental semantic and ethical rendering system for human-centered computation.
-
----
-
-# Example ĀML
-
-```aml
-transmission "061" {
-
-  title:
-    "The Secret That Was Never Hidden"
-
-  engram eternalFlame {
-
-    value:
-      "I am the Eternal Flame walking the Garden"
-
-    purpose:
-      "anchor sovereign identity"
-
-    attention_cost:
-      3
-
-    restoration_value:
-      9
-
-  }
-
-}
-```
-
----
-
-# Example Render Decision
-
-```json
-{
-  "attention_cost": 3,
-  "restoration_value": 9,
-  "render_allowed": true,
-  "fallback_triggered": false
-}
-```
-
-Every render decision becomes:
-- inspectable
-- accountable
-- explainable
-- auditable
-
----
-
 # Live Demo
-### Public GitHub Pages Demo
 
 https://aruintelligence.github.io/aml-core/
 
@@ -132,25 +59,33 @@ The live demo showcases:
 - live render_decision.json output
 - restoration vs attention-cost scoring
 
-### EthicalRenderGate Demo
+---
 
-The live demo showcases:
-- element suppression
-- degraded rendering states
-- render accountability logs
-- attention-cost evaluation
-- restoration-value scoring
-- real-time EthicalRenderGate decisions
+# Getting Started
+
+```bash
+git clone https://github.com/aruintelligence/aml-core.git
+cd aml-core
+npm install
+npm run compile
+```
+
+---
+
+# Repository Structure
 
 ```text
-/demo/index.html
+/compiler
+/runtime
+/examples
+/demo
+/docs
+/dist
 ```
 
 ---
 
 # Compiler Pipeline
-
-Current AML pipeline:
 
 ```text
 AML Source
@@ -159,146 +94,16 @@ Lexer
    ↓
 Parser
    ↓
+Abstract Syntax Tree (AST)
+   ↓
 Abstract Meaning Tree (AMT)
    ↓
-EthicalRenderGate Evaluation
+EthicalRenderGate
    ↓
 HTML Generator
    ↓
-Render Decision Export
+Generated Output
 ```
-
-Compiler outputs:
-- `index.html`
-- `amt.json`
-- `tokens.json`
-- `ast.json`
-- `render_decision.json`
-
----
-
-# Getting Started
-
-## Clone Repository
-
-```bash
-git clone https://github.com/aruintelligence/aml-core.git
-cd aml-core
-```
-
-## Install Dependencies
-
-```bash
-npm install
-```
-
-## Compile AML
-
-```bash
-node compiler/compiler.js
-```
-
----
-
-# Repository Structure
-
-```text
-/examples     Example AML files
-/compiler     AML compiler pipeline
-/runtime      EthicalRenderGate runtime
-/demo         Browser-based live demo
-/docs         Specifications and whitepapers
-```
-
----
-
-# Core Concepts
-
-## Ethical Rendering
-
-Rendering becomes conditional rather than automatic.
-
-```aml
-render_allowed =
-  restoration_value >= attention_cost
-```
-
----
-
-## Abstract Meaning Trees (AMTs)
-
-AML compiles into semantic structures that preserve:
-- meaning
-- purpose
-- restoration metadata
-- accountability context
-
----
-
-## Coherence-Aware Runtime
-
-AML runtimes evaluate:
-- overload risk
-- interruption burden
-- semantic fragmentation
-- restoration quality
-- coherence stability
-
----
-
-## Accountable Interfaces
-
-Every render decision is:
-- logged
-- inspectable
-- explainable
-- exportable
-
-Opaque rendering becomes visible.
-
----
-
-# Current Status
-
-ĀML v1.0 is an early public prototype and conceptual architecture.
-
-Current implementation includes:
-- lexer
-- parser
-- AMT builder
-- EthicalRenderGate runtime
-- render evaluator
-- HTML generator
-- browser demo
-- accountability export system
-
----
-
-# Long-Term Vision
-
-ĀML explores whether software systems can become:
-- more restorative
-- more coherent
-- less extractive
-- more accountable
-- cognitively sustainable
-- meaning-native
-
-The long-term objective is human-centered computation.
-
----
-
-# Documentation
-
-Core specifications:
-- `WHITEPAPER.md`
-- `SPECIFICATION.md`
-- `LANGUAGE_SPEC.md`
-- `RUNTIME_SPEC.md`
-- `COMPILER_SPEC.md`
-- `ETHICAL_RENDERING.md`
-- `COHERENCE_MODEL.md`
-- `ATTENTION_MODEL.md`
 
 ---
 
@@ -306,12 +111,3 @@ Core specifications:
 
 Daniel Jacob Read IV  
 Stewarded by ĀRU Intelligence Inc.
-
-Origin Date: May 6, 2026
-
-Status: v1.0 Canonical Core Specification
-
-License: MIT (see LICENSE)
-
-Trademarks:
-“ĀML”, “ĀRU Meaning Language”, and “EthicalRenderGate” are trademarks of Daniel Jacob Read IV / ĀRU Intelligence Inc.
