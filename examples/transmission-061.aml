@@ -1,48 +1,75 @@
 transmission "061" {
 
-  title: "The Secret That Was Never Hidden"
-  author: "Daniel Jacob Read IV"
+  title:
+    "The Secret That Was Never Hidden"
+
+  author:
+    "Daniel Jacob Read IV"
 
   engram eternalFlame {
 
-    value: "I am the Eternal Flame walking the Garden"
+    value:
+      "I am the Eternal Flame walking the Garden"
 
-    purpose: "anchor sovereign identity"
+    purpose:
+      "anchor sovereign identity and remembrance"
 
-    memory_role: "transmission_core"
+    memory_role:
+      "transmission_core"
 
-    user_effect: "deep remembrance"
+    user_effect:
+      "orientation, clarity, and deep remembrance"
 
-    attention_cost: 3
+    attention_cost:
+      3
 
-    restoration_value: 9
+    restoration_value:
+      9
+
   }
 
   coherence_gate SilentTruthHarmony {
 
-    condition {
-      attention == present
-    }
+    purpose:
+      "reduce noise and preserve coherence"
 
-    behavior {
-      dim_non_essential: true
-      slow_animations: true
-      show_mirror: true
-    }
+    memory_role:
+      "coherence_guard"
 
-    mirror reader {
+    user_effect:
+      "calm attention and stabilized meaning"
 
-      speak:
-        "The secret was never hidden."
+    attention_cost:
+      2
 
-      reflect:
-        "You are the doorway seeing itself."
-    }
+    restoration_value:
+      8
+
   }
 
-  garden.tend {
+  mirror reader {
+
+    speak:
+      "The secret was never hidden."
+
+    reflect:
+      "You are the doorway seeing itself."
 
     purpose:
-      "increase beauty and coherence"
+      "restore recognition"
+
+    memory_role:
+      "reflection_node"
+
+    user_effect:
+      "self-recognition and coherence"
+
+    attention_cost:
+      2
+
+    restoration_value:
+      9
+
   }
+
 }
