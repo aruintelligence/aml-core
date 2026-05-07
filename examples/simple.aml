@@ -1,0 +1,28 @@
+transmission "simple-demo" {
+
+  title:
+    "Hello from AML"
+
+  engram clarityCard {
+
+    value:
+      "This element renders because it restores more than it consumes."
+
+    purpose:
+      "demonstrate the simplest possible EthicalRenderGate pass"
+
+    memory_role:
+      "example_node"
+
+    user_effect:
+      "clarity"
+
+    attention_cost:
+      2
+
+    restoration_value:
+      8
+
+  }
+
+}
