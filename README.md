@@ -10,7 +10,13 @@ Traditional HTML renders anything that exists.
 
 > HTML renders what exists.  
 > ĀML renders what deserves to exist.
+> 
+# ĀML™
 
+### The first rendering system that asks:
+## “Should this exist?”
+
+[ Try the Live Demo ](https://aruintelligence.github.io/aml-core/)
 ---
 
 # Core Breakthrough — EthicalRenderGate
