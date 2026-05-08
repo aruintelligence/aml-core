@@ -1,0 +1,139 @@
+transmission "social-feed-demo" {
+
+  title:
+    "AML Ethical Social Feed"
+
+  purpose:
+    "Demonstrate EthicalRenderGate on modern social media patterns."
+
+  feed {
+
+    engram deepLearningPost {
+
+      content:
+        "A long-form educational thread explaining climate systems."
+
+      author:
+        "Research Collective"
+
+      attention_cost:
+        3.2
+
+      restoration_value:
+        8.9
+
+      emotional_volatility:
+        1.1
+
+      rendering_mode:
+        adaptive
+
+    }
+
+    engram rageBaitPost {
+
+      content:
+        "OUTRAGE: Everything is collapsing. Share before it disappears."
+
+      author:
+        "Viral Manipulation Account"
+
+      attention_cost:
+        8.8
+
+      restoration_value:
+        1.4
+
+      emotional_volatility:
+        9.7
+
+      rendering_mode:
+        suppress_if_harmful
+
+    }
+
+    engram endlessShortVideoLoop {
+
+      content:
+        "Infinite autoplay stimulation feed."
+
+      author:
+        "Engagement Engine"
+
+      attention_cost:
+        9.5
+
+      restoration_value:
+        2.0
+
+      emotional_volatility:
+        7.8
+
+      rendering_mode:
+        degraded
+
+    }
+
+    engram restorativeMeditation {
+
+      content:
+        "Five minute guided breathing and nervous system reset."
+
+      author:
+        "Restoration Network"
+
+      attention_cost:
+        2.5
+
+      restoration_value:
+        9.4
+
+      emotional_volatility:
+        0.4
+
+      rendering_mode:
+        prioritized
+
+    }
+
+    engram popupAdvertisement {
+
+      content:
+        "LIMITED TIME OFFER — CLICK NOW"
+
+      author:
+        "Attention Broker"
+
+      attention_cost:
+        9.1
+
+      restoration_value:
+        0.8
+
+      emotional_volatility:
+        8.4
+
+      rendering_mode:
+        suppress_if_harmful
+
+    }
+
+  }
+
+  ethical_render_gate {
+
+    rule:
+      restoration_value >= attention_cost
+
+    degraded_threshold:
+      2.25
+
+    suppression_threshold:
+      3.5
+
+    transparency_logging:
+      enabled
+
+  }
+
+}
