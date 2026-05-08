@@ -1,0 +1,142 @@
+transmission "ethical-ads-demo" {
+
+  title:
+    "AML Ethical Advertising System"
+
+  purpose:
+    "Demonstrate advertising that respects attention, restores trust, and remains accountable."
+
+  ad_surface {
+
+    engram transparentSponsorMessage {
+
+      content:
+        "This sponsor supports the article and is clearly labeled."
+
+      sponsor:
+        "Restorative Tools Company"
+
+      attention_cost:
+        2.4
+
+      restoration_value:
+        7.2
+
+      manipulation_risk:
+        0.6
+
+      rendering_mode:
+        allowed
+
+    }
+
+    engram deceptiveCountdownAd {
+
+      content:
+        "ONLY 03:00 LEFT — ACT NOW BEFORE THIS VANISHES"
+
+      sponsor:
+        "Pressure Funnel Network"
+
+      attention_cost:
+        8.9
+
+      restoration_value:
+        1.2
+
+      manipulation_risk:
+        9.6
+
+      rendering_mode:
+        suppress_if_harmful
+
+    }
+
+    engram usefulProductRecommendation {
+
+      content:
+        "A relevant tool that directly supports the user’s current task."
+
+      sponsor:
+        "Helpful Workflow App"
+
+      attention_cost:
+        3.1
+
+      restoration_value:
+        8.1
+
+      manipulation_risk:
+        1.1
+
+      rendering_mode:
+        prioritized
+
+    }
+
+    engram autoplayVideoAd {
+
+      content:
+        "Auto-playing video ad with sound and motion."
+
+      sponsor:
+        "Attention Capture Exchange"
+
+      attention_cost:
+        9.4
+
+      restoration_value:
+        1.7
+
+      manipulation_risk:
+        8.8
+
+      rendering_mode:
+        degraded_or_muted
+
+    }
+
+    engram consentBasedOffer {
+
+      content:
+        "Would you like to see optional offers related to this topic?"
+
+      sponsor:
+        "Consent Commerce Network"
+
+      attention_cost:
+        2.0
+
+      restoration_value:
+        7.8
+
+      manipulation_risk:
+        0.4
+
+      rendering_mode:
+        allowed_with_consent
+
+    }
+
+  }
+
+  ethical_render_gate {
+
+    rule:
+      restoration_value >= attention_cost
+
+    manipulation_guard:
+      enabled
+
+    consent_required_for_ads:
+      enabled
+
+    autoplay_suppression:
+      enabled
+
+    transparency_logging:
+      enabled
+
+  }
+
+}
