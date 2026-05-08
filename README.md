@@ -148,7 +148,17 @@ HTML Output
 | mirrored | reflective semantic state |
 
 ---
+## Compile AML
 
+```bash
+node compiler/aml-compiler.js examples/simple.aml dist
+```
+
+Outputs:
+
+- dist/index.html
+- dist/render_decision.json
+```
 # render_decision.json
 
 AML generates transparent rendering metadata.
