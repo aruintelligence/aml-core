@@ -3,533 +3,892 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ĀML v1.0 — EthicalRenderGate Live Demo</title>
+
+<title>ĀML v1.0 — The First Rendering System That Asks: Should This Exist?</title>
 
 <style>
-* {
-  box-sizing: border-box;
+*{box-sizing:border-box}
+
+:root{
+  --bg:#03040b;
+  --panel:rgba(255,255,255,.075);
+  --line:rgba(255,255,255,.16);
+  --cyan:#7df9ff;
+  --pink:#ff4fd8;
+  --green:#8cffb7;
+  --gold:#ffe08a;
+  --red:#ff5478;
+  --text:#f8fbff;
+  --muted:rgba(248,251,255,.72);
 }
 
-:root {
-  --bg: #03040b;
-  --panel: rgba(255,255,255,.075);
-  --panel2: rgba(0,0,0,.38);
-  --line: rgba(255,255,255,.16);
-  --cyan: #7df9ff;
-  --pink: #ff4fd8;
-  --green: #8cffb7;
-  --gold: #ffe08a;
-  --red: #ff7d9c;
-  --text: #f8fbff;
-  --muted: rgba(248,251,255,.72);
-}
+body{
+  margin:0;
+  min-height:100vh;
+  overflow-x:hidden;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:var(--text);
 
-body {
-  margin: 0;
-  min-height: 100vh;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
-  color: var(--text);
   background:
-    radial-gradient(circle at 8% 10%, rgba(125,249,255,.25), transparent 30%),
-    radial-gradient(circle at 88% 8%, rgba(255,79,216,.18), transparent 32%),
-    radial-gradient(circle at 50% 100%, rgba(140,255,183,.10), transparent 38%),
-    linear-gradient(135deg, #02030a, #0b102b 48%, #020205);
-  padding: 26px;
-  overflow-x: hidden;
+    radial-gradient(circle at 10% 10%, rgba(125,249,255,.24), transparent 30%),
+    radial-gradient(circle at 90% 12%, rgba(255,79,216,.18), transparent 34%),
+    radial-gradient(circle at 50% 100%, rgba(140,255,183,.08), transparent 40%),
+    linear-gradient(135deg,#02030a,#0b102b 48%,#020205);
+
+  padding:28px;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+
   background:
-    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
-  background-size: 42px 42px;
-  mask-image: radial-gradient(circle at center, black, transparent 80%);
+
+  background-size:42px 42px;
+
+  mask-image:radial-gradient(circle at center, black, transparent 82%);
 }
 
-.shell {
-  max-width: 1320px;
-  margin: 0 auto;
+.shell{
+  max-width:1380px;
+  margin:0 auto;
 }
 
-.hero {
-  border: 1px solid var(--line);
-  border-radius: 34px;
-  padding: 38px;
-  background: linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.035));
-  backdrop-filter: blur(22px);
+.hero{
+  position:relative;
+  overflow:hidden;
+
+  border:1px solid var(--line);
+  border-radius:36px;
+
+  padding:54px 42px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,.10),
+      rgba(255,255,255,.035)
+    );
+
+  backdrop-filter:blur(24px);
+
   box-shadow:
-    0 0 90px rgba(125,249,255,.13),
-    inset 0 0 60px rgba(255,255,255,.035);
-  margin-bottom: 24px;
+    0 0 120px rgba(125,249,255,.14),
+    inset 0 0 60px rgba(255,255,255,.04);
+
+  margin-bottom:28px;
 }
 
-.kicker {
-  color: var(--cyan);
-  font-weight: 950;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  font-size: .76rem;
+.hero::after{
+  content:"";
+  position:absolute;
+  inset:0;
+
+  background:
+    linear-gradient(
+      120deg,
+      transparent,
+      rgba(255,255,255,.05),
+      transparent
+    );
+
+  transform:translateX(-120%);
+  animation:heroScan 7s linear infinite;
 }
 
-h1 {
-  margin: 12px 0 16px;
-  font-size: clamp(2.5rem, 7vw, 7rem);
-  line-height: .88;
-  letter-spacing: -.08em;
+@keyframes heroScan{
+  0%{transform:translateX(-120%)}
+  100%{transform:translateX(120%)}
 }
 
-.tagline {
-  max-width: 980px;
-  color: var(--muted);
-  line-height: 1.65;
-  font-size: 1.12rem;
+.kicker{
+  color:var(--cyan);
+  font-size:.78rem;
+  font-weight:950;
+  letter-spacing:.22em;
+  text-transform:uppercase;
 }
 
-.equation {
-  display: inline-flex;
-  margin-top: 22px;
-  padding: 14px 18px;
-  border-radius: 999px;
-  background: rgba(0,0,0,.46);
-  border: 1px solid rgba(125,249,255,.42);
-  color: var(--cyan);
-  font-weight: 950;
-  box-shadow: 0 0 34px rgba(125,249,255,.15);
+h1{
+  margin:16px 0 18px;
+
+  font-size:clamp(2.6rem,8vw,7.3rem);
+  line-height:.88;
+  letter-spacing:-.08em;
+
+  max-width:1100px;
 }
 
-.compare {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 22px;
-  margin-bottom: 22px;
+.gradient{
+  background:linear-gradient(90deg,var(--cyan),#ffffff,var(--pink));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
 }
 
-.panel {
-  border: 1px solid var(--line);
-  border-radius: 28px;
-  padding: 22px;
-  background: var(--panel);
-  backdrop-filter: blur(18px);
+.tagline{
+  max-width:980px;
+
+  color:var(--muted);
+  font-size:1.18rem;
+  line-height:1.7;
 }
 
-.panel h2 {
-  margin: 0 0 8px;
+.quote{
+  margin-top:24px;
+
+  padding:18px 20px;
+
+  border-radius:24px;
+
+  background:rgba(0,0,0,.34);
+
+  border:1px solid rgba(125,249,255,.34);
+
+  font-weight:850;
+
+  color:#eafcff;
 }
 
-.panel p {
-  color: var(--muted);
-  line-height: 1.55;
+.equation{
+  display:inline-flex;
+
+  margin-top:22px;
+
+  padding:14px 18px;
+
+  border-radius:999px;
+
+  background:rgba(0,0,0,.46);
+
+  border:1px solid rgba(125,249,255,.44);
+
+  color:var(--cyan);
+
+  font-weight:950;
+
+  box-shadow:
+    0 0 40px rgba(125,249,255,.16);
 }
 
-.stack {
-  display: grid;
-  gap: 14px;
-  margin-top: 18px;
+.before-after{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+
+  margin-bottom:24px;
 }
 
-.element {
-  border-radius: 22px;
-  padding: 18px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.065);
-  transition: all .35s ease;
-  position: relative;
-  overflow: hidden;
+.explain{
+  border:1px solid var(--line);
+
+  border-radius:28px;
+
+  padding:24px;
+
+  background:var(--panel);
+
+  backdrop-filter:blur(18px);
 }
 
-.element::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: .28;
-  background: linear-gradient(120deg, transparent, rgba(255,255,255,.08), transparent);
-  transform: translateX(-120%);
-  animation: scan 4s infinite;
+.explain h2{
+  margin-top:0;
 }
 
-@keyframes scan {
-  0% { transform: translateX(-120%); }
-  60% { transform: translateX(120%); }
-  100% { transform: translateX(120%); }
+.explain p{
+  color:var(--muted);
+  line-height:1.6;
 }
 
-.traditional .element {
-  border-color: rgba(255,255,255,.18);
+.compare{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:22px;
+
+  margin-bottom:24px;
 }
 
-.traditional .danger {
-  border-color: rgba(255,125,156,.5);
-  box-shadow: 0 0 30px rgba(255,125,156,.12);
+.panel{
+  border:1px solid var(--line);
+
+  border-radius:30px;
+
+  padding:24px;
+
+  background:var(--panel);
+
+  backdrop-filter:blur(20px);
 }
 
-.aml .allowed {
-  border-color: rgba(125,249,255,.55);
-  box-shadow: 0 0 38px rgba(125,249,255,.13);
+.panel h2{
+  margin:0 0 8px;
 }
 
-.aml .degraded {
-  opacity: .68;
-  border-style: dashed;
-  border-color: rgba(255,224,138,.6);
-  filter: saturate(.72);
+.panel p{
+  color:var(--muted);
+  line-height:1.55;
 }
 
-.aml .suppressed {
-  opacity: .25;
-  filter: grayscale(.96) blur(1px);
-  transform: scale(.985);
-  border-color: rgba(255,125,156,.55);
+.stack{
+  display:grid;
+  gap:16px;
+
+  margin-top:18px;
 }
 
-.element strong {
-  display: block;
-  font-size: 1.04rem;
-  margin-bottom: 4px;
+.element{
+  position:relative;
+
+  overflow:hidden;
+
+  border-radius:24px;
+
+  padding:20px;
+
+  border:1px solid rgba(255,255,255,.15);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,.07),
+      rgba(255,255,255,.04)
+    );
+
+  transition:all .45s ease;
 }
 
-.small {
-  color: var(--muted);
-  font-size: .92rem;
+.element::after{
+  content:"";
+
+  position:absolute;
+  inset:0;
+
+  opacity:.25;
+
+  pointer-events:none;
+
+  background:
+    linear-gradient(
+      120deg,
+      transparent,
+      rgba(255,255,255,.08),
+      transparent
+    );
+
+  transform:translateX(-120%);
+
+  animation:scan 5s linear infinite;
 }
 
-.status {
-  margin-top: 12px;
-  font-weight: 950;
+@keyframes scan{
+  0%{transform:translateX(-120%)}
+  100%{transform:translateX(120%)}
 }
 
-.allowed .status {
-  color: var(--cyan);
+.traditional .danger{
+  border-color:rgba(255,84,120,.58);
+
+  box-shadow:
+    0 0 30px rgba(255,84,120,.16);
 }
 
-.degraded .status {
-  color: var(--gold);
+.aml .allowed{
+  border-color:rgba(125,249,255,.58);
+
+  box-shadow:
+    0 0 44px rgba(125,249,255,.16);
 }
 
-.suppressed .status {
-  color: var(--red);
+.aml .degraded{
+  opacity:.62;
+
+  border-style:dashed;
+
+  border-color:rgba(255,224,138,.68);
+
+  filter:saturate(.65);
 }
 
-.controls {
-  border: 1px solid var(--line);
-  border-radius: 28px;
-  padding: 24px;
-  background: rgba(0,0,0,.32);
-  margin-bottom: 22px;
+.aml .suppressed{
+  opacity:.18;
+
+  transform:scale(.96);
+
+  filter:
+    grayscale(1)
+    blur(2.4px);
+
+  border-color:rgba(255,84,120,.85);
+
+  box-shadow:
+    0 0 60px rgba(255,84,120,.28),
+    inset 0 0 45px rgba(255,84,120,.12);
 }
 
-.controls h2 {
-  margin: 0 0 8px;
+.aml .suppressed::before{
+  content:"SUPPRESSED BY ETHICALRENDERGATE";
+
+  position:absolute;
+
+  top:50%;
+  left:50%;
+
+  transform:
+    translate(-50%,-50%)
+    rotate(-7deg);
+
+  z-index:4;
+
+  background:rgba(255,84,120,.94);
+
+  color:white;
+
+  padding:10px 14px;
+
+  border-radius:14px;
+
+  border:1px solid rgba(255,255,255,.45);
+
+  font-size:.72rem;
+
+  letter-spacing:.08em;
+
+  font-weight:950;
+
+  text-align:center;
+
+  box-shadow:
+    0 0 40px rgba(255,84,120,.44);
 }
 
-.control-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 14px;
-  margin-top: 16px;
+.element strong{
+  display:block;
+
+  font-size:1.04rem;
+
+  margin-bottom:4px;
 }
 
-.control {
-  padding: 16px;
-  border-radius: 20px;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.12);
+.small{
+  color:var(--muted);
+  font-size:.92rem;
 }
 
-label {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  font-weight: 850;
-  margin-bottom: 10px;
-  font-size: .9rem;
+.status{
+  margin-top:14px;
+
+  font-weight:950;
 }
 
-input[type="range"] {
-  width: 100%;
+.allowed .status{color:var(--cyan)}
+.degraded .status{color:var(--gold)}
+.suppressed .status{color:var(--red)}
+
+.controls{
+  border:1px solid var(--line);
+
+  border-radius:30px;
+
+  padding:24px;
+
+  background:rgba(0,0,0,.32);
+
+  margin-bottom:24px;
 }
 
-.value {
-  color: var(--cyan);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+.control-grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:14px;
+
+  margin-top:18px;
 }
 
-.output {
-  display: grid;
-  grid-template-columns: .95fr 1.05fr;
-  gap: 22px;
+.control{
+  border-radius:22px;
+
+  padding:16px;
+
+  background:rgba(255,255,255,.06);
+
+  border:1px solid rgba(255,255,255,.12);
 }
 
-pre {
-  margin: 0;
-  color: #dffcff;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-size: .8rem;
-  line-height: 1.45;
+label{
+  display:block;
+
+  font-weight:900;
+
+  margin-bottom:10px;
+
+  font-size:.9rem;
 }
 
-.json-panel {
-  max-height: 620px;
-  overflow: auto;
-  background: rgba(0,0,0,.45);
+.value{
+  float:right;
+
+  color:var(--cyan);
+
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
 }
 
-button {
-  margin-top: 16px;
-  border: 0;
-  border-radius: 999px;
-  padding: 12px 16px;
-  background: var(--cyan);
-  color: #031018;
-  font-weight: 950;
-  cursor: pointer;
+input[type="range"]{
+  width:100%;
 }
 
-.pill-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
+.output{
+  display:grid;
+  grid-template-columns:.95fr 1.05fr;
+  gap:22px;
 }
 
-.pill {
-  padding: 7px 9px;
-  border-radius: 999px;
-  background: rgba(0,0,0,.36);
-  border: 1px solid rgba(255,255,255,.1);
-  font-size: .78rem;
+pre{
+  margin:0;
+
+  color:#dffcff;
+
+  white-space:pre-wrap;
+  word-break:break-word;
+
+  font-size:.8rem;
+  line-height:1.45;
 }
 
-footer {
-  margin-top: 34px;
-  text-align: center;
-  color: rgba(255,255,255,.52);
-  font-size: .86rem;
+.json-panel{
+  max-height:640px;
+  overflow:auto;
+
+  background:rgba(0,0,0,.45);
 }
 
-@media (max-width: 980px) {
-  body {
-    padding: 18px;
-  }
+button{
+  margin-top:16px;
 
+  border:0;
+
+  border-radius:999px;
+
+  padding:12px 16px;
+
+  background:var(--cyan);
+
+  color:#031018;
+
+  font-weight:950;
+
+  cursor:pointer;
+}
+
+.pill-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+
+  margin-top:12px;
+}
+
+.pill{
+  padding:7px 10px;
+
+  border-radius:999px;
+
+  background:rgba(0,0,0,.36);
+
+  border:1px solid rgba(255,255,255,.1);
+
+  font-size:.78rem;
+}
+
+footer{
+  margin-top:36px;
+
+  text-align:center;
+
+  color:rgba(255,255,255,.54);
+
+  font-size:.86rem;
+}
+
+@media(max-width:980px){
+  body{padding:18px}
+
+  .before-after,
   .compare,
   .output,
-  .control-grid {
-    grid-template-columns: 1fr;
+  .control-grid{
+    grid-template-columns:1fr;
   }
 }
 </style>
 </head>
 
 <body>
+
 <div class="shell">
 
 <section class="hero">
-  <div class="kicker">ĀML v1.0 Live Demo</div>
-  <h1>EthicalRenderGate</h1>
+
+  <div class="kicker">
+    ĀML v1.0 LIVE DEMO
+  </div>
+
+  <h1>
+    The First Rendering System<br>
+    That Asks:
+    <span class="gradient">
+      Should This Exist?
+    </span>
+  </h1>
+
   <p class="tagline">
-    Traditional HTML renders anything that exists. ĀML evaluates whether each interface element deserves to render.
-    Every element receives an attention cost, a restoration value, a render state, and an accountable JSON decision.
+    Traditional HTML renders anything that exists.
+    ĀML evaluates every interface element through EthicalRenderGate before allowing it into the final experience.
   </p>
-  <div class="equation">render_allowed = restoration_value ≥ attention_cost</div>
+
+  <div class="quote">
+    Traditional HTML renders everything.<br>
+    ĀML filters reality through restoration value.
+  </div>
+
+  <div class="equation">
+    render_allowed = restoration_value ≥ attention_cost
+  </div>
+
+</section>
+
+<section class="before-after">
+
+  <div class="explain">
+    <h2>Before</h2>
+    <p>
+      Infinite feeds, rage bait, manipulative popups, and meaningful content all receive identical rendering permission.
+    </p>
+  </div>
+
+  <div class="explain">
+    <h2>After ĀML</h2>
+    <p>
+      Every element must justify the attention it consumes. Harmful elements degrade or suppress automatically.
+    </p>
+  </div>
+
 </section>
 
 <section class="compare">
+
   <div class="panel traditional">
+
     <h2>Traditional HTML</h2>
-    <p>Everything below renders because the markup exists.</p>
+
+    <p>
+      Everything renders because the markup exists.
+    </p>
+
     <div id="traditionalStack" class="stack"></div>
+
   </div>
 
   <div class="panel aml">
+
     <h2>ĀML Ethical Rendering</h2>
-    <p>Each element is evaluated independently before reaching the final interface.</p>
+
+    <p>
+      Each element is evaluated independently before reaching the interface.
+    </p>
+
     <div id="amlStack" class="stack"></div>
+
   </div>
+
 </section>
 
 <section class="controls">
-  <h2>Live Per-Element Scoring</h2>
+
+  <h2>
+    Live Per-Element Restoration Controls
+  </h2>
+
   <p class="small">
-    Adjust each element’s restoration value. The AML side updates independently while traditional HTML keeps rendering everything.
+    Move the sliders. Traditional HTML ignores the values. ĀML changes render state immediately.
   </p>
+
   <div id="controls" class="control-grid"></div>
+
 </section>
 
 <section class="output">
+
   <div class="panel">
-    <h2>What This Demonstrates</h2>
+
+    <h2>
+      The Paradigm Shift
+    </h2>
+
     <p>
-      ĀML does not merely describe layout. It introduces a rendering gate.
-      Elements with high attention cost and low restoration value can be degraded or suppressed.
+      ĀML does not merely describe layout.
+      It introduces accountable rendering.
     </p>
+
     <p>
-      This turns the interface into an accountable system instead of a passive rendering surface.
+      The interface becomes a decision system instead of a passive rendering surface.
     </p>
-    <button onclick="resetDemo()">Reset Demo</button>
+
+    <button onclick="resetDemo()">
+      Reset Demo
+    </button>
+
   </div>
 
   <div class="panel json-panel">
-    <h2>Live render_decision.json</h2>
+
+    <h2>
+      Live render_decision.json
+    </h2>
+
     <pre id="decisionLog"></pre>
+
   </div>
+
 </section>
 
 <footer>
-  ĀML v1.0 • ĀRU Meaning Language • EthicalRenderGate Prototype • ĀRU Intelligence Inc.
+  ĀML v1.0 • EthicalRenderGate • ĀRU Intelligence Inc.
 </footer>
 
 </div>
 
 <script>
+
 const elements = [
+
   {
-    id: "deep_article",
-    name: "Deep Article",
-    description: "Long-form clarity, learning, and meaning.",
-    attention_cost: 4,
-    restoration_value: 8.5,
-    type: "restorative"
+    id:"deep_article",
+    name:"Deep Article",
+    description:"Long-form clarity, learning, and meaning.",
+    attention_cost:4,
+    restoration_value:8.5,
+    type:"restorative"
   },
+
   {
-    id: "infinite_scroll",
-    name: "Infinite Scroll Feed",
-    description: "High stimulation loop with low completion.",
-    attention_cost: 8.5,
-    restoration_value: 3,
-    type: "danger"
+    id:"infinite_scroll",
+    name:"Infinite Scroll Feed",
+    description:"High stimulation loop with low completion.",
+    attention_cost:8.5,
+    restoration_value:3,
+    type:"danger"
   },
+
   {
-    id: "annoying_popup",
-    name: "Annoying Popup",
-    description: "Interruptive conversion pressure.",
-    attention_cost: 9,
-    restoration_value: 1.5,
-    type: "danger"
+    id:"popup_ad",
+    name:"Aggressive Popup Ad",
+    description:"Interruptive conversion pressure.",
+    attention_cost:9,
+    restoration_value:1.5,
+    type:"danger"
   },
+
   {
-    id: "beautiful_visualization",
-    name: "Beautiful Visualization",
-    description: "Aesthetic coherence and comprehension.",
-    attention_cost: 3.5,
-    restoration_value: 9,
-    type: "restorative"
+    id:"beautiful_visualization",
+    name:"Beautiful Visualization",
+    description:"Aesthetic coherence and comprehension.",
+    attention_cost:3.5,
+    restoration_value:9,
+    type:"restorative"
   },
+
   {
-    id: "rage_bait",
-    name: "Rage Bait Post",
-    description: "Emotional manipulation and fragmentation.",
-    attention_cost: 7.5,
-    restoration_value: 2,
-    type: "danger"
+    id:"rage_bait",
+    name:"Rage Bait Thread",
+    description:"Emotional manipulation and fragmentation.",
+    attention_cost:7.5,
+    restoration_value:2,
+    type:"danger"
   }
+
 ];
 
-function ethicalRenderGate(element) {
-  const renderAllowed = element.restoration_value >= element.attention_cost;
+function ethicalRenderGate(element){
+
+  const renderAllowed =
+    element.restoration_value >= element.attention_cost;
+
   const degraded =
     !renderAllowed &&
     element.restoration_value >= element.attention_cost - 2.25;
 
-  let renderingMode = "suppressed";
-
-  if (renderAllowed) {
-    renderingMode = "allowed";
-  } else if (degraded) {
-    renderingMode = "degraded";
-  }
+  let renderingMode =
+    renderAllowed
+      ? "allowed"
+      : degraded
+        ? "degraded"
+        : "suppressed";
 
   return {
-    element: element.id,
-    label: element.name,
-    attention_cost: Number(element.attention_cost.toFixed(1)),
-    restoration_value: Number(element.restoration_value.toFixed(1)),
-    render_allowed: renderAllowed,
-    rendering_mode: renderingMode,
-    fallback_triggered: !renderAllowed,
+
+    element:element.id,
+
+    label:element.name,
+
+    attention_cost:
+      Number(element.attention_cost.toFixed(1)),
+
+    restoration_value:
+      Number(element.restoration_value.toFixed(1)),
+
+    render_allowed:renderAllowed,
+
+    rendering_mode:renderingMode,
+
+    fallback_triggered:!renderAllowed,
+
     reason:
       renderingMode === "allowed"
-        ? "Restoration value meets or exceeds attention cost."
+        ? "Restoration value exceeds attention cost."
         : renderingMode === "degraded"
-          ? "Element failed the gate but remains visible in degraded mode for transparency."
+          ? "Element failed the gate but remains visible in degraded mode."
           : "Element suppressed because attention cost exceeds restoration value.",
-    timestamp: new Date().toISOString()
+
+    timestamp:new Date().toISOString()
+
   };
+
 }
 
-function renderTraditional() {
-  const stack = document.getElementById("traditionalStack");
-  stack.innerHTML = "";
+function renderTraditional(){
 
-  elements.forEach((element) => {
-    const div = document.createElement("div");
-    div.className = "element " + (element.type === "danger" ? "danger" : "");
-    div.innerHTML = `
-      <strong>${element.name}</strong>
-      <span class="small">${element.description}</span>
-      <div class="status">RENDERED</div>
-      <div class="pill-row">
-        <span class="pill">HTML rule: exists → render</span>
-      </div>
-    `;
-    stack.appendChild(div);
-  });
-}
-
-function renderAML() {
-  const stack = document.getElementById("amlStack");
-  const log = document.getElementById("decisionLog");
+  const stack =
+    document.getElementById("traditionalStack");
 
   stack.innerHTML = "";
 
-  const decisions = elements.map(ethicalRenderGate);
+  elements.forEach((element)=>{
 
-  decisions.forEach((decision) => {
-    const element = elements.find(item => item.id === decision.element);
+    const div =
+      document.createElement("div");
 
-    const div = document.createElement("div");
-    div.className = "element " + decision.rendering_mode;
-
-    div.setAttribute("data-attention-cost", decision.attention_cost);
-    div.setAttribute("data-restoration-value", decision.restoration_value);
-    div.setAttribute("data-render-allowed", decision.render_allowed);
-    div.setAttribute("data-rendering-mode", decision.rendering_mode);
+    div.className =
+      "element " +
+      (element.type === "danger" ? "danger" : "");
 
     div.innerHTML = `
       <strong>${element.name}</strong>
-      <span class="small">${element.description}</span>
-      <div class="status">${decision.rendering_mode.toUpperCase()}</div>
-      <div class="pill-row">
-        <span class="pill">Cost: ${decision.attention_cost}</span>
-        <span class="pill">Value: ${decision.restoration_value}</span>
-        <span class="pill">Allowed: ${decision.render_allowed}</span>
+
+      <span class="small">
+        ${element.description}
+      </span>
+
+      <div class="status">
+        RENDERED
       </div>
-      <p class="small">${decision.reason}</p>
+
+      <div class="pill-row">
+        <span class="pill">
+          HTML rule: exists → render
+        </span>
+      </div>
     `;
 
     stack.appendChild(div);
+
   });
 
-  log.textContent = JSON.stringify(decisions, null, 2);
 }
 
-function renderControls() {
-  const controls = document.getElementById("controls");
+function renderAML(){
+
+  const stack =
+    document.getElementById("amlStack");
+
+  const log =
+    document.getElementById("decisionLog");
+
+  stack.innerHTML = "";
+
+  const decisions =
+    elements.map(ethicalRenderGate);
+
+  decisions.forEach((decision)=>{
+
+    const element =
+      elements.find(
+        item => item.id === decision.element
+      );
+
+    const div =
+      document.createElement("div");
+
+    div.className =
+      "element " +
+      decision.rendering_mode;
+
+    div.innerHTML = `
+      <strong>${element.name}</strong>
+
+      <span class="small">
+        ${element.description}
+      </span>
+
+      <div class="status">
+        ${decision.rendering_mode.toUpperCase()}
+      </div>
+
+      <div class="pill-row">
+        <span class="pill">
+          Cost: ${decision.attention_cost}
+        </span>
+
+        <span class="pill">
+          Value: ${decision.restoration_value}
+        </span>
+
+        <span class="pill">
+          Allowed: ${decision.render_allowed}
+        </span>
+      </div>
+
+      <p class="small">
+        ${decision.reason}
+      </p>
+    `;
+
+    stack.appendChild(div);
+
+  });
+
+  log.textContent =
+    JSON.stringify(decisions,null,2);
+
+}
+
+function renderControls(){
+
+  const controls =
+    document.getElementById("controls");
+
   controls.innerHTML = "";
 
-  elements.forEach((element, index) => {
-    const control = document.createElement("div");
+  elements.forEach((element,index)=>{
+
+    const control =
+      document.createElement("div");
+
     control.className = "control";
+
     control.innerHTML = `
       <label>
         ${element.name}
-        <span class="value" id="value-${element.id}">${element.restoration_value.toFixed(1)}</span>
+
+        <span
+          class="value"
+          id="value-${element.id}">
+          ${element.restoration_value.toFixed(1)}
+        </span>
       </label>
+
       <input
         type="range"
         min="0"
@@ -538,12 +897,51 @@ function renderControls() {
         value="${element.restoration_value}"
         oninput="updateValue(${index}, this.value)"
       />
-      <div class="small">Attention Cost: ${element.attention_cost}</div>
+
+      <div class="small">
+        Attention Cost:
+        ${element.attention_cost}
+      </div>
     `;
+
     controls.appendChild(control);
+
   });
+
 }
 
-function updateValue(index, value) {
-  elements[index].restoration_value = Number(value);
-  document.getElementById("value-" + elements[index].
+function updateValue(index,value){
+
+  elements[index].restoration_value =
+    Number(value);
+
+  document.getElementById(
+    "value-" + elements[index].id
+  ).textContent =
+    Number(value).toFixed(1);
+
+  renderAML();
+
+}
+
+function resetDemo(){
+
+  elements[0].restoration_value = 8.5;
+  elements[1].restoration_value = 3;
+  elements[2].restoration_value = 1.5;
+  elements[3].restoration_value = 9;
+  elements[4].restoration_value = 2;
+
+  renderControls();
+  renderAML();
+
+}
+
+renderTraditional();
+renderControls();
+renderAML();
+
+</script>
+
+</body>
+</html>
