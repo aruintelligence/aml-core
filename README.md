@@ -1,15 +1,15 @@
 # ĀML v1.0 — ĀRU Meaning Language
 
-## A meaning-native interface language where every rendered element must justify the attention it consumes.
+## The first rendering system that asks:
 
-Traditional web systems render anything that exists.
+# “Should this exist?”
 
-ĀML introduces a different question:
+Traditional HTML renders anything that exists.
 
-> Should this render?
+ĀML evaluates every interface element through an ethical rendering gate before allowing it into the final experience.
 
-HTML renders what exists.  
-**ĀML renders what deserves to exist.**
+> HTML renders what exists.  
+> ĀML renders what deserves to exist.
 
 ---
 
@@ -19,17 +19,48 @@ HTML renders what exists.
 render_allowed = restoration_value >= attention_cost
 ```
 
-Every interface element is evaluated before rendering.
+Every renderable element is evaluated according to:
 
-If an element consumes more cognitive attention than the restoration value it provides, AML can:
+- attention_cost
+- restoration_value
+- rendering_mode
+- fallback behavior
+- suppression thresholds
+
+If an element consumes more attention than the value it restores, AML can:
 
 - suppress it
 - degrade it
+- reroute it
 - replace it
-- log it
-- route it through a fallback state
+- log the render decision transparently
 
 This transforms rendering into an accountable semantic process.
+
+---
+
+# Why ĀML Exists
+
+Modern systems optimize for:
+
+- clicks
+- engagement
+- retention
+- stimulation
+- interruption
+- emotional extraction
+
+ĀML explores a different question:
+
+> What if interfaces optimized for restoration instead?
+
+AML introduces:
+
+- accountable rendering
+- restoration-aware interfaces
+- semantic rendering logic
+- cognitive respect layers
+- transparent render decisions
 
 ---
 
@@ -37,20 +68,15 @@ This transforms rendering into an accountable semantic process.
 
 https://aruintelligence.github.io/aml-core/
 
-The live demo showcases the core AML breakthrough in real time:
+The live prototype demonstrates:
 
-- interactive attention_cost and restoration_value sliders
-- visible EthicalRenderGate decisions
-- automatic element suppression
+- real-time EthicalRenderGate evaluation
+- traditional HTML vs AML comparison
+- per-element restoration controls
 - degraded rendering states
 - live render_decision.json output
-- traditional HTML vs AML comparison
-
-Traditional HTML renders anything that exists.
-
-ĀML asks:
-
-> Should this render?
+- suppression behavior
+- accountable rendering logic
 
 ---
 
@@ -65,7 +91,7 @@ transmission "simple-demo" {
   engram clarityCard {
 
     value:
-      "This element renders because it restores more than it consumes."
+      "This element restores more than it consumes."
 
     purpose:
       "demonstrate EthicalRenderGate"
@@ -83,7 +109,7 @@ transmission "simple-demo" {
 
 ---
 
-# Ethical Rendering Pipeline
+# Compiler Pipeline
 
 ```text
 AML Source
@@ -92,74 +118,48 @@ Lexer
    ↓
 Parser
    ↓
-Semantic Graph
+Abstract Syntax Tree (AST)
+   ↓
+Abstract Meaning Tree (AMT)
    ↓
 EthicalRenderGate
    ↓
 Render Decision
    ↓
-HTML / Interface Output
+HTML Output
 ```
-
----
-
-# Core Concepts
-
-## Attention Cost
-
-Measures cognitive burden imposed on the user.
-
-Examples:
-
-- visual noise
-- urgency pressure
-- addictive interaction loops
-- semantic fragmentation
-
-## Restoration Value
-
-Measures constructive value returned to the user.
-
-Examples:
-
-- clarity
-- orientation
-- calmness
-- memory restoration
-- comprehension
-- long-term utility
 
 ---
 
 # Render States
 
-AML supports multiple render outcomes.
-
 | State | Meaning |
 |---|---|
-| allowed | Element fully renders |
-| degraded | Element partially renders |
-| suppressed | Element blocked |
-| fallback | Alternative safer render path |
-| mirrored | Semantic reflection state |
+| allowed | fully rendered |
+| degraded | partially rendered |
+| suppressed | blocked by EthicalRenderGate |
+| fallback | rerouted safer render path |
+| mirrored | reflective semantic state |
 
 ---
 
 # render_decision.json
 
-AML generates accountable render metadata.
+AML generates transparent rendering metadata.
 
 Example:
 
 ```json
 {
-  "element": "clarityCard",
-  "attention_cost": 2,
-  "restoration_value": 8,
-  "render_allowed": true,
-  "rendering_mode": "allowed"
+  "element": "rage_bait_post",
+  "attention_cost": 8.7,
+  "restoration_value": 2.1,
+  "render_allowed": false,
+  "rendering_mode": "suppressed"
 }
 ```
+
+Rendering becomes observable and accountable.
 
 ---
 
@@ -177,35 +177,42 @@ Example:
 
 ---
 
-# Vision
+# Core Philosophy
 
-HTML asked:
+Traditional systems ask:
 
-> How do we render interfaces?
+> Can this render?
 
 ĀML asks:
 
-> What kinds of interfaces deserve to exist?
+> Should this render?
 
-This is the beginning of accountable rendering systems.
+This shifts rendering from:
+
+- passive execution
+to
+- accountable semantic evaluation
 
 ---
 
 # Status
 
-AML v1.0 is currently:
+ĀML v1.0 is currently:
 
-- conceptual language prototype
-- semantic rendering framework
-- ethical rendering research system
-- experimental compiler architecture
-- live interactive demonstration
+- a conceptual rendering language
+- an ethical rendering prototype
+- a semantic interface framework
+- a live interactive demonstration
+- an experimental compiler architecture
+- a research system exploring accountable computation
 
 ---
 
-# Author
+# Created By
 
-ĀRU Intelligence Inc.
+Daniel Jacob Read IV
+
+Stewarded by ĀRU Intelligence Inc.
 
 ---
 
