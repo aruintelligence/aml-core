@@ -1,11 +1,9 @@
-Replace docs/index.html first, then copy the same code into demo/index.html.
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ĀML EthicalRenderGate — Live Demo</title>
+<title>ĀML v1.0 — EthicalRenderGate Live Demo</title>
 
 <style>
 * {
@@ -15,11 +13,12 @@ Replace docs/index.html first, then copy the same code into demo/index.html.
 :root {
   --bg: #03040b;
   --panel: rgba(255,255,255,.075);
+  --panel2: rgba(0,0,0,.38);
   --line: rgba(255,255,255,.16);
   --cyan: #7df9ff;
   --pink: #ff4fd8;
-  --gold: #ffe08a;
   --green: #8cffb7;
+  --gold: #ffe08a;
   --red: #ff7d9c;
   --text: #f8fbff;
   --muted: rgba(248,251,255,.72);
@@ -28,48 +27,63 @@ Replace docs/index.html first, then copy the same code into demo/index.html.
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: Inter, Arial, sans-serif;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at 12% 8%, rgba(125,249,255,.22), transparent 32%),
-    radial-gradient(circle at 86% 15%, rgba(255,79,216,.16), transparent 34%),
-    radial-gradient(circle at 50% 90%, rgba(140,255,183,.09), transparent 34%),
-    linear-gradient(135deg, #02030a, #090d28 45%, #020205);
-  padding: 28px;
+    radial-gradient(circle at 8% 10%, rgba(125,249,255,.25), transparent 30%),
+    radial-gradient(circle at 88% 8%, rgba(255,79,216,.18), transparent 32%),
+    radial-gradient(circle at 50% 100%, rgba(140,255,183,.10), transparent 38%),
+    linear-gradient(135deg, #02030a, #0b102b 48%, #020205);
+  padding: 26px;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(circle at center, black, transparent 80%);
 }
 
 .shell {
-  max-width: 1240px;
+  max-width: 1320px;
   margin: 0 auto;
 }
 
 .hero {
   border: 1px solid var(--line);
-  border-radius: 32px;
-  padding: 36px;
-  background: linear-gradient(135deg, rgba(255,255,255,.09), rgba(255,255,255,.035));
-  backdrop-filter: blur(20px);
-  box-shadow: 0 0 90px rgba(125,249,255,.13);
+  border-radius: 34px;
+  padding: 38px;
+  background: linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.035));
+  backdrop-filter: blur(22px);
+  box-shadow:
+    0 0 90px rgba(125,249,255,.13),
+    inset 0 0 60px rgba(255,255,255,.035);
   margin-bottom: 24px;
 }
 
 .kicker {
   color: var(--cyan);
-  font-weight: 900;
-  letter-spacing: .16em;
+  font-weight: 950;
+  letter-spacing: .18em;
   text-transform: uppercase;
   font-size: .76rem;
 }
 
 h1 {
-  margin: 10px 0 14px;
-  font-size: clamp(2.4rem, 7vw, 6.8rem);
-  line-height: .9;
+  margin: 12px 0 16px;
+  font-size: clamp(2.5rem, 7vw, 7rem);
+  line-height: .88;
   letter-spacing: -.08em;
 }
 
 .tagline {
-  max-width: 920px;
+  max-width: 980px;
   color: var(--muted);
   line-height: 1.65;
   font-size: 1.12rem;
@@ -80,123 +94,112 @@ h1 {
   margin-top: 22px;
   padding: 14px 18px;
   border-radius: 999px;
-  background: rgba(0,0,0,.42);
-  border: 1px solid rgba(125,249,255,.38);
+  background: rgba(0,0,0,.46);
+  border: 1px solid rgba(125,249,255,.42);
   color: var(--cyan);
-  font-weight: 900;
-  box-shadow: 0 0 30px rgba(125,249,255,.12);
+  font-weight: 950;
+  box-shadow: 0 0 34px rgba(125,249,255,.15);
 }
 
-.demo-grid {
+.compare {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 22px;
   margin-bottom: 22px;
 }
 
-.column {
+.panel {
   border: 1px solid var(--line);
   border-radius: 28px;
   padding: 22px;
   background: var(--panel);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(18px);
 }
 
-.column h2 {
+.panel h2 {
   margin: 0 0 8px;
 }
 
-.column p {
+.panel p {
   color: var(--muted);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
-.traditional .html-card {
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 20px;
+.stack {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.element {
+  border-radius: 22px;
   padding: 18px;
-  margin-top: 14px;
-  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.065);
+  transition: all .35s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.traditional .bad {
+.element::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .28;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,.08), transparent);
+  transform: translateX(-120%);
+  animation: scan 4s infinite;
+}
+
+@keyframes scan {
+  0% { transform: translateX(-120%); }
+  60% { transform: translateX(120%); }
+  100% { transform: translateX(120%); }
+}
+
+.traditional .element {
+  border-color: rgba(255,255,255,.18);
+}
+
+.traditional .danger {
   border-color: rgba(255,125,156,.5);
   box-shadow: 0 0 30px rgba(255,125,156,.12);
 }
 
-.controls {
-  border: 1px solid var(--line);
-  border-radius: 28px;
-  padding: 24px;
-  background: rgba(0,0,0,.3);
-  margin-bottom: 22px;
+.aml .allowed {
+  border-color: rgba(125,249,255,.55);
+  box-shadow: 0 0 38px rgba(125,249,255,.13);
 }
 
-.controls h2 {
-  margin-top: 0;
-}
-
-.control-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
-}
-
-.control {
-  padding: 18px;
-  border-radius: 20px;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.12);
-}
-
-label {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  font-weight: 800;
-  margin-bottom: 10px;
-}
-
-input[type="range"] {
-  width: 100%;
-}
-
-.output-grid {
-  display: grid;
-  grid-template-columns: 1.05fr .95fr;
-  gap: 22px;
-}
-
-.card {
-  border: 1px solid var(--line);
-  border-radius: 26px;
-  padding: 24px;
-  background: rgba(255,255,255,.07);
-  backdrop-filter: blur(16px);
-  transition: all .35s ease;
-}
-
-.card.allowed {
-  border-color: rgba(125,249,255,.45);
-  box-shadow: 0 0 50px rgba(125,249,255,.14);
-}
-
-.card.degraded {
-  opacity: .72;
+.aml .degraded {
+  opacity: .68;
   border-style: dashed;
-  border-color: rgba(255,224,138,.55);
+  border-color: rgba(255,224,138,.6);
+  filter: saturate(.72);
 }
 
-.card.suppressed {
-  opacity: .28;
-  filter: grayscale(.95);
+.aml .suppressed {
+  opacity: .25;
+  filter: grayscale(.96) blur(1px);
   transform: scale(.985);
-  border-color: rgba(255,125,156,.5);
+  border-color: rgba(255,125,156,.55);
+}
+
+.element strong {
+  display: block;
+  font-size: 1.04rem;
+  margin-bottom: 4px;
+}
+
+.small {
+  color: var(--muted);
+  font-size: .92rem;
 }
 
 .status {
-  font-weight: 900;
-  margin-top: 14px;
+  margin-top: 12px;
+  font-weight: 950;
 }
 
 .allowed .status {
@@ -211,26 +214,54 @@ input[type="range"] {
   color: var(--red);
 }
 
-.meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+.controls {
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  padding: 24px;
+  background: rgba(0,0,0,.32);
+  margin-bottom: 22px;
+}
+
+.controls h2 {
+  margin: 0 0 8px;
+}
+
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
   margin-top: 16px;
 }
 
-.pill {
-  padding: 8px 10px;
-  border-radius: 999px;
-  background: rgba(0,0,0,.36);
-  border: 1px solid rgba(255,255,255,.1);
-  font-size: .82rem;
+.control {
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
 }
 
-.panel {
-  border: 1px solid var(--line);
-  border-radius: 26px;
-  padding: 22px;
-  background: rgba(0,0,0,.44);
+label {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 850;
+  margin-bottom: 10px;
+  font-size: .9rem;
+}
+
+input[type="range"] {
+  width: 100%;
+}
+
+.value {
+  color: var(--cyan);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.output {
+  display: grid;
+  grid-template-columns: .95fr 1.05fr;
+  gap: 22px;
 }
 
 pre {
@@ -238,8 +269,14 @@ pre {
   color: #dffcff;
   white-space: pre-wrap;
   word-break: break-word;
-  font-size: .82rem;
+  font-size: .8rem;
   line-height: 1.45;
+}
+
+.json-panel {
+  max-height: 620px;
+  overflow: auto;
+  background: rgba(0,0,0,.45);
 }
 
 button {
@@ -249,32 +286,40 @@ button {
   padding: 12px 16px;
   background: var(--cyan);
   color: #031018;
-  font-weight: 900;
+  font-weight: 950;
   cursor: pointer;
 }
 
-.explain {
-  margin-top: 14px;
-  color: var(--muted);
-  line-height: 1.5;
-  font-size: .92rem;
+.pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.pill {
+  padding: 7px 9px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.36);
+  border: 1px solid rgba(255,255,255,.1);
+  font-size: .78rem;
 }
 
 footer {
   margin-top: 34px;
   text-align: center;
   color: rgba(255,255,255,.52);
-  font-size: .85rem;
+  font-size: .86rem;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 980px) {
   body {
     padding: 18px;
   }
 
-  .demo-grid,
-  .control-grid,
-  .output-grid {
+  .compare,
+  .output,
+  .control-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -284,131 +329,112 @@ footer {
 <body>
 <div class="shell">
 
-  <section class="hero">
-    <div class="kicker">ĀML Live Runtime Demo</div>
-    <h1>EthicalRenderGate</h1>
-    <p class="tagline">
-      Traditional HTML renders whatever exists. ĀML evaluates whether an interface element should render at all.
-      If an element consumes more attention than it restores, the runtime degrades or suppresses it.
+<section class="hero">
+  <div class="kicker">ĀML v1.0 Live Demo</div>
+  <h1>EthicalRenderGate</h1>
+  <p class="tagline">
+    Traditional HTML renders anything that exists. ĀML evaluates whether each interface element deserves to render.
+    Every element receives an attention cost, a restoration value, a render state, and an accountable JSON decision.
+  </p>
+  <div class="equation">render_allowed = restoration_value ≥ attention_cost</div>
+</section>
+
+<section class="compare">
+  <div class="panel traditional">
+    <h2>Traditional HTML</h2>
+    <p>Everything below renders because the markup exists.</p>
+    <div id="traditionalStack" class="stack"></div>
+  </div>
+
+  <div class="panel aml">
+    <h2>ĀML Ethical Rendering</h2>
+    <p>Each element is evaluated independently before reaching the final interface.</p>
+    <div id="amlStack" class="stack"></div>
+  </div>
+</section>
+
+<section class="controls">
+  <h2>Live Per-Element Scoring</h2>
+  <p class="small">
+    Adjust each element’s restoration value. The AML side updates independently while traditional HTML keeps rendering everything.
+  </p>
+  <div id="controls" class="control-grid"></div>
+</section>
+
+<section class="output">
+  <div class="panel">
+    <h2>What This Demonstrates</h2>
+    <p>
+      ĀML does not merely describe layout. It introduces a rendering gate.
+      Elements with high attention cost and low restoration value can be degraded or suppressed.
     </p>
-    <div class="equation">render_allowed = restoration_value ≥ attention_cost</div>
-  </section>
-
-  <section class="demo-grid">
-    <div class="column traditional">
-      <h2>Traditional HTML</h2>
-      <p>Everything renders because it exists, even if it creates noise, pressure, or cognitive fragmentation.</p>
-
-      <div class="html-card">
-        <strong>Clarity Panel</strong>
-        <p>This helpful element renders.</p>
-      </div>
-
-      <div class="html-card bad">
-        <strong>Engagement Trap</strong>
-        <p>Artificial urgency, flashing pressure, endless stimulation. Traditional HTML still renders it.</p>
-      </div>
-    </div>
-
-    <div class="column">
-      <h2>ĀML Rendering</h2>
-      <p>Every element is evaluated through EthicalRenderGate before it reaches the final interface.</p>
-
-      <div class="html-card">
-        <strong>Decision Rule</strong>
-        <p>Restoration value must meet or exceed attention cost.</p>
-      </div>
-
-      <div class="html-card">
-        <strong>Accountability</strong>
-        <p>Each decision is logged into a transparent render_decision.json object.</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="controls">
-    <h2>Live Element Controls</h2>
-    <p class="explain">
-      Move the sliders. Watch the rendered element change state in real time.
+    <p>
+      This turns the interface into an accountable system instead of a passive rendering surface.
     </p>
+    <button onclick="resetDemo()">Reset Demo</button>
+  </div>
 
-    <div class="control-grid">
-      <div class="control">
-        <label>
-          Attention Cost
-          <span id="attentionValue">6</span>
-        </label>
-        <input id="attentionSlider" type="range" min="0" max="10" value="6" />
-      </div>
+  <div class="panel json-panel">
+    <h2>Live render_decision.json</h2>
+    <pre id="decisionLog"></pre>
+  </div>
+</section>
 
-      <div class="control">
-        <label>
-          Restoration Value
-          <span id="restorationValue">7</span>
-        </label>
-        <input id="restorationSlider" type="range" min="0" max="10" value="7" />
-      </div>
-    </div>
-  </section>
-
-  <section class="output-grid">
-    <article id="liveCard" class="card allowed">
-      <h2 id="cardTitle">Live AML Element</h2>
-      <p>
-        This simulated AML element is being evaluated by EthicalRenderGate.
-        Its rendering state changes as attention cost and restoration value change.
-      </p>
-
-      <p id="cardStatus" class="status">ALLOWED</p>
-
-      <div class="meta">
-        <span class="pill">Attention Cost: <span id="metaAttention">6</span></span>
-        <span class="pill">Restoration Value: <span id="metaRestoration">7</span></span>
-        <span class="pill">Render Allowed: <span id="metaAllowed">true</span></span>
-      </div>
-
-      <p id="cardReason" class="explain">
-        Restoration value exceeds attention cost. The element is allowed to render.
-      </p>
-    </article>
-
-    <aside class="panel">
-      <h2>render_decision.json</h2>
-      <pre id="decisionLog"></pre>
-      <button onclick="resetDemo()">Reset Demo</button>
-      <p class="explain">
-        This is the core difference: ĀML does not only output an interface.
-        It outputs an accountable rendering decision.
-      </p>
-    </aside>
-  </section>
-
-  <footer>
-    ĀML v1.0 • ĀRU Meaning Language • EthicalRenderGate Prototype • ĀRU Intelligence Inc.
-  </footer>
+<footer>
+  ĀML v1.0 • ĀRU Meaning Language • EthicalRenderGate Prototype • ĀRU Intelligence Inc.
+</footer>
 
 </div>
 
 <script>
-const attentionSlider = document.getElementById("attentionSlider");
-const restorationSlider = document.getElementById("restorationSlider");
+const elements = [
+  {
+    id: "deep_article",
+    name: "Deep Article",
+    description: "Long-form clarity, learning, and meaning.",
+    attention_cost: 4,
+    restoration_value: 8.5,
+    type: "restorative"
+  },
+  {
+    id: "infinite_scroll",
+    name: "Infinite Scroll Feed",
+    description: "High stimulation loop with low completion.",
+    attention_cost: 8.5,
+    restoration_value: 3,
+    type: "danger"
+  },
+  {
+    id: "annoying_popup",
+    name: "Annoying Popup",
+    description: "Interruptive conversion pressure.",
+    attention_cost: 9,
+    restoration_value: 1.5,
+    type: "danger"
+  },
+  {
+    id: "beautiful_visualization",
+    name: "Beautiful Visualization",
+    description: "Aesthetic coherence and comprehension.",
+    attention_cost: 3.5,
+    restoration_value: 9,
+    type: "restorative"
+  },
+  {
+    id: "rage_bait",
+    name: "Rage Bait Post",
+    description: "Emotional manipulation and fragmentation.",
+    attention_cost: 7.5,
+    restoration_value: 2,
+    type: "danger"
+  }
+];
 
-const attentionValue = document.getElementById("attentionValue");
-const restorationValue = document.getElementById("restorationValue");
-
-const liveCard = document.getElementById("liveCard");
-const cardStatus = document.getElementById("cardStatus");
-const cardReason = document.getElementById("cardReason");
-
-const metaAttention = document.getElementById("metaAttention");
-const metaRestoration = document.getElementById("metaRestoration");
-const metaAllowed = document.getElementById("metaAllowed");
-
-const decisionLog = document.getElementById("decisionLog");
-
-function ethicalRenderGate(attentionCost, restorationValue) {
-  const renderAllowed = restorationValue >= attentionCost;
-  const degraded = !renderAllowed && restorationValue >= attentionCost - 2;
+function ethicalRenderGate(element) {
+  const renderAllowed = element.restoration_value >= element.attention_cost;
+  const degraded =
+    !renderAllowed &&
+    element.restoration_value >= element.attention_cost - 2.25;
 
   let renderingMode = "suppressed";
 
@@ -418,67 +444,106 @@ function ethicalRenderGate(attentionCost, restorationValue) {
     renderingMode = "degraded";
   }
 
-  let reason = "Element suppressed because attention cost exceeds restoration value.";
-
-  if (renderingMode === "allowed") {
-    reason = "Restoration value meets or exceeds attention cost. The element is allowed to render.";
-  }
-
-  if (renderingMode === "degraded") {
-    reason = "Element failed the main gate but remains visible in degraded mode for transparency.";
-  }
-
   return {
-    element: "live_demo_element",
-    purpose: "demonstrate ethical rendering",
-    attention_cost: attentionCost,
-    restoration_value: restorationValue,
+    element: element.id,
+    label: element.name,
+    attention_cost: Number(element.attention_cost.toFixed(1)),
+    restoration_value: Number(element.restoration_value.toFixed(1)),
     render_allowed: renderAllowed,
     rendering_mode: renderingMode,
     fallback_triggered: !renderAllowed,
-    reason,
+    reason:
+      renderingMode === "allowed"
+        ? "Restoration value meets or exceeds attention cost."
+        : renderingMode === "degraded"
+          ? "Element failed the gate but remains visible in degraded mode for transparency."
+          : "Element suppressed because attention cost exceeds restoration value.",
     timestamp: new Date().toISOString()
   };
 }
 
-function updateDemo() {
-  const attentionCost = Number(attentionSlider.value);
-  const restorationValue = Number(restorationSlider.value);
+function renderTraditional() {
+  const stack = document.getElementById("traditionalStack");
+  stack.innerHTML = "";
 
-  const decision = ethicalRenderGate(attentionCost, restorationValue);
-
-  attentionValue.textContent = attentionCost;
-  restorationValue.textContent = restorationValue;
-
-  metaAttention.textContent = attentionCost;
-  metaRestoration.textContent = restorationValue;
-  metaAllowed.textContent = decision.render_allowed;
-
-  liveCard.className = "card " + decision.rendering_mode;
-  cardStatus.textContent = decision.rendering_mode.toUpperCase();
-  cardReason.textContent = decision.reason;
-
-  liveCard.setAttribute("data-attention-cost", attentionCost);
-  liveCard.setAttribute("data-restoration-value", restorationValue);
-  liveCard.setAttribute("data-render-allowed", decision.render_allowed);
-  liveCard.setAttribute("data-rendering-mode", decision.rendering_mode);
-
-  decisionLog.textContent = JSON.stringify(decision, null, 2);
-
-  console.log("render_decision.json", decision);
+  elements.forEach((element) => {
+    const div = document.createElement("div");
+    div.className = "element " + (element.type === "danger" ? "danger" : "");
+    div.innerHTML = `
+      <strong>${element.name}</strong>
+      <span class="small">${element.description}</span>
+      <div class="status">RENDERED</div>
+      <div class="pill-row">
+        <span class="pill">HTML rule: exists → render</span>
+      </div>
+    `;
+    stack.appendChild(div);
+  });
 }
 
-function resetDemo() {
-  attentionSlider.value = 6;
-  restorationSlider.value = 7;
-  updateDemo();
+function renderAML() {
+  const stack = document.getElementById("amlStack");
+  const log = document.getElementById("decisionLog");
+
+  stack.innerHTML = "";
+
+  const decisions = elements.map(ethicalRenderGate);
+
+  decisions.forEach((decision) => {
+    const element = elements.find(item => item.id === decision.element);
+
+    const div = document.createElement("div");
+    div.className = "element " + decision.rendering_mode;
+
+    div.setAttribute("data-attention-cost", decision.attention_cost);
+    div.setAttribute("data-restoration-value", decision.restoration_value);
+    div.setAttribute("data-render-allowed", decision.render_allowed);
+    div.setAttribute("data-rendering-mode", decision.rendering_mode);
+
+    div.innerHTML = `
+      <strong>${element.name}</strong>
+      <span class="small">${element.description}</span>
+      <div class="status">${decision.rendering_mode.toUpperCase()}</div>
+      <div class="pill-row">
+        <span class="pill">Cost: ${decision.attention_cost}</span>
+        <span class="pill">Value: ${decision.restoration_value}</span>
+        <span class="pill">Allowed: ${decision.render_allowed}</span>
+      </div>
+      <p class="small">${decision.reason}</p>
+    `;
+
+    stack.appendChild(div);
+  });
+
+  log.textContent = JSON.stringify(decisions, null, 2);
 }
 
-attentionSlider.addEventListener("input", updateDemo);
-restorationSlider.addEventListener("input", updateDemo);
+function renderControls() {
+  const controls = document.getElementById("controls");
+  controls.innerHTML = "";
 
-updateDemo();
-</script>
+  elements.forEach((element, index) => {
+    const control = document.createElement("div");
+    control.className = "control";
+    control.innerHTML = `
+      <label>
+        ${element.name}
+        <span class="value" id="value-${element.id}">${element.restoration_value.toFixed(1)}</span>
+      </label>
+      <input
+        type="range"
+        min="0"
+        max="10"
+        step="0.1"
+        value="${element.restoration_value}"
+        oninput="updateValue(${index}, this.value)"
+      />
+      <div class="small">Attention Cost: ${element.attention_cost}</div>
+    `;
+    controls.appendChild(control);
+  });
+}
 
-</body>
-</html>
+function updateValue(index, value) {
+  elements[index].restoration_value = Number(value);
+  document.getElementById("value-" + elements[index].
