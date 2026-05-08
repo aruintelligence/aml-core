@@ -1,0 +1,127 @@
+transmission "focus-mode-demo" {
+
+  title:
+    "AML Focus Preservation System"
+
+  purpose:
+    "Demonstrate restoration-aware productivity environments."
+
+  workspace {
+
+    engram deepWorkEditor {
+
+      content:
+        "Long-form writing and uninterrupted concentration."
+
+      attention_cost:
+        2.8
+
+      restoration_value:
+        9.5
+
+      interruption_risk:
+        0.8
+
+      rendering_mode:
+        prioritized
+
+    }
+
+    engram urgentNotification {
+
+      content:
+        "FLASH SALE — 2 HOURS LEFT"
+
+      attention_cost:
+        8.4
+
+      restoration_value:
+        0.7
+
+      interruption_risk:
+        9.8
+
+      rendering_mode:
+        suppress_if_harmful
+
+    }
+
+    engram calmingAmbientPanel {
+
+      content:
+        "Low-motion ambient environment with breathing rhythm."
+
+      attention_cost:
+        1.6
+
+      restoration_value:
+        8.7
+
+      interruption_risk:
+        0.2
+
+      rendering_mode:
+        adaptive
+
+    }
+
+    engram teamMessage {
+
+      content:
+        "Project update from trusted collaborator."
+
+      attention_cost:
+        3.1
+
+      restoration_value:
+        6.8
+
+      interruption_risk:
+        3.0
+
+      rendering_mode:
+        degraded
+
+    }
+
+    engram infiniteNewsSidebar {
+
+      content:
+        "Breaking news stream with continuous updates."
+
+      attention_cost:
+        9.2
+
+      restoration_value:
+        2.4
+
+      interruption_risk:
+        8.7
+
+      rendering_mode:
+        suppress_if_harmful
+
+    }
+
+  }
+
+  ethical_render_gate {
+
+    rule:
+      restoration_value >= attention_cost
+
+    degraded_threshold:
+      2.0
+
+    suppression_threshold:
+      3.5
+
+    interruption_protection:
+      enabled
+
+    transparency_logging:
+      enabled
+
+  }
+
+}
