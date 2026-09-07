@@ -15,6 +15,10 @@ Traditional markup asks whether an element *can* render. ĀML adds an inspectabl
 
 > **Status:** Working research prototype. The compiler, CLI, examples, runtime gate, live demonstration, and automated smoke tests are implemented. ĀML is not a production framework, a clinical evaluator, or a validated measure of cognitive impact.
 
+[![ĀML live demonstration showing the accountable-rendering interface](docs/assets/aml-live-demo.jpg)](https://aruintelligence.github.io/aml-core/)
+
+*The live interface: explicit attention cost, restoration value, and render decisions. Select the image to open the demonstration.*
+
 ## Try the live demonstration
 
 [Open the interactive ĀML demo](https://aruintelligence.github.io/aml-core/).
