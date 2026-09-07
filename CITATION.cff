@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software in research, please cite it using the metadata below."
+title: "ĀML Core"
+type: software
+authors:
+  - family-names: "Read"
+    given-names: "Daniel Jacob"
+    name-suffix: "IV"
+    orcid: "https://orcid.org/0009-0000-6133-1872"
+abstract: >-
+  An experimental meaning-native interface language and ethical rendering architecture.
+repository-code: "https://github.com/aruintelligence/aml-core"
+url: "https://aruintelligence.com/"
+license: MIT
