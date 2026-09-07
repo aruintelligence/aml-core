@@ -11,7 +11,8 @@
     "start": "node bin/aml.js",
     "compile": "node bin/aml.js compile examples/transmission-061.aml",
     "render": "node bin/aml.js render examples/transmission-061.aml",
-    "demo": "node bin/aml.js demo"
+    "demo": "node bin/aml.js demo",
+    "test": "node --test"
   },
   "keywords": [
     "aml",
