@@ -2,6 +2,7 @@
 
 ## A meaning-native interface language for accountable rendering
 
+[![Release](https://img.shields.io/github/v/release/aruintelligence/aml-core?style=flat-square)](https://github.com/aruintelligence/aml-core/releases/latest)
 [![CI](https://github.com/aruintelligence/aml-core/actions/workflows/ci.yml/badge.svg)](https://github.com/aruintelligence/aml-core/actions/workflows/ci.yml)
 [![Live demo](https://img.shields.io/badge/Open-Live_Demo-06b6d4?style=flat-square)](https://aruintelligence.github.io/aml-core/)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
