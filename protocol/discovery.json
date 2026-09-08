@@ -36,6 +36,8 @@
     "signed-verification-reports",
     "key-distinct-verifier-quorums",
     "verifier-cli-conformance",
+    "immutable-verifier-contract-snapshots",
+    "verifier-implementation-claims",
     "cross-runtime-verification-javascript-python-go",
     "external-witness-registry",
     "view-meaning"
@@ -56,6 +58,8 @@
     "signed_verification_report": "protocol/aml-signed-verification-report.schema.json",
     "signed_verification_quorum": "protocol/aml-signed-verification-quorum.schema.json",
     "verifier_conformance_result": "protocol/aml-verifier-conformance-result.schema.json",
+    "verification_contract_snapshot": "protocol/aml-verification-contract-snapshot.schema.json",
+    "verifier_implementation_claim": "protocol/aml-verifier-implementation-claim.schema.json",
     "witness_record": "protocol/aml-witness-record.schema.json"
   },
   "service_contracts": {
@@ -64,6 +68,9 @@
   },
   "reference_verifiers": {
     "registry": "protocol/verifier-registry.json",
+    "contract_snapshot": "protocol/verification-contract-v1.json",
+    "contract_snapshot_id": "aml-verifier-contract-2026-09-08-01",
+    "contract_source_commit": "b1ff5a87c7b19ae6338503a58ab6257a5b2add0b",
     "python": "independent/python/verify_witness.py",
     "go": "independent/go/main.go",
     "conformance_manifest": "conformance/verifier/manifest.json",
