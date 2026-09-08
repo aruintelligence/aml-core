@@ -12,16 +12,31 @@
 
 > **HTML tells the browser what to display. ĀML tells the system why it deserves to be displayed.**
 
-ĀML is a working research prototype for meaning-native, policy-aware, accountable AI interfaces. It does **not** require replacing HTML or React. It can sit in front of existing UI as an **AI Interface Firewall**.
+ĀML is a working research prototype for meaning-native, policy-aware, accountable AI interfaces. It does **not** require replacing HTML or React. It can sit in front of existing UI as an **AI Interface Firewall™**.
 
 ## Start in 60 seconds
 
 - **Zero-install browser use:** [examples/browser-drop-in.html](examples/browser-drop-in.html)
 - **Out-of-the-box guide:** [docs/OUT_OF_THE_BOX.md](docs/OUT_OF_THE_BOX.md)
 - **Try AML:** https://aruintelligence.github.io/aml-core/playground.html
-- **Inspect a receipt:** https://aruintelligence.github.io/aml-core/view-meaning.html
-- **Read the AI Interface Firewall guide:** [docs/AI_INTERFACE_FIREWALL.md](docs/AI_INTERFACE_FIREWALL.md)
+- **Inspect a receipt with View Meaning™:** https://aruintelligence.github.io/aml-core/view-meaning.html
+- **Read the AI Interface Firewall™ guide:** [docs/AI_INTERFACE_FIREWALL.md](docs/AI_INTERFACE_FIREWALL.md)
 - **See all capabilities:** [AML_CAPABILITIES.json](AML_CAPABILITIES.json)
+
+## Open technology. Controlled official brand.
+
+The software in this repository is available under the [MIT License](LICENSE). The official ĀML™ / ĀRU™ brand, logos, compatibility branding, certification-style marks, and endorsement rights are separate.
+
+That means developers can experiment, integrate, fork, and implement the open technology while the official commercial identity remains controlled.
+
+- Brand-use policy: [TRADEMARKS.md](TRADEMARKS.md)
+- Commercial licensing / official badge / OEM / partnership: [COMMERCIAL.md](COMMERCIAL.md)
+- Federal registration plan: [TRADEMARK_REGISTRATION_PLAN.md](TRADEMARK_REGISTRATION_PLAN.md)
+- Conformance vs. official compatibility branding: [docs/CONFORMANCE_BADGE.md](docs/CONFORMANCE_BADGE.md)
+
+**Technical conformance is reproducible. Official certification, endorsement, co-branding, and commercial use of reserved marks require separate authorization where applicable.**
+
+Commercial and strategic inquiries: https://aruintelligence.com/
 
 ### Zero-install browser module
 
@@ -44,7 +59,7 @@
 
 That path works directly in a modern browser; no package installation is required for the first AML experience.
 
-## AI Interface Firewall
+## AI Interface Firewall™
 
 After cloning the repository, the public JavaScript API can be used directly:
 
@@ -94,9 +109,9 @@ const AccountableUI = createAccountableUI(React);
 
 The adapter converts ordinary component metadata into canonical ĀML intent and sends it through the same accountability pipeline as native `.aml` source.
 
-## View Meaning
+## View Meaning™
 
-The web gave developers **View Source**. ĀML introduces **View Meaning**.
+The web gave developers **View Source**. ĀML introduces **View Meaning™**.
 
 ```js
 import { viewMeaning } from "./index.js";
@@ -117,7 +132,7 @@ A View Meaning report can expose:
 
 Browser inspector: https://aruintelligence.github.io/aml-core/view-meaning.html
 
-## Meaning Gate for pull requests
+## Meaning Gate™ for pull requests
 
 ĀML can stop semantic regressions before deployment.
 
@@ -157,10 +172,10 @@ node scripts/meaning-gate.js before.aml after.aml calm_default human_first
 - semantic diffs + semantic risk scoring
 - policy diffs + policy matrices
 - AI intent → deterministic ĀML generation
-- AI Interface Firewall
+- AI Interface Firewall™
 - React-compatible adapter
-- View Meaning API + browser inspector
-- GitHub Meaning Gate action
+- View Meaning™ API + browser inspector
+- GitHub Meaning Gate™ action
 - consent + privacy policies
 - expiring/revocable consent ledger
 - accessibility policies + audits
@@ -171,6 +186,21 @@ node scripts/meaning-gate.js before.aml after.aml calm_default human_first
 - execution provenance graphs
 - Merkle-batched execution receipts
 - Ed25519-signed execution receipts
+- cross-runtime capability negotiation
+- portable policy passports
+- content-addressed AML bundles
+- selective-disclosure commitments
+- federated AML exchange
+- causal execution graphs
+- delegated trust chains
+- threshold authorization
+- transparency logs
+- bounded signed capability tokens
+- wire replay protection
+- revocation registry
+- Proof-Carrying Interface™ manifests
+- machine-verifiable conformance claims
+- layered conformance through AML Governed Compatible™
 - CLI + JavaScript API
 - browser playground
 - VS Code language support
@@ -191,7 +221,7 @@ flowchart LR
     H --> I[HTML / existing UI]
     H --> J[Runtime audit stream]
     J --> K[Execution receipt]
-    K --> L[Provenance + signature / Merkle proof]
+    K --> L[Proof / provenance / federation]
 ```
 
 ## Built-in profiles
@@ -214,11 +244,14 @@ flowchart LR
 | [View Meaning](https://aruintelligence.github.io/aml-core/view-meaning.html) | Inspect accountable execution receipts |
 | [JavaScript API](API.md) | Programmatic API |
 | [Quickstart](QUICKSTART.md) | Clone, test, compile, inspect |
+| [Ecosystem Map](ECOSYSTEM.md) | Adoption, standards, conformance, security, and extension surfaces |
 | [Trust Continuity](docs/TRUST_CONTINUITY.md) | Consent history, provenance, policy dissent, Merkle receipts |
 | [v1.3 Architecture](docs/V1_3_BREAKTHROUGH.md) | Signed policies, diffs, audit streams, accessibility, attention |
 | [Capabilities](AML_CAPABILITIES.json) | Machine-readable platform surface |
 | [Conformance](CONFORMANCE.json) | Canonical compatibility entry point |
 | [Replication](REPLICATION.md) | Independent reproduction protocol |
+| [Trademark Policy](TRADEMARKS.md) | Open implementation vs. controlled official brand |
+| [Commercial Program](COMMERCIAL.md) | Official branding, enterprise, OEM, certification, partnerships |
 
 ## Quality gates
 
@@ -236,4 +269,6 @@ Cryptographic signatures prove integrity and key possession—not moral correctn
 
 Created by **Daniel Jacob Read IV** and stewarded by **ĀRU Intelligence Inc.™**
 
-Code is available under the [MIT License](LICENSE). ĀML™, ĀRU Meaning Language™, EthicalRenderGate™, Meaning-Native Computing™, and ĀRU Intelligence Inc.™ are claimed marks of ĀRU Intelligence Inc.; trademark rights are separate from the code license.
+Code is available under the [MIT License](LICENSE). Brand and certification rights are separate from the software license. See [TRADEMARKS.md](TRADEMARKS.md) and [COMMERCIAL.md](COMMERCIAL.md).
+
+ĀML™, ĀRU Meaning Language™, AI Interface Firewall™, View Meaning™, Meaning Gate™, EthicalRenderGate™, Meaning-Native Computing™, Proof-Carrying Interface™, and the named ĀML compatibility marks are claimed marks. Registration status varies; do not use ® unless a specific mark is actually registered for the relevant goods/services.
