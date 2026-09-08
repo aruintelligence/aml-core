@@ -98,7 +98,7 @@ Examples:
 }
 
 function showVersion() {
-  console.log("ĀML CLI v1.3.0-dev");
+  console.log("ĀML CLI v1.3.0");
 }
 
 function readSource(filePath) {
