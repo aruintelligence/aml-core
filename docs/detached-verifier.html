@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>ĀML Detached Verifier</title>
   <style>
-    body{font-family:system-ui,sans-serif;max-width:980px;margin:0 auto;padding:24px;background:#071018;color:#eaf6ff}a{color:#8bdcff}textarea,pre{width:100%;box-sizing:border-box;background:#0d1b26;color:#dff5ff;border:1px solid #29485d;border-radius:10px;padding:12px}textarea{min-height:240px}pre{white-space:pre-wrap;overflow-wrap:anywhere}button{padding:10px 14px;margin:6px 6px 6px 0;border-radius:8px;border:0;font-weight:700}.ok{color:#70f0a8}.bad{color:#ff8b8b}.small{font-size:.9rem;color:#afc5d3}
+    body{font-family:system-ui,sans-serif;max-width:980px;margin:0 auto;padding:24px;background:#071018;color:#eaf6ff}a{color:#8bdcff}textarea,pre{width:100%;box-sizing:border-box;background:#0d1b26;color:#dff5ff;border:1px solid #29485d;border-radius:10px;padding:12px}textarea{min-height:240px}pre{white-space:pre-wrap;overflow-wrap:anywhere}button,input{padding:10px 14px;margin:6px 6px 6px 0;border-radius:8px}.ok{color:#70f0a8}.bad{color:#ff8b8b}.small{font-size:.9rem;color:#afc5d3}
   </style>
 </head>
 <body>
@@ -18,28 +18,43 @@
   <pre id="challenge">No challenge yet.</pre>
   <p class="small">Copy the challenge into <a href="./attest-evidence.html" target="_blank" rel="noopener">Attest Evidence</a>, create a witness bundle there, then return here.</p>
 
-  <h2>2. Paste witness bundle</h2>
+  <h2>2. Paste or load witness bundle</h2>
+  <input id="bundleFile" type="file" accept="application/json,.json" aria-label="Load AML witness bundle JSON">
   <textarea id="bundle" spellcheck="false" placeholder='{"schema":"aml-witness-bundle/1",...}'></textarea>
   <button id="verify">Verify bundle against my challenge</button>
   <button id="tamper">Tamper with pasted copy</button>
 
   <h2>3. Result</h2>
+  <button id="downloadReport">Download verification-report.json</button>
   <pre id="result">Waiting.</pre>
-  <p class="small">A PASS means the bundle hash, evidence hash, verifier challenge, ephemeral-session public-key fingerprint, and ECDSA signature all agree under this prototype contract. It does not establish identity, official ĀRU authorization, truthful intent, regulatory compliance, or objective human impact.</p>
+  <p class="small">Files are read locally in this browser; this reference page does not upload them to a server. A PASS means the bundle hash, evidence hash, verifier challenge, ephemeral-session public-key fingerprint, and ECDSA signature all agree under this prototype contract. It does not establish identity, official ĀRU authorization, truthful intent, regulatory compliance, or objective human impact.</p>
 
   <script type="module">
     import { createVerificationChallenge } from './aml-verification-challenge.js';
     import { verifyWitnessBundle } from './aml-witness-bundle.js';
+    import { witnessVerificationReport } from './aml-verification-report.js';
 
     const challengeEl = document.getElementById('challenge');
     const bundleEl = document.getElementById('bundle');
     const resultEl = document.getElementById('result');
     let currentChallenge = null;
+    let latestReport = null;
+
+    function downloadJson(filename, value) {
+      const blob = new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
 
     document.getElementById('generate').addEventListener('click', () => {
       currentChallenge = createVerificationChallenge({ ttl_ms: 120000 });
       challengeEl.textContent = JSON.stringify(currentChallenge, null, 2);
       resultEl.textContent = 'Challenge generated. Send it to the evidence-producing page.';
+      latestReport = null;
     });
 
     document.getElementById('copyChallenge').addEventListener('click', async () => {
@@ -47,19 +62,29 @@
       await navigator.clipboard.writeText(JSON.stringify(currentChallenge, null, 2));
     });
 
+    document.getElementById('bundleFile').addEventListener('change', async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      bundleEl.value = await file.text();
+    });
+
     document.getElementById('verify').addEventListener('click', async () => {
       try {
         if (!currentChallenge) throw new Error('GENERATE_CHALLENGE_FIRST');
         const bundle = JSON.parse(bundleEl.value);
         if (bundle.challenge?.nonce !== currentChallenge.nonce || bundle.challenge?.expires_at !== currentChallenge.expires_at) {
-          resultEl.textContent = JSON.stringify({ valid:false, reason:'DETACHED_VERIFIER_CHALLENGE_MISMATCH' }, null, 2);
+          const check = { valid:false, reason:'DETACHED_VERIFIER_CHALLENGE_MISMATCH' };
+          latestReport = witnessVerificationReport(bundle, check, { verifier: 'aml-detached-browser' });
+          resultEl.textContent = JSON.stringify(latestReport, null, 2);
           resultEl.className = 'bad';
           return;
         }
         const check = await verifyWitnessBundle(bundle);
-        resultEl.textContent = JSON.stringify(check, null, 2);
+        latestReport = witnessVerificationReport(bundle, check, { verifier: 'aml-detached-browser' });
+        resultEl.textContent = JSON.stringify(latestReport, null, 2);
         resultEl.className = check.valid ? 'ok' : 'bad';
       } catch (error) {
+        latestReport = null;
         resultEl.textContent = JSON.stringify({ valid:false, reason:error?.message || String(error) }, null, 2);
         resultEl.className = 'bad';
       }
@@ -74,11 +99,17 @@
           bundle.created_at = 'tampered';
         }
         bundleEl.value = JSON.stringify(bundle, null, 2);
+        latestReport = null;
         resultEl.textContent = 'Tampered local copy. Verify again; it should fail.';
         resultEl.className = 'bad';
-      } catch (error) {
-        resultEl.textContent = 'Paste a valid JSON bundle first.';
+      } catch {
+        resultEl.textContent = 'Paste or load a valid JSON bundle first.';
       }
+    });
+
+    document.getElementById('downloadReport').addEventListener('click', () => {
+      if (!latestReport) return;
+      downloadJson('aml-verification-report.json', latestReport);
     });
   </script>
 </body>
