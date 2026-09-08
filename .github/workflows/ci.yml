@@ -31,6 +31,8 @@ jobs:
         run: node bin/aml.js validate examples/ai_assistant_response.aml
       - name: Verify semantic lint
         run: node bin/aml.js lint examples/simple.aml
+      - name: Verify explanation output
+        run: node bin/aml.js explain examples/simple.aml > "${RUNNER_TEMP}/aml-explain.json"
       - name: Verify inspectable decision output
         run: node bin/aml.js inspect examples/accessibility_first.aml > "${RUNNER_TEMP}/aml-inspect.json"
       - name: Verify benchmark harness
