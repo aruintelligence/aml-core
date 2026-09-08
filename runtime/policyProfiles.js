@@ -1,5 +1,5 @@
 // runtime/policyProfiles.js
-// ĀML v1.2 — user-owned and organization-owned policy profiles.
+// ĀML v1.3 — user-owned and organization-owned policy profiles.
 
 export const BUILTIN_POLICY_PROFILES = Object.freeze({
   calm_default: {
@@ -9,13 +9,38 @@ export const BUILTIN_POLICY_PROFILES = Object.freeze({
   },
   strict_attention: {
     id: "strict_attention",
-    description: "Stricter attention threshold plus consent awareness.",
+    description: "Stricter attention threshold plus consent awareness and a session budget.",
     policies: ["attention_conservative_v1", "consent_guard_v1", "session_attention_budget_v1"]
   },
   privacy_first: {
     id: "privacy_first",
     description: "Require restorative value, explicit consent where declared, privacy consent for personal-data collection, and respect for session attention budget.",
     policies: ["restorative_v1", "consent_guard_v1", "privacy_guard_v1", "session_attention_budget_v1"]
+  },
+  accessibility_first: {
+    id: "accessibility_first",
+    description: "Compose restorative, consent, reduced-motion, contrast-safety, cognitive-load, and session-attention safeguards.",
+    policies: [
+      "restorative_v1",
+      "consent_guard_v1",
+      "reduced_motion_v1",
+      "contrast_safety_v1",
+      "cognitive_load_guard_v1",
+      "session_attention_budget_v1"
+    ]
+  },
+  human_first: {
+    id: "human_first",
+    description: "Broad user-protective profile combining restoration, consent, privacy, accessibility, cognitive-load, and cumulative attention constraints.",
+    policies: [
+      "restorative_v1",
+      "consent_guard_v1",
+      "privacy_guard_v1",
+      "reduced_motion_v1",
+      "contrast_safety_v1",
+      "cognitive_load_guard_v1",
+      "session_attention_budget_v1"
+    ]
   }
 });
 
