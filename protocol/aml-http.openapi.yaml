@@ -4,8 +4,8 @@ info:
   version: 1.0.0
   description: >-
     Reference HTTP contract for evaluating machine intent through the ĀML accountability pipeline,
-    verifying execution receipts, and checking official AML brand-authorization trust. The contract
-    does not imply hosted service availability.
+    verifying execution receipts, verifying challenge-bound browser witness bundles, and checking
+    official AML brand-authorization trust. The contract does not imply hosted service availability.
 servers:
   - url: http://127.0.0.1:8787
 paths:
@@ -96,6 +96,48 @@ paths:
           description: Receipt verified
         '422':
           description: Receipt supplied but integrity verification failed
+        '400':
+          description: Invalid request
+  /v1/verify-witness-bundle:
+    post:
+      summary: Verify a challenge-bound AML browser witness bundle
+      description: >-
+        Recomputes receipt, browser-evidence, and witness-bundle SHA-256 integrity; checks verifier
+        challenge freshness and equality; verifies the ephemeral P-256 public-key fingerprint and
+        ECDSA/SHA-256 signature. A successful result does not prove identity, official authorization,
+        truthful declared intent, policy quality, or regulatory compliance.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bundle]
+              properties:
+                bundle:
+                  type: object
+                now:
+                  oneOf:
+                    - type: string
+                      format: date-time
+                    - type: number
+      responses:
+        '200':
+          description: Witness bundle passed the project-defined prototype verification checks
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [protocol, valid, reason]
+                properties:
+                  protocol:
+                    const: aml-http-witness-verification/1
+                  valid:
+                    const: true
+                  reason:
+                    type: string
+        '422':
+          description: Bundle was supplied but failed integrity, challenge, or signature verification
         '400':
           description: Invalid request
   /v1/verify-brand-authorization:
