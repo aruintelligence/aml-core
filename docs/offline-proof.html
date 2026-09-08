@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ĀML Offline Proof</title>
+<style>body{font-family:system-ui,-apple-system,sans-serif;max-width:760px;margin:0 auto;padding:24px;background:#07111f;color:#eef7ff;line-height:1.5}section{background:#0e1b2d;border:1px solid #27415f;border-radius:16px;padding:18px;margin:18px 0}input{width:100%}.decision{font-size:2rem;font-weight:900}.allow{color:#9cffb0}.suppress{color:#ff9f9f}code,pre{background:#06101c;border-radius:8px}pre{padding:14px;overflow:auto}.muted{color:#abc0d8}</style>
+</head>
+<body>
+<h1>ĀML Offline Proof</h1>
+<p>Save this HTML file once. Reopen it without a network connection. Change one value and reproduce the prototype decision rule.</p>
+<p class="muted">SHIPPED single-file demonstrator. It reproduces the prototype equation only; it is not the full AML compiler/runtime.</p>
+<section>
+<label>attention_cost <input id="a" type="range" min="0" max="10" value="5"><strong id="av">5</strong></label>
+<label>restoration_value <input id="r" type="range" min="0" max="10" value="1"><strong id="rv">1</strong></label>
+</section>
+<section>
+<div id="d" class="decision suppress">SUPPRESS</div>
+<p id="why"></p>
+<p><code>render_allowed = restoration_value &gt;= attention_cost</code></p>
+</section>
+<section><h2>Decision JSON</h2><pre id="json"></pre></section>
+<p>For the full browser compiler, receipts, View Meaning, and local replay, use the canonical project when connected: https://github.com/aruintelligence/aml-core</p>
+<script>
+const a=document.getElementById('a'),r=document.getElementById('r'),av=document.getElementById('av'),rv=document.getElementById('rv'),d=document.getElementById('d'),why=document.getElementById('why'),json=document.getElementById('json');
+function render(){const ai=Number(a.value),ri=Number(r.value),allowed=ri>=ai;av.textContent=ai;rv.textContent=ri;d.textContent=allowed?'ALLOW':'SUPPRESS';d.className=`decision ${allowed?'allow':'suppress'}`;why.textContent=`restoration_value (${ri}) ${allowed?'>=':'<'} attention_cost (${ai})`;json.textContent=JSON.stringify({attention_cost:ai,restoration_value:ri,render_allowed:allowed},null,2)}
+a.addEventListener('input',render);r.addEventListener('input',render);render();
+</script>
+</body>
+</html>
