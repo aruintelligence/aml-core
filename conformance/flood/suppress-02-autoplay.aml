@@ -1,0 +1,8 @@
+transmission "suppress_autoplay" {
+  message "autoplay_interrupt" {
+    purpose: "Interrupt the user with promotional media"
+    content: "Watch this promotion now"
+    attention_cost: 4
+    restoration_value: 1
+  }
+}
