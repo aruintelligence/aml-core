@@ -45,6 +45,8 @@ jobs:
         run: node scripts/check-verification-contract-drift.mjs > "${RUNNER_TEMP}/aml-verifier-contract-drift.json"
       - name: Verify reference implementation claims target the same snapshot
         run: node scripts/check-verifier-claims.mjs > "${RUNNER_TEMP}/aml-verifier-claims.json"
+      - name: Enforce verifier contract evolution lineage
+        run: node scripts/check-contract-lineage.mjs > "${RUNNER_TEMP}/aml-verifier-contract-lineage.json"
       - name: Enforce external witness registry integrity
         run: node scripts/check-witness-registry.mjs > "${RUNNER_TEMP}/aml-witness-registry.json"
       - name: Verify cross-language canonicalization vectors in Python
