@@ -1,0 +1,10 @@
+{
+  "registry": "aml-official-authorizations/1",
+  "issuer": "ĀRU Intelligence Inc.",
+  "contact": "Office@aruintelligence.com",
+  "credential_type": "aml-brand-authorization/1",
+  "schema": "schema/brand-authorization.schema.json",
+  "revocation_type": "aml-revocation-registry/1",
+  "entries": [],
+  "note": "An empty registry means no public authorization records are currently listed here. Do not infer partnership, endorsement, certification, or authorization from technical conformance alone. Private agreements may exist without public listing."
+}
