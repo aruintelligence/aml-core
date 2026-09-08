@@ -30,6 +30,14 @@
     "wire-replay-protection",
     "canonical-json",
     "http-evaluation-service",
+    "browser-witness-bundles",
+    "verification-reports",
+    "verification-quorums",
+    "signed-verification-reports",
+    "key-distinct-verifier-quorums",
+    "verifier-cli-conformance",
+    "cross-runtime-verification-javascript-python-go",
+    "external-witness-registry",
     "view-meaning"
   ],
   "schemas": {
@@ -40,10 +48,27 @@
     "brand_trust_roots": "schema/brand-trust-roots.schema.json",
     "proof_carrying_interface": "schema/proof-carrying-interface.schema.json",
     "execution_receipt": "schema/execution-receipt.schema.json",
-    "render_decision": "schema/render-decision.schema.json"
+    "render_decision": "schema/render-decision.schema.json",
+    "witness_bundle": "protocol/aml-witness-bundle.schema.json",
+    "verification_report": "protocol/aml-verification-report.schema.json",
+    "verifier_manifest": "protocol/aml-verifier-manifest.schema.json",
+    "verification_quorum": "protocol/aml-verification-quorum.schema.json",
+    "signed_verification_report": "protocol/aml-signed-verification-report.schema.json",
+    "signed_verification_quorum": "protocol/aml-signed-verification-quorum.schema.json",
+    "verifier_conformance_result": "protocol/aml-verifier-conformance-result.schema.json",
+    "witness_record": "protocol/aml-witness-record.schema.json"
   },
   "service_contracts": {
-    "http_openapi": "protocol/aml-http.openapi.yaml"
+    "http_openapi": "protocol/aml-http.openapi.yaml",
+    "verifier_cli": "protocol/aml-verifier-cli.md"
+  },
+  "reference_verifiers": {
+    "registry": "protocol/verifier-registry.json",
+    "python": "independent/python/verify_witness.py",
+    "go": "independent/go/main.go",
+    "conformance_manifest": "conformance/verifier/manifest.json",
+    "black_box_harness": "scripts/run-verifier-conformance.mjs",
+    "external_verifier_count": 0
   },
   "official_marks": "OFFICIAL_MARKS.json",
   "official_authorizations": "OFFICIAL_AUTHORIZATIONS.json",
@@ -51,5 +76,6 @@
   "registry": "protocol/registry.json",
   "protocol_vectors": "protocol/test-vectors.json",
   "conformance": "conformance/manifest.json",
-  "conformance_levels": "conformance/levels.json"
+  "conformance_levels": "conformance/levels.json",
+  "external_witness_registry": "WITNESSES.json"
 }
