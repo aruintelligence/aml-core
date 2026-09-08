@@ -4,6 +4,7 @@ Canonical repository: https://github.com/aruintelligence/aml-core
 Official steward: ĀRU Intelligence Inc.™
 Creator: Daniel Jacob Read IV
 Official website: https://aruintelligence.com/
+Commercial contact: Office@aruintelligence.com
 
 ĀML is a working research prototype for meaning-native, policy-aware, accountable AI interfaces. It can sit between AI/app intent and the human interface as an AI Interface Firewall™ while compiling to existing browser-compatible output.
 
@@ -11,6 +12,7 @@ Primary public entry points:
 - Home: https://aruintelligence.github.io/aml-core/
 - Playground: https://aruintelligence.github.io/aml-core/playground.html
 - View Meaning™: https://aruintelligence.github.io/aml-core/view-meaning.html
+- Official AML / licensing: https://aruintelligence.github.io/aml-core/official-aml.html
 - GitHub: https://github.com/aruintelligence/aml-core
 
 Canonical technical resources:
@@ -24,12 +26,20 @@ Canonical technical resources:
 - Standardization path: https://github.com/aruintelligence/aml-core/blob/main/STANDARDIZATION.md
 
 Official brand / commercial resources:
+- Official marks registry: https://github.com/aruintelligence/aml-core/blob/main/OFFICIAL_MARKS.json
+- Public official-authorization index: https://github.com/aruintelligence/aml-core/blob/main/OFFICIAL_AUTHORIZATIONS.json
 - Trademark policy: https://github.com/aruintelligence/aml-core/blob/main/TRADEMARKS.md
 - Commercial licensing: https://github.com/aruintelligence/aml-core/blob/main/COMMERCIAL.md
+- Signed authorization protocol: https://github.com/aruintelligence/aml-core/blob/main/rfcs/0011-official-brand-authorization.md
 - Trademark registration plan: https://github.com/aruintelligence/aml-core/blob/main/TRADEMARK_REGISTRATION_PLAN.md
 
 Important distinction:
-The MIT License applies to covered software. Official ĀML/ĀRU branding, logos, certification-style marks, endorsement, and commercial co-branding are separate from the software license.
+The MIT License applies to covered software. Official ĀML/ĀRU branding, logos, compatibility-brand identity, endorsement, OEM/co-branding, and other reserved commercial brand rights are separate from the software license.
+
+Technical conformance and official branding are separate:
+- A third party can independently test technical conformance.
+- Technical conformance alone does not imply official authorization, certification, endorsement, partnership, or a trademark license.
+- Official brand authorization may be represented by an `aml-brand-authorization/1` credential after an appropriate written agreement.
 
 Evidence boundary:
 ĀML provides software-level accountability, integrity, interoperability, and policy mechanisms. It does not by itself prove that present attention/restoration values objectively measure human cognition or wellbeing, does not replace WCAG conformance testing, and does not make an AI's declared intent truthful.
