@@ -1,0 +1,28 @@
+transmission "learning-mode" {
+
+  title:
+    "Deep Learning Mode"
+
+  engram conceptPrimer {
+
+    value:
+      "Explain one difficult idea without distracting the learner."
+
+    purpose:
+      "increase understanding before introducing additional interface elements"
+
+    memory_role:
+      "learning_context"
+
+    user_effect:
+      "comprehension"
+
+    attention_cost:
+      3
+
+    restoration_value:
+      9
+
+  }
+
+}
