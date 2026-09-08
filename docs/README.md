@@ -1,6 +1,14 @@
 # ĀML™ Documentation Hub
 
-ĀML™ — ĀRU Meaning Language™ — is a working research prototype for meaning-native, accountable interfaces. This directory collects the public research notes, explainers, and supporting material around the compiler and EthicalRenderGate™.
+ĀML™ — ĀRU Meaning Language™ — is a working research prototype for meaning-native, accountable interfaces. This directory collects the public research notes, explainers, tooling, and supporting material around the compiler and EthicalRenderGate™.
+
+## Run AML now
+
+- [Browser Playground](https://aruintelligence.github.io/aml-core/playground.html) — type AML source and inspect tokens, AST, Abstract Meaning Tree, and render decisions directly in the browser
+- [Live EthicalRenderGate™ Lab](https://aruintelligence.github.io/aml-core/) — interact with the policy model and compare legacy rendering with accountable rendering
+- [Quickstart](../QUICKSTART.md) — clone, test, compile, validate, and inspect from the terminal
+- [API](API.md) — use `compileAML`, `compileSource`, and `ethicalRenderGate` programmatically
+- [Example Gallery](../examples/README.md) — runnable AML programs across multiple interface domains
 
 ## Start here
 
@@ -11,22 +19,28 @@
 - [EthicalRenderGate™ Explained](ETHICAL_RENDER_GATE_EXPLAINED.md)
 - [Open Research Program](RESEARCH_PROGRAM.md)
 
+## Protocol + proof
+
+- [Render Decision Protocol](RENDER_DECISION_PROTOCOL.md)
+- [Render Decision JSON Schema](../schema/render-decision.schema.json)
+- [Conformance Manifest](../CONFORMANCE.json)
+- [Independent Replication Protocol](../REPLICATION.md)
+- [Testing](../TESTING.md)
+
 ## AI + interface research
 
 - [ĀML for AI-Generated Interfaces](AI_GENERATED_INTERFACES.md)
 - [Why Machine-Readable Intent Matters](WHY_MACHINE_READABLE_INTENT.md)
 - [Attention as an Interface Resource](ATTENTION_AS_A_RESOURCE.md)
 
-## Existing project material
+## Core project material
 
 - [Breakthrough](BREAKTHROUGH.md)
-- [Live EthicalRenderGate™ Lab](https://aruintelligence.github.io/aml-core/)
 - [Root project README](../README.md)
 - [Architecture](../ARCHITECTURE.md)
 - [Language specification](../LANGUAGE_SPEC.md)
 - [White paper](../WHITEPAPER.md)
 - [Roadmap](../ROADMAP.md)
-- [Testing](../TESTING.md)
 - [Contribution guide](../CONTRIBUTING.md)
 
 ## Core research question
