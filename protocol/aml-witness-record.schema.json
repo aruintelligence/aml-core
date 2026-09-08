@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-witness-record.schema.json",
+  "title": "AML External Witness Record",
+  "description": "Public evidence record for an independently maintained reproduction or verification of an AML artifact.",
+  "type": "object",
+  "required": ["schema", "witness_id", "observed_at", "source_url", "artifact_type", "result", "external_to_aml_core", "summary"],
+  "properties": {
+    "schema": { "const": "aml-witness-record/1" },
+    "witness_id": { "type": "string", "minLength": 1 },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "source_url": { "type": "string", "minLength": 1 },
+    "artifact_type": { "type": "string", "minLength": 1 },
+    "artifact_hash": { "type": ["string", "null"] },
+    "verifier": { "type": ["string", "null"] },
+    "runtime": { "type": ["string", "null"] },
+    "result": { "enum": ["PASS", "FAIL", "MIXED"] },
+    "external_to_aml_core": { "const": true },
+    "summary": { "type": "string", "minLength": 1 },
+    "report_url": { "type": ["string", "null"] },
+    "notes": { "type": "array", "maxItems": 20, "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}
