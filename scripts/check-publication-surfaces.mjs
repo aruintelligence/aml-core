@@ -9,7 +9,7 @@ const required = {
   'publications/RECEIPT_ANATOMY.md': ['Receipt Anatomy', 'declared purpose'],
   'publications/VIEW_MEANING_EXPLAINER.md': ['View Meaning', 'View Source'],
   'publications/MEANING_GATE_EXPLAINER.md': ['Meaning Gate', 'CI'],
-  'publications/DEVELOPER_INTEGRATION_BRIEF.md': ['Developer Integration Brief', '<aml-gate>'],
+  'publications/DEVELOPER_INTEGRATION_BRIEF.md': ['Developer Integration Brief', '<aml-gate purpose='],
   'publications/AI_PRODUCT_LEADER_BRIEF.md': ['Brief for AI Product Leaders', '30-minute pilot'],
   'publications/DESIGNER_BRIEF.md': ['Brief for Product and UX Designers', 'design judgment'],
   'publications/SECURITY_PRIVACY_BRIEF.md': ['Brief for Security and Privacy Teams', 'tamper-evident'],
@@ -24,7 +24,7 @@ const required = {
   'publications/DEMO_SCRIPT_90_SECONDS.md': ['90-Second ĀML Demo Script', 'SUPPRESS'],
   'publications/WHY_TEAMS_TRY_AML.md': ['Why Teams Might Try ĀML', 'Generated UI review'],
   'publications/CRITICS_GUIDE.md': ["A Critic's Guide to ĀML", 'Strong criticisms to test'],
-  'publications/BUYER_OBJECTIONS.md': ['Buyer Objections', 'answered without hype'],
+  'publications/BUYER_OBJECTIONS.md': ['Buyer Objections', 'Answered Without Hype'],
   'publications/LAUNCH_RELEASE.md': ['Launch Release Draft', 'research prototype']
 };
 
