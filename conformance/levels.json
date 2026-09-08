@@ -15,6 +15,10 @@
     "verifiable": {
       "extends": "federated",
       "requires": ["selective-disclosure"]
+    },
+    "governed": {
+      "extends": "verifiable",
+      "requires": ["bounded-capability-token", "proof-carrying-interface", "revocation-registry"]
     }
   }
 }
