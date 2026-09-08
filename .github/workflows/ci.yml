@@ -27,6 +27,8 @@ jobs:
         run: npm test
       - name: Prove deterministic receipt replay
         run: node demos/undeniable-proof/replay-proof.mjs > "${RUNNER_TEMP}/aml-replay-proof.json"
+      - name: Verify five ALLOW and five SUPPRESS fixtures
+        run: node scripts/check-flood-fixtures.js > "${RUNNER_TEMP}/aml-flood-fixtures.json"
       - name: Verify CLI compilation
         run: node bin/aml.js compile examples/transmission-061.aml "${RUNNER_TEMP}/aml-dist"
       - name: Verify compiled bundle integrity
