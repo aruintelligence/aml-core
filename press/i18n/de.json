@@ -1,0 +1,15 @@
+{
+  "status": "DRAFT",
+  "title": "ĀML Proof-Demo",
+  "subtitle": "Eine Interface-Firewall zwischen KI-Absicht und angezeigten Pixeln.",
+  "try_demo": "Demo testen",
+  "change_restoration": "Wiederherstellungswert ändern",
+  "compile_again": "Erneut kompilieren",
+  "decision": "Entscheidung",
+  "allowed": "Erlaubt",
+  "suppressed": "Unterdrückt",
+  "view_meaning": "Bedeutung anzeigen",
+  "receipt": "Beleg",
+  "file_result": "Ergebnis dokumentieren",
+  "prototype_notice": "Funktionsfähiger Prototyp — kein ratifizierter globaler Standard."
+}
