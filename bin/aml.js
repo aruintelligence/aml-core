@@ -7,10 +7,13 @@ import fs from "fs";
 import { compileAML, compileSource } from "../compiler/compiler.js";
 import { generateAMLFromIntent } from "../compiler/intentCompiler.js";
 import { simulatePolicies } from "../compiler/policySimulator.js";
+import { executeAccountableIntent, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { analyzeAMT } from "../compiler/diagnostics.js";
 import { explainCompilation } from "../compiler/explain.js";
 import { verifyBuildManifest } from "../compiler/verifyBuild.js";
 import { signBuildManifest, verifyBuildAttestation } from "../compiler/signature.js";
+import { listPolicies } from "../runtime/policyEngine.js";
+import { listPolicyProfiles } from "../runtime/policyProfiles.js";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -24,7 +27,11 @@ function showHelp() {
 Usage:
   aml compile <file.aml> [outputDir]
   aml generate <intent.json> [output.aml]
+  aml execute <intent.json> [profile] [context.json] [receipt.json]
+  aml verify-receipt <receipt.json>
   aml simulate <file.aml> [policy1,policy2]
+  aml policies
+  aml profiles
   aml inspect <file.aml>
   aml explain <file.aml>
   aml validate <file.aml>
@@ -38,21 +45,29 @@ Usage:
 Commands:
   compile             Compile AML into HTML and accountability artifacts
   generate            Deterministically generate AML source from machine-readable intent JSON
+  execute             Run intent → AML → simulations → composed policy → accountable receipt
+  verify-receipt      Verify that an accountable execution receipt has not been mutated
   simulate            Compare identical AML meaning under multiple policy engines
+  policies            List built-in policy engines
+  profiles            List built-in user/organization policy profiles
   inspect             Print the Abstract Meaning Tree + raw render decisions
   explain             Print a compact explanation of decisions and diagnostics
   validate            Parse and evaluate AML without writing output files
-  lint                Run semantic diagnostics on meaning-bearing nodes
-  verify              Recompute SHA-256 digests and verify an AML build bundle
-  sign                Create a detached Ed25519 build attestation
-  verify-attestation  Verify an Ed25519 AML build attestation
-  help                Show this help message
-  version             Show AML CLI version
+  lint                 Run semantic diagnostics on meaning-bearing nodes
+  verify               Recompute SHA-256 digests and verify an AML build bundle
+  sign                 Create a detached Ed25519 build attestation
+  verify-attestation   Verify an Ed25519 AML build attestation
+  help                 Show this help message
+  version              Show AML CLI version
 
 Examples:
   aml compile examples/transmission-061.aml
   aml generate examples/intent-checkout.json generated.aml
+  aml execute examples/intent-checkout.json calm_default context.json receipt.json
+  aml verify-receipt receipt.json
   aml simulate examples/simple.aml restorative_v1,attention_conservative_v1
+  aml policies
+  aml profiles
   aml explain examples/ai_assistant_response.aml
   aml lint examples/ethical_ads.aml
   aml verify dist/build_manifest.json
@@ -62,7 +77,7 @@ Examples:
 }
 
 function showVersion() {
-  console.log("ĀML CLI v1.1.0+");
+  console.log("ĀML CLI v1.2.0-dev");
 }
 
 function readSource(filePath) {
@@ -77,6 +92,16 @@ try {
 
   if (command === "version" || command === "--version" || command === "-v") {
     showVersion();
+    process.exit(0);
+  }
+
+  if (command === "policies") {
+    console.log(JSON.stringify(listPolicies(), null, 2));
+    process.exit(0);
+  }
+
+  if (command === "profiles") {
+    console.log(JSON.stringify(listPolicyProfiles(), null, 2));
     process.exit(0);
   }
 
@@ -102,6 +127,30 @@ try {
       process.stdout.write(source);
     }
     process.exit(0);
+  }
+
+  if (command === "execute") {
+    const intent = JSON.parse(readSource(inputPath));
+    const profile = args[2] || "calm_default";
+    const context = args[3] ? JSON.parse(readSource(args[3])) : {};
+    const receipt = executeAccountableIntent(intent, { profile, context });
+    const serialized = `${JSON.stringify(receipt, null, 2)}\n`;
+    const outputPath = args[4];
+    if (outputPath) {
+      fs.writeFileSync(outputPath, serialized);
+      console.log(`EXECUTED: ${outputPath}`);
+      console.log(`Receipt SHA-256: ${receipt.receipt_sha256}`);
+    } else {
+      process.stdout.write(serialized);
+    }
+    process.exit(0);
+  }
+
+  if (command === "verify-receipt") {
+    const receipt = JSON.parse(readSource(inputPath));
+    const result = verifyExecutionReceipt(receipt);
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(result.verified ? 0 : 1);
   }
 
   if (command === "simulate") {
