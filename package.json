@@ -1,17 +1,20 @@
 {
   "name": "aml-core",
-  "version": "1.0.0",
-  "description": "ĀML — ĀRU Meaning Language: a meaning-native, accountable interface compiler and EthicalRenderGate research runtime",
+  "version": "1.1.0",
+  "description": "ĀML — ĀRU Meaning Language: a meaning-native, accountable interface compiler and EthicalRenderGate research prototype",
   "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
   "type": "module",
   "bin": {
     "aml": "./bin/aml.js"
   },
   "scripts": {
-    "start": "node bin/aml.js",
+    "start": "node bin/aml.js help",
     "compile": "node bin/aml.js compile examples/transmission-061.aml",
-    "render": "node bin/aml.js render examples/transmission-061.aml",
-    "demo": "node bin/aml.js demo",
+    "validate": "node bin/aml.js validate examples/transmission-061.aml",
+    "inspect": "node bin/aml.js inspect examples/transmission-061.aml",
     "test": "node --test"
   },
   "keywords": [
@@ -20,16 +23,16 @@
     "aru-meaning-language",
     "meaning-language",
     "meaning-native-computing",
+    "meaning-native-interface",
     "accountable-interfaces",
+    "accountable-rendering",
     "ethical-rendering",
     "ethical-render-gate",
     "semantic-computing",
     "semantic-ui",
-    "ai-interfaces",
-    "ai-generated-ui",
-    "attention-aware-ui",
     "policy-aware-ui",
-    "interface-compiler",
+    "ai-generated-ui",
+    "attention-aware-interface",
     "restoration-engine"
   ],
   "author": "ĀRU Intelligence Inc.",
