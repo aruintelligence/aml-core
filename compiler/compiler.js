@@ -1,5 +1,5 @@
 // compiler/compiler.js
-// ĀML_CORE v1.0 — End-to-End Compiler Pipeline
+// ĀML_CORE v1.1 — Pure source pipeline + filesystem compiler
 
 import fs from "fs";
 import path from "path";
@@ -10,8 +10,17 @@ import { buildAMT } from "./amtBuilder.js";
 import { evaluateRenderDecisions } from "./renderEvaluator.js";
 import { generateHTML } from "./htmlGenerator.js";
 
-export function compileAML(inputPath, outputDir = "dist") {
-  const source = fs.readFileSync(inputPath, "utf8");
+/**
+ * Compile AML source text entirely in memory.
+ *
+ * This is the portable compiler core: no filesystem reads or writes.
+ * Consumers can use it in servers, editors, test harnesses, and future
+ * browser-compatible bundles.
+ */
+export function compileSource(source) {
+  if (typeof source !== "string") {
+    throw new TypeError("ĀML source must be a string.");
+  }
 
   const tokens = tokenize(source);
   const ast = parse(tokens);
@@ -19,36 +28,7 @@ export function compileAML(inputPath, outputDir = "dist") {
   const renderDecisions = evaluateRenderDecisions(amt);
   const html = generateHTML(amt, renderDecisions);
 
-  fs.mkdirSync(outputDir, { recursive: true });
-
-  fs.writeFileSync(
-    path.join(outputDir, "index.html"),
-    html
-  );
-
-  fs.writeFileSync(
-    path.join(outputDir, "tokens.json"),
-    JSON.stringify(tokens, null, 2)
-  );
-
-  fs.writeFileSync(
-    path.join(outputDir, "ast.json"),
-    JSON.stringify(ast, null, 2)
-  );
-
-  fs.writeFileSync(
-    path.join(outputDir, "amt.json"),
-    JSON.stringify(amt, null, 2)
-  );
-
-  fs.writeFileSync(
-    path.join(outputDir, "render_decision.json"),
-    JSON.stringify(renderDecisions, null, 2)
-  );
-
   return {
-    input: inputPath,
-    output: outputDir,
     tokens,
     ast,
     amt,
@@ -57,17 +37,36 @@ export function compileAML(inputPath, outputDir = "dist") {
   };
 }
 
-const isDirectRun =
-  process.argv[1] &&
-  process.argv[1].endsWith("compiler.js");
+/**
+ * Compile an AML file and emit browser + accountability artifacts.
+ */
+export function compileAML(inputPath, outputDir = "dist") {
+  const source = fs.readFileSync(inputPath, "utf8");
+  const compiled = compileSource(source);
+
+  fs.mkdirSync(outputDir, { recursive: true });
+
+  fs.writeFileSync(path.join(outputDir, "index.html"), compiled.html);
+  fs.writeFileSync(path.join(outputDir, "tokens.json"), JSON.stringify(compiled.tokens, null, 2));
+  fs.writeFileSync(path.join(outputDir, "ast.json"), JSON.stringify(compiled.ast, null, 2));
+  fs.writeFileSync(path.join(outputDir, "amt.json"), JSON.stringify(compiled.amt, null, 2));
+  fs.writeFileSync(
+    path.join(outputDir, "render_decision.json"),
+    JSON.stringify(compiled.renderDecisions, null, 2)
+  );
+
+  return {
+    input: inputPath,
+    output: outputDir,
+    ...compiled
+  };
+}
+
+const isDirectRun = process.argv[1] && process.argv[1].endsWith("compiler.js");
 
 if (isDirectRun) {
-  const inputPath =
-    process.argv[2] || "examples/transmission-061.aml";
-
-  const outputDir =
-    process.argv[3] || "dist";
-
+  const inputPath = process.argv[2] || "examples/transmission-061.aml";
+  const outputDir = process.argv[3] || "dist";
   const result = compileAML(inputPath, outputDir);
 
   console.log("ĀML compile complete.");
