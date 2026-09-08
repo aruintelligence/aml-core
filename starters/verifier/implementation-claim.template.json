@@ -1,0 +1,15 @@
+{
+  "schema": "aml-verifier-implementation-claim/1",
+  "prototype": true,
+  "implementation_id": "REPLACE_ME",
+  "implementation_version": "0.1.0",
+  "runtime": "REPLACE_ME",
+  "source_url": "https://github.com/REPLACE_ME/REPLACE_ME",
+  "contract_snapshot_id": "aml-verifier-contract-2026-09-08-01",
+  "contract_source_commit": "b1ff5a87c7b19ae6338503a58ab6257a5b2add0b",
+  "artifact_types": ["aml-witness-bundle/1"],
+  "conformance_command": "./your-verifier --now 2030-01-01T00:05:00Z bundle.json",
+  "conformance_result_url": null,
+  "external_to_aml_core": true,
+  "claim_boundary": "Self-declared external implementation claim bound to a specific AML verifier contract snapshot. External status and conformance evidence still require public verification."
+}
