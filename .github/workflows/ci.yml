@@ -26,6 +26,8 @@ jobs:
       - name: Verify CLI compilation
         run: node bin/aml.js compile examples/transmission-061.aml "${RUNNER_TEMP}/aml-dist"
       - name: Verify in-memory validation
-        run: node bin/aml.js validate examples/ai_assistant.aml
+        run: node bin/aml.js validate examples/ai_assistant_response.aml
       - name: Verify inspectable decision output
         run: node bin/aml.js inspect examples/accessibility_first.aml > "${RUNNER_TEMP}/aml-inspect.json"
+      - name: Verify benchmark harness
+        run: AML_BENCH_ITERATIONS=25 npm run benchmark > "${RUNNER_TEMP}/aml-benchmark.json"
