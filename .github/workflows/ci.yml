@@ -13,8 +13,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Check out repository history
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -39,6 +41,8 @@ jobs:
         run: node scripts/check-verifier-surfaces.mjs > "${RUNNER_TEMP}/aml-verifier-surfaces.json"
       - name: Verify immutable verifier contract snapshot
         run: node scripts/check-verification-contract-snapshot.mjs > "${RUNNER_TEMP}/aml-verifier-contract-snapshot.json"
+      - name: Reject silent verifier contract drift
+        run: node scripts/check-verification-contract-drift.mjs > "${RUNNER_TEMP}/aml-verifier-contract-drift.json"
       - name: Verify reference implementation claims target the same snapshot
         run: node scripts/check-verifier-claims.mjs > "${RUNNER_TEMP}/aml-verifier-claims.json"
       - name: Enforce external witness registry integrity
