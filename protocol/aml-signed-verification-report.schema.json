@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-signed-verification-report.schema.json",
+  "title": "AML Signed Verification Report",
+  "description": "Prototype cryptographic envelope binding an aml-verification-report/1 to a verifier key.",
+  "type": "object",
+  "required": ["schema", "prototype", "algorithm", "report", "verifier_public_key_jwk", "verifier_key_fingerprint", "signature"],
+  "properties": {
+    "schema": { "const": "aml-signed-verification-report/1" },
+    "prototype": { "const": true },
+    "algorithm": { "const": "ECDSA-P256-SHA256" },
+    "report": { "type": "object" },
+    "verifier_public_key_jwk": {
+      "type": "object",
+      "required": ["kty", "crv", "x", "y"],
+      "properties": {
+        "kty": { "const": "EC" },
+        "crv": { "const": "P-256" },
+        "x": { "type": "string", "minLength": 1 },
+        "y": { "type": "string", "minLength": 1 },
+        "ext": { "type": "boolean" },
+        "key_ops": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "verifier_key_fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "signature": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}
