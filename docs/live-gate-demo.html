@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ĀML Live DOM Firewall</title>
+<style>
+body{font-family:system-ui,-apple-system,sans-serif;max-width:900px;margin:0 auto;padding:24px;background:#07111f;color:#eef7ff;line-height:1.5}button{padding:10px 14px;border-radius:10px;border:1px solid #35597f;background:#122842;color:#fff;cursor:pointer}section{background:#0e1b2d;border:1px solid #27415f;border-radius:16px;padding:18px;margin:18px 0}pre{background:#06101c;padding:14px;border-radius:10px;overflow:auto}.ok{color:#9cffb0}.muted{color:#abc0d8}
+</style>
+</head>
+<body>
+<h1>ĀML Live DOM Firewall</h1>
+<p>Generate interface elements after page load. AML watches the live DOM, evaluates declared meaning, suppresses failing elements, and updates a page-level receipt.</p>
+<p class="muted">Prototype behavior. Scores are declared/model inputs, not objective measurements of cognition or wellbeing.</p>
+<section>
+<button id="safe">AI generates calm status</button>
+<button id="pressure">AI generates pressure CTA</button>
+<button id="mutate">Change the latest element's restoration value</button>
+<div id="stream"></div>
+</section>
+<section>
+<h2>Live receipt</h2>
+<pre id="receipt">Waiting…</pre>
+</section>
+<script type="module" src="./aml-live.js"></script>
+<script>
+const stream=document.getElementById('stream');
+let count=0;
+function add({purpose,attention,restoration,text}){
+  const node=document.createElement('div');
+  node.id=`generated-${++count}`;
+  node.dataset.amlPurpose=purpose;
+  node.dataset.amlAttentionCost=String(attention);
+  node.dataset.amlRestorationValue=String(restoration);
+  node.textContent=text;
+  node.style.margin='14px 0';
+  node.style.padding='12px';
+  node.style.border='1px solid #35597f';
+  node.style.borderRadius='10px';
+  stream.appendChild(node);
+}
+document.getElementById('safe').onclick=()=>add({purpose:'Confirm task completion',attention:1,restoration:3,text:'Saved. Your changes are complete.'});
+document.getElementById('pressure').onclick=()=>add({purpose:'Create urgency to increase conversion',attention:5,restoration:1,text:'Act now before this disappears.'});
+document.getElementById('mutate').onclick=()=>{
+  const node=stream.lastElementChild;
+  if(!node)return;
+  node.dataset.amlRestorationValue=String(Number(node.dataset.amlRestorationValue||0)+5);
+};
+document.addEventListener('aml-receipt',(event)=>{
+  document.getElementById('receipt').textContent=JSON.stringify(event.detail,null,2);
+});
+</script>
+</body>
+</html>
