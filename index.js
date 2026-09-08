@@ -1,6 +1,8 @@
 export { compileAML, compileSource } from "./compiler/compiler.js";
 export { generateAMLFromIntent } from "./compiler/intentCompiler.js";
 export { simulatePolicies } from "./compiler/policySimulator.js";
+export { semanticDiff } from "./compiler/semanticDiff.js";
+export { policyDiff } from "./compiler/policyDiff.js";
 export { executeAccountableIntent, verifyExecutionReceipt, signExecutionReceipt, verifySignedExecutionReceipt } from "./compiler/accountablePipeline.js";
 export { analyzeAMT } from "./compiler/diagnostics.js";
 export { explainCompilation } from "./compiler/explain.js";
@@ -10,4 +12,7 @@ export { ethicalRenderGate } from "./runtime/ethicalRenderGate.js";
 export { BUILTIN_POLICIES, resolvePolicy, listPolicies } from "./runtime/policyEngine.js";
 export { BUILTIN_POLICY_PROFILES, resolvePolicyProfile, listPolicyProfiles } from "./runtime/policyProfiles.js";
 export { composePolicies, policyFromProfile } from "./runtime/policyComposition.js";
+export { normalizePolicyPack, hashPolicyPack, signPolicyPack, verifySignedPolicyPack } from "./runtime/policyPack.js";
+export { createAuditStream, appendAuditEvent, verifyAuditStream } from "./runtime/auditStream.js";
+export { createAttentionLedger, consumeAttention, accountRenderDecisions, attentionContext } from "./runtime/attentionLedger.js";
 export { getCompletionItems, getHoverInfo, getLanguageCatalog } from "./tooling/languageService.js";
