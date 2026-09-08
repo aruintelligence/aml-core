@@ -15,12 +15,12 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Publish v1.2.0
+      - name: Publish v1.3.0
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view "v1.2.0" >/dev/null 2>&1; then
-            echo "Release v1.2.0 already exists."
+          if gh release view "v1.3.0" >/dev/null 2>&1; then
+            echo "Release v1.3.0 already exists."
           else
-            gh release create "v1.2.0" --target "$GITHUB_SHA" --title "ĀML Core 1.2.0 — Accountable AI Execution" --notes-file "RELEASE_NOTES_1.2.0.md"
+            gh release create "v1.3.0" --target "$GITHUB_SHA" --title "ĀML Core 1.3.0 — Trust, Difference, Accessibility, and Runtime Accountability" --notes-file "RELEASE_NOTES_1.3.0.md"
           fi
