@@ -1,61 +1,173 @@
 # ĀML™ — ĀRU Meaning Language™
 
-## HTML asks whether it *can* render. ĀML asks whether it *should* — then records the meaning, policy, runtime context, attention cost, output, and proof trail.
+## The accountability layer between AI and the human interface.
 
 [![CI](https://github.com/aruintelligence/aml-core/actions/workflows/ci.yml/badge.svg)](https://github.com/aruintelligence/aml-core/actions/workflows/ci.yml)
 [![Playground](https://img.shields.io/badge/OPEN-AML_PLAYGROUND-7df9ff?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/playground.html)
-[![Live Lab](https://img.shields.io/badge/OPEN-LIVE_LAB-a994ff?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/)
+[![View Meaning](https://img.shields.io/badge/OPEN-VIEW_MEANING-9cffb0?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/view-meaning.html)
 [![Release](https://img.shields.io/badge/AML-v1.3.0-f2ce72?style=for-the-badge&labelColor=07111f)](https://github.com/aruintelligence/aml-core/releases/tag/v1.3.0)
-[![License: MIT](https://img.shields.io/badge/CODE-MIT-9cffb0?style=for-the-badge&labelColor=07111f)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/CODE-MIT-a994ff?style=for-the-badge&labelColor=07111f)](LICENSE)
 
-**ĀML is a working research prototype for meaning-native, policy-aware, accountable AI interfaces.** It sits between machine/human intent and final interface output, preserving inspectable policy decisions and verifiable accountability artifacts.
+**AI can propose an interface. ĀML decides what it means, which policies apply, whether it should render, and what proof trail must exist afterward.**
 
-> AI can propose an interface. ĀML asks what it means, which rules apply, what attention it consumes, whether it should render, and how that decision can be independently checked.
+> **HTML tells the browser what to display. ĀML tells the system why it deserves to be displayed.**
 
-[**Launch the browser playground →**](https://aruintelligence.github.io/aml-core/playground.html)
+ĀML is a working research prototype for meaning-native, policy-aware, accountable AI interfaces. It does **not** require replacing HTML or React. It can sit in front of existing UI as an **AI Interface Firewall**.
 
-## ĀML Core v1.3.0
+## Start in 60 seconds
 
-v1.3 adds six major capabilities on top of v1.2 Accountable AI Execution:
+- **Try AML:** https://aruintelligence.github.io/aml-core/playground.html
+- **Inspect a receipt:** https://aruintelligence.github.io/aml-core/view-meaning.html
+- **Read the AI Interface Firewall guide:** [docs/AI_INTERFACE_FIREWALL.md](docs/AI_INTERFACE_FIREWALL.md)
+- **See all capabilities:** [AML_CAPABILITIES.json](AML_CAPABILITIES.json)
 
-1. **Signed policy packs** — data-only policy compositions with canonical hashes and Ed25519 signatures.
-2. **Semantic diffs** — compare Abstract Meaning Trees instead of only changed source lines.
-3. **Policy diffs** — show exactly which render outcomes change when policy/profile changes.
-4. **Runtime audit streams** — append-only SHA-256 hash chains for execution events.
-5. **Accessibility policies** — reduced-motion, contrast-safety, and cognitive-load rules driven by runtime context.
-6. **Cumulative attention accounting** — session ledgers that track attention consumption across multiple rendered elements.
+## AI Interface Firewall
 
-Read the full [v1.3 breakthrough architecture](docs/V1_3_BREAKTHROUGH.md).
+```js
+import { createInterfaceFirewall } from "aml-core";
 
-## Current execution architecture
+const firewall = createInterfaceFirewall({ profile: "human_first" });
+
+const result = firewall.enforce({
+  transmission: "pricing_assistant",
+  nodes: [{
+    type: "message",
+    identifier: "pricing",
+    properties: {
+      purpose: "Explain pricing clearly",
+      content: "Simple pricing",
+      attention_cost: 1,
+      restoration_value: 2
+    }
+  }]
+});
+
+if (result.allowed) render(result.html);
+```
+
+The result carries policy decisions, accessibility analysis, provenance, attention accounting, runtime audit state, and a verifiable execution receipt.
+
+## React adoption without rewriting the app
+
+```jsx
+import React from "react";
+import { createAccountableUI } from "aml-core";
+
+const AccountableUI = createAccountableUI(React);
+
+<AccountableUI
+  id="pricing"
+  purpose="Help the user understand pricing"
+  attentionCost={1}
+  restorationValue={2}
+  policy="human_first"
+  fallback={<p>Withheld by policy.</p>}
+>
+  <ExistingPricingComponent />
+</AccountableUI>
+```
+
+The adapter converts ordinary component metadata into canonical ĀML intent and sends it through the same accountability pipeline as native `.aml` source.
+
+## View Meaning
+
+The web gave developers **View Source**. ĀML introduces **View Meaning**.
+
+```js
+import { viewMeaning } from "aml-core";
+
+const meaning = viewMeaning(result.receipt);
+```
+
+A View Meaning report can expose:
+
+- declared purpose
+- policy/profile
+- attention cost
+- restoration value
+- allow/suppress outcome
+- policy rationale
+- receipt integrity
+- audit/attention hashes
+
+Browser inspector: https://aruintelligence.github.io/aml-core/view-meaning.html
+
+## Meaning Gate for pull requests
+
+ĀML can stop semantic regressions before deployment.
+
+```yaml
+- uses: aruintelligence/aml-core/actions/meaning-gate@main
+  with:
+    before-file: before.aml
+    after-file: after.aml
+    before-policy: calm_default
+    after-policy: human_first
+```
+
+The gate can block:
+
+- high-risk meaning changes
+- new personal-data collection
+- changed consent requirements
+- attention/restoration changes
+- policy regressions from ALLOW → SUPPRESS
+
+Direct runner:
+
+```bash
+node scripts/meaning-gate.js before.aml after.aml calm_default human_first
+```
+
+## What exists today
+
+ĀML v1.3 includes:
+
+- lexer + parser
+- AST + Abstract Meaning Tree
+- compiler to browser-compatible HTML
+- pluggable policy engines
+- user/organization policy profiles
+- policy consensus with explicit dissent
+- semantic diffs + semantic risk scoring
+- policy diffs + policy matrices
+- AI intent → deterministic ĀML generation
+- AI Interface Firewall
+- React-compatible adapter
+- View Meaning API + browser inspector
+- GitHub Meaning Gate action
+- consent + privacy policies
+- expiring/revocable consent ledger
+- accessibility policies + audits
+- cumulative attention accounting
+- signed policy packs
+- runtime SHA-256 audit streams
+- signed audit checkpoints
+- execution provenance graphs
+- Merkle-batched execution receipts
+- Ed25519-signed execution receipts
+- CLI + JavaScript API
+- browser playground
+- VS Code language support
+- LSP server
+- CI + conformance fixtures
+
+## Execution architecture
 
 ```mermaid
 flowchart LR
-    A["AI / machine intent"] --> B["Deterministic intent compiler"]
-    B --> C["ĀML source"]
-    C --> D["AST + Abstract Meaning Tree"]
-    D --> E["Policy simulation / policy profile"]
-    E --> F["Consent + privacy + accessibility"]
-    F --> G["Cumulative attention ledger"]
-    G --> H["Final render decisions"]
-    H --> I["HTML output"]
-    I --> J["Hash-chained runtime audit stream"]
-    J --> K["Accountable execution receipt"]
-    K --> L["Optional Ed25519 attestation"]
+    A[AI / app intent] --> B[ĀML Interface Firewall]
+    B --> C[Intent → ĀML]
+    C --> D[AST + Meaning Tree]
+    D --> E[Semantic + accessibility analysis]
+    E --> F[Policy matrix / consensus]
+    F --> G[Consent + privacy + attention]
+    G --> H[Render decision]
+    H --> I[HTML / existing UI]
+    H --> J[Runtime audit stream]
+    J --> K[Execution receipt]
+    K --> L[Provenance + signature / Merkle proof]
 ```
-
-## Built-in policy engines
-
-| Policy | Purpose |
-|---|---|
-| `restorative_v1` | Require restoration value ≥ attention cost |
-| `attention_conservative_v1` | Require a 20% restoration margin |
-| `consent_guard_v1` | Enforce declared consent requirements |
-| `privacy_guard_v1` | Enforce privacy consent for declared personal-data collection |
-| `session_attention_budget_v1` | Compare a node with remaining attention budget |
-| `reduced_motion_v1` | Respect reduced-motion runtime preference |
-| `contrast_safety_v1` | Reject explicitly contrast-unsafe nodes when high contrast is required |
-| `cognitive_load_guard_v1` | Enforce a runtime maximum cognitive-load threshold |
 
 ## Built-in profiles
 
@@ -64,152 +176,37 @@ flowchart LR
 | `calm_default` | restoration + consent |
 | `strict_attention` | conservative attention + consent + budget |
 | `privacy_first` | restoration + consent + privacy + budget |
-| `accessibility_first` | restoration + consent + motion + contrast + cognitive load + budget |
-| `human_first` | broad restoration + consent + privacy + accessibility + budget policy stack |
+| `accessibility_first` | motion + contrast + cognitive load + budget |
+| `human_first` | broad privacy + consent + accessibility + attention controls |
 
-Profiles currently compose with `all_must_allow`: one denying policy is enough to suppress the node.
-
-## Signed policy packs
-
-ĀML v1.3 policy packs are deliberately **data-only**. A pack can reference installed policy IDs but cannot silently transport executable JavaScript.
-
-```bash
-node bin/aml.js sign-policy-pack policy-pack.json private-key.pem signed-policy-pack.json
-node bin/aml.js verify-policy-pack signed-policy-pack.json
-```
-
-## Semantic and policy diffs
-
-```bash
-node bin/aml.js semantic-diff before.aml after.aml
-node bin/aml.js policy-diff interface.aml calm_default human_first context.json
-```
-
-A semantic diff reports structural/property/meaning changes. A policy diff holds source and context constant and reports changed allow/suppress outcomes and rationales.
-
-## Runtime audit streams
-
-Every audit entry commits to its payload and previous entry hash:
-
-```text
-entry 0 → hash 0
-entry 1 + hash 0 → hash 1
-entry 2 + hash 1 → hash 2
-```
-
-Mutating a past entry breaks verification.
-
-```bash
-node bin/aml.js verify-audit audit-stream.json
-```
-
-## Cumulative attention accounting
-
-A session ledger can enforce a shared budget across multiple components:
-
-```text
-budget 10
-A costs 3 → 7 left
-B costs 4 → 3 left
-C costs 5 → suppressed by cumulative budget
-```
-
-```bash
-node bin/aml.js attention-account interface.aml 10 restorative_v1
-```
-
-The accountable execution pipeline can bind the ledger and runtime audit stream into the final receipt.
-
-## Accountable AI execution
-
-```bash
-node bin/aml.js execute intent.json human_first context.json receipt.json
-node bin/aml.js verify-receipt receipt.json
-node bin/aml.js sign-receipt receipt.json private-key.pem signed-receipt.json
-node bin/aml.js verify-signed-receipt signed-receipt.json
-```
-
-A v1.3 receipt can bind:
-
-- original intent
-- generated ĀML source
-- policy simulations
-- selected profile and decisions
-- runtime context
-- cumulative attention ledger
-- runtime audit stream
-- final HTML
-- SHA-256 integrity values
-- optional Ed25519 receipt signature
-
-## CLI
-
-```text
-aml compile
-aml generate
-aml execute
-aml verify-receipt
-aml sign-receipt
-aml verify-signed-receipt
-aml simulate
-aml semantic-diff
-aml policy-diff
-aml sign-policy-pack
-aml verify-policy-pack
-aml verify-audit
-aml attention-account
-aml policies
-aml profiles
-aml validate
-aml inspect
-aml explain
-aml lint
-aml verify
-aml sign
-aml verify-attestation
-```
-
-## Developer + proof surface
+## Developer surface
 
 | Resource | Purpose |
 |---|---|
-| [Browser Playground](https://aruintelligence.github.io/aml-core/playground.html) | Type AML and inspect tokens, AST, AMT, and decisions |
-| [Live Lab](https://aruintelligence.github.io/aml-core/) | Operate the baseline EthicalRenderGate™ model |
-| [v1.3 breakthrough](docs/V1_3_BREAKTHROUGH.md) | Signed policies, diffs, audit streams, accessibility, attention accounting |
-| [Accountable AI Pipeline](docs/ACCOUNTABLE_AI_PIPELINE.md) | Intent → policy → receipt architecture |
+| [AI Interface Firewall](docs/AI_INTERFACE_FIREWALL.md) | Adopt AML inside existing apps |
+| [Playground](https://aruintelligence.github.io/aml-core/playground.html) | Type AML and inspect compiler structures |
+| [View Meaning](https://aruintelligence.github.io/aml-core/view-meaning.html) | Inspect accountable execution receipts |
+| [JavaScript API](API.md) | Programmatic API |
 | [Quickstart](QUICKSTART.md) | Clone, test, compile, inspect |
-| [JavaScript API](API.md) | Public programmatic API |
-| [Capabilities](AML_CAPABILITIES.json) | Machine-readable feature discovery |
-| [Independent replication](REPLICATION.md) | Reproduce the compiler behavior |
-| [Conformance](CONFORMANCE.json) | Public conformance entry point |
-| [Canonical fixtures](conformance/manifest.json) | Executable fixture inventory |
-| [Testing](TESTING.md) | Verification philosophy |
+| [Trust Continuity](docs/TRUST_CONTINUITY.md) | Consent history, provenance, policy dissent, Merkle receipts |
+| [v1.3 Architecture](docs/V1_3_BREAKTHROUGH.md) | Signed policies, diffs, audit streams, accessibility, attention |
+| [Capabilities](AML_CAPABILITIES.json) | Machine-readable platform surface |
+| [Conformance](CONFORMANCE.json) | Canonical compatibility entry point |
+| [Replication](REPLICATION.md) | Independent reproduction protocol |
 
-## Repository quality gates
+## Quality gates
 
-Every push and pull request checks:
-
-- local Markdown link integrity
-- automated unit/integration tests
-- CLI compilation
-- build-manifest integrity
-- in-memory validation
-- semantic lint
-- explanation output
-- inspectable decisions
-- benchmark execution
-
-Broken local repository links fail CI rather than silently becoming GitHub 404s.
+Every push checks local documentation links, automated tests, compiler output, bundle integrity, validation, semantic lint, explanation output, inspectable decisions, and benchmarks.
 
 ## Evidence boundary
 
-ĀML improves inspectability, policy control, reproducibility, and cryptographic integrity. It does **not** establish that its policies are universally ethical, that declared attention/restoration scores are validated measurements of human cognition, that an AI's declared intent is truthful, or that current accessibility policies replace WCAG conformance and assistive-technology testing.
+ĀML improves **inspectability, policy control, reproducibility, and cryptographic integrity**. It does not establish that its present attention/restoration scores objectively measure human cognition or wellbeing; it does not make an AI's declared intent truthful; and its accessibility policies do not replace WCAG conformance or assistive-technology testing.
 
-Cryptographic signatures prove integrity and control of a signing key; they do not by themselves establish trustworthiness.
+Cryptographic signatures prove integrity and key possession—not moral correctness or institutional trustworthiness.
 
-## Research question
+## The question
 
-> What changes when an AI-generated interface must declare meaning, pass user-owned policy, respect cumulative human attention, preserve a runtime audit trail, and produce a verifiable receipt before reaching a person?
+> What changes when AI-generated interfaces must declare meaning, pass user-owned policy, respect consent/privacy/accessibility/attention constraints, and produce a verifiable receipt before reaching a person?
 
 Created by **Daniel Jacob Read IV** and stewarded by **ĀRU Intelligence Inc.™**
 
