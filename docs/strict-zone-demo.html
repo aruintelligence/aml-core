@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ĀML Strict Zone Demo</title>
+<style>
+body{font-family:system-ui,-apple-system,sans-serif;max-width:900px;margin:0 auto;padding:24px;background:#07111f;color:#eef7ff;line-height:1.5}section{background:#0e1b2d;border:1px solid #27415f;border-radius:16px;padding:18px;margin:18px 0}button{padding:10px 14px;border-radius:10px;border:1px solid #35597f;background:#122842;color:#fff;cursor:pointer}aml-zone{display:block;min-height:80px;padding:14px;border:1px dashed #4b6f96;border-radius:12px}pre{background:#06101c;padding:14px;border-radius:10px;overflow:auto}.muted{color:#abc0d8}
+</style>
+</head>
+<body>
+<h1>ĀML Strict Zone</h1>
+<p>Inside this opt-in boundary, an undeclared top-level interface element is hidden. Declared elements still pass through the normal AML decision rule.</p>
+<p class="muted">Prototype behavior. This is a reference browser primitive, not a browser security boundary or ratified web standard.</p>
+<section>
+<button id="undeclared">Generate undeclared AI output</button>
+<button id="declaredSuppress">Generate declared SUPPRESS output</button>
+<button id="declaredAllow">Generate declared ALLOW output</button>
+</section>
+<section>
+<aml-zone id="assistant-zone" mode="strict"></aml-zone>
+</section>
+<section>
+<h2>Zone violations</h2>
+<pre id="violations">[]</pre>
+</section>
+<section>
+<h2>Latest AML receipt</h2>
+<pre id="receipt">Waiting…</pre>
+</section>
+<script type="module" src="./aml.js"></script>
+<script>
+const zone=document.getElementById('assistant-zone');
+const violations=document.getElementById('violations');
+const receipt=document.getElementById('receipt');
+function add(text, declaration){
+  const node=document.createElement('div');
+  node.textContent=text;
+  node.style.padding='12px';
+  node.style.margin='8px 0';
+  node.style.border='1px solid #35597f';
+  node.style.borderRadius='10px';
+  if(declaration){
+    node.dataset.amlPurpose=declaration.purpose;
+    node.dataset.amlAttentionCost=String(declaration.attention);
+    node.dataset.amlRestorationValue=String(declaration.restoration);
+  }
+  zone.appendChild(node);
+}
+document.getElementById('undeclared').onclick=()=>add('AI output with no declared meaning.');
+document.getElementById('declaredSuppress').onclick=()=>add('Act now before this disappears.',{purpose:'Create urgency to increase conversion',attention:5,restoration:1});
+document.getElementById('declaredAllow').onclick=()=>add('Your export is ready.',{purpose:'Confirm export readiness',attention:1,restoration:3});
+zone.addEventListener('aml-zone-violation',()=>{
+  violations.textContent=JSON.stringify(window.__AML_ZONE_VIOLATIONS__||[],null,2);
+});
+document.addEventListener('aml-receipt',(event)=>{
+  receipt.textContent=JSON.stringify(event.detail,null,2);
+});
+</script>
+</body>
+</html>
