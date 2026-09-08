@@ -15,7 +15,7 @@
   "browser_evidence": "https://aruintelligence.github.io/aml-core/aml-browser-evidence.js",
   "browser_evidence_demo": "https://aruintelligence.github.io/aml-core/browser-evidence-demo.html",
   "verification_challenge": "https://aruintelligence.github.io/aml-core/aml-verification-challenge.js",
-  "session_attestation": "https://aruintelligence.github.io/aml-core/aml-session-attestation.js",
+  "session_attestation_module": "https://aruintelligence.github.io/aml-core/aml-session-attestation.js",
   "witness_bundle": "https://aruintelligence.github.io/aml-core/aml-witness-bundle.js",
   "attestation_producer": "https://aruintelligence.github.io/aml-core/attest-evidence.html",
   "detached_verifier": "https://aruintelligence.github.io/aml-core/detached-verifier.html",
