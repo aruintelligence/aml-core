@@ -5,17 +5,36 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ĀML Proof — Change One Number</title>
   <meta name="description" content="Change restoration value and watch AML allow or suppress the same interface element. Share the exact proof state by URL." />
+  <link rel="canonical" href="https://aruintelligence.github.io/aml-core/proof.html" />
   <style>
-    body{font-family:system-ui,-apple-system,sans-serif;max-width:860px;margin:0 auto;padding:24px;background:#07111f;color:#eef7ff;line-height:1.5}a{color:#7df9ff}section{background:#0e1b2d;border:1px solid #27415f;border-radius:16px;padding:20px;margin:18px 0}input{width:100%}button{background:#122842;color:#eef7ff;border:1px solid #35597f;border-radius:10px;padding:10px 14px;cursor:pointer}button:hover{background:#173657}code,pre{background:#06101c;border-radius:10px}pre{padding:16px;overflow:auto}.decision{font-size:2rem;font-weight:800}.allow{color:#9cffb0}.suppress{color:#ff9f9f}.muted{color:#abc0d8}.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}.actions{display:flex;gap:10px;flex-wrap:wrap}.copied{color:#9cffb0;font-weight:700}@media(max-width:640px){.row{grid-template-columns:1fr}}
+    body{font-family:system-ui,-apple-system,sans-serif;max-width:860px;margin:0 auto;padding:24px;background:#07111f;color:#eef7ff;line-height:1.5}a{color:#7df9ff}section{background:#0e1b2d;border:1px solid #27415f;border-radius:16px;padding:20px;margin:18px 0}input[type=range]{width:100%}input[type=text],select{width:100%;box-sizing:border-box;background:#06101c;color:#eef7ff;border:1px solid #35597f;border-radius:10px;padding:10px}button{background:#122842;color:#eef7ff;border:1px solid #35597f;border-radius:10px;padding:10px 14px;cursor:pointer}button:hover{background:#173657}code,pre{background:#06101c;border-radius:10px}pre{padding:16px;overflow:auto}.decision{font-size:2rem;font-weight:800}.allow{color:#9cffb0}.suppress{color:#ff9f9f}.muted{color:#abc0d8}.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}.actions{display:flex;gap:10px;flex-wrap:wrap}.copied{color:#9cffb0;font-weight:700}@media(max-width:640px){.row{grid-template-columns:1fr}body{padding:14px}}
   </style>
 </head>
 <body>
-  <h1>ĀML Proof</h1>
-  <p>Change one number. Watch the same interface element move between <strong>ALLOW</strong> and <strong>SUPPRESS</strong>.</p>
-  <p class="muted">SHIPPED prototype behavior. This demonstrates deterministic software policy evaluation; it does not claim that the scores objectively measure human cognition.</p>
+  <h1 id="title">ĀML Proof</h1>
+  <p id="intro">Change one number. Watch the same interface element move between <strong>ALLOW</strong> and <strong>SUPPRESS</strong>.</p>
+  <p id="notice" class="muted">SHIPPED prototype behavior. This demonstrates deterministic software policy evaluation; it does not claim that the scores objectively measure human cognition.</p>
 
   <section>
-    <div class="row">
+    <label id="languageLabel">Language
+      <select id="language">
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="pt-BR">Português (Brasil)</option>
+        <option value="hi">हिन्दी</option>
+        <option value="ar">العربية</option>
+        <option value="zh">中文</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+      </select>
+    </label>
+  </section>
+
+  <section>
+    <label id="purposeLabel">Declared purpose
+      <input id="purpose" type="text" maxlength="120" value="Create urgency" />
+    </label>
+    <div class="row" style="margin-top:16px">
       <label>attention_cost
         <input id="attention" type="range" min="0" max="10" step="1" value="5" />
         <strong id="attentionValue">5</strong>
@@ -36,32 +55,46 @@
   <section>
     <div id="decision" class="decision suppress">SUPPRESS</div>
     <p id="reason">restoration_value (1) &lt; attention_cost (5)</p>
-    <p>Prototype rule: <code>render_allowed = restoration_value &gt;= attention_cost</code></p>
+    <p id="ruleLine">Prototype rule: <code>render_allowed = restoration_value &gt;= attention_cost</code></p>
   </section>
 
   <section>
-    <h2>Exact AML being evaluated</h2>
+    <h2 id="sourceHeading">Exact AML being evaluated</h2>
     <pre id="source"></pre>
   </section>
 
   <section>
-    <h2>Inspectable decision</h2>
+    <h2 id="decisionHeading">Inspectable decision</h2>
     <pre id="json"></pre>
   </section>
 
   <section>
-    <h2>Shareable reproduction</h2>
-    <p>Every slider state is encoded in the URL as <code>?attention=&amp;restoration=</code>. Send the link to another person and they open the same proof state.</p>
+    <h2 id="shareHeading">Shareable reproduction</h2>
+    <p id="shareText">Language, declared purpose, and slider state are encoded in the URL. Send the link to another person and they open the same proof state.</p>
     <pre id="shareUrl"></pre>
   </section>
 
-  <p><a href="./playground.html">Open full playground</a> · <a href="./view-meaning.html">Open View Meaning</a> · <a href="./proof-card.html?attention=5&restoration=1">Open embeddable proof card</a> · <a href="https://github.com/aruintelligence/aml-core/tree/main/demos/undeniable-proof">Reproduce locally</a></p>
-  <p><strong>Witness ask:</strong> change <code>restoration_value</code>, copy the proof link, screenshot the decision, then file what happened in GitHub.</p>
+  <p><a id="playgroundLink" href="./playground.html">Open full playground</a> · <a id="meaningLink" href="./view-meaning.html">Open View Meaning</a> · <a id="cardLink" href="./proof-card.html?attention=5&restoration=1">Open embeddable proof card</a> · <a id="localLink" href="https://github.com/aruintelligence/aml-core/tree/main/demos/undeniable-proof">Reproduce locally</a></p>
+  <p id="witness"><strong>Witness ask:</strong> change <code>restoration_value</code>, copy the proof link, screenshot the decision, then file what happened in GitHub.</p>
 
   <script type="module">
     import { compileSourceBrowser } from './aml-browser.js';
+
+    const strings = {
+      en:{title:'ĀML Proof',intro:'Change one number. Watch the same interface element move between ALLOW and SUPPRESS.',notice:'SHIPPED prototype behavior. This demonstrates deterministic software policy evaluation; it does not claim that the scores objectively measure human cognition.',language:'Language',purpose:'Declared purpose',suppress:'Load SUPPRESS proof',allow:'Load ALLOW proof',copy:'Copy this exact proof link',copied:'Copied',copyFallback:'Copy the URL shown below',rule:'Prototype rule:',source:'Exact AML being evaluated',decision:'Inspectable decision',share:'Shareable reproduction',shareText:'Language, declared purpose, and slider state are encoded in the URL. Send the link to another person and they open the same proof state.',playground:'Open full playground',meaning:'Open View Meaning',card:'Open embeddable proof card',local:'Reproduce locally',witness:'Witness ask: change restoration_value, copy the proof link, screenshot the decision, then file what happened in GitHub.',defaultPurpose:'Create urgency'},
+      es:{title:'Prueba de ĀML',intro:'Cambia un número. Observa cómo el mismo elemento pasa entre ALLOW y SUPPRESS.',notice:'Comportamiento de prototipo SHIPPED. Demuestra evaluación determinista de software; no afirma que las puntuaciones midan objetivamente la cognición humana.',language:'Idioma',purpose:'Propósito declarado',suppress:'Cargar prueba SUPPRESS',allow:'Cargar prueba ALLOW',copy:'Copiar este enlace exacto',copied:'Copiado',copyFallback:'Copia la URL mostrada abajo',rule:'Regla del prototipo:',source:'ĀML exacto evaluado',decision:'Decisión inspeccionable',share:'Reproducción compartible',shareText:'El idioma, el propósito declarado y los valores se codifican en la URL. Otra persona puede abrir exactamente el mismo estado.',playground:'Abrir playground completo',meaning:'Abrir View Meaning',card:'Abrir tarjeta de prueba',local:'Reproducir localmente',witness:'Petición de testigo: cambia restoration_value, copia el enlace, captura la decisión y registra lo ocurrido en GitHub.',defaultPurpose:'Crear urgencia'},
+      'pt-BR':{title:'Prova do ĀML',intro:'Mude um número. Veja o mesmo elemento alternar entre ALLOW e SUPPRESS.',notice:'Comportamento de protótipo SHIPPED. Demonstra avaliação determinística de software; não afirma que as pontuações meçam objetivamente a cognição humana.',language:'Idioma',purpose:'Finalidade declarada',suppress:'Carregar prova SUPPRESS',allow:'Carregar prova ALLOW',copy:'Copiar este link exato',copied:'Copiado',copyFallback:'Copie a URL mostrada abaixo',rule:'Regra do protótipo:',source:'ĀML exato em avaliação',decision:'Decisão inspecionável',share:'Reprodução compartilhável',shareText:'Idioma, finalidade declarada e valores ficam codificados na URL para outra pessoa abrir o mesmo estado.',playground:'Abrir playground completo',meaning:'Abrir View Meaning',card:'Abrir cartão de prova',local:'Reproduzir localmente',witness:'Pedido de testemunho: altere restoration_value, copie o link, capture a decisão e registre o resultado no GitHub.',defaultPurpose:'Criar urgência'},
+      hi:{title:'ĀML प्रमाण',intro:'एक संख्या बदलें। उसी इंटरफ़ेस तत्व को ALLOW और SUPPRESS के बीच बदलते देखें।',notice:'SHIPPED प्रोटोटाइप व्यवहार। यह निर्धारक सॉफ़्टवेयर नीति मूल्यांकन दिखाता है; यह दावा नहीं करता कि स्कोर मानव संज्ञान को वस्तुनिष्ठ रूप से मापते हैं।',language:'भाषा',purpose:'घोषित उद्देश्य',suppress:'SUPPRESS प्रमाण लोड करें',allow:'ALLOW प्रमाण लोड करें',copy:'यह सटीक प्रमाण लिंक कॉपी करें',copied:'कॉपी किया गया',copyFallback:'नीचे दिया URL कॉपी करें',rule:'प्रोटोटाइप नियम:',source:'मूल्यांकित किया जा रहा सटीक ĀML',decision:'जाँच योग्य निर्णय',share:'साझा करने योग्य पुनरुत्पादन',shareText:'भाषा, घोषित उद्देश्य और मान URL में संग्रहीत हैं ताकि दूसरा व्यक्ति वही अवस्था खोल सके।',playground:'पूरा playground खोलें',meaning:'View Meaning खोलें',card:'प्रमाण कार्ड खोलें',local:'स्थानीय रूप से पुनरुत्पादित करें',witness:'गवाह अनुरोध: restoration_value बदलें, लिंक कॉपी करें, निर्णय का स्क्रीनशॉट लें और GitHub में परिणाम दर्ज करें।',defaultPurpose:'तात्कालिकता बनाना'},
+      ar:{title:'إثبات ĀML',intro:'غيّر رقماً واحداً وشاهد العنصر نفسه ينتقل بين ALLOW وSUPPRESS.',notice:'سلوك نموذج أولي SHIPPED. يوضح تقييماً برمجياً حتمياً ولا يدّعي أن الدرجات تقيس الإدراك البشري قياساً موضوعياً.',language:'اللغة',purpose:'الغرض المعلن',suppress:'تحميل حالة SUPPRESS',allow:'تحميل حالة ALLOW',copy:'نسخ رابط الإثبات الدقيق',copied:'تم النسخ',copyFallback:'انسخ الرابط الظاهر أدناه',rule:'قاعدة النموذج الأولي:',source:'ĀML الدقيق الذي يتم تقييمه',decision:'قرار قابل للفحص',share:'إعادة إنتاج قابلة للمشاركة',shareText:'تُحفظ اللغة والغرض المعلن والقيم في الرابط حتى يفتح شخص آخر الحالة نفسها.',playground:'فتح ساحة التجربة الكاملة',meaning:'فتح View Meaning',card:'فتح بطاقة الإثبات',local:'إعادة الإنتاج محلياً',witness:'طلب الشاهد: غيّر restoration_value، انسخ الرابط، التقط صورة للقرار، ثم سجّل ما حدث في GitHub.',defaultPurpose:'إنشاء الإلحاح'},
+      zh:{title:'ĀML 证明',intro:'修改一个数值，观察同一界面元素在 ALLOW 与 SUPPRESS 之间切换。',notice:'SHIPPED 原型行为。它展示确定性的软件策略评估；并不声称这些分数客观测量人类认知。',language:'语言',purpose:'声明的目的',suppress:'加载 SUPPRESS 证明',allow:'加载 ALLOW 证明',copy:'复制此精确证明链接',copied:'已复制',copyFallback:'复制下方 URL',rule:'原型规则：',source:'正在评估的精确 ĀML',decision:'可检查的决策',share:'可分享的复现',shareText:'语言、声明目的和数值都编码在 URL 中，其他人可以打开同一证明状态。',playground:'打开完整 playground',meaning:'打开 View Meaning',card:'打开证明卡片',local:'本地复现',witness:'见证请求：修改 restoration_value，复制证明链接，截取决策结果，并在 GitHub 记录发生的情况。',defaultPurpose:'制造紧迫感'},
+      fr:{title:'Preuve ĀML',intro:'Modifiez un nombre. Regardez le même élément passer entre ALLOW et SUPPRESS.',notice:'Comportement de prototype SHIPPED. Il démontre une évaluation logicielle déterministe sans prétendre que les scores mesurent objectivement la cognition humaine.',language:'Langue',purpose:'Objectif déclaré',suppress:'Charger la preuve SUPPRESS',allow:'Charger la preuve ALLOW',copy:'Copier ce lien de preuve exact',copied:'Copié',copyFallback:'Copiez l’URL affichée ci-dessous',rule:'Règle du prototype :',source:'ĀML exact évalué',decision:'Décision inspectable',share:'Reproduction partageable',shareText:'La langue, l’objectif déclaré et les valeurs sont encodés dans l’URL pour qu’une autre personne ouvre exactement le même état.',playground:'Ouvrir le playground complet',meaning:'Ouvrir View Meaning',card:'Ouvrir la carte de preuve',local:'Reproduire localement',witness:'Demande de témoin : modifiez restoration_value, copiez le lien, capturez la décision et consignez le résultat sur GitHub.',defaultPurpose:'Créer un sentiment d’urgence'},
+      de:{title:'ĀML-Beweis',intro:'Ändere eine Zahl. Beobachte, wie dasselbe Interface-Element zwischen ALLOW und SUPPRESS wechselt.',notice:'SHIPPED-Prototypverhalten. Es zeigt deterministische Software-Policy-Auswertung und behauptet nicht, dass die Werte menschliche Kognition objektiv messen.',language:'Sprache',purpose:'Deklarierter Zweck',suppress:'SUPPRESS-Beweis laden',allow:'ALLOW-Beweis laden',copy:'Diesen exakten Beweislink kopieren',copied:'Kopiert',copyFallback:'Kopiere die unten angezeigte URL',rule:'Prototypregel:',source:'Exaktes ausgewertetes ĀML',decision:'Prüfbare Entscheidung',share:'Teilbare Reproduktion',shareText:'Sprache, deklarierter Zweck und Werte werden in der URL gespeichert, damit eine andere Person denselben Zustand öffnen kann.',playground:'Vollständiges Playground öffnen',meaning:'View Meaning öffnen',card:'Beweiskarte öffnen',local:'Lokal reproduzieren',witness:'Witness-Aufruf: restoration_value ändern, Beweislink kopieren, Entscheidung aufnehmen und das Ergebnis auf GitHub melden.',defaultPurpose:'Dringlichkeit erzeugen'}
+    };
+
     const attention = document.getElementById('attention');
     const restoration = document.getElementById('restoration');
+    const purpose = document.getElementById('purpose');
+    const language = document.getElementById('language');
     const av = document.getElementById('attentionValue');
     const rv = document.getElementById('restorationValue');
     const decision = document.getElementById('decision');
@@ -76,23 +109,61 @@
       return Number.isFinite(parsed) ? Math.min(10, Math.max(0, parsed)) : fallback;
     }
 
+    function boundedText(value, fallback){
+      const text = String(value ?? '').trim();
+      return (text || fallback).slice(0, 120);
+    }
+
     const params = new URLSearchParams(location.search);
+    const requestedLang = params.get('lang');
+    language.value = strings[requestedLang] ? requestedLang : 'en';
     attention.value = boundedNumber(params.get('attention'), 5);
     restoration.value = boundedNumber(params.get('restoration'), 1);
+    purpose.value = boundedText(params.get('purpose'), strings[language.value].defaultPurpose);
+
+    function applyLanguage(){
+      const lang = language.value;
+      const t = strings[lang] || strings.en;
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      document.getElementById('title').textContent = t.title;
+      document.getElementById('intro').textContent = t.intro;
+      document.getElementById('notice').textContent = t.notice;
+      document.getElementById('languageLabel').childNodes[0].nodeValue = t.language + '\n      ';
+      document.getElementById('purposeLabel').childNodes[0].nodeValue = t.purpose + '\n      ';
+      document.getElementById('presetSuppress').textContent = t.suppress;
+      document.getElementById('presetAllow').textContent = t.allow;
+      document.getElementById('copyLink').textContent = t.copy;
+      document.getElementById('ruleLine').firstChild.nodeValue = t.rule + ' ';
+      document.getElementById('sourceHeading').textContent = t.source;
+      document.getElementById('decisionHeading').textContent = t.decision;
+      document.getElementById('shareHeading').textContent = t.share;
+      document.getElementById('shareText').textContent = t.shareText;
+      document.getElementById('playgroundLink').textContent = t.playground;
+      document.getElementById('meaningLink').textContent = t.meaning;
+      document.getElementById('cardLink').textContent = t.card;
+      document.getElementById('localLink').textContent = t.local;
+      document.getElementById('witness').textContent = t.witness;
+    }
 
     function currentUrl(a, r){
       const url = new URL(location.href);
       url.searchParams.set('attention', String(a));
       url.searchParams.set('restoration', String(r));
+      url.searchParams.set('lang', language.value);
+      url.searchParams.set('purpose', purpose.value);
       return url.toString();
     }
 
     function render(){
+      applyLanguage();
       const a = Number(attention.value);
       const r = Number(restoration.value);
+      const declaredPurpose = boundedText(purpose.value, strings[language.value].defaultPurpose);
+      purpose.value = declaredPurpose;
       av.textContent = a;
       rv.textContent = r;
-      const source = `transmission "proof" {\n  message "pressure" {\n    purpose: "Create urgency"\n    content: "Act now"\n    attention_cost: ${a}\n    restoration_value: ${r}\n  }\n}\n`;
+      const source = `transmission "proof" {\n  message "example" {\n    purpose: ${JSON.stringify(declaredPurpose)}\n    content: "Act now"\n    attention_cost: ${a}\n    restoration_value: ${r}\n  }\n}\n`;
       const result = compileSourceBrowser(source);
       const row = result.renderDecisions[0];
       const allowed = row.render_allowed;
@@ -101,6 +172,7 @@
       reason.textContent = `restoration_value (${r}) ${allowed ? '>=' : '<'} attention_cost (${a})`;
       sourceEl.textContent = source;
       jsonEl.textContent = JSON.stringify({
+        purpose: declaredPurpose,
         attention_cost: row.attention_cost,
         restoration_value: row.restoration_value,
         render_allowed: row.render_allowed,
@@ -109,6 +181,11 @@
       const link = currentUrl(a, r);
       shareUrl.textContent = link;
       history.replaceState(null, '', link);
+      const card = new URL('./proof-card.html', location.href);
+      card.searchParams.set('attention', String(a));
+      card.searchParams.set('restoration', String(r));
+      card.searchParams.set('lang', language.value);
+      document.getElementById('cardLink').href = card.toString();
       copyStatus.textContent = '';
     }
 
@@ -116,16 +193,23 @@
     document.getElementById('presetAllow').addEventListener('click', () => { attention.value = 5; restoration.value = 5; render(); });
     document.getElementById('copyLink').addEventListener('click', async () => {
       const link = shareUrl.textContent;
+      const t = strings[language.value] || strings.en;
       try {
         await navigator.clipboard.writeText(link);
-        copyStatus.textContent = 'Copied';
+        copyStatus.textContent = t.copied;
         copyStatus.className = 'copied';
       } catch {
-        copyStatus.textContent = 'Copy the URL shown below';
+        copyStatus.textContent = t.copyFallback;
       }
     });
     attention.addEventListener('input', render);
     restoration.addEventListener('input', render);
+    purpose.addEventListener('input', render);
+    language.addEventListener('change', () => {
+      const previousDefault = Object.values(strings).some(t => t.defaultPurpose === purpose.value);
+      if (previousDefault) purpose.value = strings[language.value].defaultPurpose;
+      render();
+    });
     render();
   </script>
 </body>
