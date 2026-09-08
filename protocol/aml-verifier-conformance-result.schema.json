@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-verifier-conformance-result.schema.json",
+  "title": "AML Verifier Conformance Result",
+  "type": "object",
+  "required": ["schema", "prototype", "command", "passed", "results", "claim_boundary"],
+  "properties": {
+    "schema": { "const": "aml-verifier-conformance-result/1" },
+    "prototype": { "const": true },
+    "command": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "passed": { "type": "boolean" },
+    "results": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["id", "expected_valid", "passed", "observed"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "expected_valid": { "type": "boolean" },
+          "passed": { "type": "boolean" },
+          "observed": {
+            "type": "object",
+            "required": ["exit_code", "valid", "reason"],
+            "properties": {
+              "exit_code": { "type": ["integer", "null"] },
+              "valid": { "type": ["boolean", "null"] },
+              "reason": { "type": ["string", "null"] },
+              "stdout": { "type": "string" },
+              "stderr": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "claim_boundary": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}
