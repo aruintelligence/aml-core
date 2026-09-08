@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-browser-evidence.schema.json",
+  "title": "AML Browser Evidence",
+  "description": "Reference prototype schema binding a sealed browser AML receipt and strict-zone violations into one tamper-evident local evidence packet.",
+  "type": "object",
+  "required": ["schema", "prototype", "revision", "url", "generated_at", "receipt", "zone_violations", "integrity"],
+  "properties": {
+    "schema": { "const": "aml-browser-evidence/1" },
+    "prototype": { "const": true },
+    "revision": { "type": "integer", "minimum": 1 },
+    "url": { "type": "string" },
+    "generated_at": { "type": "string" },
+    "receipt": { "type": "object" },
+    "zone_violations": {
+      "type": "array",
+      "maxItems": 100,
+      "items": { "type": "object" }
+    },
+    "integrity": {
+      "type": "object",
+      "required": ["schema", "algorithm", "canonicalization", "value"],
+      "properties": {
+        "schema": { "const": "aml-integrity/1" },
+        "algorithm": { "const": "SHA-256" },
+        "canonicalization": { "const": "sorted-json-v1" },
+        "value": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    }
+  }
+}
