@@ -1,6 +1,6 @@
 {
   "language": "ĀML — ĀRU Meaning Language",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "status": "research-prototype",
   "entry_points": {
     "cli": "bin/aml.js",
@@ -18,19 +18,10 @@
     "html_output": true,
     "render_decisions": true,
     "pure_in_memory_compile": true,
-    "reproducible_timestamp_option": true,
-    "sha256_build_manifest": true,
     "machine_intent_to_aml": true,
-    "accountable_intent_execution": true
-  },
-  "language_features": {
-    "blocks": true,
-    "properties": true,
-    "string_values": true,
-    "numeric_values": true,
-    "identifier_values": true,
-    "single_binary_comparison_properties": true,
-    "comparison_operators": [">", ">=", "<", "<=", "=", "==", "!="]
+    "accountable_intent_execution": true,
+    "semantic_diff": true,
+    "policy_diff": true
   },
   "policy": {
     "default_engine": "restorative_v1",
@@ -38,27 +29,36 @@
     "custom_policy_functions": true,
     "policy_composition": true,
     "policy_profiles": true,
-    "builtin_profiles": ["calm_default", "strict_attention", "privacy_first"],
+    "signed_data_only_policy_packs": true,
+    "policy_pack_ed25519_attestation": true,
+    "builtin_profiles": ["calm_default", "strict_attention", "privacy_first", "accessibility_first", "human_first"],
     "builtin_policies": [
       "restorative_v1",
       "attention_conservative_v1",
       "consent_guard_v1",
       "privacy_guard_v1",
-      "session_attention_budget_v1"
+      "session_attention_budget_v1",
+      "reduced_motion_v1",
+      "contrast_safety_v1",
+      "cognitive_load_guard_v1"
     ],
     "counterfactual_policy_simulation": true,
     "runtime_context": true,
     "runtime_consent": true,
     "runtime_privacy_consent": true,
+    "reduced_motion_context": true,
+    "high_contrast_context": true,
+    "max_cognitive_load_context": true,
     "session_attention_budget": true,
-    "declared_attention_cost": true,
-    "declared_restoration_value": true,
-    "allow_suppress_decision": true,
-    "decision_json_schema": "schema/render-decision.schema.json"
+    "cumulative_attention_accounting": true
   },
   "accountability": {
     "execution_receipts": true,
     "execution_receipt_schema": "schema/execution-receipt.schema.json",
+    "runtime_audit_stream": true,
+    "sha256_hash_chained_audit_entries": true,
+    "attention_ledger": true,
+    "cumulative_budget_enforcement": true,
     "intent_hash": true,
     "generated_aml_hash": true,
     "policy_simulation_hash": true,
@@ -72,13 +72,21 @@
     "ed25519_build_attestation": true,
     "embedded_public_key_fingerprint": true,
     "manifest_tamper_detection": true,
-    "execution_receipt_tamper_detection": true
+    "execution_receipt_tamper_detection": true,
+    "policy_pack_tamper_detection": true,
+    "audit_stream_tamper_detection": true
   },
   "tooling": {
     "compile": true,
     "generate_from_intent": true,
     "execute_accountable_intent": true,
     "verify_execution_receipt": true,
+    "semantic_diff": true,
+    "policy_diff": true,
+    "sign_policy_pack": true,
+    "verify_policy_pack": true,
+    "verify_runtime_audit_stream": true,
+    "cumulative_attention_accounting": true,
     "simulate_policies": true,
     "list_policies": true,
     "list_policy_profiles": true,
@@ -88,6 +96,7 @@
     "lint": true,
     "verify": true,
     "benchmark": true,
+    "local_markdown_link_integrity_check": true,
     "browser_playground": true,
     "vscode_language_definition": true,
     "language_intelligence_api": true,
@@ -100,33 +109,29 @@
     "ci": true,
     "unit_tests": true,
     "example_suite": true,
+    "local_documentation_link_test": true,
     "canonical_allow_fixture": "conformance/allow.aml",
     "canonical_suppress_fixture": "conformance/suppress.aml",
     "browser_core_parity": true,
     "reproducible_build_test": true,
     "semantic_diagnostic_tests": true,
-    "editor_asset_tests": true,
     "build_manifest_hash_verification": true,
     "post_build_tamper_detection": true,
-    "cli_bundle_verification": true,
-    "language_service_tests": true,
-    "lsp_core_tests": true,
-    "policy_engine_tests": true,
-    "policy_profile_tests": true,
-    "policy_composition_tests": true,
-    "intent_compiler_tests": true,
-    "build_attestation_tests": true,
     "execution_receipt_tests": true,
     "signed_execution_receipt_tests": true,
-    "counterfactual_policy_tests": true,
-    "privacy_policy_tests": true,
-    "session_attention_budget_tests": true
+    "policy_pack_signature_tests": true,
+    "semantic_diff_tests": true,
+    "policy_diff_tests": true,
+    "runtime_audit_stream_tests": true,
+    "cumulative_attention_tests": true,
+    "accessibility_policy_tests": true
   },
   "diagnostics": ["AML001", "AML002", "AML003", "AML004", "AML005", "AML_PARSE"],
   "non_claims": [
     "No claim that current scores objectively measure human attention.",
     "No claim that current scores objectively measure restoration or wellbeing.",
     "No claim that the prototype constitutes a universal ethical standard.",
-    "Execution receipts prove binding and integrity of recorded artifacts, not the moral correctness of a policy or truthfulness of declared intent."
+    "Accessibility policies do not replace WCAG conformance or assistive-technology testing.",
+    "Cryptographic signatures prove integrity and key possession, not moral correctness or institutional trustworthiness."
   ]
 }
