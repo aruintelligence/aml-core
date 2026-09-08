@@ -3,8 +3,8 @@
 
 import { executeAccountableIntent, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { compileSource } from "../compiler/compiler.js";
+import { buildProvenanceGraph, verifyProvenanceGraph } from "../compiler/provenanceGraph.js";
 import { auditAccessibilityTree } from "./accessibilityAudit.js";
-import { buildProvenanceGraph, verifyProvenanceGraph } from "./provenanceGraph.js";
 
 export function createInterfaceFirewall(options = {}) {
   const profile = options.profile || "human_first";
