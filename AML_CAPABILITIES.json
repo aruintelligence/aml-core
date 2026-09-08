@@ -25,6 +25,7 @@
   },
   "policy": {
     "default_engine": "restorative_v1",
+    "decision_json_schema": "schema/render-decision.schema.json",
     "pluggable_policy_engines": true,
     "custom_policy_functions": true,
     "policy_composition": true,
