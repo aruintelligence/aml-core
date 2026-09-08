@@ -11,10 +11,15 @@ export function evaluatePullRequestChange(beforeSource, afterSource, options = {
     timestamp: options.timestamp
   });
 
-  const highRisk = (semantic.changes || []).filter(change => change.risk === "high" || change.risk_level === "high");
-  const policyRegressions = (policy.changed || policy.changes || []).filter(change => {
-    const before = change.before?.render_allowed ?? change.before_allowed;
-    const after = change.after?.render_allowed ?? change.after_allowed;
+  const highRisk = [
+    ...(semantic.changed || []),
+    ...(semantic.added || []),
+    ...(semantic.removed || [])
+  ].filter(change => change.risk === "high");
+
+  const policyRegressions = (policy.changes || []).filter(change => {
+    const before = change.left?.render_allowed;
+    const after = change.right?.render_allowed;
     return before === true && after === false;
   });
 
