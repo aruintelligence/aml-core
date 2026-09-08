@@ -13,11 +13,10 @@ import { generateHTML } from "./htmlGenerator.js";
 /**
  * Compile AML source text entirely in memory.
  *
- * This is the portable compiler core: no filesystem reads or writes.
- * Consumers can use it in servers, editors, test harnesses, and future
- * browser-compatible bundles.
+ * options.timestamp can be set to an ISO timestamp to make accountability
+ * artifacts reproducible across runs.
  */
-export function compileSource(source) {
+export function compileSource(source, options = {}) {
   if (typeof source !== "string") {
     throw new TypeError("ĀML source must be a string.");
   }
@@ -25,7 +24,7 @@ export function compileSource(source) {
   const tokens = tokenize(source);
   const ast = parse(tokens);
   const amt = buildAMT(ast);
-  const renderDecisions = evaluateRenderDecisions(amt);
+  const renderDecisions = evaluateRenderDecisions(amt, options);
   const html = generateHTML(amt, renderDecisions);
 
   return {
@@ -40,9 +39,9 @@ export function compileSource(source) {
 /**
  * Compile an AML file and emit browser + accountability artifacts.
  */
-export function compileAML(inputPath, outputDir = "dist") {
+export function compileAML(inputPath, outputDir = "dist", options = {}) {
   const source = fs.readFileSync(inputPath, "utf8");
-  const compiled = compileSource(source);
+  const compiled = compileSource(source, options);
 
   fs.mkdirSync(outputDir, { recursive: true });
 
