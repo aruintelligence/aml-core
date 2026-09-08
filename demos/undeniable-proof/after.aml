@@ -1,0 +1,16 @@
+transmission "checkout_pressure" {
+  message "countdown_pressure" {
+    purpose: "Increase urgency during checkout"
+    content: "Your offer expires in 04:59."
+    attention_cost: 5
+    restoration_value: 1
+    consent_required: false
+  }
+
+  message "purchase_action" {
+    purpose: "Let the user complete the purchase"
+    content: "Buy now"
+    attention_cost: 1
+    restoration_value: 2
+  }
+}
