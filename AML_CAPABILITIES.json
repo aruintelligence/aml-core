@@ -9,6 +9,7 @@
     "browser": "docs/aml-browser.js",
     "playground": "https://aruintelligence.github.io/aml-core/playground.html",
     "view_meaning": "https://aruintelligence.github.io/aml-core/view-meaning.html",
+    "official_aml": "https://aruintelligence.github.io/aml-core/official-aml.html",
     "vscode": "editors/vscode/package.json",
     "react_adapter": "adapters/react.js",
     "meaning_gate_action": "actions/meaning-gate/action.yml"
@@ -36,7 +37,13 @@
     "browser_view_meaning_inspector": true,
     "semantic_pull_request_gate": true,
     "reusable_github_action": true,
-    "existing_app_adoption_without_aml_source_rewrite": true
+    "existing_app_adoption_without_aml_source_rewrite": true,
+    "plain_js_starter": true,
+    "react_starter": true,
+    "nextjs_starter": true,
+    "zero_install_browser_entry": true,
+    "official_licensing_landing_page": true,
+    "ninety_day_adoption_plan": true
   },
   "policy": {
     "default_engine": "restorative_v1",
@@ -106,7 +113,57 @@
     "render_decision_hash": true,
     "output_hash": true,
     "receipt_hash": true,
-    "ed25519_execution_receipt_attestation": true
+    "ed25519_execution_receipt_attestation": true,
+    "proof_carrying_interfaces": true,
+    "proof_carrying_interface_schema": "schema/proof-carrying-interface.schema.json"
+  },
+  "interoperability": {
+    "capability_negotiation": true,
+    "wire_protocol": "aml-wire/1",
+    "wire_version": "1.0",
+    "wire_envelope_schema": "schema/wire-envelope.schema.json",
+    "wire_replay_protection": true,
+    "portable_policy_passports": true,
+    "policy_passport_schema": "schema/policy-passport.schema.json",
+    "content_addressed_bundles": true,
+    "selective_disclosure_commitments": true,
+    "federated_exchange": true,
+    "causal_execution_graphs": true,
+    "protocol_discovery": "protocol/discovery.json",
+    "protocol_registry": "protocol/registry.json",
+    "golden_protocol_vectors": "protocol/test-vectors.json",
+    "canonical_json": true
+  },
+  "trust_fabric": {
+    "trust_delegation": true,
+    "delegation_chain_verification": true,
+    "threshold_authorization": true,
+    "bounded_capability_tokens": true,
+    "capability_token_schema": "schema/capability-token.schema.json",
+    "append_only_transparency_log": true,
+    "revocation_registry": true,
+    "proof_carrying_interface_binding": true,
+    "replay_resistant_wire_envelopes": true
+  },
+  "conformance": {
+    "manifest": "conformance/manifest.json",
+    "levels": "conformance/levels.json",
+    "machine_verifiable_claims": true,
+    "levels_supported": ["core", "accountable", "federated", "verifiable", "governed"],
+    "official_brand_separate_from_technical_conformance": true
+  },
+  "official_brand_authority": {
+    "software_license_separate_from_brand_rights": true,
+    "official_marks_registry": "OFFICIAL_MARKS.json",
+    "public_authorization_index": "OFFICIAL_AUTHORIZATIONS.json",
+    "trademark_policy": "TRADEMARKS.md",
+    "commercial_program": "COMMERCIAL.md",
+    "commercial_contact": "Office@aruintelligence.com",
+    "signed_brand_authorization_credentials": true,
+    "brand_authorization_schema": "schema/brand-authorization.schema.json",
+    "brand_authorization_rfc": "rfcs/0011-official-brand-authorization.md",
+    "brand_authorization_revocable": true,
+    "registration_claims_without_verified_record": false
   },
   "integrity": {
     "sha256_build_manifest": true,
@@ -120,7 +177,10 @@
     "attention_ledger_accounting_tamper_detection": true,
     "consent_ledger_tamper_detection": true,
     "provenance_graph_binding": true,
-    "merkle_inclusion_verification": true
+    "merkle_inclusion_verification": true,
+    "brand_authorization_tamper_detection": true,
+    "brand_authorization_expiry": true,
+    "brand_authorization_revocation": true
   },
   "tooling": {
     "compile": true,
@@ -138,6 +198,8 @@
     "policy_consensus": true,
     "sign_policy_pack": true,
     "verify_policy_pack": true,
+    "sign_brand_authorization": true,
+    "verify_brand_authorization": true,
     "verify_runtime_audit_stream": true,
     "sign_runtime_audit_checkpoint": true,
     "verify_runtime_audit_checkpoint": true,
@@ -202,7 +264,20 @@
     "interface_firewall_tests": true,
     "react_adapter_tests": true,
     "view_meaning_tests": true,
-    "semantic_pr_gate_tests": true
+    "semantic_pr_gate_tests": true,
+    "interoperability_tests": true,
+    "federated_exchange_tests": true,
+    "causal_graph_tests": true,
+    "canonical_serialization_vectors": true,
+    "trust_delegation_tests": true,
+    "threshold_authorization_tests": true,
+    "capability_token_tests": true,
+    "replay_protection_tests": true,
+    "revocation_registry_tests": true,
+    "proof_carrying_interface_tests": true,
+    "brand_authorization_tests": true,
+    "brand_authorization_cli_test": true,
+    "official_mark_status_guard_test": true
   },
   "diagnostics": ["AML001", "AML002", "AML003", "AML004", "AML005", "AML_PARSE"],
   "non_claims": [
@@ -211,6 +286,9 @@
     "No claim that the prototype constitutes a universal ethical standard.",
     "Accessibility policies and audits do not replace WCAG conformance or assistive-technology testing.",
     "Cryptographic signatures prove integrity and key possession, not moral correctness or institutional trustworthiness.",
-    "Merkle inclusion proofs prove membership in a committed batch, not truthfulness of the underlying receipt content."
+    "Merkle inclusion proofs prove membership in a committed batch, not truthfulness of the underlying receipt content.",
+    "Technical conformance does not by itself imply official AML authorization, endorsement, certification, partnership, or trademark rights.",
+    "A signed AML brand-authorization credential is evidence of the represented signed scope and does not replace the underlying legal agreement.",
+    "No mark is represented as federally registered unless a verified registration record is explicitly published."
   ]
 }
