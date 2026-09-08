@@ -2,7 +2,9 @@ export { compileAML, compileSource } from "./compiler/compiler.js";
 export { generateAMLFromIntent } from "./compiler/intentCompiler.js";
 export { simulatePolicies } from "./compiler/policySimulator.js";
 export { semanticDiff } from "./compiler/semanticDiff.js";
+export { semanticRiskDiff } from "./compiler/semanticRisk.js";
 export { policyDiff } from "./compiler/policyDiff.js";
+export { policyMatrix } from "./compiler/policyMatrix.js";
 export { executeAccountableIntent, verifyExecutionReceipt, signExecutionReceipt, verifySignedExecutionReceipt } from "./compiler/accountablePipeline.js";
 export { analyzeAMT } from "./compiler/diagnostics.js";
 export { explainCompilation } from "./compiler/explain.js";
@@ -14,5 +16,8 @@ export { BUILTIN_POLICY_PROFILES, resolvePolicyProfile, listPolicyProfiles } fro
 export { composePolicies, policyFromProfile } from "./runtime/policyComposition.js";
 export { normalizePolicyPack, hashPolicyPack, signPolicyPack, verifySignedPolicyPack } from "./runtime/policyPack.js";
 export { createAuditStream, appendAuditEvent, verifyAuditStream } from "./runtime/auditStream.js";
+export { signAuditCheckpoint, verifyAuditCheckpoint } from "./runtime/auditAttestation.js";
 export { createAttentionLedger, consumeAttention, accountRenderDecisions, enforceCumulativeAttentionBudget, attentionContext } from "./runtime/attentionLedger.js";
+export { verifyAttentionLedger, attentionLedgerSummary } from "./runtime/attentionIntegrity.js";
+export { auditAccessibilityNode, auditAccessibilityTree } from "./runtime/accessibilityAudit.js";
 export { getCompletionItems, getHoverInfo, getLanguageCatalog } from "./tooling/languageService.js";
