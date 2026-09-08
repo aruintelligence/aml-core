@@ -5,8 +5,7 @@
 [![CI](https://github.com/aruintelligence/aml-core/actions/workflows/ci.yml/badge.svg)](https://github.com/aruintelligence/aml-core/actions/workflows/ci.yml)
 [![Playground](https://img.shields.io/badge/OPEN-AML_PLAYGROUND-7df9ff?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/playground.html)
 [![Live Lab](https://img.shields.io/badge/OPEN-LIVE_LAB-a994ff?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/)
-[![Release](https://img.shields.io/badge/RELEASE-v1.1.0-f2ce72?style=for-the-badge&labelColor=07111f)](https://github.com/aruintelligence/aml-core/releases/tag/v1.1.0)
-[![Development](https://img.shields.io/badge/NEXT-v1.2.0--dev-ff9e64?style=for-the-badge&labelColor=07111f)](CHANGELOG.md)
+[![Release](https://img.shields.io/badge/RELEASE-v1.2.0-f2ce72?style=for-the-badge&labelColor=07111f)](https://github.com/aruintelligence/aml-core/releases/tag/v1.2.0)
 [![License: MIT](https://img.shields.io/badge/CODE-MIT-9cffb0?style=for-the-badge&labelColor=07111f)](LICENSE)
 
 **ĀML is a working research prototype for meaning-native, policy-aware, accountable interfaces.** It compiles semantic intent into browser-compatible output while preserving inspectable records of the decisions made before rendering.
@@ -15,9 +14,9 @@
 
 [**Launch the browser playground →**](https://aruintelligence.github.io/aml-core/playground.html)
 
-## The v1.2 breakthrough direction
+## ĀML Core v1.2.0 — Accountable AI Execution
 
-ĀML is evolving beyond a markup/compiler experiment into a boundary between **machine-generated intent** and **human-facing output**.
+ĀML has evolved beyond a markup/compiler experiment into an experimental boundary between **machine-generated intent** and **human-facing output**.
 
 ```mermaid
 flowchart LR
@@ -55,7 +54,7 @@ The AI proposes. The policy layer evaluates. The compiler records. The receipt b
 - Runtime context passed into policy decisions
 - `ĀML Accountable Execution Receipt`
 - SHA-256 binding of intent, AML source, simulation results, decisions, and output
-- Execution receipt JSON Schema
+- Execution Receipt JSON Schema
 - Receipt mutation detection
 - Optional **Ed25519-signed execution receipts**
 
@@ -125,7 +124,7 @@ aml verify-attestation
 Example accountable flow:
 
 ```bash
-node bin/aml.js execute intent.json privacy_first context.json receipt.json
+node bin/aml.js execute examples/intent-checkout.json privacy_first context.json receipt.json
 node bin/aml.js verify-receipt receipt.json
 node bin/aml.js sign-receipt receipt.json private-key.pem signed-receipt.json
 node bin/aml.js verify-signed-receipt signed-receipt.json
@@ -189,10 +188,10 @@ The v1.2 execution layer adds a second proof object: the accountable execution r
 | [Accountable AI Pipeline](docs/ACCOUNTABLE_AI_PIPELINE.md) | Understand intent → policy → receipt architecture |
 | [Policy Profiles](docs/POLICY_PROFILES.md) | User/org-owned policy composition |
 | [Quickstart](QUICKSTART.md) | Clone, test, compile, validate, lint, inspect |
-| [JavaScript API](docs/API.md) | Import compiler, gate, diagnostics, policy, and receipt APIs |
+| [JavaScript API](API.md) | Import compiler, gate, diagnostics, policy, and receipt APIs |
 | [Language Server](docs/LANGUAGE_SERVER.md) | LSP completion, hover, and diagnostics |
 | [VS Code support](editors/vscode/README.md) | `.aml` file recognition and syntax highlighting |
-| [Capabilities](AML_CAPABILITIES.json) | Machine-readable v1.2 development feature discovery |
+| [Capabilities](AML_CAPABILITIES.json) | Machine-readable v1.2 feature discovery |
 
 ## Reproduce and challenge it
 
@@ -200,6 +199,7 @@ The v1.2 execution layer adds a second proof object: the accountable execution r
 |---|---|
 | [Independent replication protocol](REPLICATION.md) | Reproduce compiler behavior independently |
 | [Conformance manifest](CONFORMANCE.json) | Machine-readable fixture contract |
+| [Canonical conformance fixture inventory](conformance/manifest.json) | Exact executable fixture list |
 | [Render Decision Protocol](docs/RENDER_DECISION_PROTOCOL.md) | Decision artifact semantics |
 | [Render Decision JSON Schema](schema/render-decision.schema.json) | Validate render decisions |
 | [Execution Receipt JSON Schema](schema/execution-receipt.schema.json) | Validate accountable execution receipts |
@@ -220,6 +220,22 @@ The v1.2 execution layer adds a second proof object: the accountable execution r
 - semantic diagnostics
 - dependency-free `aml-lsp` stdio language server
 - LSP transport smoke tests
+
+## Repository quality gates
+
+Every push and pull request runs automated verification for:
+
+- local Markdown link integrity
+- unit and integration tests
+- CLI compilation
+- build-manifest integrity
+- in-memory validation
+- semantic lint
+- explanation output
+- inspectable decision output
+- benchmark harness execution
+
+Broken local documentation links now fail CI instead of silently shipping as GitHub 404s.
 
 ## What ĀML proves — and what it does not
 
