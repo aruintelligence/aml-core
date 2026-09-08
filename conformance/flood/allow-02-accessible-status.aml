@@ -1,0 +1,9 @@
+transmission "allow_accessible_status" {
+  message "status" {
+    purpose: "Confirm the user's action"
+    content: "Your changes were saved."
+    attention_cost: 1
+    restoration_value: 2
+    contrast_safe: true
+  }
+}
