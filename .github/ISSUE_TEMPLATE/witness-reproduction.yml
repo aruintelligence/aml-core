@@ -1,0 +1,55 @@
+name: AML witness reproduction
+description: Record an independent reproduction, disagreement, or breakage of a public AML proof.
+title: "[Witness] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing AML. Please report what you actually observed. A disagreement or failure is as useful as a successful reproduction.
+  - type: input
+    id: artifact
+    attributes:
+      label: Artifact or demo tested
+      placeholder: https://aruintelligence.github.io/aml-core/playground.html
+    validations:
+      required: true
+  - type: textarea
+    id: input
+    attributes:
+      label: Exact input
+      description: Paste the AML source, intent JSON, command, or fixture you tested.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Observed result
+      description: Include ALLOW/SUPPRESS, receipt hash, screenshot link, error, or mismatch when available.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser/Node version, OS, commit or release, and any relevant runtime context.
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: Outcome
+      options:
+        - Reproduced expected result
+        - Different result
+        - Could not run
+        - Found a bug or ambiguity
+    validations:
+      required: true
+  - type: checkboxes
+    id: honesty
+    attributes:
+      label: Public record
+      options:
+        - label: I confirm this issue describes my actual test result and may be referenced in WITNESSES.md.
+          required: true
