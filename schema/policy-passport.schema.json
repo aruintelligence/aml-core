@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/schema/policy-passport.schema.json",
+  "title": "AML Policy Passport",
+  "type": "object",
+  "required": ["type", "profile", "preferences", "passport_hash"],
+  "properties": {
+    "type": { "const": "aml-policy-passport/1" },
+    "subject": { "type": ["string", "null"] },
+    "profile": { "type": "string", "minLength": 1 },
+    "preferences": { "type": "object" },
+    "issued_at": { "type": ["string", "null"] },
+    "expires_at": { "type": ["string", "null"] },
+    "passport_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "additionalProperties": false
+}
