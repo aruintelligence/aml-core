@@ -1,0 +1,40 @@
+{
+  "type": "aml-project-authority/1",
+  "project": "ĀML — ĀRU Meaning Language",
+  "canonical_repository": "https://github.com/aruintelligence/aml-core",
+  "steward": "ĀRU Intelligence Inc.",
+  "creator": "Daniel Jacob Read IV",
+  "official_website": "https://aruintelligence.com/",
+  "official_pages": {
+    "home": "https://aruintelligence.github.io/aml-core/",
+    "playground": "https://aruintelligence.github.io/aml-core/playground.html",
+    "view_meaning": "https://aruintelligence.github.io/aml-core/view-meaning.html"
+  },
+  "legal": {
+    "software_license": "LICENSE",
+    "trademark_policy": "TRADEMARKS.md",
+    "commercial_licensing": "COMMERCIAL.md",
+    "registration_plan": "TRADEMARK_REGISTRATION_PLAN.md"
+  },
+  "standards": {
+    "discovery": "protocol/discovery.json",
+    "registry": "protocol/registry.json",
+    "conformance": "CONFORMANCE.json",
+    "rfcs": "rfcs/README.md",
+    "standardization": "STANDARDIZATION.md"
+  },
+  "claimed_marks": [
+    "ĀML",
+    "ĀRU Meaning Language",
+    "ĀRU Intelligence Inc.",
+    "AI Interface Firewall",
+    "View Meaning",
+    "Meaning Gate",
+    "EthicalRenderGate",
+    "Meaning-Native Computing",
+    "Proof-Carrying Interface",
+    "ĀML Compatible"
+  ],
+  "registration_notice": "Claimed marks are not represented by this manifest as federally registered. Do not use the registered trademark symbol unless registration is verified for the relevant goods/services.",
+  "commercial_contact": "https://aruintelligence.com/"
+}
