@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-page.schema.json",
+  "title": "AML Page Manifest",
+  "description": "Reference prototype schema for separating declared interface meaning from visible HTML. This schema is not a ratified web standard.",
+  "type": "object",
+  "required": ["schema", "elements"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "aml-page/1" },
+    "elements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["selector", "attention_cost", "restoration_value"],
+        "additionalProperties": false,
+        "properties": {
+          "selector": { "type": "string", "minLength": 1 },
+          "purpose": { "type": "string" },
+          "content": { "type": "string" },
+          "attention_cost": { "type": "number", "minimum": 0, "maximum": 10 },
+          "restoration_value": { "type": "number", "minimum": 0, "maximum": 10 }
+        }
+      }
+    }
+  }
+}
