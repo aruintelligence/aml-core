@@ -41,6 +41,7 @@
     "validate": true,
     "inspect": true,
     "lint": true,
+    "verify": true,
     "benchmark": true,
     "browser_playground": true,
     "vscode_language_definition": true
@@ -55,7 +56,9 @@
     "reproducible_build_test": true,
     "semantic_diagnostic_tests": true,
     "editor_asset_tests": true,
-    "build_manifest_hash_verification": true
+    "build_manifest_hash_verification": true,
+    "post_build_tamper_detection": true,
+    "cli_bundle_verification": true
   },
   "diagnostics": ["AML001", "AML002", "AML003", "AML004", "AML005"],
   "non_claims": [
