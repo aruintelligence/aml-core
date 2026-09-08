@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-verification-contract-snapshot.schema.json",
+  "title": "AML Verification Contract Snapshot",
+  "type": "object",
+  "required": ["schema", "status", "snapshot_id", "source_repository", "source_commit", "canonicalization", "witness_schema", "cli_contract", "golden_vector", "locked_paths", "required_behavior", "claim_boundary"],
+  "properties": {
+    "schema": { "const": "aml-verification-contract-snapshot/1" },
+    "status": { "type": "string", "minLength": 1 },
+    "snapshot_id": { "type": "string", "minLength": 1 },
+    "source_repository": { "type": "string", "format": "uri" },
+    "source_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "canonicalization": { "const": "sorted-json-v1" },
+    "witness_schema": { "const": "aml-witness-bundle/1" },
+    "cli_contract": { "type": "string", "minLength": 1 },
+    "golden_vector": { "type": "string", "minLength": 1 },
+    "locked_paths": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "required_behavior": { "type": "array", "minItems": 4, "items": { "type": "string", "minLength": 1 } },
+    "claim_boundary": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}
