@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Before AML: countdown pressure</title></head>
+<body>
+  <main>
+    <h1>Complete your purchase</h1>
+    <p id="pressure">Your offer expires in 04:59.</p>
+    <button>Buy now</button>
+  </main>
+  <script>
+    let seconds = 299;
+    const el = document.getElementById('pressure');
+    setInterval(() => {
+      seconds = Math.max(0, seconds - 1);
+      const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const s = String(seconds % 60).padStart(2, '0');
+      el.textContent = `Your offer expires in ${m}:${s}.`;
+    }, 1000);
+  </script>
+</body>
+</html>
