@@ -1,7 +1,7 @@
 {
   "project": "AML Core",
   "language": "ARU Meaning Language",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "artifactContract": [
     "index.html",
     "tokens.json",
@@ -10,6 +10,8 @@
     "render_decision.json"
   ],
   "fixtures": [
+    {"path": "conformance/allow.aml", "domain": "canonical-allow"},
+    {"path": "conformance/suppress.aml", "domain": "canonical-suppress"},
     {"path": "examples/simple.aml", "domain": "minimal"},
     {"path": "examples/transmission-061.aml", "domain": "flagship"},
     {"path": "examples/ethical_ads.aml", "domain": "advertising"},
