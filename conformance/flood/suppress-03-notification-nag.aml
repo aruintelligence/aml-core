@@ -1,0 +1,8 @@
+transmission "suppress_notification_nag" {
+  message "notification_nag" {
+    purpose: "Repeatedly pressure the user to enable notifications"
+    content: "Turn on notifications to continue"
+    attention_cost: 4
+    restoration_value: 1
+  }
+}
