@@ -1,0 +1,15 @@
+{
+  "schema": "aml-verifier-manifest/1",
+  "prototype": true,
+  "verifier_id": "REPLACE_WITH_STABLE_PUBLIC_ID",
+  "implementation": "REPLACE_WITH_IMPLEMENTATION_NAME",
+  "runtime": "REPLACE_WITH_RUNTIME_AND_VERSION",
+  "version": "1",
+  "artifact_types": ["aml-witness-bundle/1"],
+  "report_schema": "aml-verification-report/1",
+  "canonicalization_profiles": ["sorted-json-v1"],
+  "signature_algorithms": ["ECDSA-P256-SHA256"],
+  "verification_url": null,
+  "source_url": "REPLACE_WITH_PUBLIC_SOURCE_URL",
+  "claim_boundary": "Passing project-defined verifier conformance is technical compatibility evidence, not official certification, institutional independence, trademark authorization, or standards-body approval."
+}
