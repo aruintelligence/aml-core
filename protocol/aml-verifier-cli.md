@@ -12,11 +12,13 @@ A verifier SHOULD accept one witness-bundle JSON file path:
 <verifier-command> bundle.json
 ```
 
-A verifier MAY accept a fixed verification time for public vectors:
+For the automated public conformance harness, a verifier MUST also accept a fixed verification time:
 
 ```text
 <verifier-command> --now 2030-01-01T00:05:00Z bundle.json
 ```
+
+The fixed time exists so challenge-freshness vectors remain reproducible after their wall-clock expiry.
 
 ## Output
 
@@ -43,12 +45,18 @@ Additional fields are allowed by an implementation, but conformance tooling must
 
 ## Minimum behavioral tests
 
-An implementation claiming this CLI contract MUST demonstrate:
+An implementation claiming automated CLI conformance MUST demonstrate:
 
 1. canonical golden witness vector -> exit `0`, `valid: true`;
 2. mutation of a receipt-bound field -> nonzero, `valid: false`;
-3. expired verifier challenge -> nonzero, `valid: false`;
-4. wrong challenge binding -> nonzero, `valid: false`.
+3. mutation of the bound challenge -> nonzero, `valid: false`;
+4. untouched artifact evaluated after challenge expiry -> nonzero, `valid: false`.
+
+Reference black-box harness:
+
+```bash
+node scripts/run-verifier-conformance.mjs -- <verifier-command> [args...]
+```
 
 ## Interoperability rule
 
