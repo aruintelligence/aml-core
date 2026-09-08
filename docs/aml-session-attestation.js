@@ -76,7 +76,9 @@ export async function createSessionAttestation({
   attestation.signature = bytesToBase64Url(new Uint8Array(signature));
 
   globalThis.__AML_SESSION_ATTESTATION__ = attestation;
-  document.dispatchEvent(new CustomEvent('aml-session-attestation', { detail: attestation }));
+  if (globalThis.document?.dispatchEvent && globalThis.CustomEvent) {
+    document.dispatchEvent(new CustomEvent('aml-session-attestation', { detail: attestation }));
+  }
   return attestation;
 }
 
