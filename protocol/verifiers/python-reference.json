@@ -1,0 +1,15 @@
+{
+  "schema": "aml-verifier-manifest/1",
+  "prototype": true,
+  "verifier_id": "aru-aml-python-reference",
+  "implementation": "ĀML dependency-free Python witness verifier",
+  "runtime": "Python standard library",
+  "version": "1",
+  "artifact_types": ["aml-witness-bundle/1"],
+  "report_schema": "aml-verification-report/1",
+  "canonicalization_profiles": ["sorted-json-v1"],
+  "signature_algorithms": ["ECDSA-P256-SHA256"],
+  "verification_url": null,
+  "source_url": "https://github.com/aruintelligence/aml-core/blob/main/independent/python/verify_witness.py",
+  "claim_boundary": "In-repository second-language reference implementation. It demonstrates cross-language reproduction but is not an external witness or independent institution."
+}
