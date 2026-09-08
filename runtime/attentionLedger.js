@@ -63,6 +63,57 @@ export function accountRenderDecisions(ledger, decisions, options = {}) {
   return results;
 }
 
+export function enforceCumulativeAttentionBudget(decisions, initialBudget, options = {}) {
+  const ledger = createAttentionLedger(initialBudget, options);
+  const enforced = [];
+
+  for (const decision of decisions) {
+    if (!decision.render_allowed) {
+      enforced.push({ ...decision });
+      continue;
+    }
+
+    const amount = typeof decision.attention_cost === "number" ? decision.attention_cost : 0;
+    const entry = consumeAttention(ledger, amount, {
+      identifier: decision.identifier || decision.name || null,
+      node_type: decision.node_type,
+      policy_id: decision.policy_id
+    });
+
+    if (entry.allowed) {
+      enforced.push({
+        ...decision,
+        cumulative_attention: {
+          budget_before: entry.budget_before,
+          budget_after: entry.budget_after,
+          amount_consumed: entry.amount_consumed
+        }
+      });
+    } else {
+      const existingRationale = decision.policy_rationale;
+      const cumulativeRationale = `cumulative attention budget exhausted: requested ${entry.amount_requested}, remaining ${entry.budget_before}`;
+      enforced.push({
+        ...decision,
+        render_allowed: false,
+        fallback_triggered: true,
+        policy_rationale: Array.isArray(existingRationale)
+          ? [...existingRationale, { policy_id: "cumulative_attention_ledger_v1", render_allowed: false, rationale: cumulativeRationale }]
+          : [
+              { policy_id: decision.policy_id, render_allowed: true, rationale: existingRationale ?? "prior policy allowed" },
+              { policy_id: "cumulative_attention_ledger_v1", render_allowed: false, rationale: cumulativeRationale }
+            ],
+        cumulative_attention: {
+          budget_before: entry.budget_before,
+          budget_after: entry.budget_after,
+          amount_consumed: 0
+        }
+      });
+    }
+  }
+
+  return { decisions: enforced, ledger };
+}
+
 export function attentionContext(ledger, extra = {}) {
   if (!ledger || ledger.protocol !== "ĀML Attention Ledger") throw new Error("Invalid ĀML attention ledger.");
   return {
