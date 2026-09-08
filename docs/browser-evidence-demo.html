@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ĀML Browser Evidence</title>
+  <meta name="description" content="Generate, inspect, verify, and deliberately tamper with an ĀML browser evidence packet." />
+  <style>
+    :root{color-scheme:dark;background:#07111f;color:#eaf2ff;font-family:system-ui,sans-serif}body{max-width:980px;margin:auto;padding:28px}code,pre{font-family:ui-monospace,monospace}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}.card{border:1px solid #29405b;border-radius:16px;padding:18px;background:#0b1726}.good{color:#9cffb0}.bad{color:#ff9a9a}button{padding:10px 14px;margin:5px 5px 5px 0;border-radius:10px;border:1px solid #54708e;background:#12243a;color:#fff;cursor:pointer}pre{white-space:pre-wrap;word-break:break-word;max-height:360px;overflow:auto;background:#050b13;padding:14px;border-radius:12px}small{color:#9fb0c3}aml-zone{display:block;border:1px dashed #4b6480;border-radius:12px;padding:12px;min-height:52px}</style>
+</head>
+<body>
+  <h1>ĀML Browser Evidence</h1>
+  <p><strong>SHIPPED reference prototype.</strong> The browser can seal an AML receipt with SHA-256, bind strict-zone violations into one evidence packet, and independently recompute the hash.</p>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Declared ALLOW</h2>
+      <div id="allow" data-aml-purpose="Explain status" data-aml-attention-cost="1" data-aml-restoration-value="3">Your settings were saved.</div>
+    </section>
+    <section class="card">
+      <h2>Declared SUPPRESS</h2>
+      <div id="suppress" data-aml-purpose="Create urgency" data-aml-attention-cost="5" data-aml-restoration-value="1">Act now before time runs out.</div>
+    </section>
+    <section class="card">
+      <h2>Strict zone</h2>
+      <aml-zone mode="strict" id="ai-zone">
+        <div id="undeclared">AI inserted this without an AML declaration.</div>
+      </aml-zone>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:16px">
+    <h2>Verify evidence</h2>
+    <p id="status">Waiting for sealed browser evidence…</p>
+    <button id="verify">Verify current evidence</button>
+    <button id="tamper">Tamper with a copy and verify</button>
+    <button id="copy">Copy evidence JSON</button>
+    <p><small>SHA-256 integrity proves exact local payload integrity only. It is not a digital signature, identity proof, moral judgment, or proof that declared purpose/scores are true.</small></p>
+    <pre id="output"></pre>
+  </section>
+
+  <script type="module" src="./aml.js"></script>
+  <script type="module">
+    import { verifyBrowserEvidence, exportBrowserEvidence } from './aml-browser-evidence.js';
+
+    const status = document.querySelector('#status');
+    const output = document.querySelector('#output');
+
+    function showEvidence(evidence) {
+      status.innerHTML = `Evidence ready · <span class="good">${evidence.integrity.value}</span>`;
+      output.textContent = JSON.stringify(evidence, null, 2);
+    }
+
+    document.addEventListener('aml-evidence', (event) => showEvidence(event.detail));
+    if (window.__AML_EVIDENCE__) showEvidence(window.__AML_EVIDENCE__);
+
+    document.querySelector('#verify').addEventListener('click', async () => {
+      const result = await verifyBrowserEvidence(window.__AML_EVIDENCE__);
+      status.innerHTML = result.valid
+        ? '<span class="good">VALID — exact evidence payload matches its SHA-256 seal.</span>'
+        : `<span class="bad">INVALID — ${result.reason}</span>`;
+    });
+
+    document.querySelector('#tamper').addEventListener('click', async () => {
+      const copy = structuredClone(window.__AML_EVIDENCE__);
+      const row = copy.receipt.decisions.find((item) => item.ok);
+      if (row) row.purpose = `${row.purpose} [tampered]`;
+      const result = await verifyBrowserEvidence(copy);
+      status.innerHTML = result.valid
+        ? '<span class="bad">Unexpectedly valid.</span>'
+        : `<span class="good">TAMPER DETECTED — ${result.reason}</span>`;
+      output.textContent = JSON.stringify({ verification: result, tampered_copy: copy }, null, 2);
+    });
+
+    document.querySelector('#copy').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(exportBrowserEvidence());
+      status.textContent = 'Copied canonical evidence JSON.';
+    });
+  </script>
+</body>
+</html>
