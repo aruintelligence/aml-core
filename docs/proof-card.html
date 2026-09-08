@@ -4,10 +4,11 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ĀML Proof Card</title>
+<meta name="description" content="Embeddable AML proof state." />
 <style>body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#07111f;color:#eef7ff}main{padding:18px;border:1px solid #27415f;border-radius:14px;background:#0e1b2d}.k{color:#abc0d8}.decision{font-size:2rem;font-weight:900}.allow{color:#9cffb0}.suppress{color:#ff9f9f}code{background:#06101c;padding:2px 5px;border-radius:5px}a{color:#7df9ff}</style>
 </head>
 <body><main>
-<div class="k">ĀML interface firewall · SHIPPED prototype</div>
+<div id="label" class="k">ĀML interface firewall · SHIPPED prototype</div>
 <div id="decision" class="decision">—</div>
 <p id="equation"></p>
 <p><code>render_allowed = restoration_value &gt;= attention_cost</code></p>
@@ -15,12 +16,26 @@
 </main>
 <script type="module">
 import { compileSourceBrowser } from './aml-browser.js';
+const copy={
+  en:{label:'ĀML interface firewall · SHIPPED prototype',open:'Open this proof'},
+  es:{label:'ĀML cortafuegos de interfaz · prototipo SHIPPED',open:'Abrir esta prueba'},
+  'pt-BR':{label:'ĀML firewall de interface · protótipo SHIPPED',open:'Abrir esta prova'},
+  hi:{label:'ĀML इंटरफ़ेस फ़ायरवॉल · SHIPPED प्रोटोटाइप',open:'यह प्रमाण खोलें'},
+  ar:{label:'ĀML جدار حماية للواجهة · نموذج SHIPPED',open:'فتح هذا الإثبات'},
+  zh:{label:'ĀML 界面防火墙 · SHIPPED 原型',open:'打开此证明'},
+  fr:{label:'ĀML pare-feu d’interface · prototype SHIPPED',open:'Ouvrir cette preuve'},
+  de:{label:'ĀML Interface-Firewall · SHIPPED-Prototyp',open:'Diesen Beweis öffnen'}
+};
 const p=new URLSearchParams(location.search);
 const clamp=(v,d)=>{const n=Number(v);return Number.isFinite(n)?Math.min(10,Math.max(0,n)):d};
+const lang=copy[p.get('lang')]?p.get('lang'):'en';
+document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';
+document.getElementById('label').textContent=copy[lang].label;
+document.getElementById('open').textContent=copy[lang].open;
 const a=clamp(p.get('attention'),5),r=clamp(p.get('restoration'),1);
 const source=`transmission "proof_card" {\n  message "example" {\n    purpose: "Demonstrate AML"\n    attention_cost: ${a}\n    restoration_value: ${r}\n  }\n}\n`;
 const row=compileSourceBrowser(source).renderDecisions[0];
 const d=document.getElementById('decision');d.textContent=row.render_allowed?'ALLOW':'SUPPRESS';d.className=`decision ${row.render_allowed?'allow':'suppress'}`;
 document.getElementById('equation').textContent=`restoration_value (${r}) ${row.render_allowed?'>=':'<'} attention_cost (${a})`;
-document.getElementById('open').href=`./proof.html?attention=${encodeURIComponent(a)}&restoration=${encodeURIComponent(r)}`;
+const target=new URL('./proof.html',location.href);target.searchParams.set('attention',a);target.searchParams.set('restoration',r);target.searchParams.set('lang',lang);document.getElementById('open').href=target.toString();
 </script></body></html>
