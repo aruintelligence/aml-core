@@ -12,7 +12,9 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 - external security review of the trust and authorization layers
 - additional framework integrations and package distribution
 
-## [1.4.0] — 2026-09-08
+## [1.4.0-rc.2] — 2026-09-08
+
+Release candidate only. The stable package/CLI/capability contract remains v1.3.0 until the approved package-release path is completed.
 
 ### Mainstream adoption
 
@@ -23,6 +25,7 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 - Added a dependency-free HTTP evaluation/verification service with OpenAPI contract.
 - Added a 30-minute enterprise pilot kit.
 - Added reusable Meaning Gate™ and Verify Official ĀML GitHub Actions.
+- Added a public `Why AML Now` adoption brief for developers, researchers, enterprises, and standards participants.
 
 ### Trust continuity and policy governance
 
@@ -65,10 +68,13 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 - Added RFCs for interoperability, causal execution graphs, trust fabric, compatibility levels, capability tokens, replay resistance, proof-carrying interfaces, revocation, and official brand authorization.
 - Added protocol discovery, registries, schemas, conformance levels, and a standardization path.
 - Added public ecosystem and 90-day adoption plans.
+- Rewrote the JavaScript API documentation to match the actual exported platform surface.
+- Rewrote the roadmap around stable v1.3 and current v1.4 release-candidate work.
 
 ### Security and evidence boundaries
 
 - Added a dedicated threat model and explicit key-custody guidance.
+- Hardened `SECURITY.md` across compiler/parser, policy, cryptography, federation, authority, HTTP, browser, and official-brand trust surfaces.
 - Added tests for mutation, replay, revocation, trust-root membership, extension permissions, and official-vs-self-signed authorization status.
 - Preserved explicit non-claims around cognition measurement, universal ethics, WCAG replacement, and institutional trust.
 
