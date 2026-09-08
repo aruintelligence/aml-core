@@ -14,6 +14,8 @@
     "selective-disclosure",
     "content-addressed-bundles",
     "causal-execution-graphs",
+    "proof-carrying-interfaces",
+    "revocation-registry",
     "consent-ledgers",
     "attention-ledgers",
     "accessibility-audits",
@@ -31,6 +33,7 @@
     "wire_envelope": "schema/wire-envelope.schema.json",
     "policy_passport": "schema/policy-passport.schema.json",
     "capability_token": "schema/capability-token.schema.json",
+    "proof_carrying_interface": "schema/proof-carrying-interface.schema.json",
     "execution_receipt": "schema/execution-receipt.schema.json",
     "render_decision": "schema/render-decision.schema.json"
   },
