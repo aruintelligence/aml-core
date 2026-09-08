@@ -1,4 +1,5 @@
 import { applyAMLDomGate } from './aml-dom-gate.js';
+import { sealBrowserReceipt } from './aml-browser-integrity.js';
 
 const WATCHED_ATTRIBUTES = [
   'data-aml-purpose',
@@ -10,6 +11,37 @@ const WATCHED_ATTRIBUTES = [
 let revision = 0;
 let queued = false;
 let observer = null;
+
+function publishReceipt(receipt) {
+  globalThis.__AML_RECEIPT__ = receipt;
+  globalThis.__AML_RECEIPT_HISTORY__ ||= [];
+  globalThis.__AML_RECEIPT_HISTORY__.push(receipt);
+  if (globalThis.__AML_RECEIPT_HISTORY__.length > 50) {
+    globalThis.__AML_RECEIPT_HISTORY__.shift();
+  }
+
+  document.dispatchEvent(new CustomEvent('aml-receipt', {
+    bubbles: false,
+    detail: receipt
+  }));
+}
+
+function sealReceipt(receipt) {
+  sealBrowserReceipt(receipt)
+    .then((sealed) => {
+      document.dispatchEvent(new CustomEvent('aml-receipt-sealed', {
+        bubbles: false,
+        detail: sealed
+      }));
+    })
+    .catch((error) => {
+      receipt.integrity_error = error?.message || 'AML_BROWSER_RECEIPT_SEAL_ERROR';
+      document.dispatchEvent(new CustomEvent('aml-receipt-seal-error', {
+        bubbles: false,
+        detail: { receipt, error: receipt.integrity_error }
+      }));
+    });
+}
 
 function makeReceipt(decisions, reason) {
   revision += 1;
@@ -29,18 +61,8 @@ function makeReceipt(decisions, reason) {
     decisions
   };
 
-  globalThis.__AML_RECEIPT__ = receipt;
-  globalThis.__AML_RECEIPT_HISTORY__ ||= [];
-  globalThis.__AML_RECEIPT_HISTORY__.push(receipt);
-  if (globalThis.__AML_RECEIPT_HISTORY__.length > 50) {
-    globalThis.__AML_RECEIPT_HISTORY__.shift();
-  }
-
-  document.dispatchEvent(new CustomEvent('aml-receipt', {
-    bubbles: false,
-    detail: receipt
-  }));
-
+  publishReceipt(receipt);
+  sealReceipt(receipt);
   return receipt;
 }
 
