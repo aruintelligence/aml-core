@@ -1,0 +1,15 @@
+{
+  "status": "DRAFT",
+  "title": "Demostración de prueba de ĀML",
+  "subtitle": "Un cortafuegos de interfaz entre la intención de la IA y los píxeles.",
+  "try_demo": "Probar la demostración",
+  "change_restoration": "Cambiar el valor de restauración",
+  "compile_again": "Compilar de nuevo",
+  "decision": "Decisión",
+  "allowed": "Permitido",
+  "suppressed": "Suprimido",
+  "view_meaning": "Ver significado",
+  "receipt": "Recibo",
+  "file_result": "Reportar lo que ocurrió",
+  "prototype_notice": "Prototipo funcional; no es un estándar global ratificado."
+}
