@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-dom-receipt.schema.json",
+  "title": "AML DOM Receipt",
+  "description": "Reference prototype schema for page-level browser AML evaluation receipts.",
+  "type": "object",
+  "required": ["schema", "prototype", "revision", "reason", "url", "generated_at", "totals", "decisions"],
+  "properties": {
+    "schema": { "const": "aml-dom-receipt/1" },
+    "prototype": { "const": true },
+    "revision": { "type": "integer", "minimum": 1 },
+    "reason": { "type": "string" },
+    "url": { "type": "string" },
+    "generated_at": { "type": "string" },
+    "totals": {
+      "type": "object",
+      "required": ["evaluated", "allowed", "suppressed", "errors"],
+      "properties": {
+        "evaluated": { "type": "integer", "minimum": 0 },
+        "allowed": { "type": "integer", "minimum": 0 },
+        "suppressed": { "type": "integer", "minimum": 0 },
+        "errors": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ok", "index"],
+        "properties": {
+          "ok": { "type": "boolean" },
+          "index": { "type": "integer", "minimum": 0 },
+          "id": { "type": ["string", "null"] },
+          "purpose": { "type": "string" },
+          "attention_cost": { "type": "number" },
+          "restoration_value": { "type": "number" },
+          "render_allowed": { "type": "boolean" },
+          "error": { "type": "string" }
+        }
+      }
+    }
+  }
+}
