@@ -6,6 +6,7 @@
 import fs from "fs";
 import { compileAML, compileSource } from "../compiler/compiler.js";
 import { analyzeAMT } from "../compiler/diagnostics.js";
+import { explainCompilation } from "../compiler/explain.js";
 import { verifyBuildManifest } from "../compiler/verifyBuild.js";
 
 const args = process.argv.slice(2);
@@ -20,6 +21,7 @@ function showHelp() {
 Usage:
   aml compile <file.aml> [outputDir]
   aml inspect <file.aml>
+  aml explain <file.aml>
   aml validate <file.aml>
   aml lint <file.aml>
   aml verify <build_manifest.json>
@@ -28,7 +30,8 @@ Usage:
 
 Commands:
   compile   Compile AML into HTML and accountability artifacts
-  inspect   Compile in memory and print the Abstract Meaning Tree + render decisions
+  inspect   Print the Abstract Meaning Tree + raw render decisions
+  explain   Print a compact explanation of decisions and diagnostics
   validate  Parse and evaluate AML without writing output files
   lint      Run semantic diagnostics on meaning-bearing nodes
   verify    Recompute SHA-256 digests and verify an AML build bundle
@@ -37,7 +40,7 @@ Commands:
 
 Examples:
   aml compile examples/transmission-061.aml
-  aml compile examples/ai_assistant_response.aml dist
+  aml explain examples/ai_assistant_response.aml
   aml inspect examples/accessibility_first.aml
   aml validate examples/calm_checkout.aml
   aml lint examples/ethical_ads.aml
@@ -77,11 +80,13 @@ try {
 
   if (command === "inspect") {
     const result = compileSource(readSource(inputPath));
-    console.log(JSON.stringify({
-      input: inputPath,
-      amt: result.amt,
-      render_decisions: result.renderDecisions
-    }, null, 2));
+    console.log(JSON.stringify({ input: inputPath, amt: result.amt, render_decisions: result.renderDecisions }, null, 2));
+    process.exit(0);
+  }
+
+  if (command === "explain") {
+    const result = compileSource(readSource(inputPath), { timestamp: "1970-01-01T00:00:00.000Z" });
+    console.log(JSON.stringify({ input: inputPath, ...explainCompilation(result) }, null, 2));
     process.exit(0);
   }
 
@@ -94,9 +99,7 @@ try {
   }
 
   if (command === "lint") {
-    const result = compileSource(readSource(inputPath), {
-      timestamp: "1970-01-01T00:00:00.000Z"
-    });
+    const result = compileSource(readSource(inputPath), { timestamp: "1970-01-01T00:00:00.000Z" });
     const diagnostics = analyzeAMT(result.amt);
     const errors = diagnostics.filter(item => item.level === "error");
     const warnings = diagnostics.filter(item => item.level === "warning");
