@@ -5,11 +5,17 @@ import fs from 'node:fs';
 const pageSchema = JSON.parse(fs.readFileSync('protocol/aml-page.schema.json', 'utf8'));
 const receiptSchema = JSON.parse(fs.readFileSync('protocol/aml-dom-receipt.schema.json', 'utf8'));
 const evidenceSchema = JSON.parse(fs.readFileSync('protocol/aml-browser-evidence.schema.json', 'utf8'));
+const challengeSchema = JSON.parse(fs.readFileSync('protocol/aml-verification-challenge.schema.json', 'utf8'));
+const sessionSchema = JSON.parse(fs.readFileSync('protocol/aml-session-attestation.schema.json', 'utf8'));
+const witnessSchema = JSON.parse(fs.readFileSync('protocol/aml-witness-bundle.schema.json', 'utf8'));
 const bootstrap = fs.readFileSync('docs/aml.js', 'utf8');
 const live = fs.readFileSync('docs/aml-live.js', 'utf8');
 const pageManifestRuntime = fs.readFileSync('docs/aml-page-manifest.js', 'utf8');
 const browserIntegrity = fs.readFileSync('docs/aml-browser-integrity.js', 'utf8');
 const browserEvidence = fs.readFileSync('docs/aml-browser-evidence.js', 'utf8');
+const verificationChallenge = fs.readFileSync('docs/aml-verification-challenge.js', 'utf8');
+const sessionAttestation = fs.readFileSync('docs/aml-session-attestation.js', 'utf8');
+const witnessBundle = fs.readFileSync('docs/aml-witness-bundle.js', 'utf8');
 
 test('AML page manifest schema is versioned and bounded', () => {
   assert.equal(pageSchema.properties.schema.const, 'aml-page/1');
@@ -41,11 +47,31 @@ test('AML browser evidence schema binds receipt, violations, and integrity', () 
   assert.equal(evidenceSchema.properties.integrity.properties.algorithm.const, 'SHA-256');
 });
 
-test('one-script browser bootstrap activates all reference browser layers', () => {
+test('detached verification schemas bind freshness, evidence hash, key, signature, and bundle integrity', () => {
+  assert.equal(challengeSchema.properties.schema.const, 'aml-verification-challenge/1');
+  assert.ok(challengeSchema.required.includes('nonce'));
+  assert.ok(challengeSchema.required.includes('expires_at'));
+  assert.equal(sessionSchema.properties.schema.const, 'aml-session-attestation/1');
+  assert.equal(sessionSchema.properties.algorithm.const, 'ECDSA-P256-SHA256');
+  assert.ok(sessionSchema.required.includes('evidence_hash'));
+  assert.ok(sessionSchema.required.includes('challenge_nonce'));
+  assert.ok(sessionSchema.required.includes('session_public_key_jwk'));
+  assert.ok(sessionSchema.required.includes('signature'));
+  assert.equal(witnessSchema.properties.schema.const, 'aml-witness-bundle/1');
+  assert.ok(witnessSchema.required.includes('integrity'));
+});
+
+test('one-script browser bootstrap activates reference browser layers and detached verification API', () => {
   assert.match(bootstrap, /\.\/aml-gate\.js/);
   assert.match(bootstrap, /\.\/aml-live\.js/);
   assert.match(bootstrap, /\.\/aml-page-manifest\.js/);
   assert.match(bootstrap, /\.\/aml-browser-evidence\.js/);
+  assert.match(bootstrap, /createChallenge/);
+  assert.match(bootstrap, /verifyEvidence/);
+  assert.match(bootstrap, /createWitnessBundle/);
+  assert.match(bootstrap, /verifyWitnessBundle/);
+  assert.match(bootstrap, /globalThis\.AML = api/);
+  assert.match(bootstrap, /challenge_bound_attestation: 'ECDSA-P256-SHA256'/);
   assert.match(bootstrap, /browser_integrity: 'SHA-256'/);
   assert.match(bootstrap, /__AML_EVIDENCE__/);
   assert.match(bootstrap, /aml-browser-bootstrap\/1/);
@@ -67,12 +93,36 @@ test('browser integrity uses canonical sorted JSON and SHA-256 without overstati
   assert.match(browserIntegrity, /not a signature/i);
 });
 
-test('browser evidence verifies both sealed receipt and complete packet hash', () => {
+test('browser evidence verifies both sealed receipt and complete packet hash without requiring DOM at import time', () => {
   assert.match(browserEvidence, /verifyBrowserReceipt/);
   assert.match(browserEvidence, /aml-browser-evidence\/1/);
   assert.match(browserEvidence, /__AML_EVIDENCE_HISTORY__/);
   assert.match(browserEvidence, /AML_BROWSER_EVIDENCE_HASH_MISMATCH/);
   assert.match(browserEvidence, /zone_violations/);
+  assert.match(browserEvidence, /globalThis\.document\?\.addEventListener/);
+});
+
+test('verification challenge is random, expiring, and explicitly replay-oriented', () => {
+  assert.match(verificationChallenge, /crypto\.getRandomValues/);
+  assert.match(verificationChallenge, /new Uint8Array\(32\)/);
+  assert.match(verificationChallenge, /AML_CHALLENGE_EXPIRED/);
+});
+
+test('session attestation binds evidence hash and verifier challenge with ephemeral P-256 ECDSA', () => {
+  assert.match(sessionAttestation, /namedCurve: 'P-256'/);
+  assert.match(sessionAttestation, /ECDSA-P256-SHA256/);
+  assert.match(sessionAttestation, /challenge_nonce/);
+  assert.match(sessionAttestation, /evidence_hash/);
+  assert.match(sessionAttestation, /session_key_fingerprint/);
+  assert.match(sessionAttestation, /AML_SESSION_CHALLENGE_MISMATCH/);
+  assert.match(sessionAttestation, /does NOT prove human identity/i);
+});
+
+test('witness bundle seals the complete detached verification artifact', () => {
+  assert.match(witnessBundle, /aml-witness-bundle\/1/);
+  assert.match(witnessBundle, /verifySessionAttestation/);
+  assert.match(witnessBundle, /AML_WITNESS_BUNDLE_HASH_MISMATCH/);
+  assert.match(witnessBundle, /AML_WITNESS_BUNDLE_VALID/);
 });
 
 test('page manifest runtime fails closed and limits machine-selected DOM scope', () => {
