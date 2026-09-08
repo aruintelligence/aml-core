@@ -1,10 +1,13 @@
 export { compileAML, compileSource } from "./compiler/compiler.js";
 export { generateAMLFromIntent } from "./compiler/intentCompiler.js";
 export { simulatePolicies } from "./compiler/policySimulator.js";
+export { executeAccountableIntent, verifyExecutionReceipt } from "./compiler/accountablePipeline.js";
 export { analyzeAMT } from "./compiler/diagnostics.js";
 export { explainCompilation } from "./compiler/explain.js";
 export { verifyBuildManifest } from "./compiler/verifyBuild.js";
 export { signBuildManifest, verifyBuildAttestation } from "./compiler/signature.js";
 export { ethicalRenderGate } from "./runtime/ethicalRenderGate.js";
 export { BUILTIN_POLICIES, resolvePolicy, listPolicies } from "./runtime/policyEngine.js";
+export { BUILTIN_POLICY_PROFILES, resolvePolicyProfile, listPolicyProfiles } from "./runtime/policyProfiles.js";
+export { composePolicies, policyFromProfile } from "./runtime/policyComposition.js";
 export { getCompletionItems, getHoverInfo, getLanguageCatalog } from "./tooling/languageService.js";
