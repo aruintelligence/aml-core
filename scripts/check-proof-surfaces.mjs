@@ -19,8 +19,11 @@ const required = [
   ['docs/aml-verification-challenge.js', ['aml-verification-challenge/1', 'crypto.getRandomValues', 'AML_CHALLENGE_EXPIRED']],
   ['docs/aml-session-attestation.js', ['aml-session-attestation/1', 'ECDSA-P256-SHA256', 'challenge_nonce', 'AML_SESSION_CHALLENGE_MISMATCH']],
   ['docs/aml-witness-bundle.js', ['aml-witness-bundle/1', 'verifySessionAttestation', 'AML_WITNESS_BUNDLE_VALID']],
-  ['docs/attest-evidence.html', ['ĀML Attest Evidence', 'Create signed witness bundle', 'aml-session-attestation.js']],
-  ['docs/detached-verifier.html', ['ĀML Detached Verifier', 'Generate 2-minute challenge', 'Verify bundle against my challenge', 'Tamper with pasted copy']],
+  ['docs/aml-verification-report.js', ['aml-verification-report/1', 'witnessVerificationReport', 'does not prove identity']],
+  ['docs/attest-evidence.html', ['ĀML Attest Evidence', 'Create signed witness bundle', 'Download bundle.json', 'aml-session-attestation.js']],
+  ['docs/detached-verifier.html', ['ĀML Detached Verifier', 'Generate 2-minute challenge', 'Verify bundle against my challenge', 'Download verification-report.json', 'type="file"']],
+  ['docs/aml-verifier-worker.js', ['verifyWitnessBundle', 'aml-web-worker', 'postMessage']],
+  ['docs/worker-verifier.html', ['ĀML Worker Verifier', 'Verify in worker', "new Worker('./aml-verifier-worker.js'", 'without access to the page DOM']],
   ['docs/SESSION_ATTESTATION.md', ['ephemeral P-256', 'does **not** prove', 'aml-witness-bundle/1']],
   ['docs/DETACHED_VERIFIER.md', ['original bundle -> PASS', 'wrong challenge -> FAIL', 'window.AML']],
   ['docs/live-gate-demo.html', ['ĀML Live DOM Firewall', 'AI generates pressure CTA', 'aml-receipt']],
@@ -37,7 +40,13 @@ const required = [
   ['protocol/aml-verification-challenge.schema.json', ['"aml-verification-challenge/1"', '"expires_at"']],
   ['protocol/aml-session-attestation.schema.json', ['"aml-session-attestation/1"', '"ECDSA-P256-SHA256"', '"session_public_key_jwk"']],
   ['protocol/aml-witness-bundle.schema.json', ['"aml-witness-bundle/1"', '"integrity"']],
+  ['protocol/aml-verification-report.schema.json', ['"aml-verification-report/1"', '"checks"', '"verifier"']],
+  ['protocol/browser-canonicalization-vectors.json', ['"aml-browser-canonicalization-vectors/1"', '"sorted-json-v1"', '"unicode"']],
+  ['protocol/sorted-json-v1.md', ['Cross-language safe domain', 'must use a new canonicalization identifier', 'not an IETF']],
   ['protocol/aml-zone-violation.schema.json', ['"aml-zone-violation/1"', '"reason"']],
+  ['independent/python/verify_witness.py', ['AML_PY_WITNESS_BUNDLE_VALID', 'verify_p256_raw_signature', 'does not prove identity']],
+  ['independent/python/check_canonical_vectors.py', ['browser-canonicalization-vectors.json', 'canonical_json']],
+  ['independent/python/README.md', ['does **not** count as an independent external witness', 'Python standard library']],
   ['docs/gallery.html', ['ĀML Decision Gallery', 'Ten simple examples', 'Replay this state']],
   ['docs/.well-known/aml.json', ['"web_component"', '"html_bridge"', '"detached_verifier"', 'not an Internet standard']],
   ['docs/proof-badge.svg', ['PROOF AVAILABLE']],
@@ -67,5 +76,5 @@ if (failures.length) {
 console.log(JSON.stringify({
   verified: true,
   surfaces: required.map(([path]) => path),
-  promise: 'shareable + multilingual + embeddable + live-DOM + page-manifest + strict-zone + browser-integrity + evidence-packet + challenge-bound-session + detached-verifier + witness-bundle + one-script + offline AML proof surfaces remain present'
+  promise: 'shareable + multilingual + embeddable + live-DOM + page-manifest + strict-zone + browser-integrity + evidence-packet + challenge-bound-session + detached-verifier + file-native-witness + verification-report + worker-verifier + cross-language-python + canonical-vectors + one-script + offline AML proof surfaces remain present'
 }, null, 2));
