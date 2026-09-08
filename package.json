@@ -10,7 +10,8 @@
   "bin": {
     "aml": "./bin/aml.js",
     "aml-lsp": "./bin/aml-lsp.js",
-    "aml-serve": "./bin/aml-serve.js"
+    "aml-serve": "./bin/aml-serve.js",
+    "aml-brand-verify": "./bin/aml-brand-verify.js"
   },
   "scripts": {
     "start": "node bin/aml.js help",
@@ -67,6 +68,8 @@
     "interoperability",
     "http-api",
     "ai-middleware",
+    "brand-authorization",
+    "official-brand-verification",
     "language-server",
     "ed25519-attestation"
   ],
