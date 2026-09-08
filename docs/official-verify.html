@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Verify Official ĀML™ Authorization</title>
+  <meta name="description" content="Verify the cryptographic integrity and ĀRU trust-root status of an AML brand authorization credential." />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://aruintelligence.github.io/aml-core/official-verify.html" />
+  <style>
+    :root { color-scheme:dark; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#05080b; color:#e5edf5; }
+    a { color:#7dd3fc; }
+    .wrap { width:min(1050px,calc(100% - 32px)); margin:0 auto; }
+    header { padding:64px 0 38px; border-bottom:1px solid #1f2937; background:radial-gradient(circle at 20% 0%,rgba(16,185,129,.18),transparent 34%),radial-gradient(circle at 80% 0%,rgba(245,158,11,.12),transparent 30%); }
+    h1 { margin:12px 0; font-size:clamp(40px,7vw,72px); letter-spacing:-.05em; line-height:.98; }
+    .eyebrow { color:#6ee7b7; font:700 11px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.2em; text-transform:uppercase; }
+    .lead { max-width:820px; color:#94a3b8; font-size:18px; line-height:1.7; }
+    main { padding:40px 0 70px; }
+    textarea { width:100%; min-height:310px; resize:vertical; border-radius:16px; border:1px solid #334155; background:#070d13; color:#dbeafe; padding:18px; font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; }
+    button { border:0; border-radius:12px; padding:13px 18px; background:#10b981; color:#02120c; font-weight:800; cursor:pointer; }
+    .row { display:flex; flex-wrap:wrap; gap:12px; margin:16px 0 28px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
+    .card { border:1px solid #263442; border-radius:16px; background:#0a1118; padding:20px; }
+    .label { font:700 10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.14em; text-transform:uppercase; color:#64748b; }
+    .value { margin-top:8px; font-size:21px; font-weight:800; }
+    .good { color:#6ee7b7; } .bad { color:#fda4af; } .warn { color:#fcd34d; } .muted { color:#94a3b8; }
+    .details { margin-top:18px; white-space:pre-wrap; overflow-wrap:anywhere; border:1px solid #263442; background:#070d13; border-radius:14px; padding:16px; color:#94a3b8; font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .notice { margin-top:28px; border:1px solid rgba(245,158,11,.28); background:rgba(245,158,11,.06); border-radius:16px; padding:18px; color:#cbd5e1; line-height:1.65; }
+    footer { padding:28px 0 50px; border-top:1px solid #1f2937; color:#64748b; font-size:13px; }
+  </style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="eyebrow">ĀRU trust verification</div>
+  <h1>Verify Official ĀML™</h1>
+  <p class="lead">A valid signature is not automatically an official ĀRU authorization. This verifier checks the credential itself and then checks whether its signing-key fingerprint appears in the canonical ĀRU brand trust-root registry.</p>
+</div></header>
+<main><div class="wrap">
+  <label for="credential" class="label">Paste aml-brand-authorization/1 JSON</label>
+  <textarea id="credential" spellcheck="false" placeholder='{"type":"aml-brand-authorization/1", ...}'></textarea>
+  <div class="row"><button id="verify">Verify credential</button><span id="support" class="muted"></span></div>
+  <div class="grid">
+    <div class="card"><div class="label">Credential integrity</div><div id="integrity" class="value muted">Not checked</div></div>
+    <div class="card"><div class="label">ĀRU trust root</div><div id="trust" class="value muted">Not checked</div></div>
+    <div class="card"><div class="label">Official authorization</div><div id="official" class="value muted">Not checked</div></div>
+    <div class="card"><div class="label">Registry state</div><div id="registry" class="value muted">Loading…</div></div>
+  </div>
+  <div id="details" class="details">The canonical trust registry is loaded from the official aruintelligence/aml-core repository. Verification is performed locally in your browser.</div>
+  <div class="notice"><strong>Legal boundary:</strong> this tool verifies cryptographic integrity and published trust-root membership. It does not independently determine trademark ownership, contract enforceability, registration status, or whether a use falls within the underlying agreement. The written authorization and applicable law control the legal rights.</div>
+</div></main>
+<footer><div class="wrap">Official AML commercial contact: <a href="mailto:Office@aruintelligence.com">Office@aruintelligence.com</a> · <a href="official-aml.html">Official AML / licensing</a> · <a href="https://github.com/aruintelligence/aml-core">Canonical repository</a></div></footer>
+<script type="module">
+const TRUST_URL = "https://raw.githubusercontent.com/aruintelligence/aml-core/main/BRAND_TRUST_ROOTS.json";
+let trustRegistry = null;
+const byId = (id) => document.getElementById(id);
+
+function setState(id, text, cls) {
+  const el = byId(id); el.textContent = text; el.className = `value ${cls}`;
+}
+function canonicalize(value) {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonicalize(value[key])]));
+  }
+  return value;
+}
+function canonicalJSONStringify(value) { return JSON.stringify(canonicalize(value)); }
+function hex(buffer) { return [...new Uint8Array(buffer)].map((b) => b.toString(16).padStart(2,"0")).join(""); }
+async function sha256Bytes(bytes) { return crypto.subtle.digest("SHA-256", bytes); }
+async function sha256Text(text) { return hex(await sha256Bytes(new TextEncoder().encode(text))); }
+function b64Bytes(value) { return Uint8Array.from(atob(value), (c) => c.charCodeAt(0)); }
+function pemDer(pem) {
+  const b64 = pem.replace(/-----BEGIN PUBLIC KEY-----/g, "").replace(/-----END PUBLIC KEY-----/g, "").replace(/\s+/g, "");
+  return b64Bytes(b64);
+}
+
+async function loadRegistry() {
+  try {
+    const res = await fetch(TRUST_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    trustRegistry = await res.json();
+    const active = Array.isArray(trustRegistry.active_keys) ? trustRegistry.active_keys.length : 0;
+    setState("registry", `${trustRegistry.status || "unknown"} · ${active} active key${active === 1 ? "" : "s"}`, active ? "good" : "warn");
+  } catch (error) {
+    setState("registry", "Unavailable", "bad");
+    byId("details").textContent = `Could not load canonical trust registry: ${error.message}`;
+  }
+}
+
+async function verifyCredential(credential) {
+  if (!credential || credential.type !== "aml-brand-authorization/1") throw new Error("Credential type must be aml-brand-authorization/1");
+  const { credential_hash, algorithm, public_key_pem, public_key_sha256, signature_base64, ...body } = credential;
+  if (algorithm !== "Ed25519") throw new Error("Unsupported signature algorithm");
+  const canonical = canonicalJSONStringify(body);
+  const hash = await sha256Text(canonical);
+  if (hash !== credential_hash) return { valid:false, reason:"credential_hash_mismatch", hash };
+  const der = pemDer(public_key_pem);
+  const fingerprint = hex(await sha256Bytes(der));
+  if (fingerprint !== public_key_sha256) return { valid:false, reason:"public_key_fingerprint_mismatch", fingerprint };
+  let key;
+  try { key = await crypto.subtle.importKey("spki", der, { name:"Ed25519" }, false, ["verify"]); }
+  catch (error) { return { valid:false, reason:"ed25519_not_supported_or_invalid_key", error:error.message, fingerprint }; }
+  const signatureValid = await crypto.subtle.verify({ name:"Ed25519" }, key, b64Bytes(signature_base64), new TextEncoder().encode(canonical));
+  if (!signatureValid) return { valid:false, reason:"signature_invalid", fingerprint };
+  const expired = credential.expires_at && Date.now() >= new Date(credential.expires_at).getTime();
+  if (expired) return { valid:false, reason:"expired", fingerprint };
+  return { valid:true, reason:null, fingerprint };
+}
+
+function trustResult(credential, verification) {
+  if (!verification.valid) return { trusted:false, reason:"credential_invalid" };
+  if (!trustRegistry) return { trusted:false, reason:"trust_registry_unavailable" };
+  const revoked = (trustRegistry.revoked_keys || []).some((k) => k.public_key_sha256 === credential.public_key_sha256);
+  if (revoked) return { trusted:false, reason:"signing_key_revoked" };
+  const active = (trustRegistry.active_keys || []).find((k) => k.public_key_sha256 === credential.public_key_sha256);
+  if (!active) return { trusted:false, reason:"signing_key_not_in_active_trust_roots" };
+  return { trusted:true, reason:null, key:active };
+}
+
+byId("support").textContent = crypto?.subtle ? "Browser cryptography available" : "Browser cryptography unavailable";
+byId("verify").addEventListener("click", async () => {
+  setState("integrity", "Checking…", "muted"); setState("trust", "Checking…", "muted"); setState("official", "Checking…", "muted");
+  try {
+    const credential = JSON.parse(byId("credential").value);
+    const verification = await verifyCredential(credential);
+    setState("integrity", verification.valid ? "VALID" : "INVALID", verification.valid ? "good" : "bad");
+    const trust = trustResult(credential, verification);
+    setState("trust", trust.trusted ? "TRUSTED KEY" : "NOT TRUSTED", trust.trusted ? "good" : "warn");
+    const official = verification.valid && trust.trusted && credential.issuer === (trustRegistry?.owner || "ĀRU Intelligence Inc.");
+    setState("official", official ? "OFFICIAL" : "NOT OFFICIAL", official ? "good" : "warn");
+    byId("details").textContent = JSON.stringify({
+      credential_valid: verification.valid,
+      credential_reason: verification.reason,
+      signer_fingerprint: verification.fingerprint || credential.public_key_sha256 || null,
+      trust_root_valid: trust.trusted,
+      trust_reason: trust.reason,
+      registry_status: trustRegistry?.status || null,
+      issuer: credential.issuer || null,
+      grantee: credential.grantee || null,
+      marks: credential.marks || [],
+      permitted_uses: credential.permitted_uses || [],
+      expires_at: credential.expires_at || null,
+      official
+    }, null, 2);
+  } catch (error) {
+    setState("integrity", "INVALID", "bad"); setState("trust", "NOT CHECKED", "warn"); setState("official", "NOT OFFICIAL", "warn");
+    byId("details").textContent = error.message;
+  }
+});
+
+await loadRegistry();
+</script>
+</body>
+</html>
