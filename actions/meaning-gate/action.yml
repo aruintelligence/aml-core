@@ -1,0 +1,43 @@
+name: "ĀML Meaning Gate"
+description: "Fail CI when AML changes introduce high-risk semantic changes or policy regressions."
+inputs:
+  before-file:
+    description: "Path to the baseline .aml file"
+    required: true
+  after-file:
+    description: "Path to the proposed .aml file"
+    required: true
+  before-policy:
+    description: "Baseline policy/profile"
+    required: false
+    default: "calm_default"
+  after-policy:
+    description: "Proposed enforcement policy/profile"
+    required: false
+    default: "human_first"
+  context-file:
+    description: "Optional runtime context JSON path"
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        if [ -n "${{ inputs.context-file }}" ]; then
+          node "$GITHUB_ACTION_PATH/../../scripts/meaning-gate.js" \
+            "${{ inputs.before-file }}" \
+            "${{ inputs.after-file }}" \
+            "${{ inputs.before-policy }}" \
+            "${{ inputs.after-policy }}" \
+            "${{ inputs.context-file }}"
+        else
+          node "$GITHUB_ACTION_PATH/../../scripts/meaning-gate.js" \
+            "${{ inputs.before-file }}" \
+            "${{ inputs.after-file }}" \
+            "${{ inputs.before-policy }}" \
+            "${{ inputs.after-policy }}"
+        fi
+branding:
+  icon: "shield"
+  color: "blue"
