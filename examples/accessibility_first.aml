@@ -1,0 +1,28 @@
+transmission "accessibility-first" {
+
+  title:
+    "Accessibility-First Interface"
+
+  engram primaryInstruction {
+
+    value:
+      "Present the primary instruction clearly before secondary content."
+
+    purpose:
+      "reduce cognitive competition and preserve task clarity"
+
+    memory_role:
+      "primary_instruction"
+
+    user_effect:
+      "clarity"
+
+    attention_cost:
+      2
+
+    restoration_value:
+      8
+
+  }
+
+}
