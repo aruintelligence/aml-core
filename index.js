@@ -36,6 +36,7 @@ export { createTransparencyLog, appendTransparencyEntry, verifyTransparencyLog }
 export { createThresholdAuthorization, verifyThresholdAuthorization } from "./runtime/thresholdAuthorization.js";
 export { canonicalize, canonicalJSONStringify } from "./protocol/canonicalJson.js";
 export { createWireEnvelope, validateWireEnvelope, negotiateWireSession } from "./protocol/wireProtocol.js";
+export { createReplayGuard, acceptWireEnvelope } from "./protocol/replayGuard.js";
 export { evaluateAccountableProps, createAccountableUI } from "./adapters/react.js";
 export { viewMeaning, formatMeaningReport } from "./tooling/viewMeaning.js";
 export { evaluatePullRequestChange, formatPullRequestGate } from "./tooling/prGate.js";
