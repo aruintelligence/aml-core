@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-verifier-manifest.schema.json",
+  "title": "AML Verifier Manifest",
+  "description": "Machine-readable prototype declaration of verifier capabilities. Self-declared capabilities are not proof of independence, identity, or correctness.",
+  "type": "object",
+  "required": ["schema", "prototype", "verifier_id", "implementation", "artifact_types", "report_schema", "canonicalization_profiles"],
+  "properties": {
+    "schema": { "const": "aml-verifier-manifest/1" },
+    "prototype": { "const": true },
+    "verifier_id": { "type": "string", "minLength": 1 },
+    "implementation": { "type": "string", "minLength": 1 },
+    "runtime": { "type": "string" },
+    "version": { "type": "string" },
+    "artifact_types": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "report_schema": { "const": "aml-verification-report/1" },
+    "canonicalization_profiles": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "signature_algorithms": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "verification_url": { "type": ["string", "null"] },
+    "source_url": { "type": ["string", "null"] },
+    "claim_boundary": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}
