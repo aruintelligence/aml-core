@@ -16,7 +16,7 @@ import {
   executeAccountableIntent
 } from "../index.js";
 
-const sourceElement = { attention_cost: 2, restoration_value: 3 };
+const splitVoteElement = { attention_cost: 2, restoration_value: 2.2 };
 
 test("consent ledger supports grant, expiry, revocation, and tamper detection", () => {
   const ledger = createConsentLedger({ subject_id: "user-1", timestamp: "2026-01-01T00:00:00.000Z" });
@@ -33,10 +33,12 @@ test("consent ledger supports grant, expiry, revocation, and tamper detection", 
 
 test("policy consensus preserves dissent instead of flattening disagreement", () => {
   const consensus = createPolicyConsensus(["restorative_v1", "attention_conservative_v1"], { strategy: "majority" });
-  const result = consensus.evaluate(sourceElement, {});
+  const result = consensus.evaluate(splitVoteElement, {});
   assert.equal(Array.isArray(result.votes), true);
   assert.equal(Array.isArray(result.dissent), true);
   assert.equal(result.votes.length, 2);
+  assert.equal(result.votes.some(vote => vote.render_allowed), true);
+  assert.equal(result.votes.some(vote => !vote.render_allowed), true);
   assert.equal(result.dissent.length >= 1, true);
 });
 
