@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ĀML Page Manifest Demo</title>
+<style>
+body{font-family:system-ui,-apple-system,sans-serif;max-width:860px;margin:0 auto;padding:24px;background:#07111f;color:#eef7ff;line-height:1.5}section{background:#0e1b2d;border:1px solid #27415f;border-radius:16px;padding:18px;margin:18px 0}button,.card{padding:12px 16px;border-radius:10px;border:1px solid #35597f;background:#122842;color:white}.card{margin:12px 0}pre{background:#06101c;padding:14px;border-radius:10px;overflow:auto}.muted{color:#abc0d8}
+</style>
+</head>
+<body>
+<h1>ĀML Page Manifest</h1>
+<p>The visible HTML below has no AML attributes. Meaning is declared separately in one machine-readable manifest.</p>
+<p class="muted">Experimental reference-project embedding pattern; not a ratified web standard.</p>
+<section>
+<div id="status" class="card">Saved. Your changes are complete.</div>
+<button id="pressure">Act now before this disappears.</button>
+</section>
+<section><h2>Page receipt</h2><pre id="receipt">Waiting…</pre></section>
+<script type="application/aml+json">
+{
+  "schema": "aml-page/1",
+  "elements": [
+    {
+      "selector": "#status",
+      "purpose": "Confirm task completion",
+      "attention_cost": 1,
+      "restoration_value": 3
+    },
+    {
+      "selector": "#pressure",
+      "purpose": "Create urgency to increase conversion",
+      "attention_cost": 5,
+      "restoration_value": 1
+    }
+  ]
+}
+</script>
+<script type="module" src="./aml-page-manifest.js"></script>
+<script>
+document.addEventListener('aml-receipt',(event)=>{
+  document.getElementById('receipt').textContent=JSON.stringify(event.detail,null,2);
+});
+</script>
+</body>
+</html>
