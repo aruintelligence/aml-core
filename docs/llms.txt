@@ -13,6 +13,7 @@ Primary public entry points:
 - Playground: https://aruintelligence.github.io/aml-core/playground.html
 - View Meaning™: https://aruintelligence.github.io/aml-core/view-meaning.html
 - Official AML / licensing: https://aruintelligence.github.io/aml-core/official-aml.html
+- Verify Official AML: https://aruintelligence.github.io/aml-core/official-verify.html
 - GitHub: https://github.com/aruintelligence/aml-core
 
 Canonical technical resources:
@@ -21,13 +22,17 @@ Canonical technical resources:
 - Capabilities: https://github.com/aruintelligence/aml-core/blob/main/AML_CAPABILITIES.json
 - Protocol discovery: https://github.com/aruintelligence/aml-core/blob/main/protocol/discovery.json
 - Protocol registry: https://github.com/aruintelligence/aml-core/blob/main/protocol/registry.json
+- AML HTTP/OpenAPI contract: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-http.openapi.yaml
 - Conformance: https://github.com/aruintelligence/aml-core/blob/main/CONFORMANCE.json
 - RFC index: https://github.com/aruintelligence/aml-core/blob/main/rfcs/README.md
 - Standardization path: https://github.com/aruintelligence/aml-core/blob/main/STANDARDIZATION.md
+- 90-day adoption plan: https://github.com/aruintelligence/aml-core/blob/main/ADOPTION_90_DAYS.md
 
 Official brand / commercial resources:
 - Official marks registry: https://github.com/aruintelligence/aml-core/blob/main/OFFICIAL_MARKS.json
 - Public official-authorization index: https://github.com/aruintelligence/aml-core/blob/main/OFFICIAL_AUTHORIZATIONS.json
+- Canonical brand trust roots: https://github.com/aruintelligence/aml-core/blob/main/BRAND_TRUST_ROOTS.json
+- Brand signing/key operations: https://github.com/aruintelligence/aml-core/blob/main/docs/BRAND_KEY_OPERATIONS.md
 - Trademark policy: https://github.com/aruintelligence/aml-core/blob/main/TRADEMARKS.md
 - Commercial licensing: https://github.com/aruintelligence/aml-core/blob/main/COMMERCIAL.md
 - Signed authorization protocol: https://github.com/aruintelligence/aml-core/blob/main/rfcs/0011-official-brand-authorization.md
@@ -40,6 +45,12 @@ Technical conformance and official branding are separate:
 - A third party can independently test technical conformance.
 - Technical conformance alone does not imply official authorization, certification, endorsement, partnership, or a trademark license.
 - Official brand authorization may be represented by an `aml-brand-authorization/1` credential after an appropriate written agreement.
+
+Official credential verification has two distinct levels:
+- Cryptographically valid: credential hash, signature, expiry, and optional credential revocation checks pass.
+- Officially trusted by ĀRU: cryptographic checks pass AND the signing-key fingerprint appears in canonical `BRAND_TRUST_ROOTS.json` as active and not revoked.
+
+An embedded public key or issuer string is not enough to establish official ĀRU status. If the canonical trust-root registry is `unprovisioned`, a self-signed credential must not be described as officially authorized.
 
 Evidence boundary:
 ĀML provides software-level accountability, integrity, interoperability, and policy mechanisms. It does not by itself prove that present attention/restoration values objectively measure human cognition or wellbeing, does not replace WCAG conformance testing, and does not make an AI's declared intent truthful.
