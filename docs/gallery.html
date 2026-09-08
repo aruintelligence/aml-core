@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ĀML Decision Gallery</title>
+  <meta name="description" content="Browse concrete ALLOW and SUPPRESS examples for the AML prototype rule.">
+  <style>
+    body{font-family:system-ui,-apple-system,sans-serif;max-width:1080px;margin:0 auto;padding:24px;background:#07111f;color:#eef7ff;line-height:1.5}a{color:#7df9ff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}.card{background:#0e1b2d;border:1px solid #27415f;border-radius:16px;padding:18px}.allow{border-color:#447f56}.suppress{border-color:#8a4a4a}.decision{font-weight:800;font-size:1.35rem}.allow .decision{color:#9cffb0}.suppress .decision{color:#ff9f9f}.muted{color:#abc0d8}code{background:#06101c;padding:2px 5px;border-radius:6px}
+  </style>
+</head>
+<body>
+  <h1>ĀML Decision Gallery</h1>
+  <p>Ten simple examples. Same prototype rule: <code>render_allowed = restoration_value &gt;= attention_cost</code>.</p>
+  <p class="muted">SHIPPED demonstration fixtures. Scores are declared/model inputs, not objective measurements of human cognition.</p>
+
+  <div class="grid" id="gallery"></div>
+
+  <p><a href="./proof.html">Build your own proof state</a> · <a href="./view-meaning.html">View Meaning</a> · <a href="https://github.com/aruintelligence/aml-core/tree/main/conformance/flood">Inspect fixture source</a></p>
+
+  <script>
+    const examples = [
+      ['Clear next step','Explain what happens next',1,3],
+      ['Status confirmation','Confirm a completed action',1,4],
+      ['Consented data action','Complete a user-requested data action',2,3],
+      ['Reduced-motion option','Offer a calmer motion alternative',1,4],
+      ['Calm navigation','Help the user move to the next page',1,3],
+      ['Countdown pressure','Create purchase urgency',5,1],
+      ['Autoplay interruption','Interrupt with promotional media',4,1],
+      ['Notification nag','Pressure notification opt-in',4,1],
+      ['Forced upsell','Pressure an unrelated upgrade',5,2],
+      ['Unnecessary data pressure','Pressure collection of extra personal data',4,1]
+    ];
+    const root = document.getElementById('gallery');
+    examples.forEach(([name,purpose,a,r]) => {
+      const allowed = r >= a;
+      const card = document.createElement('article');
+      card.className = `card ${allowed ? 'allow' : 'suppress'}`;
+      const url = `./proof.html?attention=${a}&restoration=${r}`;
+      card.innerHTML = `<h2>${name}</h2><p>${purpose}</p><p><code>attention_cost=${a}</code><br><code>restoration_value=${r}</code></p><p class="decision">${allowed ? 'ALLOW' : 'SUPPRESS'}</p><p><a href="${url}">Replay this state →</a></p>`;
+      root.appendChild(card);
+    });
+  </script>
+</body>
+</html>
