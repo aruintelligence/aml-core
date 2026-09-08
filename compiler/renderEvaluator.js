@@ -7,15 +7,16 @@ export function evaluateRenderDecisions(amt, options = {}) {
   const decisions = [];
   const timestamp = options.timestamp ?? null;
   const policy = resolvePolicy(options.policy ?? "restorative_v1");
+  const context = options.context ?? {};
 
   for (const node of amt.root) {
-    walkNode(node, decisions, timestamp, policy);
+    walkNode(node, decisions, timestamp, policy, context);
   }
 
   return decisions;
 }
 
-function walkNode(node, decisions, timestamp, policy) {
+function walkNode(node, decisions, timestamp, policy, context) {
   const metadata = node.render_metadata || {};
 
   const hasRenderableMetadata =
@@ -26,17 +27,17 @@ function walkNode(node, decisions, timestamp, policy) {
     typeof metadata.restoration_value === "number";
 
   if (hasRenderableMetadata) {
-    decisions.push(createRenderDecision(node, timestamp, policy));
+    decisions.push(createRenderDecision(node, timestamp, policy, context));
   }
 
   if (node.children && node.children.length > 0) {
     for (const child of node.children) {
-      walkNode(child, decisions, timestamp, policy);
+      walkNode(child, decisions, timestamp, policy, context);
     }
   }
 }
 
-function createRenderDecision(node, timestamp, policy) {
+function createRenderDecision(node, timestamp, policy, context) {
   const metadata = node.render_metadata || {};
 
   const element = {
@@ -57,7 +58,7 @@ function createRenderDecision(node, timestamp, policy) {
     aesthetic_coherence: metadata.restoration_value || 1
   };
 
-  const result = policy.evaluate(element, { node, metadata });
+  const result = policy.evaluate(element, { node, metadata, context });
   if (!result || typeof result.render_allowed !== "boolean") {
     throw new Error(`ĀML policy ${policy.id} must return render_allowed as a boolean.`);
   }
