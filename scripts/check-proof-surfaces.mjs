@@ -21,11 +21,14 @@ const required = [
   ['docs/aml-witness-bundle.js', ['aml-witness-bundle/1', 'verifySessionAttestation', 'AML_WITNESS_BUNDLE_VALID']],
   ['docs/aml-verification-report.js', ['aml-verification-report/1', 'witnessVerificationReport', 'does not prove identity']],
   ['docs/aml-verification-quorum.js', ['aml-verification-quorum/1', 'AML_QUORUM_DUPLICATE_VERIFIER', 'disagreement_reasons']],
+  ['docs/aml-signed-verification-report.js', ['aml-signed-verification-report/1', 'verifier_key_fingerprint', 'Key possession does not prove verifier identity']],
+  ['docs/aml-signed-verification-quorum.js', ['aml-signed-verification-quorum/1', 'distinct_keys', 'Distinct keys do not prove distinct people']],
   ['docs/attest-evidence.html', ['ĀML Attest Evidence', 'Create signed witness bundle', 'Download bundle.json', 'aml-session-attestation.js']],
   ['docs/detached-verifier.html', ['ĀML Detached Verifier', 'Generate 2-minute challenge', 'Verify bundle against my challenge', 'Download verification-report.json', 'type="file"']],
   ['docs/aml-verifier-worker.js', ['verifyWitnessBundle', 'aml-web-worker', 'postMessage']],
   ['docs/worker-verifier.html', ['ĀML Worker Verifier', 'Verify in worker', "new Worker('./aml-verifier-worker.js'", 'without access to the page DOM']],
   ['docs/quorum-demo.html', ['ĀML Verifier Plurality', 'Build quorum', 'Threshold agreement is not truth or certification']],
+  ['docs/signed-quorum-demo.html', ['ĀML Key-Distinct Verifier Quorum', 'Two verifier names, same key', 'does not represent external witnesses']],
   ['docs/witnesses.html', ['ĀML External Witnesses', 'external witness records', '0 external witnesses']],
   ['docs/VERIFIER_PLURALITY.md', ['One verifier can be wrong', 'aml-verification-quorum/1', 'does **not** prove']],
   ['docs/VERIFIER_NETWORK.md', ['DRAFT protocol direction', 'preserve disagreement', 'outside implementation']],
@@ -36,7 +39,7 @@ const required = [
   ['docs/page-manifest-demo.html', ['ĀML Page Manifest', 'application/aml+json', 'Create urgency to increase conversion']],
   ['docs/aml-zone.js', ['aml-zone-violation/1', '__AML_ZONE_VIOLATIONS__', "mode === 'strict'", 'node.hidden = true']],
   ['docs/strict-zone-demo.html', ['ĀML Strict Zone', 'Generate undeclared AI output', 'mode="strict"']],
-  ['docs/aml.js', ['aml-browser-bootstrap/1', './aml-gate.js', './aml-zone.js', './aml-live.js', './aml-page-manifest.js', './aml-browser-evidence.js', 'globalThis.AML = api', 'createChallenge', 'verifyWitnessBundle', 'createVerificationQuorum']],
+  ['docs/aml.js', ['aml-browser-bootstrap/1', './aml-gate.js', './aml-zone.js', './aml-live.js', './aml-page-manifest.js', './aml-browser-evidence.js', 'globalThis.AML = api', 'createChallenge', 'verifyWitnessBundle', 'createVerificationQuorum', 'createSignedVerificationQuorum']],
   ['docs/ONE_SCRIPT_AML.md', ['One-script AML browser integration', 'window.__AML_RECEIPT__', '<aml-zone mode="strict">']],
   ['docs/one-script-demo.html', ['One script. Three AML declaration styles.', './aml.js', 'application/aml+json']],
   ['protocol/aml-page.schema.json', ['"aml-page/1"', '"maximum": 10']],
@@ -48,6 +51,8 @@ const required = [
   ['protocol/aml-verification-report.schema.json', ['"aml-verification-report/1"', '"checks"', '"verifier"']],
   ['protocol/aml-verifier-manifest.schema.json', ['"aml-verifier-manifest/1"', '"artifact_types"', '"claim_boundary"']],
   ['protocol/aml-verification-quorum.schema.json', ['"aml-verification-quorum/1"', '"threshold_met"', '"unanimous"']],
+  ['protocol/aml-signed-verification-report.schema.json', ['"aml-signed-verification-report/1"', '"verifier_key_fingerprint"', '"ECDSA-P256-SHA256"']],
+  ['protocol/aml-signed-verification-quorum.schema.json', ['"aml-signed-verification-quorum/1"', '"distinct_keys"', '"threshold_met"']],
   ['protocol/aml-witness-record.schema.json', ['"aml-witness-record/1"', '"external_to_aml_core"', '"source_url"']],
   ['protocol/verifier-registry.json', ['"external_verifier_count": 0', '"WITNESSES.json"']],
   ['WITNESSES.json', ['"external_witness_count": 0', '"records": []', 'Negative results allowed']],
@@ -87,5 +92,5 @@ if (failures.length) {
 console.log(JSON.stringify({
   verified: true,
   surfaces: required.map(([path]) => path),
-  promise: 'shareable + multilingual + embeddable + live-DOM + page-manifest + strict-zone + browser-integrity + evidence-packet + challenge-bound-session + detached-verifier + file-native-witness + verification-report + verifier-manifest + verifier-plurality + witness-registry + worker-verifier + cross-language-python + canonical-vectors + one-script + offline AML proof surfaces remain present'
+  promise: 'shareable + multilingual + embeddable + live-DOM + page-manifest + strict-zone + browser-integrity + evidence-packet + challenge-bound-session + detached-verifier + file-native-witness + verification-report + verifier-manifest + verifier-plurality + signed-verifier-report + key-distinct-quorum + witness-registry + worker-verifier + cross-language-python + canonical-vectors + one-script + offline AML proof surfaces remain present'
 }, null, 2));
