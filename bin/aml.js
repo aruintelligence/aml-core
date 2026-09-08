@@ -6,9 +6,11 @@
 import fs from "fs";
 import { compileAML, compileSource } from "../compiler/compiler.js";
 import { generateAMLFromIntent } from "../compiler/intentCompiler.js";
+import { simulatePolicies } from "../compiler/policySimulator.js";
 import { analyzeAMT } from "../compiler/diagnostics.js";
 import { explainCompilation } from "../compiler/explain.js";
 import { verifyBuildManifest } from "../compiler/verifyBuild.js";
+import { signBuildManifest, verifyBuildAttestation } from "../compiler/signature.js";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -22,33 +24,40 @@ function showHelp() {
 Usage:
   aml compile <file.aml> [outputDir]
   aml generate <intent.json> [output.aml]
+  aml simulate <file.aml> [policy1,policy2]
   aml inspect <file.aml>
   aml explain <file.aml>
   aml validate <file.aml>
   aml lint <file.aml>
   aml verify <build_manifest.json>
+  aml sign <build_manifest.json> <private-key.pem> [attestation.json]
+  aml verify-attestation <attestation.json> [build_manifest.json]
   aml help
   aml version
 
 Commands:
-  compile   Compile AML into HTML and accountability artifacts
-  generate  Deterministically generate AML source from machine-readable intent JSON
-  inspect   Print the Abstract Meaning Tree + raw render decisions
-  explain   Print a compact explanation of decisions and diagnostics
-  validate  Parse and evaluate AML without writing output files
-  lint      Run semantic diagnostics on meaning-bearing nodes
-  verify    Recompute SHA-256 digests and verify an AML build bundle
-  help      Show this help message
-  version   Show AML CLI version
+  compile             Compile AML into HTML and accountability artifacts
+  generate            Deterministically generate AML source from machine-readable intent JSON
+  simulate            Compare identical AML meaning under multiple policy engines
+  inspect             Print the Abstract Meaning Tree + raw render decisions
+  explain             Print a compact explanation of decisions and diagnostics
+  validate            Parse and evaluate AML without writing output files
+  lint                Run semantic diagnostics on meaning-bearing nodes
+  verify              Recompute SHA-256 digests and verify an AML build bundle
+  sign                Create a detached Ed25519 build attestation
+  verify-attestation  Verify an Ed25519 AML build attestation
+  help                Show this help message
+  version             Show AML CLI version
 
 Examples:
   aml compile examples/transmission-061.aml
   aml generate examples/intent-checkout.json generated.aml
+  aml simulate examples/simple.aml restorative_v1,attention_conservative_v1
   aml explain examples/ai_assistant_response.aml
-  aml inspect examples/accessibility_first.aml
-  aml validate examples/calm_checkout.aml
   aml lint examples/ethical_ads.aml
   aml verify dist/build_manifest.json
+  aml sign dist/build_manifest.json private-key.pem dist/attestation.json
+  aml verify-attestation dist/attestation.json dist/build_manifest.json
 `);
 }
 
@@ -92,6 +101,13 @@ try {
     } else {
       process.stdout.write(source);
     }
+    process.exit(0);
+  }
+
+  if (command === "simulate") {
+    const policies = (args[2] || "restorative_v1,attention_conservative_v1").split(",").map(item => item.trim()).filter(Boolean);
+    const result = simulatePolicies(readSource(inputPath), policies);
+    console.log(JSON.stringify({ input: inputPath, ...result }, null, 2));
     process.exit(0);
   }
 
@@ -142,6 +158,28 @@ try {
     console.log(`Verified: ${result.verified}`);
     console.log(`Passed: ${result.passed}`);
     console.log(`Failed: ${result.failed}`);
+    process.exit(result.verified ? 0 : 1);
+  }
+
+  if (command === "sign") {
+    const privateKeyPath = args[2];
+    if (!privateKeyPath) throw new Error("A private key PEM path is required.");
+    const attestation = signBuildManifest(inputPath, readSource(privateKeyPath), { signer: process.env.AML_SIGNER || null });
+    const outputPath = args[3];
+    const serialized = `${JSON.stringify(attestation, null, 2)}\n`;
+    if (outputPath) {
+      fs.writeFileSync(outputPath, serialized);
+      console.log(`SIGNED: ${outputPath}`);
+    } else {
+      process.stdout.write(serialized);
+    }
+    process.exit(0);
+  }
+
+  if (command === "verify-attestation") {
+    const attestation = JSON.parse(readSource(inputPath));
+    const result = verifyBuildAttestation(attestation, args[2] || attestation.manifest_path);
+    console.log(JSON.stringify(result, null, 2));
     process.exit(result.verified ? 0 : 1);
   }
 
