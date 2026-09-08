@@ -1,0 +1,10 @@
+transmission "allow_reduced_motion_alternative" {
+  message "progress" {
+    purpose: "Show task progress"
+    content: "Processing"
+    attention_cost: 1
+    restoration_value: 2
+    motion_required: true
+    reduced_motion_alternative: true
+  }
+}
