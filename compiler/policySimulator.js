@@ -16,9 +16,10 @@ export function simulatePolicies(source, policies, options = {}) {
   const ast = parse(tokens);
   const amt = buildAMT(ast);
   const timestamp = options.timestamp ?? "1970-01-01T00:00:00.000Z";
+  const context = options.context ?? {};
 
   const runs = policies.map(policy => {
-    const decisions = evaluateRenderDecisions(amt, { timestamp, policy });
+    const decisions = evaluateRenderDecisions(amt, { timestamp, policy, context });
     return {
       policy: typeof policy === "string" ? policy : policy?.id || "custom",
       allowed: decisions.filter(item => item.render_allowed).length,
@@ -32,6 +33,7 @@ export function simulatePolicies(source, policies, options = {}) {
     version: "1.0",
     policy_count: runs.length,
     decision_nodes: runs[0]?.decisions.length || 0,
+    context: structuredClone(context),
     runs
   };
 }
