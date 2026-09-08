@@ -1,0 +1,12 @@
+transmission "conformance-allow" {
+  title: "Conformance Allow"
+
+  engram restorativeNode {
+    value: "Canonical render-allowed fixture."
+    purpose: "prove a high-value low-cost AML element is allowed"
+    memory_role: "conformance_fixture"
+    user_effect: "clarity"
+    attention_cost: 2
+    restoration_value: 9
+  }
+}
