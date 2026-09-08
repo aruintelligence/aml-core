@@ -60,10 +60,12 @@ flowchart LR
 ```
 
 - Working lexer, parser, Abstract Syntax Tree, and Abstract Meaning Tree
-- CLI compilation and rendering commands
+- CLI compilation
+- Importable JavaScript package API
 - Allowed, degraded, and suppressed render modes
 - Browser laboratory with live policy inputs
 - Machine-readable `render_decision.json`
+- CI-enforced compilation across the runnable example gallery
 - Automated gate and end-to-end compiler smoke tests
 - GitHub Actions verification on pushes and pull requests
 
@@ -75,13 +77,13 @@ Requires Node.js 18 or newer.
 git clone https://github.com/aruintelligence/aml-core.git
 cd aml-core
 npm test
-node bin/aml.js compile examples/transmission-061.aml dist
+node bin/aml.js compile examples/simple.aml dist/simple
 ```
 
 The compiler emits:
 
 ```text
-dist/
+dist/simple/
 ├── index.html
 ├── tokens.json
 ├── ast.json
@@ -95,11 +97,44 @@ For CLI help:
 node bin/aml.js help
 ```
 
+For the full developer path, read [QUICKSTART.md](QUICKSTART.md).
+
+## Developer surface
+
+| Surface | Use it for |
+|---|---|
+| [Quickstart](QUICKSTART.md) | Clone, test, compile, inspect |
+| [JavaScript API](API.md) | Import `compileAML` and `ethicalRenderGate` |
+| [Example gallery](examples/README.md) | Run AML across AI, learning, accessibility, commerce, feeds, focus, and ads |
+| [Replication protocol](REPLICATION_PROTOCOL.md) | Independently reproduce compiler behavior |
+| [Conformance manifest](conformance/manifest.json) | Machine-readable fixture and artifact contract |
+| [Live Lab](https://aruintelligence.github.io/aml-core/) | Interactively inspect gate behavior |
+
+## Proof surface
+
+The project is structured so claims can be tested against artifacts:
+
+```text
+AML source
+  ↓
+tokens.json
+  ↓
+ast.json
+  ↓
+amt.json
+  ↓
+render_decision.json
+  ↓
+index.html
+```
+
+That means a reviewer can inspect not only the rendered page, but the compiler path and policy outcome that produced it.
+
 ## Inspect the system
 
 | Start here | What it contains |
 |---|---|
-| [Live Lab](https://aruintelligence.github.io/aml-core/) | Interactive HTML-versus-ĀML comparison and live decisions |
+| [Documentation hub](docs/README.md) | Research notes and conceptual map |
 | [Manifesto](MANIFESTO.md) | Why accountable rendering matters |
 | [Architecture](ARCHITECTURE.md) | Compiler and runtime structure |
 | [Language specification](LANGUAGE_SPEC.md) | Current syntax and semantics |
@@ -108,6 +143,7 @@ node bin/aml.js help
 | [Roadmap](ROADMAP.md) | Planned compiler and runtime work |
 | [White paper](WHITEPAPER.md) | Research framing |
 | [Contribution guide](CONTRIBUTING.md) | How to challenge or improve the work |
+| [Open research program](docs/RESEARCH_PROGRAM.md) | Research tracks and unanswered questions |
 
 ## What ĀML is—and is not
 
@@ -119,7 +155,7 @@ The project is best understood as an executable question:
 
 ## Build with us
 
-Useful contributions include parser tests, malformed-input handling, accessibility work, alternate policy models, counterexamples, security review, and empirical evaluation methods. Read [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md) before submitting work.
+Useful contributions include parser tests, malformed-input handling, accessibility work, alternate policy models, counterexamples, security review, AI-generated interface experiments, additional conformance fixtures, and empirical evaluation methods. Read [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md) before submitting work.
 
 Created by **Daniel Jacob Read IV** and stewarded by **ĀRU Intelligence Inc.™**
 
