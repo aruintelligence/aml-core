@@ -1,5 +1,6 @@
 import http from "node:http";
 import { executeAccountableIntent, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
+import { verifyOfficialBrandAuthorization } from "../runtime/brandTrust.js";
 import fs from "node:fs";
 
 function send(res, status, body, headers = {}) {
@@ -38,18 +39,33 @@ function readJson(req, maxBytes = 1024 * 1024) {
   });
 }
 
-function loadCapabilities() {
+function loadJson(relativePath, fallback) {
   try {
-    return JSON.parse(fs.readFileSync(new URL("../AML_CAPABILITIES.json", import.meta.url), "utf8"));
+    return JSON.parse(fs.readFileSync(new URL(relativePath, import.meta.url), "utf8"));
   } catch {
-    return { language: "ĀML — ĀRU Meaning Language", status: "capabilities_unavailable" };
+    return fallback;
   }
+}
+
+function loadCapabilities() {
+  return loadJson("../AML_CAPABILITIES.json", { language: "ĀML — ĀRU Meaning Language", status: "capabilities_unavailable" });
+}
+
+function loadBrandTrustRoots() {
+  return loadJson("../BRAND_TRUST_ROOTS.json", {
+    type: "aml-brand-trust-roots/1",
+    owner: "ĀRU Intelligence Inc.",
+    status: "unavailable",
+    active_keys: [],
+    revoked_keys: []
+  });
 }
 
 export function createAmlHttpServer(options = {}) {
   const maxBodyBytes = options.max_body_bytes ?? 1024 * 1024;
   const defaultProfile = options.default_profile ?? "human_first";
   const allowedOrigin = options.allowed_origin ?? null;
+  const trustRoots = options.brand_trust_roots ?? loadBrandTrustRoots();
 
   return http.createServer(async (req, res) => {
     const headers = allowedOrigin ? { "access-control-allow-origin": allowedOrigin } : {};
@@ -61,6 +77,10 @@ export function createAmlHttpServer(options = {}) {
 
     if (req.method === "GET" && url.pathname === "/v1/capabilities") {
       return send(res, 200, loadCapabilities(), headers);
+    }
+
+    if (req.method === "GET" && url.pathname === "/v1/brand-trust-roots") {
+      return send(res, 200, trustRoots, headers);
     }
 
     if (req.method === "OPTIONS" && allowedOrigin) {
@@ -101,6 +121,21 @@ export function createAmlHttpServer(options = {}) {
         return send(res, verification.verified ? 200 : 422, verification, headers);
       } catch (error) {
         return send(res, error.statusCode ?? 400, { error: error.message || "verification_failed" }, headers);
+      }
+    }
+
+    if (req.method === "POST" && url.pathname === "/v1/verify-brand-authorization") {
+      try {
+        const body = await readJson(req, maxBodyBytes);
+        if (!body.credential) return send(res, 400, { error: "credential_required" }, headers);
+        const result = verifyOfficialBrandAuthorization(body.credential, trustRoots, {
+          now: body.now ?? null,
+          revocation_registry: body.revocation_registry ?? null,
+          expected_issuer: trustRoots.owner ?? "ĀRU Intelligence Inc."
+        });
+        return send(res, result.valid && result.official ? 200 : 422, result, headers);
+      } catch (error) {
+        return send(res, error.statusCode ?? 400, { error: error.message || "brand_verification_failed" }, headers);
       }
     }
 
