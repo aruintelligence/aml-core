@@ -21,3 +21,13 @@ test("View Meaning extension performs local receipt and official-brand verificat
   assert.match(popup, /untrusted_signing_key/);
   assert.match(popup, /receipt_hash_mismatch/);
 });
+
+test("View Meaning extension surfaces purpose and human-context fields", () => {
+  assert.match(popup, /Declared purpose/);
+  assert.match(popup, /Consent \/ privacy \/ accessibility context/);
+  assert.match(popup, /consent_granted/);
+  assert.match(popup, /privacy_consent/);
+  assert.match(popup, /prefers_reduced_motion/);
+  assert.match(popup, /high_contrast_required/);
+  assert.match(popup, /attention_budget_remaining/);
+});
