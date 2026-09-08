@@ -1,0 +1,57 @@
+# AML verifier implementation path
+
+Status: SHIPPED prototype interoperability surface.
+Canonical repository: https://github.com/aruintelligence/aml-core
+
+Goal:
+Implement aml-witness-bundle/1 independently and report agreement or disagreement.
+
+Minimal contract:
+https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verifier-cli.md
+
+10-minute path:
+https://github.com/aruintelligence/aml-core/blob/main/docs/EXTERNAL_VERIFIER_10_MINUTES.md
+
+Golden witness:
+https://github.com/aruintelligence/aml-core/blob/main/independent/python/witness-vector.json
+
+Canonical JSON profile:
+https://github.com/aruintelligence/aml-core/blob/main/protocol/sorted-json-v1.md
+
+Schemas:
+- witness bundle: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-witness-bundle.schema.json
+- browser evidence: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-browser-evidence.schema.json
+- verification challenge: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verification-challenge.schema.json
+- session attestation: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-session-attestation.schema.json
+- verification report: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verification-report.schema.json
+- verifier manifest: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verifier-manifest.schema.json
+- verifier conformance result: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verifier-conformance-result.schema.json
+
+Black-box harness:
+node scripts/run-verifier-conformance.mjs -- <verifier-command>
+
+Required behavior:
+1. golden witness PASS
+2. tampered receipt FAIL
+3. tampered challenge FAIL
+4. expired challenge FAIL
+
+Reference implementations maintained by AML:
+- JavaScript/browser
+- Python standard library: independent/python/verify_witness.py
+- Go standard library: independent/go/main.go
+- HTTP reference service
+
+These reference implementations do NOT count as external witnesses.
+
+External witness registry:
+https://github.com/aruintelligence/aml-core/blob/main/WITNESSES.json
+
+Human witness page:
+https://aruintelligence.github.io/aml-core/witnesses.html
+
+Submit an external result:
+https://github.com/aruintelligence/aml-core/issues/17
+
+Important:
+Disagreement is acceptable and should be published. Passing the project-defined harness is compatibility evidence, not certification, official AML trademark authorization, proof of institutional independence, standards-body approval, or proof that declared intent/scores are objectively true.
