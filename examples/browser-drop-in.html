@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ĀML Browser Drop-In</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:900px;margin:40px auto;padding:0 20px;background:#07111f;color:#eef6ff}textarea,pre{width:100%;box-sizing:border-box;background:#020812;color:#dffcff;border:1px solid #24445d;border-radius:12px;padding:16px}textarea{min-height:240px}button{margin:16px 0;padding:12px 18px;border:0;border-radius:999px;font-weight:800;cursor:pointer}small{color:#9bb0c3}
+  </style>
+</head>
+<body>
+  <h1>ĀML™ — zero-install browser example</h1>
+  <p>Compile AML directly in the browser using the public GitHub Pages ES module.</p>
+  <textarea id="source">transmission "demo" {
+  message "welcome" {
+    purpose: "Explain the interface"
+    attention_cost: 1
+    restoration_value: 3
+  }
+}</textarea>
+  <button id="run">Compile + View Meaning</button>
+  <pre id="output" aria-live="polite"></pre>
+  <small>Prototype values are declared model inputs, not validated measurements of human cognition or wellbeing.</small>
+
+  <script type="module">
+    import { compileSourceBrowser } from "https://aruintelligence.github.io/aml-core/aml-browser.js";
+
+    const source = document.querySelector("#source");
+    const output = document.querySelector("#output");
+    document.querySelector("#run").addEventListener("click", () => {
+      try {
+        const result = compileSourceBrowser(source.value);
+        output.textContent = JSON.stringify({
+          protocol: "ĀML Browser Drop-In",
+          decisions: result.renderDecisions,
+          meaning_tree: result.amt
+        }, null, 2);
+      } catch (error) {
+        output.textContent = error.stack || String(error);
+      }
+    });
+    document.querySelector("#run").click();
+  </script>
+</body>
+</html>
