@@ -4,12 +4,19 @@
   "reference_verifiers": [
     "protocol/verifiers/browser-reference.json",
     "protocol/verifiers/python-reference.json",
+    "protocol/verifiers/go-reference.json",
     "protocol/verifiers/http-reference.json"
   ],
+  "reference_verifier_count": 4,
   "external_verifiers": [],
   "external_verifier_count": 0,
   "report_schema": "aml-verification-report/1",
   "quorum_schema": "aml-verification-quorum/1",
+  "signed_report_schema": "aml-signed-verification-report/1",
+  "signed_quorum_schema": "aml-signed-verification-quorum/1",
+  "cli_contract": "protocol/aml-verifier-cli.md",
+  "conformance_manifest": "conformance/verifier/manifest.json",
+  "conformance_result_schema": "aml-verifier-conformance-result/1",
   "witness_registry": "WITNESSES.json",
   "note": "Reference verifier entries are maintained by the AML repository and do not count as external witnesses. External entries remain empty until reproducible outside evidence exists."
 }
