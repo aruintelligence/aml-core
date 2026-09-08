@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
 // bin/aml.js
-// ĀML_CORE v1.0 — Command-Line Interface
+// ĀML_CORE v1.1 — Command-Line Interface
 
-import { compileAML } from "../compiler/compiler.js";
+import fs from "fs";
+import { compileAML, compileSource } from "../compiler/compiler.js";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -16,22 +17,32 @@ function showHelp() {
 
 Usage:
   aml compile <file.aml> [outputDir]
+  aml inspect <file.aml>
+  aml validate <file.aml>
   aml help
   aml version
 
 Commands:
-  compile   Compile an AML file into HTML and render accountability outputs
+  compile   Compile AML into HTML and accountability artifacts
+  inspect   Compile in memory and print the Abstract Meaning Tree + render decisions
+  validate  Parse and evaluate AML without writing output files
   help      Show this help message
   version   Show AML CLI version
 
 Examples:
   aml compile examples/transmission-061.aml
-  aml compile examples/transmission-061.aml dist
+  aml compile examples/ai_assistant.aml dist
+  aml inspect examples/accessibility_first.aml
+  aml validate examples/calm_checkout.aml
 `);
 }
 
 function showVersion() {
-  console.log("ĀML CLI v1.0.0");
+  console.log("ĀML CLI v1.1.0");
+}
+
+function readSource(filePath) {
+  return fs.readFileSync(filePath, "utf8");
 }
 
 try {
@@ -47,10 +58,27 @@ try {
 
   if (command === "compile") {
     const result = compileAML(inputPath, outputDir);
-
     console.log("ĀML compile complete.");
     console.log(`Input: ${result.input}`);
     console.log(`Output: ${result.output}`);
+    console.log(`Tokens: ${result.tokens.length}`);
+    console.log(`Render decisions: ${result.renderDecisions.length}`);
+    process.exit(0);
+  }
+
+  if (command === "inspect") {
+    const result = compileSource(readSource(inputPath));
+    console.log(JSON.stringify({
+      input: inputPath,
+      amt: result.amt,
+      render_decisions: result.renderDecisions
+    }, null, 2));
+    process.exit(0);
+  }
+
+  if (command === "validate") {
+    const result = compileSource(readSource(inputPath));
+    console.log(`VALID: ${inputPath}`);
     console.log(`Tokens: ${result.tokens.length}`);
     console.log(`Render decisions: ${result.renderDecisions.length}`);
     process.exit(0);
