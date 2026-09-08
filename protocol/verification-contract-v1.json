@@ -1,0 +1,32 @@
+{
+  "schema": "aml-verification-contract-snapshot/1",
+  "status": "SHIPPED prototype contract snapshot",
+  "snapshot_id": "aml-verifier-contract-2026-09-08-01",
+  "source_repository": "https://github.com/aruintelligence/aml-core",
+  "source_commit": "b1ff5a87c7b19ae6338503a58ab6257a5b2add0b",
+  "canonicalization": "sorted-json-v1",
+  "witness_schema": "aml-witness-bundle/1",
+  "cli_contract": "protocol/aml-verifier-cli.md",
+  "golden_vector": "independent/python/witness-vector.json",
+  "locked_paths": [
+    "protocol/aml-verifier-cli.md",
+    "protocol/aml-witness-bundle.schema.json",
+    "protocol/aml-browser-evidence.schema.json",
+    "protocol/aml-session-attestation.schema.json",
+    "protocol/aml-verification-challenge.schema.json",
+    "protocol/aml-verification-report.schema.json",
+    "protocol/aml-verifier-manifest.schema.json",
+    "protocol/aml-verifier-conformance-result.schema.json",
+    "protocol/sorted-json-v1.md",
+    "protocol/browser-canonicalization-vectors.json",
+    "independent/python/witness-vector.json",
+    "scripts/run-verifier-conformance.mjs"
+  ],
+  "required_behavior": [
+    "golden witness bundle passes",
+    "receipt-bound mutation fails",
+    "challenge mutation fails",
+    "expired challenge fails"
+  ],
+  "claim_boundary": "This snapshot identifies an exact project-defined verifier contract by immutable Git commit and path set. It is not standards-body ratification, certification, proof of implementation independence, or a replacement for content-level cryptographic verification."
+}
