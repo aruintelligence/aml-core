@@ -31,5 +31,5 @@
   "languages": ["en", "es", "pt-BR", "hi", "ar", "zh", "fr", "de"],
   "protocol_discovery": "https://github.com/aruintelligence/aml-core/blob/main/protocol/discovery.json",
   "license": "MIT for covered software; official marks are separate",
-  "note": "This path and the application/aml+json embedding pattern are experimental reference-project conventions, not Internet or web standards."
+  "note": "This path and the application/aml+json embedding pattern are experimental reference-project conventions. This is not an Internet standard or a ratified web standard."
 }
