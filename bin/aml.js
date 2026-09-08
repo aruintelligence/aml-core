@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
 // bin/aml.js
-// ĀML_CORE v1.1 — Command-Line Interface
+// ĀML_CORE — Command-Line Interface
 
 import fs from "fs";
 import { compileAML, compileSource } from "../compiler/compiler.js";
+import { generateAMLFromIntent } from "../compiler/intentCompiler.js";
 import { analyzeAMT } from "../compiler/diagnostics.js";
 import { explainCompilation } from "../compiler/explain.js";
 import { verifyBuildManifest } from "../compiler/verifyBuild.js";
@@ -20,6 +21,7 @@ function showHelp() {
 
 Usage:
   aml compile <file.aml> [outputDir]
+  aml generate <intent.json> [output.aml]
   aml inspect <file.aml>
   aml explain <file.aml>
   aml validate <file.aml>
@@ -30,6 +32,7 @@ Usage:
 
 Commands:
   compile   Compile AML into HTML and accountability artifacts
+  generate  Deterministically generate AML source from machine-readable intent JSON
   inspect   Print the Abstract Meaning Tree + raw render decisions
   explain   Print a compact explanation of decisions and diagnostics
   validate  Parse and evaluate AML without writing output files
@@ -40,6 +43,7 @@ Commands:
 
 Examples:
   aml compile examples/transmission-061.aml
+  aml generate examples/intent-checkout.json generated.aml
   aml explain examples/ai_assistant_response.aml
   aml inspect examples/accessibility_first.aml
   aml validate examples/calm_checkout.aml
@@ -49,7 +53,7 @@ Examples:
 }
 
 function showVersion() {
-  console.log("ĀML CLI v1.1.0");
+  console.log("ĀML CLI v1.1.0+");
 }
 
 function readSource(filePath) {
@@ -75,6 +79,19 @@ try {
     console.log(`Tokens: ${result.tokens.length}`);
     console.log(`Render decisions: ${result.renderDecisions.length}`);
     console.log(`Manifest: ${outputDir}/build_manifest.json`);
+    process.exit(0);
+  }
+
+  if (command === "generate") {
+    const intent = JSON.parse(readSource(inputPath));
+    const source = generateAMLFromIntent(intent);
+    const outputPath = args[2];
+    if (outputPath) {
+      fs.writeFileSync(outputPath, source);
+      console.log(`GENERATED: ${outputPath}`);
+    } else {
+      process.stdout.write(source);
+    }
     process.exit(0);
   }
 
