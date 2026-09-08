@@ -7,9 +7,15 @@
     "lsp": "bin/aml-lsp.js",
     "javascript": "index.js",
     "browser": "docs/aml-browser.js",
+    "browser_bootstrap": "docs/aml.js",
+    "proof": "https://aruintelligence.github.io/aml-core/proof.html",
     "playground": "https://aruintelligence.github.io/aml-core/playground.html",
     "view_meaning": "https://aruintelligence.github.io/aml-core/view-meaning.html",
+    "browser_evidence_demo": "https://aruintelligence.github.io/aml-core/browser-evidence-demo.html",
+    "detached_verifier": "https://aruintelligence.github.io/aml-core/detached-verifier.html",
+    "attestation_producer": "https://aruintelligence.github.io/aml-core/attest-evidence.html",
     "official_aml": "https://aruintelligence.github.io/aml-core/official-aml.html",
+    "http_service": "bin/aml-serve.js",
     "vscode": "editors/vscode/package.json",
     "react_adapter": "adapters/react.js",
     "meaning_gate_action": "actions/meaning-gate/action.yml"
@@ -42,6 +48,20 @@
     "react_starter": true,
     "nextjs_starter": true,
     "zero_install_browser_entry": true,
+    "one_script_browser_bootstrap": true,
+    "aml_gate_custom_element": true,
+    "existing_html_data_attribute_bridge": true,
+    "live_dom_firewall": true,
+    "strict_default_deny_aml_zone": true,
+    "separate_page_meaning_manifest": true,
+    "shareable_exact_state_proof_urls": true,
+    "multilingual_live_proof": true,
+    "arabic_rtl_live_proof": true,
+    "decision_gallery": true,
+    "offline_single_file_proof": true,
+    "browser_evidence_demo": true,
+    "detached_browser_verifier": true,
+    "portable_witness_bundle": true,
     "official_licensing_landing_page": true,
     "ninety_day_adoption_plan": true
   },
@@ -115,7 +135,14 @@
     "receipt_hash": true,
     "ed25519_execution_receipt_attestation": true,
     "proof_carrying_interfaces": true,
-    "proof_carrying_interface_schema": "schema/proof-carrying-interface.schema.json"
+    "proof_carrying_interface_schema": "schema/proof-carrying-interface.schema.json",
+    "browser_dom_receipts": true,
+    "browser_receipt_sha256_integrity": true,
+    "browser_evidence_packets": true,
+    "browser_evidence_schema": "protocol/aml-browser-evidence.schema.json",
+    "strict_zone_violation_records": true,
+    "challenge_bound_ephemeral_session_attestations": true,
+    "portable_browser_witness_bundles": true
   },
   "interoperability": {
     "capability_negotiation": true,
@@ -132,7 +159,15 @@
     "protocol_discovery": "protocol/discovery.json",
     "protocol_registry": "protocol/registry.json",
     "golden_protocol_vectors": "protocol/test-vectors.json",
-    "canonical_json": true
+    "canonical_json": true,
+    "browser_page_manifest_schema": "protocol/aml-page.schema.json",
+    "browser_dom_receipt_schema": "protocol/aml-dom-receipt.schema.json",
+    "browser_evidence_schema": "protocol/aml-browser-evidence.schema.json",
+    "browser_verification_challenge_schema": "protocol/aml-verification-challenge.schema.json",
+    "browser_session_attestation_schema": "protocol/aml-session-attestation.schema.json",
+    "browser_witness_bundle_schema": "protocol/aml-witness-bundle.schema.json",
+    "cross_language_python_witness_verifier": "independent/python/verify_witness.py",
+    "cross_language_witness_vector": "independent/python/witness-vector.json"
   },
   "trust_fabric": {
     "trust_delegation": true,
@@ -143,7 +178,11 @@
     "append_only_transparency_log": true,
     "revocation_registry": true,
     "proof_carrying_interface_binding": true,
-    "replay_resistant_wire_envelopes": true
+    "replay_resistant_wire_envelopes": true,
+    "browser_challenge_freshness": true,
+    "ephemeral_browser_session_key": "P-256",
+    "browser_session_signature": "ECDSA-P256-SHA256",
+    "official_brand_trust_roots_separate_from_browser_session_keys": true
   },
   "conformance": {
     "manifest": "conformance/manifest.json",
@@ -156,6 +195,7 @@
     "software_license_separate_from_brand_rights": true,
     "official_marks_registry": "OFFICIAL_MARKS.json",
     "public_authorization_index": "OFFICIAL_AUTHORIZATIONS.json",
+    "canonical_brand_trust_roots": "BRAND_TRUST_ROOTS.json",
     "trademark_policy": "TRADEMARKS.md",
     "commercial_program": "COMMERCIAL.md",
     "commercial_contact": "Office@aruintelligence.com",
@@ -180,7 +220,13 @@
     "merkle_inclusion_verification": true,
     "brand_authorization_tamper_detection": true,
     "brand_authorization_expiry": true,
-    "brand_authorization_revocation": true
+    "brand_authorization_revocation": true,
+    "browser_receipt_tamper_detection": true,
+    "browser_evidence_packet_tamper_detection": true,
+    "browser_witness_bundle_tamper_detection": true,
+    "browser_ephemeral_session_signature_verification": true,
+    "browser_verifier_challenge_binding": true,
+    "browser_challenge_expiry_enforcement": true
   },
   "tooling": {
     "compile": true,
@@ -224,6 +270,15 @@
     "local_markdown_link_integrity_check": true,
     "browser_playground": true,
     "browser_view_meaning": true,
+    "browser_api_global": "window.AML",
+    "browser_create_verification_challenge": true,
+    "browser_create_session_attestation": true,
+    "browser_verify_session_attestation": true,
+    "browser_create_witness_bundle": true,
+    "browser_verify_witness_bundle": true,
+    "detached_browser_witness_verifier": true,
+    "http_verify_witness_bundle": true,
+    "python_verify_witness_bundle": true,
     "vscode_language_definition": true,
     "language_intelligence_api": true,
     "stdio_language_server": true,
@@ -277,7 +332,13 @@
     "proof_carrying_interface_tests": true,
     "brand_authorization_tests": true,
     "brand_authorization_cli_test": true,
-    "official_mark_status_guard_test": true
+    "official_mark_status_guard_test": true,
+    "browser_contract_tests": true,
+    "detached_witness_node_webcrypto_tests": true,
+    "cross_language_python_witness_vector_ci": true,
+    "python_witness_tamper_rejection_ci": true,
+    "http_witness_bundle_tests": true,
+    "public_proof_surface_guard": true
   },
   "diagnostics": ["AML001", "AML002", "AML003", "AML004", "AML005", "AML_PARSE"],
   "non_claims": [
@@ -286,9 +347,12 @@
     "No claim that the prototype constitutes a universal ethical standard.",
     "Accessibility policies and audits do not replace WCAG conformance or assistive-technology testing.",
     "Cryptographic signatures prove integrity and key possession, not moral correctness or institutional trustworthiness.",
+    "An ephemeral browser session signature proves possession of that session key and evidence/challenge binding, not human identity, organization identity, official AML authorization, or truthful intent.",
+    "The Python witness verifier is a second-language implementation maintained in this repository and is not counted as an independent external witness or third-party adoption.",
     "Merkle inclusion proofs prove membership in a committed batch, not truthfulness of the underlying receipt content.",
     "Technical conformance does not by itself imply official AML authorization, endorsement, certification, partnership, or trademark rights.",
     "A signed AML brand-authorization credential is evidence of the represented signed scope and does not replace the underlying legal agreement.",
+    "The .well-known/aml.json path, application/aml+json embedding pattern, and detached witness contracts are experimental reference-project conventions, not ratified Internet or web standards.",
     "No mark is represented as federally registered unless a verified registration record is explicitly published."
   ]
 }
