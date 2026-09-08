@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/schema/capability-token.schema.json",
+  "title": "AML Capability Token",
+  "type": "object",
+  "required": ["type", "issuer", "capabilities", "public_key_pem", "public_key_fingerprint", "signature_base64"],
+  "properties": {
+    "type": { "const": "aml-capability-token/1" },
+    "issuer": { "type": "string", "minLength": 1 },
+    "subject": { "type": ["string", "null"] },
+    "audience": { "type": ["string", "null"] },
+    "capabilities": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "issued_at": { "type": ["string", "null"], "format": "date-time" },
+    "expires_at": { "type": ["string", "null"], "format": "date-time" },
+    "nonce": { "type": ["string", "null"] },
+    "public_key_pem": { "type": "string", "minLength": 1 },
+    "public_key_fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "signature_base64": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}
