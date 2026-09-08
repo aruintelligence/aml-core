@@ -1,6 +1,7 @@
 import http from "node:http";
 import { executeAccountableIntent, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { verifyOfficialBrandAuthorization } from "../runtime/brandTrust.js";
+import { verifyWitnessBundle } from "../docs/aml-witness-bundle.js";
 import fs from "node:fs";
 
 function send(res, status, body, headers = {}) {
@@ -121,6 +122,24 @@ export function createAmlHttpServer(options = {}) {
         return send(res, verification.verified ? 200 : 422, verification, headers);
       } catch (error) {
         return send(res, error.statusCode ?? 400, { error: error.message || "verification_failed" }, headers);
+      }
+    }
+
+    if (req.method === "POST" && url.pathname === "/v1/verify-witness-bundle") {
+      try {
+        const body = await readJson(req, maxBodyBytes);
+        if (!body.bundle) return send(res, 400, { error: "bundle_required" }, headers);
+        const now = body.now == null
+          ? Date.now()
+          : (typeof body.now === "number" ? body.now : Date.parse(body.now));
+        if (!Number.isFinite(now)) return send(res, 400, { error: "invalid_now" }, headers);
+        const result = await verifyWitnessBundle(body.bundle, { now });
+        return send(res, result.valid ? 200 : 422, {
+          protocol: "aml-http-witness-verification/1",
+          ...result
+        }, headers);
+      } catch (error) {
+        return send(res, error.statusCode ?? 400, { error: error.message || "witness_verification_failed" }, headers);
       }
     }
 
