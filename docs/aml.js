@@ -10,6 +10,8 @@ import { verifyBrowserEvidence } from './aml-browser-evidence.js';
 import { createVerificationChallenge } from './aml-verification-challenge.js';
 import { createSessionAttestation, verifySessionAttestation } from './aml-session-attestation.js';
 import { createWitnessBundle, verifyWitnessBundle } from './aml-witness-bundle.js';
+import { createVerificationReport, witnessVerificationReport } from './aml-verification-report.js';
+import { createVerificationQuorum, verifyVerificationQuorum } from './aml-verification-quorum.js';
 
 const api = Object.freeze({
   createChallenge: createVerificationChallenge,
@@ -19,7 +21,11 @@ const api = Object.freeze({
   verifyAttestation: verifySessionAttestation,
   createWitnessBundle: ({ challenge, attestation, evidence = globalThis.__AML_EVIDENCE__ } = {}) =>
     createWitnessBundle({ challenge, attestation, evidence }),
-  verifyWitnessBundle
+  verifyWitnessBundle,
+  createVerificationReport,
+  witnessVerificationReport,
+  createVerificationQuorum,
+  verifyVerificationQuorum
 });
 
 const ready = {
@@ -31,6 +37,8 @@ const ready = {
   page_manifest: true,
   browser_integrity: 'SHA-256',
   challenge_bound_attestation: 'ECDSA-P256-SHA256',
+  verification_report: 'aml-verification-report/1',
+  verification_quorum: 'aml-verification-quorum/1',
   browser_api_global: 'window.AML',
   receipt_global: 'window.__AML_RECEIPT__',
   receipt_history_global: 'window.__AML_RECEIPT_HISTORY__',
