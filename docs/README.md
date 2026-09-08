@@ -25,7 +25,10 @@
 - [Render Decision JSON Schema](../schema/render-decision.schema.json)
 - [Conformance Manifest](../CONFORMANCE.json)
 - [Independent Replication Protocol](../REPLICATION.md)
+- [Benchmarking Protocol](BENCHMARKING.md)
 - [Testing](../TESTING.md)
+
+The compiler supports fixed decision timestamps for reproducible builds, and CI enforces canonical allow/suppress fixtures plus browser/core parity.
 
 ## AI + interface research
 
