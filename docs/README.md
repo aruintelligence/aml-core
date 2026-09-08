@@ -4,10 +4,11 @@
 
 ## Run AML now
 
+- [AI Interface Firewall](AI_INTERFACE_FIREWALL.md) — mainstream adoption layer for AI/apps, React-compatible components, View Meaning, and CI gating
 - [Browser Playground](https://aruintelligence.github.io/aml-core/playground.html) — type AML source and inspect tokens, AST, Abstract Meaning Tree, and render decisions directly in the browser
 - [Live EthicalRenderGate™ Lab](https://aruintelligence.github.io/aml-core/) — interact with the policy model and compare legacy rendering with accountable rendering
 - [Quickstart](../QUICKSTART.md) — clone, test, compile, validate, lint, and inspect from the terminal
-- [API](API.md) — use `compileAML`, `compileSource`, `analyzeAMT`, and `ethicalRenderGate` programmatically
+- [API](API.md) — use the public JavaScript API programmatically
 - [Example Gallery](../examples/README.md) — runnable AML programs across multiple interface domains
 - [VS Code language support](../editors/vscode/README.md) — `.aml` recognition, syntax highlighting, comments, brackets, fields, and operators
 
@@ -19,6 +20,14 @@
 - [Accountable Interfaces](ACCOUNTABLE_INTERFACES.md)
 - [EthicalRenderGate™ Explained](ETHICAL_RENDER_GATE_EXPLAINED.md)
 - [Open Research Program](RESEARCH_PROGRAM.md)
+
+## Mainstream adoption
+
+- [AI Interface Firewall](AI_INTERFACE_FIREWALL.md)
+- React-compatible `AccountableUI` adapter at [`adapters/react.js`](../adapters/react.js)
+- `View Meaning` inspector at [`tooling/viewMeaning.js`](../tooling/viewMeaning.js)
+- Pull-request semantic gate at [`tooling/prGate.js`](../tooling/prGate.js)
+- Reusable GitHub Action at [`actions/meaning-gate/action.yml`](../actions/meaning-gate/action.yml)
 
 ## Language + tooling
 
@@ -45,6 +54,7 @@ The compiler supports fixed decision timestamps for reproducible builds and emit
 - [ĀML for AI-Generated Interfaces](AI_GENERATED_INTERFACES.md)
 - [Why Machine-Readable Intent Matters](WHY_MACHINE_READABLE_INTENT.md)
 - [Attention as an Interface Resource](ATTENTION_AS_A_RESOURCE.md)
+- [Trust Continuity](TRUST_CONTINUITY.md)
 
 ## Core project material
 
