@@ -1,0 +1,15 @@
+{
+  "status": "DRAFT",
+  "title": "ĀML Proof Demo",
+  "subtitle": "An interface firewall between AI intent and pixels.",
+  "try_demo": "Try the demo",
+  "change_restoration": "Change restoration value",
+  "compile_again": "Compile again",
+  "decision": "Decision",
+  "allowed": "Allowed",
+  "suppressed": "Suppressed",
+  "view_meaning": "View Meaning",
+  "receipt": "Receipt",
+  "file_result": "File what happened",
+  "prototype_notice": "Working prototype — not a ratified global standard."
+}
