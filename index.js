@@ -31,6 +31,9 @@ export { hashContent, createContentAddressedBundle, verifyContentAddressedBundle
 export { createDisclosureCommitment, discloseClaims, verifyDisclosureProof } from "./runtime/selectiveDisclosure.js";
 export { createFederatedExchange } from "./runtime/federatedExchange.js";
 export { createCausalEvent, createCausalExecutionGraph, verifyCausalExecutionGraph } from "./runtime/causalExecutionGraph.js";
+export { createTrustDelegation, verifyTrustDelegation, verifyDelegationChain } from "./runtime/trustDelegation.js";
+export { createTransparencyLog, appendTransparencyEntry, verifyTransparencyLog } from "./runtime/transparencyLog.js";
+export { canonicalize, canonicalJSONStringify } from "./protocol/canonicalJson.js";
 export { createWireEnvelope, validateWireEnvelope, negotiateWireSession } from "./protocol/wireProtocol.js";
 export { evaluateAccountableProps, createAccountableUI } from "./adapters/react.js";
 export { viewMeaning, formatMeaningReport } from "./tooling/viewMeaning.js";
