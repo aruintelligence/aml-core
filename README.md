@@ -3,6 +3,7 @@
 ## The accountability layer between AI and the human interface.
 
 [![CI](https://github.com/aruintelligence/aml-core/actions/workflows/ci.yml/badge.svg)](https://github.com/aruintelligence/aml-core/actions/workflows/ci.yml)
+[![Proof](https://aruintelligence.github.io/aml-core/proof-badge.svg)](https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en)
 [![Playground](https://img.shields.io/badge/OPEN-AML_PLAYGROUND-7df9ff?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/playground.html)
 [![View Meaning](https://img.shields.io/badge/OPEN-VIEW_MEANING-9cffb0?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/view-meaning.html)
 [![Official AML](https://img.shields.io/badge/OFFICIAL-AML_%2F_LICENSING-f6c453?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/official-aml.html)
@@ -18,12 +19,35 @@
 
 **Release status:** `v1.3.0` remains the stable package/CLI/capability contract. `v1.4.0-rc.2` is the current GitHub prerelease snapshot of the broader architecture on `main`. It is not a claim that a stable v1.4 registry package has already shipped.
 
+## Start with proof
+
+1. **Open the live proof:** https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
+2. Watch the same interface decision show **SUPPRESS**.
+3. Change `restoration_value` from `1` to `5`.
+4. Watch it become **ALLOW**.
+5. Copy the exact proof URL and send it to someone else.
+6. Reproduce the deterministic receipt locally with [demos/undeniable-proof/](demos/undeniable-proof/).
+
+Prototype rule:
+
+```text
+render_allowed = restoration_value >= attention_cost
+```
+
+The scores are declared/model inputs in this prototype, not claimed objective measurements of human cognition or wellbeing.
+
 ## Start in 60 seconds
 
+- **Proof:** https://aruintelligence.github.io/aml-core/proof.html
+- **Decision gallery:** https://aruintelligence.github.io/aml-core/gallery.html
+- **Zero-install `<aml-gate>` demo:** https://aruintelligence.github.io/aml-core/aml-gate-demo.html
+- **Existing-HTML bridge demo:** https://aruintelligence.github.io/aml-core/dom-gate-demo.html
+- **Offline single-file proof:** https://aruintelligence.github.io/aml-core/offline-proof.html
 - **Try AML:** https://aruintelligence.github.io/aml-core/playground.html
 - **View Meaning™:** https://aruintelligence.github.io/aml-core/view-meaning.html
 - **Verify Official AML:** https://aruintelligence.github.io/aml-core/official-verify.html
 - **Why AML Now:** [docs/WHY_AML_NOW.md](docs/WHY_AML_NOW.md)
+- **10-minute reproduction:** [docs/TRY_AML_10_MINUTES.md](docs/TRY_AML_10_MINUTES.md)
 - **Out-of-the-box adoption:** [docs/OUT_OF_THE_BOX.md](docs/OUT_OF_THE_BOX.md)
 - **30-minute enterprise pilot:** [pilots/enterprise-30min/](pilots/enterprise-30min/)
 - **Full JavaScript API:** [API.md](API.md)
@@ -47,6 +71,49 @@
   console.log(result.renderDecisions);
 </script>
 ```
+
+### One wrapper around existing HTML
+
+```html
+<script type="module" src="https://aruintelligence.github.io/aml-core/aml-gate.js"></script>
+
+<aml-gate
+  purpose="Create urgency"
+  attention-cost="5"
+  restoration-value="1">
+  <button>Act now</button>
+</aml-gate>
+```
+
+See [docs/AML_GATE_ELEMENT.md](docs/AML_GATE_ELEMENT.md).
+
+### Or keep the DOM and add three attributes
+
+```html
+<script type="module" src="https://aruintelligence.github.io/aml-core/aml-dom-gate.js"></script>
+
+<div
+  data-aml-purpose="Create urgency"
+  data-aml-attention-cost="5"
+  data-aml-restoration-value="1">
+  Offer expires soon.
+</div>
+```
+
+See [docs/HTML_BRIDGE.md](docs/HTML_BRIDGE.md).
+
+The two browser bridges are deliberately narrow adoption surfaces. They do not claim to contain the full runtime policy, consent, privacy, accessibility, receipt, or trust stack.
+
+## Proof can travel
+
+- Exact score state is encoded in the proof URL.
+- The proof URL can also carry language and declared purpose.
+- Live proof UI currently supports English, Spanish, Portuguese (Brazil), Hindi, Arabic, Chinese, French, and German.
+- Arabic switches to RTL.
+- [proof-card.html](https://aruintelligence.github.io/aml-core/proof-card.html) provides an embeddable proof surface.
+- [proof-badge.svg](https://aruintelligence.github.io/aml-core/proof-badge.svg) means only **proof available**; it is not a certification badge.
+- [proof-manifest.json](https://aruintelligence.github.io/aml-core/proof-manifest.json) and [proof-links.json](https://aruintelligence.github.io/aml-core/proof-links.json) make proof machine-readable.
+- [`.well-known/aml.json`](https://aruintelligence.github.io/aml-core/.well-known/aml.json) is an experimental reference-project discovery convention, not a ratified Internet standard.
 
 ## The core execution model
 
@@ -112,6 +179,14 @@ flowchart LR
 
 ### Mainstream adoption surfaces
 
+- shareable exact-state proof URLs
+- eight-language live proof with Arabic RTL
+- embeddable proof card + proof-available badge
+- decision gallery with five ALLOW / five SUPPRESS examples
+- zero-install `<aml-gate>` custom element
+- existing-HTML `data-aml-*` bridge
+- single-file offline proof demonstrator
+- machine-readable proof discovery
 - AI Interface Firewall™
 - React-compatible accountable UI adapter
 - plain JavaScript / React / Next.js starters
@@ -241,7 +316,7 @@ See [ECOSYSTEM.md](ECOSYSTEM.md), [STANDARDIZATION.md](STANDARDIZATION.md), and 
 
 ## Quality gates
 
-Every push runs repository-link checks, automated tests, compiler verification, build-integrity verification, validation, semantic lint, explain/inspect checks, and benchmarks. A separate AML Conformance workflow verifies the public conformance surface.
+Every push runs repository-link checks, automated tests, deterministic receipt replay, balanced ALLOW/SUPPRESS fixture checks, public proof-surface guards, compiler verification, build-integrity verification, validation, semantic lint, explain/inspect checks, and benchmarks. A separate AML Conformance workflow verifies the public conformance surface.
 
 ## Security
 
