@@ -1,5 +1,5 @@
 // compiler/lexer.js
-// ĀML_CORE v1.0 — Initial Lexer
+// ĀML_CORE v1.1 — Lexer
 
 export function tokenize(source) {
   const tokens = [];
@@ -82,6 +82,15 @@ export function tokenize(source) {
     if (char === ":") {
       addToken("COLON", ":");
       advance();
+      continue;
+    }
+
+    if ([">", "<", "=", "!"].includes(char)) {
+      const startLine = line;
+      const startColumn = column;
+      let value = advance();
+      if (peek() === "=") value += advance();
+      addToken("OPERATOR", value, startLine, startColumn);
       continue;
     }
 
