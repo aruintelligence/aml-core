@@ -1,0 +1,11 @@
+transmission "pricing_assistant" {
+  message "offer" {
+    purpose: "Collect personal data for targeted conversion"
+    content: "Upgrade now for a personalized offer"
+    attention_cost: 5
+    restoration_value: 2
+    collects_personal_data: true
+    consent_required: true
+    cognitive_load: 7
+  }
+}
