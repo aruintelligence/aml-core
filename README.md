@@ -1,43 +1,153 @@
 # ĀML™ — ĀRU Meaning Language™
 
-## HTML asks whether it *can* render. ĀML asks whether it *should*.
+## HTML asks whether it *can* render. ĀML asks whether it *should* — and now records who proposed it, which policies evaluated it, what rendered, and why.
 
 [![CI](https://github.com/aruintelligence/aml-core/actions/workflows/ci.yml/badge.svg)](https://github.com/aruintelligence/aml-core/actions/workflows/ci.yml)
 [![Playground](https://img.shields.io/badge/OPEN-AML_PLAYGROUND-7df9ff?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/playground.html)
 [![Live Lab](https://img.shields.io/badge/OPEN-LIVE_LAB-a994ff?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/)
-[![Version](https://img.shields.io/badge/AML-v1.1.0-f2ce72?style=for-the-badge&labelColor=07111f)](CHANGELOG.md)
+[![Release](https://img.shields.io/badge/RELEASE-v1.1.0-f2ce72?style=for-the-badge&labelColor=07111f)](https://github.com/aruintelligence/aml-core/releases/tag/v1.1.0)
+[![Development](https://img.shields.io/badge/NEXT-v1.2.0--dev-ff9e64?style=for-the-badge&labelColor=07111f)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/CODE-MIT-9cffb0?style=for-the-badge&labelColor=07111f)](LICENSE)
 
-**ĀML is a working research prototype for meaning-native, accountable interfaces.** It compiles semantic intent into browser-compatible output while preserving an inspectable record of why meaning-bearing elements were allowed or suppressed.
+**ĀML is a working research prototype for meaning-native, policy-aware, accountable interfaces.** It compiles semantic intent into browser-compatible output while preserving inspectable records of the decisions made before rendering.
 
-> The web inherited a document language from another era. Intelligent interfaces need a decision layer.
+> The web inherited a document language. AI-native interfaces need an accountable execution layer.
 
 [**Launch the browser playground →**](https://aruintelligence.github.io/aml-core/playground.html)
 
-[![ĀML live accountable-rendering laboratory](docs/assets/aml-live-demo.jpg)](https://aruintelligence.github.io/aml-core/)
+## The v1.2 breakthrough direction
 
-## The shift
+ĀML is evolving beyond a markup/compiler experiment into a boundary between **machine-generated intent** and **human-facing output**.
 
-| Legacy HTML substrate | ĀML accountability layer |
+```mermaid
+flowchart LR
+    A["AI / machine intent"] --> B["Deterministic intent compiler"]
+    B --> C["ĀML source"]
+    C --> D["AST + Abstract Meaning Tree"]
+    D --> E["Counterfactual policy simulation"]
+    E --> F["User / organization policy profile"]
+    F --> G["Composed policy decision"]
+    G --> H["Browser-compatible output"]
+    H --> I["SHA-256 execution receipt"]
+    I --> J["Optional Ed25519 attestation"]
+```
+
+The AI proposes. The policy layer evaluates. The compiler records. The receipt binds the stages together.
+
+## What runs today
+
+### Language + compiler
+
+- Lexer and parser for `.aml` source
+- Abstract Syntax Tree and Abstract Meaning Tree
+- Pure in-memory `compileSource()` API
+- Filesystem `compileAML()` pipeline
+- Browser compiler with Node/browser parity tests
+- Simple comparison-expression parsing
+- Interactive browser playground
+
+### Accountable AI execution
+
+- Deterministic **machine intent → ĀML** compiler
+- Counterfactual simulation across multiple policy engines
+- User / organization **policy profiles**
+- Composed policy evaluation
+- Runtime context passed into policy decisions
+- `ĀML Accountable Execution Receipt`
+- SHA-256 binding of intent, AML source, simulation results, decisions, and output
+- Execution receipt JSON Schema
+- Receipt mutation detection
+- Optional **Ed25519-signed execution receipts**
+
+### Built-in policy engines
+
+| Policy | Current purpose |
 |---|---|
-| Describes what exists | Declares what an element means |
-| Renders when syntax is valid | Evaluates policy before final output |
-| Treats attention as implicit | Makes modeled attention cost explicit |
-| Leaves intent outside the executable artifact | Preserves purpose in semantic source |
-| Produces a page | Produces a page **and** accountability artifacts |
-| Answers “Can this render?” | Asks “Should this render—and why?” |
+| `restorative_v1` | Require restoration value ≥ attention cost |
+| `attention_conservative_v1` | Require a 20% restoration margin over attention cost |
+| `consent_guard_v1` | Suppress consent-gated nodes without runtime consent |
+| `privacy_guard_v1` | Suppress declared personal-data collection without privacy consent |
+| `session_attention_budget_v1` | Suppress nodes that exceed the remaining runtime attention budget |
 
-ĀML does not pretend browsers have stopped speaking HTML. Today, it compiles to browser-compatible output. The experiment is the inspectable meaning-and-policy layer that exists before rendering—not a claim that the browser substrate has vanished.
+### Built-in policy profiles
 
-## The core experiment
+| Profile | Composition |
+|---|---|
+| `calm_default` | restoration + consent |
+| `strict_attention` | conservative attention + consent + session budget |
+| `privacy_first` | restoration + consent + privacy + session budget |
 
-The current EthicalRenderGate™ uses an intentionally simple rule:
+Profiles currently use an `all_must_allow` strategy: one denying policy is enough to suppress a node.
+
+## The accountable execution receipt
+
+An execution receipt can bind all of this into one machine-readable object:
+
+```text
+original intent
+  ↓ SHA-256
+generated AML source
+  ↓ SHA-256
+counterfactual policy simulations
+  ↓ SHA-256
+composed-policy decisions
+  ↓ SHA-256
+browser output
+  ↓ SHA-256
+execution receipt
+  ↓ optional Ed25519 signature
+signed accountable execution record
+```
+
+Read [Accountable AI Pipeline](docs/ACCOUNTABLE_AI_PIPELINE.md) and the [Execution Receipt JSON Schema](schema/execution-receipt.schema.json).
+
+## CLI
+
+```text
+aml compile
+aml generate
+aml execute
+aml verify-receipt
+aml sign-receipt
+aml verify-signed-receipt
+aml simulate
+aml policies
+aml profiles
+aml validate
+aml inspect
+aml explain
+aml lint
+aml verify
+aml sign
+aml verify-attestation
+```
+
+Example accountable flow:
+
+```bash
+node bin/aml.js execute intent.json privacy_first context.json receipt.json
+node bin/aml.js verify-receipt receipt.json
+node bin/aml.js sign-receipt receipt.json private-key.pem signed-receipt.json
+node bin/aml.js verify-signed-receipt signed-receipt.json
+```
+
+Example runtime context:
+
+```json
+{
+  "consent_granted": true,
+  "privacy_consent": false,
+  "attention_budget_remaining": 5
+}
+```
+
+## The original EthicalRenderGate™ experiment
+
+The baseline policy remains intentionally simple:
 
 ```text
 render_allowed = restoration_value ≥ attention_cost
 ```
-
-The inputs are declared model values, not validated measurements of a person's attention, restoration, ethics, or wellbeing.
 
 ```aml
 transmission "deep_focus" {
@@ -50,61 +160,14 @@ transmission "deep_focus" {
 }
 ```
 
-ĀML v1.1 also preserves simple policy comparisons:
+The values are declared model inputs. They are **not** claimed to be validated measurements of a person's cognition, ethics, attention, restoration, or wellbeing.
 
-```aml
-ethical_render_gate {
-  rule: restoration_value >= attention_cost
-}
-```
+## Integrity + proof surface
 
-## What runs today
-
-```mermaid
-flowchart LR
-    A[".aml source"] --> B["Lexer + parser"]
-    B --> C["AST"]
-    C --> D["Abstract Meaning Tree"]
-    D --> E["EthicalRenderGate"]
-    E --> F["HTML + decision artifacts"]
-    F --> G["SHA-256 build manifest"]
-```
-
-- Lexer and parser for `.aml` source
-- Abstract Syntax Tree and Abstract Meaning Tree
-- Pure in-memory `compileSource()` API
-- Filesystem `compileAML()` pipeline
-- CLI: `compile`, `validate`, `inspect`, and `lint`
-- Semantic diagnostic codes `AML001`–`AML005`
-- Simple comparison-expression parsing
-- Browser compiler with Node/browser parity tests
-- Interactive browser playground
-- Machine-readable `render_decision.json`
-- Render Decision JSON Schema
-- Canonical allow/suppress conformance fixtures
-- Reproducible compilation with fixed decision timestamps
-- SHA-256 `build_manifest.json` integrity output
-- Benchmark harness across the public example suite
-- VS Code `.aml` language definition and syntax highlighting
-- Machine-readable `AML_CAPABILITIES.json`
-- GitHub Actions verification on pushes and pull requests
-
-## Run it in under a minute
-
-Requires Node.js 18 or newer.
-
-```bash
-git clone https://github.com/aruintelligence/aml-core.git
-cd aml-core
-npm install
-npm test
-node bin/aml.js compile examples/simple.aml dist/simple
-```
-
-The compiler emits:
+Filesystem compilation emits:
 
 ```text
-dist/simple/
+dist/example/
 ├── index.html
 ├── tokens.json
 ├── ast.json
@@ -113,90 +176,79 @@ dist/simple/
 └── build_manifest.json
 ```
 
-Try the rest of the toolchain:
+The build manifest hashes the AML source and major artifacts with SHA-256. It can also receive a detached Ed25519 build attestation.
 
-```bash
-node bin/aml.js validate examples/ai_assistant_response.aml
-node bin/aml.js lint examples/simple.aml
-node bin/aml.js inspect examples/accessibility_first.aml
-npm run benchmark
-```
-
-For the full developer path, read [QUICKSTART.md](QUICKSTART.md).
+The v1.2 execution layer adds a second proof object: the accountable execution receipt, which binds AI/machine intent to generated source, policy simulation, selected decisions, and final output.
 
 ## Developer surface
 
 | Surface | Use it for |
 |---|---|
-| [Browser Playground](https://aruintelligence.github.io/aml-core/playground.html) | Type AML and inspect tokens, AST, AMT, and decisions immediately |
+| [Browser Playground](https://aruintelligence.github.io/aml-core/playground.html) | Type AML and inspect tokens, AST, AMT, and decisions |
 | [Live Lab](https://aruintelligence.github.io/aml-core/) | Operate the EthicalRenderGate™ model interactively |
+| [Accountable AI Pipeline](docs/ACCOUNTABLE_AI_PIPELINE.md) | Understand intent → policy → receipt architecture |
+| [Policy Profiles](docs/POLICY_PROFILES.md) | User/org-owned policy composition |
 | [Quickstart](QUICKSTART.md) | Clone, test, compile, validate, lint, inspect |
-| [JavaScript API](docs/API.md) | Import compiler, gate, and diagnostics APIs |
-| [Example gallery](examples/README.md) | Run AML across AI, learning, accessibility, commerce, feeds, focus, and ads |
+| [JavaScript API](docs/API.md) | Import compiler, gate, diagnostics, policy, and receipt APIs |
+| [Language Server](docs/LANGUAGE_SERVER.md) | LSP completion, hover, and diagnostics |
 | [VS Code support](editors/vscode/README.md) | `.aml` file recognition and syntax highlighting |
-| [Capabilities](AML_CAPABILITIES.json) | Machine-readable v1.1 feature discovery |
-
-## Proof surface
-
-ĀML is designed so claims can be checked against artifacts rather than accepted as prose.
-
-```text
-AML source
-  ↓
-tokens.json
-  ↓
-ast.json
-  ↓
-amt.json
-  ↓
-render_decision.json
-  ↓
-index.html
-  ↓
-build_manifest.json
-```
-
-The build manifest hashes the source and major outputs with SHA-256 so reviewers can verify that the inspected decision record belongs to the same compilation bundle.
+| [Capabilities](AML_CAPABILITIES.json) | Machine-readable v1.2 development feature discovery |
 
 ## Reproduce and challenge it
 
 | Proof resource | Purpose |
 |---|---|
-| [Independent replication protocol](REPLICATION.md) | Reproduce the compiler behavior independently |
+| [Independent replication protocol](REPLICATION.md) | Reproduce compiler behavior independently |
 | [Conformance manifest](CONFORMANCE.json) | Machine-readable fixture contract |
 | [Render Decision Protocol](docs/RENDER_DECISION_PROTOCOL.md) | Decision artifact semantics |
-| [Render Decision JSON Schema](schema/render-decision.schema.json) | Validate decision records |
-| [Build integrity](docs/BUILD_INTEGRITY.md) | Verify artifact hashes and reproducible builds |
+| [Render Decision JSON Schema](schema/render-decision.schema.json) | Validate render decisions |
+| [Execution Receipt JSON Schema](schema/execution-receipt.schema.json) | Validate accountable execution receipts |
+| [Build integrity](docs/BUILD_INTEGRITY.md) | Verify hashes and reproducible builds |
 | [Benchmarking protocol](docs/BENCHMARKING.md) | Measure compiler throughput without overstating results |
-| [Semantic diagnostics](docs/DIAGNOSTICS.md) | Understand lint codes and semantic completeness checks |
-| [Policy expressions](docs/POLICY_EXPRESSIONS.md) | Current comparison-expression syntax and boundaries |
+| [Semantic diagnostics](docs/DIAGNOSTICS.md) | Understand semantic completeness checks |
 | [Testing](TESTING.md) | Verification philosophy and automated coverage |
 
-## Inspect the system
+## Editor + tooling stack
 
-| Start here | What it contains |
-|---|---|
-| [Documentation hub](docs/README.md) | Research, tooling, protocols, and conceptual map |
-| [Manifesto](MANIFESTO.md) | Why accountable rendering matters |
-| [Architecture](ARCHITECTURE.md) | Compiler and runtime structure |
-| [Language specification](LANGUAGE_SPEC.md) | Current syntax and semantics |
-| [Ethical rendering](ETHICAL_RENDERING.md) | Gate model and evidence boundaries |
-| [Roadmap](ROADMAP.md) | Planned compiler and runtime work |
-| [White paper](WHITEPAPER.md) | Research framing |
-| [Open research program](docs/RESEARCH_PROGRAM.md) | Research tracks and unanswered questions |
-| [Contribution guide](CONTRIBUTING.md) | How to challenge or improve the work |
+ĀML already includes:
 
-## What ĀML is—and is not
+- `.aml` VS Code language definition
+- syntax highlighting
+- machine-readable language catalog
+- completion API
+- hover API
+- semantic diagnostics
+- dependency-free `aml-lsp` stdio language server
+- LSP transport smoke tests
 
-ĀML demonstrates an implemented semantic-policy architecture. It does **not** establish that its scores objectively measure attention, restoration, harm, ethics, or wellbeing. Those dimensions need operational definitions, empirical study, accessibility review, adversarial testing, and independent scrutiny before real-world use.
+## What ĀML proves — and what it does not
 
-The project is best understood as an executable question:
+ĀML can make policy inputs explicit, run reproducible policy decisions, record runtime context, hash related artifacts, and cryptographically attest to recorded execution receipts.
+
+That **does not prove**:
+
+- that a policy is morally correct;
+- that declared attention/restoration values are empirically valid;
+- that AI-generated intent is truthful or aligned with a user's interests;
+- that a signed system is trustworthy simply because it owns a private key.
+
+The contribution is architectural: assumptions and decisions that are usually implicit can become inspectable, testable, replaceable, and attestable.
+
+## The research question is getting bigger
+
+The original question was:
 
 > What changes when an interface must explain the attention it consumes?
 
+The v1.2 question is:
+
+> What changes when an AI-generated interface must declare its intent, pass user-owned policies, preserve the decision trail, and produce a verifiable receipt before reaching a human?
+
 ## Build with us
 
-Useful contributions include parser tests, malformed-input handling, accessibility work, alternate policy models, counterexamples, security review, AI-generated interface experiments, conformance fixtures, editor tooling, language-server work, and empirical evaluation methods. Read [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md) before submitting work.
+Useful contributions include parser tests, policy engines, privacy and accessibility profiles, adversarial policy tests, semantic-diff tooling, policy conflict resolution, signed policy packs, runtime audit streams, AI-generated interface experiments, security review, conformance fixtures, and empirical evaluation methods.
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md) before submitting work.
 
 Created by **Daniel Jacob Read IV** and stewarded by **ĀRU Intelligence Inc.™**
 
