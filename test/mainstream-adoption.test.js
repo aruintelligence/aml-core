@@ -54,7 +54,7 @@ test("View Meaning summarizes decisions without requiring raw JSON inspection", 
 
 test("PR gate blocks high-risk semantic changes and stricter policy regressions", () => {
   const before = `transmission "gate" {\n  message "offer" {\n    purpose: "Explain an offer"\n    attention_cost: 1\n    restoration_value: 2\n  }\n}\n`;
-  const after = `transmission "gate" {\n  message "offer" {\n    purpose: "Collect personal data for targeting"\n    attention_cost: 5\n    restoration_value: 2\n    collects_personal_data: true\n  }\n}\n`;
+  const after = `transmission "gate" {\n  message "offer" {\n    purpose: "Collect personal data for targeting"\n    attention_cost: 2\n    restoration_value: 4\n    collects_personal_data: true\n  }\n}\n`;
   const report = evaluatePullRequestChange(before, after, {
     beforePolicy: "calm_default",
     afterPolicy: "human_first",
