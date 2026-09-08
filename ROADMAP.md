@@ -1,237 +1,127 @@
-# ROADMAP.md
+# ĀML™ Development Roadmap
 
-# ĀML Development Roadmap
+ĀML™ is an experimental meaning-native, policy-aware execution layer for accountable human-facing interfaces.
 
-ĀML is an experimental meaning-native interface language focused on ethical rendering, semantic accountability, and restoration-aware computation.
+## Current status — v1.2.0
 
-This roadmap documents the planned evolution of the AML compiler, runtime, semantic systems, and EthicalRenderGate architecture.
+Implemented today:
 
----
-
-# Current Status — v1.0
-
-Implemented:
-- AML syntax prototype
-- lexer
-- parser
+- `.aml` lexer and parser
 - Abstract Syntax Tree generation
 - Abstract Meaning Tree generation
-- EthicalRenderGate runtime
-- semantic HTML generation
-- render_decision.json output
-- browser demo
-- CLI prototype
-- GitHub Pages deployment
-
-Current repository structure:
-
-```text
-/compiler
-/runtime
-/examples
-/dist
-/demo
-/docs
-```
-
----
-
-# Core Research Direction
-
-AML explores whether interface systems can:
-- protect attention
-- reduce fragmentation
-- preserve coherence
-- expose render accountability
-- optimize for restoration instead of extraction
-
-The project combines:
-- semantic compilation
-- runtime ethics
-- human-centered rendering
-- inspectable interface systems
-- accountable rendering decisions
-
----
-
-# v1.1 Goals
-
-## Compiler Improvements
-
-Planned:
-- multiline parsing
-- nested semantic structures
-- import support
-- schema validation
+- browser-compatible rendering
+- pluggable policy engines
+- composed policy profiles
+- counterfactual policy simulation
+- deterministic machine intent → ĀML generation
+- consent-aware policy evaluation
+- privacy-aware policy evaluation
+- session attention budgets
+- accountable execution receipts
+- SHA-256 build and receipt integrity
+- Ed25519 build and receipt attestations
 - semantic diagnostics
-- deterministic compilation mode
+- CLI inspection, lint, validation, explanation, simulation, verification and signing
+- browser playground
+- Node/browser parity testing
+- VS Code language definition
+- dependency-free language server
+- machine-readable schemas and capability manifests
+- automated conformance fixtures
+- GitHub Actions CI and release publishing
+- local Markdown link integrity checks
 
----
+Published release: [v1.2.0](https://github.com/aruintelligence/aml-core/releases/tag/v1.2.0)
 
-## Runtime Improvements
+## Near-term priorities — v1.3
 
-Planned:
-- adaptive coherence scoring
-- overload detection
-- progressive degradation
-- semantic hydration
-- restoration-aware animation systems
-- runtime explainability overlays
+### Policy composition
 
----
+- signed policy packs
+- policy-pack schemas
+- explicit policy precedence
+- conflict-resolution rules
+- user-owned policy profile files
+- organization policy packs
+- policy version pinning
 
-## CLI Improvements
+### Semantic and policy diffs
 
-Planned commands:
+- `aml diff` for meaning-bearing source changes
+- decision diffs between two compiler runs
+- policy diffs explaining why outcomes changed
+- receipt comparisons across versions
 
-```bash
-aml inspect
-aml audit
-aml explain
-aml validate
-aml serve
-aml profile
-```
+### Accessibility policies
 
-Future CLI features:
-- semantic debugging
-- render auditing
-- coherence analysis
-- visual explainability
-- live recompilation
+- reduced-motion context
+- high-contrast preferences
+- cognitive-load preferences
+- screen-reader-oriented semantics
+- keyboard-navigation policy inputs
 
----
+### Runtime audit streams
 
-# v1.2 Goals
+- append-only decision events
+- cumulative session attention accounting
+- consent grant/revocation events
+- receipt chaining
+- replayable audit histories
 
-## EthicalRenderGate Expansion
+### Developer tooling
 
-Future EthicalRenderGate systems:
-- contextual restoration scoring
-- emotional overload detection
-- interruption analysis
-- coherence drift tracking
-- adaptive semantic suppression
-- restoration-aware prioritization
+- editor client integration for `aml-lsp`
+- richer completion context
+- definition/reference support
+- structured code actions
+- canonical formatter that preserves comments
+- stronger malformed-input diagnostics
 
----
+## Medium-term priorities — v1.4+
 
-## Semantic Rendering Engine
+### AI accountability
 
-Planned:
-- semantic layout engine
-- meaning-priority rendering
-- coherence-aware typography
-- restoration-oriented spacing systems
-- adaptive interface simplification
+- AI proposal receipts distinct from final execution receipts
+- provenance metadata for generated intent
+- multiple proposed UI alternatives before policy selection
+- explainable fallback generation when a policy suppresses content
+- adversarial intent and policy fuzzing
 
----
+### Policy research infrastructure
 
-## Accountability Systems
+- richer conformance suites
+- policy benchmark fixtures
+- deterministic policy replay
+- policy test vectors
+- comparative evaluation harnesses
+- empirical-model plug-in boundary
 
-Planned:
-- full render audit trails
-- render explanations
-- semantic accountability exports
-- replayable render histories
-- runtime reasoning inspection
+### Privacy and data governance
 
----
+- declared data categories
+- retention-purpose declarations
+- data-minimization policies
+- third-party transfer declarations
+- runtime privacy-budget experiments
 
-# v2.0 Goals
+## v2 research direction
 
-## Meaning-Native Runtime
+The long-term question is whether the Abstract Meaning Tree can become an executable semantic substrate rather than only a compilation intermediate.
 
-Long-term objective:
-- semantic-first rendering architecture
-- meaning-aware interfaces
-- coherence-preserving interaction systems
-- restoration-native computing environments
+Potential v2 directions:
 
----
+- executable AMT graph traversal
+- semantic-first runtime scheduling
+- meaning-aware component negotiation
+- user-controlled policy runtimes
+- context-aware adaptive rendering
+- semantic continuity across sessions
+- accountable multi-agent interface generation
 
-## AML Runtime Environment
+## Evidence boundary
 
-Potential future runtime:
-- browser runtime engine
-- semantic renderer
-- restoration-aware UI framework
-- coherence-aware scheduling system
-- runtime semantic graph engine
+Roadmap items are research targets, not guarantees. Current ĀML policies do not establish scientifically validated universal measures of ethics, attention, restoration, privacy, accessibility, or wellbeing.
 
----
+The project goal is to make assumptions and decisions **explicit, testable, replaceable, reproducible, and attestable**.
 
-## AMT Execution Layer
-
-Planned:
-- executable Abstract Meaning Trees
-- semantic runtime graph traversal
-- restoration-state propagation
-- meaning persistence systems
-- semantic continuity memory
-
----
-
-# Long-Term Research Areas
-
-Experimental directions:
-- coherence metrics
-- semantic cognition systems
-- accountable rendering architectures
-- restoration economics
-- human-centered computation
-- semantic interaction systems
-- attention-aware operating environments
-
----
-
-# Open Questions
-
-AML intentionally explores unresolved questions:
-
-- Can interfaces optimize for restoration?
-- Can rendering become accountable?
-- Can semantic meaning survive compilation?
-- Can coherence become measurable?
-- Can interface systems reduce fragmentation?
-- Can runtime systems preserve orientation?
-
----
-
-# Repository Priorities
-
-Immediate priorities:
-1. stabilize compiler pipeline
-2. improve AML grammar
-3. expand runtime evaluation
-4. implement deterministic builds
-5. improve demo system
-6. add semantic validation
-7. improve compiler explainability
-
----
-
-# Philosophy
-
-Traditional systems optimize for:
-- clicks
-- engagement
-- retention
-- stimulation
-
-AML explores systems optimized for:
-- clarity
-- coherence
-- orientation
-- restoration
-- meaning preservation
-
----
-
-# Status
-
-Research Prototype  
-Version: v1.0  
-Stewarded by ĀRU Intelligence Inc.
-
-Created by Daniel Jacob Read IV
+Created by **Daniel Jacob Read IV** and stewarded by **ĀRU Intelligence Inc.™**
