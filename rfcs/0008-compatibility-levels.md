@@ -36,6 +36,16 @@ Extends Federated and requires:
 
 - selective-disclosure
 
+### AML Governed Compatible
+
+Extends Verifiable and requires:
+
+- bounded-capability-token
+- proof-carrying-interface
+- revocation-registry
+
+This level is intended for systems where authority must be bounded, evidence must travel with rendered output, and previously trusted artifacts must be revocable.
+
 ## Rules
 
 An implementation MUST NOT claim a level unless all requirements for that level and inherited levels pass the published conformance suite or an equivalent independently reproducible suite.
@@ -50,4 +60,4 @@ A compatibility claim MUST identify:
 
 ## Purpose
 
-The levels separate minimal language interoperability from stronger accountability and federation guarantees. They also give independent implementations a realistic adoption path without requiring every AML feature on day one.
+The levels separate minimal language interoperability from stronger accountability, federation, verification, and governance guarantees. They also give independent implementations a realistic adoption path without requiring every AML feature on day one.
