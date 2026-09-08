@@ -6,12 +6,105 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 
 ### Next
 
-- accessibility-first policy packs and runtime preferences
-- signed policy-pack distribution and trust chains
-- semantic and policy diffs between AML revisions
 - policy conflict-resolution strategies beyond `all_must_allow`
-- runtime audit streams and cumulative session accounting
-- adversarial policy fuzzing and independent empirical evaluation
+- signed policy trust chains and delegated issuers
+- accessibility conformance research beyond the current policy layer
+- adversarial policy fuzzing
+- runtime stream persistence and cross-session analysis
+- independent empirical evaluation of attention/restoration models
+
+## [1.3.0] — 2026-09-07
+
+### Signed policy packs
+
+- Added data-only ĀML policy packs that reference installed policy IDs without embedding executable JavaScript.
+- Added canonical policy-pack hashing.
+- Added Ed25519 policy-pack signing and verification.
+- Added public-key fingerprint validation and mutation detection.
+- Added CLI commands `sign-policy-pack` and `verify-policy-pack`.
+
+### Semantic and policy diffs
+
+- Added `semanticDiff()` to compare compiled Abstract Meaning Trees rather than raw lines of source.
+- Semantic diffs classify added, removed, changed, and unchanged meaning-bearing nodes.
+- Added `policyDiff()` to hold source/context constant while comparing policy or profile outcomes.
+- Added CLI commands `semantic-diff` and `policy-diff`.
+
+### Runtime audit streams
+
+- Added append-only SHA-256 hash-chained runtime audit streams.
+- Each entry commits to its payload and previous-entry hash.
+- Added verification that detects sequence, previous-hash, or payload mutation.
+- Accountable execution now binds the runtime audit stream into the execution receipt.
+- Added `verify-audit` CLI support.
+
+### Cumulative attention accounting
+
+- Added the ĀML Attention Ledger for session-level attention accounting.
+- Added cumulative budget consumption across multiple render decisions.
+- Added enforcement that can suppress a later node after earlier allowed nodes consume the remaining session budget.
+- Accountable execution regenerates final HTML from cumulative-enforced decisions.
+- Added attention-ledger hashes to execution receipts.
+- Added `attention-account` CLI support.
+
+### Accessibility policy layer
+
+Added executable runtime policies:
+
+- `reduced_motion_v1`
+- `contrast_safety_v1`
+- `cognitive_load_guard_v1`
+
+Added policy profiles:
+
+- `accessibility_first`
+- `human_first`
+
+The accessibility layer is explicitly supplemental and does not claim to replace WCAG conformance or assistive-technology testing.
+
+### Accountable execution receipts
+
+- Execution Receipt protocol advanced to v1.1.
+- Receipts can now bind runtime audit streams and attention ledgers.
+- Receipt verification checks the receipt hash, audit-chain integrity, and ledger hash together.
+
+### Repository reliability
+
+- Restored public compatibility paths for `REPLICATION.md`, `CONFORMANCE.json`, and `docs/API.md`.
+- Added an automated local Markdown link checker.
+- CI now fails when a relative documentation link points to a missing repository path.
+
+### Public API + CLI
+
+Added exported APIs for:
+
+- signed policy packs
+- semantic diffs
+- policy diffs
+- runtime audit streams
+- attention ledgers
+- cumulative attention enforcement
+
+Added CLI commands:
+
+```text
+aml semantic-diff
+aml policy-diff
+aml sign-policy-pack
+aml verify-policy-pack
+aml verify-audit
+aml attention-account
+```
+
+### Verification
+
+- Added policy-pack signature and tamper tests.
+- Added semantic-diff tests.
+- Added policy-diff tests.
+- Added runtime audit-stream mutation tests.
+- Added cumulative attention-accounting tests.
+- Added reduced-motion accessibility-policy tests.
+- Updated machine-readable capability tests for v1.3.
 
 ## [1.2.0] — 2026-09-07
 
@@ -33,19 +126,15 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 
 - Replaced the single hard-coded policy path with a pluggable policy-engine abstraction.
 - Added custom policy-function support.
-- Added `restorative_v1` and `attention_conservative_v1` built-in policy engines.
-- Added `consent_guard_v1` for runtime consent-aware rendering.
-- Added `privacy_guard_v1` for personal-data collection declarations and runtime privacy consent.
-- Added `session_attention_budget_v1` for runtime attention-budget enforcement.
+- Added `restorative_v1`, `attention_conservative_v1`, `consent_guard_v1`, `privacy_guard_v1`, and `session_attention_budget_v1`.
 - Preserved the semantic distinction between an omitted policy value and an explicitly declared zero.
 
 ### Policy composition and profiles
 
-- Added `composePolicies()` for multi-policy evaluation.
-- Added `policyFromProfile()` for profile-driven policy execution.
+- Added `composePolicies()` and `policyFromProfile()`.
 - Added built-in policy profiles: `calm_default`, `strict_attention`, and `privacy_first`.
-- Added counterfactual policy simulation so the same semantic source can be evaluated under multiple policy regimes before one composed result is selected.
-- Runtime context is now propagated through policy simulation and final compilation.
+- Added counterfactual policy simulation.
+- Runtime context is propagated through policy simulation and final compilation.
 
 ### AI-native source generation
 
@@ -57,8 +146,7 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 
 - Added detached Ed25519 build-manifest attestations with embedded public-key fingerprints.
 - Added build-attestation verification and tamper tests.
-- Policy identity and policy rationale are now recorded in render decisions.
-- Build manifests record the policy that produced the compiled bundle.
+- Policy identity and policy rationale are recorded in render decisions.
 
 ### CLI
 
@@ -77,26 +165,6 @@ aml sign
 aml verify-attestation
 ```
 
-These extend the existing `compile`, `validate`, `inspect`, `explain`, `lint`, and `verify` commands.
-
-### Protocols and documentation
-
-- Added the Accountable AI Execution Pipeline protocol documentation.
-- Added Policy Profiles documentation.
-- Added `schema/execution-receipt.schema.json`.
-- Expanded `AML_CAPABILITIES.json` to describe the v1.2 policy, privacy, receipt, signature, and accountable-execution surface.
-- Rebuilt the README around the v1.2 accountable execution architecture.
-
-### Verification
-
-- Added automated tests for policy profiles and policy composition.
-- Added privacy-policy tests.
-- Added session-attention-budget tests.
-- Added end-to-end execution receipt tests.
-- Added signed execution receipt tests.
-- Added counterfactual policy tests.
-- CI continues to verify compiler/browser parity, conformance fixtures, language-server behavior, build integrity, benchmarks, semantic diagnostics, and the expanded execution layer.
-
 ## [1.1.0] — 2026-09-07
 
 ### Compiler
@@ -104,40 +172,12 @@ These extend the existing `compile`, `validate`, `inspect`, `explain`, `lint`, a
 - Added `compileSource(source, options)` for pure in-memory AML compilation without filesystem output.
 - Preserved `compileAML(inputPath, outputDir, options)` as the artifact-emitting filesystem compiler.
 - Added deterministic decision timestamps for reproducible compilation.
-- Added comparison-operator lexing and structured single-binary-comparison parsing for `>`, `>=`, `<`, `<=`, `=`, `==`, and `!=`.
-- Added SHA-256 `build_manifest.json` output binding source and emitted artifacts.
-- Added active `verifyBuildManifest()` integrity verification and post-build tamper detection.
+- Added comparison-operator lexing and structured single-binary-comparison parsing.
+- Added SHA-256 `build_manifest.json` output and active bundle verification.
 
-### Public JavaScript API
+### Tooling
 
-- Exported `compileAML`, `compileSource`, `ethicalRenderGate`, `analyzeAMT`, `explainCompilation`, and `verifyBuildManifest`.
-- Added dependency-free language-intelligence APIs: `getCompletionItems`, `getHoverInfo`, and `getLanguageCatalog`.
-
-### CLI
-
-- Added `aml validate <file.aml>` for parse/evaluation checks without writing artifacts.
-- Added `aml inspect <file.aml>` to emit the Abstract Meaning Tree and raw render decisions as JSON.
-- Added `aml explain <file.aml>` for compact decision explanations and diagnostic summaries.
-- Added `aml lint <file.aml>` for semantic diagnostics.
-- Added `aml verify <build_manifest.json>` for SHA-256 bundle verification.
-
-### Semantic diagnostics
-
-- Added compiler-backed semantic diagnostics with codes `AML001`–`AML005`.
-- Added `AML_PARSE` diagnostics in the language-server layer for invalid source.
-
-### Browser runtime and tooling
-
-- Added a dependency-free browser AML compiler and interactive source playground.
-- Added automated browser/core parity tests.
-- Added VS Code `.aml` language registration and syntax highlighting.
-- Added a shared language-intelligence catalog.
-- Added the dependency-free `aml-lsp` stdio Language Server Protocol implementation.
-- Added benchmark, conformance, replication, and build-integrity protocols.
-
-### Capability discovery
-
-- Added `AML_CAPABILITIES.json` and automated capability-reference tests.
+- Added semantic diagnostics, browser compilation/playground, VS Code language registration, a language-intelligence catalog, `aml-lsp`, benchmarks, conformance fixtures, replication protocol, and machine-readable capability discovery.
 
 ## [1.0.0] — 2026-05-06
 
