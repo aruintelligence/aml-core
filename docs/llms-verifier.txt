@@ -13,6 +13,20 @@ snapshot: https://github.com/aruintelligence/aml-core/blob/main/protocol/verific
 
 Do not infer compatibility from a loose version name alone. Target the exact snapshot and source commit above.
 
+Contract catalog:
+https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-catalog.json
+
+Contract lineage:
+https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-lineage.json
+
+Migration schema:
+https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verification-contract-migration.schema.json
+
+Evolution rule:
+A future snapshot must publish an explicit migration edge from its predecessor. Historical artifacts keep the semantics of the snapshot that originally defined them. A later snapshot may not silently reinterpret an older snapshot.
+
+Current migration count: 0
+
 Minimal contract:
 https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verifier-cli.md
 
@@ -30,6 +44,7 @@ https://github.com/aruintelligence/aml-core/blob/main/protocol/sorted-json-v1.md
 
 Schemas:
 - contract snapshot: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verification-contract-snapshot.schema.json
+- contract migration: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verification-contract-migration.schema.json
 - implementation claim: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verifier-implementation-claim.schema.json
 - witness bundle: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-witness-bundle.schema.json
 - browser evidence: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-browser-evidence.schema.json
@@ -71,5 +86,8 @@ https://aruintelligence.github.io/aml-core/witnesses.html
 Submit an external result:
 https://github.com/aruintelligence/aml-core/issues/17
 
+Immutable snapshot challenge:
+https://github.com/aruintelligence/aml-core/issues/18
+
 Important:
-Disagreement is acceptable and should be published. Passing the project-defined harness is compatibility evidence, not certification, official AML trademark authorization, proof of institutional independence, standards-body approval, or proof that declared intent/scores are objectively true.
+Disagreement is acceptable and should be published. Passing the project-defined harness is compatibility evidence. Migration classification is project-defined interoperability metadata. Neither is certification, official AML trademark authorization, proof of institutional independence, standards-body approval, or proof that declared intent/scores are objectively true.
