@@ -1,0 +1,14 @@
+{
+  "status": "SHIPPED",
+  "name": "ĀML Mainstream Proof",
+  "prototype_rule": "render_allowed = restoration_value >= attention_cost",
+  "canonical_repository": "https://github.com/aruintelligence/aml-core",
+  "proof_url": "https://aruintelligence.github.io/aml-core/proof.html",
+  "suppress_example": "https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1",
+  "allow_example": "https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=5",
+  "embeddable_card": "https://aruintelligence.github.io/aml-core/proof-card.html",
+  "view_meaning": "https://aruintelligence.github.io/aml-core/view-meaning.html",
+  "local_replay": "node demos/undeniable-proof/replay-proof.mjs",
+  "fixture_check": "node scripts/check-flood-fixtures.js",
+  "evidence_boundary": "The prototype demonstrates deterministic software policy evaluation. attention_cost and restoration_value are declared/model inputs, not validated objective measurements of human cognition or wellbeing."
+}
