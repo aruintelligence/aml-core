@@ -1,0 +1,15 @@
+{
+  "schema": "aml-verifier-implementation-claim/1",
+  "prototype": true,
+  "implementation_id": "aru-aml-browser-reference",
+  "implementation_version": "1",
+  "runtime": "Browser WebCrypto",
+  "source_url": "https://github.com/aruintelligence/aml-core/blob/main/docs/aml-witness-bundle.js",
+  "contract_snapshot_id": "aml-verifier-contract-2026-09-08-01",
+  "contract_source_commit": "b1ff5a87c7b19ae6338503a58ab6257a5b2add0b",
+  "artifact_types": ["aml-witness-bundle/1"],
+  "conformance_command": "browser reference path; use detached-verifier.html or worker-verifier.html",
+  "conformance_result_url": null,
+  "external_to_aml_core": false,
+  "claim_boundary": "AML-maintained browser reference implementation claim. It does not count as an external witness or independent institution."
+}
