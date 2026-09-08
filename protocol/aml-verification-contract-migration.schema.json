@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-verification-contract-migration.schema.json",
+  "title": "AML Verification Contract Migration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "migration_id",
+    "from_snapshot",
+    "to_snapshot",
+    "classification",
+    "changed_locked_paths",
+    "historical_artifacts",
+    "notes"
+  ],
+  "properties": {
+    "schema": { "const": "aml-verification-contract-migration/1" },
+    "migration_id": { "type": "string", "minLength": 1 },
+    "from_snapshot": { "type": "string", "minLength": 1 },
+    "to_snapshot": { "type": "string", "minLength": 1 },
+    "classification": {
+      "enum": ["backward-compatible", "conditionally-compatible", "breaking"]
+    },
+    "changed_locked_paths": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "historical_artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["old_snapshot_verification_required", "new_snapshot_may_reinterpret_old_artifacts"],
+      "properties": {
+        "old_snapshot_verification_required": { "const": true },
+        "new_snapshot_may_reinterpret_old_artifacts": { "const": false }
+      }
+    },
+    "behavior_changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["area", "before", "after", "compatibility"],
+        "properties": {
+          "area": { "type": "string" },
+          "before": { "type": "string" },
+          "after": { "type": "string" },
+          "compatibility": { "enum": ["compatible", "conditional", "incompatible"] }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}
