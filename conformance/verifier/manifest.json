@@ -1,0 +1,26 @@
+{
+  "schema": "aml-verifier-conformance-manifest/1",
+  "status": "SHIPPED prototype",
+  "cli_contract": "../../protocol/aml-verifier-cli.md",
+  "canonicalization": "sorted-json-v1",
+  "golden_vector": "../../independent/python/witness-vector.json",
+  "fixed_now": "2030-01-01T00:05:00Z",
+  "required_cases": [
+    {
+      "id": "golden-valid",
+      "mutation": null,
+      "expected_valid": true
+    },
+    {
+      "id": "tampered-purpose",
+      "mutation": "evidence.receipt.decisions[0].purpose",
+      "expected_valid": false
+    },
+    {
+      "id": "tampered-challenge",
+      "mutation": "challenge.nonce",
+      "expected_valid": false
+    }
+  ],
+  "claim_boundary": "Passing these project-defined cases is compatibility evidence, not certification or proof of institutional independence."
+}
