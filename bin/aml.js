@@ -5,6 +5,7 @@
 
 import fs from "fs";
 import { compileAML, compileSource } from "../compiler/compiler.js";
+import { analyzeAMT } from "../compiler/diagnostics.js";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -19,6 +20,7 @@ Usage:
   aml compile <file.aml> [outputDir]
   aml inspect <file.aml>
   aml validate <file.aml>
+  aml lint <file.aml>
   aml help
   aml version
 
@@ -26,14 +28,16 @@ Commands:
   compile   Compile AML into HTML and accountability artifacts
   inspect   Compile in memory and print the Abstract Meaning Tree + render decisions
   validate  Parse and evaluate AML without writing output files
+  lint      Run semantic diagnostics on meaning-bearing nodes
   help      Show this help message
   version   Show AML CLI version
 
 Examples:
   aml compile examples/transmission-061.aml
-  aml compile examples/ai_assistant.aml dist
+  aml compile examples/ai_assistant_response.aml dist
   aml inspect examples/accessibility_first.aml
   aml validate examples/calm_checkout.aml
+  aml lint examples/ethical_ads.aml
 `);
 }
 
@@ -82,6 +86,27 @@ try {
     console.log(`Tokens: ${result.tokens.length}`);
     console.log(`Render decisions: ${result.renderDecisions.length}`);
     process.exit(0);
+  }
+
+  if (command === "lint") {
+    const result = compileSource(readSource(inputPath), {
+      timestamp: "1970-01-01T00:00:00.000Z"
+    });
+    const diagnostics = analyzeAMT(result.amt);
+    const errors = diagnostics.filter(item => item.level === "error");
+    const warnings = diagnostics.filter(item => item.level === "warning");
+
+    if (diagnostics.length === 0) {
+      console.log(`CLEAN: ${inputPath}`);
+    } else {
+      for (const item of diagnostics) {
+        console.log(`${item.level.toUpperCase()} ${item.code}: ${item.message} [${item.identifier || item.name || item.node_type}]`);
+      }
+    }
+
+    console.log(`Errors: ${errors.length}`);
+    console.log(`Warnings: ${warnings.length}`);
+    process.exit(errors.length > 0 ? 1 : 0);
   }
 
   console.error(`Unknown command: ${command}`);
