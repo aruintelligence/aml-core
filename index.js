@@ -14,5 +14,5 @@ export { BUILTIN_POLICY_PROFILES, resolvePolicyProfile, listPolicyProfiles } fro
 export { composePolicies, policyFromProfile } from "./runtime/policyComposition.js";
 export { normalizePolicyPack, hashPolicyPack, signPolicyPack, verifySignedPolicyPack } from "./runtime/policyPack.js";
 export { createAuditStream, appendAuditEvent, verifyAuditStream } from "./runtime/auditStream.js";
-export { createAttentionLedger, consumeAttention, accountRenderDecisions, attentionContext } from "./runtime/attentionLedger.js";
+export { createAttentionLedger, consumeAttention, accountRenderDecisions, enforceCumulativeAttentionBudget, attentionContext } from "./runtime/attentionLedger.js";
 export { getCompletionItems, getHoverInfo, getLanguageCatalog } from "./tooling/languageService.js";
