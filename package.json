@@ -19,6 +19,7 @@
     "explain": "node bin/aml.js explain examples/simple.aml",
     "lint": "node bin/aml.js lint examples/simple.aml",
     "verify": "node bin/aml.js verify dist/build_manifest.json",
+    "check:links": "node scripts/check-local-links.js",
     "benchmark": "node benchmarks/run.js",
     "lsp": "node bin/aml-lsp.js",
     "test": "node --test"
