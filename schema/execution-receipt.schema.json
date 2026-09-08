@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/aruintelligence/aml-core/blob/main/schema/execution-receipt.schema.json",
+  "title": "ĀML Accountable Execution Receipt",
+  "description": "Machine-readable contract for intent-to-render accountability receipts emitted by the ĀML v1.2 research pipeline.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "protocol",
+    "version",
+    "timestamp",
+    "profile",
+    "context",
+    "intent_sha256",
+    "aml_sha256",
+    "simulation_sha256",
+    "output_sha256",
+    "decision_sha256",
+    "intent",
+    "aml_source",
+    "simulations",
+    "selected_render",
+    "receipt_sha256"
+  ],
+  "properties": {
+    "protocol": { "const": "ĀML Accountable Execution Receipt" },
+    "version": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "profile": {
+      "type": "object",
+      "required": ["id", "policies"],
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "policies": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+      }
+    },
+    "context": { "type": "object" },
+    "intent_sha256": { "$ref": "#/$defs/sha256" },
+    "aml_sha256": { "$ref": "#/$defs/sha256" },
+    "simulation_sha256": { "$ref": "#/$defs/sha256" },
+    "output_sha256": { "$ref": "#/$defs/sha256" },
+    "decision_sha256": { "$ref": "#/$defs/sha256" },
+    "receipt_sha256": { "$ref": "#/$defs/sha256" },
+    "intent": { "type": "object" },
+    "aml_source": { "type": "string" },
+    "simulations": { "type": "object" },
+    "selected_render": {
+      "type": "object",
+      "required": ["policy_id", "allowed", "suppressed", "decisions", "html"],
+      "properties": {
+        "policy_id": { "type": "string" },
+        "allowed": { "type": "integer", "minimum": 0 },
+        "suppressed": { "type": "integer", "minimum": 0 },
+        "decisions": { "type": "array" },
+        "html": { "type": "string" }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "required": ["protocol", "algorithm", "public_key_sha256", "public_key_pem", "signature_base64"],
+      "properties": {
+        "protocol": { "const": "ĀML Execution Receipt Attestation" },
+        "algorithm": { "const": "Ed25519" },
+        "signer": { "type": ["string", "null"] },
+        "signed_at": { "type": "string", "format": "date-time" },
+        "public_key_sha256": { "$ref": "#/$defs/sha256" },
+        "public_key_pem": { "type": "string" },
+        "signature_base64": { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}
