@@ -35,6 +35,7 @@ export { createTrustDelegation, verifyTrustDelegation, verifyDelegationChain } f
 export { createTransparencyLog, appendTransparencyEntry, verifyTransparencyLog } from "./runtime/transparencyLog.js";
 export { createThresholdAuthorization, verifyThresholdAuthorization } from "./runtime/thresholdAuthorization.js";
 export { signCapabilityToken, verifyCapabilityToken } from "./runtime/capabilityToken.js";
+export { createRevocationRegistry, revokeArtifact, verifyRevocationRegistry, isRevoked } from "./runtime/revocationRegistry.js";
 export { canonicalize, canonicalJSONStringify } from "./protocol/canonicalJson.js";
 export { createWireEnvelope, validateWireEnvelope, negotiateWireSession } from "./protocol/wireProtocol.js";
 export { createReplayGuard, acceptWireEnvelope } from "./protocol/replayGuard.js";
