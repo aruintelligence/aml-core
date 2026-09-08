@@ -15,6 +15,8 @@ const required = [
   ['docs/.well-known/aml.json', ['"web_component"', '"html_bridge"', 'not an Internet standard']],
   ['docs/proof-badge.svg', ['PROOF AVAILABLE']],
   ['docs/PROOF_BADGE.md', ['does not mean official certification']],
+  ['docs/offline-proof.html', ['ĀML Offline Proof', 'no network connection', 'render_allowed = restoration_value']],
+  ['docs/OFFLINE_PROOF.md', ['SHIPPED single-file demonstrator', 'not', 'full AML compiler']],
   ['docs/worlds/ar.md', ['RTL']]
 ];
 
@@ -38,5 +40,5 @@ if (failures.length) {
 console.log(JSON.stringify({
   verified: true,
   surfaces: required.map(([path]) => path),
-  promise: 'shareable proof + multilingual proof + embeddable proof + zero-install browser gates + witness reproduction remain present'
+  promise: 'shareable + multilingual + embeddable + zero-install + offline AML proof surfaces remain present'
 }, null, 2));
