@@ -18,6 +18,8 @@ import (
 	"time"
 )
 
+const canonicalizationProfile = "sorted-json-v1"
+
 type result struct {
 	Valid  bool   `json:"valid"`
 	Reason string `json:"reason"`
@@ -102,6 +104,10 @@ func decodeB64URL(s string) ([]byte, error) {
 	return base64.RawURLEncoding.DecodeString(s)
 }
 
+func verifyIntegrityProfile(integrity map[string]any) bool {
+	return getString(integrity, "algorithm") == "SHA-256" && getString(integrity, "canonicalization") == canonicalizationProfile
+}
+
 func verifyRawP256(jwk map[string]any, message []byte, signature string) (bool, string) {
 	if getString(jwk, "kty") != "EC" || getString(jwk, "crv") != "P-256" {
 		return false, "AML_GO_KEY_UNSUPPORTED"
@@ -132,8 +138,8 @@ func verifyBundle(bundle map[string]any, now time.Time) (bool, string) {
 		return false, "AML_GO_BUNDLE_INVALID"
 	}
 	integrity, ok := asMap(bundle["integrity"])
-	if !ok || getString(integrity, "algorithm") != "SHA-256" {
-		return false, "AML_GO_BUNDLE_ALGORITHM_UNSUPPORTED"
+	if !ok || !verifyIntegrityProfile(integrity) {
+		return false, "AML_GO_BUNDLE_INTEGRITY_PROFILE_UNSUPPORTED"
 	}
 	got, err := sha256JSON(cloneWithout(bundle, "integrity"))
 	if err != nil || got != getString(integrity, "value") {
@@ -145,13 +151,17 @@ func verifyBundle(bundle map[string]any, now time.Time) (bool, string) {
 	receipt, ok := asMap(evidence["receipt"])
 	if !ok { return false, "AML_GO_RECEIPT_INVALID" }
 	receiptIntegrity, ok := asMap(receipt["integrity"])
-	if !ok { return false, "AML_GO_RECEIPT_HASH_MISMATCH" }
+	if !ok || !verifyIntegrityProfile(receiptIntegrity) {
+		return false, "AML_GO_RECEIPT_INTEGRITY_PROFILE_UNSUPPORTED"
+	}
 	receiptHash, err := sha256JSON(cloneWithout(receipt, "integrity"))
 	if err != nil || receiptHash != getString(receiptIntegrity, "value") {
 		return false, "AML_GO_RECEIPT_HASH_MISMATCH"
 	}
 	evidenceIntegrity, ok := asMap(evidence["integrity"])
-	if !ok { return false, "AML_GO_EVIDENCE_HASH_MISMATCH" }
+	if !ok || !verifyIntegrityProfile(evidenceIntegrity) {
+		return false, "AML_GO_EVIDENCE_INTEGRITY_PROFILE_UNSUPPORTED"
+	}
 	evidenceHash, err := sha256JSON(cloneWithout(evidence, "integrity"))
 	if err != nil || evidenceHash != getString(evidenceIntegrity, "value") {
 		return false, "AML_GO_EVIDENCE_HASH_MISMATCH"
