@@ -1,0 +1,15 @@
+{
+  "schema": "aml-verification-contract-catalog/1",
+  "status": "SHIPPED prototype catalog",
+  "current_snapshot": "aml-verifier-contract-2026-09-08-01",
+  "snapshots": [
+    {
+      "snapshot_id": "aml-verifier-contract-2026-09-08-01",
+      "manifest": "protocol/verification-contract-v1.json",
+      "source_commit": "b1ff5a87c7b19ae6338503a58ab6257a5b2add0b",
+      "superseded": false
+    }
+  ],
+  "migrations": [],
+  "rule": "A later snapshot must preserve every earlier snapshot as an immutable historical target and must add an explicit migration object from its predecessor."
+}
