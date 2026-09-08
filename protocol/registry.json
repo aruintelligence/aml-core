@@ -1,6 +1,6 @@
 {
   "registry": "aml-protocol-registry/1",
-  "wire_versions": ["1"],
+  "wire_versions": ["1.0"],
   "media_types": {
     "wire": "application/vnd.aru.aml-wire+json",
     "policy_passport": "application/vnd.aru.aml-policy-passport+json",
