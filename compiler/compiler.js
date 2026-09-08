@@ -1,5 +1,5 @@
 // compiler/compiler.js
-// ĀML_CORE v1.1 — Pure source pipeline + filesystem compiler
+// ĀML_CORE — Pure source pipeline + filesystem compiler
 
 import crypto from "node:crypto";
 import fs from "fs";
@@ -10,6 +10,7 @@ import { parse } from "./parser.js";
 import { buildAMT } from "./amtBuilder.js";
 import { evaluateRenderDecisions } from "./renderEvaluator.js";
 import { generateHTML } from "./htmlGenerator.js";
+import { resolvePolicy } from "../runtime/policyEngine.js";
 
 function sha256(content) {
   return crypto.createHash("sha256").update(content).digest("hex");
@@ -20,6 +21,7 @@ function sha256(content) {
  *
  * options.timestamp can be set to an ISO timestamp to make accountability
  * artifacts reproducible across runs.
+ * options.policy may be a built-in policy id, a policy object, or a function.
  */
 export function compileSource(source, options = {}) {
   if (typeof source !== "string") {
@@ -43,11 +45,12 @@ export function compileSource(source, options = {}) {
 
 /**
  * Compile an AML file and emit browser + accountability artifacts.
- * A SHA-256 build manifest binds the source and emitted artifacts together.
+ * A SHA-256 build manifest binds source, policy identity, and outputs together.
  */
 export function compileAML(inputPath, outputDir = "dist", options = {}) {
   const source = fs.readFileSync(inputPath, "utf8");
   const compiled = compileSource(source, options);
+  const policy = resolvePolicy(options.policy ?? "restorative_v1");
 
   fs.mkdirSync(outputDir, { recursive: true });
 
@@ -66,10 +69,13 @@ export function compileAML(inputPath, outputDir = "dist", options = {}) {
   const generatedAt = options.timestamp ?? new Date().toISOString();
   const buildManifest = {
     protocol: "ĀML Build Manifest",
-    version: "1.1.0",
+    version: "1.2-dev",
     source: {
       path: inputPath,
       sha256: sha256(source)
+    },
+    policy: {
+      id: policy.id
     },
     generated_at: generatedAt,
     render_decision_count: compiled.renderDecisions.length,
