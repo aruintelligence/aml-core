@@ -24,6 +24,7 @@ import { listPolicyProfiles } from "../runtime/policyProfiles.js";
 import { signPolicyPack, verifySignedPolicyPack } from "../runtime/policyPack.js";
 import { verifyAuditStream } from "../runtime/auditStream.js";
 import { enforceCumulativeAttentionBudget } from "../runtime/attentionLedger.js";
+import { signBrandAuthorization, verifyBrandAuthorization } from "../runtime/brandAuthorization.js";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -46,6 +47,8 @@ Usage:
   aml policy-diff <file.aml> <left-policy-or-profile> <right-policy-or-profile> [context.json]
   aml sign-policy-pack <pack.json> <private-key.pem> [signed-pack.json]
   aml verify-policy-pack <signed-pack.json>
+  aml sign-brand-authorization <authorization.json> <private-key.pem> [credential.json]
+  aml verify-brand-authorization <credential.json> [revocation-registry.json]
   aml verify-audit <audit-stream.json>
   aml attention-account <file.aml> <budget> [policy]
   aml policies
@@ -61,36 +64,40 @@ Usage:
   aml version
 
 Commands:
-  compile                 Compile AML into HTML and accountability artifacts
-  generate                Deterministically generate AML source from machine-readable intent JSON
-  execute                 Run intent → AML → simulations → policy profile → audit/attention receipt
-  verify-receipt          Verify receipt hash, audit stream, and attention-ledger integrity
-  sign-receipt            Add an Ed25519 attestation to a valid execution receipt
-  verify-signed-receipt   Verify receipt integrity, signature, and public-key fingerprint
-  simulate                Compare identical AML meaning under multiple policy engines
-  semantic-diff           Compare Abstract Meaning Trees instead of raw text lines
-  policy-diff             Show which render decisions change between policies/profiles
-  sign-policy-pack        Sign a data-only policy pack with Ed25519
-  verify-policy-pack      Verify policy-pack hash, signature, and key fingerprint
-  verify-audit            Verify a SHA-256 hash-chained runtime audit stream
-  attention-account       Apply cumulative session attention accounting to render decisions
-  policies                List built-in policy engines
-  profiles                List built-in user/organization policy profiles
-  inspect                 Print the Abstract Meaning Tree + raw render decisions
-  explain                 Print a compact explanation of decisions and diagnostics
-  validate                Parse and evaluate AML without writing output files
-  lint                    Run semantic diagnostics on meaning-bearing nodes
-  verify                  Recompute SHA-256 digests and verify an AML build bundle
-  sign                    Create a detached Ed25519 build attestation
-  verify-attestation      Verify an Ed25519 AML build attestation
-  help                    Show this help message
-  version                 Show AML CLI version
+  compile                     Compile AML into HTML and accountability artifacts
+  generate                    Deterministically generate AML source from machine-readable intent JSON
+  execute                     Run intent → AML → simulations → policy profile → audit/attention receipt
+  verify-receipt              Verify receipt hash, audit stream, and attention-ledger integrity
+  sign-receipt                Add an Ed25519 attestation to a valid execution receipt
+  verify-signed-receipt       Verify receipt integrity, signature, and public-key fingerprint
+  simulate                    Compare identical AML meaning under multiple policy engines
+  semantic-diff               Compare Abstract Meaning Trees instead of raw text lines
+  policy-diff                 Show which render decisions change between policies/profiles
+  sign-policy-pack            Sign a data-only policy pack with Ed25519
+  verify-policy-pack          Verify policy-pack hash, signature, and key fingerprint
+  sign-brand-authorization    Sign a scoped official-brand authorization credential with Ed25519
+  verify-brand-authorization  Verify brand credential integrity, expiry, and optional revocation status
+  verify-audit                Verify a SHA-256 hash-chained runtime audit stream
+  attention-account           Apply cumulative session attention accounting to render decisions
+  policies                    List built-in policy engines
+  profiles                    List built-in user/organization policy profiles
+  inspect                     Print the Abstract Meaning Tree + raw render decisions
+  explain                     Print a compact explanation of decisions and diagnostics
+  validate                    Parse and evaluate AML without writing output files
+  lint                        Run semantic diagnostics on meaning-bearing nodes
+  verify                      Recompute SHA-256 digests and verify an AML build bundle
+  sign                        Create a detached Ed25519 build attestation
+  verify-attestation          Verify an Ed25519 AML build attestation
+  help                        Show this help message
+  version                     Show AML CLI version
 
 Examples:
   aml semantic-diff before.aml after.aml
   aml policy-diff examples/simple.aml restorative_v1 attention_conservative_v1
   aml sign-policy-pack policy-pack.json private-key.pem signed-policy-pack.json
   aml verify-policy-pack signed-policy-pack.json
+  aml sign-brand-authorization authorization.json aru-private-key.pem brand-credential.json
+  aml verify-brand-authorization brand-credential.json revocation-registry.json
   aml attention-account examples/simple.aml 10 restorative_v1
   aml execute examples/intent-checkout.json human_first context.json receipt.json
   aml verify-receipt receipt.json
@@ -203,6 +210,28 @@ try {
     const result = verifySignedPolicyPack(JSON.parse(readSource(inputPath)));
     console.log(JSON.stringify(result, null, 2));
     process.exit(result.verified ? 0 : 1);
+  }
+  if (command === "sign-brand-authorization") {
+    const privateKeyPath = args[2];
+    if (!privateKeyPath) throw new Error("A private key PEM path is required.");
+    const request = JSON.parse(readSource(inputPath));
+    const credential = signBrandAuthorization(request, readSource(privateKeyPath), {
+      issuer: process.env.AML_BRAND_ISSUER || "ĀRU Intelligence Inc."
+    });
+    writeOrPrint(credential, args[3], "SIGNED BRAND AUTHORIZATION");
+    if (args[3]) console.log(`Credential SHA-256: ${credential.credential_hash}`);
+    process.exit(0);
+  }
+  if (command === "verify-brand-authorization") {
+    const credential = JSON.parse(readSource(inputPath));
+    const revocationRegistry = args[2] ? JSON.parse(readSource(args[2])) : null;
+    const result = verifyBrandAuthorization(credential, {
+      now: process.env.AML_VERIFY_AT || null,
+      revocation_registry: revocationRegistry,
+      expected_issuer: process.env.AML_EXPECTED_BRAND_ISSUER || null
+    });
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(result.valid ? 0 : 1);
   }
   if (command === "verify-audit") {
     const result = verifyAuditStream(JSON.parse(readSource(inputPath)));
