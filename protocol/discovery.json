@@ -3,7 +3,7 @@
   "implementation": "aruintelligence/aml-core",
   "status": "research-prototype",
   "language_version": "1.3.0",
-  "wire_versions": ["1"],
+  "wire_versions": ["1.0"],
   "capabilities": [
     "abstract-meaning-tree",
     "execution-receipts",
