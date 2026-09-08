@@ -1,0 +1,28 @@
+{
+  "name": "aml-language-support",
+  "displayName": "ĀML — ĀRU Meaning Language",
+  "description": "Language support for ĀML meaning-native interface source files.",
+  "version": "0.1.0",
+  "publisher": "aru-intelligence",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "aml",
+        "aliases": ["ĀML", "AML", "ĀRU Meaning Language"],
+        "extensions": [".aml"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "aml",
+        "scopeName": "source.aml",
+        "path": "./syntaxes/aml.tmLanguage.json"
+      }
+    ]
+  }
+}
