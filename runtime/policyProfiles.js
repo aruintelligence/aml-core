@@ -10,7 +10,12 @@ export const BUILTIN_POLICY_PROFILES = Object.freeze({
   strict_attention: {
     id: "strict_attention",
     description: "Stricter attention threshold plus consent awareness.",
-    policies: ["attention_conservative_v1", "consent_guard_v1"]
+    policies: ["attention_conservative_v1", "consent_guard_v1", "session_attention_budget_v1"]
+  },
+  privacy_first: {
+    id: "privacy_first",
+    description: "Require restorative value, explicit consent where declared, privacy consent for personal-data collection, and respect for session attention budget.",
+    policies: ["restorative_v1", "consent_guard_v1", "privacy_guard_v1", "session_attention_budget_v1"]
   }
 });
 
