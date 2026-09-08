@@ -37,6 +37,7 @@ export { createThresholdAuthorization, verifyThresholdAuthorization } from "./ru
 export { signCapabilityToken, verifyCapabilityToken } from "./runtime/capabilityToken.js";
 export { createRevocationRegistry, revokeArtifact, verifyRevocationRegistry, isRevoked } from "./runtime/revocationRegistry.js";
 export { createProofCarryingInterface, verifyProofCarryingInterface } from "./runtime/proofCarryingInterface.js";
+export { signBrandAuthorization, verifyBrandAuthorization } from "./runtime/brandAuthorization.js";
 export { canonicalize, canonicalJSONStringify } from "./protocol/canonicalJson.js";
 export { createWireEnvelope, validateWireEnvelope, negotiateWireSession } from "./protocol/wireProtocol.js";
 export { createReplayGuard, acceptWireEnvelope } from "./protocol/replayGuard.js";
