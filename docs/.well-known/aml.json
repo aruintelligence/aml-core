@@ -59,6 +59,8 @@
   "signed_verification_report_schema_url": "https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-signed-verification-report.schema.json",
   "signed_verification_quorum_schema": "aml-signed-verification-quorum/1",
   "signed_verification_quorum_schema_url": "https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-signed-verification-quorum.schema.json",
+  "verifier_conformance_result_schema": "aml-verifier-conformance-result/1",
+  "verifier_conformance_result_schema_url": "https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verifier-conformance-result.schema.json",
   "witness_record_schema": "aml-witness-record/1",
   "witness_record_schema_url": "https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-witness-record.schema.json",
   "zone_violation_schema": "aml-zone-violation/1",
@@ -67,9 +69,14 @@
   "canonicalization_profile_url": "https://github.com/aruintelligence/aml-core/blob/main/protocol/sorted-json-v1.md",
   "canonicalization_vectors": "https://github.com/aruintelligence/aml-core/blob/main/protocol/browser-canonicalization-vectors.json",
   "verification_report_vectors": "https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-report-vectors.json",
+  "verifier_cli_contract": "https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verifier-cli.md",
+  "verifier_conformance_manifest": "https://github.com/aruintelligence/aml-core/blob/main/conformance/verifier/manifest.json",
+  "verifier_conformance_harness": "https://github.com/aruintelligence/aml-core/blob/main/scripts/run-verifier-conformance.mjs",
+  "external_verifier_10_minute_path": "https://github.com/aruintelligence/aml-core/blob/main/docs/EXTERNAL_VERIFIER_10_MINUTES.md",
   "verifier_registry": "https://github.com/aruintelligence/aml-core/blob/main/protocol/verifier-registry.json",
   "witness_registry": "https://github.com/aruintelligence/aml-core/blob/main/WITNESSES.json",
   "python_witness_verifier": "https://github.com/aruintelligence/aml-core/blob/main/independent/python/verify_witness.py",
+  "go_witness_verifier": "https://github.com/aruintelligence/aml-core/blob/main/independent/go/main.go",
   "browser_api_global": "window.AML",
   "browser_receipt_global": "window.__AML_RECEIPT__",
   "browser_evidence_global": "window.__AML_EVIDENCE__",
@@ -86,15 +93,16 @@
     "claim_boundary": "proof of ephemeral session-key possession and exact evidence/challenge binding; not identity or authorization"
   },
   "verifier_plurality": {
-    "reference_verifier_count": 3,
+    "reference_verifier_count": 4,
+    "reference_languages": ["JavaScript", "Python", "Go"],
     "external_verifier_count": 0,
     "external_witness_count": 0,
     "unsigned_identity_basis": "declared verifier ID",
     "signed_identity_basis": "P-256 public-key fingerprint",
-    "claim_boundary": "Distinct verifier IDs, keys, or threshold agreement do not prove institutional independence, correctness, certification, or truth of underlying declarations."
+    "claim_boundary": "Distinct verifier IDs, keys, languages, or threshold agreement do not prove institutional independence, correctness, certification, or truth of underlying declarations."
   },
   "languages": ["en", "es", "pt-BR", "hi", "ar", "zh", "fr", "de"],
   "protocol_discovery": "https://github.com/aruintelligence/aml-core/blob/main/protocol/discovery.json",
   "license": "MIT for covered software; official marks are separate",
-  "note": "This path, application/aml+json embedding, detached witness contracts, verification reports/quorums, signed verifier reports, verifier manifests, witness registry, and sorted-json-v1 are experimental reference-project conventions. This is not an Internet standard or a ratified web standard."
+  "note": "This path, application/aml+json embedding, detached witness contracts, verifier CLI/conformance contracts, verification reports/quorums, signed verifier reports, verifier manifests, witness registry, and sorted-json-v1 are experimental reference-project conventions. This is not an Internet standard or a ratified web standard."
 }
