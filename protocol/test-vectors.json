@@ -1,0 +1,20 @@
+{
+  "type": "aml-protocol-test-vectors/1",
+  "canonical_json": [
+    {
+      "name": "object-key-order",
+      "input": {"b":2,"a":1},
+      "expected": "{\"a\":1,\"b\":2}"
+    },
+    {
+      "name": "nested-object-order",
+      "input": {"z":{"b":2,"a":1},"a":[{"d":4,"c":3}]},
+      "expected": "{\"a\":[{\"c\":3,\"d\":4}],\"z\":{\"a\":1,\"b\":2}}"
+    },
+    {
+      "name": "arrays-preserve-order",
+      "input": {"items":[3,2,1]},
+      "expected": "{\"items\":[3,2,1]}"
+    }
+  ]
+}
