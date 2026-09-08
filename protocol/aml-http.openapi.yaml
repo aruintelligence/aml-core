@@ -1,0 +1,89 @@
+openapi: 3.1.0
+info:
+  title: ĀML HTTP Evaluation API
+  version: 1.0.0
+  description: >-
+    Reference HTTP contract for evaluating machine intent through the ĀML accountability pipeline
+    and verifying execution receipts. The contract does not imply hosted service availability.
+servers:
+  - url: http://127.0.0.1:8787
+paths:
+  /health:
+    get:
+      summary: Service health
+      responses:
+        '200':
+          description: Healthy service
+  /v1/capabilities:
+    get:
+      summary: Return machine-readable AML capabilities
+      responses:
+        '200':
+          description: Capability manifest
+          content:
+            application/json:
+              schema:
+                type: object
+  /v1/evaluate:
+    post:
+      summary: Evaluate machine intent through AML
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [intent]
+              properties:
+                intent:
+                  type: object
+                profile:
+                  type: string
+                  default: human_first
+                context:
+                  type: object
+                timestamp:
+                  type: string
+                stream_id:
+                  type: string
+      responses:
+        '200':
+          description: AML evaluation and execution receipt
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [protocol, allowed, selected_render, receipt]
+                properties:
+                  protocol:
+                    const: aml-http-evaluation/1
+                  allowed:
+                    type: boolean
+                  selected_render:
+                    type: object
+                  receipt:
+                    type: object
+        '400':
+          description: Invalid request or AML evaluation error
+        '413':
+          description: Request body exceeds configured size limit
+  /v1/verify-receipt:
+    post:
+      summary: Verify an AML execution receipt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [receipt]
+              properties:
+                receipt:
+                  type: object
+      responses:
+        '200':
+          description: Receipt verified
+        '422':
+          description: Receipt supplied but integrity verification failed
+        '400':
+          description: Invalid request
