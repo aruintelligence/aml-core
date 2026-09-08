@@ -1,0 +1,84 @@
+{
+  "schema": "aml-witness-bundle/1",
+  "prototype": true,
+  "created_at": "2030-01-01T00:00:04.000Z",
+  "evidence": {
+    "schema": "aml-browser-evidence/1",
+    "prototype": true,
+    "revision": 1,
+    "url": "https://example.test/",
+    "generated_at": "2030-01-01T00:00:01.000Z",
+    "receipt": {
+      "schema": "aml-dom-receipt/1",
+      "prototype": true,
+      "revision": 1,
+      "reason": "python-vector",
+      "url": "https://example.test/",
+      "generated_at": "2030-01-01T00:00:00.000Z",
+      "totals": {
+        "evaluated": 1,
+        "allowed": 0,
+        "suppressed": 1,
+        "errors": 0
+      },
+      "decisions": [
+        {
+          "ok": true,
+          "index": 0,
+          "id": "pressure",
+          "purpose": "Create urgency",
+          "attention_cost": 5,
+          "restoration_value": 1,
+          "render_allowed": false
+        }
+      ],
+      "integrity": {
+        "schema": "aml-integrity/1",
+        "algorithm": "SHA-256",
+        "canonicalization": "sorted-json-v1",
+        "value": "5716f1eb9c2c326677130ca2291096c5912f2924e4794a2b8eaf22f87630ab14"
+      }
+    },
+    "zone_violations": [],
+    "integrity": {
+      "schema": "aml-integrity/1",
+      "algorithm": "SHA-256",
+      "canonicalization": "sorted-json-v1",
+      "value": "16784fa1030e48299d7bedd714f38768deacebd21c0abc7180cd1a013dcf6ecf"
+    }
+  },
+  "challenge": {
+    "schema": "aml-verification-challenge/1",
+    "prototype": true,
+    "nonce": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+    "issued_at": "2030-01-01T00:00:02.000Z",
+    "expires_at": "2030-01-01T00:10:02.000Z"
+  },
+  "attestation": {
+    "schema": "aml-session-attestation/1",
+    "prototype": true,
+    "algorithm": "ECDSA-P256-SHA256",
+    "evidence_hash": "16784fa1030e48299d7bedd714f38768deacebd21c0abc7180cd1a013dcf6ecf",
+    "challenge_nonce": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+    "challenge_expires_at": "2030-01-01T00:10:02.000Z",
+    "issued_at": "2030-01-01T00:00:03.000Z",
+    "session_public_key_jwk": {
+      "crv": "P-256",
+      "ext": true,
+      "key_ops": [
+        "verify"
+      ],
+      "kty": "EC",
+      "x": "xYB02HKuA0vJKOS6IbeahX9WqDo0QiG6td_nr0GiXPw",
+      "y": "OLnGhBsd8wYCMgTO9bLXcygFknLFbLR5MUxJ4-DOZK4"
+    },
+    "session_key_fingerprint": "0a9dfc31a0895ac336ca96c3a7a8df986f68eab6097cdaa6e5933b5a9e4fcba3",
+    "signature": "vPndK5i0HAhnyoXgDnOFs4egUgHkL9MTnGxGKFM48e_FqOpJNy_Qszv61mkL0ldLLGPvWXM8uEEYBar1KjFAHQ"
+  },
+  "integrity": {
+    "schema": "aml-integrity/1",
+    "algorithm": "SHA-256",
+    "canonicalization": "sorted-json-v1",
+    "value": "7bb7a268c8b6345d408e2a858c8b62d343218b47bdeb0900d646efbb6a4adb6c"
+  }
+}
