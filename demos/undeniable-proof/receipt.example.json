@@ -1,0 +1,22 @@
+{
+  "artifact_status": "DRAFT",
+  "protocol": "ĀML proof-demo receipt example",
+  "note": "Illustrative structure only. Replace with the runtime-generated execution receipt when the demo is wired end-to-end.",
+  "transmission": "checkout_pressure",
+  "decisions": [
+    {
+      "identifier": "countdown_pressure",
+      "attention_cost": 5,
+      "restoration_value": 1,
+      "render_allowed": false,
+      "rationale": "restoration_value is lower than attention_cost"
+    },
+    {
+      "identifier": "purchase_action",
+      "attention_cost": 1,
+      "restoration_value": 2,
+      "render_allowed": true,
+      "rationale": "restoration_value is greater than or equal to attention_cost"
+    }
+  ]
+}
