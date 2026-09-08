@@ -4,8 +4,8 @@ import fs from "node:fs";
 
 const capabilities = JSON.parse(fs.readFileSync("AML_CAPABILITIES.json", "utf8"));
 
-test("AML capability manifest declares the public v1.2 development surface", () => {
-  assert.equal(capabilities.version, "1.2.0-dev");
+test("AML capability manifest declares the public v1.2 surface", () => {
+  assert.equal(capabilities.version, "1.2.0");
   assert.equal(capabilities.compiler.pure_in_memory_compile, true);
   assert.equal(capabilities.compiler.accountable_intent_execution, true);
   assert.equal(capabilities.policy.policy_composition, true);
