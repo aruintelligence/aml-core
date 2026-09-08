@@ -9,6 +9,10 @@
     "version": { "type": "string", "minLength": 1 },
     "kind": { "type": "string", "minLength": 1 },
     "capabilities": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "session_id": { "type": ["string", "null"] },
+    "nonce": { "type": ["string", "null"] },
+    "issued_at": { "type": ["string", "null"], "format": "date-time" },
+    "expires_at": { "type": ["string", "null"], "format": "date-time" },
     "payload": {}
   },
   "additionalProperties": false
