@@ -1,21 +1,21 @@
 // compiler/renderEvaluator.js
-// ĀML_CORE v1.1 — Render Evaluator
-// Walks the AMT, applies EthicalRenderGate logic, and produces render decisions.
+// ĀML_CORE v1.2 research surface — policy-driven Render Evaluator
 
-import { ethicalRenderGate } from "../runtime/ethicalRenderGate.js";
+import { resolvePolicy } from "../runtime/policyEngine.js";
 
 export function evaluateRenderDecisions(amt, options = {}) {
   const decisions = [];
   const timestamp = options.timestamp ?? null;
+  const policy = resolvePolicy(options.policy ?? "restorative_v1");
 
   for (const node of amt.root) {
-    walkNode(node, decisions, timestamp);
+    walkNode(node, decisions, timestamp, policy);
   }
 
   return decisions;
 }
 
-function walkNode(node, decisions, timestamp) {
+function walkNode(node, decisions, timestamp, policy) {
   const metadata = node.render_metadata || {};
 
   const hasRenderableMetadata =
@@ -26,17 +26,17 @@ function walkNode(node, decisions, timestamp) {
     typeof metadata.restoration_value === "number";
 
   if (hasRenderableMetadata) {
-    decisions.push(createRenderDecision(node, timestamp));
+    decisions.push(createRenderDecision(node, timestamp, policy));
   }
 
   if (node.children && node.children.length > 0) {
     for (const child of node.children) {
-      walkNode(child, decisions, timestamp);
+      walkNode(child, decisions, timestamp, policy);
     }
   }
 }
 
-function createRenderDecision(node, timestamp) {
+function createRenderDecision(node, timestamp, policy) {
   const metadata = node.render_metadata || {};
 
   const element = {
@@ -57,16 +57,10 @@ function createRenderDecision(node, timestamp) {
     aesthetic_coherence: metadata.restoration_value || 1
   };
 
-  const gateResult = ethicalRenderGate(element);
-  const attentionCost =
-    typeof metadata.attention_cost === "number"
-      ? metadata.attention_cost
-      : gateResult.attention_cost;
-  const restorationValue =
-    typeof metadata.restoration_value === "number"
-      ? metadata.restoration_value
-      : gateResult.restoration_value;
-  const renderAllowed = restorationValue >= attentionCost;
+  const result = policy.evaluate(element, { node, metadata });
+  if (!result || typeof result.render_allowed !== "boolean") {
+    throw new Error(`ĀML policy ${policy.id} must return render_allowed as a boolean.`);
+  }
 
   return {
     node_type: node.type,
@@ -75,12 +69,14 @@ function createRenderDecision(node, timestamp) {
     purpose: metadata.purpose || null,
     memory_role: metadata.memory_role || null,
     user_effect: metadata.user_effect || null,
-    attention_cost: attentionCost,
-    restoration_value: restorationValue,
-    calculated_attention_cost: gateResult.attention_cost,
-    calculated_restoration_value: gateResult.restoration_value,
-    render_allowed: renderAllowed,
-    fallback_triggered: !renderAllowed,
+    policy_id: result.policy_id || policy.id,
+    policy_rationale: result.rationale || null,
+    attention_cost: result.attention_cost,
+    restoration_value: result.restoration_value,
+    calculated_attention_cost: result.calculated_attention_cost ?? null,
+    calculated_restoration_value: result.calculated_restoration_value ?? null,
+    render_allowed: result.render_allowed,
+    fallback_triggered: result.fallback_triggered ?? !result.render_allowed,
     timestamp: timestamp ?? new Date().toISOString()
   };
 }
