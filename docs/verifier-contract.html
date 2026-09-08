@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ĀML Verifier Contract Snapshot</title>
+  <meta name="description" content="Inspect the immutable ĀML verifier contract snapshot and reproduce it in another runtime.">
+  <style>
+    body{font-family:system-ui,-apple-system,sans-serif;max-width:880px;margin:0 auto;padding:32px 20px;background:#07111f;color:#eef7ff;line-height:1.55}a{color:#7df9ff}code,pre{background:#0e1b2d;border-radius:8px}code{padding:.15em .35em}pre{padding:16px;overflow:auto}.card{border:1px solid #26415f;border-radius:14px;padding:18px;margin:18px 0}.ok{color:#9cffb0}.muted{color:#adc0d3}h1,h2{line-height:1.15}.big{font-size:1.15rem}
+  </style>
+</head>
+<body>
+  <p class="muted">SHIPPED prototype interoperability surface</p>
+  <h1>ĀML Verifier Contract Snapshot</h1>
+  <p class="big">Independent verifiers should agree on an exact contract, not a vague version label.</p>
+
+  <div class="card">
+    <strong>Snapshot ID</strong><br>
+    <code>aml-verifier-contract-2026-09-08-01</code>
+    <p><strong>Immutable source commit</strong><br><code>b1ff5a87c7b19ae6338503a58ab6257a5b2add0b</code></p>
+    <p><strong>Canonicalization</strong><br><code>sorted-json-v1</code></p>
+    <p><strong>Witness artifact</strong><br><code>aml-witness-bundle/1</code></p>
+  </div>
+
+  <h2>What the snapshot locks</h2>
+  <p>The snapshot binds the exact historical verifier CLI contract, witness/evidence/challenge/attestation schemas, canonicalization profile, vectors, golden witness artifact, conformance-result contract, and black-box harness target.</p>
+
+  <h2>Reference reproduction</h2>
+  <div class="card">
+    <p class="ok"><strong>Reference runtimes: JavaScript · Python · Go · HTTP</strong></p>
+    <p>All are maintained by the AML repository. They demonstrate cross-runtime reproduction but do <strong>not</strong> count as independent external witnesses.</p>
+    <p><strong>External verifier count:</strong> 0</p>
+  </div>
+
+  <h2>Challenge it</h2>
+  <pre>node scripts/run-verifier-conformance.mjs -- your-verifier</pre>
+  <p>The black-box harness requires:</p>
+  <pre>golden witness   → PASS
+tampered receipt → FAIL
+tampered challenge → FAIL
+expired challenge → FAIL</pre>
+
+  <p><a href="https://github.com/aruintelligence/aml-core/blob/main/VERIFY.md">Verification guide</a></p>
+  <p><a href="https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-v1.json">Machine-readable snapshot</a></p>
+  <p><a href="https://github.com/aruintelligence/aml-core/blob/main/docs/EXTERNAL_VERIFIER_10_MINUTES.md">10-minute external verifier path</a></p>
+  <p><a href="https://github.com/aruintelligence/aml-core/issues/17">External verifier challenge</a></p>
+
+  <h2>Why the commit matters</h2>
+  <p>CI byte-compares every locked contract path against the immutable source commit. Silent changes to the active snapshot make the build fail. Intended contract changes require a new snapshot rather than redefining the old one.</p>
+
+  <h2>Claim boundary</h2>
+  <p>This is project-defined interoperability infrastructure. Snapshot agreement, a conformance PASS, or multiple matching verifiers do not establish standards-body approval, certification, institutional independence, official ĀML trademark authorization, policy correctness, or truth of declared interface intent.</p>
+</body>
+</html>
