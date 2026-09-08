@@ -1,6 +1,6 @@
 // compiler/parser.js
-// ĀML_CORE v1.0 — Initial Parser
-// Converts AML tokens into an Abstract Meaning Tree (AMT)
+// ĀML_CORE v1.1 — Parser
+// Converts AML tokens into an Abstract Syntax Tree while preserving simple policy expressions.
 
 export function parse(tokens) {
   let current = 0;
@@ -58,11 +58,7 @@ export function parse(tokens) {
   }
 
   function parseStatement() {
-    if (check("KEYWORD")) {
-      return parseBlockOrProperty();
-    }
-
-    if (check("IDENTIFIER")) {
+    if (check("KEYWORD") || check("IDENTIFIER")) {
       return parseBlockOrProperty();
     }
 
@@ -103,28 +99,35 @@ export function parse(tokens) {
     };
   }
 
-  function parseProperty(nameToken) {
-    let value;
+  function parseAtomicValue(nameToken) {
+    if (check("STRING") || check("NUMBER") || check("IDENTIFIER") || check("KEYWORD")) {
+      return advance().value;
+    }
 
-    if (check("STRING")) {
-      value = advance().value;
-    } else if (check("NUMBER")) {
-      value = advance().value;
-    } else if (check("IDENTIFIER")) {
-      value = advance().value;
-    } else if (check("KEYWORD")) {
-      value = advance().value;
-    } else {
-      const token = peek();
-      throw new Error(
-        `Expected property value for "${nameToken.value}" at line ${token.line}, column ${token.column}`
-      );
+    const token = peek();
+    throw new Error(
+      `Expected property value for "${nameToken.value}" at line ${token.line}, column ${token.column}`
+    );
+  }
+
+  function parseProperty(nameToken) {
+    const left = parseAtomicValue(nameToken);
+
+    if (check("OPERATOR")) {
+      const operator = advance().value;
+      const right = parseAtomicValue(nameToken);
+      return {
+        type: "Property",
+        name: nameToken.value,
+        value: `${left} ${operator} ${right}`,
+        expression: { left, operator, right }
+      };
     }
 
     return {
       type: "Property",
       name: nameToken.value,
-      value
+      value: left
     };
   }
 
