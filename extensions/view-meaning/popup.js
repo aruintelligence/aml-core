@@ -48,11 +48,10 @@ function b64Bytes(value) {
 }
 
 function pemDer(pem) {
-  const base64 = pem
+  return b64Bytes(pem
     .replace(/-----BEGIN PUBLIC KEY-----/g, '')
     .replace(/-----END PUBLIC KEY-----/g, '')
-    .replace(/\s+/g, '');
-  return b64Bytes(base64);
+    .replace(/\s+/g, ''));
 }
 
 async function verifyReceipt(receipt) {
@@ -73,22 +72,17 @@ async function verifyBrandCredential(credential, trustRegistry) {
   if (!credential || credential.type !== 'aml-brand-authorization/1') {
     return { valid: false, official: false, reason: 'invalid_type' };
   }
-  const {
-    credential_hash,
-    algorithm,
-    public_key_pem,
-    public_key_sha256,
-    signature_base64,
-    ...body
-  } = credential;
+
+  const { credential_hash, algorithm, public_key_pem, public_key_sha256, signature_base64, ...body } = credential;
   if (algorithm !== 'Ed25519') return { valid: false, official: false, reason: 'unsupported_algorithm' };
   if (credential.expires_at && Date.now() >= new Date(credential.expires_at).getTime()) {
     return { valid: false, official: false, reason: 'expired' };
   }
 
   const canonical = canonicalJSONStringify(body);
-  const hash = await sha256Text(canonical);
-  if (hash !== credential_hash) return { valid: false, official: false, reason: 'credential_hash_mismatch' };
+  if (await sha256Text(canonical) !== credential_hash) {
+    return { valid: false, official: false, reason: 'credential_hash_mismatch' };
+  }
 
   try {
     const der = pemDer(public_key_pem);
@@ -124,12 +118,8 @@ async function verifyBrandCredential(credential, trustRegistry) {
 
 function inspectDocument() {
   const meta = (name) => document.querySelector(`meta[name="${name}"]`)?.content ?? null;
-  const receiptScript =
-    document.querySelector('script[type="application/vnd.aru.aml-execution-receipt+json"]') ||
-    document.querySelector('script[data-aml-receipt]');
-  const authorizationScript =
-    document.querySelector('script[type="application/vnd.aru.aml-brand-authorization+json"]') ||
-    document.querySelector('script[data-aml-brand-authorization]');
+  const receiptScript = document.querySelector('script[type="application/vnd.aru.aml-execution-receipt+json"]') || document.querySelector('script[data-aml-receipt]');
+  const authorizationScript = document.querySelector('script[type="application/vnd.aru.aml-brand-authorization+json"]') || document.querySelector('script[data-aml-brand-authorization]');
 
   let receipt = null;
   let receiptError = null;
@@ -145,15 +135,19 @@ function inspectDocument() {
     catch (error) { authorizationError = error.message; }
   }
 
+  const purposes = (receipt?.intent?.nodes || [])
+    .map((node) => node?.properties?.purpose)
+    .filter(Boolean);
+
   return {
     url: location.href,
     title: document.title,
     profile: meta('aml-profile') || receipt?.profile?.id || null,
     policy: meta('aml-policy') || receipt?.selected_render?.policy_id || null,
+    purposes,
+    context: receipt?.context || null,
     receipt_sha256: meta('aml-receipt-sha256') || receipt?.receipt_sha256 || null,
-    allowed: typeof receipt?.selected_render?.suppressed === 'number'
-      ? receipt.selected_render.suppressed === 0
-      : null,
+    allowed: typeof receipt?.selected_render?.suppressed === 'number' ? receipt.selected_render.suppressed === 0 : null,
     receipt,
     receipt_present: Boolean(receiptScript),
     receipt_parseable: Boolean(receipt),
@@ -175,58 +169,58 @@ async function loadTrustRegistry() {
   }
 }
 
+function formatContext(context) {
+  if (!context || typeof context !== 'object') return 'No runtime context declared';
+  const interesting = [
+    ['consent_granted', context.consent_granted],
+    ['privacy_consent', context.privacy_consent],
+    ['prefers_reduced_motion', context.prefers_reduced_motion],
+    ['high_contrast_required', context.high_contrast_required],
+    ['max_cognitive_load', context.max_cognitive_load],
+    ['attention_budget_remaining', context.attention_budget_remaining]
+  ].filter(([, value]) => value !== undefined);
+  return interesting.length ? interesting.map(([key, value]) => `${key}=${String(value)}`).join(' · ') : 'Runtime context present; no standard consent/privacy/accessibility flags declared';
+}
+
 async function inspectActiveTab() {
   results.innerHTML = card('Status', 'Inspecting…', 'muted');
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id) throw new Error('No active tab available.');
-    const [{ result }] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: inspectDocument
-    });
+    const [{ result }] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: inspectDocument });
 
     const [receiptVerification, trustRegistry] = await Promise.all([
       result.receipt ? verifyReceipt(result.receipt) : Promise.resolve(null),
       result.authorization ? loadTrustRegistry() : Promise.resolve(null)
     ]);
-    const authorizationVerification = result.authorization
-      ? await verifyBrandCredential(result.authorization, trustRegistry)
-      : null;
+    const authorizationVerification = result.authorization ? await verifyBrandCredential(result.authorization, trustRegistry) : null;
 
-    const blocks = [];
-    blocks.push(card('Page', result.title || result.url));
+    const blocks = [card('Page', result.title || result.url)];
     blocks.push(card(
       'AML receipt integrity',
-      !result.receipt_present
-        ? 'No embedded AML receipt found'
-        : !result.receipt_parseable
-          ? 'Receipt JSON is invalid'
-          : receiptVerification?.valid
-            ? 'VALID — receipt hash recomputed locally'
-            : `INVALID — ${receiptVerification?.reason || 'verification failed'}`,
+      !result.receipt_present ? 'No embedded AML receipt found' :
+      !result.receipt_parseable ? 'Receipt JSON is invalid' :
+      receiptVerification?.valid ? 'VALID — receipt hash recomputed locally' : `INVALID — ${receiptVerification?.reason || 'verification failed'}`,
       receiptVerification?.valid ? 'ok' : 'warn'
     ));
-    if (result.receipt_sha256) blocks.push(card('Receipt SHA-256', result.receipt_sha256));
+    if (result.purposes?.length) blocks.push(card('Declared purpose', result.purposes.join(' | ')));
     if (result.profile) blocks.push(card('Profile', result.profile));
     if (result.policy) blocks.push(card('Policy', result.policy));
+    if (result.context) blocks.push(card('Consent / privacy / accessibility context', formatContext(result.context)));
+    if (result.receipt_sha256) blocks.push(card('Receipt SHA-256', result.receipt_sha256));
     if (result.allowed !== null) blocks.push(card('Render result', result.allowed ? 'Allowed' : 'Contains suppressed output', result.allowed ? 'ok' : 'warn'));
 
     blocks.push(card(
       'Official AML authorization',
-      !result.authorization_present
-        ? 'No embedded authorization credential found'
-        : !result.authorization_parseable
-          ? 'Authorization JSON is invalid'
-          : authorizationVerification?.official
-            ? 'OFFICIAL — valid credential signed by an active ĀRU trust root'
-            : authorizationVerification?.valid
-              ? `Cryptographically valid, NOT OFFICIAL — ${authorizationVerification.reason}`
-              : `INVALID — ${authorizationVerification?.reason || 'verification failed'}`,
+      !result.authorization_present ? 'No embedded authorization credential found' :
+      !result.authorization_parseable ? 'Authorization JSON is invalid' :
+      authorizationVerification?.official ? 'OFFICIAL — valid credential signed by an active ĀRU trust root' :
+      authorizationVerification?.valid ? `Cryptographically valid, NOT OFFICIAL — ${authorizationVerification.reason}` :
+      `INVALID — ${authorizationVerification?.reason || 'verification failed'}`,
       authorizationVerification?.official ? 'ok' : 'warn'
     ));
-    if (result.authorization?.grantee) {
-      blocks.push(card('Authorization grantee', result.authorization.grantee?.name ?? result.authorization.grantee));
-    }
+
+    if (result.authorization?.grantee) blocks.push(card('Authorization grantee', result.authorization.grantee?.name ?? result.authorization.grantee));
     if (result.authorization?.credential_hash) blocks.push(card('Authorization credential hash', result.authorization.credential_hash));
     if (trustRegistry) blocks.push(card('ĀRU trust registry', `${trustRegistry.status || 'unknown'} · ${(trustRegistry.active_keys || []).length} active key(s)`));
     if (result.receipt_error) blocks.push(card('Receipt parse error', result.receipt_error, 'warn'));
