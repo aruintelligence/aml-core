@@ -11,8 +11,11 @@ function normalize(decisions) {
 
 for (const file of [
   "examples/simple.aml",
-  "examples/ai_assistant.aml",
+  "examples/ai_assistant_response.aml",
   "examples/accessibility_first.aml",
+  "examples/ethical_ads.aml",
+  "examples/focus_mode.aml",
+  "examples/social_feed.aml",
   "conformance/allow.aml",
   "conformance/suppress.aml"
 ]) {
