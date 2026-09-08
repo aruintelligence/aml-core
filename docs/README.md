@@ -9,6 +9,7 @@
 - [ĀML and HTML: Different Jobs in the Stack](AML_VS_HTML.md)
 - [Accountable Interfaces](ACCOUNTABLE_INTERFACES.md)
 - [EthicalRenderGate™ Explained](ETHICAL_RENDER_GATE_EXPLAINED.md)
+- [Open Research Program](RESEARCH_PROGRAM.md)
 
 ## AI + interface research
 
