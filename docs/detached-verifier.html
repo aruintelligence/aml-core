@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ĀML Detached Verifier</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:980px;margin:0 auto;padding:24px;background:#071018;color:#eaf6ff}a{color:#8bdcff}textarea,pre{width:100%;box-sizing:border-box;background:#0d1b26;color:#dff5ff;border:1px solid #29485d;border-radius:10px;padding:12px}textarea{min-height:240px}pre{white-space:pre-wrap;overflow-wrap:anywhere}button{padding:10px 14px;margin:6px 6px 6px 0;border-radius:8px;border:0;font-weight:700}.ok{color:#70f0a8}.bad{color:#ff8b8b}.small{font-size:.9rem;color:#afc5d3}
+  </style>
+</head>
+<body>
+  <h1>ĀML Detached Verifier</h1>
+  <p><strong>SHIPPED prototype.</strong> This page generates the verifier challenge and later checks a portable witness bundle. It does not need to trust the page that produced the UI.</p>
+
+  <h2>1. Generate a challenge</h2>
+  <button id="generate">Generate 2-minute challenge</button>
+  <button id="copyChallenge">Copy challenge</button>
+  <pre id="challenge">No challenge yet.</pre>
+  <p class="small">Copy the challenge into <a href="./attest-evidence.html" target="_blank" rel="noopener">Attest Evidence</a>, create a witness bundle there, then return here.</p>
+
+  <h2>2. Paste witness bundle</h2>
+  <textarea id="bundle" spellcheck="false" placeholder='{"schema":"aml-witness-bundle/1",...}'></textarea>
+  <button id="verify">Verify bundle against my challenge</button>
+  <button id="tamper">Tamper with pasted copy</button>
+
+  <h2>3. Result</h2>
+  <pre id="result">Waiting.</pre>
+  <p class="small">A PASS means the bundle hash, evidence hash, verifier challenge, ephemeral-session public-key fingerprint, and ECDSA signature all agree under this prototype contract. It does not establish identity, official ĀRU authorization, truthful intent, regulatory compliance, or objective human impact.</p>
+
+  <script type="module">
+    import { createVerificationChallenge } from './aml-verification-challenge.js';
+    import { verifyWitnessBundle } from './aml-witness-bundle.js';
+
+    const challengeEl = document.getElementById('challenge');
+    const bundleEl = document.getElementById('bundle');
+    const resultEl = document.getElementById('result');
+    let currentChallenge = null;
+
+    document.getElementById('generate').addEventListener('click', () => {
+      currentChallenge = createVerificationChallenge({ ttl_ms: 120000 });
+      challengeEl.textContent = JSON.stringify(currentChallenge, null, 2);
+      resultEl.textContent = 'Challenge generated. Send it to the evidence-producing page.';
+    });
+
+    document.getElementById('copyChallenge').addEventListener('click', async () => {
+      if (!currentChallenge) return;
+      await navigator.clipboard.writeText(JSON.stringify(currentChallenge, null, 2));
+    });
+
+    document.getElementById('verify').addEventListener('click', async () => {
+      try {
+        if (!currentChallenge) throw new Error('GENERATE_CHALLENGE_FIRST');
+        const bundle = JSON.parse(bundleEl.value);
+        if (bundle.challenge?.nonce !== currentChallenge.nonce || bundle.challenge?.expires_at !== currentChallenge.expires_at) {
+          resultEl.textContent = JSON.stringify({ valid:false, reason:'DETACHED_VERIFIER_CHALLENGE_MISMATCH' }, null, 2);
+          resultEl.className = 'bad';
+          return;
+        }
+        const check = await verifyWitnessBundle(bundle);
+        resultEl.textContent = JSON.stringify(check, null, 2);
+        resultEl.className = check.valid ? 'ok' : 'bad';
+      } catch (error) {
+        resultEl.textContent = JSON.stringify({ valid:false, reason:error?.message || String(error) }, null, 2);
+        resultEl.className = 'bad';
+      }
+    });
+
+    document.getElementById('tamper').addEventListener('click', () => {
+      try {
+        const bundle = JSON.parse(bundleEl.value);
+        if (bundle.evidence?.receipt?.decisions?.[0]) {
+          bundle.evidence.receipt.decisions[0].purpose = 'tampered-after-signing';
+        } else {
+          bundle.created_at = 'tampered';
+        }
+        bundleEl.value = JSON.stringify(bundle, null, 2);
+        resultEl.textContent = 'Tampered local copy. Verify again; it should fail.';
+        resultEl.className = 'bad';
+      } catch (error) {
+        resultEl.textContent = 'Paste a valid JSON bundle first.';
+      }
+    });
+  </script>
+</body>
+</html>
