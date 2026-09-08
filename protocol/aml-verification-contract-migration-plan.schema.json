@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-verification-contract-migration-plan.schema.json",
+  "title": "AML Verification Contract Migration Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "from_snapshot",
+    "to_snapshot",
+    "from_commit",
+    "to_commit",
+    "changed_locked_paths",
+    "added_locked_paths",
+    "removed_locked_paths",
+    "classification",
+    "note"
+  ],
+  "properties": {
+    "schema": { "const": "aml-verification-contract-migration-plan/1" },
+    "from_snapshot": { "type": "string", "minLength": 1 },
+    "to_snapshot": { "type": "string", "minLength": 1 },
+    "from_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "to_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "changed_locked_paths": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "added_locked_paths": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "removed_locked_paths": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "classification": { "enum": ["no-contract-change", "REQUIRES_HUMAN_CLASSIFICATION"] },
+    "note": { "type": "string" }
+  }
+}
