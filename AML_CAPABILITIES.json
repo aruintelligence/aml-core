@@ -1,0 +1,61 @@
+{
+  "language": "ĀML — ĀRU Meaning Language",
+  "version": "1.1.0",
+  "status": "research-prototype",
+  "entry_points": {
+    "cli": "bin/aml.js",
+    "javascript": "index.js",
+    "browser": "docs/aml-browser.js",
+    "playground": "https://aruintelligence.github.io/aml-core/playground.html"
+  },
+  "compiler": {
+    "lexer": true,
+    "parser": true,
+    "ast": true,
+    "abstract_meaning_tree": true,
+    "html_output": true,
+    "render_decisions": true,
+    "pure_in_memory_compile": true,
+    "reproducible_timestamp_option": true
+  },
+  "language_features": {
+    "blocks": true,
+    "properties": true,
+    "string_values": true,
+    "numeric_values": true,
+    "identifier_values": true,
+    "single_binary_comparison_properties": true,
+    "comparison_operators": [">", ">=", "<", "<=", "=", "==", "!="]
+  },
+  "policy": {
+    "engine": "EthicalRenderGate prototype v1",
+    "declared_attention_cost": true,
+    "declared_restoration_value": true,
+    "allow_suppress_decision": true,
+    "decision_json_schema": "schema/render-decision.schema.json"
+  },
+  "tooling": {
+    "compile": true,
+    "validate": true,
+    "inspect": true,
+    "lint": true,
+    "benchmark": true,
+    "browser_playground": true
+  },
+  "verification": {
+    "ci": true,
+    "unit_tests": true,
+    "example_suite": true,
+    "canonical_allow_fixture": "conformance/allow.aml",
+    "canonical_suppress_fixture": "conformance/suppress.aml",
+    "browser_core_parity": true,
+    "reproducible_build_test": true,
+    "semantic_diagnostic_tests": true
+  },
+  "diagnostics": ["AML001", "AML002", "AML003", "AML004", "AML005"],
+  "non_claims": [
+    "No claim that current scores objectively measure human attention.",
+    "No claim that current scores objectively measure restoration or wellbeing.",
+    "No claim that the prototype constitutes a universal ethical standard."
+  ]
+}
