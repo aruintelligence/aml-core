@@ -1,0 +1,20 @@
+# ĀML reference implementation ownership/review map
+
+* @aruintelligence
+
+# Standards, conformance, registries, and protocol contracts
+/rfcs/ @aruintelligence
+/protocol/ @aruintelligence
+/schema/ @aruintelligence
+/conformance/ @aruintelligence
+/STANDARDIZATION.md @aruintelligence
+/GOVERNANCE.md @aruintelligence
+
+# Official brand and commercial authority surfaces
+/TRADEMARKS.md @aruintelligence
+/COMMERCIAL.md @aruintelligence
+/OFFICIAL_MARKS.json @aruintelligence
+/OFFICIAL_AUTHORIZATIONS.json @aruintelligence
+/TRADEMARK_REGISTRATION_PLAN.md @aruintelligence
+/runtime/brandAuthorization.js @aruintelligence
+/schema/brand-authorization.schema.json @aruintelligence
