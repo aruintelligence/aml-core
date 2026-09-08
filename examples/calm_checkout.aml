@@ -1,0 +1,28 @@
+transmission "calm-checkout" {
+
+  title:
+    "Calm Checkout"
+
+  engram purchaseSummary {
+
+    value:
+      "Summarize the purchase without introducing unnecessary urgency or distraction."
+
+    purpose:
+      "support an informed final purchase decision"
+
+    memory_role:
+      "transaction_summary"
+
+    user_effect:
+      "confidence"
+
+    attention_cost:
+      2
+
+    restoration_value:
+      7
+
+  }
+
+}
