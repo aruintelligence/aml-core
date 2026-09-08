@@ -1,0 +1,9 @@
+transmission "allow_calm_navigation" {
+  message "next_step" {
+    purpose: "Offer a clear next navigation step"
+    content: "Continue when you are ready"
+    attention_cost: 1
+    restoration_value: 2
+    cognitive_load: 1
+  }
+}
