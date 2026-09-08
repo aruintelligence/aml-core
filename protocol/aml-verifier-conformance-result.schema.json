@@ -7,6 +7,7 @@
   "properties": {
     "schema": { "const": "aml-verifier-conformance-result/1" },
     "prototype": { "const": true },
+    "harness_root": { "type": "string", "minLength": 1 },
     "command": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
     "passed": { "type": "boolean" },
     "results": {
