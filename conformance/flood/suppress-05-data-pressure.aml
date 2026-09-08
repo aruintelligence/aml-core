@@ -1,0 +1,10 @@
+transmission "suppress_data_pressure" {
+  message "data_pressure" {
+    purpose: "Pressure the user to provide unnecessary personal data"
+    content: "Add your phone number to unlock the next step"
+    attention_cost: 4
+    restoration_value: 1
+    consent_required: true
+    collects_personal_data: true
+  }
+}
