@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ĀML Worker Verifier</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:980px;margin:0 auto;padding:24px;background:#071018;color:#eaf6ff}textarea,pre{width:100%;box-sizing:border-box;background:#0d1b26;color:#dff5ff;border:1px solid #29485d;border-radius:10px;padding:12px}textarea{min-height:260px}pre{white-space:pre-wrap;overflow-wrap:anywhere}button,input{padding:10px 14px;margin:6px 6px 6px 0;border-radius:8px}.ok{color:#70f0a8}.bad{color:#ff8b8b}.small{font-size:.9rem;color:#afc5d3}a{color:#8bdcff}
+  </style>
+</head>
+<body>
+  <h1>ĀML Worker Verifier</h1>
+  <p><strong>SHIPPED prototype.</strong> This page passes a witness bundle into a Web Worker. The worker verifies it without access to the page DOM.</p>
+  <input id="file" type="file" accept="application/json,.json">
+  <textarea id="bundle" spellcheck="false" placeholder="Paste aml-witness-bundle/1 JSON"></textarea>
+  <button id="verify">Verify in worker</button>
+  <button id="tamper">Tamper copied purpose</button>
+  <pre id="result">Waiting.</pre>
+  <p class="small">Worker isolation shows the verifier can run without application DOM access. It is not a hardware, browser-vendor, or operating-system trust boundary. Generate a fresh bundle with <a href="./detached-verifier.html">Detached Verifier</a> + <a href="./attest-evidence.html">Attest Evidence</a>.</p>
+
+  <script type="module">
+    const input = document.getElementById('bundle');
+    const result = document.getElementById('result');
+    const worker = new Worker('./aml-verifier-worker.js', { type: 'module' });
+    let counter = 0;
+
+    worker.addEventListener('message', (event) => {
+      const report = event.data?.report;
+      result.textContent = JSON.stringify(report, null, 2);
+      result.className = report?.valid ? 'ok' : 'bad';
+    });
+
+    document.getElementById('file').addEventListener('change', async (event) => {
+      const file = event.target.files?.[0];
+      if (file) input.value = await file.text();
+    });
+
+    document.getElementById('verify').addEventListener('click', () => {
+      try {
+        const bundle = JSON.parse(input.value);
+        worker.postMessage({ id: ++counter, bundle, now: Date.now() });
+      } catch (error) {
+        result.textContent = JSON.stringify({ valid:false, reason:error?.message || 'INVALID_JSON' }, null, 2);
+        result.className = 'bad';
+      }
+    });
+
+    document.getElementById('tamper').addEventListener('click', () => {
+      try {
+        const bundle = JSON.parse(input.value);
+        bundle.evidence.receipt.decisions[0].purpose = 'tampered-in-page-before-worker';
+        input.value = JSON.stringify(bundle, null, 2);
+        result.textContent = 'Tampered local copy. Worker verification should fail.';
+        result.className = 'bad';
+      } catch {
+        result.textContent = 'Load a valid bundle first.';
+      }
+    });
+  </script>
+</body>
+</html>
