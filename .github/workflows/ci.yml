@@ -37,6 +37,8 @@ jobs:
         run: node scripts/check-flood-fixtures.js > "${RUNNER_TEMP}/aml-flood-fixtures.json"
       - name: Guard public proof surfaces
         run: node scripts/check-proof-surfaces.mjs > "${RUNNER_TEMP}/aml-proof-surfaces.json"
+      - name: Guard mainstream publication surfaces
+        run: node scripts/check-publication-surfaces.mjs > "${RUNNER_TEMP}/aml-publication-surfaces.json"
       - name: Guard verifier interoperability surfaces
         run: node scripts/check-verifier-surfaces.mjs > "${RUNNER_TEMP}/aml-verifier-surfaces.json"
       - name: Verify immutable verifier contract snapshot
