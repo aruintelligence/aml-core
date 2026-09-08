@@ -24,6 +24,8 @@ The following names and designations are used as claimed trademarks and/or servi
 - Meaning Gate™
 - Proof-Carrying Interface™
 
+The machine-readable registry is `OFFICIAL_MARKS.json`.
+
 Additional names, logos, badges, icons, slogans, and source-identifying designs may also function as trademarks or service marks even when not listed here.
 
 Do not use the ® symbol unless and until a mark has actually been registered in the relevant jurisdiction. The ™ and SM symbols may be used to identify claimed unregistered marks where legally appropriate.
@@ -69,6 +71,26 @@ A third party may accurately describe factual test results, but use of official 
 
 This separation is intentional: **technical interoperability should remain independently testable; official brand certification remains controlled.**
 
+## Signed official authorization credentials
+
+ĀRU may issue a machine-verifiable `aml-brand-authorization/1` credential after an appropriate written authorization, certification, OEM, co-branding, or other agreement.
+
+The credential can identify:
+
+- the grantee;
+- the specific claimed marks authorized;
+- permitted use categories;
+- issue and expiration times;
+- an agreement reference;
+- the issuing public key and Ed25519 signature;
+- a credential hash that can be checked against a revocation registry.
+
+The credential is **evidence of the represented authorization scope; it is not itself the legal agreement and does not create trademark rights independently of that agreement and applicable law.**
+
+The public format is documented in `rfcs/0011-official-brand-authorization.md` and `schema/brand-authorization.schema.json`.
+
+`OFFICIAL_AUTHORIZATIONS.json` is the repository-level public authorization index. Absence from that public index does not prove that no private agreement exists, and inclusion must not be interpreted beyond the stated scope.
+
 ## Forks
 
 Forks are welcome under the software license. Fork operators should:
@@ -84,6 +106,7 @@ Commercial trademark licensing, certification programs, OEM/co-branding, enterpr
 
 Start here:
 
+- Email: Office@aruintelligence.com
 - https://aruintelligence.com/
 - GitHub repository: https://github.com/aruintelligence/aml-core
 - Commercial licensing issue template: `.github/ISSUE_TEMPLATE/commercial-license.md`
