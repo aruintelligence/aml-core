@@ -1,127 +1,158 @@
 # ĀML™ Development Roadmap
 
-ĀML™ is an experimental meaning-native, policy-aware execution layer for accountable human-facing interfaces.
+ĀML™ is a working research prototype for meaning-native, policy-aware, accountable AI interfaces and cross-system trust.
 
-## Current status — v1.2.0
+## Current stable release — v1.3.0
 
-Implemented today:
+Published release: [v1.3.0](https://github.com/aruintelligence/aml-core/releases/tag/v1.3.0)
 
-- `.aml` lexer and parser
-- Abstract Syntax Tree generation
-- Abstract Meaning Tree generation
-- browser-compatible rendering
-- pluggable policy engines
-- composed policy profiles
-- counterfactual policy simulation
-- deterministic machine intent → ĀML generation
-- consent-aware policy evaluation
-- privacy-aware policy evaluation
-- session attention budgets
-- accountable execution receipts
-- SHA-256 build and receipt integrity
-- Ed25519 build and receipt attestations
-- semantic diagnostics
-- CLI inspection, lint, validation, explanation, simulation, verification and signing
-- browser playground
-- Node/browser parity testing
-- VS Code language definition
-- dependency-free language server
-- machine-readable schemas and capability manifests
-- automated conformance fixtures
-- GitHub Actions CI and release publishing
-- local Markdown link integrity checks
-
-Published release: [v1.2.0](https://github.com/aruintelligence/aml-core/releases/tag/v1.2.0)
-
-## Near-term priorities — v1.3
-
-### Policy composition
+Stable v1.3 introduced:
 
 - signed policy packs
-- policy-pack schemas
-- explicit policy precedence
-- conflict-resolution rules
-- user-owned policy profile files
-- organization policy packs
-- policy version pinning
+- semantic diffs
+- policy diffs
+- runtime audit streams
+- accessibility-aware policies
+- cumulative attention accounting
+- execution receipts and signed attestations
+- pluggable policy profiles
+- deterministic machine intent → AML generation
+- browser playground, CLI, LSP, VS Code language support, and conformance tooling
 
-### Semantic and policy diffs
+## Main branch — v1.4 release-candidate territory
 
-- `aml diff` for meaning-bearing source changes
-- decision diffs between two compiler runs
-- policy diffs explaining why outcomes changed
-- receipt comparisons across versions
+Main now contains a much broader architecture than the v1.3 release. The current v1.4 release-candidate surface includes:
 
-### Accessibility policies
+### Mainstream adoption
 
-- reduced-motion context
-- high-contrast preferences
-- cognitive-load preferences
-- screen-reader-oriented semantics
-- keyboard-navigation policy inputs
+- AI Interface Firewall™
+- View Meaning™ browser inspector
+- View Meaning browser-extension prototype
+- React-compatible accountable UI adapter
+- plain-JavaScript, React, and Next.js starter kits
+- Meaning Gate™ GitHub Action
+- Verify Official ĀML GitHub Action
+- dependency-free HTTP evaluation/verification service
+- 30-minute enterprise pilot kit
 
-### Runtime audit streams
+### Trust continuity
 
-- append-only decision events
-- cumulative session attention accounting
-- consent grant/revocation events
-- receipt chaining
-- replayable audit histories
+- expiring and revocable consent ledgers
+- policy consensus with explicit dissent
+- semantic risk classification
+- policy matrices
+- signed audit checkpoints
+- attention-ledger integrity verification
+- receipt Merkle batching
+- execution provenance graphs
 
-### Developer tooling
+### Cross-system interoperability
 
-- editor client integration for `aml-lsp`
-- richer completion context
-- definition/reference support
-- structured code actions
-- canonical formatter that preserves comments
-- stronger malformed-input diagnostics
+- capability negotiation
+- portable policy passports
+- content-addressed AML bundles
+- selective-disclosure commitments
+- versioned AML wire envelopes
+- federated exchange
+- causal execution graphs
+- canonical JSON
+- golden protocol vectors
+- replay resistance
 
-## Medium-term priorities — v1.4+
+### Trust fabric
 
-### AI accountability
+- delegated trust chains
+- M-of-N threshold authorization
+- append-only transparency logs
+- bounded signed capability tokens
+- revocation registries
+- Proof-Carrying Interface™ manifests
+- machine-verifiable conformance claims
+- layered conformance from Core through Governed
 
-- AI proposal receipts distinct from final execution receipts
-- provenance metadata for generated intent
-- multiple proposed UI alternatives before policy selection
-- explainable fallback generation when a policy suppresses content
-- adversarial intent and policy fuzzing
+### Official AML verification
 
-### Policy research infrastructure
+- machine-readable official-mark registry
+- signed brand-authorization credentials
+- canonical ĀRU brand trust-root registry
+- browser, CLI, HTTP, and GitHub Action verification
+- first production ĀRU Ed25519 public trust root published by fingerprint/public key only
+- private signing material kept outside GitHub
 
-- richer conformance suites
-- policy benchmark fixtures
-- deterministic policy replay
-- policy test vectors
-- comparative evaluation harnesses
-- empirical-model plug-in boundary
+### Standards surface
 
-### Privacy and data governance
+- RFC process
+- protocol discovery
+- versioned registries
+- schemas
+- conformance levels
+- conformance vectors
+- explicit governance and standardization path
+- independent second-runtime challenge
 
-- declared data categories
-- retention-purpose declarations
-- data-minimization policies
-- third-party transfer declarations
-- runtime privacy-budget experiments
+## Immediate priorities — next 30 days
+
+### 1. Independent implementation
+
+A second implementation that does not import `aml-core` should reproduce canonical serialization, wire envelopes, conformance vectors, and receipt verification. Any divergence becomes a specification bug to fix.
+
+### 2. Package distribution
+
+Publish a verified registry distribution once package metadata, release versioning, and distribution credentials can be advanced through the approved release path.
+
+### 3. Security review
+
+Invite independent review of:
+
+- receipt integrity
+- signed policy packs
+- capability tokens
+- replay resistance
+- trust delegation
+- threshold authorization
+- revocation
+- official-brand trust-root verification
+
+### 4. Browser extension hardening
+
+Move View Meaning™ from prototype toward a reviewable store package while preserving minimal permissions and local verification.
+
+### 5. Enterprise pilots
+
+Get external teams to run the 30-minute pilot against real AI-generated UI flows and report integration friction, policy ambiguity, and missing evidence.
+
+## 30–90 day adoption goals
+
+- verified package distribution
+- real React/Next integration examples
+- second-runtime interoperability result
+- independent security review
+- external accessibility review
+- public benchmark corpus
+- enterprise pilot feedback
+- browser-extension beta
+- broader standards and research outreach
+- clearer spec/reference-implementation separation
 
 ## v2 research direction
 
-The long-term question is whether the Abstract Meaning Tree can become an executable semantic substrate rather than only a compilation intermediate.
+The long-term research question remains whether the Abstract Meaning Tree can become an executable semantic substrate rather than only a compilation intermediate.
 
-Potential v2 directions:
+Potential directions:
 
 - executable AMT graph traversal
 - semantic-first runtime scheduling
-- meaning-aware component negotiation
+- multi-agent authority negotiation
 - user-controlled policy runtimes
-- context-aware adaptive rendering
-- semantic continuity across sessions
-- accountable multi-agent interface generation
+- semantic continuity across sessions and devices
+- accountability evidence that travels with rendered output
+- cross-organization trust federation
+- privacy-preserving policy disclosure where technically justified
 
 ## Evidence boundary
 
-Roadmap items are research targets, not guarantees. Current ĀML policies do not establish scientifically validated universal measures of ethics, attention, restoration, privacy, accessibility, or wellbeing.
+Roadmap items are research and engineering targets, not guarantees. Current ĀML policies do not establish scientifically validated universal measures of ethics, attention, restoration, privacy, accessibility, or wellbeing.
 
-The project goal is to make assumptions and decisions **explicit, testable, replaceable, reproducible, and attestable**.
+The goal is to make assumptions and decisions **explicit, testable, replaceable, reproducible, interoperable, and attestable**.
 
 Created by **Daniel Jacob Read IV** and stewarded by **ĀRU Intelligence Inc.™**
