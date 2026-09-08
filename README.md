@@ -1,34 +1,75 @@
-# ĀML™
+# ĀML™ — ĀRU Meaning Language™
 
-## A meaning-native interface language for accountable rendering
+## HTML asks whether it *can* render. ĀML asks whether it *should*.
 
-[![Release](https://img.shields.io/github/v/release/aruintelligence/aml-core?style=flat-square)](https://github.com/aruintelligence/aml-core/releases/latest)
 [![CI](https://github.com/aruintelligence/aml-core/actions/workflows/ci.yml/badge.svg)](https://github.com/aruintelligence/aml-core/actions/workflows/ci.yml)
-[![Live demo](https://img.shields.io/badge/Open-Live_Demo-06b6d4?style=flat-square)](https://aruintelligence.github.io/aml-core/)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-16a34a?style=flat-square)](LICENSE)
+[![Live Lab](https://img.shields.io/badge/OPEN-LIVE_LAB-7df9ff?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/)
+[![Node 18+](https://img.shields.io/badge/NODE-18%2B-9cffb0?style=for-the-badge&labelColor=07111f)](https://nodejs.org/)
+[![License: MIT](https://img.shields.io/badge/CODE-MIT-f2ce72?style=for-the-badge&labelColor=07111f)](LICENSE)
 
-ĀML™ is an experimental language, compiler, and browser demonstration built around a simple research question:
+**ĀML is a working research prototype for meaning-native, accountable interfaces.** It compiles semantic intent into browser-compatible output while producing an inspectable record of why each element was allowed, degraded, or suppressed.
 
-> Can an interface evaluate whether an element should consume attention before rendering it?
+> The web inherited a document language from another era. Intelligent interfaces need a decision layer.
 
-Traditional markup asks whether an element *can* render. ĀML adds an inspectable policy layer—EthicalRenderGate™—that asks whether its modeled restoration value justifies its modeled attention cost.
+[**Launch the EthicalRenderGate™ Lab →**](https://aruintelligence.github.io/aml-core/)
 
-> **Status:** Working research prototype. The compiler, CLI, examples, runtime gate, live demonstration, and automated smoke tests are implemented. ĀML is not a production framework, a clinical evaluator, or a validated measure of cognitive impact.
+[![ĀML live accountable-rendering laboratory](docs/assets/aml-live-demo.jpg)](https://aruintelligence.github.io/aml-core/)
 
-[![ĀML live demonstration showing the accountable-rendering interface](docs/assets/aml-live-demo.jpg)](https://aruintelligence.github.io/aml-core/)
+## The shift
 
-*The live interface: explicit attention cost, restoration value, and render decisions. Select the image to open the demonstration.*
+| Legacy HTML substrate | ĀML accountability layer |
+|---|---|
+| Describes what exists | Declares what an element means |
+| Renders when syntax is valid | Evaluates before rendering |
+| Treats attention as free | Models attention as a cost |
+| Leaves intent implicit | Exposes purpose and policy inputs |
+| Produces a page | Produces a page **and** a decision record |
+| Answers “Can this render?” | Answers “Should this render—and why?” |
 
-## Try the live demonstration
+ĀML does not pretend browsers have stopped speaking HTML. Today, it compiles to HTML, CSS, JavaScript, an Abstract Meaning Tree, and accountability artifacts. The innovation is the inspectable meaning-and-policy layer before browser rendering—not a claim that the browser substrate has vanished.
 
-[Open the interactive ĀML demo](https://aruintelligence.github.io/aml-core/).
+## The core experiment
 
-The demo shows allowed, degraded, and suppressed rendering states; per-element inputs; restoration controls; before-and-after rendering; and generated decision data.
+The current EthicalRenderGate uses an intentionally simple, inspectable rule:
 
-## Quick start
+```text
+render_allowed = restoration_value ≥ attention_cost
+```
 
-Requirements: Node.js 18 or newer.
+Near-threshold failures may degrade; larger failures are suppressed. The inputs are declared model values, not clinical measurements or universal ethical truth.
+
+```aml
+transmission "deep_focus" {
+  engram DeepArticle {
+    value: "Long-form restorative learning."
+    purpose: "Increase coherence and understanding."
+    attention_cost: 3.2
+    restoration_value: 9.1
+  }
+}
+```
+
+## What runs today
+
+```mermaid
+flowchart LR
+    A[".aml source"] --> B["Lexer + parser"]
+    B --> C["Meaning tree"]
+    C --> D["EthicalRenderGate"]
+    D --> E["HTML + decision artifacts"]
+```
+
+- Working lexer, parser, Abstract Syntax Tree, and Abstract Meaning Tree
+- CLI compilation and rendering commands
+- Allowed, degraded, and suppressed render modes
+- Browser laboratory with live policy inputs
+- Machine-readable `render_decision.json`
+- Automated gate and end-to-end compiler smoke tests
+- GitHub Actions verification on pushes and pull requests
+
+## Run it in under a minute
+
+Requires Node.js 18 or newer.
 
 ```bash
 git clone https://github.com/aruintelligence/aml-core.git
@@ -37,13 +78,16 @@ npm test
 node bin/aml.js compile examples/transmission-061.aml dist
 ```
 
-The compiler writes inspectable artifacts to the output directory:
+The compiler emits:
 
-- `index.html`
-- `tokens.json`
-- `ast.json`
-- `amt.json`
-- `render_decision.json`
+```text
+dist/
+├── index.html
+├── tokens.json
+├── ast.json
+├── amt.json
+└── render_decision.json
+```
 
 For CLI help:
 
@@ -51,118 +95,32 @@ For CLI help:
 node bin/aml.js help
 ```
 
-## Core rule
+## Inspect the system
 
-The minimal prototype uses:
-
-```text
-render_allowed = restoration_value ≥ attention_cost
-```
-
-A near-threshold failure may render in a degraded mode; a larger failure is suppressed. These values are explicit model inputs. They are not measurements of a person or universal ethical truth.
-
-## Example syntax
-
-```aml
-transmission "deep_focus" {
-
-  engram DeepArticle {
-
-    value:
-      "Long-form restorative learning."
-
-    purpose:
-      "Increase coherence and understanding."
-
-    attention_cost:
-      3.2
-
-    restoration_value:
-      9.1
-
-  }
-
-}
-```
-
-The output includes both rendered HTML and a machine-readable accountability record.
-
-## Implemented pipeline
-
-```mermaid
-flowchart LR
-    A["ĀML source"] --> B["Lexer"]
-    B --> C["Parser"]
-    C --> D["Meaning tree"]
-    D --> E["Render evaluator"]
-    E --> F["HTML + decision data"]
-```
-
-| Component | Role |
+| Start here | What it contains |
 |---|---|
-| `bin/aml.js` | Command-line entry point |
-| `compiler/lexer.js` | Tokenization |
-| `compiler/parser.js` | Syntax parsing |
-| `compiler/amtBuilder.js` | ĀRU Meaning Tree construction |
-| `compiler/renderEvaluator.js` | Policy evaluation |
-| `compiler/htmlGenerator.js` | Output generation |
-| `runtime/ethicalRenderGate.js` | Standalone gate calculation |
-| `test/aml-core.test.js` | Gate and end-to-end compiler smoke tests |
-| `docs/index.html` | GitHub Pages demonstration |
+| [Live Lab](https://aruintelligence.github.io/aml-core/) | Interactive HTML-versus-ĀML comparison and live decisions |
+| [Manifesto](MANIFESTO.md) | Why accountable rendering matters |
+| [Architecture](ARCHITECTURE.md) | Compiler and runtime structure |
+| [Language specification](LANGUAGE_SPEC.md) | Current syntax and semantics |
+| [Ethical rendering](ETHICAL_RENDERING.md) | Gate model and boundaries |
+| [Testing](TESTING.md) | Reproducible verification |
+| [Roadmap](ROADMAP.md) | Planned compiler and runtime work |
+| [White paper](WHITEPAPER.md) | Research framing |
+| [Contribution guide](CONTRIBUTING.md) | How to challenge or improve the work |
 
-## Verification
+## What ĀML is—and is not
 
-Every push and pull request runs the automated test suite and a CLI compilation check through GitHub Actions.
+ĀML demonstrates an implemented semantic-policy architecture. It does **not** establish that its scores objectively measure attention, restoration, harm, ethics, or wellbeing. Those dimensions need operational definitions, empirical study, accessibility review, adversarial testing, and independent scrutiny before real-world use.
 
-Run the same checks locally:
+The project is best understood as an executable question:
 
-```bash
-npm test
-node bin/aml.js compile examples/transmission-061.aml dist
-```
+> What changes when an interface must explain the attention it consumes?
 
-The tests currently verify:
+## Build with us
 
-- A restorative element passes the gate
-- An attention-heavy element triggers fallback
-- The compiler emits tokens, syntax data, a meaning tree, HTML, and render decisions
+Useful contributions include parser tests, malformed-input handling, accessibility work, alternate policy models, counterexamples, security review, and empirical evaluation methods. Read [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md) before submitting work.
 
-The suite is intentionally small. Parser edge cases, malformed input, accessibility behavior, and broader policy evaluation remain areas for additional testing.
+Created by **Daniel Jacob Read IV** and stewarded by **ĀRU Intelligence Inc.™**
 
-## Evidence boundaries
-
-ĀML demonstrates an implemented semantic-policy architecture. It does not establish that its scores objectively measure attention, restoration, harm, ethics, or wellbeing. Those dimensions require explicit operational definitions, empirical study, and independent scrutiny before real-world use.
-
-See:
-
-- [Architecture](ARCHITECTURE.md)
-- [Language specification](LANGUAGE_SPEC.md)
-- [Ethical rendering](ETHICAL_RENDERING.md)
-- [Testing](TESTING.md)
-- [Roadmap](ROADMAP.md)
-- [White paper](WHITEPAPER.md)
-- [Security policy](SECURITY.md)
-- [Contribution guide](CONTRIBUTING.md)
-- [Citation metadata](CITATION.cff)
-
-## Current research directions
-
-- More complete grammar and parser coverage
-- Versioned policy definitions
-- Explainable rendering decisions
-- Accessibility-aware evaluation
-- Adversarial tests and counterexamples
-- Comparison with conventional design-system policy layers
-- Empirical methods for evaluating attention and restoration assumptions
-
-## Contributing
-
-Reproducible bug reports, tests, documentation corrections, accessibility improvements, alternative scoring models, and critical counterexamples are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes.
-
-## Creator and stewardship
-
-Created by **Daniel Jacob Read IV**. Stewarded by **ĀRU Intelligence Inc.**
-
-## License and marks
-
-The code is released under the [MIT License](LICENSE). ĀML™, EthicalRenderGate™, Meaning-Native Computing™, and ĀRU Intelligence Inc.™ may be claimed marks of their respective owner. The license governs use of the code; trademark rights are separate.
+Code is available under the [MIT License](LICENSE). ĀML™, ĀRU Meaning Language™, EthicalRenderGate™, Meaning-Native Computing™, and ĀRU Intelligence Inc.™ are claimed marks of ĀRU Intelligence Inc.; trademark rights are separate from the code license.

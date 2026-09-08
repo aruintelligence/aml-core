@@ -1,35 +1,33 @@
-# CHANGELOG.md
-
 # ĀML Changelog
 
-All notable changes to AML are documented in this file.
+All notable changes to ĀML are documented here.
 
-The AML project prioritizes:
-- semantic continuity
-- deterministic evolution
-- transparent specification history
-- accountable architectural progression
+## [Unreleased]
 
----
+### Changed
 
-# [1.0.0] — 2026-05-06
+- Repositioned the project around the technically precise distinction between browser markup and accountable, meaning-native rendering.
+- Rebuilt the GitHub Pages laboratory as a responsive, accessible interactive experience.
+- Added clearer evidence boundaries and direct paths to source, compiler instructions, and research documentation.
 
-## Initial Public Architecture Draft
+### Added
 
-First formal public release of the AML conceptual architecture.
+- Published `MANIFESTO.md` to explain the motivation, commitments, and invitation behind ĀML.
+- Added live allowed, degraded, and suppressed decisions with a machine-readable policy record.
 
-Introduced:
-- meaning-native interface philosophy
-- EthicalRenderGate
-- restoration-oriented rendering
-- coherence-aware runtime concepts
-- accountable rendering systems
-- semantic-first execution philosophy
+## [1.0.0] — 2026-05-06
 
----
+### Initial public architecture draft
 
-## Core Equation Introduced
+- Meaning-native interface philosophy
+- EthicalRenderGate™ prototype
+- Restoration-oriented rendering
+- Coherence-aware runtime concepts
+- Accountable rendering systems
+- Semantic-first execution philosophy
 
-```aml
-render_allowed =
-  restoration_value >= attention_cost
+### Core equation
+
+```text
+render_allowed = restoration_value >= attention_cost
+```
