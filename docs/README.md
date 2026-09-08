@@ -6,8 +6,8 @@
 
 - [Browser Playground](https://aruintelligence.github.io/aml-core/playground.html) — type AML source and inspect tokens, AST, Abstract Meaning Tree, and render decisions directly in the browser
 - [Live EthicalRenderGate™ Lab](https://aruintelligence.github.io/aml-core/) — interact with the policy model and compare legacy rendering with accountable rendering
-- [Quickstart](../QUICKSTART.md) — clone, test, compile, validate, and inspect from the terminal
-- [API](API.md) — use `compileAML`, `compileSource`, and `ethicalRenderGate` programmatically
+- [Quickstart](../QUICKSTART.md) — clone, test, compile, validate, lint, and inspect from the terminal
+- [API](API.md) — use `compileAML`, `compileSource`, `analyzeAMT`, and `ethicalRenderGate` programmatically
 - [Example Gallery](../examples/README.md) — runnable AML programs across multiple interface domains
 
 ## Start here
@@ -19,16 +19,23 @@
 - [EthicalRenderGate™ Explained](ETHICAL_RENDER_GATE_EXPLAINED.md)
 - [Open Research Program](RESEARCH_PROGRAM.md)
 
+## Language + tooling
+
+- [Semantic Diagnostics](DIAGNOSTICS.md)
+- [Policy Expressions](POLICY_EXPRESSIONS.md)
+- [Benchmarking Protocol](BENCHMARKING.md)
+- [Language specification](../LANGUAGE_SPEC.md)
+- [Quickstart](../QUICKSTART.md)
+
 ## Protocol + proof
 
 - [Render Decision Protocol](RENDER_DECISION_PROTOCOL.md)
 - [Render Decision JSON Schema](../schema/render-decision.schema.json)
 - [Conformance Manifest](../CONFORMANCE.json)
 - [Independent Replication Protocol](../REPLICATION.md)
-- [Benchmarking Protocol](BENCHMARKING.md)
 - [Testing](../TESTING.md)
 
-The compiler supports fixed decision timestamps for reproducible builds, and CI enforces canonical allow/suppress fixtures plus browser/core parity.
+The compiler supports fixed decision timestamps for reproducible builds, and CI enforces semantic lint, canonical allow/suppress fixtures, browser/core parity, CLI validation, inspectable output, and benchmark execution.
 
 ## AI + interface research
 
@@ -41,7 +48,6 @@ The compiler supports fixed decision timestamps for reproducible builds, and CI 
 - [Breakthrough](BREAKTHROUGH.md)
 - [Root project README](../README.md)
 - [Architecture](../ARCHITECTURE.md)
-- [Language specification](../LANGUAGE_SPEC.md)
 - [White paper](../WHITEPAPER.md)
 - [Roadmap](../ROADMAP.md)
 - [Contribution guide](../CONTRIBUTING.md)
