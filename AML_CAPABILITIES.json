@@ -21,7 +21,9 @@
     "machine_intent_to_aml": true,
     "accountable_intent_execution": true,
     "semantic_diff": true,
-    "policy_diff": true
+    "semantic_risk_diff": true,
+    "policy_diff": true,
+    "multi_policy_matrix": true
   },
   "policy": {
     "default_engine": "restorative_v1",
@@ -53,12 +55,26 @@
     "session_attention_budget": true,
     "cumulative_attention_accounting": true
   },
+  "accessibility": {
+    "declarative_node_audit": true,
+    "tree_audit": true,
+    "reduced_motion_check": true,
+    "contrast_safety_check": true,
+    "keyboard_accessibility_check": true,
+    "text_alternative_check": true,
+    "cognitive_load_check": true,
+    "wcag_replacement": false
+  },
   "accountability": {
     "execution_receipts": true,
     "execution_receipt_schema": "schema/execution-receipt.schema.json",
     "runtime_audit_stream": true,
     "sha256_hash_chained_audit_entries": true,
+    "signed_audit_checkpoints": true,
+    "audit_checkpoint_ed25519_attestation": true,
     "attention_ledger": true,
+    "attention_ledger_integrity_verification": true,
+    "attention_ledger_summary": true,
     "cumulative_budget_enforcement": true,
     "intent_hash": true,
     "generated_aml_hash": true,
@@ -75,7 +91,9 @@
     "manifest_tamper_detection": true,
     "execution_receipt_tamper_detection": true,
     "policy_pack_tamper_detection": true,
-    "audit_stream_tamper_detection": true
+    "audit_stream_tamper_detection": true,
+    "audit_checkpoint_binding": true,
+    "attention_ledger_accounting_tamper_detection": true
   },
   "tooling": {
     "compile": true,
@@ -83,11 +101,17 @@
     "execute_accountable_intent": true,
     "verify_execution_receipt": true,
     "semantic_diff": true,
+    "semantic_risk_diff": true,
     "policy_diff": true,
+    "policy_matrix": true,
     "sign_policy_pack": true,
     "verify_policy_pack": true,
     "verify_runtime_audit_stream": true,
+    "sign_runtime_audit_checkpoint": true,
+    "verify_runtime_audit_checkpoint": true,
     "cumulative_attention_accounting": true,
+    "verify_attention_ledger": true,
+    "accessibility_audit": true,
     "simulate_policies": true,
     "list_policies": true,
     "list_policy_profiles": true,
@@ -122,17 +146,22 @@
     "signed_execution_receipt_tests": true,
     "policy_pack_signature_tests": true,
     "semantic_diff_tests": true,
+    "semantic_risk_diff_tests": true,
     "policy_diff_tests": true,
+    "policy_matrix_tests": true,
     "runtime_audit_stream_tests": true,
+    "signed_audit_checkpoint_tests": true,
     "cumulative_attention_tests": true,
-    "accessibility_policy_tests": true
+    "attention_ledger_integrity_tests": true,
+    "accessibility_policy_tests": true,
+    "accessibility_audit_tests": true
   },
   "diagnostics": ["AML001", "AML002", "AML003", "AML004", "AML005", "AML_PARSE"],
   "non_claims": [
     "No claim that current scores objectively measure human attention.",
     "No claim that current scores objectively measure restoration or wellbeing.",
     "No claim that the prototype constitutes a universal ethical standard.",
-    "Accessibility policies do not replace WCAG conformance or assistive-technology testing.",
+    "Accessibility policies and audits do not replace WCAG conformance or assistive-technology testing.",
     "Cryptographic signatures prove integrity and key possession, not moral correctness or institutional trustworthiness."
   ]
 }
