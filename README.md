@@ -5,6 +5,7 @@
 [![CI](https://github.com/aruintelligence/aml-core/actions/workflows/ci.yml/badge.svg)](https://github.com/aruintelligence/aml-core/actions/workflows/ci.yml)
 [![Playground](https://img.shields.io/badge/OPEN-AML_PLAYGROUND-7df9ff?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/playground.html)
 [![View Meaning](https://img.shields.io/badge/OPEN-VIEW_MEANING-9cffb0?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/view-meaning.html)
+[![Official AML](https://img.shields.io/badge/OFFICIAL-AML_%2F_LICENSING-f6c453?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/official-aml.html)
 [![Release](https://img.shields.io/badge/AML-v1.3.0-f2ce72?style=for-the-badge&labelColor=07111f)](https://github.com/aruintelligence/aml-core/releases/tag/v1.3.0)
 [![License: MIT](https://img.shields.io/badge/CODE-MIT-a994ff?style=for-the-badge&labelColor=07111f)](LICENSE)
 
@@ -20,6 +21,9 @@
 - **Out-of-the-box guide:** [docs/OUT_OF_THE_BOX.md](docs/OUT_OF_THE_BOX.md)
 - **Try AML:** https://aruintelligence.github.io/aml-core/playground.html
 - **Inspect a receipt with View Meaning™:** https://aruintelligence.github.io/aml-core/view-meaning.html
+- **Official AML / licensing / partnerships:** https://aruintelligence.github.io/aml-core/official-aml.html
+- **30-minute enterprise pilot:** [pilots/enterprise-30min/](pilots/enterprise-30min/)
+- **Run AML as an HTTP service:** `npm run serve`
 - **Read the AI Interface Firewall™ guide:** [docs/AI_INTERFACE_FIREWALL.md](docs/AI_INTERFACE_FIREWALL.md)
 - **See all capabilities:** [AML_CAPABILITIES.json](AML_CAPABILITIES.json)
 
@@ -30,13 +34,16 @@ The software in this repository is available under the [MIT License](LICENSE). T
 That means developers can experiment, integrate, fork, and implement the open technology while the official commercial identity remains controlled.
 
 - Brand-use policy: [TRADEMARKS.md](TRADEMARKS.md)
+- Machine-readable claimed marks: [OFFICIAL_MARKS.json](OFFICIAL_MARKS.json)
+- Public authorization index: [OFFICIAL_AUTHORIZATIONS.json](OFFICIAL_AUTHORIZATIONS.json)
 - Commercial licensing / official badge / OEM / partnership: [COMMERCIAL.md](COMMERCIAL.md)
+- Signed official authorization protocol: [RFC 0011](rfcs/0011-official-brand-authorization.md)
 - Federal registration plan: [TRADEMARK_REGISTRATION_PLAN.md](TRADEMARK_REGISTRATION_PLAN.md)
 - Conformance vs. official compatibility branding: [docs/CONFORMANCE_BADGE.md](docs/CONFORMANCE_BADGE.md)
 
 **Technical conformance is reproducible. Official certification, endorsement, co-branding, and commercial use of reserved marks require separate authorization where applicable.**
 
-Commercial and strategic inquiries: https://aruintelligence.com/
+Commercial, OEM, enterprise, and strategic inquiries: **Office@aruintelligence.com**
 
 ### Zero-install browser module
 
@@ -86,6 +93,26 @@ if (result.allowed) render(result.html);
 ```
 
 The result carries policy decisions, accessibility analysis, provenance, attention accounting, runtime audit state, and a verifiable execution receipt.
+
+## Run AML as an HTTP accountability service
+
+ĀML can sit between an AI backend and any frontend stack without requiring the application to import compiler internals.
+
+```bash
+npm run serve
+# http://127.0.0.1:8787
+```
+
+Reference endpoints:
+
+- `GET /health`
+- `GET /v1/capabilities`
+- `POST /v1/evaluate`
+- `POST /v1/verify-receipt`
+
+OpenAPI contract: [protocol/aml-http.openapi.yaml](protocol/aml-http.openapi.yaml)
+
+The reference service is dependency-free and intended as a local/reference integration surface. Production deployments still need normal authentication, authorization, rate limits, transport security, key management, logging, and application security.
 
 ## React adoption without rewriting the app
 
@@ -159,6 +186,19 @@ Direct runner:
 node scripts/meaning-gate.js before.aml after.aml calm_default human_first
 ```
 
+## Signed official AML authorization
+
+Open-source software rights and official brand rights are deliberately separate.
+
+After an appropriate written agreement, ĀRU can issue a signed `aml-brand-authorization/1` credential that identifies the grantee, authorized marks, permitted uses, agreement reference, expiration, issuing public key, and revocable credential hash.
+
+```bash
+aml sign-brand-authorization authorization.json aru-private-key.pem credential.json
+aml verify-brand-authorization credential.json revocation-registry.json
+```
+
+The credential is machine-verifiable evidence of the represented authorization scope. It is **not** a substitute for the written agreement and does not independently create trademark rights.
+
 ## What exists today
 
 ĀML v1.3 includes:
@@ -173,6 +213,8 @@ node scripts/meaning-gate.js before.aml after.aml calm_default human_first
 - policy diffs + policy matrices
 - AI intent → deterministic ĀML generation
 - AI Interface Firewall™
+- dependency-free HTTP evaluation service + OpenAPI contract
+- 30-minute enterprise pilot kit
 - React-compatible adapter
 - View Meaning™ API + browser inspector
 - GitHub Meaning Gate™ action
@@ -199,6 +241,7 @@ node scripts/meaning-gate.js before.aml after.aml calm_default human_first
 - wire replay protection
 - revocation registry
 - Proof-Carrying Interface™ manifests
+- signed official brand-authorization credentials
 - machine-verifiable conformance claims
 - layered conformance through AML Governed Compatible™
 - CLI + JavaScript API
@@ -239,19 +282,24 @@ flowchart LR
 | Resource | Purpose |
 |---|---|
 | [Out of the Box](docs/OUT_OF_THE_BOX.md) | Browser, app, React, CI adoption paths |
+| [30-Minute Enterprise Pilot](pilots/enterprise-30min/) | Existing-app pilot without a rewrite |
+| [AML HTTP OpenAPI](protocol/aml-http.openapi.yaml) | Framework-independent service contract |
 | [AI Interface Firewall](docs/AI_INTERFACE_FIREWALL.md) | Adopt AML inside existing apps |
 | [Playground](https://aruintelligence.github.io/aml-core/playground.html) | Type AML and inspect compiler structures |
 | [View Meaning](https://aruintelligence.github.io/aml-core/view-meaning.html) | Inspect accountable execution receipts |
+| [Official AML](https://aruintelligence.github.io/aml-core/official-aml.html) | Licensing, official branding, OEM, partnerships |
 | [JavaScript API](API.md) | Programmatic API |
 | [Quickstart](QUICKSTART.md) | Clone, test, compile, inspect |
+| [90-Day Adoption Plan](ADOPTION_90_DAYS.md) | Distribution, independent credibility, enterprise adoption |
 | [Ecosystem Map](ECOSYSTEM.md) | Adoption, standards, conformance, security, and extension surfaces |
 | [Trust Continuity](docs/TRUST_CONTINUITY.md) | Consent history, provenance, policy dissent, Merkle receipts |
 | [v1.3 Architecture](docs/V1_3_BREAKTHROUGH.md) | Signed policies, diffs, audit streams, accessibility, attention |
 | [Capabilities](AML_CAPABILITIES.json) | Machine-readable platform surface |
 | [Conformance](CONFORMANCE.json) | Canonical compatibility entry point |
 | [Replication](REPLICATION.md) | Independent reproduction protocol |
+| [Official Marks](OFFICIAL_MARKS.json) | Machine-readable public mark status |
 | [Trademark Policy](TRADEMARKS.md) | Open implementation vs. controlled official brand |
-| [Commercial Program](COMMERCIAL.md) | Official branding, enterprise, OEM, certification, partnerships |
+| [Commercial Program](COMMERCIAL.md) | Official branding, enterprise, OEM, partnerships |
 
 ## Quality gates
 
