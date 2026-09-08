@@ -3,7 +3,7 @@
   "implementation": "aruintelligence/aml-core",
   "status": "research-prototype",
   "language_version": "1.3.0",
-  "wire_versions": ["1.0"],
+  "wire_versions": ["1"],
   "capabilities": [
     "abstract-meaning-tree",
     "execution-receipts",
@@ -19,6 +19,10 @@
     "signed-policy-packs",
     "signed-audit-checkpoints",
     "receipt-merkle-proofs",
+    "trust-delegation",
+    "threshold-authorization",
+    "transparency-log",
+    "canonical-json",
     "view-meaning"
   ],
   "schemas": {
@@ -27,5 +31,7 @@
     "execution_receipt": "schema/execution-receipt.schema.json",
     "render_decision": "schema/render-decision.schema.json"
   },
-  "conformance": "conformance/manifest.json"
+  "registry": "protocol/registry.json",
+  "conformance": "conformance/manifest.json",
+  "conformance_levels": "conformance/levels.json"
 }
