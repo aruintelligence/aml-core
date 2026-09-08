@@ -1,0 +1,15 @@
+{
+  "schema": "aml-witness-registry/1",
+  "status": "SHIPPED public registry",
+  "canonical_repository": "https://github.com/aruintelligence/aml-core",
+  "external_witness_count": 0,
+  "records": [],
+  "acceptance": {
+    "record_schema": "protocol/aml-witness-record.schema.json",
+    "requires_public_source_url": true,
+    "requires_external_to_aml_core": true,
+    "negative_results_allowed": true,
+    "claim_boundary": "A listed witness is evidence that an outside source publicly reported a reproduction or verification result. Listing does not imply endorsement, certification, standards-body approval, or correctness of the underlying AML model."
+  },
+  "note": "Rows remain empty until externally maintained public evidence exists. In-repository reference implementations are not counted as external witnesses."
+}
