@@ -14,7 +14,10 @@ export function browserEvidencePayload(evidence) {
   return payload;
 }
 
-export async function createBrowserEvidence(receipt = globalThis.__AML_RECEIPT__) {
+export async function createBrowserEvidence(
+  receipt = globalThis.__AML_RECEIPT__,
+  { url = globalThis.location?.href || 'about:blank' } = {}
+) {
   if (!receipt?.integrity) throw new Error('AML_BROWSER_EVIDENCE_REQUIRES_SEALED_RECEIPT');
   const receiptCheck = await verifyBrowserReceipt(receipt);
   if (!receiptCheck.valid) throw new Error('AML_BROWSER_EVIDENCE_RECEIPT_INVALID');
@@ -24,7 +27,7 @@ export async function createBrowserEvidence(receipt = globalThis.__AML_RECEIPT__
     schema: 'aml-browser-evidence/1',
     prototype: true,
     revision: evidenceRevision,
-    url: location.href,
+    url,
     generated_at: new Date().toISOString(),
     receipt,
     zone_violations: currentViolations()
@@ -44,10 +47,12 @@ export async function createBrowserEvidence(receipt = globalThis.__AML_RECEIPT__
     globalThis.__AML_EVIDENCE_HISTORY__.shift();
   }
 
-  document.dispatchEvent(new CustomEvent('aml-evidence', {
-    bubbles: false,
-    detail: evidence
-  }));
+  if (globalThis.document?.dispatchEvent && globalThis.CustomEvent) {
+    document.dispatchEvent(new CustomEvent('aml-evidence', {
+      bubbles: false,
+      detail: evidence
+    }));
+  }
   return evidence;
 }
 
@@ -79,10 +84,14 @@ export function exportBrowserEvidence(evidence = globalThis.__AML_EVIDENCE__) {
   return canonicalJSONStringifyBrowser(evidence);
 }
 
-document.addEventListener('aml-receipt-sealed', (event) => {
-  createBrowserEvidence(event.detail).catch((error) => {
-    document.dispatchEvent(new CustomEvent('aml-evidence-error', {
-      detail: { error: error?.message || 'AML_BROWSER_EVIDENCE_CREATE_ERROR' }
-    }));
+if (globalThis.document?.addEventListener) {
+  document.addEventListener('aml-receipt-sealed', (event) => {
+    createBrowserEvidence(event.detail).catch((error) => {
+      if (globalThis.document?.dispatchEvent && globalThis.CustomEvent) {
+        document.dispatchEvent(new CustomEvent('aml-evidence-error', {
+          detail: { error: error?.message || 'AML_BROWSER_EVIDENCE_CREATE_ERROR' }
+        }));
+      }
+    });
   });
-});
+}
