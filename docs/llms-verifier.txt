@@ -6,11 +6,21 @@ Canonical repository: https://github.com/aruintelligence/aml-core
 Goal:
 Implement aml-witness-bundle/1 independently and report agreement or disagreement.
 
+Immutable verifier target:
+snapshot_id: aml-verifier-contract-2026-09-08-01
+source_commit: b1ff5a87c7b19ae6338503a58ab6257a5b2add0b
+snapshot: https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-v1.json
+
+Do not infer compatibility from a loose version name alone. Target the exact snapshot and source commit above.
+
 Minimal contract:
 https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verifier-cli.md
 
 10-minute path:
 https://github.com/aruintelligence/aml-core/blob/main/docs/EXTERNAL_VERIFIER_10_MINUTES.md
+
+Canonical verification entry:
+https://github.com/aruintelligence/aml-core/blob/main/VERIFY.md
 
 Golden witness:
 https://github.com/aruintelligence/aml-core/blob/main/independent/python/witness-vector.json
@@ -19,6 +29,8 @@ Canonical JSON profile:
 https://github.com/aruintelligence/aml-core/blob/main/protocol/sorted-json-v1.md
 
 Schemas:
+- contract snapshot: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verification-contract-snapshot.schema.json
+- implementation claim: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verifier-implementation-claim.schema.json
 - witness bundle: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-witness-bundle.schema.json
 - browser evidence: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-browser-evidence.schema.json
 - verification challenge: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verification-challenge.schema.json
@@ -36,13 +48,19 @@ Required behavior:
 3. tampered challenge FAIL
 4. expired challenge FAIL
 
+Implementation claims:
+Use aml-verifier-implementation-claim/1 to declare exactly which immutable contract snapshot your verifier targets. A claim is not proof of conformance.
+
+Generate a claim:
+node scripts/create-verifier-implementation-claim.mjs --implementation-id my-verifier --implementation-version 0.1.0 --runtime rust-1.90 --source-url https://github.com/example/my-verifier --command './my-verifier --now 2030-01-01T00:05:00Z bundle.json' --external true
+
 Reference implementations maintained by AML:
 - JavaScript/browser
 - Python standard library: independent/python/verify_witness.py
 - Go standard library: independent/go/main.go
 - HTTP reference service
 
-These reference implementations do NOT count as external witnesses.
+Each reference implementation is bound to the same snapshot by an in-repository implementation claim. These reference implementations do NOT count as external witnesses.
 
 External witness registry:
 https://github.com/aruintelligence/aml-core/blob/main/WITNESSES.json
