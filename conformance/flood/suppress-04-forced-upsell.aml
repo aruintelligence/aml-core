@@ -1,0 +1,8 @@
+transmission "suppress_forced_upsell" {
+  message "forced_upsell" {
+    purpose: "Pressure the user into adding an unrelated upgrade"
+    content: "Add premium protection before continuing"
+    attention_cost: 5
+    restoration_value: 2
+  }
+}
