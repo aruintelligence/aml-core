@@ -1,0 +1,19 @@
+{
+  "transmission": "enterprise_pilot_allowed",
+  "nodes": [
+    {
+      "type": "message",
+      "identifier": "PricingExplanation",
+      "properties": {
+        "purpose": "Explain the pricing plan clearly before commitment.",
+        "user_effect": "Reduce uncertainty before the user makes a decision.",
+        "attention_cost": 1.5,
+        "restoration_value": 4.5,
+        "collects_personal_data": false,
+        "consent_required": false,
+        "contrast_safe": true,
+        "cognitive_load": 1.5
+      }
+    }
+  ]
+}
