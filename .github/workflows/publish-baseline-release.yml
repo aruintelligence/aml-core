@@ -15,16 +15,16 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Publish v1.4.0-rc.1
+      - name: Publish v1.4.0-rc.2
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view "v1.4.0-rc.1" >/dev/null 2>&1; then
-            echo "Release v1.4.0-rc.1 already exists."
+          if gh release view "v1.4.0-rc.2" >/dev/null 2>&1; then
+            echo "Release v1.4.0-rc.2 already exists."
           else
-            gh release create "v1.4.0-rc.1" \
+            gh release create "v1.4.0-rc.2" \
               --target "$GITHUB_SHA" \
               --prerelease \
-              --title "ĀML Core 1.4.0-rc.1 — Federated Trust & Mainstream Adoption Preview" \
-              --notes-file "RELEASE_NOTES_1.4.0_RC1.md"
+              --title "ĀML Core 1.4.0-rc.2 — Hardened Federated Trust & Adoption Preview" \
+              --notes-file "RELEASE_NOTES_1.4.0_RC2.md"
           fi
