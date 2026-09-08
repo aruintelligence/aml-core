@@ -1,0 +1,29 @@
+{
+  "registry": "aml-protocol-registry/1",
+  "wire_versions": ["1"],
+  "media_types": {
+    "wire": "application/vnd.aru.aml-wire+json",
+    "policy_passport": "application/vnd.aru.aml-policy-passport+json",
+    "execution_receipt": "application/vnd.aru.aml-execution-receipt+json",
+    "content_bundle": "application/vnd.aru.aml-bundle+json",
+    "causal_graph": "application/vnd.aru.aml-causal-graph+json"
+  },
+  "kinds": [
+    "capability_hello",
+    "policy_passport",
+    "execution_receipt",
+    "content_bundle",
+    "selective_disclosure",
+    "causal_graph"
+  ],
+  "capabilities": [
+    "meaning-tree",
+    "render-decision",
+    "execution-receipt",
+    "policy-passport",
+    "content-addressed-bundle",
+    "selective-disclosure",
+    "causal-execution-graph",
+    "view-meaning"
+  ]
+}
