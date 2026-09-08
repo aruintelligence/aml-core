@@ -37,6 +37,10 @@ jobs:
         run: node scripts/check-proof-surfaces.mjs > "${RUNNER_TEMP}/aml-proof-surfaces.json"
       - name: Guard verifier interoperability surfaces
         run: node scripts/check-verifier-surfaces.mjs > "${RUNNER_TEMP}/aml-verifier-surfaces.json"
+      - name: Verify immutable verifier contract snapshot
+        run: node scripts/check-verification-contract-snapshot.mjs > "${RUNNER_TEMP}/aml-verifier-contract-snapshot.json"
+      - name: Verify reference implementation claims target the same snapshot
+        run: node scripts/check-verifier-claims.mjs > "${RUNNER_TEMP}/aml-verifier-claims.json"
       - name: Enforce external witness registry integrity
         run: node scripts/check-witness-registry.mjs > "${RUNNER_TEMP}/aml-witness-registry.json"
       - name: Verify cross-language canonicalization vectors in Python
