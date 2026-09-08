@@ -1,0 +1,21 @@
+{
+  "registry": "aml-official-marks/1",
+  "owner": "ĀRU Intelligence Inc.",
+  "commercial_contact": "Office@aruintelligence.com",
+  "policy": "TRADEMARKS.md",
+  "commercial_terms": "COMMERCIAL.md",
+  "status_note": "Entries below identify marks claimed or used by ĀRU Intelligence Inc. This registry does not state or imply federal registration unless an entry explicitly includes a verified registration record.",
+  "marks": [
+    { "mark": "ĀML", "display": "ĀML™", "status": "claimed", "registration": null },
+    { "mark": "ĀRU Meaning Language", "display": "ĀRU Meaning Language™", "status": "claimed", "registration": null },
+    { "mark": "AI Interface Firewall", "display": "AI Interface Firewall™", "status": "claimed", "registration": null },
+    { "mark": "View Meaning", "display": "View Meaning™", "status": "claimed", "registration": null },
+    { "mark": "Meaning Gate", "display": "Meaning Gate™", "status": "claimed", "registration": null },
+    { "mark": "EthicalRenderGate", "display": "EthicalRenderGate™", "status": "claimed", "registration": null },
+    { "mark": "Meaning-Native Computing", "display": "Meaning-Native Computing™", "status": "claimed", "registration": null },
+    { "mark": "Proof-Carrying Interface", "display": "Proof-Carrying Interface™", "status": "claimed", "registration": null },
+    { "mark": "ĀML Compatible", "display": "ĀML Compatible™", "status": "claimed", "registration": null, "note": "Official branded compatibility usage requires separate authorization; technical conformance alone does not grant official branding rights." },
+    { "mark": "ĀML Governed Compatible", "display": "ĀML Governed Compatible™", "status": "claimed", "registration": null, "note": "Official branded compatibility usage requires separate authorization; technical conformance alone does not grant official branding rights." },
+    { "mark": "ĀRU Intelligence", "display": "ĀRU Intelligence Inc.™", "status": "claimed", "registration": null }
+  ]
+}
