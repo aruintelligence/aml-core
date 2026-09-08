@@ -25,6 +25,11 @@ export { createConsentLedger, grantConsent, revokeConsent, verifyConsentLedger, 
 export { buildReceiptMerkleTree, createReceiptInclusionProof, verifyReceiptInclusionProof } from "./runtime/receiptMerkle.js";
 export { auditAccessibilityNode, auditAccessibilityTree } from "./runtime/accessibilityAudit.js";
 export { createInterfaceFirewall, enforceInterfaceIntent } from "./runtime/interfaceFirewall.js";
+export { negotiateCapabilities } from "./runtime/capabilityNegotiation.js";
+export { createPolicyPassport, verifyPolicyPassport, passportContext } from "./runtime/policyPassport.js";
+export { hashContent, createContentAddressedBundle, verifyContentAddressedBundle } from "./runtime/contentAddressedBundle.js";
+export { createDisclosureCommitment, discloseClaims, verifyDisclosureProof } from "./runtime/selectiveDisclosure.js";
+export { createWireEnvelope, validateWireEnvelope, negotiateWireSession } from "./protocol/wireProtocol.js";
 export { evaluateAccountableProps, createAccountableUI } from "./adapters/react.js";
 export { viewMeaning, formatMeaningReport } from "./tooling/viewMeaning.js";
 export { evaluatePullRequestChange, formatPullRequestGate } from "./tooling/prGate.js";
