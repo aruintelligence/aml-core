@@ -6,12 +6,71 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 
 ### Next
 
-- policy conflict-resolution strategies beyond `all_must_allow`
-- signed policy trust chains and delegated issuers
-- accessibility conformance research beyond the current policy layer
-- adversarial policy fuzzing
-- runtime stream persistence and cross-session analysis
-- independent empirical evaluation of attention/restoration models
+- independent second-runtime interoperability testing
+- broader accessibility conformance research and assistive-technology testing
+- adversarial fuzzing of policy, wire, and trust surfaces
+- external security review of the trust and authorization layers
+- additional framework integrations and package distribution
+
+## [1.4.0] — 2026-09-08
+
+### Mainstream adoption
+
+- Added the AI Interface Firewall™ adoption path for existing applications.
+- Added View Meaning™ browser inspection plus a privacy-minimal Manifest V3 extension prototype.
+- Added plain-JavaScript, React, and Next.js starter kits.
+- Added a React-compatible accountable UI adapter.
+- Added a dependency-free HTTP evaluation/verification service with OpenAPI contract.
+- Added a 30-minute enterprise pilot kit.
+- Added reusable Meaning Gate™ and Verify Official ĀML GitHub Actions.
+
+### Trust continuity and policy governance
+
+- Added time-scoped consent ledgers with expiration, revocation, and hash-chain verification.
+- Added policy consensus with majority, unanimous, any-policy, weighted modes, and explicit dissent preservation.
+- Added semantic risk scoring and multi-policy matrices.
+- Added execution provenance graphs and Merkle-batched receipt inclusion proofs.
+- Added signed runtime audit checkpoints and attention-ledger integrity verification.
+
+### Federated interoperability
+
+- Added runtime capability negotiation and portable policy passports.
+- Added content-addressed artifact bundles and selective-disclosure commitments.
+- Added a versioned `aml-wire/1` envelope and federated AML exchange.
+- Added causal execution graphs for multi-parent lineage.
+- Added canonical JSON serialization and golden protocol vectors for independent implementations.
+- Added replay-resistant wire metadata and guards.
+
+### Trust fabric
+
+- Added delegated trust chains and M-of-N threshold authorization.
+- Added append-only transparency logs and revocation registries.
+- Added bounded signed capability tokens.
+- Added Proof-Carrying Interface™ manifests that bind rendered output to accountability evidence.
+- Added layered conformance levels: Core, Accountable, Federated, Verifiable, and Governed.
+- Added machine-verifiable conformance claims.
+
+### Official AML identity verification
+
+- Separated MIT software rights from official AML/ĀRU brand and certification identity.
+- Added machine-readable official-mark and authorization registries.
+- Added signed `aml-brand-authorization/1` credentials.
+- Added browser, CLI, HTTP, and GitHub Action verification paths.
+- Added a canonical ĀRU brand trust-root registry.
+- Provisioned the first production ĀRU Ed25519 brand-signing trust root by publishing its public fingerprint and public key only; private key material remains outside GitHub.
+- Added automated fingerprint verification to prevent trust-root drift.
+
+### Standards surface
+
+- Added RFCs for interoperability, causal execution graphs, trust fabric, compatibility levels, capability tokens, replay resistance, proof-carrying interfaces, revocation, and official brand authorization.
+- Added protocol discovery, registries, schemas, conformance levels, and a standardization path.
+- Added public ecosystem and 90-day adoption plans.
+
+### Security and evidence boundaries
+
+- Added a dedicated threat model and explicit key-custody guidance.
+- Added tests for mutation, replay, revocation, trust-root membership, extension permissions, and official-vs-self-signed authorization status.
+- Preserved explicit non-claims around cognition measurement, universal ethics, WCAG replacement, and institutional trust.
 
 ## [1.3.0] — 2026-09-07
 
