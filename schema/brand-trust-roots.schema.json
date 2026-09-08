@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/schema/brand-trust-roots.schema.json",
+  "title": "AML Brand Trust Roots",
+  "type": "object",
+  "required": ["type", "owner", "status", "active_keys", "revoked_keys"],
+  "properties": {
+    "type": { "const": "aml-brand-trust-roots/1" },
+    "owner": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["unprovisioned", "active", "rotating", "suspended"] },
+    "active_keys": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key_id", "public_key_sha256"],
+        "properties": {
+          "key_id": { "type": "string", "minLength": 1 },
+          "public_key_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "purpose": { "type": ["string", "null"] },
+          "not_before": { "type": ["string", "null"] },
+          "not_after": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "revoked_keys": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["public_key_sha256"],
+        "properties": {
+          "key_id": { "type": ["string", "null"] },
+          "public_key_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "revoked_at": { "type": ["string", "null"] },
+          "reason": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "contact": { "type": ["string", "null"] },
+    "note": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}
