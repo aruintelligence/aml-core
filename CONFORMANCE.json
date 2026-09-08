@@ -1,7 +1,7 @@
 {
   "project": "AML Core",
   "language": "ARU Meaning Language",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "canonical_manifest": "conformance/manifest.json",
   "canonical_allow_fixture": "conformance/allow.aml",
   "canonical_suppress_fixture": "conformance/suppress.aml",
@@ -13,5 +13,5 @@
     "render_decision.json",
     "build_manifest.json"
   ],
-  "note": "Compatibility entry point for the public README. The detailed fixture inventory remains in conformance/manifest.json."
+  "note": "Compatibility entry point for the public README. The detailed fixture inventory remains in conformance/manifest.json. Main may contain v1.4 release-candidate work while the stable package/version contract remains v1.3.0 until formally advanced."
 }
