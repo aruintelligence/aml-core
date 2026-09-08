@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ĀML One Script Demo</title>
+<style>
+body{font-family:system-ui,-apple-system,sans-serif;max-width:900px;margin:0 auto;padding:24px;background:#07111f;color:#eef7ff;line-height:1.5}section{background:#0e1b2d;border:1px solid #27415f;border-radius:16px;padding:18px;margin:18px 0}pre{background:#06101c;padding:14px;border-radius:10px;overflow:auto}button{padding:10px 14px;border-radius:10px;border:1px solid #35597f;background:#122842;color:#fff}.muted{color:#abc0d8}
+</style>
+</head>
+<body>
+<h1>One script. Three AML declaration styles.</h1>
+<p class="muted">All behavior on this page is activated by one module import at the bottom.</p>
+<section>
+<h2>1. Custom element</h2>
+<aml-gate purpose="Explain status" attention-cost="1" restoration-value="3">
+  <div>Saved. Your changes are complete.</div>
+</aml-gate>
+</section>
+<section>
+<h2>2. Existing HTML attributes</h2>
+<div data-aml-purpose="Create urgency" data-aml-attention-cost="5" data-aml-restoration-value="1">
+  Act now before this disappears.
+</div>
+</section>
+<section>
+<h2>3. Untouched visible HTML + separate manifest</h2>
+<div id="manifest-status">Your export is ready.</div>
+</section>
+<section>
+<h2>Latest browser receipt</h2>
+<pre id="receipt">Waiting…</pre>
+</section>
+<script type="application/aml+json">
+{
+  "schema": "aml-page/1",
+  "elements": [
+    {
+      "selector": "#manifest-status",
+      "purpose": "Confirm export readiness",
+      "attention_cost": 1,
+      "restoration_value": 2
+    }
+  ]
+}
+</script>
+<script type="module" src="./aml.js"></script>
+<script>
+document.addEventListener('aml-receipt',(event)=>{
+  document.getElementById('receipt').textContent=JSON.stringify(event.detail,null,2);
+});
+</script>
+</body>
+</html>
