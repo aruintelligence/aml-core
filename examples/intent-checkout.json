@@ -1,0 +1,15 @@
+{
+  "transmission": "ai_generated_checkout",
+  "nodes": [
+    {
+      "type": "engram",
+      "identifier": "CheckoutSummary",
+      "properties": {
+        "purpose": "Help the user confirm a purchase calmly.",
+        "user_effect": "Reduce uncertainty before commitment.",
+        "attention_cost": 2.5,
+        "restoration_value": 6.5
+      }
+    }
+  ]
+}
