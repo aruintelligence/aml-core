@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-verification-challenge.schema.json",
+  "title": "AML Verification Challenge",
+  "description": "Prototype verifier-generated freshness challenge for detached browser evidence verification.",
+  "type": "object",
+  "required": ["schema", "prototype", "nonce", "issued_at", "expires_at"],
+  "properties": {
+    "schema": { "const": "aml-verification-challenge/1" },
+    "prototype": { "const": true },
+    "nonce": { "type": "string", "minLength": 32 },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}
