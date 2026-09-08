@@ -18,6 +18,7 @@ export function tokenize(source) {
     if (ch === "{") { add("LEFT_BRACE", "{"); advance(); continue; }
     if (ch === "}") { add("RIGHT_BRACE", "}"); advance(); continue; }
     if (ch === ":") { add("COLON", ":"); advance(); continue; }
+    if ([">","<","=","!"].includes(ch)) { const l=line,c=column; let value=advance(); if (peek()==="=") value += advance(); add("OPERATOR", value, l, c); continue; }
     if (ch === '"') {
       const l = line, c = column; let value = ""; advance();
       while (i < source.length && peek() !== '"') value += advance();
@@ -50,11 +51,19 @@ export function parse(tokens) {
   const match = (type, value = null) => { if (!check(type, value)) return false; advance(); return true; };
   const consume = (type, message, value = null) => { if (check(type, value)) return advance(); const t = peek(); throw new Error(`${message} at line ${t?.line ?? "unknown"}, column ${t?.column ?? "unknown"}`); };
 
+  function parseAtomicValue(nameToken) {
+    if (check("STRING") || check("NUMBER") || check("IDENTIFIER") || check("KEYWORD")) return advance().value;
+    const t = peek(); throw new Error(`Expected property value for "${nameToken.value}" at line ${t.line}, column ${t.column}`);
+  }
+
   function parseProperty(nameToken) {
-    let value;
-    if (check("STRING") || check("NUMBER") || check("IDENTIFIER") || check("KEYWORD")) value = advance().value;
-    else { const t = peek(); throw new Error(`Expected property value for "${nameToken.value}" at line ${t.line}, column ${t.column}`); }
-    return { type: "Property", name: nameToken.value, value };
+    const left = parseAtomicValue(nameToken);
+    if (check("OPERATOR")) {
+      const operator = advance().value;
+      const right = parseAtomicValue(nameToken);
+      return { type:"Property", name:nameToken.value, value:`${left} ${operator} ${right}`, expression:{left,operator,right} };
+    }
+    return { type: "Property", name: nameToken.value, value:left };
   }
 
   function parseBlockOrProperty() {
