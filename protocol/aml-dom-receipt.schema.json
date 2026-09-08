@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-dom-receipt.schema.json",
   "title": "AML DOM Receipt",
-  "description": "Reference prototype schema for page-level browser AML evaluation receipts.",
+  "description": "Reference prototype schema for page-level browser AML evaluation receipts. A receipt may be emitted before asynchronous browser SHA-256 sealing completes; sealed receipts include integrity.",
   "type": "object",
   "required": ["schema", "prototype", "revision", "reason", "url", "generated_at", "totals", "decisions"],
   "properties": {
@@ -38,6 +38,17 @@
           "error": { "type": "string" }
         }
       }
-    }
+    },
+    "integrity": {
+      "type": "object",
+      "required": ["schema", "algorithm", "canonicalization", "value"],
+      "properties": {
+        "schema": { "const": "aml-integrity/1" },
+        "algorithm": { "const": "SHA-256" },
+        "canonicalization": { "const": "sorted-json-v1" },
+        "value": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "integrity_error": { "type": "string" }
   }
 }
