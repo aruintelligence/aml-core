@@ -1,7 +1,7 @@
 {
   "name": "aml-core",
-  "version": "1.1.0",
-  "description": "ĀML — ĀRU Meaning Language: a meaning-native, accountable interface compiler and EthicalRenderGate research prototype",
+  "version": "1.2.0",
+  "description": "ĀML — ĀRU Meaning Language: a meaning-native, policy-aware accountable execution layer for AI-generated interfaces",
   "main": "index.js",
   "exports": {
     ".": "./index.js"
@@ -32,14 +32,22 @@
     "meaning-native-interface",
     "accountable-interfaces",
     "accountable-rendering",
+    "accountable-ai",
+    "ai-execution-receipts",
+    "policy-aware-ui",
+    "policy-engine",
+    "policy-profiles",
+    "privacy-aware-ui",
+    "consent-aware-ui",
+    "attention-budget",
     "ethical-rendering",
     "ethical-render-gate",
     "semantic-computing",
     "semantic-ui",
-    "policy-aware-ui",
     "ai-generated-ui",
     "attention-aware-interface",
     "language-server",
+    "ed25519-attestation",
     "restoration-engine"
   ],
   "author": "ĀRU Intelligence Inc.",
