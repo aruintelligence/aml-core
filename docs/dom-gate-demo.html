@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ĀML HTML Bridge Demo</title>
+  <meta name="description" content="Add AML data attributes to ordinary HTML and gate it with one module import.">
+  <style>
+    body{font-family:system-ui,-apple-system,sans-serif;max-width:860px;margin:0 auto;padding:24px;background:#07111f;color:#eef7ff;line-height:1.5}a{color:#7df9ff}section{background:#0e1b2d;border:1px solid #27415f;border-radius:16px;padding:20px;margin:18px 0}pre{background:#06101c;border-radius:10px;padding:16px;overflow:auto}.allow{color:#9cffb0}.suppress{color:#ff9f9f}.muted{color:#abc0d8}
+  </style>
+  <script type="module" src="./aml-dom-gate.js"></script>
+</head>
+<body>
+  <h1>ĀML HTML bridge</h1>
+  <p>Keep your HTML. Add three attributes. Let AML decide whether the element renders.</p>
+  <p class="muted">SHIPPED prototype bridge. This demonstrates the prototype score rule; it is not the full AML runtime.</p>
+
+  <section>
+    <h2>Pressure element</h2>
+    <pre>&lt;div data-aml-purpose="Create urgency" data-aml-attention-cost="5" data-aml-restoration-value="1"&gt;Offer expires soon.&lt;/div&gt;</pre>
+    <div id="pressure" data-aml-purpose="Create urgency" data-aml-attention-cost="5" data-aml-restoration-value="1">Offer expires soon.</div>
+    <p class="suppress">Expected: SUPPRESS</p>
+  </section>
+
+  <section>
+    <h2>Helpful element</h2>
+    <pre>&lt;div data-aml-purpose="Explain the next step" data-aml-attention-cost="1" data-aml-restoration-value="3"&gt;Continue when ready.&lt;/div&gt;</pre>
+    <div id="help" data-aml-purpose="Explain the next step" data-aml-attention-cost="1" data-aml-restoration-value="3">Continue when ready.</div>
+    <p class="allow">Expected: ALLOW</p>
+  </section>
+
+  <section>
+    <h2>Decision log</h2>
+    <pre id="log">Waiting for AML DOM gate…</pre>
+  </section>
+
+  <p><a href="./proof.html">Open canonical proof</a> · <a href="https://github.com/aruintelligence/aml-core/blob/main/docs/HTML_BRIDGE.md">Copy the integration</a></p>
+
+  <script>
+    document.addEventListener('aml-dom-gated', event => {
+      document.getElementById('log').textContent = JSON.stringify(event.detail.decisions, null, 2);
+    });
+  </script>
+</body>
+</html>
