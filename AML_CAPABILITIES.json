@@ -8,7 +8,10 @@
     "javascript": "index.js",
     "browser": "docs/aml-browser.js",
     "playground": "https://aruintelligence.github.io/aml-core/playground.html",
-    "vscode": "editors/vscode/package.json"
+    "view_meaning": "https://aruintelligence.github.io/aml-core/view-meaning.html",
+    "vscode": "editors/vscode/package.json",
+    "react_adapter": "adapters/react.js",
+    "meaning_gate_action": "actions/meaning-gate/action.yml"
   },
   "compiler": {
     "lexer": true,
@@ -25,6 +28,15 @@
     "policy_diff": true,
     "multi_policy_matrix": true,
     "execution_provenance_graph": true
+  },
+  "mainstream_adoption": {
+    "ai_interface_firewall": true,
+    "react_compatible_adapter": true,
+    "view_meaning_api": true,
+    "browser_view_meaning_inspector": true,
+    "semantic_pull_request_gate": true,
+    "reusable_github_action": true,
+    "existing_app_adoption_without_aml_source_rewrite": true
   },
   "policy": {
     "default_engine": "restorative_v1",
@@ -115,6 +127,10 @@
     "generate_from_intent": true,
     "execute_accountable_intent": true,
     "verify_execution_receipt": true,
+    "interface_firewall": true,
+    "view_meaning": true,
+    "semantic_pr_gate": true,
+    "react_adapter": true,
     "semantic_diff": true,
     "semantic_risk_diff": true,
     "policy_diff": true,
@@ -145,6 +161,7 @@
     "benchmark": true,
     "local_markdown_link_integrity_check": true,
     "browser_playground": true,
+    "browser_view_meaning": true,
     "vscode_language_definition": true,
     "language_intelligence_api": true,
     "stdio_language_server": true,
@@ -181,7 +198,11 @@
     "receipt_merkle_inclusion_tests": true,
     "provenance_graph_binding_tests": true,
     "accessibility_policy_tests": true,
-    "accessibility_audit_tests": true
+    "accessibility_audit_tests": true,
+    "interface_firewall_tests": true,
+    "react_adapter_tests": true,
+    "view_meaning_tests": true,
+    "semantic_pr_gate_tests": true
   },
   "diagnostics": ["AML001", "AML002", "AML003", "AML004", "AML005", "AML_PARSE"],
   "non_claims": [
