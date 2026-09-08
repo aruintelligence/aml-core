@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ĀML Proof — Change One Number</title>
-  <meta name="description" content="Change restoration value and watch AML allow or suppress the same interface element." />
+  <meta name="description" content="Change restoration value and watch AML allow or suppress the same interface element. Share the exact proof state by URL." />
   <style>
-    body{font-family:system-ui,-apple-system,sans-serif;max-width:860px;margin:0 auto;padding:24px;background:#07111f;color:#eef7ff;line-height:1.5}a{color:#7df9ff}section{background:#0e1b2d;border:1px solid #27415f;border-radius:16px;padding:20px;margin:18px 0}input{width:100%}code,pre{background:#06101c;border-radius:10px}pre{padding:16px;overflow:auto}.decision{font-size:2rem;font-weight:800}.allow{color:#9cffb0}.suppress{color:#ff9f9f}.muted{color:#abc0d8}.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:640px){.row{grid-template-columns:1fr}}
+    body{font-family:system-ui,-apple-system,sans-serif;max-width:860px;margin:0 auto;padding:24px;background:#07111f;color:#eef7ff;line-height:1.5}a{color:#7df9ff}section{background:#0e1b2d;border:1px solid #27415f;border-radius:16px;padding:20px;margin:18px 0}input{width:100%}button{background:#122842;color:#eef7ff;border:1px solid #35597f;border-radius:10px;padding:10px 14px;cursor:pointer}button:hover{background:#173657}code,pre{background:#06101c;border-radius:10px}pre{padding:16px;overflow:auto}.decision{font-size:2rem;font-weight:800}.allow{color:#9cffb0}.suppress{color:#ff9f9f}.muted{color:#abc0d8}.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}.actions{display:flex;gap:10px;flex-wrap:wrap}.copied{color:#9cffb0;font-weight:700}@media(max-width:640px){.row{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -24,6 +24,12 @@
         <input id="restoration" type="range" min="0" max="10" step="1" value="1" />
         <strong id="restorationValue">1</strong>
       </label>
+    </div>
+    <div class="actions" style="margin-top:16px">
+      <button id="presetSuppress" type="button">Load SUPPRESS proof</button>
+      <button id="presetAllow" type="button">Load ALLOW proof</button>
+      <button id="copyLink" type="button">Copy this exact proof link</button>
+      <span id="copyStatus" aria-live="polite"></span>
     </div>
   </section>
 
@@ -43,8 +49,14 @@
     <pre id="json"></pre>
   </section>
 
-  <p><a href="./playground.html">Open full playground</a> · <a href="./view-meaning.html">Open View Meaning</a> · <a href="https://github.com/aruintelligence/aml-core/tree/main/demos/undeniable-proof">Reproduce locally</a></p>
-  <p><strong>Witness ask:</strong> change <code>restoration_value</code>, screenshot the decision, then file what happened in GitHub.</p>
+  <section>
+    <h2>Shareable reproduction</h2>
+    <p>Every slider state is encoded in the URL as <code>?attention=&amp;restoration=</code>. Send the link to another person and they open the same proof state.</p>
+    <pre id="shareUrl"></pre>
+  </section>
+
+  <p><a href="./playground.html">Open full playground</a> · <a href="./view-meaning.html">Open View Meaning</a> · <a href="./proof-card.html?attention=5&restoration=1">Open embeddable proof card</a> · <a href="https://github.com/aruintelligence/aml-core/tree/main/demos/undeniable-proof">Reproduce locally</a></p>
+  <p><strong>Witness ask:</strong> change <code>restoration_value</code>, copy the proof link, screenshot the decision, then file what happened in GitHub.</p>
 
   <script type="module">
     import { compileSourceBrowser } from './aml-browser.js';
@@ -56,6 +68,24 @@
     const reason = document.getElementById('reason');
     const sourceEl = document.getElementById('source');
     const jsonEl = document.getElementById('json');
+    const shareUrl = document.getElementById('shareUrl');
+    const copyStatus = document.getElementById('copyStatus');
+
+    function boundedNumber(value, fallback){
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? Math.min(10, Math.max(0, parsed)) : fallback;
+    }
+
+    const params = new URLSearchParams(location.search);
+    attention.value = boundedNumber(params.get('attention'), 5);
+    restoration.value = boundedNumber(params.get('restoration'), 1);
+
+    function currentUrl(a, r){
+      const url = new URL(location.href);
+      url.searchParams.set('attention', String(a));
+      url.searchParams.set('restoration', String(r));
+      return url.toString();
+    }
 
     function render(){
       const a = Number(attention.value);
@@ -76,7 +106,24 @@
         render_allowed: row.render_allowed,
         fallback_triggered: row.fallback_triggered
       }, null, 2);
+      const link = currentUrl(a, r);
+      shareUrl.textContent = link;
+      history.replaceState(null, '', link);
+      copyStatus.textContent = '';
     }
+
+    document.getElementById('presetSuppress').addEventListener('click', () => { attention.value = 5; restoration.value = 1; render(); });
+    document.getElementById('presetAllow').addEventListener('click', () => { attention.value = 5; restoration.value = 5; render(); });
+    document.getElementById('copyLink').addEventListener('click', async () => {
+      const link = shareUrl.textContent;
+      try {
+        await navigator.clipboard.writeText(link);
+        copyStatus.textContent = 'Copied';
+        copyStatus.className = 'copied';
+      } catch {
+        copyStatus.textContent = 'Copy the URL shown below';
+      }
+    });
     attention.addEventListener('input', render);
     restoration.addEventListener('input', render);
     render();
