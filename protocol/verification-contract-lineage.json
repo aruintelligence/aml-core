@@ -1,0 +1,17 @@
+{
+  "schema": "aml-verification-contract-lineage/1",
+  "status": "SHIPPED prototype lineage",
+  "nodes": [
+    {
+      "snapshot_id": "aml-verifier-contract-2026-09-08-01",
+      "source_commit": "b1ff5a87c7b19ae6338503a58ab6257a5b2add0b"
+    }
+  ],
+  "edges": [],
+  "invariants": [
+    "snapshot ids are unique",
+    "migration edges are acyclic",
+    "every snapshot after the first has exactly one declared predecessor",
+    "historical snapshot semantics remain anchored to their own immutable source commit"
+  ]
+}
