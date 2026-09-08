@@ -37,6 +37,13 @@
   "live_dom_demo": "https://aruintelligence.github.io/aml-core/live-gate-demo.html",
   "page_manifest_bridge": "https://aruintelligence.github.io/aml-core/aml-page-manifest.js",
   "page_manifest_demo": "https://aruintelligence.github.io/aml-core/page-manifest-demo.html",
+  "verification_contract_snapshot": "https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-v1.json",
+  "verification_contract_snapshot_id": "aml-verifier-contract-2026-09-08-01",
+  "verification_contract_source_commit": "b1ff5a87c7b19ae6338503a58ab6257a5b2add0b",
+  "verification_contract_snapshot_schema": "aml-verification-contract-snapshot/1",
+  "verification_contract_snapshot_schema_url": "https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verification-contract-snapshot.schema.json",
+  "verifier_implementation_claim_schema": "aml-verifier-implementation-claim/1",
+  "verifier_implementation_claim_schema_url": "https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verifier-implementation-claim.schema.json",
   "page_manifest_schema": "aml-page/1",
   "page_manifest_schema_url": "https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-page.schema.json",
   "browser_receipt_schema": "aml-dom-receipt/1",
@@ -97,6 +104,8 @@
     "reference_languages": ["JavaScript", "Python", "Go"],
     "external_verifier_count": 0,
     "external_witness_count": 0,
+    "contract_snapshot_id": "aml-verifier-contract-2026-09-08-01",
+    "contract_source_commit": "b1ff5a87c7b19ae6338503a58ab6257a5b2add0b",
     "unsigned_identity_basis": "declared verifier ID",
     "signed_identity_basis": "P-256 public-key fingerprint",
     "claim_boundary": "Distinct verifier IDs, keys, languages, or threshold agreement do not prove institutional independence, correctness, certification, or truth of underlying declarations."
@@ -104,5 +113,5 @@
   "languages": ["en", "es", "pt-BR", "hi", "ar", "zh", "fr", "de"],
   "protocol_discovery": "https://github.com/aruintelligence/aml-core/blob/main/protocol/discovery.json",
   "license": "MIT for covered software; official marks are separate",
-  "note": "This path, application/aml+json embedding, detached witness contracts, verifier CLI/conformance contracts, verification reports/quorums, signed verifier reports, verifier manifests, witness registry, and sorted-json-v1 are experimental reference-project conventions. This is not an Internet standard or a ratified web standard."
+  "note": "This path, application/aml+json embedding, detached witness contracts, verifier CLI/conformance contracts, immutable verifier contract snapshots, implementation claims, verification reports/quorums, signed verifier reports, verifier manifests, witness registry, and sorted-json-v1 are experimental reference-project conventions. This is not an Internet standard or a ratified web standard."
 }
