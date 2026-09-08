@@ -1,9 +1,17 @@
 {
   "type": "aml-brand-trust-roots/1",
   "owner": "ĀRU Intelligence Inc.",
-  "status": "unprovisioned",
-  "active_keys": [],
+  "status": "active",
+  "active_keys": [
+    {
+      "key_id": "aru-aml-brand-prod-2026-09-08-01",
+      "public_key_sha256": "eda0184568cb2110add5130d2a9fffaf53a77e0f2be311be414e7912ed69997c",
+      "purpose": "Official ĀML brand authorization and certification credential signing",
+      "not_before": "2026-09-08T00:00:00Z",
+      "not_after": null
+    }
+  ],
   "revoked_keys": [],
   "contact": "Office@aruintelligence.com",
-  "note": "No production AML brand-signing key is published in this registry yet. A credential must not be treated as officially authorized merely because it is self-signed. Official verification requires a signing-key fingerprint listed in active_keys and not listed in revoked_keys."
+  "note": "Official AML brand authorization credentials must verify cryptographically and be signed by an active, non-revoked key listed here. The corresponding private key is kept outside GitHub and is not published in this repository."
 }
