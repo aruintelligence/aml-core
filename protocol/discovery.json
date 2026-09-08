@@ -1,0 +1,31 @@
+{
+  "protocol": "aml-discovery/1",
+  "implementation": "aruintelligence/aml-core",
+  "status": "research-prototype",
+  "language_version": "1.3.0",
+  "wire_versions": ["1.0"],
+  "capabilities": [
+    "abstract-meaning-tree",
+    "execution-receipts",
+    "policy-profiles",
+    "policy-passports",
+    "policy-consensus",
+    "selective-disclosure",
+    "content-addressed-bundles",
+    "causal-execution-graphs",
+    "consent-ledgers",
+    "attention-ledgers",
+    "accessibility-audits",
+    "signed-policy-packs",
+    "signed-audit-checkpoints",
+    "receipt-merkle-proofs",
+    "view-meaning"
+  ],
+  "schemas": {
+    "wire_envelope": "schema/wire-envelope.schema.json",
+    "policy_passport": "schema/policy-passport.schema.json",
+    "execution_receipt": "schema/execution-receipt.schema.json",
+    "render_decision": "schema/render-decision.schema.json"
+  },
+  "conformance": "conformance/manifest.json"
+}
