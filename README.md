@@ -6,53 +6,30 @@
 [![Playground](https://img.shields.io/badge/OPEN-AML_PLAYGROUND-7df9ff?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/playground.html)
 [![View Meaning](https://img.shields.io/badge/OPEN-VIEW_MEANING-9cffb0?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/view-meaning.html)
 [![Official AML](https://img.shields.io/badge/OFFICIAL-AML_%2F_LICENSING-f6c453?style=for-the-badge&labelColor=07111f)](https://aruintelligence.github.io/aml-core/official-aml.html)
-[![Stable Release](https://img.shields.io/badge/STABLE-v1.3.0-f2ce72?style=for-the-badge&labelColor=07111f)](https://github.com/aruintelligence/aml-core/releases/tag/v1.3.0)
-[![v1.4 RC](https://img.shields.io/badge/PREVIEW-v1.4.0--rc.1-7dd3fc?style=for-the-badge&labelColor=07111f)](https://github.com/aruintelligence/aml-core/releases/tag/v1.4.0-rc.1)
+[![Stable](https://img.shields.io/badge/STABLE-v1.3.0-f2ce72?style=for-the-badge&labelColor=07111f)](https://github.com/aruintelligence/aml-core/releases/tag/v1.3.0)
+[![v1.4 RC2](https://img.shields.io/badge/PREVIEW-v1.4.0--rc.2-7dd3fc?style=for-the-badge&labelColor=07111f)](https://github.com/aruintelligence/aml-core/releases/tag/v1.4.0-rc.2)
 [![License: MIT](https://img.shields.io/badge/CODE-MIT-a994ff?style=for-the-badge&labelColor=07111f)](LICENSE)
 
-**AI can propose an interface. ĀML decides what it means, which policies apply, whether it should render, and what proof trail must exist afterward.**
+**AI can propose an interface. ĀML can make its meaning, policy, authority, and evidence inspectable before and after rendering.**
 
 > **HTML tells the browser what to display. ĀML tells the system why it deserves to be displayed.**
 
-ĀML is a working research prototype for meaning-native, policy-aware, accountable AI interfaces. It does **not** require replacing HTML or React. It can sit in front of existing UI as an **AI Interface Firewall™**.
+ĀML is a working research prototype for meaning-native, policy-aware, accountable AI interfaces. It does **not** require replacing HTML, React, or existing frontend stacks. It can sit between machine intent and human-facing output as an **AI Interface Firewall™**.
 
-**Release status:** v1.3.0 remains the stable package/CLI/capability contract. `main` contains the broader v1.4 release-candidate architecture. The public `v1.4.0-rc.1` snapshot is a prerelease, not a claim that a stable v1.4 package has already been published.
+**Release status:** `v1.3.0` remains the stable package/CLI/capability contract. `v1.4.0-rc.2` is the current GitHub prerelease snapshot of the broader architecture on `main`. It is not a claim that a stable v1.4 registry package has already shipped.
 
 ## Start in 60 seconds
 
-- **Zero-install browser use:** [examples/browser-drop-in.html](examples/browser-drop-in.html)
-- **Out-of-the-box guide:** [docs/OUT_OF_THE_BOX.md](docs/OUT_OF_THE_BOX.md)
 - **Try AML:** https://aruintelligence.github.io/aml-core/playground.html
-- **Inspect a receipt with View Meaning™:** https://aruintelligence.github.io/aml-core/view-meaning.html
-- **Verify official AML authorization:** https://aruintelligence.github.io/aml-core/official-verify.html
-- **Official AML / licensing / partnerships:** https://aruintelligence.github.io/aml-core/official-aml.html
-- **v1.4 release-candidate notes:** [RELEASE_NOTES_1.4.0_RC1.md](RELEASE_NOTES_1.4.0_RC1.md)
+- **View Meaning™:** https://aruintelligence.github.io/aml-core/view-meaning.html
+- **Verify Official AML:** https://aruintelligence.github.io/aml-core/official-verify.html
+- **Why AML Now:** [docs/WHY_AML_NOW.md](docs/WHY_AML_NOW.md)
+- **Out-of-the-box adoption:** [docs/OUT_OF_THE_BOX.md](docs/OUT_OF_THE_BOX.md)
 - **30-minute enterprise pilot:** [pilots/enterprise-30min/](pilots/enterprise-30min/)
-- **Run AML as an HTTP service:** `npm run serve`
-- **Read the AI Interface Firewall™ guide:** [docs/AI_INTERFACE_FIREWALL.md](docs/AI_INTERFACE_FIREWALL.md)
-- **See all capabilities:** [AML_CAPABILITIES.json](AML_CAPABILITIES.json)
+- **Full JavaScript API:** [API.md](API.md)
+- **v1.4 RC2 notes:** [RELEASE_NOTES_1.4.0_RC2.md](RELEASE_NOTES_1.4.0_RC2.md)
 
-## Open technology. Controlled official brand.
-
-The software in this repository is available under the [MIT License](LICENSE). The official ĀML™ / ĀRU™ brand, logos, compatibility branding, certification-style marks, and endorsement rights are separate.
-
-That means developers can experiment, integrate, fork, and implement the open technology while the official commercial identity remains controlled.
-
-- Brand-use policy: [TRADEMARKS.md](TRADEMARKS.md)
-- Machine-readable claimed marks: [OFFICIAL_MARKS.json](OFFICIAL_MARKS.json)
-- Public authorization index: [OFFICIAL_AUTHORIZATIONS.json](OFFICIAL_AUTHORIZATIONS.json)
-- Canonical ĀRU trust roots: [BRAND_TRUST_ROOTS.json](BRAND_TRUST_ROOTS.json)
-- Published production verification key: [keys/aru-aml-brand-prod-2026-09-08-01-public.pem](keys/aru-aml-brand-prod-2026-09-08-01-public.pem)
-- Commercial licensing / official badge / OEM / partnership: [COMMERCIAL.md](COMMERCIAL.md)
-- Signed official authorization protocol: [RFC 0011](rfcs/0011-official-brand-authorization.md)
-- Federal registration plan: [TRADEMARK_REGISTRATION_PLAN.md](TRADEMARK_REGISTRATION_PLAN.md)
-- Conformance vs. official compatibility branding: [docs/CONFORMANCE_BADGE.md](docs/CONFORMANCE_BADGE.md)
-
-**Technical conformance is reproducible. Official certification, endorsement, co-branding, and commercial use of reserved marks require separate authorization where applicable.**
-
-Commercial, OEM, enterprise, and strategic inquiries: **Office@aruintelligence.com**
-
-### Zero-install browser module
+### Zero-install browser entry
 
 ```html
 <script type="module">
@@ -71,17 +48,85 @@ Commercial, OEM, enterprise, and strategic inquiries: **Office@aruintelligence.c
 </script>
 ```
 
-That path works directly in a modern browser; no package installation is required for the first AML experience.
+## The core execution model
+
+```mermaid
+flowchart LR
+    A[AI / app intent] --> B[ĀML Interface Firewall]
+    B --> C[Intent → AML]
+    C --> D[AST + Abstract Meaning Tree]
+    D --> E[Semantic + accessibility analysis]
+    E --> F[Policy matrix / consensus]
+    F --> G[Consent + privacy + attention + authority]
+    G --> H[Render decision]
+    H --> I[HTML / existing UI]
+    H --> J[Audit stream + receipt]
+    J --> K[Proof / provenance / federation]
+    K --> L[Independent verification / View Meaning]
+```
+
+## What AML can do today
+
+### Meaning and policy
+
+- lexer/parser + AST + Abstract Meaning Tree
+- semantic diffs and semantic risk scoring
+- policy diffs and multi-policy matrices
+- policy consensus with explicit dissent
+- pluggable policies and user/organization profiles
+- deterministic machine-intent → AML generation
+
+### Human-context controls
+
+- consent-aware and privacy-aware policies
+- expiring/revocable consent ledger
+- reduced-motion, contrast, keyboard, text-alternative, and cognitive-load audits
+- cumulative session attention accounting
+
+### Accountability evidence
+
+- execution receipts
+- Ed25519-signed receipts
+- signed data-only policy packs
+- SHA-256 runtime audit streams
+- signed audit checkpoints
+- execution provenance graphs
+- Merkle-batched receipt inclusion proofs
+- Proof-Carrying Interface™ manifests
+
+### Federated trust
+
+- capability negotiation
+- portable policy passports
+- content-addressed artifact bundles
+- selective-disclosure commitments
+- versioned `aml-wire/1` envelopes
+- replay protection
+- causal execution graphs
+- canonical JSON + golden protocol vectors
+- trust delegation
+- M-of-N threshold authorization
+- bounded signed capability tokens
+- transparency logs
+- revocation registries
+
+### Mainstream adoption surfaces
+
+- AI Interface Firewall™
+- React-compatible accountable UI adapter
+- plain JavaScript / React / Next.js starters
+- dependency-free HTTP evaluation service
+- Meaning Gate™ GitHub Action
+- View Meaning™ browser inspector
+- privacy-minimal Manifest V3 View Meaning extension prototype
+- 30-minute enterprise pilot kit
 
 ## AI Interface Firewall™
-
-After cloning the repository, the public JavaScript API can be used directly:
 
 ```js
 import { createInterfaceFirewall } from "./index.js";
 
 const firewall = createInterfaceFirewall({ profile: "human_first" });
-
 const result = firewall.enforce({
   transmission: "pricing_assistant",
   nodes: [{
@@ -99,80 +144,24 @@ const result = firewall.enforce({
 if (result.allowed) render(result.html);
 ```
 
-The result carries policy decisions, accessibility analysis, provenance, attention accounting, runtime audit state, and a verifiable execution receipt.
-
-## Run AML as an HTTP accountability service
-
-ĀML can sit between an AI backend and any frontend stack without requiring the application to import compiler internals.
-
-```bash
-npm run serve
-# http://127.0.0.1:8787
-```
-
-Reference endpoints include:
-
-- `GET /health`
-- `GET /v1/capabilities`
-- `POST /v1/evaluate`
-- `POST /v1/verify-receipt`
-- AML trust-root / official-authorization verification endpoints documented in the OpenAPI contract
-
-OpenAPI contract: [protocol/aml-http.openapi.yaml](protocol/aml-http.openapi.yaml)
-
-The reference service is dependency-free and intended as a local/reference integration surface. Production deployments still need normal authentication, authorization, rate limits, transport security, key management, logging, and application security.
-
-## React adoption without rewriting the app
-
-```jsx
-import React from "react";
-import { createAccountableUI } from "./adapters/react.js";
-
-const AccountableUI = createAccountableUI(React);
-
-<AccountableUI
-  id="pricing"
-  purpose="Help the user understand pricing"
-  attentionCost={1}
-  restorationValue={2}
-  policy="human_first"
-  fallback={<p>Withheld by policy.</p>}
->
-  <ExistingPricingComponent />
-</AccountableUI>
-```
-
-The adapter converts ordinary component metadata into canonical ĀML intent and sends it through the same accountability pipeline as native `.aml` source.
+The result can carry policy decisions, accessibility analysis, provenance, attention accounting, audit state, and a verifiable execution receipt.
 
 ## View Meaning™
 
-The web gave developers **View Source**. ĀML introduces **View Meaning™**.
+The web gave developers **View Source**. ĀML explores **View Meaning™**.
 
 ```js
 import { viewMeaning } from "./index.js";
-
-const meaning = viewMeaning(result.receipt);
+const report = viewMeaning(receipt);
 ```
 
-A View Meaning report can expose:
-
-- declared purpose
-- policy/profile
-- attention cost
-- restoration value
-- consent/privacy/accessibility context
-- allow/suppress outcome
-- policy rationale
-- receipt integrity
-- audit/attention hashes
+A View Meaning report can expose declared purpose, policy/profile, consent/privacy/accessibility context, attention/restoration inputs, allow/suppress outcome, rationale, and receipt integrity.
 
 Browser inspector: https://aruintelligence.github.io/aml-core/view-meaning.html
 
-The repository also includes a privacy-minimal Manifest V3 browser-extension prototype under `extensions/view-meaning/` that locally recomputes receipt integrity and can verify AML brand credentials against the canonical ĀRU trust-root registry.
+The extension prototype under `extensions/view-meaning/` performs user-invoked active-tab inspection, recomputes receipt integrity locally, and can verify official-brand credentials against the canonical public ĀRU trust-root registry.
 
-## Meaning Gate™ for pull requests
-
-ĀML can stop semantic regressions before deployment.
+## Meaning Gate™
 
 ```yaml
 - uses: aruintelligence/aml-core/actions/meaning-gate@main
@@ -183,25 +172,40 @@ The repository also includes a privacy-minimal Manifest V3 browser-extension pro
     after-policy: human_first
 ```
 
-The gate can block:
+The gate can surface or block high-risk semantic changes, new personal-data collection, consent changes, attention/restoration changes, and policy regressions.
 
-- high-risk meaning changes
-- new personal-data collection
-- changed consent requirements
-- attention/restoration changes
-- policy regressions from ALLOW → SUPPRESS
-
-Direct runner:
+## Run AML as a service
 
 ```bash
-node scripts/meaning-gate.js before.aml after.aml calm_default human_first
+npm run serve
+# http://127.0.0.1:8787
 ```
 
-## Signed official AML authorization
+Reference HTTP endpoints and the official-verification contract are documented in [protocol/aml-http.openapi.yaml](protocol/aml-http.openapi.yaml).
 
-Open-source software rights and official brand rights are deliberately separate.
+The reference service does not replace production authentication, authorization, TLS, rate limiting, logging, network controls, or secure secret management.
 
-After an appropriate written agreement, ĀRU can issue a signed `aml-brand-authorization/1` credential that identifies the grantee, authorized marks, permitted uses, agreement reference, expiration, issuing public key, and revocable credential hash.
+## Open technology. Controlled official identity.
+
+The covered software is available under the [MIT License](LICENSE). Official ĀML™ / ĀRU™ branding, logos, compatibility branding, certification-style identity, endorsement, OEM/co-branding, and related reserved brand rights are separate from the software license.
+
+Technical conformance is independently testable. It does **not** automatically grant official authorization, endorsement, partnership, certification, or trademark rights.
+
+Official resources:
+
+- [TRADEMARKS.md](TRADEMARKS.md)
+- [OFFICIAL_MARKS.json](OFFICIAL_MARKS.json)
+- [OFFICIAL_AUTHORIZATIONS.json](OFFICIAL_AUTHORIZATIONS.json)
+- [BRAND_TRUST_ROOTS.json](BRAND_TRUST_ROOTS.json)
+- [COMMERCIAL.md](COMMERCIAL.md)
+- [RFC 0011 — Official Brand Authorization](rfcs/0011-official-brand-authorization.md)
+- [Trademark registration plan](TRADEMARK_REGISTRATION_PLAN.md)
+
+Commercial, OEM, enterprise, and strategic inquiries: **Office@aruintelligence.com**
+
+## Cryptographically verifiable official AML authorization
+
+After an appropriate written agreement, ĀRU can issue a scoped `aml-brand-authorization/1` credential.
 
 ```bash
 aml sign-brand-authorization authorization.json aru-private-key.pem credential.json
@@ -209,139 +213,52 @@ aml verify-brand-authorization credential.json revocation-registry.json
 aml-brand-verify credential.json BRAND_TRUST_ROOTS.json
 ```
 
-The first two checks establish credential cryptographic validity. The `aml-brand-verify` path adds canonical ĀRU trust-root membership.
+A credential can be cryptographically valid while still **not** being an official ĀRU authorization. Official verification additionally requires its signer fingerprint to be active and non-revoked in the canonical public trust-root registry.
 
-**A self-signed credential can be cryptographically valid and still not be an official ĀRU authorization.** Official verification requires the signer fingerprint to be active in `BRAND_TRUST_ROOTS.json` and not revoked.
+Current production public trust root:
 
-The production private signing key is intentionally kept outside GitHub.
+- key id: `aru-aml-brand-prod-2026-09-08-01`
+- public SHA-256 fingerprint: `eda0184568cb2110add5130d2a9fffaf53a77e0f2be311be414e7912ed69997c`
+- public key: [keys/aru-aml-brand-prod-2026-09-08-01-public.pem](keys/aru-aml-brand-prod-2026-09-08-01-public.pem)
 
-## What exists today
+Production private signing material is intentionally kept outside GitHub.
 
-Stable v1.3 plus the v1.4 release-candidate surface on `main` currently includes:
+## Standards and independent implementation
 
-- lexer + parser
-- AST + Abstract Meaning Tree
-- compiler to browser-compatible HTML
-- pluggable policy engines
-- user/organization policy profiles
-- policy consensus with explicit dissent
-- semantic diffs + semantic risk scoring
-- policy diffs + policy matrices
-- AI intent → deterministic ĀML generation
-- AI Interface Firewall™
-- dependency-free HTTP evaluation service + OpenAPI contract
-- 30-minute enterprise pilot kit
-- React-compatible adapter
-- View Meaning™ API + browser inspector + extension prototype
-- GitHub Meaning Gate™ action
-- Verify Official ĀML GitHub Action
-- consent + privacy policies
-- expiring/revocable consent ledger
-- accessibility policies + audits
-- cumulative attention accounting
-- signed policy packs
-- runtime SHA-256 audit streams
-- signed audit checkpoints
-- execution provenance graphs
-- Merkle-batched execution receipts
-- Ed25519-signed execution receipts
-- cross-runtime capability negotiation
-- portable policy passports
-- content-addressed AML bundles
-- selective-disclosure commitments
-- federated AML exchange
-- causal execution graphs
-- canonical JSON + protocol vectors
-- delegated trust chains
-- threshold authorization
-- transparency logs
-- bounded signed capability tokens
-- wire replay protection
-- revocation registry
-- Proof-Carrying Interface™ manifests
-- signed official brand-authorization credentials
-- canonical ĀRU brand trust roots
-- machine-verifiable conformance claims
-- layered conformance through AML Governed Compatible™
-- RFC/process/registry/schema standards surface
-- CLI + JavaScript API
-- browser playground
-- VS Code language support
-- LSP server
-- CI + conformance fixtures
+AML publishes a standards-oriented surface rather than requiring other runtimes to copy implementation internals:
 
-## Execution architecture
+- RFCs 0001–0011
+- protocol discovery and registry
+- JSON Schemas
+- canonical serialization rules
+- golden protocol vectors
+- conformance fixtures
+- layered compatibility levels: Core, Accountable, Federated, Verifiable, Governed
+- explicit governance and standardization path
+- independent second-runtime challenge
 
-```mermaid
-flowchart LR
-    A[AI / app intent] --> B[ĀML Interface Firewall]
-    B --> C[Intent → ĀML]
-    C --> D[AST + Meaning Tree]
-    D --> E[Semantic + accessibility analysis]
-    E --> F[Policy matrix / consensus]
-    F --> G[Consent + privacy + attention]
-    G --> H[Render decision]
-    H --> I[HTML / existing UI]
-    H --> J[Runtime audit stream]
-    J --> K[Execution receipt]
-    K --> L[Proof / provenance / federation]
-    L --> M[Independent verification / View Meaning]
-```
-
-## Built-in profiles
-
-| Profile | Focus |
-|---|---|
-| `calm_default` | restoration + consent |
-| `strict_attention` | conservative attention + consent + budget |
-| `privacy_first` | restoration + consent + privacy + budget |
-| `accessibility_first` | motion + contrast + cognitive load + budget |
-| `human_first` | broad privacy + consent + accessibility + attention controls |
-
-## Developer surface
-
-| Resource | Purpose |
-|---|---|
-| [Out of the Box](docs/OUT_OF_THE_BOX.md) | Browser, app, React, CI adoption paths |
-| [30-Minute Enterprise Pilot](pilots/enterprise-30min/) | Existing-app pilot without a rewrite |
-| [AML HTTP OpenAPI](protocol/aml-http.openapi.yaml) | Framework-independent service contract |
-| [AI Interface Firewall](docs/AI_INTERFACE_FIREWALL.md) | Adopt AML inside existing apps |
-| [Playground](https://aruintelligence.github.io/aml-core/playground.html) | Type AML and inspect compiler structures |
-| [View Meaning](https://aruintelligence.github.io/aml-core/view-meaning.html) | Inspect accountable execution receipts |
-| [Verify Official AML](https://aruintelligence.github.io/aml-core/official-verify.html) | Check credential integrity + canonical ĀRU trust-root status |
-| [Official AML](https://aruintelligence.github.io/aml-core/official-aml.html) | Licensing, official branding, OEM, partnerships |
-| [JavaScript API](API.md) | Full programmatic API |
-| [Quickstart](QUICKSTART.md) | Clone, test, compile, inspect |
-| [v1.4 RC Notes](RELEASE_NOTES_1.4.0_RC1.md) | Public post-v1.3 architecture snapshot |
-| [Roadmap](ROADMAP.md) | Current stable, v1.4 candidate, and next adoption priorities |
-| [90-Day Adoption Plan](ADOPTION_90_DAYS.md) | Distribution, independent credibility, enterprise adoption |
-| [Ecosystem Map](ECOSYSTEM.md) | Adoption, standards, conformance, security, and extension surfaces |
-| [Trust Continuity](docs/TRUST_CONTINUITY.md) | Consent history, provenance, policy dissent, Merkle receipts |
-| [v1.3 Architecture](docs/V1_3_BREAKTHROUGH.md) | Signed policies, diffs, audit streams, accessibility, attention |
-| [Capabilities](AML_CAPABILITIES.json) | Machine-readable stable platform surface |
-| [Protocol Discovery](protocol/discovery.json) | Machine-readable interoperability discovery |
-| [Conformance](CONFORMANCE.json) | Canonical compatibility entry point |
-| [Replication](REPLICATION.md) | Independent reproduction protocol |
-| [Official Marks](OFFICIAL_MARKS.json) | Machine-readable public mark status |
-| [Trademark Policy](TRADEMARKS.md) | Open implementation vs. controlled official brand |
-| [Commercial Program](COMMERCIAL.md) | Official branding, enterprise, OEM, partnerships |
+See [ECOSYSTEM.md](ECOSYSTEM.md), [STANDARDIZATION.md](STANDARDIZATION.md), and [rfcs/README.md](rfcs/README.md).
 
 ## Quality gates
 
-Every push checks local documentation links, automated tests, compiler output, bundle integrity, validation, semantic lint, explanation output, inspectable decisions, and benchmarks. A dedicated AML Conformance workflow separately validates the public conformance surface.
+Every push runs repository-link checks, automated tests, compiler verification, build-integrity verification, validation, semantic lint, explain/inspect checks, and benchmarks. A separate AML Conformance workflow verifies the public conformance surface.
+
+## Security
+
+Security scope includes compiler/parser behavior, policy bypasses, receipt/signature integrity, wire replay, capability escalation, revocation, official trust-root verification, HTTP behavior, and browser-extension permission/privacy boundaries.
+
+See [SECURITY.md](SECURITY.md) and [SECURITY_THREAT_MODEL.md](SECURITY_THREAT_MODEL.md).
 
 ## Evidence boundary
 
-ĀML improves **inspectability, policy control, reproducibility, interoperability, and cryptographic integrity**. It does not establish that its present attention/restoration scores objectively measure human cognition or wellbeing; it does not make an AI's declared intent truthful; and its accessibility policies do not replace WCAG conformance or assistive-technology testing.
+ĀML improves **inspectability, policy control, reproducibility, interoperability, and cryptographic integrity**.
 
-Cryptographic signatures prove integrity and key possession—not moral correctness or institutional trustworthiness.
+It does not establish that current attention/restoration values objectively measure human cognition or wellbeing; it does not make an AI's declared intent truthful; its accessibility mechanisms do not replace WCAG conformance or assistive-technology testing; and cryptographic signatures do not prove moral correctness or institutional trustworthiness.
 
 ## The question
 
-> What changes when AI-generated interfaces must declare meaning, pass user-owned policy, respect consent/privacy/accessibility/attention constraints, and produce a verifiable receipt before reaching a person?
+> **When AI generates an interface, can the system prove what it meant, what authority it had, which policies governed it, and why the human saw the result?**
 
-Created by **Daniel Jacob Read IV** and stewarded by **ĀRU Intelligence Inc.™**
+Created by **Daniel Jacob Read IV** and stewarded by **ĀRU Intelligence Inc.™**.
 
-Code is available under the [MIT License](LICENSE). Brand and certification rights are separate from the software license. See [TRADEMARKS.md](TRADEMARKS.md) and [COMMERCIAL.md](COMMERCIAL.md).
-
-ĀML™, ĀRU Meaning Language™, AI Interface Firewall™, View Meaning™, Meaning Gate™, EthicalRenderGate™, Meaning-Native Computing™, Proof-Carrying Interface™, and the named ĀML compatibility marks are claimed marks. Registration status varies; do not use ® unless a specific mark is actually registered for the relevant goods/services.
+ĀML™, ĀRU Meaning Language™, AI Interface Firewall™, View Meaning™, Meaning Gate™, EthicalRenderGate™, Meaning-Native Computing™, Proof-Carrying Interface™, and named ĀML compatibility marks are claimed marks. Registration status varies; do not use ® unless a specific mark is actually registered for the relevant goods/services.
