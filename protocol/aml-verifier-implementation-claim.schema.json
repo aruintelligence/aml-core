@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-verifier-implementation-claim.schema.json",
+  "title": "AML Verifier Implementation Claim",
+  "type": "object",
+  "required": ["schema", "prototype", "implementation_id", "implementation_version", "runtime", "source_url", "contract_snapshot_id", "contract_source_commit", "artifact_types", "conformance_command", "external_to_aml_core", "claim_boundary"],
+  "properties": {
+    "schema": { "const": "aml-verifier-implementation-claim/1" },
+    "prototype": { "const": true },
+    "implementation_id": { "type": "string", "minLength": 1 },
+    "implementation_version": { "type": "string", "minLength": 1 },
+    "runtime": { "type": "string", "minLength": 1 },
+    "source_url": { "type": "string", "format": "uri" },
+    "contract_snapshot_id": { "type": "string", "minLength": 1 },
+    "contract_source_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "artifact_types": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "conformance_command": { "type": "string", "minLength": 1 },
+    "conformance_result_url": { "type": ["string", "null"], "format": "uri" },
+    "external_to_aml_core": { "type": "boolean" },
+    "claim_boundary": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}
