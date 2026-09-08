@@ -29,6 +29,7 @@ export { negotiateCapabilities } from "./runtime/capabilityNegotiation.js";
 export { createPolicyPassport, verifyPolicyPassport, passportContext } from "./runtime/policyPassport.js";
 export { hashContent, createContentAddressedBundle, verifyContentAddressedBundle } from "./runtime/contentAddressedBundle.js";
 export { createDisclosureCommitment, discloseClaims, verifyDisclosureProof } from "./runtime/selectiveDisclosure.js";
+export { createFederatedExchange } from "./runtime/federatedExchange.js";
 export { createWireEnvelope, validateWireEnvelope, negotiateWireSession } from "./protocol/wireProtocol.js";
 export { evaluateAccountableProps, createAccountableUI } from "./adapters/react.js";
 export { viewMeaning, formatMeaningReport } from "./tooling/viewMeaning.js";
