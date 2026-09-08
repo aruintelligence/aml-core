@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-verification-report.schema.json",
+  "title": "AML Verification Report",
+  "description": "Portable prototype result for verification of an AML evidence artifact.",
+  "type": "object",
+  "required": ["schema", "prototype", "verifier", "artifact_type", "valid", "reason", "checked_at", "checks"],
+  "properties": {
+    "schema": { "const": "aml-verification-report/1" },
+    "prototype": { "const": true },
+    "verifier": { "type": "string", "minLength": 1 },
+    "artifact_type": { "type": "string", "minLength": 1 },
+    "valid": { "type": "boolean" },
+    "reason": { "type": "string", "minLength": 1 },
+    "checked_at": { "type": "string", "format": "date-time" },
+    "artifact_hash": { "type": ["string", "null"] },
+    "session_key_fingerprint": { "type": ["string", "null"] },
+    "challenge_expires_at": { "type": ["string", "null"], "format": "date-time" },
+    "checks": {
+      "type": "object",
+      "additionalProperties": { "type": "boolean" }
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 20
+    }
+  },
+  "additionalProperties": false
+}
