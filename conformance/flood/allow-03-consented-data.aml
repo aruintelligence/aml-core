@@ -1,0 +1,10 @@
+transmission "allow_consented_data" {
+  message "email_receipt" {
+    purpose: "Send the user the receipt they requested"
+    content: "Email this receipt to me"
+    attention_cost: 1
+    restoration_value: 2
+    consent_required: true
+    collects_personal_data: true
+  }
+}
