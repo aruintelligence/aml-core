@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/schema/proof-carrying-interface.schema.json",
+  "title": "AML Proof-Carrying Interface Manifest",
+  "type": "object",
+  "required": ["type", "output_sha256", "receipt_sha256", "policy_passport_sha256", "conformance_claim_sha256", "provenance_sha256", "causal_graph_sha256", "manifest_sha256"],
+  "properties": {
+    "type": { "const": "aml-proof-carrying-interface/1" },
+    "output_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "receipt_sha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+    "policy_passport_sha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+    "conformance_claim_sha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+    "provenance_sha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+    "causal_graph_sha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+    "manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  },
+  "additionalProperties": false
+}
