@@ -1,11 +1,22 @@
 {
   "schema": "aml-verifier-registry/1",
   "status": "SHIPPED prototype registry",
+  "contract_snapshot": "protocol/verification-contract-v1.json",
+  "contract_snapshot_schema": "aml-verification-contract-snapshot/1",
+  "contract_snapshot_id": "aml-verifier-contract-2026-09-08-01",
+  "contract_source_commit": "b1ff5a87c7b19ae6338503a58ab6257a5b2add0b",
+  "implementation_claim_schema": "aml-verifier-implementation-claim/1",
   "reference_verifiers": [
     "protocol/verifiers/browser-reference.json",
     "protocol/verifiers/python-reference.json",
     "protocol/verifiers/go-reference.json",
     "protocol/verifiers/http-reference.json"
+  ],
+  "reference_implementation_claims": [
+    "protocol/verifiers/browser-reference-claim.json",
+    "protocol/verifiers/python-reference-claim.json",
+    "protocol/verifiers/go-reference-claim.json",
+    "protocol/verifiers/http-reference-claim.json"
   ],
   "reference_verifier_count": 4,
   "external_verifiers": [],
@@ -18,5 +29,5 @@
   "conformance_manifest": "conformance/verifier/manifest.json",
   "conformance_result_schema": "aml-verifier-conformance-result/1",
   "witness_registry": "WITNESSES.json",
-  "note": "Reference verifier entries are maintained by the AML repository and do not count as external witnesses. External entries remain empty until reproducible outside evidence exists."
+  "note": "Reference verifier entries and claims are maintained by the AML repository and do not count as external witnesses. Claims identify targeted compatibility; black-box conformance results show observed behavior; witness records require reproducible outside evidence."
 }
