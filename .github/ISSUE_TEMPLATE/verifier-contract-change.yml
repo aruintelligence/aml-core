@@ -1,0 +1,60 @@
+name: Verifier contract change
+about: Propose a versioned change to the immutable AML verifier contract
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this only for a real verifier-contract behavior change. Do not create a ceremonial new snapshot.
+  - type: input
+    id: current_snapshot
+    attributes:
+      label: Current snapshot
+      value: aml-verifier-contract-2026-09-08-01
+    validations:
+      required: true
+  - type: textarea
+    id: behavior_change
+    attributes:
+      label: What verifier behavior must change?
+      description: Describe behavior, not only file edits.
+    validations:
+      required: true
+  - type: textarea
+    id: locked_paths
+    attributes:
+      label: Locked paths affected
+      description: List every verifier-contract path expected to change.
+    validations:
+      required: true
+  - type: dropdown
+    id: compatibility
+    attributes:
+      label: Proposed compatibility classification
+      options:
+        - backward-compatible
+        - conditionally-compatible
+        - breaking
+        - unknown — needs adversarial review
+    validations:
+      required: true
+  - type: textarea
+    id: old_artifacts
+    attributes:
+      label: Historical artifact behavior
+      description: Explain how artifacts created under the old snapshot remain verifiable under the old snapshot.
+    validations:
+      required: true
+  - type: checkboxes
+    id: invariants
+    attributes:
+      label: Required invariants
+      options:
+        - label: I will not reuse the old snapshot ID.
+          required: true
+        - label: I will publish an explicit migration object.
+          required: true
+        - label: I will not silently reinterpret old artifacts under the old snapshot.
+          required: true
+        - label: I understand compatibility classification is not certification or standards-body approval.
+          required: true
