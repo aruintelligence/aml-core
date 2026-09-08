@@ -22,8 +22,12 @@ const required = [
   "rfcs/0011-official-brand-authorization.md",
   "actions/verify-official/action.yml",
   "pilots/enterprise-30min/README.md",
-  "protocol/aml-http.openapi.yaml"
+  "protocol/aml-http.openapi.yaml",
+  "keys/aru-aml-brand-prod-2026-09-08-01-public.pem"
 ];
+
+const EXPECTED_PROD_KEY_ID = "aru-aml-brand-prod-2026-09-08-01";
+const EXPECTED_PROD_FINGERPRINT = "eda0184568cb2110add5130d2a9fffaf53a77e0f2be311be414e7912ed69997c";
 
 test("official AML commercial/verification surface remains present", () => {
   for (const relative of required) {
@@ -31,7 +35,26 @@ test("official AML commercial/verification surface remains present", () => {
   }
 });
 
-test("official AML trust registry does not contain a fake bootstrap production key", () => {
+test("official AML production trust registry is active and pinned to the published fingerprint", () => {
   const registry = JSON.parse(fs.readFileSync(path.join(root, "BRAND_TRUST_ROOTS.json"), "utf8"));
-  if (registry.status === "unprovisioned") assert.deepEqual(registry.active_keys, []);
+  assert.equal(registry.status, "active");
+  assert.equal(registry.active_keys.length, 1);
+  assert.equal(registry.active_keys[0].key_id, EXPECTED_PROD_KEY_ID);
+  assert.equal(registry.active_keys[0].public_key_sha256, EXPECTED_PROD_FINGERPRINT);
+  assert.match(registry.active_keys[0].public_key_sha256, /^[a-f0-9]{64}$/);
+  assert.equal(registry.revoked_keys.some((entry) => entry.public_key_sha256 === EXPECTED_PROD_FINGERPRINT), false);
+});
+
+test("repository publishes the AML production public key but never the production private key", () => {
+  const keysDir = path.join(root, "keys");
+  const files = fs.readdirSync(keysDir);
+  assert.equal(files.some((name) => /private/i.test(name)), false, "Private-key filename must never be committed under keys/");
+  for (const name of files) {
+    const full = path.join(keysDir, name);
+    if (!fs.statSync(full).isFile()) continue;
+    const body = fs.readFileSync(full, "utf8");
+    assert.equal(body.includes("BEGIN PRIVATE KEY"), false, `Private key material detected in keys/${name}`);
+  }
+  const publicPem = fs.readFileSync(path.join(keysDir, "aru-aml-brand-prod-2026-09-08-01-public.pem"), "utf8");
+  assert.match(publicPem, /BEGIN PUBLIC KEY/);
 });
