@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ĀML Gate Element Demo</title>
+  <meta name="description" content="Wrap ordinary HTML in an AML gate with one module import.">
+  <style>
+    body{font-family:system-ui,-apple-system,sans-serif;max-width:860px;margin:0 auto;padding:24px;background:#07111f;color:#eef7ff;line-height:1.5}a{color:#7df9ff}section{background:#0e1b2d;border:1px solid #27415f;border-radius:16px;padding:20px;margin:18px 0}code,pre{background:#06101c;border-radius:10px}pre{padding:16px;overflow:auto}.allow{color:#9cffb0}.suppress{color:#ff9f9f}.muted{color:#abc0d8}button{padding:12px 16px;border-radius:10px;border:0;font-weight:700}
+  </style>
+  <script type="module" src="./aml-gate.js"></script>
+</head>
+<body>
+  <h1>&lt;aml-gate&gt;</h1>
+  <p>One module. One wrapper. Existing HTML stays HTML.</p>
+  <p class="muted">SHIPPED prototype browser integration. This demonstrates the prototype attention/restoration rule; it is not the full server/runtime policy surface.</p>
+
+  <section>
+    <h2>Suppressed example</h2>
+    <pre>&lt;aml-gate purpose="Create urgency" attention-cost="5" restoration-value="1"&gt;...&lt;/aml-gate&gt;</pre>
+    <aml-gate id="pressure" purpose="Create urgency" attention-cost="5" restoration-value="1">
+      <button>Buy before the timer ends</button>
+    </aml-gate>
+    <p id="pressureResult" class="suppress">SUPPRESS — wrapped content is hidden.</p>
+  </section>
+
+  <section>
+    <h2>Allowed example</h2>
+    <pre>&lt;aml-gate purpose="Explain the next step" attention-cost="1" restoration-value="3"&gt;...&lt;/aml-gate&gt;</pre>
+    <aml-gate id="help" purpose="Explain the next step" attention-cost="1" restoration-value="3">
+      <button>Continue</button>
+    </aml-gate>
+    <p id="helpResult" class="allow">ALLOW — wrapped content remains visible.</p>
+  </section>
+
+  <section>
+    <h2>Change it live</h2>
+    <label>restoration_value <input id="value" type="range" min="0" max="10" value="1"></label>
+    <strong id="valueText">1</strong>
+    <p id="liveResult">SUPPRESS</p>
+    <aml-gate id="live" purpose="Create urgency" attention-cost="5" restoration-value="1">
+      <button>Act now</button>
+    </aml-gate>
+  </section>
+
+  <p><a href="./proof.html">Open canonical proof</a> · <a href="https://github.com/aruintelligence/aml-core/blob/main/docs/AML_GATE_ELEMENT.md">Copy the integration</a></p>
+
+  <script>
+    const slider = document.getElementById('value');
+    const gate = document.getElementById('live');
+    const text = document.getElementById('valueText');
+    const result = document.getElementById('liveResult');
+    slider.addEventListener('input', () => {
+      text.textContent = slider.value;
+      gate.setAttribute('restoration-value', slider.value);
+    });
+    gate.addEventListener('aml-decision', event => {
+      if (!event.detail.ok) return;
+      result.textContent = event.detail.render_allowed ? 'ALLOW' : 'SUPPRESS';
+      result.className = event.detail.render_allowed ? 'allow' : 'suppress';
+    });
+  </script>
+</body>
+</html>
