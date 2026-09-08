@@ -6,6 +6,7 @@
 import fs from "fs";
 import { compileAML, compileSource } from "../compiler/compiler.js";
 import { analyzeAMT } from "../compiler/diagnostics.js";
+import { verifyBuildManifest } from "../compiler/verifyBuild.js";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -21,6 +22,7 @@ Usage:
   aml inspect <file.aml>
   aml validate <file.aml>
   aml lint <file.aml>
+  aml verify <build_manifest.json>
   aml help
   aml version
 
@@ -29,6 +31,7 @@ Commands:
   inspect   Compile in memory and print the Abstract Meaning Tree + render decisions
   validate  Parse and evaluate AML without writing output files
   lint      Run semantic diagnostics on meaning-bearing nodes
+  verify    Recompute SHA-256 digests and verify an AML build bundle
   help      Show this help message
   version   Show AML CLI version
 
@@ -38,6 +41,7 @@ Examples:
   aml inspect examples/accessibility_first.aml
   aml validate examples/calm_checkout.aml
   aml lint examples/ethical_ads.aml
+  aml verify dist/build_manifest.json
 `);
 }
 
@@ -67,6 +71,7 @@ try {
     console.log(`Output: ${result.output}`);
     console.log(`Tokens: ${result.tokens.length}`);
     console.log(`Render decisions: ${result.renderDecisions.length}`);
+    console.log(`Manifest: ${outputDir}/build_manifest.json`);
     process.exit(0);
   }
 
@@ -107,6 +112,17 @@ try {
     console.log(`Errors: ${errors.length}`);
     console.log(`Warnings: ${warnings.length}`);
     process.exit(errors.length > 0 ? 1 : 0);
+  }
+
+  if (command === "verify") {
+    const result = verifyBuildManifest(inputPath);
+    for (const check of result.checks) {
+      console.log(`${check.ok ? "PASS" : "FAIL"} ${check.kind}: ${check.file} — ${check.reason}`);
+    }
+    console.log(`Verified: ${result.verified}`);
+    console.log(`Passed: ${result.passed}`);
+    console.log(`Failed: ${result.failed}`);
+    process.exit(result.verified ? 0 : 1);
   }
 
   console.error(`Unknown command: ${command}`);
