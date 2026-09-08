@@ -1,0 +1,9 @@
+{
+  "type": "aml-brand-trust-roots/1",
+  "owner": "ĀRU Intelligence Inc.",
+  "status": "unprovisioned",
+  "active_keys": [],
+  "revoked_keys": [],
+  "contact": "Office@aruintelligence.com",
+  "note": "No production AML brand-signing key is published in this registry yet. A credential must not be treated as officially authorized merely because it is self-signed. Official verification requires a signing-key fingerprint listed in active_keys and not listed in revoked_keys."
+}
