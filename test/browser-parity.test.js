@@ -6,7 +6,7 @@ import { compileSource } from "../index.js";
 import { compileSourceBrowser } from "../docs/aml-browser.js";
 
 function normalize(decisions) {
-  return decisions.map(({ timestamp, ...rest }) => rest);
+  return decisions.map(({ timestamp, policy_id, policy_rationale, ...rest }) => rest);
 }
 
 for (const file of [
