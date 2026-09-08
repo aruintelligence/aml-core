@@ -69,7 +69,7 @@ export function compileAML(inputPath, outputDir = "dist", options = {}) {
   const generatedAt = options.timestamp ?? new Date().toISOString();
   const buildManifest = {
     protocol: "ĀML Build Manifest",
-    version: "1.2-dev",
+    version: "1.3.0",
     source: {
       path: inputPath,
       sha256: sha256(source)
