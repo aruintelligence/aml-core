@@ -3,20 +3,35 @@
 
 import { createInterfaceFirewall } from "../runtime/interfaceFirewall.js";
 
+function cleanProperties(properties) {
+  return Object.fromEntries(Object.entries(properties).filter(([, value]) => value !== undefined));
+}
+
 export function evaluateAccountableProps(props = {}, options = {}) {
   const intent = {
-    type: props.type || "component",
-    id: props.id || "accountable-ui",
-    purpose: props.purpose || "",
-    content: props.content || "",
-    attention_cost: props.attentionCost ?? props.attention_cost ?? 0,
-    restoration_value: props.restorationValue ?? props.restoration_value ?? 0,
-    consent_required: props.consentRequired ?? props.consent_required,
-    collects_personal_data: props.collectsPersonalData ?? props.collects_personal_data,
-    motion_required: props.motionRequired ?? props.motion_required,
-    reduced_motion_alternative: props.reducedMotionAlternative ?? props.reduced_motion_alternative,
-    contrast_safe: props.contrastSafe ?? props.contrast_safe,
-    cognitive_load: props.cognitiveLoad ?? props.cognitive_load
+    transmission: props.transmission || "react_accountable_ui",
+    nodes: [
+      {
+        type: props.type || "component",
+        identifier: props.id || "accountable_ui",
+        properties: cleanProperties({
+          purpose: props.purpose || "",
+          content: props.content || "",
+          attention_cost: props.attentionCost ?? props.attention_cost ?? 0,
+          restoration_value: props.restorationValue ?? props.restoration_value ?? 0,
+          consent_required: props.consentRequired ?? props.consent_required,
+          collects_personal_data: props.collectsPersonalData ?? props.collects_personal_data,
+          motion_required: props.motionRequired ?? props.motion_required,
+          reduced_motion_alternative: props.reducedMotionAlternative ?? props.reduced_motion_alternative,
+          contrast_safe: props.contrastSafe ?? props.contrast_safe,
+          cognitive_load: props.cognitiveLoad ?? props.cognitive_load,
+          interactive: props.interactive,
+          keyboard_accessible: props.keyboardAccessible ?? props.keyboard_accessible,
+          visual_only: props.visualOnly ?? props.visual_only,
+          text_alternative: props.textAlternative ?? props.text_alternative
+        })
+      }
+    ]
   };
 
   const firewall = createInterfaceFirewall({
