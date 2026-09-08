@@ -2,6 +2,7 @@
 // ĀML mainstream surface — accountable interface firewall between AI intent and UI output.
 
 import { executeAccountableIntent, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
+import { compileSource } from "../compiler/compiler.js";
 import { auditAccessibilityTree } from "./accessibilityAudit.js";
 import { buildProvenanceGraph, verifyProvenanceGraph } from "./provenanceGraph.js";
 
@@ -15,14 +16,20 @@ export function createInterfaceFirewall(options = {}) {
     profile,
     inspect(intent, runOptions = {}) {
       const context = { ...defaultContext, ...(runOptions.context || {}) };
+      const selectedProfile = runOptions.profile || profile;
       const receipt = executeAccountableIntent(intent, {
-        profile: runOptions.profile || profile,
+        profile: selectedProfile,
         context,
         timestamp: runOptions.timestamp
       });
-      const accessibility = auditAccessibilityTree(receipt.selected_render?.decisions || [], context);
+      const compilation = compileSource(receipt.aml_source, {
+        timestamp: runOptions.timestamp,
+        context
+      });
+      const accessibility = auditAccessibilityTree(compilation.amt, context);
       const provenance = buildProvenanceGraph(receipt);
       return {
+        profile: selectedProfile,
         receipt,
         receipt_verification: verifyExecutionReceipt(receipt),
         provenance,
