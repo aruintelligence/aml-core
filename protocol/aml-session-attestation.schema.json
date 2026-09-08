@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-session-attestation.schema.json",
+  "title": "AML Session Attestation",
+  "description": "Prototype challenge-bound evidence attestation signed by an ephemeral browser session key.",
+  "type": "object",
+  "required": ["schema", "prototype", "algorithm", "evidence_hash", "challenge_nonce", "challenge_expires_at", "issued_at", "session_public_key_jwk", "session_key_fingerprint", "signature"],
+  "properties": {
+    "schema": { "const": "aml-session-attestation/1" },
+    "prototype": { "const": true },
+    "algorithm": { "const": "ECDSA-P256-SHA256" },
+    "evidence_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "challenge_nonce": { "type": "string", "minLength": 32 },
+    "challenge_expires_at": { "type": "string", "format": "date-time" },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "session_public_key_jwk": {
+      "type": "object",
+      "required": ["kty", "crv", "x", "y"],
+      "properties": {
+        "kty": { "const": "EC" },
+        "crv": { "const": "P-256" },
+        "x": { "type": "string" },
+        "y": { "type": "string" }
+      }
+    },
+    "session_key_fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "signature": { "type": "string", "minLength": 64 }
+  },
+  "additionalProperties": false
+}
