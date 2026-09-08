@@ -33,5 +33,5 @@ runs:
             "$TRUST_ROOTS"
         fi
 branding:
-  icon: "verified"
+  icon: "shield"
   color: "green"
