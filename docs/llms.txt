@@ -13,6 +13,10 @@ render_allowed = restoration_value >= attention_cost
 
 Primary public entry points:
 - Proof lab: https://aruintelligence.github.io/aml-core/proof.html
+- Shareable SUPPRESS proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1
+- Shareable ALLOW proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=5
+- Embeddable proof card: https://aruintelligence.github.io/aml-core/proof-card.html
+- Machine-readable proof manifest: https://aruintelligence.github.io/aml-core/proof-manifest.json
 - Home: https://aruintelligence.github.io/aml-core/
 - Playground: https://aruintelligence.github.io/aml-core/playground.html
 - View Meaning™: https://aruintelligence.github.io/aml-core/view-meaning.html
@@ -22,6 +26,8 @@ Primary public entry points:
 
 Fast reproduction:
 - 10-minute path: https://github.com/aruintelligence/aml-core/blob/main/docs/TRY_AML_10_MINUTES.md
+- Witness kit: https://github.com/aruintelligence/aml-core/blob/main/docs/WITNESS_KIT.md
+- Embed instructions: https://github.com/aruintelligence/aml-core/blob/main/docs/EMBED_PROOF.md
 - Deterministic proof: https://github.com/aruintelligence/aml-core/tree/main/demos/undeniable-proof
 - Balanced fixtures: https://github.com/aruintelligence/aml-core/tree/main/conformance/flood
 - Witness template: https://github.com/aruintelligence/aml-core/issues/new/choose
