@@ -1,7 +1,7 @@
 {
   "name": "aml-core",
   "version": "1.3.0",
-  "description": "ĀML — ĀRU Meaning Language: accountable AI execution with signed policies, semantic diffs, runtime audit streams, accessibility policies, and cumulative attention accounting",
+  "description": "ĀML — accountable AI interface firewall, meaning-native policy execution, View Meaning, semantic diffs, signed receipts, and human-first UI controls",
   "main": "index.js",
   "exports": {
     ".": "./index.js"
@@ -20,6 +20,7 @@
     "lint": "node bin/aml.js lint examples/simple.aml",
     "verify": "node bin/aml.js verify dist/build_manifest.json",
     "check:links": "node scripts/check-local-links.js",
+    "meaning-gate": "node scripts/meaning-gate.js",
     "benchmark": "node benchmarks/run.js",
     "lsp": "node bin/aml-lsp.js",
     "test": "node --test"
@@ -32,6 +33,12 @@
     "meaning-native-computing",
     "accountable-ai",
     "accountable-rendering",
+    "ai-interface-firewall",
+    "interface-firewall",
+    "view-meaning",
+    "react-accountability",
+    "github-action",
+    "semantic-pr-gate",
     "ai-execution-receipts",
     "signed-policy-pack",
     "semantic-diff",
