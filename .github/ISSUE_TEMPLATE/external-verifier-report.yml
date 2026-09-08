@@ -1,0 +1,70 @@
+name: External verifier report
+description: Submit public evidence from a verifier maintained outside aml-core.
+title: "[External verifier] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Submit reproducible evidence. Negative results and disagreements are welcome. This is not a certification request.
+  - type: input
+    id: source
+    attributes:
+      label: Public source URL
+      description: Repository or source maintained outside aruintelligence/aml-core.
+    validations:
+      required: true
+  - type: input
+    id: runtime
+    attributes:
+      label: Runtime and version
+      placeholder: "Go 1.24 / Rust 1.90 / Java 25 / etc."
+    validations:
+      required: true
+  - type: input
+    id: artifact_hash
+    attributes:
+      label: Exact artifact hash
+      description: Hash of the witness bundle you verified.
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options:
+        - PASS
+        - FAIL
+        - DISAGREES WITH REFERENCE
+        - COULD NOT COMPLETE
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: aml-verification-report/1 JSON
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: mutation
+    attributes:
+      label: Deliberate mutation test
+      description: What did you change and what happened?
+    validations:
+      required: true
+  - type: textarea
+    id: disagreement
+    attributes:
+      label: Any disagreement or ambiguity
+      description: Leave "none observed" only if that is actually the result.
+    validations:
+      required: true
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Evidence boundary
+      options:
+        - label: This implementation is maintained outside aruintelligence/aml-core.
+          required: true
+        - label: I understand this submission is interoperability evidence, not official certification, trademark authorization, or standards-body approval.
+          required: true
