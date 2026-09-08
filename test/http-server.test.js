@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
+import fs from "node:fs";
 import { once } from "node:events";
 import { createAmlHttpServer } from "../server/httpServer.js";
 import { signBrandAuthorization } from "../runtime/brandAuthorization.js";
@@ -20,6 +21,10 @@ function intent() {
       }
     }]
   };
+}
+
+function witnessVector() {
+  return JSON.parse(fs.readFileSync(new URL("../independent/python/witness-vector.json", import.meta.url), "utf8"));
 }
 
 async function withServer(fn, options = {}) {
@@ -70,6 +75,33 @@ test("AML HTTP evaluate returns a verifiable receipt", async () => {
     assert.equal(verifyResponse.status, 200);
     const verification = await verifyResponse.json();
     assert.equal(verification.verified, true);
+  });
+});
+
+test("AML HTTP verifies a cross-language witness bundle and rejects mutation", async () => {
+  await withServer(async (base) => {
+    const bundle = witnessVector();
+    const validResponse = await fetch(`${base}/v1/verify-witness-bundle`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ bundle, now: "2030-01-01T00:05:00Z" })
+    });
+    assert.equal(validResponse.status, 200);
+    const valid = await validResponse.json();
+    assert.equal(valid.protocol, "aml-http-witness-verification/1");
+    assert.equal(valid.valid, true);
+    assert.equal(valid.reason, "AML_WITNESS_BUNDLE_VALID");
+
+    const mutated = structuredClone(bundle);
+    mutated.evidence.receipt.decisions[0].purpose = "tampered-over-http";
+    const badResponse = await fetch(`${base}/v1/verify-witness-bundle`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ bundle: mutated, now: "2030-01-01T00:05:00Z" })
+    });
+    assert.equal(badResponse.status, 422);
+    const bad = await badResponse.json();
+    assert.equal(bad.valid, false);
   });
 });
 
