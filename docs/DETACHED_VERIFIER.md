@@ -45,13 +45,13 @@ expired challenge -> FAIL
 <script type="module" src="https://aruintelligence.github.io/aml-core/aml.js"></script>
 ```
 
-Then:
+The bootstrap exposes the prototype browser API as `window.AML` (also available as `AML` in ordinary page scripts).
 
 ```js
-const challenge = AML.createChallenge();
-const attestation = await AML.attest({ challenge });
-const bundle = await AML.createWitnessBundle({ challenge, attestation });
-const check = await AML.verifyWitnessBundle(bundle);
+const challenge = window.AML.createChallenge();
+const attestation = await window.AML.attest({ challenge });
+const bundle = await window.AML.createWitnessBundle({ challenge, attestation });
+const check = await window.AML.verifyWitnessBundle(bundle);
 ```
 
 ## Claim boundary
