@@ -1,0 +1,16 @@
+{
+  "status": "DRAFT",
+  "direction": "rtl",
+  "title": "عرض إثبات ĀML",
+  "subtitle": "جدار حماية للواجهة بين نية الذكاء الاصطناعي والبكسلات المعروضة.",
+  "try_demo": "جرّب العرض",
+  "change_restoration": "غيّر قيمة الاستعادة",
+  "compile_again": "أعد التجميع",
+  "decision": "القرار",
+  "allowed": "مسموح",
+  "suppressed": "محجوب",
+  "view_meaning": "عرض المعنى",
+  "receipt": "الإيصال",
+  "file_result": "سجّل ما حدث",
+  "prototype_notice": "نموذج أولي يعمل — وليس معياراً عالمياً معتمداً."
+}
