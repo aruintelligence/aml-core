@@ -1,0 +1,8 @@
+transmission "allow_clear_help" {
+  message "clear_help" {
+    purpose: "Explain the next step clearly"
+    content: "Here is what happens next."
+    attention_cost: 1
+    restoration_value: 3
+  }
+}
