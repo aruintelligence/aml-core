@@ -15,6 +15,7 @@
     "compile": "node bin/aml.js compile examples/transmission-061.aml",
     "validate": "node bin/aml.js validate examples/transmission-061.aml",
     "inspect": "node bin/aml.js inspect examples/transmission-061.aml",
+    "lint": "node bin/aml.js lint examples/simple.aml",
     "benchmark": "node benchmarks/run.js",
     "test": "node --test"
   },
