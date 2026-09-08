@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ĀML Proof — Change One Number</title>
+  <meta name="description" content="Change restoration value and watch AML allow or suppress the same interface element." />
+  <style>
+    body{font-family:system-ui,-apple-system,sans-serif;max-width:860px;margin:0 auto;padding:24px;background:#07111f;color:#eef7ff;line-height:1.5}a{color:#7df9ff}section{background:#0e1b2d;border:1px solid #27415f;border-radius:16px;padding:20px;margin:18px 0}input{width:100%}code,pre{background:#06101c;border-radius:10px}pre{padding:16px;overflow:auto}.decision{font-size:2rem;font-weight:800}.allow{color:#9cffb0}.suppress{color:#ff9f9f}.muted{color:#abc0d8}.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:640px){.row{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <h1>ĀML Proof</h1>
+  <p>Change one number. Watch the same interface element move between <strong>ALLOW</strong> and <strong>SUPPRESS</strong>.</p>
+  <p class="muted">SHIPPED prototype behavior. This demonstrates deterministic software policy evaluation; it does not claim that the scores objectively measure human cognition.</p>
+
+  <section>
+    <div class="row">
+      <label>attention_cost
+        <input id="attention" type="range" min="0" max="10" step="1" value="5" />
+        <strong id="attentionValue">5</strong>
+      </label>
+      <label>restoration_value
+        <input id="restoration" type="range" min="0" max="10" step="1" value="1" />
+        <strong id="restorationValue">1</strong>
+      </label>
+    </div>
+  </section>
+
+  <section>
+    <div id="decision" class="decision suppress">SUPPRESS</div>
+    <p id="reason">restoration_value (1) &lt; attention_cost (5)</p>
+    <p>Prototype rule: <code>render_allowed = restoration_value &gt;= attention_cost</code></p>
+  </section>
+
+  <section>
+    <h2>Exact AML being evaluated</h2>
+    <pre id="source"></pre>
+  </section>
+
+  <section>
+    <h2>Inspectable decision</h2>
+    <pre id="json"></pre>
+  </section>
+
+  <p><a href="./playground.html">Open full playground</a> · <a href="./view-meaning.html">Open View Meaning</a> · <a href="https://github.com/aruintelligence/aml-core/tree/main/demos/undeniable-proof">Reproduce locally</a></p>
+  <p><strong>Witness ask:</strong> change <code>restoration_value</code>, screenshot the decision, then file what happened in GitHub.</p>
+
+  <script type="module">
+    import { compileSourceBrowser } from './aml-browser.js';
+    const attention = document.getElementById('attention');
+    const restoration = document.getElementById('restoration');
+    const av = document.getElementById('attentionValue');
+    const rv = document.getElementById('restorationValue');
+    const decision = document.getElementById('decision');
+    const reason = document.getElementById('reason');
+    const sourceEl = document.getElementById('source');
+    const jsonEl = document.getElementById('json');
+
+    function render(){
+      const a = Number(attention.value);
+      const r = Number(restoration.value);
+      av.textContent = a;
+      rv.textContent = r;
+      const source = `transmission "proof" {\n  message "pressure" {\n    purpose: "Create urgency"\n    content: "Act now"\n    attention_cost: ${a}\n    restoration_value: ${r}\n  }\n}\n`;
+      const result = compileSourceBrowser(source);
+      const row = result.renderDecisions[0];
+      const allowed = row.render_allowed;
+      decision.textContent = allowed ? 'ALLOW' : 'SUPPRESS';
+      decision.className = `decision ${allowed ? 'allow' : 'suppress'}`;
+      reason.textContent = `restoration_value (${r}) ${allowed ? '>=' : '<'} attention_cost (${a})`;
+      sourceEl.textContent = source;
+      jsonEl.textContent = JSON.stringify({
+        attention_cost: row.attention_cost,
+        restoration_value: row.restoration_value,
+        render_allowed: row.render_allowed,
+        fallback_triggered: row.fallback_triggered
+      }, null, 2);
+    }
+    attention.addEventListener('input', render);
+    restoration.addEventListener('input', render);
+    render();
+  </script>
+</body>
+</html>
