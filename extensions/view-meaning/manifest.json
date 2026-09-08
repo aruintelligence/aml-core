@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "View Meaning™ — ĀML Inspector",
+  "version": "0.1.0",
+  "description": "Inspect AML meaning and accountability metadata exposed by the page you explicitly choose to inspect.",
+  "action": {
+    "default_title": "View Meaning™",
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ]
+}
