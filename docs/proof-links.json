@@ -1,0 +1,18 @@
+{
+  "status": "SHIPPED",
+  "rule": "render_allowed = restoration_value >= attention_cost",
+  "proof": "https://aruintelligence.github.io/aml-core/proof.html",
+  "examples": [
+    {"name":"clear-next-step","attention_cost":1,"restoration_value":3,"decision":"ALLOW","url":"https://aruintelligence.github.io/aml-core/proof.html?attention=1&restoration=3"},
+    {"name":"status-confirmation","attention_cost":1,"restoration_value":4,"decision":"ALLOW","url":"https://aruintelligence.github.io/aml-core/proof.html?attention=1&restoration=4"},
+    {"name":"consented-data-action","attention_cost":2,"restoration_value":3,"decision":"ALLOW","url":"https://aruintelligence.github.io/aml-core/proof.html?attention=2&restoration=3"},
+    {"name":"reduced-motion-option","attention_cost":1,"restoration_value":4,"decision":"ALLOW","url":"https://aruintelligence.github.io/aml-core/proof.html?attention=1&restoration=4"},
+    {"name":"calm-navigation","attention_cost":1,"restoration_value":3,"decision":"ALLOW","url":"https://aruintelligence.github.io/aml-core/proof.html?attention=1&restoration=3"},
+    {"name":"countdown-pressure","attention_cost":5,"restoration_value":1,"decision":"SUPPRESS","url":"https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1"},
+    {"name":"autoplay-interruption","attention_cost":4,"restoration_value":1,"decision":"SUPPRESS","url":"https://aruintelligence.github.io/aml-core/proof.html?attention=4&restoration=1"},
+    {"name":"notification-nag","attention_cost":4,"restoration_value":1,"decision":"SUPPRESS","url":"https://aruintelligence.github.io/aml-core/proof.html?attention=4&restoration=1"},
+    {"name":"forced-upsell","attention_cost":5,"restoration_value":2,"decision":"SUPPRESS","url":"https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=2"},
+    {"name":"unnecessary-data-pressure","attention_cost":4,"restoration_value":1,"decision":"SUPPRESS","url":"https://aruintelligence.github.io/aml-core/proof.html?attention=4&restoration=1"}
+  ],
+  "evidence_boundary": "These are declared/model inputs used to demonstrate deterministic software behavior; they are not objective measurements of human cognition or wellbeing."
+}
