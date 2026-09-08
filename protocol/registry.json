@@ -7,7 +7,9 @@
     "capability_token": "application/vnd.aru.aml-capability-token+json",
     "execution_receipt": "application/vnd.aru.aml-execution-receipt+json",
     "content_bundle": "application/vnd.aru.aml-bundle+json",
-    "causal_graph": "application/vnd.aru.aml-causal-graph+json"
+    "causal_graph": "application/vnd.aru.aml-causal-graph+json",
+    "proof_carrying_interface": "application/vnd.aru.aml-proof-interface+json",
+    "revocation_registry": "application/vnd.aru.aml-revocation-registry+json"
   },
   "kinds": [
     "capability_hello",
@@ -16,7 +18,9 @@
     "execution_receipt",
     "content_bundle",
     "selective_disclosure",
-    "causal_graph"
+    "causal_graph",
+    "proof_carrying_interface",
+    "revocation_registry"
   ],
   "capabilities": [
     "meaning-tree",
@@ -27,6 +31,8 @@
     "content-addressed-bundle",
     "selective-disclosure",
     "causal-execution-graph",
+    "proof-carrying-interface",
+    "revocation-registry",
     "view-meaning"
   ]
 }
