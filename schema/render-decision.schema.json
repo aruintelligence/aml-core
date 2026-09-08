@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/aruintelligence/aml-core/blob/main/schema/render-decision.schema.json",
+  "title": "ĀML Render Decision Array",
+  "description": "Machine-readable contract for render_decision.json emitted by the ĀML compiler.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": true,
+    "required": [
+      "node_type",
+      "name",
+      "identifier",
+      "purpose",
+      "memory_role",
+      "user_effect",
+      "attention_cost",
+      "restoration_value",
+      "calculated_attention_cost",
+      "calculated_restoration_value",
+      "render_allowed",
+      "fallback_triggered",
+      "timestamp"
+    ],
+    "properties": {
+      "node_type": { "type": ["string", "null"] },
+      "name": { "type": ["string", "null"] },
+      "identifier": { "type": ["string", "null"] },
+      "purpose": { "type": ["string", "null"] },
+      "memory_role": { "type": ["string", "null"] },
+      "user_effect": { "type": ["string", "null"] },
+      "attention_cost": { "type": "number" },
+      "restoration_value": { "type": "number" },
+      "calculated_attention_cost": { "type": "number" },
+      "calculated_restoration_value": { "type": "number" },
+      "render_allowed": { "type": "boolean" },
+      "fallback_triggered": { "type": "boolean" },
+      "timestamp": { "type": "string", "format": "date-time" }
+    }
+  }
+}
