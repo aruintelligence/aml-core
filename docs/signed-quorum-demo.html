@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ĀML Key-Distinct Verifier Quorum</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:980px;margin:0 auto;padding:24px;background:#071018;color:#eaf6ff}button{padding:10px 14px;border:0;border-radius:8px;font-weight:700;margin:6px 6px 6px 0}pre{background:#0d1b26;color:#dff5ff;border:1px solid #29485d;border-radius:10px;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere}.card{border:1px solid #29485d;border-radius:14px;padding:16px;margin:16px 0}.small{color:#afc5d3;font-size:.92rem}
+  </style>
+</head>
+<body>
+  <h1>ĀML Key-Distinct Verifier Quorum</h1>
+  <p><strong>SHIPPED synthetic local demo.</strong> This generates verifier keys in your browser. It does not represent external witnesses, organizations, certification, or adoption.</p>
+  <div class="card">
+    <button id="same">Two verifier names, same key</button>
+    <button id="distinct">Two verifier names, distinct keys</button>
+  </div>
+  <pre id="result">Choose a case.</pre>
+  <p class="small">A distinct key fingerprint only proves a distinct public key was used. One actor can control many keys.</p>
+
+  <script type="module">
+    import { createVerifierKeyPair, signVerificationReport } from './aml-signed-verification-report.js';
+    import { createSignedVerificationQuorum } from './aml-signed-verification-quorum.js';
+
+    const result = document.getElementById('result');
+    const artifactHash = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+    function report(verifier) {
+      return {
+        schema: 'aml-verification-report/1', prototype: true, verifier,
+        artifact_type: 'aml-witness-bundle/1', valid: true,
+        reason: 'AML_WITNESS_BUNDLE_VALID', checked_at: new Date().toISOString(),
+        artifact_hash: artifactHash, session_key_fingerprint: null,
+        challenge_expires_at: null, checks: { bundle_integrity: true }, notes: []
+      };
+    }
+
+    async function run(reuseKey) {
+      result.textContent = 'Generating local verifier keys…';
+      const keyA = await createVerifierKeyPair();
+      const keyB = reuseKey ? keyA : await createVerifierKeyPair();
+      const signedA = await signVerificationReport(report('synthetic-verifier-a'), keyA);
+      const signedB = await signVerificationReport(report('synthetic-verifier-b'), keyB);
+      const quorum = await createSignedVerificationQuorum([signedA, signedB], { threshold: 2 });
+      result.textContent = JSON.stringify({
+        case: reuseKey ? 'two names, same key' : 'two names, two keys',
+        key_fingerprints: [signedA.verifier_key_fingerprint, signedB.verifier_key_fingerprint],
+        summary: quorum.summary,
+        claim_boundary: quorum.claim_boundary
+      }, null, 2);
+    }
+
+    document.getElementById('same').addEventListener('click', () => run(true));
+    document.getElementById('distinct').addEventListener('click', () => run(false));
+  </script>
+</body>
+</html>
