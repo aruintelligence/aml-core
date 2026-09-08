@@ -1,0 +1,23 @@
+{
+  "project": "AML Core",
+  "language": "ARU Meaning Language",
+  "version": "1.0.0",
+  "artifactContract": [
+    "index.html",
+    "tokens.json",
+    "ast.json",
+    "amt.json",
+    "render_decision.json"
+  ],
+  "fixtures": [
+    {"path": "examples/simple.aml", "domain": "minimal"},
+    {"path": "examples/transmission-061.aml", "domain": "flagship"},
+    {"path": "examples/ethical_ads.aml", "domain": "advertising"},
+    {"path": "examples/focus_mode.aml", "domain": "focus"},
+    {"path": "examples/social_feed.aml", "domain": "social-feed"},
+    {"path": "examples/learning_mode.aml", "domain": "learning"},
+    {"path": "examples/accessibility_first.aml", "domain": "accessibility"},
+    {"path": "examples/ai_assistant_response.aml", "domain": "ai-assistant"},
+    {"path": "examples/calm_checkout.aml", "domain": "commerce"}
+  ]
+}
