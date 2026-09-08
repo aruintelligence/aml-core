@@ -1,0 +1,59 @@
+{
+  "schema": "aml-verification-report-vectors/1",
+  "status": "SHIPPED prototype vectors",
+  "artifact_type": "aml-witness-bundle/1",
+  "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "reports": [
+    {
+      "schema": "aml-verification-report/1",
+      "prototype": true,
+      "verifier": "example-verifier-a",
+      "artifact_type": "aml-witness-bundle/1",
+      "valid": true,
+      "reason": "AML_WITNESS_BUNDLE_VALID",
+      "checked_at": "2030-01-01T00:05:00.000Z",
+      "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "session_key_fingerprint": null,
+      "challenge_expires_at": "2030-01-01T00:10:00.000Z",
+      "checks": { "bundle_integrity": true },
+      "notes": []
+    },
+    {
+      "schema": "aml-verification-report/1",
+      "prototype": true,
+      "verifier": "example-verifier-b",
+      "artifact_type": "aml-witness-bundle/1",
+      "valid": false,
+      "reason": "AML_SESSION_SIGNATURE_INVALID",
+      "checked_at": "2030-01-01T00:05:01.000Z",
+      "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "session_key_fingerprint": null,
+      "challenge_expires_at": "2030-01-01T00:10:00.000Z",
+      "checks": { "bundle_integrity": true, "session_signature": false },
+      "notes": []
+    },
+    {
+      "schema": "aml-verification-report/1",
+      "prototype": true,
+      "verifier": "example-verifier-c",
+      "artifact_type": "aml-witness-bundle/1",
+      "valid": true,
+      "reason": "AML_WITNESS_BUNDLE_VALID",
+      "checked_at": "2030-01-01T00:05:02.000Z",
+      "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "session_key_fingerprint": null,
+      "challenge_expires_at": "2030-01-01T00:10:00.000Z",
+      "checks": { "bundle_integrity": true },
+      "notes": []
+    }
+  ],
+  "expected_threshold_2": {
+    "distinct_verifiers": 3,
+    "valid_reports": 2,
+    "invalid_reports": 1,
+    "threshold_met": true,
+    "unanimous": false,
+    "disagreement_reasons": ["AML_SESSION_SIGNATURE_INVALID"]
+  },
+  "claim_boundary": "Example verifier identifiers are fixtures, not real external witnesses."
+}
