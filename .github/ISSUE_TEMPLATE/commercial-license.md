@@ -1,12 +1,14 @@
 ---
-name: Commercial licensing / official AML branding
-description: Request official ĀML™ branding, certification, enterprise, OEM, or partnership rights
-title: "Commercial licensing: "
+name: AML commercial licensing / official branding
+description: Start a public, non-confidential conversation about official ĀML™ branding, compatibility authorization, enterprise integration, OEM, managed infrastructure, or strategic partnership
+title: "Commercial / official AML inquiry: "
 labels: []
 assignees: []
 ---
 
-> Do not post confidential information, customer data, passwords, private keys, or trade secrets in this public issue.
+> **PUBLIC ISSUE — DO NOT POST CONFIDENTIAL INFORMATION.**
+>
+> Do not include trade secrets, private keys, passwords, customer data, confidential pricing, contract terms, or information covered by an NDA. For confidential discussions, email **Office@aruintelligence.com**.
 
 ## Organization
 
@@ -14,35 +16,47 @@ Name:
 
 Website:
 
-Primary contact role:
+Primary public contact / role:
 
-## What are you building?
-
-Brief description:
-
-## What are you requesting?
+## What are you interested in?
 
 Check any that apply:
 
-- [ ] Official ĀML™ / ĀRU™ brand use
-- [ ] ĀML Compatible™ or conformance-level branding
-- [ ] Powered by ĀML™ co-branding
-- [ ] Enterprise implementation/support
-- [ ] OEM / embedded arrangement
-- [ ] Certification program participation
+- [ ] Official ĀML Compatible™ / conformance branding
+- [ ] Official badge / trademark authorization
+- [ ] Signed `aml-brand-authorization/1` credential
+- [ ] AI Interface Firewall™ enterprise integration
+- [ ] OEM / embedded AML
+- [ ] “Powered by ĀML™” co-branding
+- [ ] Enterprise architecture / implementation support
+- [ ] Managed verification / policy / trust infrastructure
 - [ ] Strategic partnership
+- [ ] Research / standards collaboration
 - [ ] Training / architecture / consulting
-- [ ] Other commercial arrangement
+- [ ] Other
+
+## Public project summary
+
+Describe the product, platform, research program, or integration at a non-confidential level.
+
+## AML technology already in use
+
+Which AML components, protocol levels, conformance tests, or repositories are you currently using or evaluating?
+
+## Desired official relationship
+
+What official authorization, branding, support, verification, or partnership are you seeking?
 
 ## Expected deployment
 
 Users / customers / scale, if public:
 
-## Requested timeline
+## Timing
 
+Is there a target launch, procurement, research, or integration date?
 
-## Contact preference
+## Move private when needed
 
-Please provide a business website or other non-sensitive way for ĀRU Intelligence Inc.™ to identify your organization. Detailed commercial terms can move to a private channel after initial contact.
+For confidential discussion, email **Office@aruintelligence.com** and reference this issue number.
 
-By submitting this issue, you understand that technical compatibility or use of MIT-licensed code does not itself grant an official trademark license, certification, endorsement, or partnership.
+Opening this issue does not create a trademark license, official compatibility authorization, certification, endorsement, partnership, exclusivity right, NDA, or other commercial relationship. Any such relationship requires an appropriate written agreement.
