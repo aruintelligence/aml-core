@@ -7,7 +7,12 @@ import fs from "fs";
 import { compileAML, compileSource } from "../compiler/compiler.js";
 import { generateAMLFromIntent } from "../compiler/intentCompiler.js";
 import { simulatePolicies } from "../compiler/policySimulator.js";
-import { executeAccountableIntent, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
+import {
+  executeAccountableIntent,
+  verifyExecutionReceipt,
+  signExecutionReceipt,
+  verifySignedExecutionReceipt
+} from "../compiler/accountablePipeline.js";
 import { analyzeAMT } from "../compiler/diagnostics.js";
 import { explainCompilation } from "../compiler/explain.js";
 import { verifyBuildManifest } from "../compiler/verifyBuild.js";
@@ -29,6 +34,8 @@ Usage:
   aml generate <intent.json> [output.aml]
   aml execute <intent.json> [profile] [context.json] [receipt.json]
   aml verify-receipt <receipt.json>
+  aml sign-receipt <receipt.json> <private-key.pem> [signed-receipt.json]
+  aml verify-signed-receipt <signed-receipt.json>
   aml simulate <file.aml> [policy1,policy2]
   aml policies
   aml profiles
@@ -43,28 +50,32 @@ Usage:
   aml version
 
 Commands:
-  compile             Compile AML into HTML and accountability artifacts
-  generate            Deterministically generate AML source from machine-readable intent JSON
-  execute             Run intent → AML → simulations → composed policy → accountable receipt
-  verify-receipt      Verify that an accountable execution receipt has not been mutated
-  simulate            Compare identical AML meaning under multiple policy engines
-  policies            List built-in policy engines
-  profiles            List built-in user/organization policy profiles
-  inspect             Print the Abstract Meaning Tree + raw render decisions
-  explain             Print a compact explanation of decisions and diagnostics
-  validate            Parse and evaluate AML without writing output files
-  lint                 Run semantic diagnostics on meaning-bearing nodes
-  verify               Recompute SHA-256 digests and verify an AML build bundle
-  sign                 Create a detached Ed25519 build attestation
-  verify-attestation   Verify an Ed25519 AML build attestation
-  help                 Show this help message
-  version              Show AML CLI version
+  compile                 Compile AML into HTML and accountability artifacts
+  generate                Deterministically generate AML source from machine-readable intent JSON
+  execute                 Run intent → AML → simulations → composed policy → accountable receipt
+  verify-receipt          Verify that an accountable execution receipt has not been mutated
+  sign-receipt            Add an Ed25519 attestation to a valid execution receipt
+  verify-signed-receipt   Verify receipt integrity, signature, and public-key fingerprint
+  simulate                Compare identical AML meaning under multiple policy engines
+  policies                List built-in policy engines
+  profiles                List built-in user/organization policy profiles
+  inspect                 Print the Abstract Meaning Tree + raw render decisions
+  explain                 Print a compact explanation of decisions and diagnostics
+  validate                Parse and evaluate AML without writing output files
+  lint                    Run semantic diagnostics on meaning-bearing nodes
+  verify                  Recompute SHA-256 digests and verify an AML build bundle
+  sign                    Create a detached Ed25519 build attestation
+  verify-attestation      Verify an Ed25519 AML build attestation
+  help                    Show this help message
+  version                 Show AML CLI version
 
 Examples:
   aml compile examples/transmission-061.aml
   aml generate examples/intent-checkout.json generated.aml
-  aml execute examples/intent-checkout.json calm_default context.json receipt.json
+  aml execute examples/intent-checkout.json privacy_first context.json receipt.json
   aml verify-receipt receipt.json
+  aml sign-receipt receipt.json private-key.pem signed-receipt.json
+  aml verify-signed-receipt signed-receipt.json
   aml simulate examples/simple.aml restorative_v1,attention_conservative_v1
   aml policies
   aml profiles
@@ -149,6 +160,31 @@ try {
   if (command === "verify-receipt") {
     const receipt = JSON.parse(readSource(inputPath));
     const result = verifyExecutionReceipt(receipt);
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(result.verified ? 0 : 1);
+  }
+
+  if (command === "sign-receipt") {
+    const privateKeyPath = args[2];
+    if (!privateKeyPath) throw new Error("A private key PEM path is required.");
+    const receipt = JSON.parse(readSource(inputPath));
+    const signed = signExecutionReceipt(receipt, readSource(privateKeyPath), {
+      signer: process.env.AML_SIGNER || null
+    });
+    const outputPath = args[3];
+    const serialized = `${JSON.stringify(signed, null, 2)}\n`;
+    if (outputPath) {
+      fs.writeFileSync(outputPath, serialized);
+      console.log(`SIGNED RECEIPT: ${outputPath}`);
+    } else {
+      process.stdout.write(serialized);
+    }
+    process.exit(0);
+  }
+
+  if (command === "verify-signed-receipt") {
+    const receipt = JSON.parse(readSource(inputPath));
+    const result = verifySignedExecutionReceipt(receipt);
     console.log(JSON.stringify(result, null, 2));
     process.exit(result.verified ? 0 : 1);
   }
