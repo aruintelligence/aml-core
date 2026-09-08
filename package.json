@@ -1,7 +1,7 @@
 {
   "name": "aml-core",
   "version": "1.3.0",
-  "description": "ĀML — accountable AI interface firewall, meaning-native policy execution, View Meaning, semantic diffs, signed receipts, and human-first UI controls",
+  "description": "ĀML — accountable AI interface firewall, meaning-native policy execution, View Meaning, semantic diffs, signed receipts, proof-carrying interfaces, and governed cross-system trust",
   "main": "index.js",
   "exports": {
     ".": "./index.js"
@@ -36,6 +36,9 @@
     "ai-interface-firewall",
     "interface-firewall",
     "view-meaning",
+    "meaning-gate",
+    "proof-carrying-interface",
+    "proof-carrying-ui",
     "react-accountability",
     "github-action",
     "semantic-pr-gate",
@@ -54,11 +57,25 @@
     "ethical-render-gate",
     "semantic-ui",
     "ai-generated-ui",
+    "federated-ai",
+    "capability-security",
+    "trust-delegation",
+    "transparency-log",
+    "conformance",
+    "interoperability",
     "language-server",
     "ed25519-attestation"
   ],
   "author": "ĀRU Intelligence Inc.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aruintelligence/aml-core.git"
+  },
+  "homepage": "https://aruintelligence.github.io/aml-core/",
+  "bugs": {
+    "url": "https://github.com/aruintelligence/aml-core/issues"
+  },
   "engines": {
     "node": ">=18.0.0"
   }
