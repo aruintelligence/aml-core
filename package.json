@@ -9,10 +9,12 @@
   "type": "module",
   "bin": {
     "aml": "./bin/aml.js",
-    "aml-lsp": "./bin/aml-lsp.js"
+    "aml-lsp": "./bin/aml-lsp.js",
+    "aml-serve": "./bin/aml-serve.js"
   },
   "scripts": {
     "start": "node bin/aml.js help",
+    "serve": "node bin/aml-serve.js",
     "compile": "node bin/aml.js compile examples/transmission-061.aml",
     "validate": "node bin/aml.js validate examples/transmission-061.aml",
     "inspect": "node bin/aml.js inspect examples/transmission-061.aml",
@@ -63,6 +65,8 @@
     "transparency-log",
     "conformance",
     "interoperability",
+    "http-api",
+    "ai-middleware",
     "language-server",
     "ed25519-attestation"
   ],
