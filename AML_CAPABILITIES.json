@@ -1,7 +1,7 @@
 {
   "language": "ĀML — ĀRU Meaning Language",
   "version": "1.1.0",
-  "status": "research-prototype",
+  "status": "research-prototype-active-development",
   "entry_points": {
     "cli": "bin/aml.js",
     "lsp": "bin/aml-lsp.js",
@@ -19,7 +19,8 @@
     "render_decisions": true,
     "pure_in_memory_compile": true,
     "reproducible_timestamp_option": true,
-    "sha256_build_manifest": true
+    "sha256_build_manifest": true,
+    "machine_intent_to_aml": true
   },
   "language_features": {
     "blocks": true,
@@ -31,14 +32,25 @@
     "comparison_operators": [">", ">=", "<", "<=", "=", "==", "!="]
   },
   "policy": {
-    "engine": "EthicalRenderGate prototype v1",
+    "default_engine": "restorative_v1",
+    "pluggable_policy_engines": true,
+    "custom_policy_functions": true,
+    "builtin_policies": ["restorative_v1", "attention_conservative_v1"],
+    "counterfactual_policy_simulation": true,
     "declared_attention_cost": true,
     "declared_restoration_value": true,
     "allow_suppress_decision": true,
     "decision_json_schema": "schema/render-decision.schema.json"
   },
+  "integrity": {
+    "sha256_build_manifest": true,
+    "ed25519_build_attestation": true,
+    "embedded_public_key_fingerprint": true,
+    "manifest_tamper_detection": true
+  },
   "tooling": {
     "compile": true,
+    "generate_from_intent": true,
     "validate": true,
     "inspect": true,
     "explain": true,
@@ -67,7 +79,11 @@
     "post_build_tamper_detection": true,
     "cli_bundle_verification": true,
     "language_service_tests": true,
-    "lsp_core_tests": true
+    "lsp_core_tests": true,
+    "policy_engine_tests": true,
+    "intent_compiler_tests": true,
+    "build_attestation_tests": true,
+    "counterfactual_policy_tests": true
   },
   "diagnostics": ["AML001", "AML002", "AML003", "AML004", "AML005", "AML_PARSE"],
   "non_claims": [
