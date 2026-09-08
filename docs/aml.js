@@ -4,6 +4,7 @@ import './aml-gate.js';
 import './aml-zone.js';
 import './aml-live.js';
 import './aml-page-manifest.js';
+import './aml-browser-evidence.js';
 
 const ready = {
   schema: 'aml-browser-bootstrap/1',
@@ -12,8 +13,11 @@ const ready = {
   strict_zone: Boolean(customElements.get('aml-zone')),
   live_dom: true,
   page_manifest: true,
+  browser_integrity: 'SHA-256',
   receipt_global: 'window.__AML_RECEIPT__',
   receipt_history_global: 'window.__AML_RECEIPT_HISTORY__',
+  evidence_global: 'window.__AML_EVIDENCE__',
+  evidence_history_global: 'window.__AML_EVIDENCE_HISTORY__',
   zone_violation_global: 'window.__AML_ZONE_VIOLATIONS__'
 };
 
