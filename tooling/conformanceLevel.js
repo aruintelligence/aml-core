@@ -5,10 +5,11 @@ export const AML_CONFORMANCE_LEVELS = {
   core: ["meaning-tree", "render-decision"],
   accountable: ["meaning-tree", "render-decision", "execution-receipt", "view-meaning"],
   federated: ["meaning-tree", "render-decision", "execution-receipt", "view-meaning", "policy-passport", "content-addressed-bundle", "causal-execution-graph"],
-  verifiable: ["meaning-tree", "render-decision", "execution-receipt", "view-meaning", "policy-passport", "content-addressed-bundle", "causal-execution-graph", "selective-disclosure"]
+  verifiable: ["meaning-tree", "render-decision", "execution-receipt", "view-meaning", "policy-passport", "content-addressed-bundle", "causal-execution-graph", "selective-disclosure"],
+  governed: ["meaning-tree", "render-decision", "execution-receipt", "view-meaning", "policy-passport", "content-addressed-bundle", "causal-execution-graph", "selective-disclosure", "bounded-capability-token", "proof-carrying-interface", "revocation-registry"]
 };
 
-const ORDER = ["core", "accountable", "federated", "verifiable"];
+const ORDER = ["core", "accountable", "federated", "verifiable", "governed"];
 
 function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
@@ -21,11 +22,12 @@ export function evaluateConformanceLevel(capabilities = []) {
     if (AML_CONFORMANCE_LEVELS[candidate].every((capability) => set.has(capability))) level = candidate;
     else break;
   }
+  const nextIndex = ORDER.indexOf(level) + 1;
   return {
     level,
-    missing_for_next: level === "verifiable"
+    missing_for_next: nextIndex <= 0 || nextIndex >= ORDER.length
       ? []
-      : AML_CONFORMANCE_LEVELS[ORDER[ORDER.indexOf(level) + 1] ?? "core"].filter((capability) => !set.has(capability))
+      : AML_CONFORMANCE_LEVELS[ORDER[nextIndex]].filter((capability) => !set.has(capability))
   };
 }
 
