@@ -16,6 +16,7 @@
     "validate": "node bin/aml.js validate examples/transmission-061.aml",
     "inspect": "node bin/aml.js inspect examples/transmission-061.aml",
     "lint": "node bin/aml.js lint examples/simple.aml",
+    "verify": "node bin/aml.js verify dist/build_manifest.json",
     "benchmark": "node benchmarks/run.js",
     "test": "node --test"
   },
