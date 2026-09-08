@@ -40,4 +40,5 @@ export { createReplayGuard, acceptWireEnvelope } from "./protocol/replayGuard.js
 export { evaluateAccountableProps, createAccountableUI } from "./adapters/react.js";
 export { viewMeaning, formatMeaningReport } from "./tooling/viewMeaning.js";
 export { evaluatePullRequestChange, formatPullRequestGate } from "./tooling/prGate.js";
+export { AML_CONFORMANCE_LEVELS, evaluateConformanceLevel, createConformanceClaim, verifyConformanceClaim } from "./tooling/conformanceLevel.js";
 export { getCompletionItems, getHoverInfo, getLanguageCatalog } from "./tooling/languageService.js";
