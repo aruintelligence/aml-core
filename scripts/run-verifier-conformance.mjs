@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const split = process.argv.indexOf('--');
@@ -12,13 +13,16 @@ if (split < 0 || split === process.argv.length - 1) {
 
 const command = process.argv[split + 1];
 const baseArgs = process.argv.slice(split + 2);
-const vectorPath = path.resolve('independent/python/witness-vector.json');
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(scriptDir, '..');
+const vectorPath = path.join(repoRoot, 'independent/python/witness-vector.json');
 const source = JSON.parse(fs.readFileSync(vectorPath, 'utf8'));
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-verifier-conformance-'));
 
 function invoke(bundlePath, now) {
   const result = spawnSync(command, [...baseArgs, '--now', now, bundlePath], {
-    encoding: 'utf8'
+    encoding: 'utf8',
+    cwd: process.cwd()
   });
   let parsed = null;
   try { parsed = JSON.parse((result.stdout || '').trim()); } catch {}
@@ -76,6 +80,7 @@ const passed = results.every(r => r.passed);
 console.log(JSON.stringify({
   schema: 'aml-verifier-conformance-result/1',
   prototype: true,
+  harness_root: repoRoot,
   command: [command, ...baseArgs],
   passed,
   results,
