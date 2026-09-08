@@ -1,0 +1,8 @@
+transmission "pricing_assistant" {
+  message "offer" {
+    purpose: "Explain the available plan"
+    content: "Upgrade for additional features"
+    attention_cost: 1
+    restoration_value: 2
+  }
+}
