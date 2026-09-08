@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AML Verifier Contract Evolution</title>
+  <style>
+    body{font-family:system-ui,-apple-system,sans-serif;max-width:900px;margin:0 auto;padding:32px 20px;line-height:1.55;background:#0b1020;color:#eef2ff}
+    a{color:#9cc7ff}.card{border:1px solid #334155;border-radius:16px;padding:20px;margin:18px 0;background:#111827}.tag{font-family:ui-monospace,monospace;background:#1f2937;padding:3px 7px;border-radius:7px}.good{color:#86efac}.muted{color:#cbd5e1}code,pre{font-family:ui-monospace,monospace}pre{overflow:auto;background:#020617;padding:16px;border-radius:12px}
+  </style>
+</head>
+<body>
+  <h1>AML verifier contract evolution</h1>
+  <p class="muted">Old evidence keeps its historical meaning when AML evolves.</p>
+
+  <div class="card">
+    <h2>Current lineage</h2>
+    <p><strong>Current snapshot:</strong> <span class="tag">aml-verifier-contract-2026-09-08-01</span></p>
+    <p><strong>Migration edges:</strong> <span class="good">0</span></p>
+    <p>There is no ceremonial Snapshot 2. A new snapshot appears only when a locked verifier-contract behavior genuinely changes.</p>
+  </div>
+
+  <div class="card">
+    <h2>The invariant</h2>
+    <pre>Snapshot N is immutable.
+Snapshot N+1 must declare what changed.
+Old artifacts keep Snapshot N meaning.</pre>
+  </div>
+
+  <div class="card">
+    <h2>Future migration classes</h2>
+    <ul>
+      <li><strong>backward-compatible</strong> — old behavior remains accepted without additional conditions.</li>
+      <li><strong>conditionally-compatible</strong> — an explicit adapter, condition, or migration step is required.</li>
+      <li><strong>breaking</strong> — behavior intentionally changes; historical verification remains anchored to the old snapshot.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Inspect the machine contracts</h2>
+    <ul>
+      <li><a href="https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-catalog.json">snapshot catalog</a></li>
+      <li><a href="https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-lineage.json">lineage graph</a></li>
+      <li><a href="https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verification-contract-migration.schema.json">migration schema</a></li>
+      <li><a href="https://github.com/aruintelligence/aml-core/blob/main/docs/HISTORICAL_VERIFICATION.md">historical verification rule</a></li>
+      <li><a href="https://github.com/aruintelligence/aml-core/blob/main/docs/CONTRACT_MIGRATION_CHECKLIST.md">migration checklist</a></li>
+    </ul>
+  </div>
+
+  <p class="muted">Compatibility metadata describes project-defined verifier behavior. It is not certification, standards-body approval, or proof that declared interface meaning is objectively true.</p>
+</body>
+</html>
