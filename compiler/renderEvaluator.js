@@ -40,22 +40,25 @@ function walkNode(node, decisions, timestamp, policy, context) {
 function createRenderDecision(node, timestamp, policy, context) {
   const metadata = node.render_metadata || {};
 
+  // Preserve the distinction between an omitted score and an explicitly
+  // declared zero. Policy engines may fall back to calculated metrics only
+  // when the declaration is absent.
   const element = {
     purpose: metadata.purpose,
     memory_role: metadata.memory_role,
     user_effect: metadata.user_effect,
-    attention_cost: typeof metadata.attention_cost === "number" ? metadata.attention_cost : 0,
-    restoration_value: typeof metadata.restoration_value === "number" ? metadata.restoration_value : 0,
+    attention_cost: typeof metadata.attention_cost === "number" ? metadata.attention_cost : undefined,
+    restoration_value: typeof metadata.restoration_value === "number" ? metadata.restoration_value : undefined,
     animation_intensity: 1,
-    cognitive_load: metadata.attention_cost || 1,
+    cognitive_load: typeof metadata.attention_cost === "number" ? metadata.attention_cost : 1,
     interaction_interruptions: 1,
     reading_complexity: 1,
     visual_noise: 1,
-    clarity: metadata.restoration_value || 1,
-    usefulness: metadata.restoration_value || 1,
-    emotional_regulation: metadata.restoration_value || 1,
-    continuity: metadata.restoration_value || 1,
-    aesthetic_coherence: metadata.restoration_value || 1
+    clarity: typeof metadata.restoration_value === "number" ? metadata.restoration_value : 1,
+    usefulness: typeof metadata.restoration_value === "number" ? metadata.restoration_value : 1,
+    emotional_regulation: typeof metadata.restoration_value === "number" ? metadata.restoration_value : 1,
+    continuity: typeof metadata.restoration_value === "number" ? metadata.restoration_value : 1,
+    aesthetic_coherence: typeof metadata.restoration_value === "number" ? metadata.restoration_value : 1
   };
 
   const result = policy.evaluate(element, { node, metadata, context });
