@@ -31,13 +31,19 @@ A company can implement the open protocol without buying a license to the code. 
 
 ## Commercial contact
 
-Start a confidential business conversation through the official ĀRU Intelligence Inc.™ website:
+For licensing, certification-brand, enterprise, OEM, or strategic partnership discussions:
+
+**Office@aruintelligence.com**
+
+Official website:
 
 https://aruintelligence.com/
 
-For a public/non-confidential first contact, use the repository’s Commercial Licensing request template.
+For a public/non-confidential first contact, use the repository’s Commercial Licensing request template:
 
-Do **not** include trade secrets, passwords, private keys, customer data, or confidential deal terms in a public GitHub issue.
+`.github/ISSUE_TEMPLATE/commercial-license.md`
+
+Do **not** include trade secrets, passwords, private keys, customer data, pricing negotiations, or confidential deal terms in a public GitHub issue.
 
 ## No implied license
 
