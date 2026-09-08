@@ -1,0 +1,15 @@
+{
+  "schema": "aml-verifier-registry/1",
+  "status": "SHIPPED prototype registry",
+  "reference_verifiers": [
+    "protocol/verifiers/browser-reference.json",
+    "protocol/verifiers/python-reference.json",
+    "protocol/verifiers/http-reference.json"
+  ],
+  "external_verifiers": [],
+  "external_verifier_count": 0,
+  "report_schema": "aml-verification-report/1",
+  "quorum_schema": "aml-verification-quorum/1",
+  "witness_registry": "WITNESSES.json",
+  "note": "Reference verifier entries are maintained by the AML repository and do not count as external witnesses. External entries remain empty until reproducible outside evidence exists."
+}
