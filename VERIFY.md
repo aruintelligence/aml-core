@@ -50,6 +50,22 @@ expired challenge    -> FAIL
 - [`protocol/sorted-json-v1.md`](protocol/sorted-json-v1.md)
 - [`protocol/aml-verifier-cli.md`](protocol/aml-verifier-cli.md)
 
+## Contract evolution without rewriting history
+
+Machine-readable evolution surfaces:
+
+- [`protocol/verification-contract-catalog.json`](protocol/verification-contract-catalog.json)
+- [`protocol/verification-contract-lineage.json`](protocol/verification-contract-lineage.json)
+- [`protocol/aml-verification-contract-migration.schema.json`](protocol/aml-verification-contract-migration.schema.json)
+
+Human guides:
+
+- [`docs/CONTRACT_EVOLUTION.md`](docs/CONTRACT_EVOLUTION.md)
+- [`docs/HISTORICAL_VERIFICATION.md`](docs/HISTORICAL_VERIFICATION.md)
+- [`docs/CONTRACT_MIGRATION_CHECKLIST.md`](docs/CONTRACT_MIGRATION_CHECKLIST.md)
+
+Current lineage contains one snapshot and zero migrations. That is intentional. Future snapshots must publish an explicit migration edge and may not silently reinterpret old artifacts under the old snapshot.
+
 ## Reference implementations
 
 - Browser / JavaScript
@@ -85,8 +101,8 @@ Current machine-readable external witness registry:
 
 The registry intentionally remains empty until reproducible evidence maintained outside `aruintelligence/aml-core` exists.
 
-Submit a result through GitHub Issue #17, the **External verifier report** template, or the **External verifier implementation claim** template.
+Submit a result through GitHub Issue #17, Issue #18, the **External verifier report** template, or the **External verifier implementation claim** template.
 
 ## Claim boundary
 
-A successful reproduction is project-defined interoperability evidence. An implementation claim is a compatibility declaration. Neither is certification, standards-body approval, official trademark authorization, proof of institutional independence, or proof that the underlying declared intent/scores are objectively true.
+A successful reproduction is project-defined interoperability evidence. An implementation claim is a compatibility declaration. A migration classification describes behavior between project snapshots. None of these is certification, standards-body approval, official trademark authorization, proof of institutional independence, or proof that the underlying declared intent/scores are objectively true.
