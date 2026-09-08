@@ -28,6 +28,7 @@
     "transparency-log",
     "wire-replay-protection",
     "canonical-json",
+    "http-evaluation-service",
     "view-meaning"
   ],
   "schemas": {
@@ -38,6 +39,9 @@
     "proof_carrying_interface": "schema/proof-carrying-interface.schema.json",
     "execution_receipt": "schema/execution-receipt.schema.json",
     "render_decision": "schema/render-decision.schema.json"
+  },
+  "service_contracts": {
+    "http_openapi": "protocol/aml-http.openapi.yaml"
   },
   "official_marks": "OFFICIAL_MARKS.json",
   "registry": "protocol/registry.json",
