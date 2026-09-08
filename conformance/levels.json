@@ -1,0 +1,20 @@
+{
+  "type": "aml-conformance-levels/1",
+  "levels": {
+    "core": {
+      "requires": ["meaning-tree", "render-decision"]
+    },
+    "accountable": {
+      "extends": "core",
+      "requires": ["execution-receipt", "view-meaning"]
+    },
+    "federated": {
+      "extends": "accountable",
+      "requires": ["policy-passport", "content-addressed-bundle", "causal-execution-graph"]
+    },
+    "verifiable": {
+      "extends": "federated",
+      "requires": ["selective-disclosure"]
+    }
+  }
+}
