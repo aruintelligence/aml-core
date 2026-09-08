@@ -5,6 +5,7 @@
     "wire": "application/vnd.aru.aml-wire+json",
     "policy_passport": "application/vnd.aru.aml-policy-passport+json",
     "capability_token": "application/vnd.aru.aml-capability-token+json",
+    "brand_authorization": "application/vnd.aru.aml-brand-authorization+json",
     "execution_receipt": "application/vnd.aru.aml-execution-receipt+json",
     "content_bundle": "application/vnd.aru.aml-bundle+json",
     "causal_graph": "application/vnd.aru.aml-causal-graph+json",
@@ -14,6 +15,7 @@
   "kinds": [
     "capability_hello",
     "capability_token",
+    "brand_authorization",
     "policy_passport",
     "execution_receipt",
     "content_bundle",
@@ -28,6 +30,7 @@
     "execution-receipt",
     "policy-passport",
     "bounded-capability-token",
+    "official-brand-authorization",
     "content-addressed-bundle",
     "selective-disclosure",
     "causal-execution-graph",
