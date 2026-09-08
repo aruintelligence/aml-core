@@ -8,7 +8,8 @@
   },
   "type": "module",
   "bin": {
-    "aml": "./bin/aml.js"
+    "aml": "./bin/aml.js",
+    "aml-lsp": "./bin/aml-lsp.js"
   },
   "scripts": {
     "start": "node bin/aml.js help",
@@ -19,6 +20,7 @@
     "lint": "node bin/aml.js lint examples/simple.aml",
     "verify": "node bin/aml.js verify dist/build_manifest.json",
     "benchmark": "node benchmarks/run.js",
+    "lsp": "node bin/aml-lsp.js",
     "test": "node --test"
   },
   "keywords": [
@@ -37,6 +39,7 @@
     "policy-aware-ui",
     "ai-generated-ui",
     "attention-aware-interface",
+    "language-server",
     "restoration-engine"
   ],
   "author": "ĀRU Intelligence Inc.",
