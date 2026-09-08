@@ -6,10 +6,13 @@
   "proof_manifest": "https://aruintelligence.github.io/aml-core/proof-manifest.json",
   "proof_links": "https://aruintelligence.github.io/aml-core/proof-links.json",
   "gallery": "https://aruintelligence.github.io/aml-core/gallery.html",
+  "offline_proof": "https://aruintelligence.github.io/aml-core/offline-proof.html",
+  "proof_badge": "https://aruintelligence.github.io/aml-core/proof-badge.svg",
   "view_meaning": "https://aruintelligence.github.io/aml-core/view-meaning.html",
   "browser_module": "https://aruintelligence.github.io/aml-core/aml-browser.js",
   "web_component": "https://aruintelligence.github.io/aml-core/aml-gate.js",
   "html_bridge": "https://aruintelligence.github.io/aml-core/aml-dom-gate.js",
+  "languages": ["en", "es", "pt-BR", "hi", "ar", "zh", "fr", "de"],
   "protocol_discovery": "https://github.com/aruintelligence/aml-core/blob/main/protocol/discovery.json",
   "license": "MIT for covered software; official marks are separate",
   "note": "This path is an experimental discovery convention for the reference project, not an Internet standard."
