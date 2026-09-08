@@ -12,6 +12,8 @@ import { createSessionAttestation, verifySessionAttestation } from './aml-sessio
 import { createWitnessBundle, verifyWitnessBundle } from './aml-witness-bundle.js';
 import { createVerificationReport, witnessVerificationReport } from './aml-verification-report.js';
 import { createVerificationQuorum, verifyVerificationQuorum } from './aml-verification-quorum.js';
+import { createVerifierKeyPair, signVerificationReport, verifySignedVerificationReport } from './aml-signed-verification-report.js';
+import { createSignedVerificationQuorum } from './aml-signed-verification-quorum.js';
 
 const api = Object.freeze({
   createChallenge: createVerificationChallenge,
@@ -25,7 +27,11 @@ const api = Object.freeze({
   createVerificationReport,
   witnessVerificationReport,
   createVerificationQuorum,
-  verifyVerificationQuorum
+  verifyVerificationQuorum,
+  createVerifierKeyPair,
+  signVerificationReport,
+  verifySignedVerificationReport,
+  createSignedVerificationQuorum
 });
 
 const ready = {
@@ -39,6 +45,8 @@ const ready = {
   challenge_bound_attestation: 'ECDSA-P256-SHA256',
   verification_report: 'aml-verification-report/1',
   verification_quorum: 'aml-verification-quorum/1',
+  signed_verification_report: 'aml-signed-verification-report/1',
+  signed_verification_quorum: 'aml-signed-verification-quorum/1',
   browser_api_global: 'window.AML',
   receipt_global: 'window.__AML_RECEIPT__',
   receipt_history_global: 'window.__AML_RECEIPT_HISTORY__',
