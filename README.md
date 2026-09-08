@@ -19,6 +19,35 @@
 
 **Release status:** `v1.3.0` remains the stable package/CLI/capability contract. `v1.4.0-rc.2` is the current GitHub prerelease snapshot of the broader architecture on `main`. It is not a claim that a stable v1.4 registry package has already shipped.
 
+## Three ways in
+
+### TRY IT
+
+Open the proof and change one number:
+
+https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
+
+### READ IT
+
+Start with the public reading room:
+
+**[ĀML Publications →](PUBLICATIONS.md)**
+
+Recommended first reads:
+
+- [Start Here — ĀML in 5 minutes](publications/START_HERE.md)
+- [ĀML in one page](publications/AML_IN_ONE_PAGE.md)
+- [Why AI-generated UI needs a firewall](publications/WHY_AI_UI_NEEDS_A_FIREWALL.md)
+- [A critic's guide to ĀML](publications/CRITICS_GUIDE.md)
+- [Enterprise buyer brief](publications/ENTERPRISE_BUYER_BRIEF.md)
+
+### INTEGRATE IT
+
+- [Developer integration brief](publications/DEVELOPER_INTEGRATION_BRIEF.md)
+- [10-minute reproduction](docs/TRY_AML_10_MINUTES.md)
+- [30-minute enterprise pilot](pilots/enterprise-30min/)
+- [Verify AML without trusting AML](VERIFY.md)
+
 ## Start with proof
 
 1. **Open the live proof:** https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
@@ -38,6 +67,7 @@ The scores are declared/model inputs in this prototype, not claimed objective me
 
 ## Start in 60 seconds
 
+- **Publications:** [PUBLICATIONS.md](PUBLICATIONS.md)
 - **Proof:** https://aruintelligence.github.io/aml-core/proof.html
 - **Decision gallery:** https://aruintelligence.github.io/aml-core/gallery.html
 - **Zero-install `<aml-gate>` demo:** https://aruintelligence.github.io/aml-core/aml-gate-demo.html
@@ -179,6 +209,7 @@ flowchart LR
 
 ### Mainstream adoption surfaces
 
+- public publication library for developers, designers, AI teams, security/privacy, research, enterprise, and media
 - shareable exact-state proof URLs
 - eight-language live proof with Arabic RTL
 - embeddable proof card + proof-available badge
@@ -316,7 +347,7 @@ See [ECOSYSTEM.md](ECOSYSTEM.md), [STANDARDIZATION.md](STANDARDIZATION.md), and 
 
 ## Quality gates
 
-Every push runs repository-link checks, automated tests, deterministic receipt replay, balanced ALLOW/SUPPRESS fixture checks, public proof-surface guards, compiler verification, build-integrity verification, validation, semantic lint, explain/inspect checks, and benchmarks. A separate AML Conformance workflow verifies the public conformance surface.
+Every push runs repository-link checks, automated tests, deterministic receipt replay, balanced ALLOW/SUPPRESS fixture checks, public proof-surface guards, mainstream publication guards, verifier-contract drift checks, compiler verification, build-integrity verification, validation, semantic lint, explain/inspect checks, and benchmarks. A separate AML Conformance workflow verifies the public conformance surface.
 
 ## Security
 
