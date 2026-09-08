@@ -20,5 +20,5 @@ const server = createAmlHttpServer({
 server.listen(port, host, () => {
   console.log(`ĀML HTTP service listening on http://${host}:${port}`);
   console.log(`Default profile: ${defaultProfile}`);
-  console.log("Endpoints: GET /health, GET /v1/capabilities, POST /v1/evaluate, POST /v1/verify-receipt");
+  console.log("Endpoints: GET /health, GET /v1/capabilities, POST /v1/evaluate, POST /v1/verify-receipt, POST /v1/verify-witness-bundle, POST /v1/verify-brand-authorization");
 });
