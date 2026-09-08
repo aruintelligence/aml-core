@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ĀML Verifier Plurality</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:980px;margin:0 auto;padding:24px;background:#071018;color:#eaf6ff}a{color:#8bdcff}textarea,pre,input{width:100%;box-sizing:border-box;background:#0d1b26;color:#dff5ff;border:1px solid #29485d;border-radius:10px;padding:12px}textarea{min-height:320px}pre{white-space:pre-wrap;overflow-wrap:anywhere}.card{border:1px solid #29485d;border-radius:14px;padding:16px;margin:16px 0}button{padding:10px 14px;border:0;border-radius:8px;font-weight:700;margin:6px 6px 6px 0}.small{color:#afc5d3;font-size:.92rem}
+  </style>
+</head>
+<body>
+  <h1>ĀML Verifier Plurality</h1>
+  <p><strong>SHIPPED prototype.</strong> Paste several <code>aml-verification-report/1</code> objects for the same exact artifact. The demo preserves disagreement instead of flattening it.</p>
+
+  <div class="card">
+    <label>Threshold</label>
+    <input id="threshold" type="number" min="1" value="2">
+    <label>Reports JSON array</label>
+    <textarea id="reports" spellcheck="false"></textarea>
+    <button id="load">Load published example</button>
+    <button id="evaluate">Build quorum</button>
+  </div>
+
+  <h2>Result</h2>
+  <pre id="result">Waiting.</pre>
+  <p class="small">Distinct verifier strings are not proof of independent institutions. Threshold agreement is not truth or certification.</p>
+
+  <script type="module">
+    import { createVerificationQuorum } from './aml-verification-quorum.js';
+    const reportsEl = document.getElementById('reports');
+    const resultEl = document.getElementById('result');
+    document.getElementById('load').addEventListener('click', async () => {
+      const vectors = await fetch('../protocol/verification-report-vectors.json').then(r => r.json());
+      reportsEl.value = JSON.stringify(vectors.reports, null, 2);
+    });
+    document.getElementById('evaluate').addEventListener('click', () => {
+      try {
+        const reports = JSON.parse(reportsEl.value);
+        const threshold = Number(document.getElementById('threshold').value);
+        const quorum = createVerificationQuorum(reports, { threshold });
+        resultEl.textContent = JSON.stringify(quorum, null, 2);
+      } catch (error) {
+        resultEl.textContent = JSON.stringify({ valid:false, reason:error?.message || String(error) }, null, 2);
+      }
+    });
+  </script>
+</body>
+</html>
