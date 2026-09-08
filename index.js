@@ -3,6 +3,7 @@ export { generateAMLFromIntent } from "./compiler/intentCompiler.js";
 export { analyzeAMT } from "./compiler/diagnostics.js";
 export { explainCompilation } from "./compiler/explain.js";
 export { verifyBuildManifest } from "./compiler/verifyBuild.js";
+export { signBuildManifest, verifyBuildAttestation } from "./compiler/signature.js";
 export { ethicalRenderGate } from "./runtime/ethicalRenderGate.js";
 export { BUILTIN_POLICIES, resolvePolicy, listPolicies } from "./runtime/policyEngine.js";
 export { getCompletionItems, getHoverInfo, getLanguageCatalog } from "./tooling/languageService.js";
