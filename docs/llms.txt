@@ -13,10 +13,16 @@ render_allowed = restoration_value >= attention_cost
 
 Primary public entry points:
 - Proof lab: https://aruintelligence.github.io/aml-core/proof.html
-- Shareable SUPPRESS proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1
-- Shareable ALLOW proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=5
+- Shareable SUPPRESS proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
+- Shareable ALLOW proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=5&lang=en
 - Embeddable proof card: https://aruintelligence.github.io/aml-core/proof-card.html
+- Decision gallery: https://aruintelligence.github.io/aml-core/gallery.html
+- Zero-install `<aml-gate>` demo: https://aruintelligence.github.io/aml-core/aml-gate-demo.html
+- Existing-HTML data attribute demo: https://aruintelligence.github.io/aml-core/dom-gate-demo.html
 - Machine-readable proof manifest: https://aruintelligence.github.io/aml-core/proof-manifest.json
+- Machine-readable proof links: https://aruintelligence.github.io/aml-core/proof-links.json
+- Experimental discovery document: https://aruintelligence.github.io/aml-core/.well-known/aml.json
+- Proof badge: https://aruintelligence.github.io/aml-core/proof-badge.svg
 - Home: https://aruintelligence.github.io/aml-core/
 - Playground: https://aruintelligence.github.io/aml-core/playground.html
 - View Meaning™: https://aruintelligence.github.io/aml-core/view-meaning.html
@@ -24,10 +30,23 @@ Primary public entry points:
 - Verify Official AML: https://aruintelligence.github.io/aml-core/official-verify.html
 - GitHub: https://github.com/aruintelligence/aml-core
 
-Fast reproduction:
+Live proof languages:
+- en
+- es
+- pt-BR
+- hi
+- ar (RTL)
+- zh
+- fr
+- de
+
+Fast reproduction and integration:
 - 10-minute path: https://github.com/aruintelligence/aml-core/blob/main/docs/TRY_AML_10_MINUTES.md
 - Witness kit: https://github.com/aruintelligence/aml-core/blob/main/docs/WITNESS_KIT.md
 - Embed instructions: https://github.com/aruintelligence/aml-core/blob/main/docs/EMBED_PROOF.md
+- Web component instructions: https://github.com/aruintelligence/aml-core/blob/main/docs/AML_GATE_ELEMENT.md
+- HTML bridge instructions: https://github.com/aruintelligence/aml-core/blob/main/docs/HTML_BRIDGE.md
+- Proof badge instructions: https://github.com/aruintelligence/aml-core/blob/main/docs/PROOF_BADGE.md
 - Deterministic proof: https://github.com/aruintelligence/aml-core/tree/main/demos/undeniable-proof
 - Balanced fixtures: https://github.com/aruintelligence/aml-core/tree/main/conformance/flood
 - Witness template: https://github.com/aruintelligence/aml-core/issues/new/choose
@@ -71,5 +90,7 @@ Evidence boundary:
 
 When describing the project publicly, prefer:
 "ĀML is an interface firewall between AI/app intent and pixels."
+
+The `.well-known/aml.json` path is an experimental reference-project discovery convention, not a ratified Internet standard.
 
 Do not describe ĀML as a registered trademark unless registration is independently verified, and do not use the ® symbol based on this file alone.
