@@ -1,0 +1,23 @@
+name: AML Verifier Conformance
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  aml-verifier-conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Clone AML conformance target
+        run: git clone --depth 1 https://github.com/aruintelligence/aml-core.git .aml-conformance
+      - name: Run verifier black-box conformance
+        run: |
+          node .aml-conformance/scripts/run-verifier-conformance.mjs -- ./your-verifier
+
+# Replace ./your-verifier with your own command.
+# Your verifier must implement protocol/aml-verifier-cli.md.
+# Passing is project-defined compatibility evidence, not official certification or trademark authorization.
