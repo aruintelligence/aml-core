@@ -16,15 +16,40 @@
 
 ## Start in 60 seconds
 
+- **Zero-install browser use:** [examples/browser-drop-in.html](examples/browser-drop-in.html)
+- **Out-of-the-box guide:** [docs/OUT_OF_THE_BOX.md](docs/OUT_OF_THE_BOX.md)
 - **Try AML:** https://aruintelligence.github.io/aml-core/playground.html
 - **Inspect a receipt:** https://aruintelligence.github.io/aml-core/view-meaning.html
 - **Read the AI Interface Firewall guide:** [docs/AI_INTERFACE_FIREWALL.md](docs/AI_INTERFACE_FIREWALL.md)
 - **See all capabilities:** [AML_CAPABILITIES.json](AML_CAPABILITIES.json)
 
+### Zero-install browser module
+
+```html
+<script type="module">
+  import { compileSourceBrowser } from "https://aruintelligence.github.io/aml-core/aml-browser.js";
+
+  const result = compileSourceBrowser(`transmission "demo" {
+    message "welcome" {
+      purpose: "Explain the interface"
+      attention_cost: 1
+      restoration_value: 3
+    }
+  }`);
+
+  console.log(result.amt);
+  console.log(result.renderDecisions);
+</script>
+```
+
+That path works directly in a modern browser; no package installation is required for the first AML experience.
+
 ## AI Interface Firewall
 
+After cloning the repository, the public JavaScript API can be used directly:
+
 ```js
-import { createInterfaceFirewall } from "aml-core";
+import { createInterfaceFirewall } from "./index.js";
 
 const firewall = createInterfaceFirewall({ profile: "human_first" });
 
@@ -51,7 +76,7 @@ The result carries policy decisions, accessibility analysis, provenance, attenti
 
 ```jsx
 import React from "react";
-import { createAccountableUI } from "aml-core";
+import { createAccountableUI } from "./adapters/react.js";
 
 const AccountableUI = createAccountableUI(React);
 
@@ -74,7 +99,7 @@ The adapter converts ordinary component metadata into canonical ĀML intent and 
 The web gave developers **View Source**. ĀML introduces **View Meaning**.
 
 ```js
-import { viewMeaning } from "aml-core";
+import { viewMeaning } from "./index.js";
 
 const meaning = viewMeaning(result.receipt);
 ```
@@ -183,6 +208,7 @@ flowchart LR
 
 | Resource | Purpose |
 |---|---|
+| [Out of the Box](docs/OUT_OF_THE_BOX.md) | Browser, app, React, CI adoption paths |
 | [AI Interface Firewall](docs/AI_INTERFACE_FIREWALL.md) | Adopt AML inside existing apps |
 | [Playground](https://aruintelligence.github.io/aml-core/playground.html) | Type AML and inspect compiler structures |
 | [View Meaning](https://aruintelligence.github.io/aml-core/view-meaning.html) | Inspect accountable execution receipts |
