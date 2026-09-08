@@ -2,12 +2,23 @@
 
 Copyright © 2026 Daniel Jacob Read IV. Stewarded by ĀRU Intelligence Inc.™
 
-The software in this repository is licensed under the MIT License as stated in LICENSE.
+SOFTWARE LICENSE
 
-The MIT License does not grant rights to use the project’s trademarks, service marks, logos, certification-style marks, or other source-identifying branding except as permitted by applicable law or separate written authorization.
+Software covered by LICENSE is made available under the MIT License according to that file. The MIT License controls the rights it grants in the covered software.
 
-See TRADEMARKS.md for the current brand-use policy and claimed marks.
+BRAND RIGHTS
 
-Claimed marks include, without limitation: ĀML™, ĀRU Meaning Language™, ĀRU Intelligence Inc.™, Meaning-Native Computing™, EthicalRenderGate™, AI Interface Firewall™, View Meaning™, Meaning Gate™, ĀML Compatible™, and the named ĀML conformance-level marks.
+The software license does not automatically grant rights to use source-identifying trademarks, service marks, logos, official compatibility branding, endorsement language, certification-style branding, or trade dress except as otherwise permitted by applicable law or separate written authorization.
 
-No use of the ® symbol is intended unless a mark is actually registered in the applicable jurisdiction.
+Claimed marks include, among others, ĀML™, ĀRU Meaning Language™, AI Interface Firewall™, View Meaning™, Meaning Gate™, EthicalRenderGate™, Meaning-Native Computing™, Proof-Carrying Interface™, ĀML Compatible™, ĀML Governed Compatible™, and ĀRU Intelligence Inc.™.
+
+See TRADEMARKS.md and OFFICIAL_MARKS.json for the public brand-use policy and machine-readable mark status. Do not use the ® symbol unless an applicable registration has actually been verified.
+
+OFFICIAL COMMERCIAL RELATIONSHIPS
+
+Official branding, official compatibility identity, OEM/co-branding, enterprise services, managed infrastructure, or strategic partnerships may require a separate written agreement.
+
+Commercial contact: Office@aruintelligence.com
+Official website: https://aruintelligence.com/
+
+A signed aml-brand-authorization/1 credential may be used to provide machine-verifiable evidence of the scope represented by an underlying written authorization. The credential does not replace the legal agreement or independently create trademark rights.
