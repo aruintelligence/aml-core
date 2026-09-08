@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/schema/wire-envelope.schema.json",
+  "title": "AML Wire Envelope",
+  "type": "object",
+  "required": ["protocol", "version", "kind", "capabilities", "payload"],
+  "properties": {
+    "protocol": { "const": "aml-wire/1" },
+    "version": { "type": "string", "minLength": 1 },
+    "kind": { "type": "string", "minLength": 1 },
+    "capabilities": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "payload": {}
+  },
+  "additionalProperties": false
+}
