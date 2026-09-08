@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ĀML External Witnesses</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:980px;margin:0 auto;padding:24px;background:#071018;color:#eaf6ff}a{color:#8bdcff}.card{border:1px solid #29485d;border-radius:14px;padding:16px;margin:16px 0}.count{font-size:3rem;font-weight:800}pre{background:#0d1b26;border:1px solid #29485d;border-radius:10px;padding:12px;overflow:auto}.small{color:#afc5d3;font-size:.92rem}
+  </style>
+</head>
+<body>
+  <h1>ĀML External Witnesses</h1>
+  <p><strong>SHIPPED public registry.</strong> This page counts only public evidence maintained outside <code>aruintelligence/aml-core</code>.</p>
+  <div class="card">
+    <div class="count" id="count">…</div>
+    <div>external witness records</div>
+  </div>
+  <div id="records"></div>
+  <p class="small">In-repository JavaScript, Python, browser, worker, and HTTP verifiers do not count as external witnesses. Negative results are allowed and useful.</p>
+  <p><a href="https://github.com/aruintelligence/aml-core/issues/15">Implement a third-runtime verifier</a> · <a href="https://github.com/aruintelligence/aml-core/issues/16">Attack canonicalization</a></p>
+  <script type="module">
+    const registry = await fetch('../WITNESSES.json').then(r => r.json());
+    document.getElementById('count').textContent = String(registry.external_witness_count);
+    const root = document.getElementById('records');
+    if (!registry.records.length) {
+      root.innerHTML = '<div class="card"><strong>No external witness has been recorded yet.</strong><p>The registry remains empty rather than inventing adoption.</p></div>';
+    } else {
+      for (const record of registry.records) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<strong>${record.result}</strong> — ${record.summary}<p><a href="${record.source_url}">public evidence</a></p><pre>${JSON.stringify(record,null,2)}</pre>`;
+        root.appendChild(card);
+      }
+    }
+  </script>
+</body>
+</html>
