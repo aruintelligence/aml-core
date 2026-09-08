@@ -1,0 +1,22 @@
+name: AML Meaning Gate
+
+on:
+  pull_request:
+
+jobs:
+  meaning-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Example: compare two committed AML fixtures.
+      # In a real project, replace these paths with the interface snapshots
+      # or generated AML files you want to protect.
+      - uses: aruintelligence/aml-core/actions/meaning-gate@main
+        with:
+          before-file: demos/interface-firewall/before.aml
+          after-file: demos/interface-firewall/after.aml
+          before-policy: calm_default
+          after-policy: human_first
