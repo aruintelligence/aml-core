@@ -3,8 +3,9 @@ info:
   title: ĀML HTTP Evaluation API
   version: 1.0.0
   description: >-
-    Reference HTTP contract for evaluating machine intent through the ĀML accountability pipeline
-    and verifying execution receipts. The contract does not imply hosted service availability.
+    Reference HTTP contract for evaluating machine intent through the ĀML accountability pipeline,
+    verifying execution receipts, and checking official AML brand-authorization trust. The contract
+    does not imply hosted service availability.
 servers:
   - url: http://127.0.0.1:8787
 paths:
@@ -20,6 +21,16 @@ paths:
       responses:
         '200':
           description: Capability manifest
+          content:
+            application/json:
+              schema:
+                type: object
+  /v1/brand-trust-roots:
+    get:
+      summary: Return the AML brand trust-root registry used by this service
+      responses:
+        '200':
+          description: Brand trust-root registry
           content:
             application/json:
               schema:
@@ -85,5 +96,32 @@ paths:
           description: Receipt verified
         '422':
           description: Receipt supplied but integrity verification failed
+        '400':
+          description: Invalid request
+  /v1/verify-brand-authorization:
+    post:
+      summary: Verify whether an AML brand authorization is officially trusted by the configured AML trust roots
+      description: >-
+        A valid embedded signature is insufficient for official status. The signer fingerprint must also
+        appear in the configured active brand trust roots and must not be revoked.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [credential]
+              properties:
+                credential:
+                  type: object
+                now:
+                  type: string
+                revocation_registry:
+                  type: object
+      responses:
+        '200':
+          description: Credential is cryptographically valid and officially trusted by the configured AML trust root
+        '422':
+          description: Credential is not officially trusted, is invalid, expired, revoked, or signed by an untrusted key
         '400':
           description: Invalid request
