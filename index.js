@@ -24,4 +24,8 @@ export { verifyAttentionLedger, attentionLedgerSummary } from "./runtime/attenti
 export { createConsentLedger, grantConsent, revokeConsent, verifyConsentLedger, resolveConsent, consentContext } from "./runtime/consentLedger.js";
 export { buildReceiptMerkleTree, createReceiptInclusionProof, verifyReceiptInclusionProof } from "./runtime/receiptMerkle.js";
 export { auditAccessibilityNode, auditAccessibilityTree } from "./runtime/accessibilityAudit.js";
+export { createInterfaceFirewall, enforceInterfaceIntent } from "./runtime/interfaceFirewall.js";
+export { evaluateAccountableProps, createAccountableUI } from "./adapters/react.js";
+export { viewMeaning, formatMeaningReport } from "./tooling/viewMeaning.js";
+export { evaluatePullRequestChange, formatPullRequestGate } from "./tooling/prGate.js";
 export { getCompletionItems, getHoverInfo, getLanguageCatalog } from "./tooling/languageService.js";
