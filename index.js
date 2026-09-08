@@ -1,5 +1,6 @@
 export { compileAML, compileSource } from "./compiler/compiler.js";
 export { generateAMLFromIntent } from "./compiler/intentCompiler.js";
+export { simulatePolicies } from "./compiler/policySimulator.js";
 export { analyzeAMT } from "./compiler/diagnostics.js";
 export { explainCompilation } from "./compiler/explain.js";
 export { verifyBuildManifest } from "./compiler/verifyBuild.js";
