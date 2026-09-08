@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-witness-bundle.schema.json",
+  "title": "AML Witness Bundle",
+  "description": "Portable prototype bundle containing browser evidence, a verifier challenge, and a challenge-bound ephemeral-session attestation.",
+  "type": "object",
+  "required": ["schema", "prototype", "created_at", "evidence", "challenge", "attestation", "integrity"],
+  "properties": {
+    "schema": { "const": "aml-witness-bundle/1" },
+    "prototype": { "const": true },
+    "created_at": { "type": "string", "format": "date-time" },
+    "evidence": { "type": "object" },
+    "challenge": { "type": "object" },
+    "attestation": { "type": "object" },
+    "integrity": {
+      "type": "object",
+      "required": ["schema", "algorithm", "canonicalization", "value"],
+      "properties": {
+        "schema": { "const": "aml-integrity/1" },
+        "algorithm": { "const": "SHA-256" },
+        "canonicalization": { "const": "sorted-json-v1" },
+        "value": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    }
+  },
+  "additionalProperties": false
+}
