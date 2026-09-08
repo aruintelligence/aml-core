@@ -1,0 +1,66 @@
+name: External verifier implementation claim
+description: Bind an outside verifier to an immutable AML verifier contract snapshot.
+title: "External verifier claim: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to declare which exact AML verifier contract snapshot your implementation targets. A claim is not automatically a witness record or certification.
+  - type: input
+    id: source
+    attributes:
+      label: Public source repository
+      placeholder: https://github.com/example/aml-verifier
+    validations:
+      required: true
+  - type: input
+    id: implementation
+    attributes:
+      label: Implementation ID and version
+      placeholder: example-verifier 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: runtime
+    attributes:
+      label: Runtime
+      placeholder: Rust 1.90 / Java 25 / Swift 7 / etc.
+    validations:
+      required: true
+  - type: input
+    id: snapshot
+    attributes:
+      label: Contract snapshot ID
+      value: aml-verifier-contract-2026-09-08-01
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Contract source commit
+      value: b1ff5a87c7b19ae6338503a58ab6257a5b2add0b
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Black-box verifier command
+      placeholder: ./my-verifier --now 2030-01-01T00:05:00Z bundle.json
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Conformance result
+      description: Paste the aml-verifier-conformance-result/1 JSON or link to a public artifact.
+    validations:
+      required: true
+  - type: checkboxes
+    id: external
+    attributes:
+      label: External-maintainer declaration
+      options:
+        - label: This implementation is maintained outside aruintelligence/aml-core.
+          required: true
+        - label: I understand this claim is compatibility evidence, not certification, endorsement, trademark authorization, or standards-body approval.
+          required: true
