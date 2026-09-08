@@ -55,7 +55,7 @@ const required = [
   ['protocol/aml-signed-verification-quorum.schema.json', ['"aml-signed-verification-quorum/1"', '"distinct_keys"', '"threshold_met"']],
   ['protocol/aml-witness-record.schema.json', ['"aml-witness-record/1"', '"external_to_aml_core"', '"source_url"']],
   ['protocol/verifier-registry.json', ['"external_verifier_count": 0', '"WITNESSES.json"']],
-  ['WITNESSES.json', ['"external_witness_count": 0', '"records": []', 'Negative results allowed']],
+  ['WITNESSES.json', ['"external_witness_count": 0', '"records": []', '"negative_results_allowed": true']],
   ['protocol/verification-report-vectors.json', ['"aml-verification-report-vectors/1"', '"threshold_met": true', '"unanimous": false']],
   ['protocol/browser-canonicalization-vectors.json', ['"aml-browser-canonicalization-vectors/1"', '"sorted-json-v1"', '"unicode"']],
   ['protocol/sorted-json-v1.md', ['Cross-language safe domain', 'must use a new canonicalization identifier', 'not an IETF']],
