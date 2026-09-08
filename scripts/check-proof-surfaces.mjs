@@ -13,11 +13,16 @@ const required = [
   ['docs/HTML_BRIDGE.md', ['data-aml-attention-cost', 'data-aml-restoration-value']],
   ['docs/aml-live.js', ['MutationObserver', '__AML_RECEIPT__', '__AML_RECEIPT_HISTORY__', 'aml-dom-receipt/1']],
   ['docs/live-gate-demo.html', ['ĀML Live DOM Firewall', 'AI generates pressure CTA', 'aml-receipt']],
-  ['docs/aml-page-manifest.js', ['application/aml+json', 'aml-page/1', 'applyAMLPageManifest']],
+  ['docs/aml-page-manifest.js', ['application/aml+json', 'aml-page/1', 'MAX_ENTRIES = 100', 'MAX_TOTAL_MATCHES = 1000']],
   ['docs/page-manifest-demo.html', ['ĀML Page Manifest', 'application/aml+json', 'Create urgency to increase conversion']],
-  ['docs/aml.js', ['aml-browser-bootstrap/1', './aml-gate.js', './aml-live.js', './aml-page-manifest.js']],
-  ['docs/ONE_SCRIPT_AML.md', ['One-script AML browser integration', 'window.__AML_RECEIPT__', 'Three declaration styles']],
+  ['docs/aml-zone.js', ['aml-zone-violation/1', '__AML_ZONE_VIOLATIONS__', "mode === 'strict'", 'node.hidden = true']],
+  ['docs/strict-zone-demo.html', ['ĀML Strict Zone', 'Generate undeclared AI output', 'mode="strict"']],
+  ['docs/aml.js', ['aml-browser-bootstrap/1', './aml-gate.js', './aml-zone.js', './aml-live.js', './aml-page-manifest.js']],
+  ['docs/ONE_SCRIPT_AML.md', ['One-script AML browser integration', 'window.__AML_RECEIPT__', '<aml-zone mode="strict">']],
   ['docs/one-script-demo.html', ['One script. Three AML declaration styles.', './aml.js', 'application/aml+json']],
+  ['protocol/aml-page.schema.json', ['"aml-page/1"', '"maximum": 10']],
+  ['protocol/aml-dom-receipt.schema.json', ['"aml-dom-receipt/1"', '"decisions"']],
+  ['protocol/aml-zone-violation.schema.json', ['"aml-zone-violation/1"', '"reason"']],
   ['docs/gallery.html', ['ĀML Decision Gallery', 'Ten simple examples', 'Replay this state']],
   ['docs/.well-known/aml.json', ['"web_component"', '"html_bridge"', 'not an Internet standard']],
   ['docs/proof-badge.svg', ['PROOF AVAILABLE']],
@@ -47,5 +52,5 @@ if (failures.length) {
 console.log(JSON.stringify({
   verified: true,
   surfaces: required.map(([path]) => path),
-  promise: 'shareable + multilingual + embeddable + live-DOM + page-manifest + one-script + offline AML proof surfaces remain present'
+  promise: 'shareable + multilingual + embeddable + live-DOM + page-manifest + strict-zone + one-script + offline AML proof surfaces remain present'
 }, null, 2));
