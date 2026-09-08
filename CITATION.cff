@@ -1,14 +1,32 @@
 cff-version: 1.2.0
-message: "If you use this software in research, please cite it using the metadata below."
-title: "ĀML Core"
+message: "If you use ĀML™ in research or technical work, please cite this project."
+title: "ĀML — ĀRU Meaning Language"
 type: software
 authors:
   - family-names: "Read"
     given-names: "Daniel Jacob"
     name-suffix: "IV"
     orcid: "https://orcid.org/0009-0000-6133-1872"
+version: 1.3.0
+date-released: 2026-09-07
 abstract: >-
-  An experimental meaning-native interface language and ethical rendering architecture.
+  ĀML is a working research prototype for meaning-native, policy-aware,
+  accountable AI interfaces. It provides semantic intent modeling,
+  policy evaluation, execution receipts, conformance tooling, cross-system
+  negotiation, bounded authority, provenance, and verifiable trust primitives
+  while compiling to existing browser-compatible output.
 repository-code: "https://github.com/aruintelligence/aml-core"
 url: "https://aruintelligence.com/"
 license: MIT
+keywords:
+  - accountable AI
+  - human interface
+  - meaning-native computing
+  - AI interface firewall
+  - View Meaning
+  - execution receipts
+  - semantic diff
+  - policy engine
+  - interoperability
+  - conformance
+  - proof-carrying interfaces
