@@ -27,7 +27,7 @@ const required = [
   ['protocol/verifiers/http-reference-claim.json', ['aml-verifier-implementation-claim/1', 'external_to_aml_core']],
   ['protocol/verifier-registry.json', ['"reference_verifier_count": 4', '"external_verifier_count": 0', 'aml-verifier-contract-2026-09-08-01']],
   ['docs/EXTERNAL_VERIFIER_10_MINUTES.md', ['Build an external AML verifier in 10 minutes', 'aml-verifier-contract-2026-09-08-01']],
-  ['docs/VERIFICATION_CONTRACT_SNAPSHOT.md', ['immutable historical contents', 'create-verifier-implementation-claim.mjs']],
+  ['docs/VERIFICATION_CONTRACT_SNAPSHOT.md', ['The immutable Git commit anchors the exact historical contents', 'create-verifier-implementation-claim.mjs']],
   ['docs/IMPLEMENTATION_CLAIMS.md', ['A claim is a declaration', 'A witness record is public reproduction evidence']],
   ['docs/VERIFIER_MATRIX.md', ['Go standard library', 'The next empty row']],
   ['docs/verifier-contract.html', ['ĀML Verifier Contract Snapshot', 'External verifier count:</strong> 0']],
