@@ -11,13 +11,14 @@
 <body>
   <h1>ĀML External Witnesses</h1>
   <p><strong>SHIPPED public registry.</strong> This page counts only public evidence maintained outside <code>aruintelligence/aml-core</code>.</p>
+  <p><strong>Current bootstrap state: 0 external witnesses.</strong> That number changes only when reproducible outside evidence is actually published.</p>
   <div class="card">
     <div class="count" id="count">…</div>
     <div>external witness records</div>
   </div>
   <div id="records"></div>
   <p class="small">In-repository JavaScript, Python, browser, worker, and HTTP verifiers do not count as external witnesses. Negative results are allowed and useful.</p>
-  <p><a href="https://github.com/aruintelligence/aml-core/issues/15">Implement a third-runtime verifier</a> · <a href="https://github.com/aruintelligence/aml-core/issues/16">Attack canonicalization</a></p>
+  <p><a href="https://github.com/aruintelligence/aml-core/issues/15">Implement a third-runtime verifier</a> · <a href="https://github.com/aruintelligence/aml-core/issues/16">Attack canonicalization</a> · <a href="https://github.com/aruintelligence/aml-core/issues/17">Publish an external verification report</a></p>
   <script type="module">
     const registry = await fetch('../WITNESSES.json').then(r => r.json());
     document.getElementById('count').textContent = String(registry.external_witness_count);
