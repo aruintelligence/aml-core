@@ -1,0 +1,15 @@
+{
+  "status": "DRAFT",
+  "title": "Démo de preuve ĀML",
+  "subtitle": "Un pare-feu d’interface entre l’intention de l’IA et les pixels affichés.",
+  "try_demo": "Essayer la démo",
+  "change_restoration": "Modifier la valeur de restauration",
+  "compile_again": "Compiler à nouveau",
+  "decision": "Décision",
+  "allowed": "Autorisé",
+  "suppressed": "Supprimé",
+  "view_meaning": "Voir le sens",
+  "receipt": "Reçu",
+  "file_result": "Signaler ce qui s’est passé",
+  "prototype_notice": "Prototype fonctionnel — pas une norme mondiale ratifiée."
+}
