@@ -1,0 +1,28 @@
+transmission "ai-assistant-response" {
+
+  title:
+    "AI Assistant Response"
+
+  engram answerCard {
+
+    value:
+      "Give the user one useful answer with visible purpose and bounded attention cost."
+
+    purpose:
+      "demonstrate an inspectable interface contract for AI-generated output"
+
+    memory_role:
+      "assistant_output"
+
+    user_effect:
+      "resolution"
+
+    attention_cost:
+      4
+
+    restoration_value:
+      8
+
+  }
+
+}
