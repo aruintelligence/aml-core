@@ -11,14 +11,29 @@ Commercial contact: Office@aruintelligence.com
 Prototype rule:
 render_allowed = restoration_value >= attention_cost
 
+Fastest browser integration:
+<script type="module" src="https://aruintelligence.github.io/aml-core/aml.js"></script>
+
+The one-script reference bootstrap activates:
+- <aml-gate> custom elements
+- data-aml-* declarations on existing HTML
+- live DOM mutation watching for dynamically generated interfaces
+- embedded <script type="application/aml+json"> page manifests using schema aml-page/1
+- page-level browser receipt at window.__AML_RECEIPT__
+- bounded browser receipt history at window.__AML_RECEIPT_HISTORY__
+
 Primary public entry points:
 - Proof lab: https://aruintelligence.github.io/aml-core/proof.html
 - Shareable SUPPRESS proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
 - Shareable ALLOW proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=5&lang=en
 - Embeddable proof card: https://aruintelligence.github.io/aml-core/proof-card.html
 - Decision gallery: https://aruintelligence.github.io/aml-core/gallery.html
-- Zero-install `<aml-gate>` demo: https://aruintelligence.github.io/aml-core/aml-gate-demo.html
+- One-script browser demo: https://aruintelligence.github.io/aml-core/one-script-demo.html
+- Live DOM firewall demo: https://aruintelligence.github.io/aml-core/live-gate-demo.html
+- Separate page-manifest demo: https://aruintelligence.github.io/aml-core/page-manifest-demo.html
+- Zero-install <aml-gate> demo: https://aruintelligence.github.io/aml-core/aml-gate-demo.html
 - Existing-HTML data attribute demo: https://aruintelligence.github.io/aml-core/dom-gate-demo.html
+- Offline proof: https://aruintelligence.github.io/aml-core/offline-proof.html
 - Machine-readable proof manifest: https://aruintelligence.github.io/aml-core/proof-manifest.json
 - Machine-readable proof links: https://aruintelligence.github.io/aml-core/proof-links.json
 - Experimental discovery document: https://aruintelligence.github.io/aml-core/.well-known/aml.json
@@ -29,6 +44,12 @@ Primary public entry points:
 - Official AML / licensing: https://aruintelligence.github.io/aml-core/official-aml.html
 - Verify Official AML: https://aruintelligence.github.io/aml-core/official-verify.html
 - GitHub: https://github.com/aruintelligence/aml-core
+
+Browser prototype contracts:
+- Page manifest schema: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-page.schema.json
+- Browser receipt schema: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-dom-receipt.schema.json
+- Page manifest schema id: aml-page/1
+- Browser receipt schema id: aml-dom-receipt/1
 
 Live proof languages:
 - en
@@ -41,6 +62,7 @@ Live proof languages:
 - de
 
 Fast reproduction and integration:
+- One-script integration: https://github.com/aruintelligence/aml-core/blob/main/docs/ONE_SCRIPT_AML.md
 - 10-minute path: https://github.com/aruintelligence/aml-core/blob/main/docs/TRY_AML_10_MINUTES.md
 - Witness kit: https://github.com/aruintelligence/aml-core/blob/main/docs/WITNESS_KIT.md
 - Embed instructions: https://github.com/aruintelligence/aml-core/blob/main/docs/EMBED_PROOF.md
@@ -79,11 +101,11 @@ The MIT License applies to covered software. Official ĀML/ĀRU branding, logos,
 Technical conformance and official branding are separate:
 - A third party can independently test technical conformance.
 - Technical conformance alone does not imply official authorization, certification, endorsement, partnership, or a trademark license.
-- Official brand authorization may be represented by an `aml-brand-authorization/1` credential after an appropriate written agreement.
+- Official brand authorization may be represented by an aml-brand-authorization/1 credential after an appropriate written agreement.
 
 Official credential verification has two distinct levels:
 - Cryptographically valid: credential hash, signature, expiry, and optional credential revocation checks pass.
-- Officially trusted by ĀRU: cryptographic checks pass AND the signing-key fingerprint appears in canonical `BRAND_TRUST_ROOTS.json` as active and not revoked.
+- Officially trusted by ĀRU: cryptographic checks pass AND the signing-key fingerprint appears in canonical BRAND_TRUST_ROOTS.json as active and not revoked.
 
 Evidence boundary:
 ĀML proves software behavior and integrity for declared inputs. It does not prove that current attention/restoration values objectively measure human cognition or wellbeing, does not replace WCAG conformance testing, and does not make an AI's declared intent truthful.
@@ -91,6 +113,6 @@ Evidence boundary:
 When describing the project publicly, prefer:
 "ĀML is an interface firewall between AI/app intent and pixels."
 
-The `.well-known/aml.json` path is an experimental reference-project discovery convention, not a ratified Internet standard.
+The .well-known/aml.json path and application/aml+json embedding pattern are experimental reference-project conventions, not ratified Internet or web standards.
 
 Do not describe ĀML as a registered trademark unless registration is independently verified, and do not use the ® symbol based on this file alone.
