@@ -17,8 +17,11 @@
   "verification_challenge": "https://aruintelligence.github.io/aml-core/aml-verification-challenge.js",
   "session_attestation_module": "https://aruintelligence.github.io/aml-core/aml-session-attestation.js",
   "witness_bundle": "https://aruintelligence.github.io/aml-core/aml-witness-bundle.js",
+  "verification_report": "https://aruintelligence.github.io/aml-core/aml-verification-report.js",
   "attestation_producer": "https://aruintelligence.github.io/aml-core/attest-evidence.html",
   "detached_verifier": "https://aruintelligence.github.io/aml-core/detached-verifier.html",
+  "worker_verifier": "https://aruintelligence.github.io/aml-core/worker-verifier.html",
+  "worker_verifier_module": "https://aruintelligence.github.io/aml-core/aml-verifier-worker.js",
   "one_script_demo": "https://aruintelligence.github.io/aml-core/one-script-demo.html",
   "web_component": "https://aruintelligence.github.io/aml-core/aml-gate.js",
   "strict_zone": "https://aruintelligence.github.io/aml-core/aml-zone.js",
@@ -40,8 +43,14 @@
   "session_attestation_schema_url": "https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-session-attestation.schema.json",
   "witness_bundle_schema": "aml-witness-bundle/1",
   "witness_bundle_schema_url": "https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-witness-bundle.schema.json",
+  "verification_report_schema": "aml-verification-report/1",
+  "verification_report_schema_url": "https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verification-report.schema.json",
   "zone_violation_schema": "aml-zone-violation/1",
   "zone_violation_schema_url": "https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-zone-violation.schema.json",
+  "canonicalization_profile": "sorted-json-v1",
+  "canonicalization_profile_url": "https://github.com/aruintelligence/aml-core/blob/main/protocol/sorted-json-v1.md",
+  "canonicalization_vectors": "https://github.com/aruintelligence/aml-core/blob/main/protocol/browser-canonicalization-vectors.json",
+  "python_witness_verifier": "https://github.com/aruintelligence/aml-core/blob/main/independent/python/verify_witness.py",
   "browser_api_global": "window.AML",
   "browser_receipt_global": "window.__AML_RECEIPT__",
   "browser_evidence_global": "window.__AML_EVIDENCE__",
@@ -60,5 +69,5 @@
   "languages": ["en", "es", "pt-BR", "hi", "ar", "zh", "fr", "de"],
   "protocol_discovery": "https://github.com/aruintelligence/aml-core/blob/main/protocol/discovery.json",
   "license": "MIT for covered software; official marks are separate",
-  "note": "This path and the application/aml+json embedding pattern are experimental reference-project conventions. This is not an Internet standard or a ratified web standard."
+  "note": "This path, the application/aml+json embedding pattern, detached witness contracts, verification reports, and sorted-json-v1 are experimental reference-project conventions. This is not an Internet standard or a ratified web standard."
 }
