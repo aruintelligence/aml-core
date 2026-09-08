@@ -15,9 +15,9 @@ const required = [
   ['docs/.well-known/aml.json', ['"web_component"', '"html_bridge"', 'not an Internet standard']],
   ['docs/proof-badge.svg', ['PROOF AVAILABLE']],
   ['docs/PROOF_BADGE.md', ['does not mean official certification']],
-  ['docs/offline-proof.html', ['ĀML Offline Proof', 'no network connection', 'render_allowed = restoration_value']],
+  ['docs/offline-proof.html', ['ĀML Offline Proof', 'without a network connection', 'render_allowed = restoration_value']],
   ['docs/OFFLINE_PROOF.md', ['SHIPPED single-file demonstrator', 'not', 'full AML compiler']],
-  ['docs/worlds/ar.md', ['RTL']]
+  ['docs/worlds/ar.md', ['<div dir="rtl">']]
 ];
 
 const failures = [];
