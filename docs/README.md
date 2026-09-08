@@ -9,6 +9,7 @@
 - [Quickstart](../QUICKSTART.md) — clone, test, compile, validate, lint, and inspect from the terminal
 - [API](API.md) — use `compileAML`, `compileSource`, `analyzeAMT`, and `ethicalRenderGate` programmatically
 - [Example Gallery](../examples/README.md) — runnable AML programs across multiple interface domains
+- [VS Code language support](../editors/vscode/README.md) — `.aml` recognition, syntax highlighting, comments, brackets, fields, and operators
 
 ## Start here
 
@@ -23,8 +24,10 @@
 
 - [Semantic Diagnostics](DIAGNOSTICS.md)
 - [Policy Expressions](POLICY_EXPRESSIONS.md)
+- [Build Integrity](BUILD_INTEGRITY.md)
 - [Benchmarking Protocol](BENCHMARKING.md)
 - [Language specification](../LANGUAGE_SPEC.md)
+- [Machine-readable capability manifest](../AML_CAPABILITIES.json)
 - [Quickstart](../QUICKSTART.md)
 
 ## Protocol + proof
@@ -35,7 +38,7 @@
 - [Independent Replication Protocol](../REPLICATION.md)
 - [Testing](../TESTING.md)
 
-The compiler supports fixed decision timestamps for reproducible builds, and CI enforces semantic lint, canonical allow/suppress fixtures, browser/core parity, CLI validation, inspectable output, and benchmark execution.
+The compiler supports fixed decision timestamps for reproducible builds and emits a SHA-256 build manifest. CI enforces semantic lint, canonical allow/suppress fixtures, browser/core parity, editor asset validity, reproducible builds, build-integrity hashes, CLI validation, inspectable output, and benchmark execution.
 
 ## AI + interface research
 
