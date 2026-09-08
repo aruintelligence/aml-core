@@ -5,12 +5,12 @@ export const BUILTIN_POLICY_PROFILES = Object.freeze({
   calm_default: {
     id: "calm_default",
     description: "Balanced restorative rendering with consent awareness.",
-    policies: ["restorative_v1", "consent_required_v1"]
+    policies: ["restorative_v1", "consent_guard_v1"]
   },
   strict_attention: {
     id: "strict_attention",
     description: "Stricter attention threshold plus consent awareness.",
-    policies: ["attention_conservative_v1", "consent_required_v1"]
+    policies: ["attention_conservative_v1", "consent_guard_v1"]
   }
 });
 
