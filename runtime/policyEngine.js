@@ -10,24 +10,34 @@ function baseMetrics(element) {
   return { gate, attention, restoration };
 }
 
+function baseResult(policyId, gate, attention, restoration, allowed, rationale) {
+  return {
+    policy_id: policyId,
+    attention_cost: attention,
+    restoration_value: restoration,
+    render_allowed: allowed,
+    fallback_triggered: !allowed,
+    calculated_attention_cost: gate.attention_cost,
+    calculated_restoration_value: gate.restoration_value,
+    rationale
+  };
+}
+
 export const BUILTIN_POLICIES = Object.freeze({
   restorative_v1: {
     id: "restorative_v1",
     description: "Allow when restoration value is greater than or equal to attention cost.",
     evaluate(element) {
       const { gate, attention, restoration } = baseMetrics(element);
-      return {
-        policy_id: "restorative_v1",
-        attention_cost: attention,
-        restoration_value: restoration,
-        render_allowed: restoration >= attention,
-        fallback_triggered: restoration < attention,
-        calculated_attention_cost: gate.attention_cost,
-        calculated_restoration_value: gate.restoration_value,
-        rationale: restoration >= attention
-          ? "restoration_value >= attention_cost"
-          : "restoration_value < attention_cost"
-      };
+      const allowed = restoration >= attention;
+      return baseResult(
+        "restorative_v1",
+        gate,
+        attention,
+        restoration,
+        allowed,
+        allowed ? "restoration_value >= attention_cost" : "restoration_value < attention_cost"
+      );
     }
   },
   attention_conservative_v1: {
@@ -36,16 +46,15 @@ export const BUILTIN_POLICIES = Object.freeze({
     evaluate(element) {
       const { gate, attention, restoration } = baseMetrics(element);
       const threshold = attention * 1.2;
-      return {
-        policy_id: "attention_conservative_v1",
-        attention_cost: attention,
-        restoration_value: restoration,
-        render_allowed: restoration >= threshold,
-        fallback_triggered: restoration < threshold,
-        calculated_attention_cost: gate.attention_cost,
-        calculated_restoration_value: gate.restoration_value,
-        rationale: `restoration_value >= attention_cost * 1.2 (threshold=${threshold})`
-      };
+      const allowed = restoration >= threshold;
+      return baseResult(
+        "attention_conservative_v1",
+        gate,
+        attention,
+        restoration,
+        allowed,
+        `restoration_value >= attention_cost * 1.2 (threshold=${threshold})`
+      );
     }
   },
   consent_guard_v1: {
@@ -58,22 +67,54 @@ export const BUILTIN_POLICIES = Object.freeze({
       const consentGranted = execution.context?.consent_granted === true;
       const restorativeAllowed = restoration >= attention;
       const allowed = restorativeAllowed && (!consentRequired || consentGranted);
-      return {
-        policy_id: "consent_guard_v1",
-        attention_cost: attention,
-        restoration_value: restoration,
-        render_allowed: allowed,
-        fallback_triggered: !allowed,
-        calculated_attention_cost: gate.attention_cost,
-        calculated_restoration_value: gate.restoration_value,
-        rationale: !restorativeAllowed
-          ? "restoration_value < attention_cost"
-          : consentRequired && !consentGranted
-            ? "consent_required but runtime consent_granted != true"
-            : consentRequired
-              ? "consent_required and runtime consent_granted == true"
-              : "no consent gate and restoration_value >= attention_cost"
-      };
+      const rationale = !restorativeAllowed
+        ? "restoration_value < attention_cost"
+        : consentRequired && !consentGranted
+          ? "consent_required but runtime consent_granted != true"
+          : consentRequired
+            ? "consent_required and runtime consent_granted == true"
+            : "no consent gate and restoration_value >= attention_cost";
+      return baseResult("consent_guard_v1", gate, attention, restoration, allowed, rationale);
+    }
+  },
+  privacy_guard_v1: {
+    id: "privacy_guard_v1",
+    description: "Suppress nodes declaring personal-data collection unless runtime privacy consent is granted.",
+    evaluate(element, execution = {}) {
+      const { gate, attention, restoration } = baseMetrics(element);
+      const rawCollection = execution.node?.properties?.collects_personal_data;
+      const collectsPersonalData = rawCollection === true || rawCollection === "true" || rawCollection === "yes" || rawCollection === "required";
+      const privacyConsent = execution.context?.privacy_consent === true;
+      const restorativeAllowed = restoration >= attention;
+      const allowed = restorativeAllowed && (!collectsPersonalData || privacyConsent);
+      const rationale = !restorativeAllowed
+        ? "restoration_value < attention_cost"
+        : collectsPersonalData && !privacyConsent
+          ? "collects_personal_data but runtime privacy_consent != true"
+          : collectsPersonalData
+            ? "personal-data collection permitted by runtime privacy consent"
+            : "no personal-data collection declared";
+      return baseResult("privacy_guard_v1", gate, attention, restoration, allowed, rationale);
+    }
+  },
+  session_attention_budget_v1: {
+    id: "session_attention_budget_v1",
+    description: "Suppress a node when its declared/calculated attention cost exceeds the runtime session attention budget remaining.",
+    evaluate(element, execution = {}) {
+      const { gate, attention, restoration } = baseMetrics(element);
+      const budget = execution.context?.attention_budget_remaining;
+      const hasBudget = typeof budget === "number" && Number.isFinite(budget);
+      const restorativeAllowed = restoration >= attention;
+      const budgetAllowed = !hasBudget || attention <= budget;
+      const allowed = restorativeAllowed && budgetAllowed;
+      const rationale = !restorativeAllowed
+        ? "restoration_value < attention_cost"
+        : hasBudget && !budgetAllowed
+          ? `attention_cost (${attention}) exceeds attention_budget_remaining (${budget})`
+          : hasBudget
+            ? `attention_cost (${attention}) is within attention_budget_remaining (${budget})`
+            : "no runtime attention budget supplied";
+      return baseResult("session_attention_budget_v1", gate, attention, restoration, allowed, rationale);
     }
   }
 });
