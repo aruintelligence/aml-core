@@ -1,7 +1,7 @@
 {
   "language": "ĀML — ĀRU Meaning Language",
-  "version": "1.2.0-dev",
-  "status": "research-prototype-active-development",
+  "version": "1.2.0",
+  "status": "research-prototype",
   "entry_points": {
     "cli": "bin/aml.js",
     "lsp": "bin/aml-lsp.js",
