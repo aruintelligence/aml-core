@@ -31,6 +31,8 @@ jobs:
         run: node scripts/check-flood-fixtures.js > "${RUNNER_TEMP}/aml-flood-fixtures.json"
       - name: Guard public proof surfaces
         run: node scripts/check-proof-surfaces.mjs > "${RUNNER_TEMP}/aml-proof-surfaces.json"
+      - name: Enforce external witness registry integrity
+        run: node scripts/check-witness-registry.mjs > "${RUNNER_TEMP}/aml-witness-registry.json"
       - name: Verify cross-language canonicalization vectors in Python
         run: python3 independent/python/check_canonical_vectors.py > "${RUNNER_TEMP}/aml-python-canonicalization.json"
       - name: Verify dependency-free Python witness vector
