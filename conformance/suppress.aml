@@ -1,0 +1,12 @@
+transmission "conformance-suppress" {
+  title: "Conformance Suppress"
+
+  engram costlyNode {
+    value: "Canonical render-suppressed fixture."
+    purpose: "prove a low-value high-cost AML element is suppressed"
+    memory_role: "conformance_fixture"
+    user_effect: "interruption"
+    attention_cost: 9
+    restoration_value: 1
+  }
+}
