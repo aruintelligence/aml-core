@@ -1,0 +1,52 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "ĀML",
+  "scopeName": "source.aml",
+  "patterns": [
+    {"include": "#comments"},
+    {"include": "#strings"},
+    {"include": "#numbers"},
+    {"include": "#keywords"},
+    {"include": "#policyFields"},
+    {"include": "#operators"},
+    {"include": "#identifiers"}
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {"name": "comment.line.double-slash.aml", "match": "//.*$"},
+        {"name": "comment.block.aml", "begin": "/\\*", "end": "\\*/"}
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {"name": "string.quoted.double.aml", "begin": "\"", "end": "\""}
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {"name": "constant.numeric.aml", "match": "\\b[0-9]+(?:\\.[0-9]+)?\\b"}
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {"name": "keyword.control.aml", "match": "\\b(transmission|engram|coherence_gate|ethical_render_gate|mirror|condition|behavior|render|runtime|attention|memory|garden)\\b"}
+      ]
+    },
+    "policyFields": {
+      "patterns": [
+        {"name": "variable.other.member.aml", "match": "\\b(purpose|memory_role|user_effect|attention_cost|restoration_value|rule|rendering_mode|degraded_threshold|suppression_threshold)\\b(?=\\s*:)"}
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {"name": "keyword.operator.comparison.aml", "match": ">=|<=|==|!=|>|<|="}
+      ]
+    },
+    "identifiers": {
+      "patterns": [
+        {"name": "entity.name.type.aml", "match": "\\b[A-Za-z_Āā][A-Za-z0-9_Āā]*\\b(?=\\s*\\{)"}
+      ]
+    }
+  }
+}
