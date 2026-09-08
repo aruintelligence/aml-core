@@ -1,0 +1,15 @@
+{
+  "status": "DRAFT",
+  "title": "ĀML प्रमाण डेमो",
+  "subtitle": "AI की मंशा और स्क्रीन के पिक्सेल के बीच एक इंटरफ़ेस फ़ायरवॉल।",
+  "try_demo": "डेमो चलाएँ",
+  "change_restoration": "पुनर्स्थापन मान बदलें",
+  "compile_again": "फिर से कंपाइल करें",
+  "decision": "निर्णय",
+  "allowed": "अनुमत",
+  "suppressed": "रोका गया",
+  "view_meaning": "अर्थ देखें",
+  "receipt": "रसीद",
+  "file_result": "जो हुआ उसे दर्ज करें",
+  "prototype_notice": "कार्यशील प्रोटोटाइप — अनुमोदित वैश्विक मानक नहीं।"
+}
