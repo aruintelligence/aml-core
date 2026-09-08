@@ -12,6 +12,7 @@
   "web_component_demo": "https://aruintelligence.github.io/aml-core/aml-gate-demo.html",
   "html_bridge": "https://aruintelligence.github.io/aml-core/aml-dom-gate.js",
   "html_bridge_demo": "https://aruintelligence.github.io/aml-core/dom-gate-demo.html",
+  "offline_proof": "https://aruintelligence.github.io/aml-core/offline-proof.html",
   "proof_badge": "https://aruintelligence.github.io/aml-core/proof-badge.svg",
   "proof_links": "https://aruintelligence.github.io/aml-core/proof-links.json",
   "experimental_discovery": "https://aruintelligence.github.io/aml-core/.well-known/aml.json",
