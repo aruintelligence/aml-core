@@ -6,7 +6,8 @@
     "cli": "bin/aml.js",
     "javascript": "index.js",
     "browser": "docs/aml-browser.js",
-    "playground": "https://aruintelligence.github.io/aml-core/playground.html"
+    "playground": "https://aruintelligence.github.io/aml-core/playground.html",
+    "vscode": "editors/vscode/package.json"
   },
   "compiler": {
     "lexer": true,
@@ -40,7 +41,8 @@
     "inspect": true,
     "lint": true,
     "benchmark": true,
-    "browser_playground": true
+    "browser_playground": true,
+    "vscode_language_definition": true
   },
   "verification": {
     "ci": true,
@@ -50,7 +52,8 @@
     "canonical_suppress_fixture": "conformance/suppress.aml",
     "browser_core_parity": true,
     "reproducible_build_test": true,
-    "semantic_diagnostic_tests": true
+    "semantic_diagnostic_tests": true,
+    "editor_asset_tests": true
   },
   "diagnostics": ["AML001", "AML002", "AML003", "AML004", "AML005"],
   "non_claims": [
