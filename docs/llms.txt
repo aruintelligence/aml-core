@@ -6,7 +6,7 @@ Creator: Daniel Jacob Read IV
 Official website: https://aruintelligence.com/
 Commercial contact: Office@aruintelligence.com
 
-ĀML is a working research prototype for an interface firewall between AI/app intent and human-facing pixels. It makes declared purpose, attention cost, restoration value, policy decisions, and receipts inspectable.
+ĀML is a working research prototype for an interface firewall between AI/app intent and human-facing pixels. It makes declared purpose, attention cost, restoration value, policy decisions, receipts, strict-zone violations, and local evidence packets inspectable.
 
 Prototype rule:
 render_allowed = restoration_value >= attention_cost
@@ -16,19 +16,26 @@ Fastest browser integration:
 
 The one-script reference bootstrap activates:
 - <aml-gate> custom elements
+- <aml-zone mode="strict"> default-deny regions for undeclared direct UI children
 - data-aml-* declarations on existing HTML
 - live DOM mutation watching for dynamically generated interfaces
 - embedded <script type="application/aml+json"> page manifests using schema aml-page/1
 - page-level browser receipt at window.__AML_RECEIPT__
 - bounded browser receipt history at window.__AML_RECEIPT_HISTORY__
+- SHA-256 sealed browser receipts
+- browser evidence packet at window.__AML_EVIDENCE__
+- bounded evidence history at window.__AML_EVIDENCE_HISTORY__
+- strict-zone violations at window.__AML_ZONE_VIOLATIONS__
 
 Primary public entry points:
 - Proof lab: https://aruintelligence.github.io/aml-core/proof.html
 - Shareable SUPPRESS proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
 - Shareable ALLOW proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=5&lang=en
+- Browser evidence verification demo: https://aruintelligence.github.io/aml-core/browser-evidence-demo.html
 - Embeddable proof card: https://aruintelligence.github.io/aml-core/proof-card.html
 - Decision gallery: https://aruintelligence.github.io/aml-core/gallery.html
 - One-script browser demo: https://aruintelligence.github.io/aml-core/one-script-demo.html
+- Strict-zone demo: https://aruintelligence.github.io/aml-core/strict-zone-demo.html
 - Live DOM firewall demo: https://aruintelligence.github.io/aml-core/live-gate-demo.html
 - Separate page-manifest demo: https://aruintelligence.github.io/aml-core/page-manifest-demo.html
 - Zero-install <aml-gate> demo: https://aruintelligence.github.io/aml-core/aml-gate-demo.html
@@ -48,8 +55,17 @@ Primary public entry points:
 Browser prototype contracts:
 - Page manifest schema: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-page.schema.json
 - Browser receipt schema: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-dom-receipt.schema.json
+- Browser evidence schema: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-browser-evidence.schema.json
+- Strict-zone violation schema: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-zone-violation.schema.json
 - Page manifest schema id: aml-page/1
 - Browser receipt schema id: aml-dom-receipt/1
+- Browser evidence schema id: aml-browser-evidence/1
+- Strict-zone violation schema id: aml-zone-violation/1
+- Browser integrity schema id: aml-integrity/1
+- Browser integrity algorithm: SHA-256 over sorted-json-v1 canonical JSON
+
+Browser integrity claim boundary:
+SHA-256 proves exact local payload integrity for the canonical bytes that were hashed. It is not a digital signature, identity proof, endorsement, immutable global log, or proof that declared purpose/scores are truthful.
 
 Live proof languages:
 - en
@@ -62,6 +78,7 @@ Live proof languages:
 - de
 
 Fast reproduction and integration:
+- Browser evidence: https://github.com/aruintelligence/aml-core/blob/main/docs/BROWSER_EVIDENCE.md
 - One-script integration: https://github.com/aruintelligence/aml-core/blob/main/docs/ONE_SCRIPT_AML.md
 - 10-minute path: https://github.com/aruintelligence/aml-core/blob/main/docs/TRY_AML_10_MINUTES.md
 - Witness kit: https://github.com/aruintelligence/aml-core/blob/main/docs/WITNESS_KIT.md
@@ -102,10 +119,6 @@ Technical conformance and official branding are separate:
 - A third party can independently test technical conformance.
 - Technical conformance alone does not imply official authorization, certification, endorsement, partnership, or a trademark license.
 - Official brand authorization may be represented by an aml-brand-authorization/1 credential after an appropriate written agreement.
-
-Official credential verification has two distinct levels:
-- Cryptographically valid: credential hash, signature, expiry, and optional credential revocation checks pass.
-- Officially trusted by ĀRU: cryptographic checks pass AND the signing-key fingerprint appears in canonical BRAND_TRUST_ROOTS.json as active and not revoked.
 
 Evidence boundary:
 ĀML proves software behavior and integrity for declared inputs. It does not prove that current attention/restoration values objectively measure human cognition or wellbeing, does not replace WCAG conformance testing, and does not make an AI's declared intent truthful.
