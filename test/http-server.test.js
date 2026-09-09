@@ -23,6 +23,21 @@ function intent() {
   };
 }
 
+function suppressedIntent() {
+  return {
+    transmission: "http_shadow_test",
+    nodes: [{
+      type: "message",
+      identifier: "Pressure",
+      properties: {
+        purpose: "Create urgency",
+        attention_cost: 5,
+        restoration_value: 1
+      }
+    }]
+  };
+}
+
 function witnessVector() {
   return JSON.parse(fs.readFileSync(new URL("../independent/python/witness-vector.json", import.meta.url), "utf8"));
 }
@@ -75,6 +90,55 @@ test("AML HTTP evaluate returns a verifiable receipt", async () => {
     assert.equal(verifyResponse.status, 200);
     const verification = await verifyResponse.json();
     assert.equal(verification.verified, true);
+  });
+});
+
+test("AML HTTP deployment endpoint supports shadow rollout", async () => {
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/v1/deployment/evaluate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        intent: suppressedIntent(),
+        profile: "calm_default",
+        mode: "shadow",
+        failure_mode: "closed",
+        timestamp: "2030-01-01T00:00:00.000Z"
+      })
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.protocol, "aml-http-deployment-evaluation/1");
+    assert.equal(body.mode, "shadow");
+    assert.equal(body.aml_allowed, false);
+    assert.equal(body.effective_allowed, true);
+    assert.equal(body.would_suppress, true);
+    assert.ok(body.receipt.receipt_sha256);
+  });
+});
+
+test("AML HTTP deployment endpoint exposes fail-open versus fail-closed", async () => {
+  await withServer(async (base) => {
+    const invalidIntent = { transmission: "invalid", nodes: [{ type: "not valid type", properties: {} }] };
+    const closedResponse = await fetch(`${base}/v1/deployment/evaluate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ intent: invalidIntent, failure_mode: "closed" })
+    });
+    assert.equal(closedResponse.status, 422);
+    const closed = await closedResponse.json();
+    assert.equal(closed.effective_allowed, false);
+    assert.equal(closed.aml_allowed, null);
+
+    const openResponse = await fetch(`${base}/v1/deployment/evaluate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ intent: invalidIntent, failure_mode: "open" })
+    });
+    assert.equal(openResponse.status, 422);
+    const open = await openResponse.json();
+    assert.equal(open.effective_allowed, true);
+    assert.equal(open.aml_allowed, null);
   });
 });
 
