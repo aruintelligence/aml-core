@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { meaningFingerprint, compareMeaningFingerprints } from "../index.js";
+import { meaningFingerprint, compareMeaningFingerprints, semanticDiff } from "../index.js";
 
 const base = `transmission "demo" {
   engram card {
@@ -34,6 +34,8 @@ test("meaning fingerprint is stable across non-semantic source formatting", () =
   const left = meaningFingerprint(base);
   const right = meaningFingerprint(reformatted);
   assert.equal(left.protocol, "aml-meaning-fingerprint/1");
+  assert.equal(left.material_protocol, "aml-meaning-material/1");
+  assert.equal(left.algorithm, "sha256");
   assert.match(left.fingerprint, /^[a-f0-9]{64}$/);
   assert.equal(left.fingerprint, right.fingerprint);
 });
@@ -52,4 +54,16 @@ test("meaning equivalence report exposes both fingerprints", () => {
   const different = compareMeaningFingerprints(base, changed);
   assert.equal(different.equivalent, false);
   assert.notEqual(different.left.fingerprint, different.right.fingerprint);
+});
+
+test("semantic diff is bound to the same meaning fingerprint contract", () => {
+  const same = semanticDiff(base, reformatted);
+  assert.equal(same.meaning_equivalent, true);
+  assert.equal(same.left_meaning_fingerprint, same.right_meaning_fingerprint);
+  assert.equal(same.fingerprint_protocol, "aml-meaning-fingerprint/1");
+
+  const different = semanticDiff(base, changed);
+  assert.equal(different.meaning_equivalent, false);
+  assert.notEqual(different.left_meaning_fingerprint, different.right_meaning_fingerprint);
+  assert.equal(different.summary.changed, 1);
 });
