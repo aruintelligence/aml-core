@@ -19,6 +19,14 @@ The verifier must emit one JSON object containing a boolean `valid` field. A val
 
 The machine-readable contract is [`conformance/verifier-challenge.json`](../conformance/verifier-challenge.json).
 
+## Start without reading the reference verifier
+
+The `AML External Verifier Kit` workflow publishes a downloadable artifact containing only the public challenge, protocol text, JSON Schemas, canonicalization/test vectors, the JSON witness fixture, and witness-submission material.
+
+The kit intentionally excludes JavaScript, Python, Go, Rust, Java, C/C++, C#, Swift, Zig, shell, and other reference implementation source files. Its `manifest.json` records every included path, byte count, SHA-256 digest, source commit, and one aggregate kit root. `SHA256SUMS` is generated from the same sorted material.
+
+This makes an implementation clean-room-friendly by reducing accidental exposure to reference verifier code. It does **not** by itself prove that an implementation is independent; that remains an external evidence question.
+
 ## Drop it into GitHub Actions
 
 In an independently maintained repository:
@@ -91,6 +99,6 @@ Submit outside results through the repository's `Independent replication` or `Ex
 
 ## Evidence boundary
 
-Passing this challenge is project-defined black-box interoperability evidence for the tested verifier contract. Passing the witness-record validator proves only that the submission matches the machine-checkable acceptance profile. Neither establishes certification, implementation independence by itself, endorsement, standards-body approval, safety, ethics, legal compliance, institutional authority, or broad adoption.
+Passing this challenge is project-defined black-box interoperability evidence for the tested verifier contract. Passing the witness-record validator proves only that the submission matches the machine-checkable acceptance profile. A valid verifier-kit manifest proves only the integrity and declared code-exclusion profile of that generated kit. None establishes certification, implementation independence by itself, endorsement, standards-body approval, safety, ethics, legal compliance, institutional authority, or broad adoption.
 
 The external witness count remains whatever `WITNESSES.json` can actually substantiate.
