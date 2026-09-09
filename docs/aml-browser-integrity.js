@@ -2,14 +2,32 @@
 // SHA-256 here provides tamper evidence for exact canonical payload bytes.
 // It is not a signature, endorsement, trust assertion, or proof that declared inputs are truthful.
 
-export function canonicalizeBrowser(value) {
-  if (value === null || typeof value !== 'object') return value;
-  if (Array.isArray(value)) return value.map(canonicalizeBrowser);
-  const out = {};
-  for (const key of Object.keys(value).sort()) {
-    if (value[key] !== undefined) out[key] = canonicalizeBrowser(value[key]);
+function canonicalPrimitiveBrowser(value) {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return value;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) throw new TypeError('AML_CANONICAL_JSON_NON_FINITE_NUMBER');
+    return value;
   }
-  return out;
+  if (['undefined', 'function', 'symbol', 'bigint'].includes(typeof value)) {
+    throw new TypeError('AML_CANONICAL_JSON_UNSUPPORTED_VALUE');
+  }
+  return undefined;
+}
+
+export function canonicalizeBrowser(value) {
+  const primitive = canonicalPrimitiveBrowser(value);
+  if (primitive !== undefined || value === null) return primitive;
+  if (Array.isArray(value)) return value.map(canonicalizeBrowser);
+  if (value && typeof value === 'object') {
+    const prototype = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null) {
+      throw new TypeError('AML_CANONICAL_JSON_NON_PLAIN_OBJECT');
+    }
+    const out = {};
+    for (const key of Object.keys(value).sort()) out[key] = canonicalizeBrowser(value[key]);
+    return out;
+  }
+  throw new TypeError('AML_CANONICAL_JSON_UNSUPPORTED_VALUE');
 }
 
 export function canonicalJSONStringifyBrowser(value) {
