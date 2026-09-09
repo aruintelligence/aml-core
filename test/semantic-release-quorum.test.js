@@ -177,3 +177,17 @@ test("quorum policy threshold and exact canonical policy fingerprint fail closed
   assert.equal(mismatch.verified, false);
   assert.equal(mismatch.reason, "policy_fingerprint_mismatch");
 });
+
+test("quorum policy fingerprint treats trusted_keys as a semantic set", () => {
+  const keys = [keyPair(), keyPair(), keyPair()];
+  const original = policy(keys, 2);
+  const reordered = { ...original, trusted_keys: [...original.trusted_keys].reverse() };
+  assert.equal(fingerprintSemanticReleaseQuorumPolicy(reordered), fingerprintSemanticReleaseQuorumPolicy(original));
+
+  const changed = structuredClone(original);
+  changed.trusted_keys[0].signer = "different-approver";
+  assert.notEqual(fingerprintSemanticReleaseQuorumPolicy(changed), fingerprintSemanticReleaseQuorumPolicy(original));
+
+  const thresholdChanged = { ...original, threshold: 3 };
+  assert.notEqual(fingerprintSemanticReleaseQuorumPolicy(thresholdChanged), fingerprintSemanticReleaseQuorumPolicy(original));
+});
