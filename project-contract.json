@@ -23,7 +23,8 @@
   "canonicalFiles": {
     "package": "package.json",
     "citation": "CITATION.cff",
-    "claims": "CLAIMS.md",
+    "claimsLedger": "claims.json",
+    "claimsHuman": "CLAIMS.md",
     "readme": "README.md",
     "conformanceManifest": "conformance/manifest.json"
   }
