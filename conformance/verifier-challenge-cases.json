@@ -1,0 +1,49 @@
+{
+  "schema": "aml-verifier-challenge-cases/1",
+  "bundle_source": "independent/python/witness-vector.json",
+  "mutation_language": {
+    "schema": "aml-json-pointer-replace/1",
+    "operation": "replace",
+    "path_semantics": "RFC 6901 JSON Pointer",
+    "supported_operations": ["replace"]
+  },
+  "cases": [
+    {
+      "id": "golden-valid",
+      "now": "2030-01-01T00:05:00Z",
+      "expected_valid": true,
+      "mutations": []
+    },
+    {
+      "id": "tampered-purpose",
+      "now": "2030-01-01T00:05:00Z",
+      "expected_valid": false,
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/evidence/receipt/decisions/0/purpose",
+          "value": "tampered-by-conformance-harness"
+        }
+      ]
+    },
+    {
+      "id": "tampered-challenge",
+      "now": "2030-01-01T00:05:00Z",
+      "expected_valid": false,
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/challenge/nonce",
+          "value": "tampered-challenge-nonce-000000000000000000000"
+        }
+      ]
+    },
+    {
+      "id": "expired-challenge",
+      "now": "2030-01-01T00:11:00Z",
+      "expected_valid": false,
+      "mutations": []
+    }
+  ],
+  "evidence_boundary": "This file defines project challenge inputs and expected validity. Matching it is black-box interoperability evidence, not certification or proof of implementation independence."
+}
