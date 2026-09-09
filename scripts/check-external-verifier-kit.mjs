@@ -82,21 +82,58 @@ export function checkExternalVerifierKit(root = 'dist/external-verifier-kit') {
     'independent/python/witness-vector.json',
     'protocol/sorted-json-v1.md',
     'protocol/aml-witness-bundle.schema.json',
-    'protocol/aml-witness-record.schema.json'
+    'protocol/aml-witness-record.schema.json',
+    'protocol/verification-contract-v1.json',
+    'protocol/verification-contract-v2.json',
+    'protocol/verification-contract-catalog.json',
+    'protocol/verification-contract-lineage.json',
+    'protocol/migrations/aml-verifier-contract-2026-09-08-01_to_2026-09-09-01.json'
   ];
   for (const requiredPath of required) if (!seen.has(requiredPath)) failures.push(`required kit file missing: ${requiredPath}`);
 
   const challengePath = path.join(root, 'conformance/verifier-challenge.json');
+  const vectorPath = path.join(root, 'independent/python/witness-vector.json');
+  const catalogPath = path.join(root, 'protocol/verification-contract-catalog.json');
+  const lineagePath = path.join(root, 'protocol/verification-contract-lineage.json');
   if (fs.existsSync(challengePath)) {
     try {
-      const challenge = JSON.parse(fs.readFileSync(challengePath, 'utf8'));
+      const challengeBytes = fs.readFileSync(challengePath);
+      const challenge = JSON.parse(challengeBytes.toString('utf8'));
       if (!challenge.witness_vector || !seen.has(challenge.witness_vector)) failures.push('challenge witness_vector does not resolve inside kit');
+      if (manifest.challenge_sha256 !== sha256(challengeBytes)) failures.push('manifest challenge_sha256 mismatch');
     } catch (error) {
       failures.push(`challenge JSON invalid: ${error.message}`);
     }
   }
+  if (fs.existsSync(vectorPath) && manifest.witness_vector_sha256 !== sha256(fs.readFileSync(vectorPath))) {
+    failures.push('manifest witness_vector_sha256 mismatch');
+  }
 
-  return { valid: failures.length === 0, failures, file_count: entries.length, root_sha256: manifest.root_sha256 || null };
+  if (fs.existsSync(catalogPath) && fs.existsSync(lineagePath)) {
+    try {
+      const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+      const lineage = JSON.parse(fs.readFileSync(lineagePath, 'utf8'));
+      const current = (catalog.snapshots || []).find((entry) => entry.snapshot_id === catalog.current_snapshot);
+      if (manifest.current_contract_snapshot_id !== catalog.current_snapshot) failures.push('manifest current contract snapshot does not match bundled catalog');
+      if (manifest.current_contract_source_commit !== current?.source_commit) failures.push('manifest current contract source commit does not match bundled catalog');
+      if (manifest.contract_snapshot_count !== (catalog.snapshots || []).length) failures.push('manifest contract_snapshot_count mismatch');
+      if (manifest.contract_migration_count !== (catalog.migrations || []).length) failures.push('manifest contract_migration_count mismatch');
+      if ((lineage.nodes || []).length !== manifest.contract_snapshot_count) failures.push('bundled lineage node count does not match manifest snapshot count');
+      if ((lineage.edges || []).length !== manifest.contract_migration_count) failures.push('bundled lineage edge count does not match manifest migration count');
+    } catch (error) {
+      failures.push(`bundled contract catalog/lineage invalid: ${error.message}`);
+    }
+  }
+
+  return {
+    valid: failures.length === 0,
+    failures,
+    file_count: entries.length,
+    root_sha256: manifest.root_sha256 || null,
+    current_contract_snapshot_id: manifest.current_contract_snapshot_id || null,
+    challenge_sha256: manifest.challenge_sha256 || null,
+    witness_vector_sha256: manifest.witness_vector_sha256 || null
+  };
 }
 
 function main() {
