@@ -13,6 +13,7 @@
     "stableTag": "v1.3.0",
     "previewVersion": "1.4.0-rc.2",
     "previewTag": "v1.4.0-rc.2",
+    "previewNotesFile": "RELEASE_NOTES_1.4.0_RC2.md",
     "defaultChannel": "stable"
   },
   "claimBoundary": {
