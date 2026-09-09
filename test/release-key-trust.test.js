@@ -12,6 +12,7 @@ import {
 } from "../index.js";
 import {
   RELEASE_KEY_TRUST_POLICY_PROTOCOL,
+  releaseKeyTrustPolicyFingerprint,
   validateReleaseKeyTrustPolicy,
   verifyTrustedSemanticReleaseProof
 } from "../tooling/releaseKeyTrust.js";
@@ -75,6 +76,45 @@ test("external release-key policy upgrades valid signature into explicit trusted
   assert.equal(result.signer_constraint_valid, true);
   assert.equal(result.policy_id, "production-release-keys");
   assert.equal(result.public_key_sha256, proof.public_key_sha256);
+  assert.match(result.policy_sha256, /^[a-f0-9]{64}$/);
+});
+
+test("trust-policy fingerprint is deterministic across key order and changes on policy semantics", () => {
+  const firstProof = fixture();
+  const secondProof = fixture();
+  const a = {
+    protocol: RELEASE_KEY_TRUST_POLICY_PROTOCOL,
+    policy_id: "prod",
+    trusted_keys: [
+      { public_key_sha256: firstProof.public_key_sha256, signer: "release-a" },
+      { public_key_sha256: secondProof.public_key_sha256, signer: null }
+    ]
+  };
+  const b = structuredClone(a);
+  b.trusted_keys.reverse();
+  assert.equal(releaseKeyTrustPolicyFingerprint(a), releaseKeyTrustPolicyFingerprint(b));
+
+  const changedSigner = structuredClone(a);
+  changedSigner.trusted_keys[0].signer = "release-b";
+  assert.notEqual(releaseKeyTrustPolicyFingerprint(a), releaseKeyTrustPolicyFingerprint(changedSigner));
+
+  const changedId = structuredClone(a);
+  changedId.policy_id = "prod-2";
+  assert.notEqual(releaseKeyTrustPolicyFingerprint(a), releaseKeyTrustPolicyFingerprint(changedId));
+});
+
+test("trusted verification can pin the exact external policy fingerprint", () => {
+  const proof = fixture();
+  const policy = policyFor(proof);
+  const expected = releaseKeyTrustPolicyFingerprint(policy);
+  const accepted = verifyTrustedSemanticReleaseProof(proof, policy, { expected_policy_sha256: expected });
+  assert.equal(accepted.verified, true);
+  assert.equal(accepted.policy_fingerprint_valid, true);
+
+  const rejected = verifyTrustedSemanticReleaseProof(proof, policy, { expected_policy_sha256: "0".repeat(64) });
+  assert.equal(rejected.verified, false);
+  assert.equal(rejected.policy_fingerprint_valid, false);
+  assert.equal(rejected.reason, "trust_policy_fingerprint_mismatch");
 });
 
 test("valid self-signed semantic proof fails when its release key is not externally trusted", () => {
@@ -110,21 +150,25 @@ test("release-key policy rejects duplicate, malformed and empty trust roots", ()
   assert.equal(validateReleaseKeyTrustPolicy({ protocol: RELEASE_KEY_TRUST_POLICY_PROTOCOL, trusted_keys: [] }).valid, false);
 });
 
-test("GitHub plus AML verifier requires external release-key trust when policy is supplied", () => {
+test("GitHub plus AML verifier requires and can pin external release-key trust", () => {
   const proof = fixture();
   const proofBytes = Buffer.from(`${JSON.stringify(proof, null, 2)}\n`);
   const evidence = githubEvidence(proof, proofBytes);
+  const policy = policyFor(proof);
+  const expected = releaseKeyTrustPolicyFingerprint(policy);
 
-  const trusted = verifyGitHubSemanticAttestationEvidence({ ghVerification: evidence, proof, proofBytes, trustPolicy: policyFor(proof) });
+  const trusted = verifyGitHubSemanticAttestationEvidence({ ghVerification: evidence, proof, proofBytes, trustPolicy: policy, expectedTrustPolicySha256: expected });
   assert.equal(trusted.verified, true);
   assert.equal(trusted.release_key_trust_required, true);
   assert.equal(trusted.release_key_trusted, true);
-  assert.equal(trusted.trust_policy_id, "production-release-keys");
+  assert.equal(trusted.trust_policy_fingerprint_valid, true);
+  assert.equal(trusted.trust_policy_sha256, expected);
 
-  const untrustedPolicy = policyFor(proof);
-  untrustedPolicy.trusted_keys[0].public_key_sha256 = "f".repeat(64);
-  const rejected = verifyGitHubSemanticAttestationEvidence({ ghVerification: evidence, proof, proofBytes, trustPolicy: untrustedPolicy });
-  assert.equal(rejected.verified, false);
-  assert.equal(rejected.release_proof_valid, true);
-  assert.equal(rejected.reason, "release_key_not_trusted");
+  const wrongPin = verifyGitHubSemanticAttestationEvidence({ ghVerification: evidence, proof, proofBytes, trustPolicy: policy, expectedTrustPolicySha256: "f".repeat(64) });
+  assert.equal(wrongPin.verified, false);
+  assert.equal(wrongPin.reason, "trust_policy_fingerprint_mismatch");
+
+  const pinWithoutPolicy = verifyGitHubSemanticAttestationEvidence({ ghVerification: evidence, proof, proofBytes, expectedTrustPolicySha256: expected });
+  assert.equal(pinWithoutPolicy.verified, false);
+  assert.equal(pinWithoutPolicy.reason, "trust_policy_required_for_fingerprint");
 });
