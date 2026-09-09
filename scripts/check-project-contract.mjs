@@ -20,8 +20,8 @@ function check(name, condition, detail) {
 const contract = readJson("project-contract.json");
 const pkg = readJson(contract.canonicalFiles.package);
 const conformance = readJson(contract.canonicalFiles.conformanceManifest);
+const claimsLedger = readJson(contract.canonicalFiles.claimsLedger);
 const citation = readText(contract.canonicalFiles.citation);
-const claims = readText(contract.canonicalFiles.claims);
 const readme = readText(contract.canonicalFiles.readme);
 
 const stableVersion = contract.release.stableVersion;
@@ -83,41 +83,79 @@ check(
 );
 
 check(
-  "README release status names stable version",
-  readme.includes(`\`v${stableVersion}\` remains the stable package/CLI/capability contract`),
-  `README release-status prose must name v${stableVersion}`
+  "claims ledger schema",
+  claimsLedger.type === "aml-claims-ledger/1",
+  `unexpected claims ledger type ${claimsLedger.type}`
 );
 
+const claimIds = (claimsLedger.claims ?? []).map((claim) => claim.id);
 check(
-  "README preserves prototype claim boundary",
-  readme.includes("working research prototype"),
-  "README must retain the working research prototype boundary"
+  "claim IDs are unique",
+  new Set(claimIds).size === claimIds.length,
+  "claims.json contains duplicate claim IDs"
 );
 
+const allowedStatuses = new Set(claimsLedger.status_labels ?? []);
+for (const claim of claimsLedger.claims ?? []) {
+  check(
+    `claim status allowed: ${claim.id}`,
+    allowedStatuses.has(claim.status),
+    `${claim.id} uses undeclared status ${claim.status}`
+  );
+
+  if (claim.status === "SHIPPED") {
+    check(
+      `SHIPPED claim has evidence: ${claim.id}`,
+      Array.isArray(claim.evidence) && claim.evidence.length > 0,
+      `${claim.id} is SHIPPED without evidence`
+    );
+    for (const evidence of claim.evidence ?? []) {
+      check(
+        `claim evidence exists: ${claim.id} -> ${evidence}`,
+        exists(evidence),
+        `${claim.id} references missing evidence ${evidence}`
+      );
+    }
+  }
+}
+
+const nonClaims = new Set(claimsLedger.non_claims ?? []);
 const requiredNonClaims = [
-  "it is a ratified global standard",
-  "enterprises broadly use it in production",
-  "its declared scores objectively measure human cognition or wellbeing",
-  "an AML decision is automatically ethical, legally compliant, or factually correct"
+  "ratified global standard",
+  "broad enterprise production adoption",
+  "objective measurement of human cognition",
+  "guaranteed ethical or legal correctness"
 ];
 for (const statement of requiredNonClaims) {
   check(
-    `claims boundary preserved: ${statement}`,
-    claims.includes(statement),
-    `CLAIMS.md must retain non-claim: ${statement}`
+    `machine claim boundary preserved: ${statement}`,
+    nonClaims.has(statement),
+    `claims.json must retain non-claim: ${statement}`
   );
 }
 
 check(
   "contract and claims agree on standard status",
-  contract.claimBoundary.ratifiedStandard === false,
-  "ratifiedStandard must remain false until a real standards event changes it"
+  contract.claimBoundary.ratifiedStandard === false && nonClaims.has("ratified global standard"),
+  "project contract and claims ledger disagree on standards status"
 );
 
 check(
   "contract and claims agree on broad adoption",
-  contract.claimBoundary.broadProductionAdoptionClaim === false,
-  "broadProductionAdoptionClaim must remain false without evidence"
+  contract.claimBoundary.broadProductionAdoptionClaim === false && nonClaims.has("broad enterprise production adoption"),
+  "project contract and claims ledger disagree on broad production adoption"
+);
+
+check(
+  "contract and claims agree on cognition measurement",
+  contract.claimBoundary.objectiveHumanCognitionMeasurementClaim === false && nonClaims.has("objective measurement of human cognition"),
+  "project contract and claims ledger disagree on cognition measurement"
+);
+
+check(
+  "contract and claims agree on ethics/compliance guarantee",
+  contract.claimBoundary.automaticEthicsOrComplianceClaim === false && nonClaims.has("guaranteed ethical or legal correctness"),
+  "project contract and claims ledger disagree on ethics/compliance guarantee"
 );
 
 for (const fixture of conformance.fixtures ?? []) {
