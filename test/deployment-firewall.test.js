@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import {
   createDecisionCache,
   createDeploymentFirewall,
-  createStreamingInterfaceFirewall
+  createStreamingInterfaceFirewall,
+  evaluateInterfaceBatch
 } from "../index.js";
 
 const allowedIntent = {
@@ -110,5 +111,28 @@ test("streaming firewall rejects duplicate identifiers", () => {
   assert.throws(
     () => stream.push(allowedIntent.nodes[0], { timestamp: fixed }),
     /AML_STREAM_DUPLICATE_IDENTIFIER/
+  );
+});
+
+test("batch firewall preserves per-intent evidence and aggregate outcome", () => {
+  const batch = evaluateInterfaceBatch([allowedIntent, suppressedIntent], {
+    mode: "enforce",
+    profile: "calm_default",
+    timestamp: fixed,
+    max_items: 10
+  });
+  assert.equal(batch.total, 2);
+  assert.equal(batch.aml_allowed, 1);
+  assert.equal(batch.aml_suppressed, 1);
+  assert.equal(batch.evaluation_errors, 0);
+  assert.equal(batch.effective_allowed, 1);
+  assert.equal(typeof batch.results[0].receipt_sha256, "string");
+  assert.equal(typeof batch.results[1].receipt_sha256, "string");
+});
+
+test("batch firewall enforces explicit size bound", () => {
+  assert.throws(
+    () => evaluateInterfaceBatch([allowedIntent, suppressedIntent], { max_items: 1, timestamp: fixed }),
+    /AML_BATCH_LIMIT_EXCEEDED/
   );
 });
