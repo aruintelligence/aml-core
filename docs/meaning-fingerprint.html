@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="ĀML Meaning Fingerprint Challenge: prove whether two textually different AML files compile to the same Abstract Meaning Tree fingerprint.">
+  <meta name="theme-color" content="#04070d">
+  <title>ĀML™ Meaning Fingerprint Challenge</title>
+  <style>
+    :root{--bg:#04070d;--panel:#0a111d;--panel2:#0d1726;--ink:#f5f9ff;--muted:#94a3b8;--cyan:#78f7ff;--green:#8dffb3;--red:#ff6685;--amber:#ffd36a;--line:rgba(255,255,255,.12)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 15% 0,rgba(41,128,255,.22),transparent 35rem),radial-gradient(circle at 90% 25%,rgba(141,255,179,.08),transparent 28rem),var(--bg);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.shell{width:min(1320px,calc(100% - 28px));margin:auto}.nav{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:22px 0}.brand{font-weight:950;letter-spacing:.13em}.nav a{color:var(--cyan);text-decoration:none}.hero{padding:48px 0 28px}.eyebrow{color:var(--cyan);font-weight:900;letter-spacing:.16em;font-size:.75rem}.hero h1{font-size:clamp(3rem,8vw,7.2rem);line-height:.88;letter-spacing:-.065em;margin:12px 0 22px;max-width:1100px}.hero p{max-width:860px;color:#c8d3e3;font-size:clamp(1.05rem,2vw,1.3rem)}.verdict{margin:24px 0 18px;border:1px solid var(--line);background:linear-gradient(110deg,rgba(13,23,38,.94),rgba(6,12,22,.94));border-radius:26px;padding:24px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;box-shadow:0 28px 90px rgba(0,0,0,.25)}.verdict h2{font-size:clamp(1.8rem,4vw,3.4rem);letter-spacing:-.04em;margin:3px 0}.verdict p{margin:0;color:var(--muted)}.signal{width:74px;height:74px;border-radius:50%;display:grid;place-items:center;font-weight:950;font-size:1.5rem;border:1px solid currentColor}.same h2,.same .signal{color:var(--green)}.different h2,.different .signal{color:var(--red)}.error h2,.error .signal{color:var(--amber)}.controls{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 22px}.button{border:1px solid var(--line);background:var(--cyan);color:#041018;padding:11px 16px;border-radius:999px;font-weight:900;cursor:pointer}.button:hover{transform:translateY(-1px)}.ghost{background:transparent;color:var(--ink)}.danger{background:transparent;color:var(--red);border-color:rgba(255,102,133,.45)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.panel{background:rgba(10,17,29,.92);border:1px solid var(--line);border-radius:22px;overflow:hidden}.head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line)}.head strong{font-size:.92rem}.badge{font-size:.68rem;font-weight:950;letter-spacing:.09em;color:var(--cyan)}textarea{width:100%;min-height:390px;border:0;outline:0;resize:vertical;background:#060b13;color:#dffcff;padding:18px;font:13px/1.58 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.hashbox{border-top:1px solid var(--line);padding:14px 16px}.hashlabel{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.1em}.hash{display:block;margin-top:6px;color:#fff;font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}.section{padding:58px 0}.section h2{font-size:clamp(2rem,4vw,3.6rem);letter-spacing:-.045em;margin:0 0 12px}.section>p{max-width:850px;color:#b6c2d2}.three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px}.card{border:1px solid var(--line);border-radius:20px;background:rgba(13,23,38,.7);padding:20px}.card b{display:block;margin-bottom:8px;color:var(--cyan)}.card p{margin:0;color:var(--muted)}pre{margin:18px 0 0;padding:18px;border:1px solid var(--line);border-radius:18px;background:#050a12;overflow:auto;color:#dffcff;font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}.protocol{display:grid;grid-template-columns:180px 1fr;gap:10px 18px;margin-top:22px;border:1px solid var(--line);border-radius:20px;padding:20px}.protocol dt{color:var(--muted)}.protocol dd{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}.truth{border-left:4px solid var(--amber);padding:14px 18px;background:rgba(255,211,106,.06);color:#d9dfeb;margin-top:26px}.footer{padding:42px 0 56px;color:var(--muted);border-top:1px solid var(--line)}@media(max-width:880px){.grid,.three{grid-template-columns:1fr}.verdict{grid-template-columns:1fr}.signal{width:58px;height:58px}.protocol{grid-template-columns:1fr}.hero{padding-top:28px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <nav class="nav"><div class="brand">ĀML™ / MEANING FINGERPRINT</div><div><a href="./">Live Lab</a> · <a href="./playground.html">Playground</a> · <a href="https://github.com/aruintelligence/aml-core">GitHub</a></div></nav>
+
+    <section class="hero">
+      <div class="eyebrow">DON'T TRUST THE DIFF. HASH THE COMPILED MEANING.</div>
+      <h1>Can a refactor prove its meaning stayed the same?</h1>
+      <p>Edit either ĀML program below. Comments and whitespace can change without changing the fingerprint. Change declared purpose, structure, or values and the fingerprint changes. The comparison runs entirely in your browser using the same AMT and canonicalization contracts tested against Node.</p>
+    </section>
+
+    <section id="verdict" class="verdict same" aria-live="polite">
+      <div><div class="eyebrow">LIVE RESULT</div><h2 id="verdict-title">CALCULATING…</h2><p id="verdict-copy">Compiling both sources into Abstract Meaning Trees.</p></div>
+      <div id="signal" class="signal">…</div>
+    </section>
+
+    <div class="controls">
+      <button id="same-example" class="button">Prove formatting doesn't matter</button>
+      <button id="change-purpose" class="button danger">Change one purpose</button>
+      <button id="reset" class="button ghost">Reset challenge</button>
+    </div>
+
+    <section class="grid">
+      <article class="panel">
+        <div class="head"><strong>Before</strong><span class="badge">AML SOURCE A</span></div>
+        <textarea id="left" spellcheck="false" aria-label="Before AML source"></textarea>
+        <div class="hashbox"><div class="hashlabel">Meaning fingerprint</div><code id="left-hash" class="hash">—</code></div>
+      </article>
+      <article class="panel">
+        <div class="head"><strong>After</strong><span class="badge">AML SOURCE B</span></div>
+        <textarea id="right" spellcheck="false" aria-label="After AML source"></textarea>
+        <div class="hashbox"><div class="hashlabel">Meaning fingerprint</div><code id="right-hash" class="hash">—</code></div>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2>A source hash answers “same bytes?”<br>A Meaning Fingerprint answers “same compiled AMT?”</h2>
+      <p>ĀML compiles source into an Abstract Meaning Tree before fingerprinting it. That means lexical noise such as comments and formatting can disappear while meaning-bearing structure remains part of the authenticated material.</p>
+      <div class="three">
+        <div class="card"><b>1 · Compile</b><p>Both sources run through the browser lexer, parser, and AMT builder.</p></div>
+        <div class="card"><b>2 · Canonicalize</b><p>The AMT is wrapped in domain-separated <code>aml-meaning-material/1</code> and serialized with strict canonical JSON.</p></div>
+        <div class="card"><b>3 · SHA-256</b><p>The canonical UTF-8 bytes produce a deterministic <code>aml-meaning-fingerprint/1</code> identity.</p></div>
+      </div>
+      <dl class="protocol">
+        <dt>Fingerprint protocol</dt><dd>aml-meaning-fingerprint/1</dd>
+        <dt>Material protocol</dt><dd>aml-meaning-material/1</dd>
+        <dt>Algorithm</dt><dd>SHA-256</dd>
+        <dt>AMT version</dt><dd>1.0</dd>
+      </dl>
+    </section>
+
+    <section class="section">
+      <h2>Put a Meaning Lock on CI.</h2>
+      <p>If a pull request is supposed to be a meaning-preserving refactor, make the claim executable. This action exits nonzero when the compiled AMT fingerprint changes.</p>
+      <pre><code>- uses: aruintelligence/aml-core/actions/meaning-lock@main
+  with:
+    before-file: before.aml
+    after-file: after.aml</code></pre>
+      <p>Or from the command line:</p>
+      <pre><code>aml-meaning before.aml after.aml</code></pre>
+      <div class="truth"><strong>Evidence boundary:</strong> matching fingerprints do not prove truth, ethics, human intent, subjective perception, or arbitrary program behavioral equivalence. They prove something narrower and reproducible: the two sources compiled to the same canonical ĀML AMT material under this versioned contract.</div>
+    </section>
+
+    <footer class="footer">ĀML™ — ĀRU Meaning Language™ · Created by Daniel Jacob Read IV · Stewarded by ĀRU Intelligence Inc.™ · <a href="https://github.com/aruintelligence/aml-core/blob/main/publications/MEANING_FINGERPRINT.md">Read the protocol explainer</a></footer>
+  </main>
+
+  <script type="module">
+    import { compareMeaningFingerprintsBrowser } from './aml-meaning-fingerprint.js';
+
+    const base=`transmission "demo" {
+  engram card {
+    purpose: "Explain clearly"
+    attention_cost: 2
+    restoration_value: 5
+  }
+}`;
+
+    const formatting=`// Same compiled meaning. Different source bytes.
+transmission "demo" {
+
+  engram card {
+    purpose: "Explain clearly"
+    attention_cost: 2
+    restoration_value: 5
+  }
+
+}`;
+
+    const changed=`transmission "demo" {
+  engram card {
+    purpose: "Create urgency"
+    attention_cost: 2
+    restoration_value: 5
+  }
+}`;
+
+    const left=document.querySelector('#left');
+    const right=document.querySelector('#right');
+    const leftHash=document.querySelector('#left-hash');
+    const rightHash=document.querySelector('#right-hash');
+    const verdict=document.querySelector('#verdict');
+    const title=document.querySelector('#verdict-title');
+    const copy=document.querySelector('#verdict-copy');
+    const signal=document.querySelector('#signal');
+    let generation=0;
+
+    async function compare(){
+      const current=++generation;
+      title.textContent='CALCULATING…';
+      signal.textContent='…';
+      try{
+        const report=await compareMeaningFingerprintsBrowser(left.value,right.value);
+        if(current!==generation)return;
+        leftHash.textContent=report.left.fingerprint;
+        rightHash.textContent=report.right.fingerprint;
+        verdict.className='verdict '+(report.equivalent?'same':'different');
+        title.textContent=report.equivalent?'SAME COMPILED MEANING':'MEANING CHANGED';
+        signal.textContent=report.equivalent?'=':'≠';
+        copy.textContent=report.equivalent
+          ? 'Different source text. Identical canonical AMT fingerprint.'
+          : 'The canonical AMT material differs. Inspect the semantic diff before treating this as a refactor.';
+      }catch(error){
+        if(current!==generation)return;
+        leftHash.textContent='—';rightHash.textContent='—';
+        verdict.className='verdict error';title.textContent='INVALID AML';signal.textContent='!';copy.textContent=error.message;
+      }
+    }
+
+    let timer;
+    function schedule(){clearTimeout(timer);timer=setTimeout(compare,120)}
+    left.addEventListener('input',schedule);right.addEventListener('input',schedule);
+    document.querySelector('#same-example').addEventListener('click',()=>{left.value=base;right.value=formatting;compare()});
+    document.querySelector('#change-purpose').addEventListener('click',()=>{left.value=base;right.value=changed;compare()});
+    document.querySelector('#reset').addEventListener('click',()=>{left.value=base;right.value=formatting;compare()});
+
+    left.value=base;right.value=formatting;compare();
+  </script>
+</body>
+</html>
