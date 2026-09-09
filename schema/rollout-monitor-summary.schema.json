@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/schema/rollout-monitor-summary.schema.json",
+  "title": "ĀML Rollout Monitor Summary",
+  "description": "Prototype aggregate over locally recorded deployment-firewall results. It reports observed runtime outcomes, not human impact.",
+  "type": "object",
+  "required": ["protocol", "version", "total", "aml_allowed", "aml_suppressed", "evaluation_errors", "shadow_evaluations", "enforced_evaluations", "would_suppress", "effective_suppressed", "aml_suppression_rate", "evaluation_error_rate", "shadow_rate", "records_retained", "max_records"],
+  "properties": {
+    "protocol": { "const": "ĀML Rollout Monitor Summary" },
+    "version": { "const": "1.0" },
+    "total": { "type": "integer", "minimum": 0 },
+    "aml_allowed": { "type": "integer", "minimum": 0 },
+    "aml_suppressed": { "type": "integer", "minimum": 0 },
+    "evaluation_errors": { "type": "integer", "minimum": 0 },
+    "shadow_evaluations": { "type": "integer", "minimum": 0 },
+    "enforced_evaluations": { "type": "integer", "minimum": 0 },
+    "would_suppress": { "type": "integer", "minimum": 0 },
+    "effective_suppressed": { "type": "integer", "minimum": 0 },
+    "aml_suppression_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+    "evaluation_error_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+    "shadow_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+    "records_retained": { "type": "integer", "minimum": 0 },
+    "max_records": { "type": "integer", "minimum": 1 }
+  }
+}
