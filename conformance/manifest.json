@@ -42,10 +42,10 @@
       "scope": "Deterministic ALLOW/SUPPRESS decision from declared attention_cost and restoration_value inputs"
     },
     {
-      "name": "ĀML Canonical JSON 1",
-      "protocol": "aml-conformance/canonical-json-1",
+      "name": "ĀML Sorted JSON 1",
+      "protocol": "aml-conformance/sorted-json-1",
       "status": "experimental",
-      "normativeDocument": "conformance/CANONICAL_JSON_1.md",
+      "normativeDocument": "conformance/SORTED_JSON_1.md",
       "vectors": [
         "protocol/browser-canonicalization-vectors.json"
       ],
@@ -53,7 +53,7 @@
         "independent/python/check_canonical_vectors.py",
         "conformance/independent-javascript/verify_canonical_json.mjs"
       ],
-      "scope": "Exact sorted-json-v1 canonical UTF-8 serialization and SHA-256 agreement for the published vector domain"
+      "scope": "Exact sorted-json-v1 UTF-8 serialization and SHA-256 agreement for the published vector domain"
     }
   ]
 }
