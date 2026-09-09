@@ -53,7 +53,7 @@ The [ĀML Library](library/README.md) is the stable, numbered publication shelf.
 - [AML-LIB-005 — Meaning Gate](library/AML-LIB-005-MEANING-GATE.md)
 - [AML-LIB-006 — Reproducible Interface Decisions](library/AML-LIB-006-REPRODUCIBLE-INTERFACE-DECISIONS.md)
 - [AML-LIB-007 — Independent Verification](library/AML-LIB-007-INDEPENDENT-VERIFICATION.md)
-- [AML-LIB-008 — The Case for Declared Interface Intent](library/AML-LIB-008-THE-CASE-FOR-DECLARED-INTERFACE-INTENT.md)
+- [AML-LIB-008 — The Case for Declared Interface Intent](library/AML-LIB-008-DECLARED-INTERFACE-INTENT.md)
 
 ### Industry casebooks
 
