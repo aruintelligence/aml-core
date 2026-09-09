@@ -20,6 +20,14 @@ function currentAttestationMaterial(attestation) {
   };
 }
 
+function currentSignedBytes(attestation, manifest) {
+  return Buffer.concat([
+    Buffer.from(JSON.stringify(currentAttestationMaterial(attestation))),
+    Buffer.from("\n"),
+    manifest
+  ]);
+}
+
 export function signBuildManifest(manifestPath, privateKeyPem, options = {}) {
   const manifest = fs.readFileSync(manifestPath);
   const privateKey = crypto.createPrivateKey(privateKeyPem);
@@ -36,11 +44,7 @@ export function signBuildManifest(manifestPath, privateKeyPem, options = {}) {
     signed_at: options.timestamp ?? new Date().toISOString(),
     signer: options.signer ?? null
   };
-  const signature = crypto.sign(
-    null,
-    Buffer.from(JSON.stringify(currentAttestationMaterial(attestation))),
-    privateKey
-  );
+  const signature = crypto.sign(null, currentSignedBytes(attestation, manifest), privateKey);
 
   return {
     ...attestation,
@@ -116,9 +120,7 @@ export function verifyBuildAttestation(attestation, manifestPath = attestation?.
     const publicKey = crypto.createPublicKey(attestation.public_key_pem);
     const publicKeyFingerprint = sha256(publicKey.export({ type: "spki", format: "der" }));
     const fingerprintValid = publicKeyFingerprint === attestation.public_key_sha256;
-    const signedBytes = current
-      ? Buffer.from(JSON.stringify(currentAttestationMaterial(attestation)))
-      : manifest;
+    const signedBytes = current ? currentSignedBytes(attestation, manifest) : manifest;
     const signature = Buffer.from(attestation.signature_base64, "base64");
     const signatureValid = crypto.verify(null, signedBytes, publicKey, signature);
     const verified = hashValid && signatureValid && fingerprintValid;
