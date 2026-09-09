@@ -99,6 +99,27 @@ try {
   const quorumBin = path.join(installDir, 'node_modules', '.bin', process.platform === 'win32' ? 'aml-release-quorum.cmd' : 'aml-release-quorum');
   const quorumHash = execFileSync(quorumBin, ['hash-policy', quorumPolicyPath], { cwd: installDir, encoding: 'utf8' }).trim();
   check('installed aml-release-quorum CLI hashes policy', /^[a-f0-9]{64}$/.test(quorumHash), quorumHash);
+
+  const profilePath = path.join(installDir, 'release-profile.json');
+  fs.writeFileSync(profilePath, JSON.stringify({
+    protocol: 'aml-release-authorization-profile/1',
+    profile_id: 'package-smoke-test',
+    repository: 'acme/app',
+    signer_workflow: null,
+    allow_self_hosted: false,
+    predicate_type: 'https://aruintelligence.github.io/aml-core/predicates/semantic-release/v1.json',
+    required_layers: {
+      github_attestation: true,
+      semantic_release_proof: true,
+      release_key_trust: false,
+      semantic_release_quorum: false
+    },
+    release_key_policy_sha256: null,
+    quorum_policy_sha256: null
+  }));
+  const profileBin = path.join(installDir, 'node_modules', '.bin', process.platform === 'win32' ? 'aml-release-profile.cmd' : 'aml-release-profile');
+  const profileHash = execFileSync(profileBin, ['hash', profilePath], { cwd: installDir, encoding: 'utf8' }).trim();
+  check('installed aml-release-profile CLI hashes profile', /^[a-f0-9]{64}$/.test(profileHash), profileHash);
 } catch (error) {
   failures.push(`clean install/smoke test failed: ${error.message}`);
 } finally {
