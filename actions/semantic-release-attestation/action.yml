@@ -1,0 +1,74 @@
+name: "ĀML Semantic Release Attestation"
+description: "Verify an ĀML Semantic Release Proof and publish its custom predicate as a GitHub/Sigstore artifact attestation."
+inputs:
+  proof-file:
+    description: "Path to an aml-semantic-release-proof/1 JSON file."
+    required: true
+outputs:
+  attestation-id:
+    description: "GitHub artifact attestation ID"
+    value: ${{ steps.attest.outputs.attestation-id }}
+  attestation-url:
+    description: "GitHub artifact attestation summary URL"
+    value: ${{ steps.attest.outputs.attestation-url }}
+  bundle-path:
+    description: "Path to the generated Sigstore bundle"
+    value: ${{ steps.attest.outputs.bundle-path }}
+  predicate-path:
+    description: "Path to the verified ĀML custom predicate JSON"
+    value: ${{ steps.prepare.outputs.predicate_path }}
+  statement-path:
+    description: "Path to the locally generated in-toto Statement v1"
+    value: ${{ steps.prepare.outputs.statement_path }}
+  subject-name:
+    description: "ĀML meaning-state subject name"
+    value: ${{ steps.prepare.outputs.subject_name }}
+  subject-digest:
+    description: "SHA-256 digest of the verified after-Meaning-Manifest semantic state"
+    value: ${{ steps.prepare.outputs.subject_digest }}
+  proof-sha256:
+    description: "SHA-256 of the authenticated ĀML Semantic Release Proof material"
+    value: ${{ steps.prepare.outputs.proof_sha256 }}
+  signer:
+    description: "Signer authenticated by the embedded ĀML Semantic Release Proof"
+    value: ${{ steps.prepare.outputs.signer }}
+runs:
+  using: "composite"
+  steps:
+    - id: prepare
+      shell: bash
+      env:
+        AML_PROOF_FILE: ${{ inputs.proof-file }}
+      run: |
+        set -euo pipefail
+        OUT="$RUNNER_TEMP/aml-semantic-release-attestation"
+        rm -rf "$OUT"
+        RESULT="$(node "$GITHUB_ACTION_PATH/../../scripts/prepare-github-semantic-attestation.mjs" --proof "$AML_PROOF_FILE" --output "$OUT")"
+        printf '%s\n' "$RESULT"
+
+        node - "$RESULT" "$GITHUB_OUTPUT" <<'NODE'
+        const fs = require('fs');
+        const result = JSON.parse(process.argv[2]);
+        if (result.valid !== true) process.exit(1);
+        const output = process.argv[3];
+        const values = {
+          predicate_path: result.predicate_path,
+          statement_path: result.statement_path,
+          subject_name: result.subject_name,
+          subject_digest: result.subject_digest,
+          proof_sha256: result.proof_sha256,
+          signer: result.signer ?? ''
+        };
+        fs.appendFileSync(output, Object.entries(values).map(([key, value]) => `${key}=${String(value)}\n`).join(''));
+        NODE
+
+    - id: attest
+      uses: actions/attest@v4
+      with:
+        subject-name: ${{ steps.prepare.outputs.subject_name }}
+        subject-digest: ${{ steps.prepare.outputs.subject_digest }}
+        predicate-type: https://aruintelligence.github.io/aml-core/predicates/semantic-release/v1.json
+        predicate-path: ${{ steps.prepare.outputs.predicate_path }}
+branding:
+  icon: "shield"
+  color: "purple"
