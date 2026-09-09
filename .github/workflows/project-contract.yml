@@ -22,3 +22,5 @@ jobs:
           node-version: "20"
       - name: Enforce project identity, version, claims, and conformance invariants
         run: node scripts/check-project-contract.mjs
+      - name: Reject automatically triggered write-capable workflows
+        run: node scripts/check-workflow-safety.mjs
