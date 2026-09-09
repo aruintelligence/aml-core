@@ -1,0 +1,14 @@
+{
+  "protocol": "aml-conformance/decision-core-1",
+  "purpose": "Inputs that a conforming Decision Core 1 implementation must reject",
+  "vectors": [
+    {"id":"boolean-attention","attention_cost":true,"restoration_value":1},
+    {"id":"boolean-restoration","attention_cost":1,"restoration_value":false},
+    {"id":"string-attention","attention_cost":"1","restoration_value":1},
+    {"id":"string-restoration","attention_cost":1,"restoration_value":"1"},
+    {"id":"null-attention","attention_cost":null,"restoration_value":1},
+    {"id":"null-restoration","attention_cost":1,"restoration_value":null},
+    {"id":"missing-attention","restoration_value":1},
+    {"id":"missing-restoration","attention_cost":1}
+  ]
+}
