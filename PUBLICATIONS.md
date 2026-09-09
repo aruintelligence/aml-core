@@ -12,9 +12,10 @@
 4. [Claims Ledger — what is SHIPPED, SPEC, DRAFT, or PITCH](CLAIMS.md)
 5. [Proof Map — claim → shortest evidence path](publications/PROOF_MAP.md)
 6. [Evaluate ĀML in 15 minutes](publications/EVALUATE_AML_IN_15_MINUTES.md)
-7. [Why AI-generated UI needs a firewall](publications/WHY_AI_UI_NEEDS_A_FIREWALL.md)
-8. Live proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
-9. View Meaning: https://aruintelligence.github.io/aml-core/view-meaning.html
+7. [Deploy ĀML without breaking production](publications/DEPLOY_AML_WITHOUT_BREAKING_PRODUCTION.md)
+8. [Why AI-generated UI needs a firewall](publications/WHY_AI_UI_NEEDS_A_FIREWALL.md)
+9. Live proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
+10. View Meaning: https://aruintelligence.github.io/aml-core/view-meaning.html
 
 ## Trust the evidence, not the volume
 
@@ -26,6 +27,7 @@ Useful trust surfaces:
 - [Machine-readable claims ledger](claims.json)
 - [Proof Map](publications/PROOF_MAP.md)
 - [15-minute evaluation path](publications/EVALUATE_AML_IN_15_MINUTES.md)
+- [Deployment rollout brief](publications/DEPLOY_AML_WITHOUT_BREAKING_PRODUCTION.md)
 - [Press fact sheet](publications/PRESS_FACT_SHEET.md)
 - [Category brief — interface accountability](publications/CATEGORY_BRIEF.md)
 - [Buyer decision tree](publications/BUYER_DECISION_TREE.md)
@@ -74,6 +76,7 @@ Casebooks are proposed application areas unless independent evidence is explicit
 - Security and privacy teams: [Security/privacy brief](publications/SECURITY_PRIVACY_BRIEF.md)
 - Researchers and standards engineers: [Research/standards brief](publications/RESEARCH_STANDARDS_BRIEF.md)
 - Enterprise evaluators: [Enterprise buyer brief](publications/ENTERPRISE_BUYER_BRIEF.md)
+- Platform/release teams: [Deploy ĀML without breaking production](publications/DEPLOY_AML_WITHOUT_BREAKING_PRODUCTION.md)
 - Media/podcasts: [Media brief](publications/PODCAST_MEDIA_BRIEF.md)
 
 ## Core explainers
@@ -113,6 +116,7 @@ The scores are declared/model inputs. ĀML is a working research prototype, not 
 - Inspect the receipt.
 - Run the 10-minute reproduction.
 - Verify an artifact without trusting the original page.
+- Run the deployment rollout example in shadow/canary/enforce modes.
 - Check the claim against `CLAIMS.md`.
 - Publish disagreement if you find it.
 
