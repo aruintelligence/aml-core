@@ -39,7 +39,8 @@ const manifest = {
     api_import_smoke_test: true,
     aml_cli_smoke_test: true,
     aml_meaning_cli_smoke_test: true,
-    aml_release_quorum_cli_smoke_test: true
+    aml_release_quorum_cli_smoke_test: true,
+    aml_release_profile_cli_smoke_test: true
   },
   boundary: 'This manifest proves the uploaded tarball bytes match this SHA-256 and passed the repository package audit. It is not an npm registry publication, external adoption claim, or package-ownership proof.'
 };
