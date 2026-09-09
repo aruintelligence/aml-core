@@ -16,6 +16,10 @@ function sha256(value) {
   return crypto.createHash("sha256").update(typeof value === "string" ? value : stableStringify(value)).digest("hex");
 }
 
+function sha256Bytes(value) {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
 function policyPackAttestationMaterial(packSha256, attestation) {
   return {
     protocol: "ĀML Policy Pack Attestation",
@@ -66,16 +70,11 @@ export function signPolicyPack(pack, privateKeyPem, options = {}) {
     algorithm: "Ed25519",
     signer: options.signer ?? normalized.issuer ?? null,
     signed_at: options.timestamp ?? new Date().toISOString(),
-    public_key_sha256: sha256(publicDer),
+    public_key_sha256: sha256Bytes(publicDer),
     public_key_pem: publicPem
   };
-  const material = policyPackAttestationMaterial(packSha256, attestation);
-  const signature = crypto.sign(null, Buffer.from(stableStringify(material), "utf8"), privateKey);
-  return {
-    ...normalized,
-    pack_sha256: packSha256,
-    attestation: { ...attestation, signature_base64: signature.toString("base64") }
-  };
+  const signature = crypto.sign(null, Buffer.from(stableStringify(policyPackAttestationMaterial(packSha256, attestation)), "utf8"), privateKey);
+  return { ...normalized, pack_sha256: packSha256, attestation: { ...attestation, signature_base64: signature.toString("base64") } };
 }
 
 export function verifySignedPolicyPack(signedPack) {
@@ -104,10 +103,10 @@ export function verifySignedPolicyPack(signedPack) {
   try {
     const publicKey = crypto.createPublicKey(attestation.public_key_pem);
     const publicDer = publicKey.export({ type: "spki", format: "der" });
-    const publicKeyFingerprintValid = sha256(publicDer) === attestation.public_key_sha256;
+    const expectedFingerprint = current ? sha256Bytes(publicDer) : sha256(publicDer);
+    const publicKeyFingerprintValid = expectedFingerprint === attestation.public_key_sha256;
     const payload = current ? Buffer.from(stableStringify(policyPackAttestationMaterial(expectedPackHash, attestation)), "utf8") : Buffer.from(stableStringify(normalized), "utf8");
-    const signature = Buffer.from(attestation.signature_base64, "base64");
-    const signatureValid = crypto.verify(null, payload, publicKey, signature);
+    const signatureValid = crypto.verify(null, payload, publicKey, Buffer.from(attestation.signature_base64, "base64"));
     const verified = signatureValid && publicKeyFingerprintValid && hashValid;
     return {
       verified,
