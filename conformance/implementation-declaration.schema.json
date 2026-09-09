@@ -7,7 +7,10 @@
   "required": ["protocol", "implementation", "version", "language", "source", "test_vector_commit", "result"],
   "properties": {
     "protocol": {
-      "const": "aml-conformance/decision-core-1"
+      "enum": [
+        "aml-conformance/decision-core-1",
+        "aml-conformance/sorted-json-1"
+      ]
     },
     "implementation": {
       "type": "string",
