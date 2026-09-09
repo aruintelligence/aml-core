@@ -33,14 +33,10 @@ export function normalizePolicyPack(pack) {
   if (pack.version !== undefined && pack.version !== "1.0") throw new Error("Unsupported policy pack version.");
   if (!pack.id || typeof pack.id !== "string") throw new Error("Policy pack id is required.");
   if (!Array.isArray(pack.policies) || pack.policies.length === 0) throw new Error("Policy pack policies must be a non-empty array.");
-
-  // v1.3 policy packs are intentionally data-only: they may reference installed
-  // policy IDs but cannot embed executable JavaScript.
   for (const policyId of pack.policies) {
     if (typeof policyId !== "string") throw new Error("Policy pack policies must contain policy IDs only.");
     resolvePolicy(policyId);
   }
-
   return {
     protocol: "ĀML Policy Pack",
     version: "1.0",
@@ -75,31 +71,17 @@ export function signPolicyPack(pack, privateKeyPem, options = {}) {
   };
   const material = policyPackAttestationMaterial(packSha256, attestation);
   const signature = crypto.sign(null, Buffer.from(stableStringify(material), "utf8"), privateKey);
-
   return {
     ...normalized,
     pack_sha256: packSha256,
-    attestation: {
-      ...attestation,
-      signature_base64: signature.toString("base64")
-    }
+    attestation: { ...attestation, signature_base64: signature.toString("base64") }
   };
 }
 
 export function verifySignedPolicyPack(signedPack) {
   if (!signedPack || signedPack.protocol !== "ĀML Policy Pack") throw new Error("Invalid ĀML policy pack.");
   if (signedPack.version !== "1.0") {
-    return {
-      verified: false,
-      signature_valid: false,
-      public_key_fingerprint_valid: false,
-      pack_hash_valid: false,
-      pack_sha256: null,
-      attribution_bound: false,
-      signer: null,
-      signed_at: null,
-      reason: "unsupported policy pack version"
-    };
+    return { verified: false, signature_valid: false, public_key_fingerprint_valid: false, pack_hash_valid: false, pack_sha256: null, attribution_bound: false, signer: null, signed_at: null, reason: "unsupported policy pack version" };
   }
   if (!signedPack.attestation) throw new Error("Signed policy pack attestation is missing.");
 
@@ -108,82 +90,38 @@ export function verifySignedPolicyPack(signedPack) {
   try {
     normalized = normalizePolicyPack(packFields);
   } catch (error) {
-    return {
-      verified: false,
-      signature_valid: false,
-      public_key_fingerprint_valid: false,
-      pack_hash_valid: false,
-      pack_sha256: null,
-      attribution_bound: false,
-      signer: null,
-      signed_at: null,
-      claimed_signer: attestation.signer ?? null,
-      claimed_signed_at: attestation.signed_at ?? null,
-      reason: error.message
-    };
+    return { verified: false, signature_valid: false, public_key_fingerprint_valid: false, pack_hash_valid: false, pack_sha256: null, attribution_bound: false, signer: null, signed_at: null, claimed_signer: attestation.signer ?? null, claimed_signed_at: attestation.signed_at ?? null, reason: error.message };
   }
 
   const expectedPackHash = sha256(normalized);
   const hashValid = expectedPackHash === pack_sha256;
-  const current = attestation.protocol === "ĀML Policy Pack Attestation" &&
-    attestation.version === "1.1" &&
-    attestation.algorithm === "Ed25519";
-  const legacy = attestation.protocol === undefined &&
-    attestation.version === undefined &&
-    attestation.algorithm === "Ed25519";
-
+  const current = attestation.protocol === "ĀML Policy Pack Attestation" && attestation.version === "1.1" && attestation.algorithm === "Ed25519";
+  const legacy = attestation.protocol === undefined && attestation.version === undefined && attestation.algorithm === "Ed25519";
   if (!current && !legacy) {
-    return {
-      verified: false,
-      signature_valid: false,
-      public_key_fingerprint_valid: false,
-      pack_hash_valid: hashValid,
-      pack_sha256: expectedPackHash,
-      attribution_bound: false,
-      signer: null,
-      signed_at: null,
-      claimed_signer: attestation.signer ?? null,
-      claimed_signed_at: attestation.signed_at ?? null,
-      reason: "unsupported policy pack attestation version"
-    };
+    return { verified: false, signature_valid: false, public_key_fingerprint_valid: false, pack_hash_valid: hashValid, pack_sha256: expectedPackHash, attribution_bound: false, signer: null, signed_at: null, claimed_signer: attestation.signer ?? null, claimed_signed_at: attestation.signed_at ?? null, reason: "unsupported policy pack attestation version" };
   }
 
   try {
     const publicKey = crypto.createPublicKey(attestation.public_key_pem);
     const publicDer = publicKey.export({ type: "spki", format: "der" });
     const publicKeyFingerprintValid = sha256(publicDer) === attestation.public_key_sha256;
-    const payload = current
-      ? Buffer.from(stableStringify(policyPackAttestationMaterial(expectedPackHash, attestation)), "utf8")
-      : Buffer.from(stableStringify(normalized), "utf8");
+    const payload = current ? Buffer.from(stableStringify(policyPackAttestationMaterial(expectedPackHash, attestation)), "utf8") : Buffer.from(stableStringify(normalized), "utf8");
     const signature = Buffer.from(attestation.signature_base64, "base64");
     const signatureValid = crypto.verify(null, payload, publicKey, signature);
     const verified = signatureValid && publicKeyFingerprintValid && hashValid;
-
     return {
       verified,
       signature_valid: signatureValid,
       public_key_fingerprint_valid: publicKeyFingerprintValid,
       pack_hash_valid: hashValid,
       pack_sha256: expectedPackHash,
-      attribution_bound: current && signatureValid && publicKeyFingerprintValid,
+      attribution_bound: current && verified,
       signer: current && verified ? attestation.signer ?? null : null,
       signed_at: current && verified ? attestation.signed_at ?? null : null,
       claimed_signer: attestation.signer ?? null,
       claimed_signed_at: attestation.signed_at ?? null
     };
   } catch {
-    return {
-      verified: false,
-      signature_valid: false,
-      public_key_fingerprint_valid: false,
-      pack_hash_valid: hashValid,
-      pack_sha256: expectedPackHash,
-      attribution_bound: false,
-      signer: null,
-      signed_at: null,
-      claimed_signer: attestation.signer ?? null,
-      claimed_signed_at: attestation.signed_at ?? null,
-      reason: "malformed policy pack signature material"
-    };
+    return { verified: false, signature_valid: false, public_key_fingerprint_valid: false, pack_hash_valid: hashValid, pack_sha256: expectedPackHash, attribution_bound: false, signer: null, signed_at: null, claimed_signer: attestation.signer ?? null, claimed_signed_at: attestation.signed_at ?? null, reason: "malformed policy pack signature material" };
   }
 }
