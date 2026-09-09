@@ -14,6 +14,9 @@ Use this map when evaluating a public AML claim. Start with the claim, then foll
 | Browser evidence can detect mutation | `docs/browser-evidence-demo.html` | `docs/aml-browser-integrity.js` |
 | Verification can happen away from the producing page | `docs/detached-verifier.html` | Python and Go reference verifiers |
 | AML has a stable verifier target | `docs/verifier-contract.html` | immutable verifier snapshot + drift CI |
+| AML can run in shadow mode without changing effective rendering | `examples/deployment-rollout.mjs` | `runtime/deploymentFirewall.js` + deployment result schema |
+| AML can compare baseline and candidate policies before rollout | `examples/deployment-rollout.mjs` | `runtime/policyCanary.js` + policy canary schema |
+| AML can summarize rollout outcomes and compare operator thresholds | `runtime/rolloutMonitor.js` | `runtime/rolloutCriteria.js` + rollout schemas |
 | AML publishes claim-bounded public literature | `PUBLICATIONS.md` | `library/` + `claims.json` |
 
 ## Fast skeptical path
@@ -24,6 +27,7 @@ Use this map when evaluating a public AML claim. Start with the claim, then foll
 4. Reproduce the receipt locally.
 5. Tamper with evidence and verify rejection.
 6. Run the black-box verifier harness.
-7. Read `CLAIMS.md` before repeating a broad claim.
+7. Run `node examples/deployment-rollout.mjs` and inspect shadow, canary, and enforce outputs.
+8. Read `CLAIMS.md` before repeating a broad claim.
 
 A failed reproduction is useful evidence. File it.
