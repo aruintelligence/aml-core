@@ -13,6 +13,7 @@ function digest(value) {
 }
 
 function parseTimestamp(value) {
+  if (typeof value !== "string" || value.trim() === "") return null;
   const timestamp = Date.parse(value);
   return Number.isFinite(timestamp) ? timestamp : null;
 }
@@ -23,9 +24,18 @@ function requireTimestamp(value, field) {
   }
 }
 
+function requireValidWindow(issuedAt, expiresAt) {
+  const issued = issuedAt === null || issuedAt === undefined ? null : parseTimestamp(issuedAt);
+  const expires = expiresAt === null || expiresAt === undefined ? null : parseTimestamp(expiresAt);
+  if (issued !== null && expires !== null && expires <= issued) {
+    throw new Error("expires_at must be after issued_at");
+  }
+}
+
 export function createPolicyPassport({ subject = null, profile, preferences = {}, issued_at = null, expires_at = null } = {}) {
   requireTimestamp(issued_at, "issued_at");
   requireTimestamp(expires_at, "expires_at");
+  requireValidWindow(issued_at, expires_at);
 
   const body = {
     type: "aml-policy-passport/1",
@@ -38,32 +48,49 @@ export function createPolicyPassport({ subject = null, profile, preferences = {}
   return { ...body, passport_hash: digest(body) };
 }
 
-export function verifyPolicyPassport(passport, { now = null } = {}) {
-  if (!passport || passport.type !== "aml-policy-passport/1") return { valid: false, reason: "invalid_type" };
-  const { passport_hash, ...body } = passport;
-  if (digest(body) !== passport_hash) return { valid: false, reason: "hash_mismatch" };
+export function verifyPolicyPassport(passport, { now = new Date().toISOString() } = {}) {
+  try {
+    if (!passport || typeof passport !== "object" || Array.isArray(passport) || passport.type !== "aml-policy-passport/1") {
+      return { valid: false, reason: "invalid_type" };
+    }
+    const { passport_hash, ...body } = passport;
+    if (typeof passport_hash !== "string" || digest(body) !== passport_hash) {
+      return { valid: false, reason: "hash_mismatch" };
+    }
 
-  if (passport.issued_at !== null && passport.issued_at !== undefined && parseTimestamp(passport.issued_at) === null) {
-    return { valid: false, reason: "invalid_issued_at" };
+    const issuedAt = passport.issued_at === null || passport.issued_at === undefined
+      ? null
+      : parseTimestamp(passport.issued_at);
+    if (passport.issued_at !== null && passport.issued_at !== undefined && issuedAt === null) {
+      return { valid: false, reason: "invalid_issued_at" };
+    }
+
+    const expiresAt = passport.expires_at === null || passport.expires_at === undefined
+      ? null
+      : parseTimestamp(passport.expires_at);
+    if (passport.expires_at !== null && passport.expires_at !== undefined && expiresAt === null) {
+      return { valid: false, reason: "invalid_expires_at" };
+    }
+    if (issuedAt !== null && expiresAt !== null && expiresAt <= issuedAt) {
+      return { valid: false, reason: "invalid_time_window" };
+    }
+
+    if (now === null) {
+      return { valid: true, reason: null, passport_hash, temporal_validation: "skipped_explicitly" };
+    }
+    const nowTimestamp = parseTimestamp(now);
+    if (nowTimestamp === null) return { valid: false, reason: "invalid_now" };
+    if (issuedAt !== null && nowTimestamp < issuedAt) return { valid: false, reason: "not_yet_valid" };
+    if (expiresAt !== null && nowTimestamp >= expiresAt) return { valid: false, reason: "expired" };
+
+    return { valid: true, reason: null, passport_hash, temporal_validation: "enforced" };
+  } catch {
+    return { valid: false, reason: "verification_error" };
   }
-  const expiresAt = passport.expires_at === null || passport.expires_at === undefined
-    ? null
-    : parseTimestamp(passport.expires_at);
-  if (passport.expires_at !== null && passport.expires_at !== undefined && expiresAt === null) {
-    return { valid: false, reason: "invalid_expires_at" };
-  }
-  const nowTimestamp = now === null || now === undefined ? null : parseTimestamp(now);
-  if (now !== null && now !== undefined && nowTimestamp === null) {
-    return { valid: false, reason: "invalid_now" };
-  }
-  if (nowTimestamp !== null && expiresAt !== null && nowTimestamp >= expiresAt) {
-    return { valid: false, reason: "expired" };
-  }
-  return { valid: true, reason: null, passport_hash };
 }
 
-export function passportContext(passport) {
-  const verification = verifyPolicyPassport(passport);
+export function passportContext(passport, options = {}) {
+  const verification = verifyPolicyPassport(passport, options);
   if (!verification.valid) return { policy_passport_valid: false };
   return {
     policy_passport_valid: true,
