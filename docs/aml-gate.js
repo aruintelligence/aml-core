@@ -15,7 +15,17 @@ export class AMLGateElement extends HTMLElement {
   }
 
   connectedCallback() {
+    this._onDeploymentPostureChange = () => this.evaluate();
+    document.addEventListener('aml-mode-change', this._onDeploymentPostureChange);
+    document.addEventListener('aml-failure-mode-change', this._onDeploymentPostureChange);
     this.evaluate();
+  }
+
+  disconnectedCallback() {
+    if (this._onDeploymentPostureChange) {
+      document.removeEventListener('aml-mode-change', this._onDeploymentPostureChange);
+      document.removeEventListener('aml-failure-mode-change', this._onDeploymentPostureChange);
+    }
   }
 
   attributeChangedCallback() {
