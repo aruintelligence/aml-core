@@ -30,12 +30,30 @@
       "protocol": "aml-conformance/decision-core-1",
       "status": "experimental",
       "normativeDocument": "CONFORMANCE.md",
-      "vectors": "conformance/decision-core-1.json",
+      "vectors": [
+        "conformance/decision-core-1.json",
+        "conformance/decision-core-1-invalid.json"
+      ],
+      "blackBoxProtocol": "conformance/BLACK_BOX_PROTOCOL.md",
       "independentExamples": [
         "conformance/independent-python/verify.py",
         "conformance/independent-javascript/verify.mjs"
       ],
       "scope": "Deterministic ALLOW/SUPPRESS decision from declared attention_cost and restoration_value inputs"
+    },
+    {
+      "name": "ĀML Canonical JSON 1",
+      "protocol": "aml-conformance/canonical-json-1",
+      "status": "experimental",
+      "normativeDocument": "conformance/CANONICAL_JSON_1.md",
+      "vectors": [
+        "protocol/browser-canonicalization-vectors.json"
+      ],
+      "independentExamples": [
+        "independent/python/check_canonical_vectors.py",
+        "conformance/independent-javascript/verify_canonical_json.mjs"
+      ],
+      "scope": "Exact sorted-json-v1 canonical UTF-8 serialization and SHA-256 agreement for the published vector domain"
     }
   ]
 }
