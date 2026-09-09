@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import {
   createDeploymentFirewall,
   createRolloutMonitor,
-  evaluatePolicyCanary
+  evaluatePolicyCanary,
+  evaluateRolloutCriteria
 } from "../index.js";
 
 const fixed = "2030-01-01T00:00:00.000Z";
@@ -99,4 +100,48 @@ test("rollout monitor retains a bounded record window", () => {
   assert.equal(records.length, 2);
   assert.equal(records[0].label, "two");
   assert.equal(records[1].label, "three");
+});
+
+test("rollout criteria only evaluate operator-supplied mechanical thresholds", () => {
+  const monitor = createRolloutMonitor({ max_records: 10 });
+  const shadow = createDeploymentFirewall({ mode: "shadow", profile: "calm_default" });
+  monitor.record(shadow.evaluate(intent, { timestamp: fixed }), { recorded_at: fixed });
+  monitor.record(shadow.evaluate(suppressIntent, { timestamp: fixed }), { recorded_at: fixed });
+
+  const result = evaluateRolloutCriteria(monitor.summary(), {
+    min_evaluations: 2,
+    max_evaluation_error_rate: 0,
+    max_aml_suppression_rate: 0.5,
+    min_shadow_rate: 1
+  });
+
+  assert.equal(result.protocol, "ĀML Rollout Criteria Result");
+  assert.equal(result.criteria_met, true);
+  assert.match(result.claim_boundary, /does not prove safety, correctness, ethics, compliance, or production readiness/i);
+});
+
+test("rollout criteria report failed thresholds without converting them into policy truth", () => {
+  const monitor = createRolloutMonitor({ max_records: 10 });
+  const shadow = createDeploymentFirewall({ mode: "shadow", profile: "calm_default" });
+  monitor.record(shadow.evaluate(suppressIntent, { timestamp: fixed }), { recorded_at: fixed });
+
+  const result = evaluateRolloutCriteria(monitor.summary(), {
+    min_evaluations: 10,
+    max_aml_suppression_rate: 0.1
+  });
+
+  assert.equal(result.criteria_met, false);
+  assert.equal(result.checks.filter(check => !check.passed).length, 2);
+});
+
+test("rollout criteria reject empty or invalid operator criteria", () => {
+  const monitor = createRolloutMonitor({ max_records: 2 });
+  const shadow = createDeploymentFirewall({ mode: "shadow", profile: "calm_default" });
+  monitor.record(shadow.evaluate(intent, { timestamp: fixed }), { recorded_at: fixed });
+  const summary = monitor.summary();
+  assert.throws(() => evaluateRolloutCriteria(summary, {}), /At least one rollout criterion/);
+  assert.throws(
+    () => evaluateRolloutCriteria(summary, { max_evaluation_error_rate: 1.5 }),
+    /between 0 and 1/
+  );
 });
