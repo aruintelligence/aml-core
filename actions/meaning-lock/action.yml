@@ -1,0 +1,20 @@
+name: "ĀML Meaning Lock"
+description: "Fail CI when two AML files no longer compile to the same Abstract Meaning Tree meaning fingerprint."
+inputs:
+  before-file:
+    description: "Path to the baseline .aml file"
+    required: true
+  after-file:
+    description: "Path to the proposed .aml file"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        node "$GITHUB_ACTION_PATH/../../bin/aml-meaning.js" \
+          "${{ inputs.before-file }}" \
+          "${{ inputs.after-file }}"
+branding:
+  icon: "lock"
+  color: "purple"
