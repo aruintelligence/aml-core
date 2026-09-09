@@ -5,7 +5,8 @@ import path from "node:path";
 import process from "node:process";
 
 const root = process.cwd();
-const readText = (p) => fs.readFileSync(path.join(root, p), "utf8");
+const resolvePath = (p) => path.join(root, p);
+const readText = (p) => fs.readFileSync(resolvePath(p), "utf8");
 const readJson = (p) => JSON.parse(readText(p));
 
 const contract = readJson("project-contract.json");
@@ -19,12 +20,43 @@ const check = (name, ok, detail) => {
   if (!ok) failures.push(`${name}: ${detail}`);
 };
 
-const { stableVersion, stableTag, previewVersion, previewTag, defaultChannel } = contract.release;
+const {
+  stableVersion,
+  stableTag,
+  previewVersion,
+  previewTag,
+  previewNotesFile,
+  defaultChannel
+} = contract.release;
 
 check("stable tag/version shape", stableTag === `v${stableVersion}`, `${stableTag} must equal v${stableVersion}`);
 check("preview tag/version shape", previewTag === `v${previewVersion}`, `${previewTag} must equal v${previewVersion}`);
 check("stable and preview differ", stableVersion !== previewVersion, "stable and preview versions must differ");
 check("default channel is stable", defaultChannel === "stable", "defaultChannel must remain stable until an intentional release promotion changes it");
+check(
+  "preview release notes path declared",
+  typeof previewNotesFile === "string" && previewNotesFile.length > 0,
+  "release.previewNotesFile must name the canonical prerelease notes file"
+);
+check(
+  "preview release notes file exists",
+  typeof previewNotesFile === "string" && fs.existsSync(resolvePath(previewNotesFile)),
+  `${previewNotesFile ?? "missing previewNotesFile"} does not exist`
+);
+
+if (typeof previewNotesFile === "string" && fs.existsSync(resolvePath(previewNotesFile))) {
+  const previewNotes = readText(previewNotesFile);
+  check(
+    "preview release notes identify preview tag",
+    previewNotes.includes(previewTag),
+    `${previewNotesFile} must identify ${previewTag}`
+  );
+  check(
+    "preview release notes preserve stable boundary",
+    previewNotes.includes(`stable package/CLI/capability version remains v${stableVersion}`),
+    `${previewNotesFile} must state that stable remains v${stableVersion}`
+  );
+}
 
 check(
   "README stable badge",
@@ -57,7 +89,7 @@ check(
 const result = {
   valid: failures.length === 0,
   stable: { version: stableVersion, tag: stableTag },
-  preview: { version: previewVersion, tag: previewTag },
+  preview: { version: previewVersion, tag: previewTag, notesFile: previewNotesFile },
   defaultChannel,
   checks: checks.length,
   failures
