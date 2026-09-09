@@ -3,21 +3,34 @@
 
 import { compileSource } from "./compiler.js";
 import { fingerprintAMT } from "./meaningFingerprint.js";
+import { buildPairedComparisonIndexes } from "../runtime/comparisonIdentity.js";
 
-function flatten(nodes, parent = "root", out = new Map(), ordinal = { value: 0 }) {
-  for (const node of nodes || []) {
-    const key = node.identifier || node.name || `${parent}/${node.type}:${ordinal.value++}`;
-    out.set(key, {
-      key,
+function flatten(nodes, parentPath = "root", out = []) {
+  for (let index = 0; index < (nodes || []).length; index++) {
+    const node = nodes[index];
+    const structuralPath = `${parentPath}/${node.type}:${index}`;
+    const baseKey = node.identifier || node.name || structuralPath;
+    out.push({
+      base_key: baseKey,
+      structural_path: structuralPath,
       type: node.type,
       name: node.name || null,
       identifier: node.identifier || null,
       properties: structuredClone(node.properties || {}),
       render_metadata: structuredClone(node.render_metadata || {})
     });
-    flatten(node.children, key, out, ordinal);
+    flatten(node.children, structuralPath, out);
   }
   return out;
+}
+
+function decorateIndex(result) {
+  return new Map(result.entries.map(entry => [entry.key, {
+    ...entry.item,
+    key: entry.key,
+    identity_ambiguous: entry.ambiguous,
+    identity_occurrence: entry.occurrence
+  }]));
 }
 
 function changedFields(left, right) {
@@ -37,8 +50,14 @@ export function semanticDiff(leftSource, rightSource, options = {}) {
   const right = compileSource(rightSource, { timestamp, policy: options.policy, context: options.context || {} });
   const leftFingerprint = fingerprintAMT(left.amt);
   const rightFingerprint = fingerprintAMT(right.amt);
-  const leftNodes = flatten(left.amt.root);
-  const rightNodes = flatten(right.amt.root);
+
+  const paired = buildPairedComparisonIndexes(
+    flatten(left.amt.root),
+    flatten(right.amt.root),
+    node => node.base_key
+  );
+  const leftNodes = decorateIndex(paired.left);
+  const rightNodes = decorateIndex(paired.right);
   const keys = [...new Set([...leftNodes.keys(), ...rightNodes.keys()])].sort();
 
   const added = [];
@@ -55,12 +74,18 @@ export function semanticDiff(leftSource, rightSource, options = {}) {
     const propertyChanges = changedFields(a.properties, b.properties);
     const meaningChanges = changedFields(a.render_metadata, b.render_metadata);
     const structuralChanges = changedFields(
-      { type: a.type, name: a.name, identifier: a.identifier },
-      { type: b.type, name: b.name, identifier: b.identifier }
+      { type: a.type, name: a.name, identifier: a.identifier, structural_path: a.structural_path },
+      { type: b.type, name: b.name, identifier: b.identifier, structural_path: b.structural_path }
     );
 
     if (Object.keys(propertyChanges).length || Object.keys(meaningChanges).length || Object.keys(structuralChanges).length) {
-      changed.push({ key, structural_changes: structuralChanges, property_changes: propertyChanges, meaning_changes: meaningChanges });
+      changed.push({
+        key,
+        identity_ambiguous: a.identity_ambiguous || b.identity_ambiguous,
+        structural_changes: structuralChanges,
+        property_changes: propertyChanges,
+        meaning_changes: meaningChanges
+      });
     } else {
       unchanged.push(key);
     }
@@ -73,6 +98,8 @@ export function semanticDiff(leftSource, rightSource, options = {}) {
     left_meaning_fingerprint: leftFingerprint.fingerprint,
     right_meaning_fingerprint: rightFingerprint.fingerprint,
     fingerprint_protocol: leftFingerprint.protocol,
+    ambiguous_identity_keys: paired.ambiguous_identity_keys,
+    identity_ambiguity_detected: paired.ambiguous_identity_keys.length > 0,
     summary: { added: added.length, removed: removed.length, changed: changed.length, unchanged: unchanged.length },
     added,
     removed,
