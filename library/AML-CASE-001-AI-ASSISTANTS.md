@@ -20,5 +20,7 @@ Example cases:
 
 ĀML cannot know whether the assistant's declared purpose is truthful. It does not guarantee safety or legal compliance. The casebook shows where an inspectable decision boundary may be useful.
 
+**This casebook is not evidence of AI-assistant adoption. It describes a proposed application area for public testing.**
+
 Try the public proof:
 https://aruintelligence.github.io/aml-core/proof.html
