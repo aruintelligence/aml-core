@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Try ĀML — ĀRU Meaning Language — as an accountable AI interface firewall around ordinary HTML in under a minute." />
+  <title>Try ĀML in 60 seconds — AI Interface Firewall</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #07111f; color: #f4f7fb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { width: min(920px, calc(100% - 32px)); margin: 0 auto; padding: 56px 0 80px; }
+    a { color: #9cffb0; }
+    h1 { font-size: clamp(2.2rem, 7vw, 4.8rem); line-height: .96; margin: 10px 0 20px; max-width: 850px; }
+    h2 { margin-top: 0; }
+    .eyebrow { color: #7dd3fc; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .lead { font-size: 1.2rem; max-width: 760px; color: #c8d4e3; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin: 38px 0; }
+    .card { padding: 22px; border: 1px solid #2d4058; border-radius: 18px; background: #0d1a2b; }
+    .code { position: relative; margin-top: 28px; }
+    pre { overflow: auto; padding: 22px; border: 1px solid #2d4058; border-radius: 18px; background: #040b14; color: #dbe8f7; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    button.copy { border: 0; border-radius: 10px; padding: 10px 14px; font: inherit; font-weight: 750; cursor: pointer; background: #f2ce72; color: #07111f; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+    .actions a { display: inline-block; padding: 11px 15px; border: 1px solid #3c5470; border-radius: 10px; text-decoration: none; font-weight: 700; }
+    .fine { color: #91a4ba; font-size: .94rem; margin-top: 28px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">ĀML™ · ĀRU Meaning Language™</div>
+    <h1>Put an accountability gate around ordinary HTML.</h1>
+    <p class="lead">No framework migration. No build system. This live page uses the same narrow browser bridge you can place around one AI-generated or high-risk interface decision.</p>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Pressure CTA</h2>
+        <p>Purpose: create urgency. Attention cost: 5. Restoration value: 1.</p>
+        <aml-gate purpose="Create urgency for a purchase" attention-cost="5" restoration-value="1">
+          <button type="button">Buy before the timer expires</button>
+        </aml-gate>
+      </section>
+
+      <section class="card">
+        <h2>Explanatory CTA</h2>
+        <p>Purpose: explain pricing. Attention cost: 1. Restoration value: 3.</p>
+        <aml-gate purpose="Explain pricing without pressure" attention-cost="1" restoration-value="3">
+          <button type="button">Review pricing details</button>
+        </aml-gate>
+      </section>
+    </div>
+
+    <section class="code">
+      <h2>Copy this into an HTML page</h2>
+      <button class="copy" id="copy">Copy integration</button>
+      <pre><code id="snippet">&lt;script type="module" src="https://aruintelligence.github.io/aml-core/aml-gate.js"&gt;&lt;/script&gt;
+
+&lt;aml-gate
+  purpose="Create urgency for a purchase"
+  attention-cost="5"
+  restoration-value="1"&gt;
+  &lt;button&gt;Buy before the timer expires&lt;/button&gt;
+&lt;/aml-gate&gt;</code></pre>
+    </section>
+
+    <div class="actions">
+      <a href="../ADOPT_AML.md">Adoption guide</a>
+      <a href="../starters/ai-interface-firewall/">Copy-and-run starter</a>
+      <a href="../VERIFY.md">Verify without trusting ĀML</a>
+      <a href="https://github.com/aruintelligence/aml-core/issues/81">Build with ĀML</a>
+    </div>
+
+    <p class="fine">The current attention/restoration values are declared or model-provided prototype inputs, not objective measurements of cognition or wellbeing. This narrow browser demonstration does not by itself provide the complete ĀML consent, privacy, accessibility, cryptographic evidence, or production authorization stack.</p>
+  </main>
+
+  <script type="module" src="./aml-gate.js"></script>
+  <script>
+    const copy = document.getElementById('copy');
+    copy.addEventListener('click', async () => {
+      const text = document.getElementById('snippet').textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        copy.textContent = 'Copied';
+      } catch {
+        copy.textContent = 'Select the code below';
+      }
+    });
+  </script>
+</body>
+</html>
