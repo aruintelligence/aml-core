@@ -22,7 +22,14 @@ export function createProofCarryingInterface({ html, receipt = null, policy_pass
 export function verifyProofCarryingInterface(manifest, { html, receipt = null, policy_passport = null, conformance_claim = null, provenance = null, causal_graph = null } = {}) {
   if (!manifest || manifest.type !== "aml-proof-carrying-interface/1") return { valid: false, reason: "invalid_type" };
   const { manifest_sha256, ...body } = manifest;
-  if (hash(body) !== manifest_sha256) return { valid: false, reason: "manifest_hash_mismatch" };
+
+  let manifestHash;
+  try {
+    manifestHash = hash(body);
+  } catch {
+    return { valid: false, reason: "invalid_manifest" };
+  }
+  if (manifestHash !== manifest_sha256) return { valid: false, reason: "manifest_hash_mismatch" };
   if (typeof html !== "string" || hash(html) !== manifest.output_sha256) return { valid: false, reason: "output_mismatch" };
 
   const checks = [
@@ -34,7 +41,15 @@ export function verifyProofCarryingInterface(manifest, { html, receipt = null, p
   ];
   for (const [field, value] of checks) {
     if (manifest[field] === null && value == null) continue;
-    if (manifest[field] === null || value == null || hash(value) !== manifest[field]) return { valid: false, reason: `${field}_mismatch` };
+    if (manifest[field] === null || value == null) return { valid: false, reason: `${field}_mismatch` };
+
+    let valueHash;
+    try {
+      valueHash = hash(value);
+    } catch {
+      return { valid: false, reason: `${field}_invalid` };
+    }
+    if (valueHash !== manifest[field]) return { valid: false, reason: `${field}_mismatch` };
   }
 
   return { valid: true, reason: null, manifest_sha256 };
