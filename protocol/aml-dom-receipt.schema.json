@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-dom-receipt.schema.json",
   "title": "AML DOM Receipt",
-  "description": "Reference prototype schema for page-level browser AML evaluation receipts. A receipt may be emitted before asynchronous browser SHA-256 sealing completes; sealed receipts include integrity.",
+  "description": "Reference prototype schema for page-level browser AML evaluation receipts. A receipt may be emitted before asynchronous browser SHA-256 sealing completes; sealed receipts include integrity. Deployment fields distinguish AML policy decisions from what the rollout posture actually rendered.",
   "type": "object",
   "required": ["schema", "prototype", "revision", "reason", "url", "generated_at", "totals", "decisions"],
   "properties": {
@@ -12,6 +12,15 @@
     "reason": { "type": "string" },
     "url": { "type": "string" },
     "generated_at": { "type": "string" },
+    "deployment": {
+      "type": "object",
+      "properties": {
+        "default_mode": { "enum": ["enforce", "shadow"] },
+        "default_failure_mode": { "enum": ["open", "closed"] },
+        "mode_counts": { "type": "object" },
+        "failure_mode_counts": { "type": "object" }
+      }
+    },
     "totals": {
       "type": "object",
       "required": ["evaluated", "allowed", "suppressed", "errors"],
@@ -19,7 +28,10 @@
         "evaluated": { "type": "integer", "minimum": 0 },
         "allowed": { "type": "integer", "minimum": 0 },
         "suppressed": { "type": "integer", "minimum": 0 },
-        "errors": { "type": "integer", "minimum": 0 }
+        "errors": { "type": "integer", "minimum": 0 },
+        "effective_rendered": { "type": "integer", "minimum": 0 },
+        "effective_suppressed": { "type": "integer", "minimum": 0 },
+        "shadowed_suppressions": { "type": "integer", "minimum": 0 }
       }
     },
     "decisions": {
@@ -34,7 +46,11 @@
           "purpose": { "type": "string" },
           "attention_cost": { "type": "number" },
           "restoration_value": { "type": "number" },
-          "render_allowed": { "type": "boolean" },
+          "render_allowed": { "type": ["boolean", "null"] },
+          "effective_rendered": { "type": "boolean" },
+          "deployment_mode": { "enum": ["enforce", "shadow"] },
+          "failure_mode": { "enum": ["open", "closed"] },
+          "would_suppress": { "type": "boolean" },
           "error": { "type": "string" }
         }
       }
