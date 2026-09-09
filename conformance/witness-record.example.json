@@ -4,7 +4,7 @@
   "observed_at": "2026-09-09T07:15:00Z",
   "source_url": "https://github.com/example-labs/aml-verifier",
   "artifact_type": "aml-external-verifier-challenge/1",
-  "artifact_hash": null,
+  "artifact_hash": "9700993b15245cda9b1830bbeb84f1854b12ba7c7c218ab47504ad996e2a6144",
   "verifier": "example-go-verifier",
   "runtime": "go1.24",
   "result": "PASS",
@@ -12,6 +12,7 @@
   "summary": "Independent black-box verifier matched the published challenge cases.",
   "report_url": "https://github.com/example-labs/aml-verifier/actions/runs/123",
   "notes": [
-    "Template only: replace example-labs URLs and identifiers with real outside evidence before submission."
+    "Template only: replace example-labs URLs and identifiers with real outside evidence before submission.",
+    "artifact_hash must equal the challenge-sha256 output from the exact verifier-conformance Action/commit you tested."
   ]
 }
