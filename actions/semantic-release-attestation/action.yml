@@ -47,6 +47,7 @@ runs:
         printf '%s\n' "$RESULT"
 
         node - "$RESULT" "$GITHUB_OUTPUT" <<'NODE'
+        const crypto = require('crypto');
         const fs = require('fs');
         const result = JSON.parse(process.argv[2]);
         if (result.valid !== true) process.exit(1);
@@ -59,11 +60,18 @@ runs:
           proof_sha256: result.proof_sha256,
           signer: result.signer ?? ''
         };
-        fs.appendFileSync(output, Object.entries(values).map(([key, value]) => `${key}=${String(value)}\n`).join(''));
+        let text = '';
+        for (const [key, raw] of Object.entries(values)) {
+          const value = String(raw);
+          const delimiter = `AML_${crypto.randomBytes(16).toString('hex')}`;
+          text += `${key}<<${delimiter}\n${value}\n${delimiter}\n`;
+        }
+        fs.appendFileSync(output, text);
         NODE
 
     - id: attest
-      uses: actions/attest@v4
+      # actions/attest v4.2.2, immutable release tag resolved 2026-09-09.
+      uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6
       with:
         subject-name: ${{ steps.prepare.outputs.subject_name }}
         subject-digest: ${{ steps.prepare.outputs.subject_digest }}
