@@ -32,7 +32,7 @@ for (const vector of data.vectors) {
   const rendered = canonicalize(vector.input);
   const digest = crypto.createHash("sha256").update(rendered, "utf8").digest("hex");
   if (rendered !== vector.canonical) {
-    failures.push(`${vector.name}: canonical mismatch`);
+    failures.push(`${vector.name}: serialized output mismatch`);
   }
   if (digest !== vector.sha256) {
     failures.push(`${vector.name}: sha256 mismatch`);
@@ -44,4 +44,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`PASS aml-conformance/canonical-json-1 (${data.vectors.length}/${data.vectors.length} vectors)`);
+console.log(`PASS aml-conformance/sorted-json-1 (${data.vectors.length}/${data.vectors.length} vectors)`);
