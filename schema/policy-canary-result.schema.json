@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/schema/policy-canary-result.schema.json",
+  "title": "ĀML Policy Canary Result",
+  "description": "Prototype contract comparing the same interface intent under baseline and candidate policy profiles without declaring either policy correct.",
+  "type": "object",
+  "required": ["protocol", "version", "baseline_profile", "candidate_profile", "total_decisions", "changed_decisions", "candidate_new_suppressions", "candidate_new_allows", "changes", "baseline", "candidate"],
+  "properties": {
+    "protocol": { "const": "ĀML Policy Canary Result" },
+    "version": { "const": "1.0" },
+    "baseline_profile": { "type": "string" },
+    "candidate_profile": { "type": "string" },
+    "total_decisions": { "type": "integer", "minimum": 0 },
+    "changed_decisions": { "type": "integer", "minimum": 0 },
+    "candidate_new_suppressions": { "type": "integer", "minimum": 0 },
+    "candidate_new_allows": { "type": "integer", "minimum": 0 },
+    "changes": { "type": "array" },
+    "baseline": {
+      "type": "object",
+      "required": ["allowed", "denied_count", "receipt_sha256", "receipt"],
+      "properties": {
+        "allowed": { "type": "boolean" },
+        "denied_count": { "type": "integer", "minimum": 0 },
+        "receipt_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "receipt": { "type": "object" }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "required": ["allowed", "denied_count", "receipt_sha256", "receipt"],
+      "properties": {
+        "allowed": { "type": "boolean" },
+        "denied_count": { "type": "integer", "minimum": 0 },
+        "receipt_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "receipt": { "type": "object" }
+      }
+    }
+  }
+}
