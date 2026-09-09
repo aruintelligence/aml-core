@@ -2,7 +2,7 @@ name: "ĀML Semantic Release Attestation"
 description: "Verify an ĀML Semantic Release Proof and publish its custom predicate as a GitHub/Sigstore artifact attestation."
 inputs:
   proof-file:
-    description: "Path to an aml-semantic-release-proof/1 JSON file."
+    description: "Path to an aml-semantic-release-proof/1 JSON file. This exact file is the GitHub attestation subject."
     required: true
 outputs:
   attestation-id:
@@ -18,14 +18,14 @@ outputs:
     description: "Path to the verified ĀML custom predicate JSON"
     value: ${{ steps.prepare.outputs.predicate_path }}
   statement-path:
-    description: "Path to the locally generated in-toto Statement v1"
+    description: "Path to the locally generated ĀML in-toto Statement v1"
     value: ${{ steps.prepare.outputs.statement_path }}
-  subject-name:
-    description: "ĀML meaning-state subject name"
-    value: ${{ steps.prepare.outputs.subject_name }}
-  subject-digest:
+  meaning-state-name:
+    description: "Derived ĀML meaning-state resource name carried by the local statement"
+    value: ${{ steps.prepare.outputs.meaning_state_name }}
+  meaning-state-digest:
     description: "SHA-256 digest of the verified after-Meaning-Manifest semantic state"
-    value: ${{ steps.prepare.outputs.subject_digest }}
+    value: ${{ steps.prepare.outputs.meaning_state_digest }}
   proof-sha256:
     description: "SHA-256 of the authenticated ĀML Semantic Release Proof material"
     value: ${{ steps.prepare.outputs.proof_sha256 }}
@@ -55,8 +55,8 @@ runs:
         const values = {
           predicate_path: result.predicate_path,
           statement_path: result.statement_path,
-          subject_name: result.subject_name,
-          subject_digest: result.subject_digest,
+          meaning_state_name: result.subject_name,
+          meaning_state_digest: result.subject_digest,
           proof_sha256: result.proof_sha256,
           signer: result.signer ?? ''
         };
@@ -73,8 +73,7 @@ runs:
       # actions/attest v4.2.2, immutable release tag resolved 2026-09-09.
       uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6
       with:
-        subject-name: ${{ steps.prepare.outputs.subject_name }}
-        subject-digest: ${{ steps.prepare.outputs.subject_digest }}
+        subject-path: ${{ inputs.proof-file }}
         predicate-type: https://aruintelligence.github.io/aml-core/predicates/semantic-release/v1.json
         predicate-path: ${{ steps.prepare.outputs.predicate_path }}
 branding:
