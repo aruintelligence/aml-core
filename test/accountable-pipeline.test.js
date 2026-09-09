@@ -81,6 +81,22 @@ test("accountable AI pipeline emits a verifiable execution receipt", () => {
   assert.equal(verifyExecutionReceipt(receipt).verified, true);
 });
 
+test("default accountable receipt survives a JSON serialization round trip", () => {
+  const receipt = executeAccountableIntent(intent, {
+    timestamp,
+    profile: "calm_default",
+    context: { consent_granted: true }
+  });
+
+  assert.equal(receipt.attention_ledger.initial_budget, null);
+  assert.equal(receipt.attention_ledger.remaining, null);
+
+  const roundTripped = JSON.parse(JSON.stringify(receipt));
+  assert.equal(roundTripped.attention_ledger.initial_budget, null);
+  assert.equal(roundTripped.attention_ledger.remaining, null);
+  assert.equal(verifyExecutionReceipt(roundTripped).verified, true);
+});
+
 test("execution receipt verification detects mutation", () => {
   const receipt = executeAccountableIntent(intent, {
     timestamp,
@@ -122,6 +138,25 @@ test("accountable execution receipts can be Ed25519 signed and verified", () => 
   const verification = verifySignedExecutionReceipt(signed);
   assert.equal(verification.verified, true);
   assert.equal(verification.signer, "test-suite");
+});
+
+test("signed accountable receipt survives a JSON serialization round trip", () => {
+  const { privateKey } = crypto.generateKeyPairSync("ed25519");
+  const privateKeyPem = privateKey.export({ type: "pkcs8", format: "pem" });
+  const receipt = executeAccountableIntent(intent, {
+    timestamp,
+    profile: "calm_default",
+    context: { consent_granted: true }
+  });
+  const signed = signExecutionReceipt(receipt, privateKeyPem, {
+    timestamp,
+    signer: "round-trip-test"
+  });
+
+  const roundTripped = JSON.parse(JSON.stringify(signed));
+  const verification = verifySignedExecutionReceipt(roundTripped);
+  assert.equal(verification.verified, true);
+  assert.equal(verification.signer, "round-trip-test");
 });
 
 test("signed receipt verification fails after receipt mutation", () => {
