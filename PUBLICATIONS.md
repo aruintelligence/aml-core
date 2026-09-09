@@ -15,9 +15,10 @@
 7. [Deploy ĀML without breaking production](publications/DEPLOY_AML_WITHOUT_BREAKING_PRODUCTION.md)
 8. [Security hardening bulletin — September 8, 2026](publications/SECURITY_HARDENING_BULLETIN_2026-09-08.md)
 9. [Meaning Fingerprint — deterministic AMT identity](publications/MEANING_FINGERPRINT.md)
-10. [Why AI-generated UI needs a firewall](publications/WHY_AI_UI_NEEDS_A_FIREWALL.md)
-11. Live proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
-12. View Meaning: https://aruintelligence.github.io/aml-core/view-meaning.html
+10. [Meaning Manifest — project-level compiled-meaning lock](publications/MEANING_MANIFEST.md)
+11. [Why AI-generated UI needs a firewall](publications/WHY_AI_UI_NEEDS_A_FIREWALL.md)
+12. Live proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
+13. View Meaning: https://aruintelligence.github.io/aml-core/view-meaning.html
 
 ## Trust the evidence, not the volume
 
@@ -32,6 +33,7 @@ Useful trust surfaces:
 - [Deployment rollout brief](publications/DEPLOY_AML_WITHOUT_BREAKING_PRODUCTION.md)
 - [Security hardening bulletin — September 8, 2026](publications/SECURITY_HARDENING_BULLETIN_2026-09-08.md)
 - [Meaning Fingerprint — deterministic AMT identity](publications/MEANING_FINGERPRINT.md)
+- [Meaning Manifest — project-level compiled-meaning lock](publications/MEANING_MANIFEST.md)
 - [Press fact sheet](publications/PRESS_FACT_SHEET.md)
 - [Category brief — interface accountability](publications/CATEGORY_BRIEF.md)
 - [Buyer decision tree](publications/BUYER_DECISION_TREE.md)
@@ -91,6 +93,7 @@ Casebooks are proposed application areas unless independent evidence is explicit
 - [View Meaning explainer](publications/VIEW_MEANING_EXPLAINER.md)
 - [Meaning Gate explainer](publications/MEANING_GATE_EXPLAINER.md)
 - [Meaning Fingerprint](publications/MEANING_FINGERPRINT.md)
+- [Meaning Manifest](publications/MEANING_MANIFEST.md)
 - [Fair comparison landscape](publications/COMPARISON_LANDSCAPE.md)
 - [Executive FAQ](publications/FAQ_EXECUTIVE.md)
 - [Buyer objections — answered without hype](publications/BUYER_OBJECTIONS.md)
