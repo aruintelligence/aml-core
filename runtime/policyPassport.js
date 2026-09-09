@@ -90,8 +90,11 @@ export function verifyPolicyPassport(passport, { now = new Date().toISOString() 
 }
 
 export function passportContext(passport, options = {}) {
-  const verification = verifyPolicyPassport(passport, options);
-  if (!verification.valid) return { policy_passport_valid: false };
+  const now = options.now ?? new Date().toISOString();
+  const verification = verifyPolicyPassport(passport, { now });
+  if (!verification.valid || verification.temporal_validation !== "enforced") {
+    return { policy_passport_valid: false };
+  }
   return {
     policy_passport_valid: true,
     policy_profile: passport.profile,
