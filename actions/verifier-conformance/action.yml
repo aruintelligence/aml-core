@@ -1,0 +1,33 @@
+name: "ĀML External Verifier Conformance"
+description: "Run an independently maintained verifier against the public ĀML black-box witness challenge."
+inputs:
+  verifier-command:
+    description: "Path to one executable verifier command in the caller repository. The harness appends --now <ISO-8601> <bundle.json>."
+    required: true
+outputs:
+  result-file:
+    description: "Path to the machine-readable aml-verifier-conformance-result/1 artifact"
+    value: ${{ steps.verify.outputs.result_file }}
+  passed:
+    description: "true only when all project-defined black-box cases pass"
+    value: ${{ steps.verify.outputs.passed }}
+runs:
+  using: "composite"
+  steps:
+    - id: verify
+      shell: bash
+      run: |
+        set -euo pipefail
+        RESULT_FILE="$RUNNER_TEMP/aml-verifier-conformance-result.json"
+        set +e
+        node "$GITHUB_ACTION_PATH/../../scripts/run-verifier-conformance.mjs" -- "${{ inputs.verifier-command }}" > "$RESULT_FILE"
+        STATUS=$?
+        set -e
+        cat "$RESULT_FILE"
+        PASSED="$(node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(String(r.passed===true))" "$RESULT_FILE")"
+        echo "result_file=$RESULT_FILE" >> "$GITHUB_OUTPUT"
+        echo "passed=$PASSED" >> "$GITHUB_OUTPUT"
+        exit "$STATUS"
+branding:
+  icon: "check-circle"
+  color: "purple"
