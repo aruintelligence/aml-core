@@ -31,5 +31,7 @@ The value is not “AML bans marketing.” It is that product teams can state a 
 
 Can a checkout team review generated urgency and upsell UI through Meaning Gate before deployment and inspect the executed decision afterward through a receipt?
 
+**This casebook is not evidence of e-commerce adoption. It describes a proposed application area for public testing.**
+
 Proof:
 https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
