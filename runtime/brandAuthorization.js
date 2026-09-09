@@ -6,10 +6,25 @@ function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
+function validTimestamp(value) {
+  return typeof value === "string" && Number.isFinite(Date.parse(value));
+}
+
+function validateTimes({ issued_at = null, expires_at = null } = {}) {
+  if (issued_at !== null && !validTimestamp(issued_at)) return "invalid_issued_at";
+  if (expires_at !== null && !validTimestamp(expires_at)) return "invalid_expires_at";
+  if (issued_at !== null && expires_at !== null && Date.parse(expires_at) <= Date.parse(issued_at)) {
+    return "invalid_time_window";
+  }
+  return null;
+}
+
 export function signBrandAuthorization({ grantee, marks = [], uses = [], issued_at = null, expires_at = null, authorization_id = null, agreement_reference = null } = {}, privateKeyPem, options = {}) {
   if (!grantee) throw new Error("grantee is required");
   if (!Array.isArray(marks) || marks.length === 0) throw new Error("at least one mark is required");
   if (!privateKeyPem) throw new Error("private key is required");
+  const timeError = validateTimes({ issued_at, expires_at });
+  if (timeError) throw new Error(timeError);
 
   const body = {
     type: "aml-brand-authorization/1",
@@ -53,7 +68,11 @@ export function verifyBrandAuthorization(credential, { now = null, revocation_re
 
   if (algorithm !== "Ed25519") return { valid: false, reason: "unsupported_algorithm" };
   if (expected_issuer && credential.issuer !== expected_issuer) return { valid: false, reason: "issuer_mismatch" };
-  if (now && credential.expires_at && new Date(now) >= new Date(credential.expires_at)) return { valid: false, reason: "expired" };
+
+  const timeError = validateTimes(credential);
+  if (timeError) return { valid: false, reason: timeError };
+  if (now !== null && !validTimestamp(now)) return { valid: false, reason: "invalid_now" };
+  if (now && credential.expires_at && Date.parse(now) >= Date.parse(credential.expires_at)) return { valid: false, reason: "expired" };
 
   const canonical = canonicalJSONStringify(body);
   if (sha256(canonical) !== credential_hash) return { valid: false, reason: "hash_mismatch" };
