@@ -66,6 +66,62 @@ function rootFor(files) {
   return sha256Utf8(canonicalJSONStringify(manifestMaterial(files)));
 }
 
+function validateManifestShape(manifest) {
+  if (!manifest || manifest.protocol !== MANIFEST_PROTOCOL || manifest.version !== "1.0") {
+    return { valid: false, reason: "invalid_manifest_protocol" };
+  }
+  if (manifest.algorithm !== "sha256" || manifest.material_protocol !== MATERIAL_PROTOCOL || manifest.fingerprint_protocol !== FINGERPRINT_PROTOCOL) {
+    return { valid: false, reason: "unsupported_manifest_contract" };
+  }
+  if (!Array.isArray(manifest.files) || manifest.files.length === 0 || manifest.file_count !== manifest.files.length) {
+    return { valid: false, reason: "invalid_manifest_files" };
+  }
+  if (typeof manifest.root_sha256 !== "string" || !/^[a-f0-9]{64}$/.test(manifest.root_sha256)) {
+    return { valid: false, reason: "invalid_manifest_root" };
+  }
+
+  const manifestPaths = new Set();
+  let previousPath = null;
+  for (const file of manifest.files) {
+    let path;
+    try {
+      path = assertManifestPath(file?.path);
+    } catch (error) {
+      return { valid: false, reason: error instanceof Error ? error.message : "invalid_manifest_path" };
+    }
+    if (manifestPaths.has(path)) return { valid: false, reason: "duplicate_manifest_path", path };
+    manifestPaths.add(path);
+    if (previousPath !== null && comparePortablePaths(previousPath, path) >= 0) {
+      return { valid: false, reason: "manifest_paths_not_sorted", path };
+    }
+    previousPath = path;
+    if (typeof file.fingerprint !== "string" || !/^[a-f0-9]{64}$/.test(file.fingerprint)) {
+      return { valid: false, reason: "invalid_file_fingerprint", path };
+    }
+    if (typeof file.amt_version !== "string" || file.amt_version.length === 0) {
+      return { valid: false, reason: "invalid_amt_version", path };
+    }
+  }
+
+  return { valid: true, manifest_paths: manifestPaths };
+}
+
+export function verifyMeaningManifestIntegrity(manifest) {
+  const shape = validateManifestShape(manifest);
+  if (!shape.valid) {
+    return { verified: false, reason: shape.reason, path: shape.path ?? null, expected_root_sha256: null };
+  }
+  const expectedRoot = rootFor(manifest.files);
+  const verified = expectedRoot === manifest.root_sha256;
+  return {
+    verified,
+    reason: verified ? null : "manifest_root_mismatch",
+    file_count: manifest.files.length,
+    expected_root_sha256: expectedRoot,
+    declared_root_sha256: manifest.root_sha256
+  };
+}
+
 export function createMeaningManifest(sources) {
   const entries = normalizeSources(sources);
   if (entries.length === 0) throw new Error("Meaning Manifest requires at least one AML source.");
@@ -93,37 +149,10 @@ export function createMeaningManifest(sources) {
 
 export function verifyMeaningManifest(manifest, sources) {
   try {
-    if (!manifest || manifest.protocol !== MANIFEST_PROTOCOL || manifest.version !== "1.0") {
-      return { verified: false, reason: "invalid_manifest_protocol" };
-    }
-    if (manifest.algorithm !== "sha256" || manifest.material_protocol !== MATERIAL_PROTOCOL || manifest.fingerprint_protocol !== FINGERPRINT_PROTOCOL) {
-      return { verified: false, reason: "unsupported_manifest_contract" };
-    }
-    if (!Array.isArray(manifest.files) || manifest.files.length === 0 || manifest.file_count !== manifest.files.length) {
-      return { verified: false, reason: "invalid_manifest_files" };
-    }
-    if (typeof manifest.root_sha256 !== "string" || !/^[a-f0-9]{64}$/.test(manifest.root_sha256)) {
-      return { verified: false, reason: "invalid_manifest_root" };
-    }
+    const integrity = verifyMeaningManifestIntegrity(manifest);
+    if (!integrity.verified) return integrity;
 
-    const manifestPaths = new Set();
-    let previousPath = null;
-    for (const file of manifest.files) {
-      const path = assertManifestPath(file?.path);
-      if (manifestPaths.has(path)) return { verified: false, reason: "duplicate_manifest_path", path };
-      manifestPaths.add(path);
-      if (previousPath !== null && comparePortablePaths(previousPath, path) >= 0) {
-        return { verified: false, reason: "manifest_paths_not_sorted", path };
-      }
-      previousPath = path;
-      if (typeof file.fingerprint !== "string" || !/^[a-f0-9]{64}$/.test(file.fingerprint)) {
-        return { verified: false, reason: "invalid_file_fingerprint", path };
-      }
-      if (typeof file.amt_version !== "string" || file.amt_version.length === 0) {
-        return { verified: false, reason: "invalid_amt_version", path };
-      }
-    }
-
+    const manifestPaths = new Set(manifest.files.map(file => file.path));
     const normalized = normalizeSources(sources);
     const sourcePaths = new Set(normalized.map(entry => entry.path));
     if (sourcePaths.size !== manifestPaths.size || [...manifestPaths].some(path => !sourcePaths.has(path))) {
@@ -146,20 +175,18 @@ export function verifyMeaningManifest(manifest, sources) {
       }))
       .filter(item => item.expected !== item.observed || item.expected_amt_version !== item.observed_amt_version);
 
-    const expectedRoot = rootFor(manifest.files);
     const observedRoot = rootFor(recomputedFiles);
-    const declaredRootValid = expectedRoot === manifest.root_sha256;
     const sourceRootValid = observedRoot === manifest.root_sha256;
-    const verified = declaredRootValid && sourceRootValid && mismatches.length === 0;
+    const verified = sourceRootValid && mismatches.length === 0;
 
     return {
       verified,
-      reason: verified ? null : mismatches.length ? "file_fingerprint_mismatch" : !declaredRootValid ? "manifest_root_mismatch" : "source_root_mismatch",
+      reason: verified ? null : mismatches.length ? "file_fingerprint_mismatch" : "source_root_mismatch",
       file_count: manifest.files.length,
       mismatches,
-      declared_root_valid: declaredRootValid,
+      declared_root_valid: true,
       source_root_valid: sourceRootValid,
-      expected_root_sha256: expectedRoot,
+      expected_root_sha256: integrity.expected_root_sha256,
       observed_root_sha256: observedRoot
     };
   } catch (error) {
