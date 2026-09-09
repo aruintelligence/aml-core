@@ -76,3 +76,13 @@ test('witness action exposes only validated fields', () => {
   assert.match(action, /steps\.validate\.outputs\.result/);
   assert.doesNotMatch(action, /WITNESSES\.json/);
 });
+
+test('external verifier issue form uses the witness registry result vocabulary', () => {
+  const form = fs.readFileSync('.github/ISSUE_TEMPLATE/external-verifier-report.yml', 'utf8');
+  assert.match(form, /- PASS/);
+  assert.match(form, /- FAIL/);
+  assert.match(form, /- MIXED/);
+  assert.doesNotMatch(form, /DISAGREES WITH REFERENCE/);
+  assert.doesNotMatch(form, /COULD NOT COMPLETE/);
+  assert.match(form, /aml-witness-record\/1 JSON/);
+});
