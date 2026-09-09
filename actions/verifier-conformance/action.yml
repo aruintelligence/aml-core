@@ -11,6 +11,12 @@ outputs:
   passed:
     description: "true only when all project-defined black-box cases pass"
     value: ${{ steps.verify.outputs.passed }}
+  challenge-sha256:
+    description: "SHA-256 of the exact challenge contract bytes used by the harness"
+    value: ${{ steps.verify.outputs.challenge_sha256 }}
+  witness-vector-sha256:
+    description: "SHA-256 of the exact golden witness-vector bytes used by the harness"
+    value: ${{ steps.verify.outputs.witness_vector_sha256 }}
 runs:
   using: "composite"
   steps:
@@ -25,8 +31,12 @@ runs:
         set -e
         cat "$RESULT_FILE"
         PASSED="$(node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(String(r.passed===true))" "$RESULT_FILE")"
+        CHALLENGE_SHA256="$(node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(String(r.challenge_sha256||''))" "$RESULT_FILE")"
+        WITNESS_VECTOR_SHA256="$(node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(String(r.witness_vector_sha256||''))" "$RESULT_FILE")"
         echo "result_file=$RESULT_FILE" >> "$GITHUB_OUTPUT"
         echo "passed=$PASSED" >> "$GITHUB_OUTPUT"
+        echo "challenge_sha256=$CHALLENGE_SHA256" >> "$GITHUB_OUTPUT"
+        echo "witness_vector_sha256=$WITNESS_VECTOR_SHA256" >> "$GITHUB_OUTPUT"
         exit "$STATUS"
 branding:
   icon: "check-circle"
