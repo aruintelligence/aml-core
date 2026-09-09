@@ -1,5 +1,6 @@
 import { applyAMLDomGate } from './aml-dom-gate.js';
 import { sealBrowserReceipt } from './aml-browser-integrity.js';
+import { resolveAMLDeploymentMode, resolveAMLFailureMode } from './aml-deployment-mode.js';
 
 const WATCHED_ATTRIBUTES = [
   'data-aml-purpose',
@@ -43,6 +44,14 @@ function sealReceipt(receipt) {
     });
 }
 
+function countBy(decisions, field) {
+  return decisions.reduce((acc, row) => {
+    const key = row[field] ?? 'unknown';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+}
+
 function makeReceipt(decisions, reason) {
   revision += 1;
   const receipt = {
@@ -52,11 +61,20 @@ function makeReceipt(decisions, reason) {
     reason,
     url: location.href,
     generated_at: new Date().toISOString(),
+    deployment: {
+      default_mode: resolveAMLDeploymentMode(),
+      default_failure_mode: resolveAMLFailureMode(),
+      mode_counts: countBy(decisions, 'deployment_mode'),
+      failure_mode_counts: countBy(decisions, 'failure_mode')
+    },
     totals: {
       evaluated: decisions.length,
       allowed: decisions.filter((row) => row.ok && row.render_allowed).length,
       suppressed: decisions.filter((row) => row.ok && !row.render_allowed).length,
-      errors: decisions.filter((row) => !row.ok).length
+      errors: decisions.filter((row) => !row.ok).length,
+      effective_rendered: decisions.filter((row) => row.effective_rendered === true).length,
+      effective_suppressed: decisions.filter((row) => row.effective_rendered === false).length,
+      shadowed_suppressions: decisions.filter((row) => row.render_allowed === false && row.effective_rendered === true).length
     },
     decisions
   };
@@ -80,10 +98,20 @@ function queueEvaluation(reason) {
   });
 }
 
+function onModeChange() {
+  queueEvaluation('deployment-mode-change');
+}
+
+function onFailureModeChange() {
+  queueEvaluation('failure-mode-change');
+}
+
 export function startAMLLiveGate() {
   if (observer) return observer;
 
   evaluateLiveAML('startup');
+  document.addEventListener('aml-mode-change', onModeChange);
+  document.addEventListener('aml-failure-mode-change', onFailureModeChange);
 
   observer = new MutationObserver((mutations) => {
     const relevant = mutations.some((mutation) => {
@@ -115,6 +143,8 @@ export function startAMLLiveGate() {
 export function stopAMLLiveGate() {
   observer?.disconnect();
   observer = null;
+  document.removeEventListener('aml-mode-change', onModeChange);
+  document.removeEventListener('aml-failure-mode-change', onFailureModeChange);
   globalThis.__AML_LIVE_OBSERVER__ = null;
 }
 
