@@ -1,0 +1,32 @@
+name: AML External Verifier Kit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verifier-kit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Build reference-code-free verifier kit
+        run: node scripts/build-external-verifier-kit.mjs
+      - name: Verify kit integrity and code exclusion
+        run: node scripts/check-external-verifier-kit.mjs
+      - name: Upload exact verifier kit
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-external-verifier-kit-${{ github.sha }}
+          path: dist/external-verifier-kit/
+          if-no-files-found: error
+          retention-days: 30
