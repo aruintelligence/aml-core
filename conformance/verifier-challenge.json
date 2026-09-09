@@ -1,0 +1,48 @@
+{
+  "schema": "aml-external-verifier-challenge/1",
+  "status": "SHIPPED challenge contract",
+  "canonical_repository": "https://github.com/aruintelligence/aml-core",
+  "harness": "scripts/run-verifier-conformance.mjs",
+  "witness_vector": "independent/python/witness-vector.json",
+  "command_contract": {
+    "invocation": "<verifier-command> --now <ISO-8601> <bundle.json>",
+    "stdout": "single JSON object",
+    "required_result_field": "valid",
+    "success_exit_code_for_valid_bundle": 0,
+    "nonzero_exit_code_for_invalid_bundle": true
+  },
+  "cases": [
+    {
+      "id": "golden-valid",
+      "expected_valid": true,
+      "now": "2030-01-01T00:05:00Z",
+      "mutation": null
+    },
+    {
+      "id": "tampered-purpose",
+      "expected_valid": false,
+      "now": "2030-01-01T00:05:00Z",
+      "mutation": "evidence.receipt.decisions[0].purpose is changed"
+    },
+    {
+      "id": "tampered-challenge",
+      "expected_valid": false,
+      "now": "2030-01-01T00:05:00Z",
+      "mutation": "challenge.nonce is changed"
+    },
+    {
+      "id": "expired-challenge",
+      "expected_valid": false,
+      "now": "2030-01-01T00:11:00Z",
+      "mutation": null
+    }
+  ],
+  "independence": {
+    "required_for_external_witness_credit": true,
+    "must_be_maintained_outside_canonical_repository": true,
+    "must_not_import_reference_implementation": true,
+    "must_not_wrap_aml_core_cli_or_api": true,
+    "negative_and_mixed_results_welcome": true
+  },
+  "claim_boundary": "Passing this project-defined black-box challenge is interoperability evidence for the tested contract. It is not certification, proof of implementation independence, endorsement, standards-body approval, safety, ethics, legal compliance, or broad adoption."
+}
