@@ -1,0 +1,87 @@
+name: ĀML conformance implementation
+
+description: Submit reproducible evidence for an independent ĀML conformance implementation.
+title: "[Conformance] <implementation name> / <protocol>"
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for implementing ĀML semantics independently. Registry inclusion records reproducible evidence only; it is not certification, endorsement, security approval, accessibility certification, or standards-body recognition.
+
+  - type: input
+    id: implementation
+    attributes:
+      label: Implementation name
+      placeholder: example-aml-rust
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Implementation version
+      placeholder: 0.1.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: protocol
+    attributes:
+      label: Conformance protocol
+      options:
+        - aml-conformance/decision-core-1
+        - aml-conformance/canonical-json-1
+    validations:
+      required: true
+
+  - type: input
+    id: language
+    attributes:
+      label: Language/runtime
+      placeholder: Rust 1.x
+    validations:
+      required: true
+
+  - type: input
+    id: source
+    attributes:
+      label: Public source URL
+      placeholder: https://github.com/example/example-aml-rust
+    validations:
+      required: true
+
+  - type: input
+    id: commit
+    attributes:
+      label: aml-core vector commit tested
+      description: Use the full 40-character commit SHA containing the vectors you tested.
+    validations:
+      required: true
+
+  - type: textarea
+    id: command
+    attributes:
+      label: Reproduction command
+      description: Provide the shortest command another person can run to reproduce your PASS result.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Observed output
+      render: text
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: independence
+    attributes:
+      label: Independence declaration
+      options:
+        - label: This implementation does not import or call the ĀML reference runtime for the behavior being submitted.
+          required: true
+        - label: I understand registry inclusion reports evidence and does not mean certification or endorsement.
+          required: true
