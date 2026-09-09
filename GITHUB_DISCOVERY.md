@@ -4,6 +4,16 @@
 
 This file exists as a concise GitHub-native discovery surface for developers, researchers, security engineers, AI teams, frontend engineers, platform teams, and technical evaluators searching for the problems ĀML addresses.
 
+## Found this from GitHub search? Try ĀML first.
+
+**Live 60-second AI Interface Firewall starter:**
+
+https://aruintelligence.github.io/aml-core/quickstart.html
+
+It gates ordinary HTML without requiring a framework migration or build system and exposes the exact integration snippet for copying.
+
+**Copy-and-run source:** [starters/ai-interface-firewall/](starters/ai-interface-firewall/)
+
 ## Core category
 
 **Accountability layer between AI and the human interface.**
@@ -52,7 +62,9 @@ This file exists as a concise GitHub-native discovery surface for developers, re
 
 ## Fast paths
 
-**Try:** https://aruintelligence.github.io/aml-core/playground.html
+**Try in 60 seconds:** https://aruintelligence.github.io/aml-core/quickstart.html
+
+**Explore:** https://aruintelligence.github.io/aml-core/playground.html
 
 **Live proof:** https://aruintelligence.github.io/aml-core/proof.html
 
@@ -61,6 +73,8 @@ This file exists as a concise GitHub-native discovery surface for developers, re
 **Verify independently:** [VERIFY.md](VERIFY.md)
 
 **Read:** [PUBLICATIONS.md](PUBLICATIONS.md)
+
+**Build / report results:** https://github.com/aruintelligence/aml-core/issues/81
 
 **External verifier challenge:** https://github.com/aruintelligence/aml-core/issues/56
 
