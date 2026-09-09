@@ -1,7 +1,21 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 
-const snapshotPath = process.argv[2] || 'protocol/verification-contract-v1.json';
+function currentSnapshotPath() {
+  const catalog = JSON.parse(fs.readFileSync('protocol/verification-contract-catalog.json', 'utf8'));
+  const entry = (catalog.snapshots || []).find((item) => item.snapshot_id === catalog.current_snapshot);
+  if (!entry?.manifest) throw new Error(`current verifier snapshot ${catalog.current_snapshot || '<missing>'} has no catalog manifest`);
+  return entry.manifest;
+}
+
+let snapshotPath;
+try {
+  snapshotPath = process.argv[2] || currentSnapshotPath();
+} catch (error) {
+  console.error(JSON.stringify({ verified: false, failures: [error.message] }, null, 2));
+  process.exit(1);
+}
+
 const snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
 const failures = [];
 
@@ -24,13 +38,14 @@ for (const path of [snapshot.cli_contract, snapshot.golden_vector]) {
 }
 
 if (failures.length) {
-  console.error(JSON.stringify({ verified: false, snapshot_id: snapshot.snapshot_id || null, failures }, null, 2));
+  console.error(JSON.stringify({ verified: false, snapshot_path: snapshotPath, snapshot_id: snapshot.snapshot_id || null, failures }, null, 2));
   process.exit(1);
 }
 
 console.log(JSON.stringify({
   verified: true,
   schema: snapshot.schema,
+  snapshot_path: snapshotPath,
   snapshot_id: snapshot.snapshot_id,
   source_commit: snapshot.source_commit,
   locked_path_count: snapshot.locked_paths.length,
