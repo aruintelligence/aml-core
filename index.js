@@ -61,5 +61,6 @@ export { viewMeaning, formatMeaningReport } from "./tooling/viewMeaning.js";
 export { evaluatePullRequestChange, formatPullRequestGate } from "./tooling/prGate.js";
 export { AML_CONFORMANCE_LEVELS, evaluateConformanceLevel, createConformanceClaim, verifyConformanceClaim } from "./tooling/conformanceLevel.js";
 export { RELEASE_KEY_TRUST_POLICY_PROTOCOL, RELEASE_KEY_TRUST_POLICY_MATERIAL_PROTOCOL, releaseKeyTrustPolicyFingerprint, validateReleaseKeyTrustPolicy, verifyTrustedSemanticReleaseProof } from "./tooling/releaseKeyTrust.js";
+export { SEMANTIC_RELEASE_ENDORSEMENT_PROTOCOL, SEMANTIC_RELEASE_QUORUM_POLICY_PROTOCOL, createSemanticReleaseEndorsement, verifySemanticReleaseEndorsement, validateSemanticReleaseQuorumPolicy, fingerprintSemanticReleaseQuorumPolicy, verifySemanticReleaseQuorum } from "./tooling/semanticReleaseQuorum.js";
 export { buildGitHubAttestationVerifyArgs, verifyGitHubSemanticAttestationEvidence } from "./tooling/githubSemanticAttestation.js";
 export { getCompletionItems, getHoverInfo, getLanguageCatalog } from "./tooling/languageService.js";

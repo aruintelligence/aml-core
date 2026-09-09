@@ -1,0 +1,69 @@
+name: "ĀML Semantic Release Quorum"
+description: "Fail closed unless a verified ĀML Semantic Release Proof has enough distinct trusted release endorsements."
+inputs:
+  proof-file:
+    description: "Path to aml-semantic-release-proof/1 JSON"
+    required: true
+  endorsements-file:
+    description: "Path to JSON array of aml-semantic-release-endorsement/1 artifacts"
+    required: true
+  policy-file:
+    description: "Path to aml-semantic-release-quorum-policy/1 JSON"
+    required: true
+  policy-sha256:
+    description: "Optional expected canonical quorum-policy SHA-256"
+    required: false
+outputs:
+  verified:
+    description: "true when quorum verification succeeds"
+    value: ${{ steps.verify.outputs.verified }}
+  threshold:
+    description: "Required distinct trusted endorsements"
+    value: ${{ steps.verify.outputs.threshold }}
+  valid-trusted-endorsements:
+    description: "Distinct trusted endorsements that counted"
+    value: ${{ steps.verify.outputs.valid_trusted_endorsements }}
+  policy-sha256:
+    description: "Canonical quorum-policy SHA-256"
+    value: ${{ steps.verify.outputs.policy_sha256 }}
+runs:
+  using: "composite"
+  steps:
+    - id: verify
+      shell: bash
+      env:
+        AML_PROOF_FILE: ${{ inputs.proof-file }}
+        AML_ENDORSEMENTS_FILE: ${{ inputs.endorsements-file }}
+        AML_POLICY_FILE: ${{ inputs.policy-file }}
+        AML_POLICY_SHA256: ${{ inputs.policy-sha256 }}
+      run: |
+        set -euo pipefail
+        ARGS=(verify "$AML_PROOF_FILE" "$AML_ENDORSEMENTS_FILE" "$AML_POLICY_FILE")
+        if [[ -n "$AML_POLICY_SHA256" ]]; then
+          ARGS+=(--policy-sha256 "$AML_POLICY_SHA256")
+        fi
+        RESULT="$(node "$GITHUB_ACTION_PATH/../../bin/aml-release-quorum.js" "${ARGS[@]}")"
+        printf '%s\n' "$RESULT"
+
+        node - "$RESULT" "$GITHUB_OUTPUT" <<'NODE'
+        const crypto = require('crypto');
+        const fs = require('fs');
+        const result = JSON.parse(process.argv[2]);
+        if (result.verified !== true) process.exit(1);
+        const values = {
+          verified: 'true',
+          threshold: result.threshold,
+          valid_trusted_endorsements: result.valid_trusted_endorsements,
+          policy_sha256: result.policy_sha256
+        };
+        let text = '';
+        for (const [key, raw] of Object.entries(values)) {
+          const value = String(raw);
+          const delimiter = `AML_${crypto.randomBytes(16).toString('hex')}`;
+          text += `${key}<<${delimiter}\n${value}\n${delimiter}\n`;
+        }
+        fs.appendFileSync(process.argv[3], text);
+        NODE
+branding:
+  icon: "users"
+  color: "purple"

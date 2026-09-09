@@ -88,6 +88,17 @@ try {
   const meaningBin = path.join(installDir, 'node_modules', '.bin', process.platform === 'win32' ? 'aml-meaning.cmd' : 'aml-meaning');
   execFileSync(meaningBin, [path.resolve('examples/simple.aml')], { cwd: installDir, stdio: 'pipe' });
   check('installed aml-meaning CLI fingerprints source', true, 'aml-meaning examples/simple.aml');
+
+  const quorumPolicyPath = path.join(installDir, 'quorum-policy.json');
+  fs.writeFileSync(quorumPolicyPath, JSON.stringify({
+    protocol: 'aml-semantic-release-quorum-policy/1',
+    policy_id: 'package-smoke-test',
+    threshold: 1,
+    trusted_keys: [{ public_key_sha256: '0'.repeat(64), signer: null }]
+  }));
+  const quorumBin = path.join(installDir, 'node_modules', '.bin', process.platform === 'win32' ? 'aml-release-quorum.cmd' : 'aml-release-quorum');
+  const quorumHash = execFileSync(quorumBin, ['hash-policy', quorumPolicyPath], { cwd: installDir, encoding: 'utf8' }).trim();
+  check('installed aml-release-quorum CLI hashes policy', /^[a-f0-9]{64}$/.test(quorumHash), quorumHash);
 } catch (error) {
   failures.push(`clean install/smoke test failed: ${error.message}`);
 } finally {
