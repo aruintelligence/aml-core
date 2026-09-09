@@ -37,6 +37,15 @@ Public status labels:
 8. **ĀML publishes a numbered, machine-readable publication library.**  
    Evidence: `library/`, `library/catalog.json`, `scripts/check-library-surfaces.mjs`.
 
+9. **ĀML can run in shadow deployment mode so the AML decision is recorded without changing the effective render decision.**  
+   Evidence: `runtime/deploymentFirewall.js`, `schema/deployment-firewall-result.schema.json`, `examples/deployment-rollout.mjs`.
+
+10. **ĀML can compare baseline and candidate policy profiles over the same interface intent and report exactly which decisions changed.**  
+    Evidence: `runtime/policyCanary.js`, `schema/policy-canary-result.schema.json`, `examples/deployment-rollout.mjs`.
+
+11. **ĀML can aggregate local deployment outcomes into rollout summaries and mechanically compare them against operator-supplied thresholds.**  
+    Evidence: `runtime/rolloutMonitor.js`, `runtime/rolloutCriteria.js`, `schema/rollout-monitor-summary.schema.json`, `schema/rollout-criteria-result.schema.json`.
+
 ## Claims ĀML does not make
 
 ĀML does **not** currently claim that:
@@ -46,7 +55,8 @@ Public status labels:
 - its declared scores objectively measure human cognition or wellbeing;
 - an AML decision is automatically ethical, legally compliant, or factually correct;
 - a cryptographic signature proves institutional legitimacy or truthful declared intent;
-- reference implementations maintained by ĀRU count as independent external witnesses.
+- reference implementations maintained by ĀRU count as independent external witnesses;
+- a rollout threshold being met proves production readiness, safety, compliance, human benefit, or policy quality.
 
 ## Commercial and official identity
 
