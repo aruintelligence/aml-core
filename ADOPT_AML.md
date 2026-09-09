@@ -106,7 +106,7 @@ Start here:
 - [External verifier challenge](https://github.com/aruintelligence/aml-core/issues/56)
 - [External application integration challenge](https://github.com/aruintelligence/aml-core/issues/57)
 - [Security challenge](https://github.com/aruintelligence/aml-core/issues/58)
-- [External Verifier Kit](interop/external-verifier-kit/)
+- [External Verifier Challenge and downloadable kit instructions](publications/EXTERNAL_VERIFIER_CHALLENGE.md)
 
 A result maintained by `aruintelligence/aml-core` does **not** count as an external witness. The external witness counter stays at zero until another maintainer or organization produces reproducible public evidence.
 
