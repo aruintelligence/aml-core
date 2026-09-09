@@ -60,12 +60,35 @@ export function verifyThresholdAuthorization(authorization) {
     };
   }
 
-  const message = authorizationMessage(authorization);
+  if (!Array.isArray(authorization.signatures)) {
+    return {
+      valid: false,
+      reason: "invalid_signatures",
+      valid_signatures: 0,
+      threshold: authorization.threshold,
+      threshold_bound: true
+    };
+  }
+
+  let message;
+  try {
+    message = authorizationMessage(authorization);
+  } catch {
+    return {
+      valid: false,
+      reason: "invalid_payload",
+      valid_signatures: 0,
+      threshold: authorization.threshold,
+      threshold_bound: true
+    };
+  }
+
   const seen = new Set();
   let valid = 0;
 
-  for (const item of authorization.signatures ?? []) {
+  for (const item of authorization.signatures) {
     try {
+      if (!item || typeof item !== "object") continue;
       const publicKey = crypto.createPublicKey(item.public_key_pem);
       const fp = fingerprint(publicKey);
       if (fp !== item.key_fingerprint || seen.has(fp)) continue;
