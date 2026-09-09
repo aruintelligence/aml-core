@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/schema/deployment-firewall-result.schema.json",
+  "title": "ĀML Deployment Firewall Result",
+  "description": "Prototype contract separating the AML policy decision from the effective rollout decision.",
+  "type": "object",
+  "required": ["protocol", "version", "mode", "failure_mode", "profile", "aml_allowed", "effective_allowed", "would_suppress", "evaluation_error", "cache", "result"],
+  "properties": {
+    "protocol": { "const": "ĀML Deployment Firewall Result" },
+    "version": { "const": "1.0" },
+    "mode": { "enum": ["enforce", "shadow"] },
+    "failure_mode": { "enum": ["open", "closed"] },
+    "profile": { "type": "string" },
+    "aml_allowed": { "type": ["boolean", "null"] },
+    "effective_allowed": { "type": "boolean" },
+    "would_suppress": { "type": "boolean" },
+    "evaluation_error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["name", "message", "code"],
+          "properties": {
+            "name": { "type": "string" },
+            "message": { "type": "string" },
+            "code": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "cache": {
+      "type": "object",
+      "required": ["enabled", "hit", "key"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "hit": { "type": "boolean" },
+        "key": { "type": ["string", "null"] }
+      }
+    },
+    "result": { "type": ["object", "null"] }
+  }
+}
