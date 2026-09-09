@@ -35,7 +35,10 @@ function resolveInitialAttentionBudget(context) {
   if (typeof context.attention_budget_initial === "number" && Number.isFinite(context.attention_budget_initial)) {
     return context.attention_budget_initial;
   }
-  return Infinity;
+  // Accountable receipts are JSON artifacts. `null` is the portable unbounded
+  // sentinel; using JavaScript Infinity here would become null only *after*
+  // JSON serialization and silently invalidate the receipt's hash material.
+  return null;
 }
 
 export function executeAccountableIntent(intent, options = {}) {
