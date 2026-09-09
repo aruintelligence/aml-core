@@ -5,9 +5,19 @@
     {
       "snapshot_id": "aml-verifier-contract-2026-09-08-01",
       "source_commit": "b1ff5a87c7b19ae6338503a58ab6257a5b2add0b"
+    },
+    {
+      "snapshot_id": "aml-verifier-contract-2026-09-09-01",
+      "source_commit": "2dac9e2b4a6401af3718bc71a4b031bd57f358c5"
     }
   ],
-  "edges": [],
+  "edges": [
+    {
+      "from_snapshot": "aml-verifier-contract-2026-09-08-01",
+      "to_snapshot": "aml-verifier-contract-2026-09-09-01",
+      "migration": "protocol/migrations/aml-verifier-contract-2026-09-08-01_to_2026-09-09-01.json"
+    }
+  ],
   "invariants": [
     "snapshot ids are unique",
     "migration edges are acyclic",
