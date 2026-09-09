@@ -4,13 +4,50 @@
 
 An outside implementation can report PASS, FAIL, or MIXED results without asking the canonical repository to translate prose into a registry entry.
 
+## Fast path: challenge → witness artifact
+
+The External Verifier Conformance Action can now emit a validated `aml-witness-record/1` from the same black-box run that produced `aml-verifier-conformance-result/1`.
+
+```yaml
+- id: aml-conformance
+  continue-on-error: true
+  uses: aruintelligence/aml-core/actions/verifier-conformance@main
+  with:
+    verifier-command: ./my-verifier
+    verifier-name: my-verifier 0.1.0
+    runtime: rust-1.90
+
+- name: Preserve AML evidence
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: aml-external-verifier-evidence
+    path: |
+      ${{ steps.aml-conformance.outputs.result-file }}
+      ${{ steps.aml-conformance.outputs.witness-record-file }}
+```
+
+In an outside repository the Action defaults `source_url` to that repository's GitHub Actions run URL and derives a run-specific witness ID. You can override `source-url` or `witness-id` explicitly.
+
+The Action returns the original conformance exit status **after** generating the witness record. A failing or partially compatible verifier therefore remains a failing check, while its evidence can still be preserved with `continue-on-error: true` + `if: always()`.
+
+Result mapping is deterministic:
+
+- every challenge case matched → `PASS`;
+- zero challenge cases matched → `FAIL`;
+- anything between those states → `MIXED`.
+
+The generated record binds `artifact_hash` to the exact challenge SHA-256 and records the exact witness-vector SHA-256 in `notes`. The canonical `aruintelligence/aml-core` repository skips automatic external-witness generation for itself.
+
+For reproducible third-party CI, pin this Action to an immutable commit or published release tag instead of `main`.
+
 ## 1. Produce public outside evidence
 
 Maintain the verifier or reproduction outside `aruintelligence/aml-core` and publish a stable HTTPS source/report URL.
 
 ## 2. Create `aml-witness-record/1`
 
-Start from [`../conformance/witness-record.example.json`](../conformance/witness-record.example.json). Replace every example identity and URL with the real outside evidence.
+You can use the automatic path above, or start from [`../conformance/witness-record.example.json`](../conformance/witness-record.example.json). Replace every example identity and URL with the real outside evidence.
 
 The result vocabulary is exact:
 
@@ -45,7 +82,7 @@ A record is not added automatically merely because its JSON validates. Maintaine
 
 ## Machine-checkable vs evidence-review boundary
 
-The validator can check structure, result vocabulary, UTC observation time, HTTPS URLs, unexpected properties, and whether the supplied evidence URL points back at canonical ĀML evidence.
+The validator can check structure, result vocabulary, UTC observation time, HTTPS URLs, unexpected properties, exact verifier-challenge byte binding, and whether the supplied evidence URL points back at canonical ĀML evidence.
 
 It cannot establish from JSON alone that an outside implementation is genuinely independent, that a report is truthful, or that a verifier is technically correct. Those are evidence-review questions.
 

@@ -1,9 +1,29 @@
 name: "ĀML External Verifier Conformance"
-description: "Run an independently maintained verifier against the public ĀML black-box witness challenge."
+description: "Run an independently maintained verifier against the public ĀML black-box witness challenge and emit portable evidence."
 inputs:
   verifier-command:
     description: "Path to one executable verifier command in the caller repository. The harness appends --now <ISO-8601> <bundle.json>."
     required: true
+  emit-witness-record:
+    description: "Emit a validated aml-witness-record/1 after the conformance run. Automatically skipped for the canonical aml-core repository unless source-url is explicitly external."
+    required: false
+    default: "true"
+  witness-id:
+    description: "Optional external witness ID. Defaults to a sanitized repository/run identifier."
+    required: false
+    default: ""
+  source-url:
+    description: "Optional public HTTPS evidence URL. Defaults to the caller GitHub Actions run URL."
+    required: false
+    default: ""
+  verifier-name:
+    description: "Optional human-readable verifier implementation name/version for the witness record."
+    required: false
+    default: ""
+  runtime:
+    description: "Optional verifier runtime/toolchain identifier for the witness record."
+    required: false
+    default: ""
 outputs:
   result-file:
     description: "Path to the machine-readable aml-verifier-conformance-result/1 artifact"
@@ -17,26 +37,82 @@ outputs:
   witness-vector-sha256:
     description: "SHA-256 of the exact golden witness-vector bytes used by the harness"
     value: ${{ steps.verify.outputs.witness_vector_sha256 }}
+  witness-record-file:
+    description: "Path to generated aml-witness-record/1 evidence when emission is enabled"
+    value: ${{ steps.verify.outputs.witness_record_file }}
+  witness-result:
+    description: "PASS, MIXED, or FAIL when a witness record was generated"
+    value: ${{ steps.verify.outputs.witness_result }}
 runs:
   using: "composite"
   steps:
     - id: verify
       shell: bash
+      env:
+        AML_VERIFIER_COMMAND: ${{ inputs.verifier-command }}
+        AML_EMIT_WITNESS_RECORD: ${{ inputs.emit-witness-record }}
+        AML_WITNESS_ID: ${{ inputs.witness-id }}
+        AML_SOURCE_URL: ${{ inputs.source-url }}
+        AML_VERIFIER_NAME: ${{ inputs.verifier-name }}
+        AML_VERIFIER_RUNTIME: ${{ inputs.runtime }}
       run: |
         set -euo pipefail
         RESULT_FILE="$RUNNER_TEMP/aml-verifier-conformance-result.json"
+        WITNESS_FILE="$RUNNER_TEMP/aml-witness-record.json"
+
         set +e
-        node "$GITHUB_ACTION_PATH/../../scripts/run-verifier-conformance.mjs" -- "${{ inputs.verifier-command }}" > "$RESULT_FILE"
+        node "$GITHUB_ACTION_PATH/../../scripts/run-verifier-conformance.mjs" -- "$AML_VERIFIER_COMMAND" > "$RESULT_FILE"
         STATUS=$?
         set -e
+
         cat "$RESULT_FILE"
         PASSED="$(node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(String(r.passed===true))" "$RESULT_FILE")"
         CHALLENGE_SHA256="$(node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(String(r.challenge_sha256||''))" "$RESULT_FILE")"
         WITNESS_VECTOR_SHA256="$(node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(String(r.witness_vector_sha256||''))" "$RESULT_FILE")"
+
         echo "result_file=$RESULT_FILE" >> "$GITHUB_OUTPUT"
         echo "passed=$PASSED" >> "$GITHUB_OUTPUT"
         echo "challenge_sha256=$CHALLENGE_SHA256" >> "$GITHUB_OUTPUT"
         echo "witness_vector_sha256=$WITNESS_VECTOR_SHA256" >> "$GITHUB_OUTPUT"
+        echo "witness_record_file=" >> "$GITHUB_OUTPUT"
+        echo "witness_result=" >> "$GITHUB_OUTPUT"
+
+        SOURCE_URL="$AML_SOURCE_URL"
+        if [[ "$AML_EMIT_WITNESS_RECORD" == "true" ]]; then
+          if [[ -z "$SOURCE_URL" ]]; then
+            SOURCE_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          fi
+
+          # aml-core cannot manufacture its own external witness. An explicit outside source URL is required to override this self-witness guard.
+          if [[ "${GITHUB_REPOSITORY}" == "aruintelligence/aml-core" && -z "$AML_SOURCE_URL" ]]; then
+            echo "Skipping external witness generation inside canonical aml-core repository."
+          else
+            WITNESS_ID="$AML_WITNESS_ID"
+            if [[ -z "$WITNESS_ID" ]]; then
+              WITNESS_ID="$(printf '%s-%s-%s' "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "${GITHUB_RUN_ATTEMPT:-1}" | tr '[:upper:]/' '[:lower:]-' | tr -cd 'a-z0-9._-')"
+            fi
+            VERIFIER_NAME="$AML_VERIFIER_NAME"
+            if [[ -z "$VERIFIER_NAME" ]]; then VERIFIER_NAME="$AML_VERIFIER_COMMAND"; fi
+            OBSERVED_AT="$(node -e 'process.stdout.write(new Date().toISOString())')"
+
+            WITNESS_ARGS=(
+              --result "$RESULT_FILE"
+              --output "$WITNESS_FILE"
+              --witness-id "$WITNESS_ID"
+              --source-url "$SOURCE_URL"
+              --verifier "$VERIFIER_NAME"
+              --observed-at "$OBSERVED_AT"
+            )
+            if [[ -n "$AML_VERIFIER_RUNTIME" ]]; then WITNESS_ARGS+=(--runtime "$AML_VERIFIER_RUNTIME"); fi
+
+            node "$GITHUB_ACTION_PATH/../../scripts/create-witness-record-from-conformance.mjs" "${WITNESS_ARGS[@]}"
+            WITNESS_RESULT="$(node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(r.result)" "$WITNESS_FILE")"
+            cat "$WITNESS_FILE"
+            echo "witness_record_file=$WITNESS_FILE" >> "$GITHUB_OUTPUT"
+            echo "witness_result=$WITNESS_RESULT" >> "$GITHUB_OUTPUT"
+          fi
+        fi
+
         exit "$STATUS"
 branding:
   icon: "check-circle"
