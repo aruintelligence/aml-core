@@ -11,6 +11,7 @@
     "aml": "./bin/aml.js",
     "aml-meaning": "./bin/aml-meaning.js",
     "aml-release-proof": "./bin/aml-release-proof.js",
+    "aml-github-attestation": "./bin/aml-github-attestation.js",
     "aml-lsp": "./bin/aml-lsp.js",
     "aml-serve": "./bin/aml-serve.js",
     "aml-brand-verify": "./bin/aml-brand-verify.js"

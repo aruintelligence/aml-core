@@ -30,7 +30,7 @@ export function prepareGitHubSemanticAttestation(proof, outputDir) {
   const verification = verifyInTotoSemanticReleaseStatement(statement);
   if (!verification.verified) throw new Error(`generated in-toto statement did not verify: ${verification.reason || "unknown"}`);
 
-  const subject = statement.subject[0];
+  const meaningState = statement.subject[0];
   const target = path.resolve(outputDir);
   fs.mkdirSync(target, { recursive: true });
   const predicatePath = path.join(target, "aml-semantic-release-predicate.json");
@@ -41,12 +41,13 @@ export function prepareGitHubSemanticAttestation(proof, outputDir) {
   fs.writeFileSync(statementPath, `${JSON.stringify(statement, null, 2)}\n`);
 
   const metadata = {
-    schema: "aml-github-semantic-attestation-input/1",
+    schema: "aml-github-semantic-attestation-input/2",
     predicate_type: AML_SEMANTIC_RELEASE_PREDICATE_V1,
     predicate_path: predicatePath,
     statement_path: statementPath,
-    subject_name: subject.name,
-    subject_digest: `sha256:${subject.digest.sha256}`,
+    meaning_state_name: meaningState.name,
+    meaning_state_digest: `sha256:${meaningState.digest.sha256}`,
+    github_artifact_subject: "proof-file-bytes-via-actions-attest-subject-path",
     release_id: verification.release_id,
     signer: verification.signer,
     proof_sha256: verification.proof_sha256,
@@ -55,7 +56,7 @@ export function prepareGitHubSemanticAttestation(proof, outputDir) {
     lineage_head_sha256: verification.lineage_head_sha256,
     semantic_changed: verification.semantic_changed,
     change_summary: verification.change_summary,
-    claim_boundary: "Inputs for GitHub custom artifact attestation. The resulting GitHub/Sigstore attestation authenticates this custom AML predicate under the GitHub workflow identity; it is not SLSA build provenance or proof of truth, safety, ethics, legal compliance, certification, or institutional authority."
+    claim_boundary: "Preparation metadata distinguishes the virtual AML meaning state from the GitHub artifact subject. actions/attest binds the exact proof-file bytes via subject-path; the AML predicate independently binds the verified semantic transition. This is not SLSA build provenance or proof of truth, safety, ethics, legal compliance, certification, or institutional authority."
   };
   fs.writeFileSync(metadataPath, `${JSON.stringify(metadata, null, 2)}\n`);
   return { ...metadata, metadata_path: metadataPath };

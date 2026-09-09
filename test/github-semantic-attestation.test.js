@@ -11,10 +11,15 @@ import {
   createMeaningLineage,
   appendMeaningLineage,
   createSemanticReleaseProof,
+  createInTotoSemanticReleaseStatement,
   verifyInTotoSemanticReleaseStatement,
   AML_SEMANTIC_RELEASE_PREDICATE_V1
 } from "../index.js";
 import { prepareGitHubSemanticAttestation } from "../scripts/prepare-github-semantic-attestation.mjs";
+import {
+  buildGitHubAttestationVerifyArgs,
+  verifyGitHubSemanticAttestationEvidence
+} from "../tooling/githubSemanticAttestation.js";
 
 const beforeSources = {
   "ui/card.aml": `transmission "release" {
@@ -62,14 +67,33 @@ function fixture() {
   });
 }
 
-test("GitHub semantic attestation preparation emits verified predicate and statement", () => {
+function githubEvidence(proof, proofBytes) {
+  const statement = createInTotoSemanticReleaseStatement(proof);
+  const digest = crypto.createHash("sha256").update(proofBytes).digest("hex");
+  return [{
+    verificationResult: {
+      statement: {
+        _type: "https://in-toto.io/Statement/v1",
+        subject: [{ name: "release-proof.json", digest: { sha256: digest } }],
+        predicateType: AML_SEMANTIC_RELEASE_PREDICATE_V1,
+        predicate: structuredClone(statement.predicate)
+      }
+    }
+  }];
+}
+
+test("GitHub semantic attestation preparation names the meaning state without mislabeling it as GitHub artifact subject", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "aml-github-attest-"));
   try {
     const proof = fixture();
     const result = prepareGitHubSemanticAttestation(proof, root);
+    assert.equal(result.schema, "aml-github-semantic-attestation-input/2");
     assert.equal(result.predicate_type, AML_SEMANTIC_RELEASE_PREDICATE_V1);
-    assert.equal(result.subject_name, "aml-meaning-state:v-next");
-    assert.equal(result.subject_digest, `sha256:${proof.after_manifest_root_sha256}`);
+    assert.equal(result.meaning_state_name, "aml-meaning-state:v-next");
+    assert.equal(result.meaning_state_digest, `sha256:${proof.after_manifest_root_sha256}`);
+    assert.equal(result.github_artifact_subject, "proof-file-bytes-via-actions-attest-subject-path");
+    assert.equal("subject_name" in result, false);
+    assert.equal("subject_digest" in result, false);
     assert.equal(result.proof_sha256, proof.proof_sha256);
     assert.equal(result.signer, "release-bot");
     assert.ok(fs.existsSync(result.predicate_path));
@@ -113,4 +137,50 @@ test("semantic release attestation action pins actions/attest and avoids shell i
   assert.equal(runBody.includes("${{ inputs."), false);
   assert.ok(runBody.includes("crypto.randomBytes(16)"));
   assert.ok(runBody.includes("<<${delimiter}"));
+});
+
+test("GitHub verification command binds repo, signer repo, predicate and denies self-hosted runners by default", () => {
+  const args = buildGitHubAttestationVerifyArgs({ proofFile: "release-proof.json", repo: "acme/app" });
+  assert.deepEqual(args.slice(0, 3), ["attestation", "verify", "release-proof.json"]);
+  assert.ok(args.includes("--repo"));
+  assert.ok(args.includes("--signer-repo"));
+  assert.ok(args.includes("--predicate-type"));
+  assert.ok(args.includes(AML_SEMANTIC_RELEASE_PREDICATE_V1));
+  assert.ok(args.includes("--deny-self-hosted-runners"));
+  assert.equal(args.includes("acme/app; echo pwned"), false);
+
+  const relaxed = buildGitHubAttestationVerifyArgs({ proofFile: "release-proof.json", repo: "acme/app", allowSelfHosted: true });
+  assert.equal(relaxed.includes("--deny-self-hosted-runners"), false);
+});
+
+test("two-layer verifier accepts only exact GitHub file bytes plus exact AML predicate and proof", () => {
+  const proof = fixture();
+  const proofBytes = Buffer.from(`${JSON.stringify(proof, null, 2)}\n`, "utf8");
+  const ghVerification = githubEvidence(proof, proofBytes);
+  const result = verifyGitHubSemanticAttestationEvidence({ ghVerification, proof, proofBytes });
+  assert.equal(result.verified, true);
+  assert.equal(result.github_attestation_verified, true);
+  assert.equal(result.proof_file_digest_valid, true);
+  assert.equal(result.predicate_binding_valid, true);
+  assert.equal(result.release_proof_valid, true);
+  assert.equal(result.signer, "release-bot");
+  assert.equal(result.meaning_state_sha256, proof.after_manifest_root_sha256);
+});
+
+test("two-layer verifier rejects digest, predicate, embedded-proof and empty-evidence tampering", () => {
+  const proof = fixture();
+  const proofBytes = Buffer.from(`${JSON.stringify(proof, null, 2)}\n`, "utf8");
+
+  const wrongBytes = Buffer.concat([proofBytes, Buffer.from(" ")]);
+  assert.equal(verifyGitHubSemanticAttestationEvidence({ ghVerification: githubEvidence(proof, proofBytes), proof, proofBytes: wrongBytes }).verified, false);
+
+  const predicateTamper = githubEvidence(proof, proofBytes);
+  predicateTamper[0].verificationResult.statement.predicate.release.id = "forged";
+  assert.equal(verifyGitHubSemanticAttestationEvidence({ ghVerification: predicateTamper, proof, proofBytes }).verified, false);
+
+  const proofTamper = githubEvidence(proof, proofBytes);
+  proofTamper[0].verificationResult.statement.predicate.releaseProof.signer = "forged";
+  assert.equal(verifyGitHubSemanticAttestationEvidence({ ghVerification: proofTamper, proof, proofBytes }).verified, false);
+
+  assert.equal(verifyGitHubSemanticAttestationEvidence({ ghVerification: [], proof, proofBytes }).verified, false);
 });
