@@ -78,6 +78,33 @@ Exit codes:
 - `1` — the artifact was parsed but verification failed;
 - `2` — invocation, file, or JSON error.
 
+## in-toto Statement v1 bridge
+
+A fully verified Semantic Release Proof can be exported into a standard in-toto Statement v1 envelope:
+
+```bash
+aml-release-proof in-toto release-proof.json > semantic-release.intoto.json
+aml-release-proof verify-in-toto semantic-release.intoto.json
+```
+
+The statement type is the standard in-toto URI:
+
+```text
+https://in-toto.io/Statement/v1
+```
+
+The predicate type is owned and published by ĀML:
+
+```text
+https://aruintelligence.github.io/aml-core/predicates/semantic-release/v1.json
+```
+
+The subject is the resulting `aml-meaning-state:<release-id>` resource, with its verified after-Meaning-Manifest root carried as the SHA-256 digest. The predicate embeds the complete signed `aml-semantic-release-proof/1` plus derived release, semantic, and authenticated attribution fields.
+
+`verifyInTotoSemanticReleaseStatement()` does not trust the envelope's copied metadata. It re-verifies the embedded release proof, then recomputes the subject, before/after roots, semantic-change flag, lineage head, change summary, signer, generation time, public-key fingerprint reference, and proof hash.
+
+This is deliberately **not** labeled SLSA build provenance. A Semantic Release Proof describes an ĀML semantic state transition; SLSA build provenance describes how a build produced an artifact. The in-toto Statement is the interoperability envelope, while the ĀML predicate defines the claim being carried.
+
 ## Semantic Release Gate — GitHub Action
 
 A repository can make a verified semantic release proof a deployment prerequisite:
@@ -120,7 +147,10 @@ The adversarial suite rewrites:
 - lineage head;
 - nested manifest attestations;
 - historical lineage entries;
-- the proof signature and public key.
+- the proof signature and public key;
+- in-toto subject name/digest;
+- in-toto predicate type;
+- copied semantic and attribution metadata.
 
 These mutations must cause verification to fail.
 
@@ -128,6 +158,6 @@ These mutations must cause verification to fail.
 
 A valid Semantic Release Proof establishes cryptographic integrity and reproducible consistency under the declared ĀML contracts. It can show that signed compiled meaning roots differ, which paths changed under those fingerprints, what the ĀML semantic-diff implementation recomputes from the embedded snapshots, who possessed the signing private key, and whether the embedded semantic lineage is intact.
 
-It does **not** prove that declared meaning is truthful, that a release is ethical or safe, that two arbitrary programs have identical runtime behavior, that the signer has institutional authority, that the software complies with law or regulation, or that ĀML is a ratified standard.
+An in-toto-wrapped proof carries those same project-defined claims in a standard attestation envelope. It does **not** transform them into SLSA provenance or prove that declared meaning is truthful, that a release is ethical or safe, that two arbitrary programs have identical runtime behavior, that the signer has institutional authority, that the software complies with law or regulation, or that ĀML is a ratified standard.
 
 That boundary is intentional.
