@@ -55,8 +55,8 @@ runs:
         const values = {
           predicate_path: result.predicate_path,
           statement_path: result.statement_path,
-          meaning_state_name: result.subject_name,
-          meaning_state_digest: result.subject_digest,
+          meaning_state_name: result.meaning_state_name,
+          meaning_state_digest: result.meaning_state_digest,
           proof_sha256: result.proof_sha256,
           signer: result.signer ?? ''
         };
