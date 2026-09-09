@@ -23,3 +23,5 @@ jobs:
         run: npm install --ignore-scripts
       - name: Audit installable package artifact
         run: node scripts/check-package-artifact.mjs
+      - name: Probe live npm package identity
+        run: node scripts/check-npm-identity.mjs --allow-unpublished --soft-unavailable
