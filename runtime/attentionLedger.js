@@ -1,9 +1,14 @@
 // runtime/attentionLedger.js
 // ĀML v1.3 — cumulative session attention accounting.
 
+function isUnboundedBudget(value) {
+  return value === null || value === Infinity;
+}
+
 export function createAttentionLedger(initialBudget = Infinity, options = {}) {
-  if (typeof initialBudget !== "number" || Number.isNaN(initialBudget) || initialBudget < 0) {
-    throw new TypeError("Initial attention budget must be a non-negative number.");
+  const validFiniteBudget = typeof initialBudget === "number" && Number.isFinite(initialBudget) && initialBudget >= 0;
+  if (!validFiniteBudget && !isUnboundedBudget(initialBudget)) {
+    throw new TypeError("Initial attention budget must be a non-negative finite number, Infinity, or null for unbounded.");
   }
   return {
     protocol: "ĀML Attention Ledger",
@@ -20,11 +25,12 @@ export function consumeAttention(ledger, amount, metadata = {}) {
   if (!ledger || ledger.protocol !== "ĀML Attention Ledger") throw new Error("Invalid ĀML attention ledger.");
   if (typeof amount !== "number" || !Number.isFinite(amount) || amount < 0) throw new TypeError("Attention amount must be a finite non-negative number.");
 
+  const unbounded = isUnboundedBudget(ledger.initial_budget);
   const before = ledger.remaining;
-  const allowed = amount <= before;
+  const allowed = unbounded || amount <= before;
   const consumed = allowed ? amount : 0;
   ledger.consumed += consumed;
-  ledger.remaining = Number.isFinite(ledger.initial_budget) ? Math.max(0, before - consumed) : Infinity;
+  ledger.remaining = unbounded ? ledger.initial_budget : Math.max(0, before - consumed);
 
   const entry = {
     sequence: ledger.entries.length,
