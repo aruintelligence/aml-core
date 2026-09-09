@@ -1,3 +1,5 @@
+import { highestCommonProtocolVersion } from "../protocol/versionOrder.js";
+
 export function negotiateCapabilities(local, remote, { required = [] } = {}) {
   const normalize = (value = []) => [...new Set(value)].sort();
   const localCaps = normalize(local?.capabilities);
@@ -6,11 +8,9 @@ export function negotiateCapabilities(local, remote, { required = [] } = {}) {
   const common = localCaps.filter((cap) => remoteSet.has(cap));
   const missingRequired = normalize(required).filter((cap) => !common.includes(cap));
 
-  const localVersions = normalize(local?.versions || [local?.version].filter(Boolean));
-  const remoteVersions = normalize(remote?.versions || [remote?.version].filter(Boolean));
-  const remoteVersionSet = new Set(remoteVersions);
-  const commonVersions = localVersions.filter((version) => remoteVersionSet.has(version));
-  const selectedVersion = commonVersions.at(-1) || null;
+  const localVersions = [...new Set(local?.versions || [local?.version].filter(Boolean))];
+  const remoteVersions = [...new Set(remote?.versions || [remote?.version].filter(Boolean))];
+  const { selected: selectedVersion } = highestCommonProtocolVersion(localVersions, remoteVersions);
 
   return {
     protocol: "aml-capability-negotiation/1",
