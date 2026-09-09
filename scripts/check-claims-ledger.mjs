@@ -3,7 +3,15 @@ import fs from 'node:fs';
 const allowedStatuses = new Set(['SHIPPED', 'SPEC', 'DRAFT', 'PITCH']);
 const failures = [];
 
-for (const path of ['CLAIMS.md', 'claims.json', 'publications/PROOF_MAP.md', 'publications/EVALUATE_AML_IN_15_MINUTES.md', 'publications/PRESS_FACT_SHEET.md', 'PUBLICATIONS.md']) {
+for (const path of [
+  'CLAIMS.md',
+  'claims.json',
+  'publications/PROOF_MAP.md',
+  'publications/EVALUATE_AML_IN_15_MINUTES.md',
+  'publications/PRESS_FACT_SHEET.md',
+  'publications/DEPLOY_AML_WITHOUT_BREAKING_PRODUCTION.md',
+  'PUBLICATIONS.md'
+]) {
   if (!fs.existsSync(path)) failures.push(`${path}: missing`);
 }
 
@@ -14,7 +22,7 @@ if (!fs.existsSync('claims.json')) {
 
 const ledger = JSON.parse(fs.readFileSync('claims.json', 'utf8'));
 if (ledger.type !== 'aml-claims-ledger/1') failures.push('claims.json: wrong type');
-if (!Array.isArray(ledger.claims) || ledger.claims.length < 7) failures.push('claims.json: too few claims');
+if (!Array.isArray(ledger.claims) || ledger.claims.length < 10) failures.push('claims.json: too few claims');
 
 const ids = new Set();
 for (const claim of ledger.claims || []) {
@@ -32,16 +40,31 @@ for (const claim of ledger.claims || []) {
 }
 
 const publications = fs.readFileSync('PUBLICATIONS.md', 'utf8');
-for (const needle of ['CLAIMS.md', 'publications/PROOF_MAP.md', 'library/README.md']) {
+for (const needle of [
+  'CLAIMS.md',
+  'publications/PROOF_MAP.md',
+  'library/README.md',
+  'publications/DEPLOY_AML_WITHOUT_BREAKING_PRODUCTION.md'
+]) {
   if (!publications.includes(needle)) failures.push(`PUBLICATIONS.md: missing ${needle}`);
 }
 
+const proofMap = fs.readFileSync('publications/PROOF_MAP.md', 'utf8');
+for (const needle of ['shadow mode', 'policyCanary.js', 'rolloutCriteria.js']) {
+  if (!proofMap.includes(needle)) failures.push(`publications/PROOF_MAP.md: missing ${JSON.stringify(needle)}`);
+}
+
+const deploymentBrief = fs.readFileSync('publications/DEPLOY_AML_WITHOUT_BREAKING_PRODUCTION.md', 'utf8');
+for (const needle of ['observe → compare → measure → enforce', 'Shadow mode is observation', 'does not prove production readiness']) {
+  if (!deploymentBrief.includes(needle)) failures.push(`deployment brief: missing ${JSON.stringify(needle)}`);
+}
+
 const claimsMd = fs.readFileSync('CLAIMS.md', 'utf8');
-for (const needle of ['SHIPPED', 'SPEC', 'DRAFT', 'PITCH', 'does **not** currently claim', 'Office@aruintelligence.com']) {
+for (const needle of ['SHIPPED', 'SPEC', 'DRAFT', 'PITCH', 'does **not** currently claim', 'Office@aruintelligence.com', 'rollout threshold']) {
   if (!claimsMd.includes(needle)) failures.push(`CLAIMS.md: missing ${JSON.stringify(needle)}`);
 }
 
-if (!Array.isArray(ledger.non_claims) || ledger.non_claims.length < 4) failures.push('claims.json: non_claims boundary is too small');
+if (!Array.isArray(ledger.non_claims) || ledger.non_claims.length < 5) failures.push('claims.json: non_claims boundary is too small');
 
 if (failures.length) {
   console.error(JSON.stringify({ verified: false, failures }, null, 2));
