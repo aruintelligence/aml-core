@@ -3,13 +3,18 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const challenge = JSON.parse(fs.readFileSync('conformance/verifier-challenge.json', 'utf8'));
+const cases = JSON.parse(fs.readFileSync('conformance/verifier-challenge-cases.json', 'utf8'));
 const harness = fs.readFileSync('scripts/run-verifier-conformance.mjs', 'utf8');
 const action = fs.readFileSync('actions/verifier-conformance/action.yml', 'utf8');
 
-test('external verifier challenge publishes the exact harness cases', () => {
+test('external verifier challenge publishes a language-neutral exact case corpus', () => {
   assert.equal(challenge.schema, 'aml-external-verifier-challenge/1');
+  assert.equal(challenge.cases_file, 'conformance/verifier-challenge-cases.json');
+  assert.equal(cases.schema, 'aml-verifier-challenge-cases/1');
+  assert.equal(cases.bundle_source, challenge.witness_vector);
+  assert.equal(cases.mutation_language.schema, 'aml-json-pointer-replace/1');
   assert.deepEqual(
-    challenge.cases.map((entry) => [entry.id, entry.expected_valid]),
+    cases.cases.map((entry) => [entry.id, entry.expected_valid]),
     [
       ['golden-valid', true],
       ['tampered-purpose', false],
@@ -17,9 +22,24 @@ test('external verifier challenge publishes the exact harness cases', () => {
       ['expired-challenge', false]
     ]
   );
-  for (const entry of challenge.cases) {
-    assert.match(harness, new RegExp(`id: ['\"]${entry.id}['\"]`));
-  }
+  assert.deepEqual(cases.cases[1].mutations, [{
+    op: 'replace',
+    path: '/evidence/receipt/decisions/0/purpose',
+    value: 'tampered-by-conformance-harness'
+  }]);
+  assert.deepEqual(cases.cases[2].mutations, [{
+    op: 'replace',
+    path: '/challenge/nonce',
+    value: 'tampered-challenge-nonce-000000000000000000000'
+  }]);
+});
+
+test('external verifier harness consumes the case corpus instead of hard-coding cases', () => {
+  assert.match(harness, /challenge\.cases_file/);
+  assert.match(harness, /casesContract\.cases\.map/);
+  assert.match(harness, /aml-json-pointer-replace\/1/);
+  assert.doesNotMatch(harness, /purposeTamper/);
+  assert.doesNotMatch(harness, /challengeTamper/);
 });
 
 test('external verifier action drives the canonical black-box harness', () => {
