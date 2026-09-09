@@ -1,0 +1,30 @@
+{
+  "schema": "aml-verification-contract-migration/1",
+  "migration_id": "aml-verifier-contract-migration-2026-09-08-01-to-2026-09-09-01",
+  "from_snapshot": "aml-verifier-contract-2026-09-08-01",
+  "to_snapshot": "aml-verifier-contract-2026-09-09-01",
+  "classification": "breaking",
+  "changed_locked_paths": [
+    "protocol/aml-verifier-conformance-result.schema.json",
+    "scripts/run-verifier-conformance.mjs"
+  ],
+  "historical_artifacts": {
+    "old_snapshot_verification_required": true,
+    "new_snapshot_may_reinterpret_old_artifacts": false
+  },
+  "behavior_changes": [
+    {
+      "area": "conformance result evidence binding",
+      "before": "aml-verifier-conformance-result/1 did not identify the exact external verifier challenge bytes or golden witness-vector bytes used by the harness",
+      "after": "aml-verifier-conformance-result/1 requires SHA-256 bindings for the exact external verifier challenge and golden witness-vector bytes and can be rechecked by the archived-result verifier",
+      "compatibility": "incompatible"
+    },
+    {
+      "area": "black-box verifier command cases",
+      "before": "golden valid, receipt-purpose tamper, challenge-nonce tamper, and expired challenge cases",
+      "after": "the same four verifier command cases, with stronger evidence metadata around the resulting report",
+      "compatibility": "compatible"
+    }
+  ],
+  "notes": "Snapshot 1 conformance result artifacts remain historical Snapshot 1 evidence. They are not upgraded or reinterpreted as Snapshot 2 results. Snapshot 2 adds exact challenge/vector byte binding because archived PASS/FAIL/MIXED evidence must identify the precise project-defined challenge it refers to."
+}

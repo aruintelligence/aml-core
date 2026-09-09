@@ -15,9 +15,16 @@
 
   <div class="card">
     <h2>Current lineage</h2>
-    <p><strong>Current snapshot:</strong> <span class="tag">aml-verifier-contract-2026-09-08-01</span></p>
-    <p><strong>Migration edges:</strong> <span class="good">0</span></p>
-    <p>There is no ceremonial Snapshot 2. A new snapshot appears only when a locked verifier-contract behavior genuinely changes.</p>
+    <p><strong>Current snapshot:</strong> <span class="tag">aml-verifier-contract-2026-09-09-01</span></p>
+    <p><strong>Migration edges:</strong> <span class="good">1</span></p>
+    <p>Snapshot 2 is the first real verifier-contract evolution. It adds exact challenge and witness-vector SHA-256 bindings to archived conformance evidence. Snapshot 1 remains an immutable historical target.</p>
+  </div>
+
+  <div class="card">
+    <h2>Snapshot 1 → Snapshot 2</h2>
+    <p><strong>Classification:</strong> <span class="tag">breaking</span> at the conformance-result artifact layer.</p>
+    <p>The four black-box verifier cases are unchanged. The result artifact is stricter: Snapshot 2 requires the exact challenge bytes and golden witness-vector bytes to be identified by SHA-256.</p>
+    <p>Old Snapshot 1 result artifacts remain Snapshot 1 evidence. They are not silently reinterpreted as Snapshot 2 artifacts.</p>
   </div>
 
   <div class="card">
@@ -28,7 +35,7 @@ Old artifacts keep Snapshot N meaning.</pre>
   </div>
 
   <div class="card">
-    <h2>Future migration classes</h2>
+    <h2>Migration classes</h2>
     <ul>
       <li><strong>backward-compatible</strong> — old behavior remains accepted without additional conditions.</li>
       <li><strong>conditionally-compatible</strong> — an explicit adapter, condition, or migration step is required.</li>
@@ -39,8 +46,11 @@ Old artifacts keep Snapshot N meaning.</pre>
   <div class="card">
     <h2>Inspect the machine contracts</h2>
     <ul>
+      <li><a href="https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-v1.json">Snapshot 1</a></li>
+      <li><a href="https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-v2.json">Snapshot 2</a></li>
       <li><a href="https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-catalog.json">snapshot catalog</a></li>
       <li><a href="https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-lineage.json">lineage graph</a></li>
+      <li><a href="https://github.com/aruintelligence/aml-core/blob/main/protocol/migrations/aml-verifier-contract-2026-09-08-01_to_2026-09-09-01.json">Snapshot 1 → 2 migration</a></li>
       <li><a href="https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verification-contract-migration.schema.json">migration schema</a></li>
       <li><a href="https://github.com/aruintelligence/aml-core/blob/main/docs/HISTORICAL_VERIFICATION.md">historical verification rule</a></li>
       <li><a href="https://github.com/aruintelligence/aml-core/blob/main/docs/CONTRACT_MIGRATION_CHECKLIST.md">migration checklist</a></li>

@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 
+import crypto from 'node:crypto';
 import fs from 'node:fs';
+import path from 'node:path';
 import process from 'node:process';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const REQUIRED = [
   'schema', 'witness_id', 'observed_at', 'source_url',
@@ -15,6 +17,11 @@ const ALLOWED = new Set([
 const RESULTS = new Set(['PASS', 'FAIL', 'MIXED']);
 const WITNESS_ID = /^[a-z0-9][a-z0-9._-]{2,127}$/;
 const ISO_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/;
+const SHA256 = /^[0-9a-f]{64}$/;
+const EXTERNAL_VERIFIER_CHALLENGE = 'aml-external-verifier-challenge/1';
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const challengePath = path.resolve(scriptDir, '../conformance/verifier-challenge.json');
+const canonicalChallengeSha256 = crypto.createHash('sha256').update(fs.readFileSync(challengePath)).digest('hex');
 
 function publicHttpsUrl(value, field, failures) {
   if (typeof value !== 'string' || value.length < 8) {
@@ -39,11 +46,11 @@ function publicHttpsUrl(value, field, failures) {
 function isCanonicalAmlCoreSource(parsed) {
   if (!parsed) return false;
   const host = parsed.hostname.toLowerCase();
-  const path = parsed.pathname.replace(/\/+$/, '').toLowerCase();
+  const pathname = parsed.pathname.replace(/\/+$/, '').toLowerCase();
   if (host === 'github.com' || host === 'www.github.com' || host === 'raw.githubusercontent.com') {
-    return path.startsWith('/aruintelligence/aml-core');
+    return pathname.startsWith('/aruintelligence/aml-core');
   }
-  if (host === 'aruintelligence.github.io') return path.startsWith('/aml-core');
+  if (host === 'aruintelligence.github.io') return pathname.startsWith('/aml-core');
   return false;
 }
 
@@ -81,6 +88,13 @@ export function validateWitnessRecord(record) {
   if (record.artifact_hash !== undefined && record.artifact_hash !== null && typeof record.artifact_hash !== 'string') {
     failures.push('artifact_hash must be a string or null');
   }
+  if (record.artifact_type === EXTERNAL_VERIFIER_CHALLENGE) {
+    if (!SHA256.test(String(record.artifact_hash || ''))) {
+      failures.push('artifact_hash must be the lowercase SHA-256 of the exact external verifier challenge bytes');
+    } else if (record.artifact_hash !== canonicalChallengeSha256) {
+      failures.push(`artifact_hash does not match this validator's external verifier challenge (${canonicalChallengeSha256})`);
+    }
+  }
   for (const field of ['verifier', 'runtime']) {
     if (record[field] !== undefined && record[field] !== null && typeof record[field] !== 'string') {
       failures.push(`${field} must be a string or null`);
@@ -104,7 +118,9 @@ export function validateWitnessRecord(record) {
     witness_id: typeof record.witness_id === 'string' ? record.witness_id : null,
     result: RESULTS.has(record.result) ? record.result : null,
     source_url: sourceUrl?.href || null,
-    acceptance_boundary: 'Syntax and canonical-source exclusion are machine-checkable. Independent maintenance and truth of the external report still require human/public-evidence review.'
+    artifact_hash: SHA256.test(String(record.artifact_hash || '')) ? record.artifact_hash : null,
+    expected_external_verifier_challenge_sha256: canonicalChallengeSha256,
+    acceptance_boundary: 'Syntax, exact challenge-byte binding for verifier-challenge records, and canonical-source exclusion are machine-checkable. Independent maintenance and truth of the external report still require human/public-evidence review.'
   };
 }
 

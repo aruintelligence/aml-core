@@ -6,12 +6,15 @@ Canonical repository: https://github.com/aruintelligence/aml-core
 Goal:
 Implement aml-witness-bundle/1 independently and report agreement or disagreement.
 
-Immutable verifier target:
-snapshot_id: aml-verifier-contract-2026-09-08-01
-source_commit: b1ff5a87c7b19ae6338503a58ab6257a5b2add0b
-snapshot: https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-v1.json
+Current immutable verifier target:
+snapshot_id: aml-verifier-contract-2026-09-09-01
+source_commit: 2dac9e2b4a6401af3718bc71a4b031bd57f358c5
+snapshot: https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-v2.json
 
-Do not infer compatibility from a loose version name alone. Target the exact snapshot and source commit above.
+Historical Snapshot 1 remains available at:
+https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-v1.json
+
+Do not infer compatibility from a loose version name alone. Target an exact snapshot and source commit. Historical artifacts keep the semantics of the snapshot that defined them.
 
 Contract catalog:
 https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-catalog.json
@@ -19,13 +22,16 @@ https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-cont
 Contract lineage:
 https://github.com/aruintelligence/aml-core/blob/main/protocol/verification-contract-lineage.json
 
+Current migration:
+https://github.com/aruintelligence/aml-core/blob/main/protocol/migrations/aml-verifier-contract-2026-09-08-01_to_2026-09-09-01.json
+
 Migration schema:
 https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verification-contract-migration.schema.json
 
 Evolution rule:
-A future snapshot must publish an explicit migration edge from its predecessor. Historical artifacts keep the semantics of the snapshot that originally defined them. A later snapshot may not silently reinterpret an older snapshot.
+Every snapshot after the first publishes an explicit migration edge from its predecessor. Historical artifacts keep the semantics of the snapshot that originally defined them. A later snapshot may not silently reinterpret an older snapshot.
 
-Current migration count: 0
+Current migration count: 1
 
 Minimal contract:
 https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verifier-cli.md
@@ -54,10 +60,22 @@ Schemas:
 - verifier manifest: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verifier-manifest.schema.json
 - verifier conformance result: https://github.com/aruintelligence/aml-core/blob/main/protocol/aml-verifier-conformance-result.schema.json
 
+External verifier challenge:
+https://github.com/aruintelligence/aml-core/blob/main/conformance/verifier-challenge.json
+
 Black-box harness:
 node scripts/run-verifier-conformance.mjs -- <verifier-command>
 
-Required behavior:
+Archived-result verifier:
+node scripts/verify-verifier-conformance-result.mjs <result.json>
+
+Snapshot 2 conformance evidence binds:
+- SHA-256 of the exact external verifier challenge bytes
+- SHA-256 of the exact golden witness-vector bytes
+- ordered case IDs and expected verdicts
+- observed valid/invalid state and process exit behavior
+
+Required verifier behavior remains:
 1. golden witness PASS
 2. tampered receipt FAIL
 3. tampered challenge FAIL
@@ -66,28 +84,19 @@ Required behavior:
 Implementation claims:
 Use aml-verifier-implementation-claim/1 to declare exactly which immutable contract snapshot your verifier targets. A claim is not proof of conformance.
 
-Generate a claim:
-node scripts/create-verifier-implementation-claim.mjs --implementation-id my-verifier --implementation-version 0.1.0 --runtime rust-1.90 --source-url https://github.com/example/my-verifier --command './my-verifier --now 2030-01-01T00:05:00Z bundle.json' --external true
-
 Reference implementations maintained by AML:
 - JavaScript/browser
 - Python standard library: independent/python/verify_witness.py
 - Go standard library: independent/go/main.go
 - HTTP reference service
 
-Each reference implementation is bound to the same snapshot by an in-repository implementation claim. These reference implementations do NOT count as external witnesses.
+Reference implementation claims may remain bound to the historical snapshot they actually declare until separately upgraded and evidenced. These reference implementations do NOT count as external witnesses.
 
 External witness registry:
 https://github.com/aruintelligence/aml-core/blob/main/WITNESSES.json
 
 Human witness page:
 https://aruintelligence.github.io/aml-core/witnesses.html
-
-Submit an external result:
-https://github.com/aruintelligence/aml-core/issues/17
-
-Immutable snapshot challenge:
-https://github.com/aruintelligence/aml-core/issues/18
 
 Important:
 Disagreement is acceptable and should be published. Passing the project-defined harness is compatibility evidence. Migration classification is project-defined interoperability metadata. Neither is certification, official AML trademark authorization, proof of institutional independence, standards-body approval, or proof that declared intent/scores are objectively true.

@@ -1,8 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import { validateWitnessRecord } from '../scripts/validate-witness-record.mjs';
 import { validateWitnessRegistry } from '../scripts/check-witness-registry.mjs';
+
+const challengeSha256 = crypto.createHash('sha256')
+  .update(fs.readFileSync('conformance/verifier-challenge.json'))
+  .digest('hex');
 
 function validRecord(overrides = {}) {
   return {
@@ -11,7 +16,7 @@ function validRecord(overrides = {}) {
     observed_at: '2026-09-09T07:15:00Z',
     source_url: 'https://github.com/example-labs/aml-verifier',
     artifact_type: 'aml-external-verifier-challenge/1',
-    artifact_hash: null,
+    artifact_hash: challengeSha256,
     verifier: 'example-go-verifier',
     runtime: 'go1.24',
     result: 'PASS',
@@ -23,11 +28,19 @@ function validRecord(overrides = {}) {
   };
 }
 
-test('external witness validator accepts a well-formed outside PASS record', () => {
+test('external witness validator accepts a well-formed outside PASS record bound to exact challenge bytes', () => {
   const result = validateWitnessRecord(validRecord());
   assert.equal(result.valid, true);
   assert.equal(result.witness_id, 'outside-go-verifier-001');
   assert.equal(result.result, 'PASS');
+  assert.equal(result.artifact_hash, challengeSha256);
+  assert.equal(result.expected_external_verifier_challenge_sha256, challengeSha256);
+});
+
+test('external verifier witness records reject missing, malformed, or wrong challenge hashes', () => {
+  assert.equal(validateWitnessRecord(validRecord({ artifact_hash: null })).valid, false);
+  assert.equal(validateWitnessRecord(validRecord({ artifact_hash: 'abc' })).valid, false);
+  assert.equal(validateWitnessRecord(validRecord({ artifact_hash: '0'.repeat(64) })).valid, false);
 });
 
 test('external witness validator treats FAIL and MIXED as first-class results', () => {

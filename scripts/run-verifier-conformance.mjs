@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -15,8 +16,15 @@ const command = process.argv[split + 1];
 const baseArgs = process.argv.slice(split + 2);
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..');
+const challengePath = path.join(repoRoot, 'conformance/verifier-challenge.json');
 const vectorPath = path.join(repoRoot, 'independent/python/witness-vector.json');
-const source = JSON.parse(fs.readFileSync(vectorPath, 'utf8'));
+const challengeBytes = fs.readFileSync(challengePath);
+const vectorBytes = fs.readFileSync(vectorPath);
+const challenge = JSON.parse(challengeBytes.toString('utf8'));
+const source = JSON.parse(vectorBytes.toString('utf8'));
+const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
+const challengeSha256 = sha256(challengeBytes);
+const witnessVectorSha256 = sha256(vectorBytes);
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-verifier-conformance-'));
 
 function invoke(bundlePath, now) {
@@ -78,13 +86,16 @@ const results = cases.map(test => {
 
 const passed = results.every(r => r.passed);
 console.log(JSON.stringify({
-  schema: 'aml-verifier-conformance-result/1',
+  schema: challenge.result_contract?.schema || 'aml-verifier-conformance-result/1',
   prototype: true,
+  challenge_schema: challenge.schema,
+  challenge_sha256: challengeSha256,
+  witness_vector_sha256: witnessVectorSha256,
   harness_root: repoRoot,
   command: [command, ...baseArgs],
   passed,
   results,
-  claim_boundary: 'PASS is project-defined black-box compatibility evidence, not certification or proof of verifier independence.'
+  claim_boundary: 'PASS is project-defined black-box compatibility evidence bound to the exact published challenge and witness-vector bytes; it is not certification or proof of verifier independence.'
 }, null, 2));
 
 process.exit(passed ? 0 : 1);
