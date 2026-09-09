@@ -60,4 +60,6 @@ export { evaluateAccountableProps, createAccountableUI } from "./adapters/react.
 export { viewMeaning, formatMeaningReport } from "./tooling/viewMeaning.js";
 export { evaluatePullRequestChange, formatPullRequestGate } from "./tooling/prGate.js";
 export { AML_CONFORMANCE_LEVELS, evaluateConformanceLevel, createConformanceClaim, verifyConformanceClaim } from "./tooling/conformanceLevel.js";
+export { RELEASE_KEY_TRUST_POLICY_PROTOCOL, validateReleaseKeyTrustPolicy, verifyTrustedSemanticReleaseProof } from "./tooling/releaseKeyTrust.js";
+export { buildGitHubAttestationVerifyArgs, verifyGitHubSemanticAttestationEvidence } from "./tooling/githubSemanticAttestation.js";
 export { getCompletionItems, getHoverInfo, getLanguageCatalog } from "./tooling/languageService.js";

@@ -49,35 +49,42 @@ jobs:
 
 ## One-command verification
 
-The strongest normal verification path is:
+The normal verification path is:
 
 ```bash
 aml-github-attestation release-proof.json --repo OWNER/REPOSITORY
 ```
 
-The command invokes GitHub CLI without a shell and requires all of the following:
+It requires GitHub/Sigstore verification, exact repository and signer-repository binding, the exact ĀML predicate type, non-self-hosted attestation by default, exact local proof-file digest binding, exact predicate recomputation, exact embedded-proof equality, and complete nested ĀML Semantic Release Proof verification.
 
-1. GitHub/Sigstore verifies an attestation for the exact proof-file bytes;
-2. the attestation is scoped to the requested repository;
-3. the signer repository is the requested repository;
-4. the predicate type is exactly the ĀML semantic-release predicate URI;
-5. self-hosted-runner attestations are rejected by default;
-6. the locally recomputed SHA-256 of the proof file matches the verified in-toto subject digest;
-7. the verified predicate exactly matches the predicate independently derived from the local proof;
-8. the predicate's embedded `releaseProof` exactly matches the local proof;
-9. the complete ĀML Semantic Release Proof verifies, including signed manifests, lineage, semantic roots, source snapshots, detailed diffs, proof hash, public-key fingerprint, and Ed25519 signature.
+## Production release-key trust
 
-A caller can explicitly opt into self-hosted attestations with `--allow-self-hosted`. That is a conscious trust-policy change, not the default.
+A valid Semantic Release Proof proves possession of its embedded Ed25519 private key. It does **not** by itself establish that the key is an authorized release key. For production verification, supply an out-of-band trust policy:
 
-Optional stricter workflow pinning is available:
+```json
+{
+  "protocol": "aml-release-key-trust-policy/1",
+  "policy_id": "production-release-keys",
+  "trusted_keys": [
+    {
+      "public_key_sha256": "<64 lowercase hex characters from the approved release key>",
+      "signer": "release-bot"
+    }
+  ]
+}
+```
+
+Then verify all layers at once:
 
 ```bash
 aml-github-attestation release-proof.json \
   --repo OWNER/REPOSITORY \
-  --signer-workflow OWNER/REPOSITORY/.github/workflows/release.yml
+  --trust-policy release-key-policy.json
 ```
 
-Offline GitHub attestation bundles can be supplied with `--bundle`.
+The trust policy is deliberately external to the proof and attestation. Embedding the trust root inside the object being verified would let an attacker replace both the release key and its claimed authorization. A policy entry can omit or set `signer` to `null` to trust the fingerprint regardless of the signed human-readable signer label.
+
+A caller can explicitly opt into self-hosted attestations with `--allow-self-hosted`. That is a conscious trust-policy change, not the default. Optional stricter workflow pinning is available with `--signer-workflow`, and offline GitHub attestation bundles can be supplied with `--bundle`.
 
 ## Manual verification path
 
@@ -109,12 +116,15 @@ Do not conflate these:
 
 The preparation metadata uses explicit `meaning_state_name` and `meaning_state_digest` fields so downstream tooling cannot mistake the virtual semantic state for the GitHub artifact subject.
 
-## Two verification layers, two claims
+## Three verification layers, three claims
 
-1. **GitHub/Sigstore attestation:** the repository workflow produced an attestation binding the proof-file bytes to the supplied ĀML predicate.
+1. **GitHub/Sigstore attestation:** a qualifying GitHub workflow produced an attestation binding the proof-file bytes to the supplied ĀML predicate.
 2. **ĀML Semantic Release Proof:** the embedded signed semantic transition, manifests, lineage, roots, diffs, attribution, and proof material verify under the declared ĀML contracts.
+3. **External release-key trust policy:** the semantic proof was signed by a key fingerprint that the verifier explicitly chose to trust, optionally constrained to the signed signer label.
 
-Neither layer proves that declared meaning is objectively true, the release is safe/ethical/legal, the ĀML signer has institutional authority merely because a key verified, or the project satisfies SLSA. This is a custom in-toto predicate, not SLSA build provenance.
+The third layer does not magically create institutional authority. It establishes authorization only relative to the externally supplied policy. The provenance of that policy remains the verifier's responsibility.
+
+None of these layers proves that declared meaning is objectively true, the release is safe/ethical/legal, or the project satisfies SLSA. This remains a custom in-toto predicate, not SLSA build provenance.
 
 ## Dependency pin
 
