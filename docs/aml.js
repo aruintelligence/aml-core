@@ -14,6 +14,14 @@ import { createVerificationReport, witnessVerificationReport } from './aml-verif
 import { createVerificationQuorum, verifyVerificationQuorum } from './aml-verification-quorum.js';
 import { createVerifierKeyPair, signVerificationReport, verifySignedVerificationReport } from './aml-signed-verification-report.js';
 import { createSignedVerificationQuorum } from './aml-signed-verification-quorum.js';
+import {
+  resolveAMLDeploymentMode,
+  resolveAMLFailureMode,
+  setAMLDeploymentMode,
+  setAMLFailureMode,
+  AML_BROWSER_DEPLOYMENT_MODES,
+  AML_BROWSER_FAILURE_MODES
+} from './aml-deployment-mode.js';
 
 const api = Object.freeze({
   createChallenge: createVerificationChallenge,
@@ -31,7 +39,13 @@ const api = Object.freeze({
   createVerifierKeyPair,
   signVerificationReport,
   verifySignedVerificationReport,
-  createSignedVerificationQuorum
+  createSignedVerificationQuorum,
+  getDeploymentMode: () => resolveAMLDeploymentMode(),
+  setDeploymentMode: setAMLDeploymentMode,
+  getFailureMode: () => resolveAMLFailureMode(),
+  setFailureMode: setAMLFailureMode,
+  deploymentModes: AML_BROWSER_DEPLOYMENT_MODES,
+  failureModes: AML_BROWSER_FAILURE_MODES
 });
 
 const ready = {
@@ -47,6 +61,8 @@ const ready = {
   verification_quorum: 'aml-verification-quorum/1',
   signed_verification_report: 'aml-signed-verification-report/1',
   signed_verification_quorum: 'aml-signed-verification-quorum/1',
+  deployment_mode: resolveAMLDeploymentMode(),
+  failure_mode: resolveAMLFailureMode(),
   browser_api_global: 'window.AML',
   receipt_global: 'window.__AML_RECEIPT__',
   receipt_history_global: 'window.__AML_RECEIPT_HISTORY__',
