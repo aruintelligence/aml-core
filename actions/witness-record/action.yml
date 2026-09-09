@@ -1,0 +1,25 @@
+name: AML Witness Record Validator
+description: Validate an external aml-witness-record/1 before submitting it to the public witness registry.
+inputs:
+  record-file:
+    description: Path to a JSON witness record in the caller repository.
+    required: true
+outputs:
+  valid:
+    description: true only when the record passes the machine-checkable acceptance profile.
+    value: ${{ steps.validate.outputs.valid }}
+  witness-id:
+    description: Validated witness identifier.
+    value: ${{ steps.validate.outputs.witness-id }}
+  result:
+    description: Validated PASS, FAIL, or MIXED result.
+    value: ${{ steps.validate.outputs.result }}
+  source-url:
+    description: Validated external public evidence URL.
+    value: ${{ steps.validate.outputs.source-url }}
+runs:
+  using: composite
+  steps:
+    - id: validate
+      shell: bash
+      run: node "$GITHUB_ACTION_PATH/../../scripts/witness-record-gate.mjs" "${{ inputs.record-file }}"
