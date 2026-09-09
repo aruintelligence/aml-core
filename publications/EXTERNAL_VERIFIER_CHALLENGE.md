@@ -51,16 +51,46 @@ The current challenge runs:
 
 The harness emits `aml-verifier-conformance-result/1` with the observed exit code, parsed validity, stdout/stderr, and per-case PASS/FAIL result.
 
+## Turn the result into a machine-checkable witness record
+
+The public witness registry uses `aml-witness-record/1`. A template lives at [`conformance/witness-record.example.json`](../conformance/witness-record.example.json).
+
+Validate the record in the outside repository before submitting it:
+
+```yaml
+- id: aml-witness
+  uses: aruintelligence/aml-core/actions/witness-record@main
+  with:
+    record-file: witness-record.json
+
+- run: |
+    echo "valid=${{ steps.aml-witness.outputs.valid }}"
+    echo "witness=${{ steps.aml-witness.outputs.witness-id }}"
+    echo "result=${{ steps.aml-witness.outputs.result }}"
+```
+
+Or run the validator directly from a checkout:
+
+```bash
+node scripts/validate-witness-record.mjs witness-record.json
+```
+
+The same validator is used by the canonical `WITNESSES.json` registry guard. That prevents the registry and the submission instructions from drifting into different acceptance formats.
+
+The machine-checkable profile verifies structure, required fields, PASS/FAIL/MIXED result values, UTC observation time, HTTPS evidence URLs, and that the source/report URL does not point back at the canonical `aruintelligence/aml-core` repository or its GitHub Pages evidence surface.
+
+It deliberately **cannot prove independence or truth merely from JSON**. Maintainer identity, actual implementation independence, and whether the public report accurately describes the experiment remain evidence-review questions. A self-declared `external_to_aml_core: true` flag is not sufficient if the supplied source URL is canonical project evidence.
+
 ## What counts as an external witness
 
 A passing run inside `aruintelligence/aml-core` does **not** count as outside adoption. To qualify for the public witness registry, the implementation/result must be maintained outside the canonical repository and backed by a stable public source or report.
 
 PASS, FAIL, and MIXED reports are welcome. An ambiguity or failure in the contract is useful evidence and should not be hidden.
 
-Submit outside results through the repository's `Independent replication` or `External verifier report` issue forms. Accepted public evidence may be recorded in `WITNESSES.json`.
+Submit outside results through the repository's `Independent replication` or `External verifier report` issue forms. Accepted public evidence may be recorded in `WITNESSES.json` only after the record passes the machine validator and the outside evidence is reviewed.
 
 ## Evidence boundary
 
-Passing this challenge is project-defined black-box interoperability evidence for the tested verifier contract. It does not establish certification, implementation independence by itself, endorsement, standards-body approval, safety, ethics, legal compliance, institutional authority, or broad adoption.
+Passing this challenge is project-defined black-box interoperability evidence for the tested verifier contract. Passing the witness-record validator proves only that the submission matches the machine-checkable acceptance profile. Neither establishes certification, implementation independence by itself, endorsement, standards-body approval, safety, ethics, legal compliance, institutional authority, or broad adoption.
 
 The external witness count remains whatever `WITNESSES.json` can actually substantiate.
