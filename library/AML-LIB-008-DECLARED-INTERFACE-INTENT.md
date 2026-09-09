@@ -12,7 +12,7 @@ The useful question is therefore not:
 
 > Can declaration prove motive?
 
-It cannot.
+It cannot. **Declared interface intent does not prove hidden motive or truthfulness.**
 
 The useful question is:
 
