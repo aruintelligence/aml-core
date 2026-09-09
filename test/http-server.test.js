@@ -142,6 +142,66 @@ test("AML HTTP deployment endpoint exposes fail-open versus fail-closed", async 
   });
 });
 
+test("AML HTTP deployment batch preserves aggregate and per-intent evidence", async () => {
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/v1/deployment/batch`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        intents: [intent(), suppressedIntent()],
+        profile: "calm_default",
+        mode: "enforce",
+        failure_mode: "closed",
+        timestamp: "2030-01-01T00:00:00.000Z"
+      })
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.protocol, "aml-http-deployment-batch/1");
+    assert.equal(body.total, 2);
+    assert.equal(body.aml_allowed, 1);
+    assert.equal(body.aml_suppressed, 1);
+    assert.equal(body.results.length, 2);
+    assert.equal(typeof body.results[0].receipt_sha256, "string");
+  });
+});
+
+test("AML HTTP policy canary reports decision changes without choosing policy correctness", async () => {
+  await withServer(async (base) => {
+    const privacyIntent = {
+      transmission: "http_canary",
+      nodes: [{
+        type: "message",
+        identifier: "Collect",
+        properties: {
+          purpose: "Collect optional personal data",
+          attention_cost: 1,
+          restoration_value: 4,
+          collects_personal_data: true
+        }
+      }]
+    };
+    const response = await fetch(`${base}/v1/deployment/canary`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        intent: privacyIntent,
+        baseline_profile: "calm_default",
+        candidate_profile: "privacy_first",
+        context: { privacy_consent: false },
+        timestamp: "2030-01-01T00:00:00.000Z"
+      })
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.protocol, "aml-http-policy-canary/1");
+    assert.equal(body.changed_decisions >= 1, true);
+    assert.equal(body.candidate_new_suppressions >= 1, true);
+    assert.equal(typeof body.baseline.receipt_sha256, "string");
+    assert.equal(typeof body.candidate.receipt_sha256, "string");
+  });
+});
+
 test("AML HTTP verifies a cross-language witness bundle and rejects mutation", async () => {
   await withServer(async (base) => {
     const bundle = witnessVector();
