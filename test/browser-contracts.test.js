@@ -5,11 +5,16 @@ import fs from 'node:fs';
 const pageSchema = JSON.parse(fs.readFileSync('protocol/aml-page.schema.json', 'utf8'));
 const receiptSchema = JSON.parse(fs.readFileSync('protocol/aml-dom-receipt.schema.json', 'utf8'));
 const evidenceSchema = JSON.parse(fs.readFileSync('protocol/aml-browser-evidence.schema.json', 'utf8'));
+const zoneViolationSchema = JSON.parse(fs.readFileSync('protocol/aml-zone-violation.schema.json', 'utf8'));
 const challengeSchema = JSON.parse(fs.readFileSync('protocol/aml-verification-challenge.schema.json', 'utf8'));
 const sessionSchema = JSON.parse(fs.readFileSync('protocol/aml-session-attestation.schema.json', 'utf8'));
 const witnessSchema = JSON.parse(fs.readFileSync('protocol/aml-witness-bundle.schema.json', 'utf8'));
 const bootstrap = fs.readFileSync('docs/aml.js', 'utf8');
 const live = fs.readFileSync('docs/aml-live.js', 'utf8');
+const domGate = fs.readFileSync('docs/aml-dom-gate.js', 'utf8');
+const webComponent = fs.readFileSync('docs/aml-gate.js', 'utf8');
+const zone = fs.readFileSync('docs/aml-zone.js', 'utf8');
+const deploymentMode = fs.readFileSync('docs/aml-deployment-mode.js', 'utf8');
 const pageManifestRuntime = fs.readFileSync('docs/aml-page-manifest.js', 'utf8');
 const browserIntegrity = fs.readFileSync('docs/aml-browser-integrity.js', 'utf8');
 const browserEvidence = fs.readFileSync('docs/aml-browser-evidence.js', 'utf8');
@@ -27,12 +32,17 @@ test('AML page manifest schema is versioned and bounded', () => {
   assert.equal(item.properties.restoration_value.maximum, 10);
 });
 
-test('AML DOM receipt schema exposes inspectable decision totals and optional SHA-256 integrity', () => {
+test('AML DOM receipt schema exposes policy and effective deployment totals plus optional SHA-256 integrity', () => {
   assert.equal(receiptSchema.properties.schema.const, 'aml-dom-receipt/1');
   assert.ok(receiptSchema.required.includes('totals'));
   assert.ok(receiptSchema.required.includes('decisions'));
   const totals = receiptSchema.properties.totals.required;
   assert.deepEqual(totals, ['evaluated', 'allowed', 'suppressed', 'errors']);
+  assert.ok(receiptSchema.properties.totals.properties.effective_rendered);
+  assert.ok(receiptSchema.properties.totals.properties.effective_suppressed);
+  assert.ok(receiptSchema.properties.totals.properties.shadowed_suppressions);
+  assert.ok(receiptSchema.properties.deployment);
+  assert.deepEqual(receiptSchema.properties.decisions.items.properties.render_allowed.type, ['boolean', 'null']);
   assert.equal(receiptSchema.properties.integrity.properties.schema.const, 'aml-integrity/1');
   assert.equal(receiptSchema.properties.integrity.properties.algorithm.const, 'SHA-256');
   assert.equal(receiptSchema.properties.integrity.properties.value.pattern, '^[a-f0-9]{64}$');
@@ -45,6 +55,13 @@ test('AML browser evidence schema binds receipt, violations, and integrity', () 
   assert.ok(evidenceSchema.required.includes('integrity'));
   assert.equal(evidenceSchema.properties.zone_violations.maxItems, 100);
   assert.equal(evidenceSchema.properties.integrity.properties.algorithm.const, 'SHA-256');
+});
+
+test('zone violation schema can preserve audit versus effective deployment posture', () => {
+  assert.equal(zoneViolationSchema.properties.schema.const, 'aml-zone-violation/1');
+  assert.deepEqual(zoneViolationSchema.properties.zone_mode.enum, ['strict', 'audit']);
+  assert.deepEqual(zoneViolationSchema.properties.deployment_mode.enum, ['enforce', 'shadow']);
+  assert.equal(zoneViolationSchema.properties.effective_rendered.type, 'boolean');
 });
 
 test('detached verification schemas bind freshness, evidence hash, key, signature, and bundle integrity', () => {
@@ -61,7 +78,7 @@ test('detached verification schemas bind freshness, evidence hash, key, signatur
   assert.ok(witnessSchema.required.includes('integrity'));
 });
 
-test('one-script browser bootstrap activates reference browser layers and detached verification API', () => {
+test('one-script browser bootstrap activates reference layers, verification, and rollout posture API', () => {
   assert.match(bootstrap, /\.\/aml-gate\.js/);
   assert.match(bootstrap, /\.\/aml-live\.js/);
   assert.match(bootstrap, /\.\/aml-page-manifest\.js/);
@@ -70,6 +87,9 @@ test('one-script browser bootstrap activates reference browser layers and detach
   assert.match(bootstrap, /verifyEvidence/);
   assert.match(bootstrap, /createWitnessBundle/);
   assert.match(bootstrap, /verifyWitnessBundle/);
+  assert.match(bootstrap, /setDeploymentMode/);
+  assert.match(bootstrap, /setFailureMode/);
+  assert.match(bootstrap, /getDeploymentMode/);
   assert.match(bootstrap, /globalThis\.AML = api/);
   assert.match(bootstrap, /challenge_bound_attestation: 'ECDSA-P256-SHA256'/);
   assert.match(bootstrap, /browser_integrity: 'SHA-256'/);
@@ -77,11 +97,29 @@ test('one-script browser bootstrap activates reference browser layers and detach
   assert.match(bootstrap, /aml-browser-bootstrap\/1/);
 });
 
-test('live DOM firewall publishes bounded receipt history and seals receipts asynchronously', () => {
+test('browser deployment posture explicitly separates shadow/enforce and open/closed behavior', () => {
+  assert.match(deploymentMode, /'enforce', 'shadow'/);
+  assert.match(deploymentMode, /'open', 'closed'/);
+  assert.match(deploymentMode, /AML_BROWSER_INVALID_MODE/);
+  assert.match(deploymentMode, /AML_BROWSER_INVALID_FAILURE_MODE/);
+  assert.match(deploymentMode, /mode === 'shadow'/);
+  assert.match(domGate, /effective_rendered/);
+  assert.match(domGate, /deployment_mode/);
+  assert.match(webComponent, /effective_rendered/);
+  assert.match(webComponent, /aml-mode-change/);
+  assert.match(zone, /deployment_mode/);
+  assert.match(zone, /deployment-mode-change/);
+});
+
+test('live DOM firewall publishes bounded receipt history and deployment-effective totals', () => {
   assert.match(live, /__AML_RECEIPT_HISTORY__/);
   assert.match(live, /length > 50/);
   assert.match(live, /sealBrowserReceipt/);
   assert.match(live, /aml-receipt-sealed/);
+  assert.match(live, /effective_rendered/);
+  assert.match(live, /effective_suppressed/);
+  assert.match(live, /shadowed_suppressions/);
+  assert.match(live, /aml-mode-change/);
   assert.match(live, /attributeFilter: WATCHED_ATTRIBUTES/);
   assert.doesNotMatch(live, /WATCHED_ATTRIBUTES[\s\S]*data-aml-decision/);
 });
