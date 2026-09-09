@@ -164,8 +164,9 @@ export function createAmlHttpServer(options = {}) {
           max_items: body.max_items ?? 100
         });
         return send(res, 200, {
+          ...result,
           protocol: "aml-http-deployment-batch/1",
-          ...result
+          runtime_protocol: result.protocol
         }, headers);
       } catch (error) {
         return send(res, error.statusCode ?? 400, { error: error.message || "deployment_batch_failed" }, headers);
@@ -183,8 +184,9 @@ export function createAmlHttpServer(options = {}) {
           timestamp: body.timestamp
         });
         return send(res, 200, {
+          ...result,
           protocol: "aml-http-policy-canary/1",
-          ...result
+          runtime_protocol: result.protocol
         }, headers);
       } catch (error) {
         return send(res, error.statusCode ?? 400, { error: error.message || "policy_canary_failed" }, headers);
