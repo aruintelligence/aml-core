@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ĀML AI Interface Firewall Starter</title>
+  <style>
+    :root { color-scheme: light dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    body { max-width: 760px; margin: 0 auto; padding: 48px 20px; line-height: 1.55; }
+    main { display: grid; gap: 24px; }
+    .panel { border: 1px solid currentColor; border-radius: 16px; padding: 20px; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    button { font: inherit; padding: 12px 18px; border-radius: 10px; cursor: pointer; }
+    .hint { opacity: .78; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p><strong>ĀML™ — AI Interface Firewall™ starter</strong></p>
+      <h1>Gate one risky interface decision without replacing your frontend.</h1>
+      <p class="hint">This page is plain HTML. No build system. No framework migration.</p>
+    </header>
+
+    <section class="panel">
+      <h2>High-attention / low-restoration CTA</h2>
+      <p>This content declares what it is trying to do and the prototype inputs used by the gate.</p>
+
+      <aml-gate
+        purpose="Create urgency for a purchase"
+        attention-cost="5"
+        restoration-value="1">
+        <button type="button">Buy before the timer expires</button>
+      </aml-gate>
+    </section>
+
+    <section class="panel">
+      <h2>Lower-attention explanatory action</h2>
+      <aml-gate
+        purpose="Explain pricing without pressure"
+        attention-cost="1"
+        restoration-value="3">
+        <button type="button">Review the pricing details</button>
+      </aml-gate>
+    </section>
+
+    <section>
+      <h2>What just happened?</h2>
+      <p>The two existing HTML controls were wrapped in <code>&lt;aml-gate&gt;</code>. The prototype gate evaluates declared inputs before allowing the wrapped interface to render.</p>
+      <p class="hint">The attention/restoration values are declared or model-provided inputs. ĀML does not claim they are objective measurements of cognition, wellbeing, truth, ethics, legality, or safety.</p>
+    </section>
+  </main>
+
+  <script type="module" src="https://aruintelligence.github.io/aml-core/aml-gate.js"></script>
+</body>
+</html>
