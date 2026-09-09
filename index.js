@@ -8,6 +8,7 @@ export { createMeaningManifest, verifyMeaningManifest, verifyMeaningManifestInte
 export { signMeaningManifest, verifySignedMeaningManifest } from "./compiler/meaningManifestAttestation.js";
 export { createMeaningLineage, appendMeaningLineage, verifyMeaningLineage } from "./compiler/meaningLineage.js";
 export { createSemanticReleaseProof, verifySemanticReleaseProof } from "./compiler/semanticReleaseProof.js";
+export { createInTotoSemanticReleaseStatement, verifyInTotoSemanticReleaseStatement, IN_TOTO_STATEMENT_V1, AML_SEMANTIC_RELEASE_PREDICATE_V1, AML_SEMANTIC_RELEASE_PREDICATE_SCHEMA_V1 } from "./compiler/inTotoSemanticRelease.js";
 export { policyDiff } from "./compiler/policyDiff.js";
 export { policyMatrix } from "./compiler/policyMatrix.js";
 export { buildProvenanceGraph, verifyProvenanceGraph } from "./compiler/provenanceGraph.js";
