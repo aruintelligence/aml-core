@@ -2,6 +2,8 @@ import http from "node:http";
 import { executeAccountableIntent, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { verifyOfficialBrandAuthorization } from "../runtime/brandTrust.js";
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
+import { evaluateInterfaceBatch } from "../runtime/batchInterfaceFirewall.js";
+import { evaluatePolicyCanary } from "../runtime/policyCanary.js";
 import { verifyWitnessBundle } from "../docs/aml-witness-bundle.js";
 import fs from "node:fs";
 
@@ -146,6 +148,46 @@ export function createAmlHttpServer(options = {}) {
         }, headers);
       } catch (error) {
         return send(res, error.statusCode ?? 400, { error: error.message || "deployment_evaluation_failed" }, headers);
+      }
+    }
+
+    if (req.method === "POST" && url.pathname === "/v1/deployment/batch") {
+      try {
+        const body = await readJson(req, maxBodyBytes);
+        if (!Array.isArray(body.intents)) return send(res, 400, { error: "intents_array_required" }, headers);
+        const result = evaluateInterfaceBatch(body.intents, {
+          profile: body.profile ?? defaultProfile,
+          context: body.context ?? {},
+          mode: body.mode ?? "enforce",
+          failure_mode: body.failure_mode ?? "closed",
+          timestamp: body.timestamp,
+          max_items: body.max_items ?? 100
+        });
+        return send(res, 200, {
+          protocol: "aml-http-deployment-batch/1",
+          ...result
+        }, headers);
+      } catch (error) {
+        return send(res, error.statusCode ?? 400, { error: error.message || "deployment_batch_failed" }, headers);
+      }
+    }
+
+    if (req.method === "POST" && url.pathname === "/v1/deployment/canary") {
+      try {
+        const body = await readJson(req, maxBodyBytes);
+        if (!body.intent) return send(res, 400, { error: "intent_required" }, headers);
+        const result = evaluatePolicyCanary(body.intent, {
+          baseline_profile: body.baseline_profile ?? "calm_default",
+          candidate_profile: body.candidate_profile ?? defaultProfile,
+          context: body.context ?? {},
+          timestamp: body.timestamp
+        });
+        return send(res, 200, {
+          protocol: "aml-http-policy-canary/1",
+          ...result
+        }, headers);
+      } catch (error) {
+        return send(res, error.statusCode ?? 400, { error: error.message || "policy_canary_failed" }, headers);
       }
     }
 
