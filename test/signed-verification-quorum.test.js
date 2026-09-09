@@ -65,6 +65,23 @@ test('reusing one verifier key cannot satisfy a two-key threshold', async () => 
   assert.equal(quorum.summary.threshold_met, false);
 });
 
+test('a correctly signed invalid report is dissent and cannot satisfy the distinct-key quorum', async () => {
+  const keyA = await createVerifierKeyPair();
+  const keyB = await createVerifierKeyPair();
+  const envelopeA1 = await signVerificationReport(report('verifier-a-1'), keyA);
+  const envelopeA2 = await signVerificationReport(report('verifier-a-2'), keyA);
+  const dissent = await signVerificationReport(report('verifier-b', 'a'.repeat(64), false), keyB);
+
+  const quorum = await createSignedVerificationQuorum([envelopeA1, envelopeA2, dissent], { threshold: 2 });
+  assert.equal(quorum.summary.valid_signatures, 3);
+  assert.equal(quorum.summary.valid_reports, 2);
+  assert.equal(quorum.summary.invalid_reports, 1);
+  assert.equal(quorum.summary.distinct_keys, 1);
+  assert.equal(quorum.summary.threshold_met, false);
+  assert.equal(quorum.summary.unanimous, false);
+  assert.ok(quorum.summary.disagreement_reasons.includes('AML_SESSION_SIGNATURE_INVALID'));
+});
+
 test('signed verification quorum rejects mixed artifact hashes', async () => {
   const keyA = await createVerifierKeyPair();
   const keyB = await createVerifierKeyPair();
