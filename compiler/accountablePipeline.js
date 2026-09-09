@@ -10,6 +10,7 @@ import { policyFromProfile } from "../runtime/policyComposition.js";
 import { resolvePolicyProfile } from "../runtime/policyProfiles.js";
 import { createAuditStream, appendAuditEvent, verifyAuditStream } from "../runtime/auditStream.js";
 import { enforceCumulativeAttentionBudget } from "../runtime/attentionLedger.js";
+import { verifyAttentionLedger } from "../runtime/attentionIntegrity.js";
 
 function stableStringify(value) {
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
@@ -145,19 +146,75 @@ export function verifyExecutionReceipt(receipt) {
   }
 
   const expected = sha256(receiptPayload(receipt));
-  const audit = receipt.runtime_audit_stream ? verifyAuditStream(receipt.runtime_audit_stream) : { verified: true };
-  const auditHashValid = receipt.runtime_audit_stream
-    ? sha256(receipt.runtime_audit_stream) === receipt.audit_stream_sha256
-    : true;
-  const ledgerHashValid = receipt.attention_ledger
-    ? sha256(receipt.attention_ledger) === receipt.attention_ledger_sha256
-    : true;
+  const receiptHashValid = expected === receipt.receipt_sha256;
+
+  const intentHashValid = Boolean(receipt.intent) && sha256(receipt.intent) === receipt.intent_sha256;
+  const amlHashValid = typeof receipt.aml_source === "string" && sha256(receipt.aml_source) === receipt.aml_sha256;
+  const simulationHashValid = Boolean(receipt.simulations) && sha256(receipt.simulations) === receipt.simulation_sha256;
+  const decisions = Array.isArray(receipt.selected_render?.decisions) ? receipt.selected_render.decisions : null;
+  const decisionHashValid = decisions !== null && sha256(decisions) === receipt.decision_sha256;
+  const outputHashValid = typeof receipt.selected_render?.html === "string" && sha256(receipt.selected_render.html) === receipt.output_sha256;
+
+  const selectedRenderCountsValid = decisions !== null &&
+    Number.isInteger(receipt.selected_render?.allowed) &&
+    Number.isInteger(receipt.selected_render?.suppressed) &&
+    receipt.selected_render.allowed === decisions.filter(item => item?.render_allowed).length &&
+    receipt.selected_render.suppressed === decisions.filter(item => !item?.render_allowed).length;
+
+  let audit = { verified: true };
+  let auditHashValid = true;
+  let runtimeAuditFlagValid = true;
+  if (receipt.runtime_audit_stream) {
+    try {
+      audit = verifyAuditStream(receipt.runtime_audit_stream);
+      auditHashValid = sha256(receipt.runtime_audit_stream) === receipt.audit_stream_sha256;
+      runtimeAuditFlagValid = receipt.runtime_audit_verified === audit.verified;
+    } catch {
+      audit = { verified: false };
+      auditHashValid = false;
+      runtimeAuditFlagValid = false;
+    }
+  }
+
+  let ledgerHashValid = true;
+  let ledgerStructureValid = true;
+  if (receipt.attention_ledger) {
+    try {
+      ledgerHashValid = sha256(receipt.attention_ledger) === receipt.attention_ledger_sha256;
+      ledgerStructureValid = verifyAttentionLedger(receipt.attention_ledger).verified;
+    } catch {
+      ledgerHashValid = false;
+      ledgerStructureValid = false;
+    }
+  }
+
+  const bindingsValid = intentHashValid &&
+    amlHashValid &&
+    simulationHashValid &&
+    decisionHashValid &&
+    outputHashValid &&
+    selectedRenderCountsValid &&
+    auditHashValid &&
+    audit.verified &&
+    runtimeAuditFlagValid &&
+    ledgerHashValid &&
+    ledgerStructureValid;
 
   return {
-    verified: expected === receipt.receipt_sha256 && audit.verified && auditHashValid && ledgerHashValid,
-    receipt_hash_valid: expected === receipt.receipt_sha256,
-    audit_stream_valid: audit.verified && auditHashValid,
-    attention_ledger_valid: ledgerHashValid,
+    verified: receiptHashValid && bindingsValid,
+    receipt_hash_valid: receiptHashValid,
+    bindings_valid: bindingsValid,
+    intent_binding_valid: intentHashValid,
+    aml_binding_valid: amlHashValid,
+    simulation_binding_valid: simulationHashValid,
+    decision_binding_valid: decisionHashValid,
+    output_binding_valid: outputHashValid,
+    selected_render_counts_valid: selectedRenderCountsValid,
+    audit_stream_valid: audit.verified && auditHashValid && runtimeAuditFlagValid,
+    runtime_audit_flag_valid: runtimeAuditFlagValid,
+    attention_ledger_valid: ledgerHashValid && ledgerStructureValid,
+    attention_ledger_hash_valid: ledgerHashValid,
+    attention_ledger_structure_valid: ledgerStructureValid,
     expected_sha256: expected,
     receipt_sha256: receipt.receipt_sha256
   };
