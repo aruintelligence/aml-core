@@ -1,0 +1,17 @@
+{
+  "schema": "aml-witness-record/1",
+  "witness_id": "outside-go-verifier-001",
+  "observed_at": "2026-09-09T07:15:00Z",
+  "source_url": "https://github.com/example-labs/aml-verifier",
+  "artifact_type": "aml-external-verifier-challenge/1",
+  "artifact_hash": null,
+  "verifier": "example-go-verifier",
+  "runtime": "go1.24",
+  "result": "PASS",
+  "external_to_aml_core": true,
+  "summary": "Independent black-box verifier matched the published challenge cases.",
+  "report_url": "https://github.com/example-labs/aml-verifier/actions/runs/123",
+  "notes": [
+    "Template only: replace example-labs URLs and identifiers with real outside evidence before submission."
+  ]
+}
