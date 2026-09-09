@@ -39,3 +39,22 @@ test("capability token rejects mutation, wrong audience, and expiry", () => {
   assert.equal(verifyCapabilityToken(token, { audience: "other-system" }).reason, "audience_mismatch");
   assert.equal(verifyCapabilityToken(token, { now: "2026-01-01T01:00:00.000Z" }).reason, "expired");
 });
+
+test("capability token signer rejects malformed or inverted time windows", () => {
+  assert.throws(() => signCapabilityToken({ issuer: "root", expires_at: "tomorow" }, privatePem()), /invalid_expires_at/);
+  assert.throws(() => signCapabilityToken({
+    issuer: "root",
+    issued_at: "2026-01-02T00:00:00.000Z",
+    expires_at: "2026-01-01T00:00:00.000Z"
+  }, privatePem()), /invalid_time_window/);
+});
+
+test("capability token verifier fails closed on malformed signed time fields and invalid now", () => {
+  const token = signCapabilityToken({ issuer: "root", expires_at: "2026-01-02T00:00:00.000Z" }, privatePem());
+  assert.equal(verifyCapabilityToken(token, { now: "not-a-date" }).reason, "invalid_now");
+
+  const malformed = structuredClone(token);
+  malformed.expires_at = "not-a-date";
+  assert.equal(verifyCapabilityToken(malformed).valid, false);
+  assert.equal(verifyCapabilityToken(malformed).reason, "signature_invalid");
+});
