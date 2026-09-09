@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-zone-violation.schema.json",
   "title": "AML Zone Violation",
-  "description": "Reference prototype schema for undeclared interface elements observed inside an AML strict zone.",
+  "description": "Reference prototype schema for undeclared interface elements observed inside an AML zone. Optional deployment fields distinguish audit/shadow observation from effective suppression.",
   "type": "object",
   "required": ["schema", "prototype", "zone_id", "element_id", "tag", "reason", "observed_at"],
   "properties": {
@@ -11,6 +11,9 @@
     "zone_id": { "type": ["string", "null"] },
     "element_id": { "type": ["string", "null"] },
     "tag": { "type": ["string", "null"] },
+    "zone_mode": { "enum": ["strict", "audit"] },
+    "deployment_mode": { "enum": ["enforce", "shadow"] },
+    "effective_rendered": { "type": "boolean" },
     "reason": { "type": "string" },
     "observed_at": { "type": "string" }
   }
