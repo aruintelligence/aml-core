@@ -1,0 +1,62 @@
+{
+  "type": "aml-claims-ledger/1",
+  "project": "ĀML",
+  "status_labels": ["SHIPPED", "SPEC", "DRAFT", "PITCH"],
+  "claims": [
+    {
+      "id": "AML-CLAIM-001",
+      "status": "SHIPPED",
+      "claim": "ĀML can evaluate declared interface meaning before rendering.",
+      "evidence": ["runtime/interfaceFirewall.js", "test/mainstream-adoption.test.js"]
+    },
+    {
+      "id": "AML-CLAIM-002",
+      "status": "SHIPPED",
+      "claim": "The public prototype can produce ALLOW and SUPPRESS decisions from declared restoration_value and attention_cost inputs.",
+      "evidence": ["docs/proof.html", "scripts/check-flood-fixtures.js"]
+    },
+    {
+      "id": "AML-CLAIM-003",
+      "status": "SHIPPED",
+      "claim": "A fixed AML execution can reproduce the same receipt.",
+      "evidence": ["demos/undeniable-proof/replay-proof.mjs"]
+    },
+    {
+      "id": "AML-CLAIM-004",
+      "status": "SHIPPED",
+      "claim": "Browser evidence can detect mutation of bound receipt and evidence fields.",
+      "evidence": ["docs/aml-browser-integrity.js", "docs/aml-browser-evidence.js", "docs/browser-evidence-demo.html"]
+    },
+    {
+      "id": "AML-CLAIM-005",
+      "status": "SHIPPED",
+      "claim": "The same AML witness contract is exercised through Python and Go reference verifiers using a black-box conformance harness.",
+      "evidence": ["independent/python/verify_witness.py", "independent/go/main.go", "scripts/run-verifier-conformance.mjs"]
+    },
+    {
+      "id": "AML-CLAIM-006",
+      "status": "SHIPPED",
+      "claim": "ĀML publishes an immutable verifier contract snapshot and checks for silent drift.",
+      "evidence": ["scripts/check-verification-contract-snapshot.mjs", "scripts/check-verification-contract-drift.mjs"]
+    },
+    {
+      "id": "AML-CLAIM-007",
+      "status": "SHIPPED",
+      "claim": "ĀML publishes a numbered machine-readable publication library.",
+      "evidence": ["library/README.md", "library/catalog.json", "scripts/check-library-surfaces.mjs"]
+    },
+    {
+      "id": "AML-CLAIM-008",
+      "status": "PITCH",
+      "claim": "ĀML could become a broadly used interface accountability layer for AI-generated interfaces.",
+      "evidence": []
+    }
+  ],
+  "non_claims": [
+    "ratified global standard",
+    "broad enterprise production adoption",
+    "objective measurement of human cognition",
+    "guaranteed ethical or legal correctness",
+    "reference implementations counted as independent external witnesses"
+  ]
+}
