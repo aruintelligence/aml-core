@@ -47,9 +47,6 @@ function resolveInitialAttentionBudget(context) {
   if (typeof context.attention_budget_initial === "number" && Number.isFinite(context.attention_budget_initial)) {
     return context.attention_budget_initial;
   }
-  // Accountable receipts are JSON artifacts. `null` is the portable unbounded
-  // sentinel; using JavaScript Infinity here would become null only *after*
-  // JSON serialization and silently invalidate the receipt's hash material.
   return null;
 }
 
@@ -61,40 +58,16 @@ export function executeAccountableIntent(intent, options = {}) {
   const streamId = options.stream_id || sha256({ intent, profile: profile.id, timestamp }).slice(0, 32);
   const auditStream = createAuditStream({ stream_id: streamId, timestamp });
 
-  appendAuditEvent(auditStream, {
-    event_type: "intent_received",
-    payload: { intent_sha256: sha256(intent), profile_id: profile.id }
-  }, { timestamp });
+  appendAuditEvent(auditStream, { event_type: "intent_received", payload: { intent_sha256: sha256(intent), profile_id: profile.id } }, { timestamp });
+  appendAuditEvent(auditStream, { event_type: "aml_generated", payload: { aml_sha256: sha256(amlSource) } }, { timestamp });
 
-  appendAuditEvent(auditStream, {
-    event_type: "aml_generated",
-    payload: { aml_sha256: sha256(amlSource) }
-  }, { timestamp });
-
-  const simulations = simulatePolicies(amlSource, profile.policies, {
-    timestamp,
-    context
-  });
-
-  appendAuditEvent(auditStream, {
-    event_type: "policy_simulated",
-    payload: { simulation_sha256: sha256(simulations), policies: profile.policies }
-  }, { timestamp });
+  const simulations = simulatePolicies(amlSource, profile.policies, { timestamp, context });
+  appendAuditEvent(auditStream, { event_type: "policy_simulated", payload: { simulation_sha256: sha256(simulations), policies: profile.policies } }, { timestamp });
 
   const composedPolicy = policyFromProfile(profile);
-  const selectedCompilation = compileSource(amlSource, {
-    timestamp,
-    policy: composedPolicy,
-    context
-  });
-
+  const selectedCompilation = compileSource(amlSource, { timestamp, policy: composedPolicy, context });
   const initialBudget = resolveInitialAttentionBudget(context);
-  const cumulative = enforceCumulativeAttentionBudget(
-    selectedCompilation.renderDecisions,
-    initialBudget,
-    { session_id: context.session_id || null }
-  );
-
+  const cumulative = enforceCumulativeAttentionBudget(selectedCompilation.renderDecisions, initialBudget, { session_id: context.session_id || null });
   const finalDecisions = cumulative.decisions;
   const finalHtml = generateHTML(selectedCompilation.amt, finalDecisions);
 
@@ -107,23 +80,14 @@ export function executeAccountableIntent(intent, options = {}) {
       attention_ledger_consumed: cumulative.ledger.consumed
     }
   }, { timestamp });
-
-  appendAuditEvent(auditStream, {
-    event_type: "output_rendered",
-    payload: { output_sha256: sha256(finalHtml) }
-  }, { timestamp });
+  appendAuditEvent(auditStream, { event_type: "output_rendered", payload: { output_sha256: sha256(finalHtml) } }, { timestamp });
 
   const auditVerification = verifyAuditStream(auditStream);
-
   const receipt = {
     protocol: "ĀML Accountable Execution Receipt",
     version: "1.1",
     timestamp,
-    profile: {
-      id: profile.id,
-      description: profile.description,
-      policies: profile.policies
-    },
+    profile: { id: profile.id, description: profile.description, policies: profile.policies },
     context: structuredClone(context),
     intent_sha256: sha256(intent),
     aml_sha256: sha256(amlSource),
@@ -152,25 +116,17 @@ export function executeAccountableIntent(intent, options = {}) {
 }
 
 export function verifyExecutionReceipt(receipt) {
-  if (!receipt || receipt.protocol !== "ĀML Accountable Execution Receipt") {
-    throw new Error("Invalid ĀML accountable execution receipt.");
-  }
+  if (!receipt || receipt.protocol !== "ĀML Accountable Execution Receipt") throw new Error("Invalid ĀML accountable execution receipt.");
 
   const expected = sha256(receiptPayload(receipt));
   const receiptHashValid = expected === receipt.receipt_sha256;
-
   const intentHashValid = Boolean(receipt.intent) && sha256(receipt.intent) === receipt.intent_sha256;
   const amlHashValid = typeof receipt.aml_source === "string" && sha256(receipt.aml_source) === receipt.aml_sha256;
   const simulationHashValid = Boolean(receipt.simulations) && sha256(receipt.simulations) === receipt.simulation_sha256;
   const decisions = Array.isArray(receipt.selected_render?.decisions) ? receipt.selected_render.decisions : null;
   const decisionHashValid = decisions !== null && sha256(decisions) === receipt.decision_sha256;
   const outputHashValid = typeof receipt.selected_render?.html === "string" && sha256(receipt.selected_render.html) === receipt.output_sha256;
-
-  const selectedRenderCountsValid = decisions !== null &&
-    Number.isInteger(receipt.selected_render?.allowed) &&
-    Number.isInteger(receipt.selected_render?.suppressed) &&
-    receipt.selected_render.allowed === decisions.filter(item => item?.render_allowed).length &&
-    receipt.selected_render.suppressed === decisions.filter(item => !item?.render_allowed).length;
+  const selectedRenderCountsValid = decisions !== null && Number.isInteger(receipt.selected_render?.allowed) && Number.isInteger(receipt.selected_render?.suppressed) && receipt.selected_render.allowed === decisions.filter(item => item?.render_allowed).length && receipt.selected_render.suppressed === decisions.filter(item => !item?.render_allowed).length;
 
   let audit = { verified: true };
   let auditHashValid = true;
@@ -199,17 +155,7 @@ export function verifyExecutionReceipt(receipt) {
     }
   }
 
-  const bindingsValid = intentHashValid &&
-    amlHashValid &&
-    simulationHashValid &&
-    decisionHashValid &&
-    outputHashValid &&
-    selectedRenderCountsValid &&
-    auditHashValid &&
-    audit.verified &&
-    runtimeAuditFlagValid &&
-    ledgerHashValid &&
-    ledgerStructureValid;
+  const bindingsValid = intentHashValid && amlHashValid && simulationHashValid && decisionHashValid && outputHashValid && selectedRenderCountsValid && auditHashValid && audit.verified && runtimeAuditFlagValid && ledgerHashValid && ledgerStructureValid;
 
   return {
     verified: receiptHashValid && bindingsValid,
@@ -238,27 +184,17 @@ export function signExecutionReceipt(receipt, privateKeyPem, options = {}) {
   const privateKey = crypto.createPrivateKey(privateKeyPem);
   const publicKey = crypto.createPublicKey(privateKey);
   const publicKeyDer = publicKey.export({ type: "spki", format: "der" });
-  const signer = options.signer ?? null;
-  const signedAt = options.timestamp ?? new Date().toISOString();
   const attestation = {
     protocol: "ĀML Execution Receipt Attestation",
     version: "1.1",
     algorithm: "Ed25519",
-    signer,
-    signed_at: signedAt,
+    signer: options.signer ?? null,
+    signed_at: options.timestamp ?? new Date().toISOString(),
     public_key_pem: publicKey.export({ type: "spki", format: "pem" }).toString(),
     public_key_sha256: sha256(publicKeyDer)
   };
-  const material = executionAttestationMaterial(receipt.receipt_sha256, attestation);
-  const signature = crypto.sign(null, Buffer.from(stableStringify(material), "utf8"), privateKey);
-
-  return {
-    ...receipt,
-    signature: {
-      ...attestation,
-      signature_base64: signature.toString("base64")
-    }
-  };
+  const signature = crypto.sign(null, Buffer.from(stableStringify(executionAttestationMaterial(receipt.receipt_sha256, attestation)), "utf8"), privateKey);
+  return { ...receipt, signature: { ...attestation, signature_base64: signature.toString("base64") } };
 }
 
 export function verifySignedExecutionReceipt(receipt) {
@@ -266,35 +202,16 @@ export function verifySignedExecutionReceipt(receipt) {
   try {
     integrity = verifyExecutionReceipt(receipt);
   } catch {
-    return {
-      verified: false,
-      integrity_valid: false,
-      signature_valid: false,
-      public_key_fingerprint_valid: false,
-      attribution_bound: false,
-      signer: null,
-      signed_at: null
-    };
+    return { verified: false, integrity_valid: false, signature_valid: false, public_key_fingerprint_valid: false, attribution_bound: false, signer: null, signed_at: null };
   }
 
   if (!integrity.verified || !receipt.signature) {
-    return {
-      verified: false,
-      integrity_valid: integrity.verified,
-      signature_valid: false,
-      public_key_fingerprint_valid: false,
-      attribution_bound: false,
-      signer: null,
-      signed_at: null
-    };
+    return { verified: false, integrity_valid: integrity.verified, signature_valid: false, public_key_fingerprint_valid: false, attribution_bound: false, signer: null, signed_at: null };
   }
 
   const attestation = receipt.signature;
-  const legacy = attestation.version === "1.0";
-  const current = attestation.version === "1.1" &&
-    attestation.protocol === "ĀML Execution Receipt Attestation" &&
-    attestation.algorithm === "Ed25519";
-
+  const legacy = attestation.version === "1.0" && attestation.protocol === "ĀML Execution Receipt Attestation" && attestation.algorithm === "Ed25519";
+  const current = attestation.version === "1.1" && attestation.protocol === "ĀML Execution Receipt Attestation" && attestation.algorithm === "Ed25519";
   if (!legacy && !current) {
     return {
       verified: false,
@@ -313,23 +230,15 @@ export function verifySignedExecutionReceipt(receipt) {
     const publicKey = crypto.createPublicKey(attestation.public_key_pem);
     const publicKeyDer = publicKey.export({ type: "spki", format: "der" });
     const fingerprintValid = sha256(publicKeyDer) === attestation.public_key_sha256;
-    const signedBytes = current
-      ? Buffer.from(stableStringify(executionAttestationMaterial(receipt.receipt_sha256, attestation)), "utf8")
-      : Buffer.from(receipt.receipt_sha256, "utf8");
-    const signatureValid = crypto.verify(
-      null,
-      signedBytes,
-      publicKey,
-      Buffer.from(attestation.signature_base64, "base64")
-    );
+    const signedBytes = current ? Buffer.from(stableStringify(executionAttestationMaterial(receipt.receipt_sha256, attestation)), "utf8") : Buffer.from(receipt.receipt_sha256, "utf8");
+    const signatureValid = crypto.verify(null, signedBytes, publicKey, Buffer.from(attestation.signature_base64, "base64"));
     const verified = integrity.verified && fingerprintValid && signatureValid;
-
     return {
       verified,
       integrity_valid: integrity.verified,
       signature_valid: signatureValid,
       public_key_fingerprint_valid: fingerprintValid,
-      attribution_bound: current && signatureValid && fingerprintValid,
+      attribution_bound: current && verified,
       signer: current && verified ? attestation.signer ?? null : null,
       signed_at: current && verified ? attestation.signed_at ?? null : null,
       claimed_signer: attestation.signer ?? null,
