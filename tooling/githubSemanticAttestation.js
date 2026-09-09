@@ -49,7 +49,8 @@ export function verifyGitHubSemanticAttestationEvidence({
   ghVerification,
   proof,
   proofBytes,
-  trustPolicy = null
+  trustPolicy = null,
+  expectedTrustPolicySha256 = null
 } = {}) {
   const base = {
     verified: false,
@@ -60,7 +61,9 @@ export function verifyGitHubSemanticAttestationEvidence({
     release_proof_valid: false,
     release_key_trust_required: trustPolicy !== null,
     release_key_trusted: null,
+    trust_policy_fingerprint_valid: expectedTrustPolicySha256 === null ? null : false,
     trust_policy_id: null,
+    trust_policy_sha256: null,
     matched_attestations: 0,
     proof_file_sha256: null,
     signer: null,
@@ -74,19 +77,22 @@ export function verifyGitHubSemanticAttestationEvidence({
   try {
     if (!Array.isArray(ghVerification) || ghVerification.length === 0) return { ...base, reason: "no_verified_attestations" };
     if (!Buffer.isBuffer(proofBytes) && !(proofBytes instanceof Uint8Array)) return { ...base, reason: "invalid_proof_bytes" };
+    if (expectedTrustPolicySha256 !== null && trustPolicy === null) return { ...base, reason: "trust_policy_required_for_fingerprint" };
 
     const proofVerification = verifySemanticReleaseProof(proof);
     if (!proofVerification.verified) return { ...base, reason: "invalid_semantic_release_proof" };
 
     let trustVerification = null;
     if (trustPolicy !== null) {
-      trustVerification = verifyTrustedSemanticReleaseProof(proof, trustPolicy);
+      trustVerification = verifyTrustedSemanticReleaseProof(proof, trustPolicy, { expected_policy_sha256: expectedTrustPolicySha256 });
       if (!trustVerification.verified) {
         return {
           ...base,
           release_proof_valid: true,
-          release_key_trusted: false,
+          release_key_trusted: trustVerification.release_key_trusted,
+          trust_policy_fingerprint_valid: trustVerification.policy_fingerprint_valid,
           trust_policy_id: trustVerification.policy_id ?? null,
+          trust_policy_sha256: trustVerification.policy_sha256 ?? null,
           public_key_sha256: proof.public_key_sha256 ?? null,
           release_id: proof.release_id ?? null,
           reason: trustVerification.reason || "release_key_not_trusted"
@@ -127,7 +133,9 @@ export function verifyGitHubSemanticAttestationEvidence({
       predicate_binding_valid: predicateValid,
       release_proof_valid: true,
       release_key_trusted: trustPolicy === null ? null : true,
+      trust_policy_fingerprint_valid: trustVerification?.policy_fingerprint_valid ?? null,
       trust_policy_id: trustVerification?.policy_id ?? null,
+      trust_policy_sha256: trustVerification?.policy_sha256 ?? null,
       matched_attestations: matched,
       proof_file_sha256: fileHash,
       signer: verified ? proofVerification.signer : null,
