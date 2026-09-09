@@ -3,6 +3,7 @@ export { generateAMLFromIntent } from "./compiler/intentCompiler.js";
 export { simulatePolicies } from "./compiler/policySimulator.js";
 export { semanticDiff } from "./compiler/semanticDiff.js";
 export { semanticRiskDiff } from "./compiler/semanticRisk.js";
+export { meaningFingerprint, fingerprintAMT, compareMeaningFingerprints } from "./compiler/meaningFingerprint.js";
 export { policyDiff } from "./compiler/policyDiff.js";
 export { policyMatrix } from "./compiler/policyMatrix.js";
 export { buildProvenanceGraph, verifyProvenanceGraph } from "./compiler/provenanceGraph.js";
