@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { meaningFingerprint, compareMeaningFingerprints } from "../compiler/meaningFingerprint.js";
 import { createMeaningManifest, verifyMeaningManifest } from "../compiler/meaningManifest.js";
+import { signMeaningManifest, verifySignedMeaningManifest } from "../compiler/meaningManifestAttestation.js";
 
 const args = process.argv.slice(2);
 
@@ -12,11 +13,8 @@ function usage() {
   console.error("  aml-meaning <file.aml> [other.aml]");
   console.error("  aml-meaning manifest <file.aml> [more.aml ...]");
   console.error("  aml-meaning verify-manifest <manifest.json>");
-  console.error("");
-  console.error("One file prints its deterministic meaning fingerprint.");
-  console.error("Two files compare AMT meaning and exit 0 when equivalent, 1 when different.");
-  console.error("manifest prints a deterministic project Meaning Manifest to stdout.");
-  console.error("verify-manifest reads the manifest's relative paths and exits 0 only when all compiled meaning matches.");
+  console.error("  aml-meaning sign-manifest <manifest.json> <private-key.pem> [signer]");
+  console.error("  aml-meaning verify-attestation <attestation.json> <manifest.json>");
 }
 
 function portableRelativePath(inputPath) {
@@ -33,25 +31,17 @@ function safeManifestReadPath(value) {
     throw new Error(`Unsafe Meaning Manifest path: ${String(value)}`);
   }
   const segments = value.split("/");
-  if (segments.some(segment => !segment || segment === "." || segment === "..")) {
-    throw new Error(`Unsafe Meaning Manifest path: ${value}`);
-  }
+  if (segments.some(segment => !segment || segment === "." || segment === "..")) throw new Error(`Unsafe Meaning Manifest path: ${value}`);
   return path.resolve(process.cwd(), ...segments);
 }
 
-if (args.length === 0) {
-  usage();
-  process.exit(2);
-}
+if (args.length === 0) { usage(); process.exit(2); }
 
 try {
   if (args[0] === "manifest") {
     const files = args.slice(1);
-    if (files.length === 0) throw new Error("manifest requires at least one AML file.");
-    const sources = Object.fromEntries(files.map(file => {
-      const manifestPath = portableRelativePath(file);
-      return [manifestPath, fs.readFileSync(file, "utf8")];
-    }));
+    if (!files.length) throw new Error("manifest requires at least one AML file.");
+    const sources = Object.fromEntries(files.map(file => [portableRelativePath(file), fs.readFileSync(file, "utf8")]));
     console.log(JSON.stringify(createMeaningManifest(sources), null, 2));
     process.exit(0);
   }
@@ -61,11 +51,27 @@ try {
     if (!manifestPath || args.length !== 2) throw new Error("verify-manifest requires exactly one manifest JSON path.");
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
     if (!Array.isArray(manifest.files)) throw new Error("Meaning Manifest files must be an array.");
-    const sources = Object.fromEntries(manifest.files.map(file => [
-      file.path,
-      fs.readFileSync(safeManifestReadPath(file.path), "utf8")
-    ]));
+    const sources = Object.fromEntries(manifest.files.map(file => [file.path, fs.readFileSync(safeManifestReadPath(file.path), "utf8")]));
     const report = verifyMeaningManifest(manifest, sources);
+    console.log(JSON.stringify(report, null, 2));
+    process.exit(report.verified ? 0 : 1);
+  }
+
+  if (args[0] === "sign-manifest") {
+    const [, manifestPath, keyPath, signer] = args;
+    if (!manifestPath || !keyPath || args.length > 4) throw new Error("sign-manifest requires <manifest.json> <private-key.pem> [signer].");
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    const privateKey = fs.readFileSync(keyPath, "utf8");
+    console.log(JSON.stringify(signMeaningManifest(manifest, privateKey, { signer: signer ?? null }), null, 2));
+    process.exit(0);
+  }
+
+  if (args[0] === "verify-attestation") {
+    const [, attestationPath, manifestPath] = args;
+    if (!attestationPath || !manifestPath || args.length !== 3) throw new Error("verify-attestation requires <attestation.json> <manifest.json>.");
+    const attestation = JSON.parse(fs.readFileSync(attestationPath, "utf8"));
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    const report = verifySignedMeaningManifest(attestation, manifest);
     console.log(JSON.stringify(report, null, 2));
     process.exit(report.verified ? 0 : 1);
   }
@@ -77,7 +83,6 @@ try {
     console.log(JSON.stringify({ file: leftPath, ...meaningFingerprint(leftSource) }, null, 2));
     process.exit(0);
   }
-
   const rightSource = fs.readFileSync(rightPath, "utf8");
   const report = compareMeaningFingerprints(leftSource, rightSource);
   console.log(JSON.stringify({ left_file: leftPath, right_file: rightPath, ...report }, null, 2));
