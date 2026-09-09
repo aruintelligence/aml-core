@@ -56,6 +56,13 @@ function normalizeTrustedKey(entry) {
   return { public_key_sha256: entry.public_key_sha256, signer: entry.signer ?? null };
 }
 
+function compareTrustedKeys(a, b) {
+  if (a.public_key_sha256 !== b.public_key_sha256) return a.public_key_sha256 < b.public_key_sha256 ? -1 : 1;
+  const left = a.signer ?? "";
+  const right = b.signer ?? "";
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
 export function fingerprintSemanticReleaseQuorumPolicy(policy) {
   const validation = validateSemanticReleaseQuorumPolicy(policy);
   if (!validation.valid) throw new TypeError(`invalid quorum policy: ${validation.reason}`);
@@ -63,7 +70,7 @@ export function fingerprintSemanticReleaseQuorumPolicy(policy) {
     protocol: SEMANTIC_RELEASE_QUORUM_POLICY_PROTOCOL,
     policy_id: validation.policy_id,
     threshold: validation.threshold,
-    trusted_keys: validation.trusted_keys
+    trusted_keys: validation.trusted_keys.map(entry => ({ ...entry })).sort(compareTrustedKeys)
   }), "utf8"));
 }
 
