@@ -20,6 +20,8 @@ jobs:
       - run: npm install --ignore-scripts
       - name: Run AML conformance suite
         run: node scripts/check-conformance.js
+      - name: Enforce conformance registry consistency
+        run: node scripts/check-conformance-registry.mjs
 
   decision-core-1:
     name: Decision Core 1 / ${{ matrix.runner }}
