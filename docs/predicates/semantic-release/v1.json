@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/predicates/semantic-release/v1.json",
+  "title": "ĀML Semantic Release Predicate v1",
+  "description": "Predicate carried inside an in-toto Statement v1. It embeds one verified aml-semantic-release-proof/1 and derived semantic release metadata. It is not SLSA build provenance.",
+  "type": "object",
+  "required": ["schema", "releaseProof", "release", "semantic", "attribution", "claimBoundary"],
+  "additionalProperties": true,
+  "properties": {
+    "schema": { "const": "aml-in-toto-semantic-release-predicate/1" },
+    "releaseProof": {
+      "type": "object",
+      "required": ["protocol", "version", "proof_sha256", "signature_base64", "after_manifest_root_sha256", "lineage_head_sha256"],
+      "properties": {
+        "protocol": { "const": "aml-semantic-release-proof/1" },
+        "version": { "const": "1.0" },
+        "proof_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "after_manifest_root_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "lineage_head_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "release": {
+      "type": "object",
+      "required": ["id", "previousId"],
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": ["string", "null"] },
+        "previousId": { "type": ["string", "null"] }
+      }
+    },
+    "semantic": {
+      "type": "object",
+      "required": ["beforeRootSha256", "afterRootSha256", "changed", "lineageHeadSha256", "changeSummary"],
+      "additionalProperties": true,
+      "properties": {
+        "beforeRootSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "afterRootSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "changed": { "type": "boolean" },
+        "lineageHeadSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "changeSummary": {
+          "type": "object",
+          "required": ["added", "removed", "changed", "unchanged"],
+          "properties": {
+            "added": { "type": "integer", "minimum": 0 },
+            "removed": { "type": "integer", "minimum": 0 },
+            "changed": { "type": "integer", "minimum": 0 },
+            "unchanged": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "attribution": {
+      "type": "object",
+      "required": ["signer", "generatedAt", "publicKeySha256", "proofSha256"],
+      "additionalProperties": true,
+      "properties": {
+        "signer": { "type": ["string", "null"] },
+        "generatedAt": { "type": "string" },
+        "publicKeySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "proofSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "claimBoundary": { "type": "string", "minLength": 1 }
+  }
+}
