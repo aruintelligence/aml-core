@@ -14,8 +14,10 @@ function normalize(value, allowed, fallback) {
 }
 
 export function resolveAMLDeploymentMode(element = null) {
-  const local = element?.getAttribute?.('mode') || element?.dataset?.amlMode || null;
-  if (MODES.has(local)) return local;
+  const attributeMode = element?.getAttribute?.('mode') || null;
+  if (MODES.has(attributeMode)) return attributeMode;
+  const dataMode = element?.dataset?.amlMode || null;
+  if (MODES.has(dataMode)) return dataMode;
   const globalMode = globalThis.__AML_MODE__;
   if (MODES.has(globalMode)) return globalMode;
   const meta = readMeta('aml-mode');
@@ -25,8 +27,10 @@ export function resolveAMLDeploymentMode(element = null) {
 }
 
 export function resolveAMLFailureMode(element = null) {
-  const local = element?.getAttribute?.('failure-mode') || element?.dataset?.amlFailureMode || null;
-  if (FAILURE_MODES.has(local)) return local;
+  const attributeMode = element?.getAttribute?.('failure-mode') || null;
+  if (FAILURE_MODES.has(attributeMode)) return attributeMode;
+  const dataMode = element?.dataset?.amlFailureMode || null;
+  if (FAILURE_MODES.has(dataMode)) return dataMode;
   const globalMode = globalThis.__AML_FAILURE_MODE__;
   if (FAILURE_MODES.has(globalMode)) return globalMode;
   const meta = readMeta('aml-failure-mode');
