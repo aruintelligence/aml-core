@@ -28,6 +28,7 @@ export { createInterfaceFirewall, enforceInterfaceIntent } from "./runtime/inter
 export { createDecisionCache } from "./runtime/decisionCache.js";
 export { createDeploymentFirewall, evaluateDeploymentIntent } from "./runtime/deploymentFirewall.js";
 export { createStreamingInterfaceFirewall } from "./runtime/streamingInterfaceFirewall.js";
+export { evaluateInterfaceBatch } from "./runtime/batchInterfaceFirewall.js";
 export { negotiateCapabilities } from "./runtime/capabilityNegotiation.js";
 export { createPolicyPassport, verifyPolicyPassport, passportContext } from "./runtime/policyPassport.js";
 export { hashContent, createContentAddressedBundle, verifyContentAddressedBundle } from "./runtime/contentAddressedBundle.js";
