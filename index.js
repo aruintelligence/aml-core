@@ -6,6 +6,7 @@ export { semanticRiskDiff } from "./compiler/semanticRisk.js";
 export { meaningFingerprint, fingerprintAMT, compareMeaningFingerprints } from "./compiler/meaningFingerprint.js";
 export { createMeaningManifest, verifyMeaningManifest, verifyMeaningManifestIntegrity } from "./compiler/meaningManifest.js";
 export { signMeaningManifest, verifySignedMeaningManifest } from "./compiler/meaningManifestAttestation.js";
+export { createMeaningLineage, appendMeaningLineage, verifyMeaningLineage } from "./compiler/meaningLineage.js";
 export { policyDiff } from "./compiler/policyDiff.js";
 export { policyMatrix } from "./compiler/policyMatrix.js";
 export { buildProvenanceGraph, verifyProvenanceGraph } from "./compiler/provenanceGraph.js";
