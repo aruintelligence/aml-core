@@ -1,10 +1,7 @@
-name: Publish AML release
+name: Publish AML preview release
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/publish-baseline-release.yml"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,18 +10,57 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      - name: Require default branch dispatch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main" || {
+            echo "Release publication must be dispatched from main; got $GITHUB_REF" >&2
+            exit 1
+          }
+
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Publish v1.4.0-rc.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verify release coherence before write
+        run: node scripts/check-release-coherence.mjs
+
+      - name: Resolve canonical preview release
+        shell: bash
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const contract = JSON.parse(fs.readFileSync('project-contract.json', 'utf8'));
+          const { previewVersion, previewTag, previewNotesFile } = contract.release;
+          for (const [key, value] of Object.entries({ PREVIEW_VERSION: previewVersion, PREVIEW_TAG: previewTag, PREVIEW_NOTES_FILE: previewNotesFile })) {
+            if (!value) throw new Error(`missing release contract value: ${key}`);
+            fs.appendFileSync(process.env.GITHUB_ENV, `${key}=${value}\n`);
+          }
+          NODE
+
+      - name: Publish canonical preview release if absent
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          if gh release view "v1.4.0-rc.2" >/dev/null 2>&1; then
-            echo "Release v1.4.0-rc.2 already exists."
-          else
-            gh release create "v1.4.0-rc.2" \
-              --target "$GITHUB_SHA" \
-              --prerelease \
-              --title "ĀML Core 1.4.0-rc.2 — Hardened Federated Trust & Adoption Preview" \
-              --notes-file "RELEASE_NOTES_1.4.0_RC2.md"
+          set -euo pipefail
+          if gh release view "$PREVIEW_TAG" >/dev/null 2>&1; then
+            echo "Release $PREVIEW_TAG already exists; refusing to mutate an existing release."
+            exit 0
           fi
+
+          title="$(head -n 1 "$PREVIEW_NOTES_FILE" | sed 's/^# //')"
+          test -n "$title"
+
+          gh release create "$PREVIEW_TAG" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "$title" \
+            --notes-file "$PREVIEW_NOTES_FILE"
