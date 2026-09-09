@@ -5,6 +5,8 @@
 Author: Daniel Jacob Read IV  
 Steward: ĀRU Intelligence Inc.™
 
+**Live challenge:** https://aruintelligence.github.io/aml-core/meaning-fingerprint.html
+
 ## The idea
 
 Source code has file hashes. Builds have artifact hashes. ĀML now has a deliberately narrower experiment: a hash of the **Abstract Meaning Tree** produced from an ĀML source file.
@@ -22,6 +24,12 @@ aml-meaning-fingerprint/1
 ```
 
 This is not a claim that SHA-256 can determine human intent, truth, morality, or subjective meaning. It is a deterministic fingerprint of the **meaning structure ĀML itself compiled**.
+
+## Try it in the browser
+
+The [live Meaning Fingerprint Challenge](https://aruintelligence.github.io/aml-core/meaning-fingerprint.html) runs the browser compiler, strict browser canonicalizer, and Web Crypto SHA-256 locally. The repository test suite requires the browser fingerprint record to exactly match the Node implementation across the browser/core parity fixtures.
+
+Start with two source files that differ only by comments and whitespace. They produce the same AMT fingerprint. Then change a declared purpose or value and watch the fingerprints diverge.
 
 ## Why this is different from hashing the file
 
