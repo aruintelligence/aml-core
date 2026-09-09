@@ -30,7 +30,9 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
     if (envelope.report.artifact_hash !== artifactHash) throw new Error('AML_SIGNED_QUORUM_ARTIFACT_HASH_MISMATCH');
   }
 
-  const validKeyFingerprints = new Set();
+  // Only keys that signed a valid verdict count toward the endorsement quorum.
+  // A correctly signed INVALID report is authenticated dissent, not support.
+  const validEndorserKeyFingerprints = new Set();
   let validReports = 0;
   let invalidReports = 0;
   const reasons = new Set();
@@ -41,9 +43,11 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
       reasons.add(signature.reason);
       continue;
     }
-    validKeyFingerprints.add(envelope.verifier_key_fingerprint);
-    if (envelope.report.valid) validReports += 1;
-    else {
+
+    if (envelope.report.valid) {
+      validReports += 1;
+      validEndorserKeyFingerprints.add(envelope.verifier_key_fingerprint);
+    } else {
       invalidReports += 1;
       reasons.add(envelope.report.reason);
     }
@@ -57,14 +61,14 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
     threshold,
     signed_reports: signedReports,
     summary: {
-      distinct_keys: validKeyFingerprints.size,
+      distinct_keys: validEndorserKeyFingerprints.size,
       valid_signatures: checks.filter(({ signature }) => signature.valid).length,
       valid_reports: validReports,
       invalid_reports: invalidReports,
-      threshold_met: validReports >= threshold && validKeyFingerprints.size >= threshold,
+      threshold_met: validReports >= threshold && validEndorserKeyFingerprints.size >= threshold,
       unanimous: invalidReports === 0 && validReports === signedReports.length,
       disagreement_reasons: [...reasons]
     },
-    claim_boundary: 'Threshold agreement means enough supplied reports were validly signed by distinct public-key fingerprints over the same exact artifact and reported valid. Distinct keys do not prove distinct people, organizations, independence, authorization, certification, or correctness.'
+    claim_boundary: 'Threshold agreement means enough supplied reports were validly signed by distinct public-key fingerprints over the same exact artifact and reported valid. Correctly signed invalid reports are authenticated dissent and never count toward the endorsement quorum. Distinct keys do not prove distinct people, organizations, independence, authorization, certification, or correctness.'
   };
 }
