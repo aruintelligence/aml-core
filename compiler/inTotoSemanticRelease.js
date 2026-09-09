@@ -2,7 +2,7 @@ import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 import { verifySemanticReleaseProof } from "./semanticReleaseProof.js";
 
 export const IN_TOTO_STATEMENT_V1 = "https://in-toto.io/Statement/v1";
-export const AML_SEMANTIC_RELEASE_PREDICATE_V1 = "https://aruintelligence.github.io/aml-core/predicates/semantic-release/v1";
+export const AML_SEMANTIC_RELEASE_PREDICATE_V1 = "https://aruintelligence.github.io/aml-core/predicates/semantic-release/v1.json";
 export const AML_SEMANTIC_RELEASE_PREDICATE_SCHEMA_V1 = "aml-in-toto-semantic-release-predicate/1";
 
 const CLAIM_BOUNDARY = "Verified AML semantic-transition integrity under aml-semantic-release-proof/1; not SLSA build provenance, certification, truth, safety, ethics, legal compliance, or institutional authority.";
