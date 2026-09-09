@@ -16,6 +16,7 @@ test("threshold authorization accepts distinct valid signers", () => {
   const result = verifyThresholdAuthorization(authorization);
   assert.equal(result.valid, true);
   assert.equal(result.valid_signatures, 3);
+  assert.equal(result.threshold_bound, true);
 });
 
 test("threshold authorization rejects tampered payloads", () => {
@@ -29,4 +30,35 @@ test("threshold authorization rejects tampered payloads", () => {
   const result = verifyThresholdAuthorization(tampered);
   assert.equal(result.valid, false);
   assert.equal(result.reason, "threshold_not_met");
+});
+
+test("threshold authorization rejects a lowered quorum", () => {
+  const authorization = createThresholdAuthorization(
+    { action: "publish-policy", policy_hash: "abc123" },
+    [privatePem(), privatePem(), privatePem()],
+    { threshold: 2 }
+  );
+
+  const tampered = structuredClone(authorization);
+  tampered.threshold = 1;
+  const result = verifyThresholdAuthorization(tampered);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, "threshold_not_met");
+  assert.equal(result.valid_signatures, 0);
+  assert.equal(result.threshold_bound, true);
+});
+
+test("legacy threshold authorizations fail closed because quorum was not signed", () => {
+  const legacy = createThresholdAuthorization(
+    { action: "publish-policy", policy_hash: "abc123" },
+    [privatePem(), privatePem()],
+    { threshold: 2 }
+  );
+  delete legacy.version;
+
+  const result = verifyThresholdAuthorization(legacy);
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, "legacy_threshold_unbound");
+  assert.equal(result.threshold_bound, false);
 });
