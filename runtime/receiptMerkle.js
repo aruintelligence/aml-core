@@ -62,16 +62,39 @@ export function createReceiptInclusionProof(tree, index) {
 }
 
 export function verifyReceiptInclusionProof(inclusionProof) {
-  if (!inclusionProof || inclusionProof.protocol !== "ĀML Receipt Inclusion Proof") return { verified: false };
-  let current = normalizeLeaf(inclusionProof.leaf);
-  for (const step of inclusionProof.proof || []) {
-    current = step.position === "left"
-      ? hashPair(normalizeLeaf(step.hash), current)
-      : hashPair(current, normalizeLeaf(step.hash));
+  if (!inclusionProof || inclusionProof.protocol !== "ĀML Receipt Inclusion Proof") {
+    return { verified: false, reason: "invalid_protocol" };
   }
-  return {
-    verified: current === inclusionProof.root_sha256,
-    calculated_root_sha256: current,
-    root_sha256: inclusionProof.root_sha256
-  };
+  if (inclusionProof.version !== "1.0") return { verified: false, reason: "unsupported_version" };
+  if (!Number.isInteger(inclusionProof.index) || inclusionProof.index < 0) return { verified: false, reason: "invalid_index" };
+  if (!Array.isArray(inclusionProof.proof)) return { verified: false, reason: "invalid_proof" };
+
+  try {
+    let current = normalizeLeaf(inclusionProof.leaf);
+    const expectedRoot = normalizeLeaf(inclusionProof.root_sha256);
+    let cursor = inclusionProof.index;
+
+    for (const step of inclusionProof.proof) {
+      if (!step || typeof step !== "object" || Array.isArray(step)) return { verified: false, reason: "invalid_step" };
+      if (step.position !== "left" && step.position !== "right") return { verified: false, reason: "invalid_position" };
+
+      const expectedPosition = cursor % 2 === 0 ? "right" : "left";
+      if (step.position !== expectedPosition) return { verified: false, reason: "index_path_mismatch" };
+
+      const sibling = normalizeLeaf(step.hash);
+      current = step.position === "left"
+        ? hashPair(sibling, current)
+        : hashPair(current, sibling);
+      cursor = Math.floor(cursor / 2);
+    }
+
+    return {
+      verified: current === expectedRoot,
+      reason: current === expectedRoot ? null : "root_mismatch",
+      calculated_root_sha256: current,
+      root_sha256: expectedRoot
+    };
+  } catch {
+    return { verified: false, reason: "invalid_hash" };
+  }
 }
