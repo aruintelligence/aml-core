@@ -10,6 +10,7 @@
   "bin": {
     "aml": "./bin/aml.js",
     "aml-meaning": "./bin/aml-meaning.js",
+    "aml-release-proof": "./bin/aml-release-proof.js",
     "aml-lsp": "./bin/aml-lsp.js",
     "aml-serve": "./bin/aml-serve.js",
     "aml-brand-verify": "./bin/aml-brand-verify.js"
@@ -25,6 +26,7 @@
     "verify": "node bin/aml.js verify dist/build_manifest.json",
     "fingerprint": "node bin/aml-meaning.js",
     "meaning-manifest": "node bin/aml-meaning.js manifest",
+    "release-proof": "node bin/aml-release-proof.js",
     "check:links": "node scripts/check-local-links.js",
     "meaning-gate": "node scripts/meaning-gate.js",
     "benchmark": "node benchmarks/run.js",
@@ -45,6 +47,8 @@
     "meaning-gate",
     "meaning-fingerprint",
     "meaning-manifest",
+    "semantic-release-proof",
+    "semantic-provenance",
     "semantic-equivalence",
     "semantic-lockfile",
     "proof-carrying-interface",

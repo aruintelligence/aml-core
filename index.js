@@ -7,6 +7,7 @@ export { meaningFingerprint, fingerprintAMT, compareMeaningFingerprints } from "
 export { createMeaningManifest, verifyMeaningManifest, verifyMeaningManifestIntegrity } from "./compiler/meaningManifest.js";
 export { signMeaningManifest, verifySignedMeaningManifest } from "./compiler/meaningManifestAttestation.js";
 export { createMeaningLineage, appendMeaningLineage, verifyMeaningLineage } from "./compiler/meaningLineage.js";
+export { createSemanticReleaseProof, verifySemanticReleaseProof } from "./compiler/semanticReleaseProof.js";
 export { policyDiff } from "./compiler/policyDiff.js";
 export { policyMatrix } from "./compiler/policyMatrix.js";
 export { buildProvenanceGraph, verifyProvenanceGraph } from "./compiler/provenanceGraph.js";
