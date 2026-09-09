@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 
 const required = {
+  'PUBLICATIONS.md': ['ĀML Library', 'library/README.md', '100 Ways to Use an Interface Firewall'],
   'library/README.md': ['ĀML Library', 'AML-LIB-001', 'AML-100'],
   'library/catalog.json': ['aml-library-catalog/1', 'AML-LIB-008', 'AML-CASE-006', 'AML-COMP-003'],
   'library/CITATION.md': ['Citing the ĀML Library', 'Git commit'],
