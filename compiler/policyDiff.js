@@ -5,6 +5,7 @@ import { compileSource } from "./compiler.js";
 import { policyFromProfile } from "../runtime/policyComposition.js";
 import { resolvePolicyProfile } from "../runtime/policyProfiles.js";
 import { resolvePolicy } from "../runtime/policyEngine.js";
+import { buildPairedComparisonIndexes } from "../runtime/comparisonIdentity.js";
 
 function normalizeTarget(target) {
   if (typeof target === "string") {
@@ -36,17 +37,19 @@ export function policyDiff(source, leftTarget, rightTarget, options = {}) {
   const leftResult = compileSource(source, { timestamp, context, policy: left.policy });
   const rightResult = compileSource(source, { timestamp, context, policy: right.policy });
 
-  const leftMap = new Map(leftResult.renderDecisions.map((d, i) => [keyFor(d, i), d]));
-  const rightMap = new Map(rightResult.renderDecisions.map((d, i) => [keyFor(d, i), d]));
+  const paired = buildPairedComparisonIndexes(leftResult.renderDecisions, rightResult.renderDecisions, keyFor);
+  const leftMap = paired.left.index;
+  const rightMap = paired.right.index;
   const keys = [...new Set([...leftMap.keys(), ...rightMap.keys()])].sort();
   const changes = [];
 
   for (const key of keys) {
     const a = leftMap.get(key) || null;
     const b = rightMap.get(key) || null;
-    if (!a || !b || a.render_allowed !== b.render_allowed || a.policy_rationale !== b.policy_rationale) {
+    if (!a || !b || a.render_allowed !== b.render_allowed || JSON.stringify(a.policy_rationale) !== JSON.stringify(b.policy_rationale)) {
       changes.push({
         key,
+        identity_ambiguous: key.includes("#") && paired.ambiguous_identity_keys.some(entry => key.startsWith(`${entry.key}#`)),
         left: a && { render_allowed: a.render_allowed, policy_id: a.policy_id, rationale: a.policy_rationale },
         right: b && { render_allowed: b.render_allowed, policy_id: b.policy_id, rationale: b.policy_rationale }
       });
@@ -59,6 +62,8 @@ export function policyDiff(source, leftTarget, rightTarget, options = {}) {
     context: structuredClone(context),
     left: { id: left.id, kind: left.kind },
     right: { id: right.id, kind: right.kind },
+    ambiguous_identity_keys: paired.ambiguous_identity_keys,
+    identity_ambiguity_detected: paired.ambiguous_identity_keys.length > 0,
     changed_decisions: changes.length,
     changes
   };
