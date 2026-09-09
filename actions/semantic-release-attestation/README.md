@@ -49,7 +49,7 @@ jobs:
 
 ## One-command verification
 
-The normal verification path is:
+The baseline verification path is:
 
 ```bash
 aml-github-attestation release-proof.json --repo OWNER/REPOSITORY
@@ -74,15 +74,34 @@ A valid Semantic Release Proof proves possession of its embedded Ed25519 private
 }
 ```
 
-Then verify all layers at once:
+Then verify:
 
 ```bash
 aml-github-attestation release-proof.json \
   --repo OWNER/REPOSITORY \
-  --trust-policy release-key-policy.json
+  --trust-policy release-key-policy.json \
+  --trust-policy-sha256 <expected-policy-sha256>
 ```
 
-The trust policy is deliberately external to the proof and attestation. Embedding the trust root inside the object being verified would let an attacker replace both the release key and its claimed authorization. A policy entry can omit or set `signer` to `null` to trust the fingerprint regardless of the signed human-readable signer label.
+The trust policy is deliberately external to the proof and attestation. Embedding the trust root inside the object being verified would let an attacker replace both the release key and its claimed authorization.
+
+## M-of-N release-board authorization
+
+For releases where one trusted release key is still too much authority, add Semantic Release Quorum. Example:
+
+```bash
+aml-github-attestation release-proof.json \
+  --repo OWNER/REPOSITORY \
+  --trust-policy release-key-policy.json \
+  --trust-policy-sha256 <expected-release-key-policy-sha256> \
+  --quorum-endorsements endorsements.json \
+  --quorum-policy quorum-policy.json \
+  --quorum-policy-sha256 <expected-quorum-policy-sha256>
+```
+
+When quorum inputs are supplied, the command fails unless all requested layers pass. A valid GitHub attestation and valid semantic proof are insufficient if the quorum is one trusted signer short. The quorum policy and endorsement list are atomic inputs: neither can be supplied alone.
+
+The quorum layer counts distinct trusted key fingerprints, not signature count. Repeating one key cannot inflate a 2-of-3 policy into success. See [Semantic Release Quorum](../../publications/SEMANTIC_RELEASE_QUORUM.md).
 
 A caller can explicitly opt into self-hosted attestations with `--allow-self-hosted`. That is a conscious trust-policy change, not the default. Optional stricter workflow pinning is available with `--signer-workflow`, and offline GitHub attestation bundles can be supplied with `--bundle`.
 
@@ -116,13 +135,14 @@ Do not conflate these:
 
 The preparation metadata uses explicit `meaning_state_name` and `meaning_state_digest` fields so downstream tooling cannot mistake the virtual semantic state for the GitHub artifact subject.
 
-## Three verification layers, three claims
+## Four verification layers, four claims
 
 1. **GitHub/Sigstore attestation:** a qualifying GitHub workflow produced an attestation binding the proof-file bytes to the supplied ĀML predicate.
 2. **ĀML Semantic Release Proof:** the embedded signed semantic transition, manifests, lineage, roots, diffs, attribution, and proof material verify under the declared ĀML contracts.
 3. **External release-key trust policy:** the semantic proof was signed by a key fingerprint that the verifier explicitly chose to trust, optionally constrained to the signed signer label.
+4. **Semantic Release Quorum:** the verifier-selected threshold of distinct trusted endorsement keys approved the exact proof, release ID, resulting semantic root, and lineage head.
 
-The third layer does not magically create institutional authority. It establishes authorization only relative to the externally supplied policy. The provenance of that policy remains the verifier's responsibility.
+The third and fourth layers establish authorization only relative to verifier-supplied policies. Their provenance and real-world governance remain the verifier's responsibility.
 
 None of these layers proves that declared meaning is objectively true, the release is safe/ethical/legal, or the project satisfies SLSA. This remains a custom in-toto predicate, not SLSA build provenance.
 
