@@ -31,6 +31,10 @@ jobs:
         run: npm run check:links
       - name: Run automated tests
         run: npm test
+      - name: Guard deployment rollout surfaces
+        run: node scripts/check-deployment-surfaces.mjs > "${RUNNER_TEMP}/aml-deployment-surfaces.json"
+      - name: Run deployment rollout scenario
+        run: node examples/deployment-rollout.mjs > "${RUNNER_TEMP}/aml-deployment-rollout.json"
       - name: Prove deterministic receipt replay
         run: node demos/undeniable-proof/replay-proof.mjs > "${RUNNER_TEMP}/aml-replay-proof.json"
       - name: Verify five ALLOW and five SUPPRESS fixtures
