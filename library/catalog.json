@@ -1,0 +1,30 @@
+{
+  "type": "aml-library-catalog/1",
+  "status": "SHIPPED",
+  "canonical_repository": "https://github.com/aruintelligence/aml-core",
+  "proof_url": "https://aruintelligence.github.io/aml-core/proof.html",
+  "author": "Daniel Jacob Read IV",
+  "steward": "ĀRU Intelligence Inc.",
+  "claim_boundary": "ĀML is a working research prototype, not a ratified global standard. Industry casebooks are proposed application areas, not evidence of adoption.",
+  "publications": [
+    {"id":"AML-LIB-001","path":"AML-LIB-001-THE-INTERFACE-FIREWALL.md","status":"SHIPPED"},
+    {"id":"AML-LIB-002","path":"AML-LIB-002-RECEIPTS-FOR-GENERATED-INTERFACES.md","status":"SHIPPED"},
+    {"id":"AML-LIB-003","path":"AML-LIB-003-WHY-GENERATED-UI-NEEDS-A-DECISION-BOUNDARY.md","status":"SHIPPED"},
+    {"id":"AML-LIB-004","path":"AML-LIB-004-VIEW-MEANING.md","status":"SHIPPED"},
+    {"id":"AML-LIB-005","path":"AML-LIB-005-MEANING-GATE.md","status":"SHIPPED"},
+    {"id":"AML-LIB-006","path":"AML-LIB-006-REPRODUCIBLE-INTERFACE-DECISIONS.md","status":"SHIPPED"},
+    {"id":"AML-LIB-007","path":"AML-LIB-007-INDEPENDENT-VERIFICATION.md","status":"SHIPPED"},
+    {"id":"AML-LIB-008","path":"AML-LIB-008-DECLARED-INTERFACE-INTENT.md","status":"SHIPPED"},
+    {"id":"AML-CASE-001","path":"AML-CASE-001-AI-ASSISTANTS.md","status":"DRAFT"},
+    {"id":"AML-CASE-002","path":"AML-CASE-002-E-COMMERCE.md","status":"DRAFT"},
+    {"id":"AML-CASE-003","path":"AML-CASE-003-SOCIAL-FEEDS.md","status":"DRAFT"},
+    {"id":"AML-CASE-004","path":"AML-CASE-004-HEALTH-INTERFACES.md","status":"DRAFT"},
+    {"id":"AML-CASE-005","path":"AML-CASE-005-FINANCIAL-INTERFACES.md","status":"DRAFT"},
+    {"id":"AML-CASE-006","path":"AML-CASE-006-EDUCATION.md","status":"DRAFT"},
+    {"id":"AML-COMP-001","path":"AML-COMP-001-AML-AND-CSP.md","status":"SHIPPED"},
+    {"id":"AML-COMP-002","path":"AML-COMP-002-AML-AND-CONSENT-BANNERS.md","status":"SHIPPED"},
+    {"id":"AML-COMP-003","path":"AML-COMP-003-AML-AND-POLICY-ENGINES.md","status":"SHIPPED"},
+    {"id":"AML-100","path":"AML-100-WAYS-TO-USE-AN-INTERFACE-FIREWALL.md","status":"PITCH"},
+    {"id":"AML-EXEC-001","path":"AML-EXEC-001-EXECUTIVE-BRIEF.md","status":"SHIPPED"}
+  ]
+}
