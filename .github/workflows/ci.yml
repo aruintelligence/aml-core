@@ -41,6 +41,8 @@ jobs:
         run: node scripts/check-publication-surfaces.mjs > "${RUNNER_TEMP}/aml-publication-surfaces.json"
       - name: Guard numbered AML Library
         run: node scripts/check-library-surfaces.mjs > "${RUNNER_TEMP}/aml-library-surfaces.json"
+      - name: Enforce evidence-backed public claims
+        run: node scripts/check-claims-ledger.mjs > "${RUNNER_TEMP}/aml-claims-ledger.json"
       - name: Guard verifier interoperability surfaces
         run: node scripts/check-verifier-surfaces.mjs > "${RUNNER_TEMP}/aml-verifier-surfaces.json"
       - name: Verify immutable verifier contract snapshot
