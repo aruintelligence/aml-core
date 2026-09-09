@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { validateWitnessRecord } from '../scripts/validate-witness-record.mjs';
+import { validateWitnessRegistry } from '../scripts/check-witness-registry.mjs';
 
 function validRecord(overrides = {}) {
   return {
@@ -67,6 +68,37 @@ test('canonical report URL is rejected even when the source repository is extern
   }));
   assert.equal(result.valid, false);
   assert.ok(result.failures.some((failure) => failure.includes('report_url')));
+});
+
+test('witness registry rejects the same public report counted under multiple IDs', () => {
+  const registry = {
+    schema: 'aml-witness-registry/1',
+    external_witness_count: 2,
+    records: [
+      validRecord(),
+      validRecord({ witness_id: 'outside-go-verifier-002' })
+    ]
+  };
+  const result = validateWitnessRegistry(registry);
+  assert.equal(result.verified, false);
+  assert.ok(result.failures.some((failure) => failure.includes('duplicate report_url')));
+});
+
+test('witness registry permits distinct public reports from the same outside source', () => {
+  const registry = {
+    schema: 'aml-witness-registry/1',
+    external_witness_count: 2,
+    records: [
+      validRecord(),
+      validRecord({
+        witness_id: 'outside-go-verifier-002',
+        observed_at: '2026-09-10T07:15:00Z',
+        report_url: 'https://github.com/example-labs/aml-verifier/actions/runs/456',
+        result: 'MIXED'
+      })
+    ]
+  };
+  assert.equal(validateWitnessRegistry(registry).verified, true);
 });
 
 test('witness action exposes only validated fields', () => {
