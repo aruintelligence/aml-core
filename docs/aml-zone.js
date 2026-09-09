@@ -1,3 +1,5 @@
+import { resolveAMLDeploymentMode } from './aml-deployment-mode.js';
+
 const DECLARED_SELECTOR = '[data-aml-attention-cost][data-aml-restoration-value]';
 const SAFE_NON_UI = new Set(['SCRIPT', 'STYLE', 'TEMPLATE']);
 
@@ -5,13 +7,30 @@ function isDeclared(node) {
   return node.matches?.(DECLARED_SELECTOR) || node.tagName === 'AML-GATE';
 }
 
-function recordViolation(zone, node, reason) {
+function applyZoneVisibility(node, shouldSuppress) {
+  if (shouldSuppress) {
+    if (!node.hidden) {
+      node.hidden = true;
+      node.dataset.amlZoneHidden = 'true';
+    }
+    return;
+  }
+  if (node.dataset.amlZoneHidden === 'true') {
+    node.hidden = false;
+    delete node.dataset.amlZoneHidden;
+  }
+}
+
+function recordViolation(zone, node, reason, deploymentMode, effectiveRendered) {
   const violation = {
     schema: 'aml-zone-violation/1',
     prototype: true,
     zone_id: zone.id || null,
     element_id: node.id || null,
     tag: node.tagName?.toLowerCase?.() || null,
+    zone_mode: zone.mode,
+    deployment_mode: deploymentMode,
+    effective_rendered: effectiveRendered,
     reason,
     observed_at: new Date().toISOString()
   };
@@ -32,6 +51,8 @@ function recordViolation(zone, node, reason) {
 class AMLZone extends HTMLElement {
   connectedCallback() {
     this.dataset.amlZone = this.mode;
+    this._onAMLModeChange = () => this.scan('deployment-mode-change');
+    document.addEventListener('aml-mode-change', this._onAMLModeChange);
     this.scan('startup');
     this.observer = new MutationObserver((mutations) => {
       if (!mutations.some((mutation) => mutation.type === 'childList' && mutation.addedNodes.length)) return;
@@ -42,6 +63,7 @@ class AMLZone extends HTMLElement {
 
   disconnectedCallback() {
     this.observer?.disconnect();
+    if (this._onAMLModeChange) document.removeEventListener('aml-mode-change', this._onAMLModeChange);
   }
 
   get mode() {
@@ -50,14 +72,26 @@ class AMLZone extends HTMLElement {
 
   scan(reason = 'manual') {
     const violations = [];
+    const deploymentMode = resolveAMLDeploymentMode(this);
+    this.dataset.amlDeploymentMode = deploymentMode;
+
     for (const node of [...this.children]) {
       if (SAFE_NON_UI.has(node.tagName)) continue;
       const declared = isDeclared(node);
       node.dataset.amlDeclared = declared ? 'true' : 'false';
       if (!declared) {
-        const violation = recordViolation(this, node, `undeclared-direct-child:${reason}`);
+        const shouldSuppress = this.mode === 'strict' && deploymentMode === 'enforce';
+        const effectiveRendered = !shouldSuppress;
+        applyZoneVisibility(node, shouldSuppress);
+        node.dataset.amlZoneEffectiveDecision = effectiveRendered ? 'render' : 'suppress';
+        const violation = recordViolation(
+          this,
+          node,
+          `undeclared-direct-child:${reason}`,
+          deploymentMode,
+          effectiveRendered
+        );
         violations.push(violation);
-        if (this.mode === 'strict') node.hidden = true;
       }
     }
     return violations;
