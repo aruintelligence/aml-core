@@ -25,14 +25,20 @@ function sha256(value) {
   return crypto.createHash("sha256").update(typeof value === "string" || Buffer.isBuffer(value) ? value : stableStringify(value)).digest("hex");
 }
 
+function legacyObjectSha256(value) {
+  return crypto.createHash("sha256").update(typeof value === "string" ? value : stableStringify(value)).digest("hex");
+}
+
 function keyPair() {
   const { privateKey, publicKey } = crypto.generateKeyPairSync("ed25519");
+  const publicDer = publicKey.export({ type: "spki", format: "der" });
   return {
     privateKey,
     publicKey,
     privatePem: privateKey.export({ type: "pkcs8", format: "pem" }),
     publicPem: publicKey.export({ type: "spki", format: "pem" }).toString(),
-    fingerprint: sha256(publicKey.export({ type: "spki", format: "der" }))
+    fingerprint: sha256(publicDer),
+    legacyFingerprint: legacyObjectSha256(publicDer)
   };
 }
 
@@ -70,6 +76,7 @@ test("current execution receipt attestation binds signer and signing time", () =
     timestamp
   });
 
+  assert.equal(signed.signature.public_key_sha256, keys.fingerprint);
   const verification = verifySignedExecutionReceipt(signed);
   assert.equal(verification.verified, true);
   assert.equal(verification.attribution_bound, true);
@@ -98,7 +105,7 @@ test("legacy execution receipt signatures verify payload but do not authenticate
       signer: "legacy-claimed-signer",
       signed_at: timestamp,
       public_key_pem: keys.publicPem,
-      public_key_sha256: keys.fingerprint,
+      public_key_sha256: keys.legacyFingerprint,
       signature_base64: legacySignature.toString("base64")
     }
   };
@@ -106,6 +113,7 @@ test("legacy execution receipt signatures verify payload but do not authenticate
   const verification = verifySignedExecutionReceipt(legacy);
   assert.equal(verification.verified, true);
   assert.equal(verification.signature_valid, true);
+  assert.equal(verification.public_key_fingerprint_valid, true);
   assert.equal(verification.attribution_bound, false);
   assert.equal(verification.signer, null);
   assert.equal(verification.signed_at, null);
@@ -139,6 +147,7 @@ test("current policy pack attestation binds signer and signing time", () => {
     timestamp
   });
 
+  assert.equal(signed.attestation.public_key_sha256, keys.fingerprint);
   const verification = verifySignedPolicyPack(signed);
   assert.equal(verification.verified, true);
   assert.equal(verification.attribution_bound, true);
@@ -161,12 +170,12 @@ test("legacy policy pack signatures verify payload but do not authenticate attri
   const legacySignature = crypto.sign(null, payload, keys.privateKey);
   const legacy = {
     ...normalized,
-    pack_sha256: sha256(normalized),
+    pack_sha256: legacyObjectSha256(normalized),
     attestation: {
       algorithm: "Ed25519",
       signer: "legacy-policy-claim",
       signed_at: timestamp,
-      public_key_sha256: keys.fingerprint,
+      public_key_sha256: keys.legacyFingerprint,
       public_key_pem: keys.publicPem,
       signature_base64: legacySignature.toString("base64")
     }
@@ -174,6 +183,8 @@ test("legacy policy pack signatures verify payload but do not authenticate attri
 
   const verification = verifySignedPolicyPack(legacy);
   assert.equal(verification.verified, true);
+  assert.equal(verification.signature_valid, true);
+  assert.equal(verification.public_key_fingerprint_valid, true);
   assert.equal(verification.attribution_bound, false);
   assert.equal(verification.signer, null);
   assert.equal(verification.signed_at, null);
