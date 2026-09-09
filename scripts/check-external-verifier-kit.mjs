@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { pathToFileURL } from 'node:url';
 
 const FORBIDDEN_SOURCE_EXTENSIONS = new Set([
   '.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.py', '.go', '.rs', '.java', '.kt', '.kts', '.cs', '.c', '.cc', '.cpp', '.h', '.hpp', '.swift', '.zig', '.rb', '.php', '.sh', '.bash', '.ps1'
@@ -98,7 +99,11 @@ export function checkExternalVerifierKit(root = 'dist/external-verifier-kit') {
   return { valid: failures.length === 0, failures, file_count: entries.length, root_sha256: manifest.root_sha256 || null };
 }
 
-const root = process.argv[2] || 'dist/external-verifier-kit';
-const result = checkExternalVerifierKit(root);
-console.log(JSON.stringify(result, null, 2));
-process.exit(result.valid ? 0 : 1);
+function main() {
+  const root = process.argv[2] || 'dist/external-verifier-kit';
+  const result = checkExternalVerifierKit(root);
+  console.log(JSON.stringify(result, null, 2));
+  process.exit(result.valid ? 0 : 1);
+}
+
+if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) main();
