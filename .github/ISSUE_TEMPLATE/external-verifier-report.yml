@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Submit reproducible evidence. Negative results and disagreements are welcome. This is not a certification request.
+        Submit reproducible evidence. PASS, FAIL, and MIXED results are all useful. This is not a certification request.
   - type: input
     id: source
     attributes:
@@ -24,24 +24,32 @@ body:
     id: artifact_hash
     attributes:
       label: Exact artifact hash
-      description: Hash of the witness bundle you verified.
+      description: Hash of the witness bundle you verified, if the tested contract provides one.
     validations:
       required: true
   - type: dropdown
     id: result
     attributes:
       label: Result
+      description: Use MIXED for partial success, disagreements, ambiguities, or cases you could not reproduce consistently.
       options:
         - PASS
         - FAIL
-        - DISAGREES WITH REFERENCE
-        - COULD NOT COMPLETE
+        - MIXED
     validations:
       required: true
   - type: textarea
     id: report
     attributes:
       label: aml-verification-report/1 JSON
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: witness_record
+    attributes:
+      label: aml-witness-record/1 JSON
+      description: Validate this with actions/witness-record or scripts/validate-witness-record.mjs before submission. Use the same PASS/FAIL/MIXED result selected above.
       render: json
     validations:
       required: true
@@ -56,7 +64,7 @@ body:
     id: disagreement
     attributes:
       label: Any disagreement or ambiguity
-      description: Leave "none observed" only if that is actually the result.
+      description: Leave "none observed" only if that is actually the result. Record partial or ambiguous outcomes as MIXED above.
     validations:
       required: true
   - type: checkboxes
