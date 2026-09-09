@@ -15,7 +15,9 @@ const command = process.argv[split + 1];
 const baseArgs = process.argv.slice(split + 2);
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..');
-const vectorPath = path.join(repoRoot, 'independent/python/witness-vector.json');
+const challenge = JSON.parse(fs.readFileSync(path.join(repoRoot, 'conformance/verifier-challenge.json'), 'utf8'));
+const casesContract = JSON.parse(fs.readFileSync(path.join(repoRoot, challenge.cases_file), 'utf8'));
+const vectorPath = path.join(repoRoot, casesContract.bundle_source);
 const source = JSON.parse(fs.readFileSync(vectorPath, 'utf8'));
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-verifier-conformance-'));
 
@@ -41,39 +43,40 @@ function write(name, value) {
   return target;
 }
 
-const purposeTamper = structuredClone(source);
-purposeTamper.evidence.receipt.decisions[0].purpose = 'tampered-by-conformance-harness';
+function decodePointerToken(token) {
+  return token.replace(/~1/g, '/').replace(/~0/g, '~');
+}
 
-const challengeTamper = structuredClone(source);
-challengeTamper.challenge.nonce = 'tampered-challenge-nonce-000000000000000000000';
-
-const cases = [
-  {
-    id: 'golden-valid',
-    expected: true,
-    run: () => invoke(vectorPath, '2030-01-01T00:05:00Z')
-  },
-  {
-    id: 'tampered-purpose',
-    expected: false,
-    run: () => invoke(write('tampered-purpose', purposeTamper), '2030-01-01T00:05:00Z')
-  },
-  {
-    id: 'tampered-challenge',
-    expected: false,
-    run: () => invoke(write('tampered-challenge', challengeTamper), '2030-01-01T00:05:00Z')
-  },
-  {
-    id: 'expired-challenge',
-    expected: false,
-    run: () => invoke(vectorPath, '2030-01-01T00:11:00Z')
+function applyReplace(root, mutation) {
+  if (!mutation || mutation.op !== 'replace' || typeof mutation.path !== 'string' || !mutation.path.startsWith('/')) {
+    throw new Error('Unsupported verifier challenge mutation');
   }
-];
+  const tokens = mutation.path.slice(1).split('/').map(decodePointerToken);
+  let parent = root;
+  for (const token of tokens.slice(0, -1)) {
+    if (parent === null || typeof parent !== 'object' || !(token in parent)) throw new Error(`Mutation path does not exist: ${mutation.path}`);
+    parent = parent[token];
+  }
+  const leaf = tokens.at(-1);
+  if (parent === null || typeof parent !== 'object' || !(leaf in parent)) throw new Error(`Mutation path does not exist: ${mutation.path}`);
+  parent[leaf] = structuredClone(mutation.value);
+}
 
-const results = cases.map(test => {
-  const observed = test.run();
-  const passed = observed.valid === test.expected && (test.expected ? observed.exit_code === 0 : observed.exit_code !== 0);
-  return { id: test.id, expected_valid: test.expected, passed, observed };
+function materializeCase(testCase) {
+  const bundle = structuredClone(source);
+  for (const mutation of testCase.mutations || []) applyReplace(bundle, mutation);
+  if (!(testCase.mutations || []).length) return vectorPath;
+  return write(testCase.id, bundle);
+}
+
+if (casesContract.schema !== 'aml-verifier-challenge-cases/1') throw new Error('Unsupported verifier challenge case schema');
+if (casesContract.mutation_language?.schema !== 'aml-json-pointer-replace/1') throw new Error('Unsupported verifier challenge mutation language');
+if (!Array.isArray(casesContract.cases) || !casesContract.cases.length) throw new Error('Verifier challenge requires cases');
+
+const results = casesContract.cases.map(testCase => {
+  const observed = invoke(materializeCase(testCase), testCase.now);
+  const passed = observed.valid === testCase.expected_valid && (testCase.expected_valid ? observed.exit_code === 0 : observed.exit_code !== 0);
+  return { id: testCase.id, expected_valid: testCase.expected_valid, passed, observed };
 });
 
 const passed = results.every(r => r.passed);
@@ -81,6 +84,7 @@ console.log(JSON.stringify({
   schema: 'aml-verifier-conformance-result/1',
   prototype: true,
   harness_root: repoRoot,
+  challenge_cases: challenge.cases_file,
   command: [command, ...baseArgs],
   passed,
   results,
