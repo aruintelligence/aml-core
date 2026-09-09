@@ -1,12 +1,20 @@
 import crypto from "node:crypto";
 
-import { compileSource } from "./compiler.js";
+import { tokenize } from "./lexer.js";
+import { parse } from "./parser.js";
+import { buildAMT } from "./amtBuilder.js";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 
 const MATERIAL_PROTOCOL = "aml-meaning-material/1";
 
 function sha256Utf8(value) {
   return crypto.createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+function sourceToAMT(source) {
+  const tokens = tokenize(source);
+  const ast = parse(tokens);
+  return buildAMT(ast);
 }
 
 export function fingerprintAMT(amt) {
@@ -30,20 +38,14 @@ export function fingerprintAMT(amt) {
   };
 }
 
-export function meaningFingerprint(source, options = {}) {
+export function meaningFingerprint(source) {
   if (typeof source !== "string") throw new TypeError("AML source must be a string.");
-  const timestamp = options.timestamp ?? "1970-01-01T00:00:00.000Z";
-  const compiled = compileSource(source, {
-    timestamp,
-    policy: options.policy,
-    context: options.context || {}
-  });
-  return fingerprintAMT(compiled.amt);
+  return fingerprintAMT(sourceToAMT(source));
 }
 
-export function compareMeaningFingerprints(leftSource, rightSource, options = {}) {
-  const left = meaningFingerprint(leftSource, options);
-  const right = meaningFingerprint(rightSource, options);
+export function compareMeaningFingerprints(leftSource, rightSource) {
+  const left = meaningFingerprint(leftSource);
+  const right = meaningFingerprint(rightSource);
   return {
     protocol: "aml-meaning-equivalence/1",
     version: "1.0",
