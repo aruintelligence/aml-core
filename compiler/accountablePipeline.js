@@ -29,6 +29,17 @@ function receiptPayload(receipt) {
   return payload;
 }
 
+function executionAttestationMaterial(receiptSha256, signature) {
+  return {
+    protocol: "ĀML Execution Receipt Attestation",
+    version: "1.1",
+    algorithm: "Ed25519",
+    receipt_sha256: receiptSha256,
+    signer: signature.signer ?? null,
+    signed_at: signature.signed_at
+  };
+}
+
 function resolveInitialAttentionBudget(context) {
   if (typeof context.attention_budget_remaining === "number" && Number.isFinite(context.attention_budget_remaining)) {
     return context.attention_budget_remaining;
@@ -227,45 +238,114 @@ export function signExecutionReceipt(receipt, privateKeyPem, options = {}) {
   const privateKey = crypto.createPrivateKey(privateKeyPem);
   const publicKey = crypto.createPublicKey(privateKey);
   const publicKeyDer = publicKey.export({ type: "spki", format: "der" });
-  const signature = crypto.sign(null, Buffer.from(receipt.receipt_sha256, "utf8"), privateKey);
+  const signer = options.signer ?? null;
+  const signedAt = options.timestamp ?? new Date().toISOString();
+  const attestation = {
+    protocol: "ĀML Execution Receipt Attestation",
+    version: "1.1",
+    algorithm: "Ed25519",
+    signer,
+    signed_at: signedAt,
+    public_key_pem: publicKey.export({ type: "spki", format: "pem" }).toString(),
+    public_key_sha256: sha256(publicKeyDer)
+  };
+  const material = executionAttestationMaterial(receipt.receipt_sha256, attestation);
+  const signature = crypto.sign(null, Buffer.from(stableStringify(material), "utf8"), privateKey);
 
   return {
     ...receipt,
     signature: {
-      protocol: "ĀML Execution Receipt Attestation",
-      version: "1.0",
-      algorithm: "Ed25519",
-      signer: options.signer ?? null,
-      signed_at: options.timestamp ?? new Date().toISOString(),
-      public_key_pem: publicKey.export({ type: "spki", format: "pem" }).toString(),
-      public_key_sha256: sha256(publicKeyDer),
+      ...attestation,
       signature_base64: signature.toString("base64")
     }
   };
 }
 
 export function verifySignedExecutionReceipt(receipt) {
-  const integrity = verifyExecutionReceipt(receipt);
-  if (!integrity.verified || !receipt.signature) {
-    return { verified: false, integrity_valid: integrity.verified, signature_valid: false };
+  let integrity;
+  try {
+    integrity = verifyExecutionReceipt(receipt);
+  } catch {
+    return {
+      verified: false,
+      integrity_valid: false,
+      signature_valid: false,
+      public_key_fingerprint_valid: false,
+      attribution_bound: false,
+      signer: null,
+      signed_at: null
+    };
   }
 
-  const publicKey = crypto.createPublicKey(receipt.signature.public_key_pem);
-  const publicKeyDer = publicKey.export({ type: "spki", format: "der" });
-  const fingerprintValid = sha256(publicKeyDer) === receipt.signature.public_key_sha256;
-  const signatureValid = crypto.verify(
-    null,
-    Buffer.from(receipt.receipt_sha256, "utf8"),
-    publicKey,
-    Buffer.from(receipt.signature.signature_base64, "base64")
-  );
+  if (!integrity.verified || !receipt.signature) {
+    return {
+      verified: false,
+      integrity_valid: integrity.verified,
+      signature_valid: false,
+      public_key_fingerprint_valid: false,
+      attribution_bound: false,
+      signer: null,
+      signed_at: null
+    };
+  }
 
-  return {
-    verified: integrity.verified && fingerprintValid && signatureValid,
-    integrity_valid: integrity.verified,
-    signature_valid: signatureValid,
-    public_key_fingerprint_valid: fingerprintValid,
-    signer: receipt.signature.signer ?? null,
-    signed_at: receipt.signature.signed_at ?? null
-  };
+  const attestation = receipt.signature;
+  const legacy = attestation.version === "1.0";
+  const current = attestation.version === "1.1" &&
+    attestation.protocol === "ĀML Execution Receipt Attestation" &&
+    attestation.algorithm === "Ed25519";
+
+  if (!legacy && !current) {
+    return {
+      verified: false,
+      integrity_valid: true,
+      signature_valid: false,
+      public_key_fingerprint_valid: false,
+      attribution_bound: false,
+      signer: null,
+      signed_at: null,
+      claimed_signer: attestation.signer ?? null,
+      claimed_signed_at: attestation.signed_at ?? null
+    };
+  }
+
+  try {
+    const publicKey = crypto.createPublicKey(attestation.public_key_pem);
+    const publicKeyDer = publicKey.export({ type: "spki", format: "der" });
+    const fingerprintValid = sha256(publicKeyDer) === attestation.public_key_sha256;
+    const signedBytes = current
+      ? Buffer.from(stableStringify(executionAttestationMaterial(receipt.receipt_sha256, attestation)), "utf8")
+      : Buffer.from(receipt.receipt_sha256, "utf8");
+    const signatureValid = crypto.verify(
+      null,
+      signedBytes,
+      publicKey,
+      Buffer.from(attestation.signature_base64, "base64")
+    );
+    const verified = integrity.verified && fingerprintValid && signatureValid;
+
+    return {
+      verified,
+      integrity_valid: integrity.verified,
+      signature_valid: signatureValid,
+      public_key_fingerprint_valid: fingerprintValid,
+      attribution_bound: current && signatureValid && fingerprintValid,
+      signer: current && verified ? attestation.signer ?? null : null,
+      signed_at: current && verified ? attestation.signed_at ?? null : null,
+      claimed_signer: attestation.signer ?? null,
+      claimed_signed_at: attestation.signed_at ?? null
+    };
+  } catch {
+    return {
+      verified: false,
+      integrity_valid: integrity.verified,
+      signature_valid: false,
+      public_key_fingerprint_valid: false,
+      attribution_bound: false,
+      signer: null,
+      signed_at: null,
+      claimed_signer: attestation.signer ?? null,
+      claimed_signed_at: attestation.signed_at ?? null
+    };
+  }
 }
