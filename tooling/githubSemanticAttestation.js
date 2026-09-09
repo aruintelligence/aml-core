@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 import { verifySemanticReleaseProof } from "../compiler/semanticReleaseProof.js";
+import { verifyTrustedSemanticReleaseProof } from "./releaseKeyTrust.js";
 import {
   AML_SEMANTIC_RELEASE_PREDICATE_V1,
   createInTotoSemanticReleaseStatement
@@ -47,7 +48,8 @@ export function buildGitHubAttestationVerifyArgs({
 export function verifyGitHubSemanticAttestationEvidence({
   ghVerification,
   proof,
-  proofBytes
+  proofBytes,
+  trustPolicy = null
 } = {}) {
   const base = {
     verified: false,
@@ -56,9 +58,13 @@ export function verifyGitHubSemanticAttestationEvidence({
     predicate_type_valid: false,
     predicate_binding_valid: false,
     release_proof_valid: false,
+    release_key_trust_required: trustPolicy !== null,
+    release_key_trusted: trustPolicy === null,
+    trust_policy_id: null,
     matched_attestations: 0,
     proof_file_sha256: null,
     signer: null,
+    public_key_sha256: null,
     release_id: null,
     meaning_state_sha256: null,
     proof_sha256: null,
@@ -71,6 +77,21 @@ export function verifyGitHubSemanticAttestationEvidence({
 
     const proofVerification = verifySemanticReleaseProof(proof);
     if (!proofVerification.verified) return { ...base, reason: "invalid_semantic_release_proof" };
+
+    let trustVerification = null;
+    if (trustPolicy !== null) {
+      trustVerification = verifyTrustedSemanticReleaseProof(proof, trustPolicy);
+      if (!trustVerification.verified) {
+        return {
+          ...base,
+          release_proof_valid: true,
+          trust_policy_id: trustVerification.policy_id ?? null,
+          public_key_sha256: proof.public_key_sha256 ?? null,
+          release_id: proof.release_id ?? null,
+          reason: trustVerification.reason || "release_key_not_trusted"
+        };
+      }
+    }
 
     const fileHash = sha256(proofBytes);
     const expectedPredicate = createInTotoSemanticReleaseStatement(proof).predicate;
@@ -104,9 +125,12 @@ export function verifyGitHubSemanticAttestationEvidence({
       predicate_type_valid: predicateTypeValid,
       predicate_binding_valid: predicateValid,
       release_proof_valid: true,
+      release_key_trusted: trustPolicy === null ? true : true,
+      trust_policy_id: trustVerification?.policy_id ?? null,
       matched_attestations: matched,
       proof_file_sha256: fileHash,
       signer: verified ? proofVerification.signer : null,
+      public_key_sha256: proof.public_key_sha256 ?? null,
       release_id: proof.release_id ?? null,
       meaning_state_sha256: proof.after_manifest_root_sha256,
       proof_sha256: proof.proof_sha256,
