@@ -5,9 +5,24 @@ function fingerprint(publicKey) {
   return crypto.createHash("sha256").update(publicKey.export({ type: "spki", format: "der" })).digest("hex");
 }
 
+function validTimestamp(value) {
+  return typeof value === "string" && Number.isFinite(Date.parse(value));
+}
+
+function validateTimes({ issued_at = null, expires_at = null } = {}) {
+  if (issued_at !== null && !validTimestamp(issued_at)) return "invalid_issued_at";
+  if (expires_at !== null && !validTimestamp(expires_at)) return "invalid_expires_at";
+  if (issued_at !== null && expires_at !== null && Date.parse(expires_at) <= Date.parse(issued_at)) {
+    return "invalid_time_window";
+  }
+  return null;
+}
+
 export function signCapabilityToken({ issuer, subject = null, audience = null, capabilities = [], issued_at = null, expires_at = null, nonce = null } = {}, privateKeyPem) {
   if (!issuer) throw new Error("issuer is required");
   if (!privateKeyPem) throw new Error("private key is required");
+  const timeError = validateTimes({ issued_at, expires_at });
+  if (timeError) throw new Error(timeError);
 
   const body = {
     type: "aml-capability-token/1",
@@ -45,7 +60,10 @@ export function verifyCapabilityToken(token, { now = null, audience = null, requ
     return { valid: false, reason: "signature_invalid" };
   }
 
-  if (now && token.expires_at && new Date(now) >= new Date(token.expires_at)) return { valid: false, reason: "expired" };
+  const timeError = validateTimes(token);
+  if (timeError) return { valid: false, reason: timeError };
+  if (now !== null && !validTimestamp(now)) return { valid: false, reason: "invalid_now" };
+  if (now && token.expires_at && Date.parse(now) >= Date.parse(token.expires_at)) return { valid: false, reason: "expired" };
   if (audience && token.audience !== audience) return { valid: false, reason: "audience_mismatch" };
   if (requiredCapability && !token.capabilities.includes(requiredCapability)) return { valid: false, reason: "capability_missing" };
 

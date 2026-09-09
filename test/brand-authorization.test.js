@@ -54,6 +54,35 @@ test("expired authorization fails verification", () => {
   assert.equal(verified.reason, "expired");
 });
 
+test("brand authorization signer rejects malformed or inverted time windows", () => {
+  const { privateKey } = keys();
+  const pem = privateKey.export({ type: "pkcs8", format: "pem" });
+  assert.throws(() => signBrandAuthorization({
+    grantee: "Example Integrator LLC",
+    marks: ["ĀML™"],
+    expires_at: "later-ish"
+  }, pem), /invalid_expires_at/);
+  assert.throws(() => signBrandAuthorization({
+    grantee: "Example Integrator LLC",
+    marks: ["ĀML™"],
+    issued_at: "2027-01-02T00:00:00.000Z",
+    expires_at: "2027-01-01T00:00:00.000Z"
+  }, pem), /invalid_time_window/);
+});
+
+test("brand authorization verifier rejects invalid verification time", () => {
+  const { privateKey } = keys();
+  const credential = signBrandAuthorization({
+    grantee: "Example Integrator LLC",
+    marks: ["ĀML™"],
+    expires_at: "2027-01-01T00:00:00.000Z"
+  }, privateKey.export({ type: "pkcs8", format: "pem" }));
+
+  const verified = verifyBrandAuthorization(credential, { now: "not-a-date" });
+  assert.equal(verified.valid, false);
+  assert.equal(verified.reason, "invalid_now");
+});
+
 test("revoked authorization fails verification", () => {
   const { privateKey } = keys();
   const credential = signBrandAuthorization({
