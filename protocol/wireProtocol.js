@@ -1,3 +1,5 @@
+import { highestCommonProtocolVersion } from "./versionOrder.js";
+
 export function createWireEnvelope({
   kind,
   payload,
@@ -35,11 +37,11 @@ export function negotiateWireSession(local, remote, required = []) {
   const remoteCaps = new Set(remote?.capabilities || []);
   const common = [...localCaps].filter((cap) => remoteCaps.has(cap)).sort();
   const missing = required.filter((cap) => !common.includes(cap));
-  const versions = (local?.versions || []).filter((v) => (remote?.versions || []).includes(v)).sort();
+  const { common: versions, selected } = highestCommonProtocolVersion(local?.versions || [], remote?.versions || []);
   return {
     protocol: "aml-wire-session/1",
     accepted: missing.length === 0 && versions.length > 0,
-    version: versions.at(-1) || null,
+    version: selected,
     capabilities: common,
     missing_required: missing
   };
