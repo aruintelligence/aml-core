@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 import { verifySemanticReleaseProof } from "../compiler/semanticReleaseProof.js";
 import { verifyTrustedSemanticReleaseProof } from "./releaseKeyTrust.js";
+import { verifySemanticReleaseQuorum } from "./semanticReleaseQuorum.js";
 import {
   AML_SEMANTIC_RELEASE_PREDICATE_V1,
   createInTotoSemanticReleaseStatement
@@ -50,8 +51,12 @@ export function verifyGitHubSemanticAttestationEvidence({
   proof,
   proofBytes,
   trustPolicy = null,
-  expectedTrustPolicySha256 = null
+  expectedTrustPolicySha256 = null,
+  quorumEndorsements = null,
+  quorumPolicy = null,
+  expectedQuorumPolicySha256 = null
 } = {}) {
+  const quorumRequired = quorumPolicy !== null || quorumEndorsements !== null || expectedQuorumPolicySha256 !== null;
   const base = {
     verified: false,
     github_attestation_verified: false,
@@ -64,6 +69,13 @@ export function verifyGitHubSemanticAttestationEvidence({
     trust_policy_fingerprint_valid: expectedTrustPolicySha256 === null ? null : false,
     trust_policy_id: null,
     trust_policy_sha256: null,
+    quorum_required: quorumRequired,
+    quorum_verified: quorumRequired ? false : null,
+    quorum_threshold: null,
+    quorum_valid_trusted_endorsements: null,
+    quorum_policy_id: null,
+    quorum_policy_sha256: null,
+    quorum_policy_fingerprint_valid: expectedQuorumPolicySha256 === null ? null : false,
     matched_attestations: 0,
     proof_file_sha256: null,
     signer: null,
@@ -78,6 +90,8 @@ export function verifyGitHubSemanticAttestationEvidence({
     if (!Array.isArray(ghVerification) || ghVerification.length === 0) return { ...base, reason: "no_verified_attestations" };
     if (!Buffer.isBuffer(proofBytes) && !(proofBytes instanceof Uint8Array)) return { ...base, reason: "invalid_proof_bytes" };
     if (expectedTrustPolicySha256 !== null && trustPolicy === null) return { ...base, reason: "trust_policy_required_for_fingerprint" };
+    if (quorumRequired && (quorumPolicy === null || quorumEndorsements === null)) return { ...base, reason: "quorum_policy_and_endorsements_required" };
+    if (expectedQuorumPolicySha256 !== null && quorumPolicy === null) return { ...base, reason: "quorum_policy_required_for_fingerprint" };
 
     const proofVerification = verifySemanticReleaseProof(proof);
     if (!proofVerification.verified) return { ...base, reason: "invalid_semantic_release_proof" };
@@ -96,6 +110,30 @@ export function verifyGitHubSemanticAttestationEvidence({
           public_key_sha256: proof.public_key_sha256 ?? null,
           release_id: proof.release_id ?? null,
           reason: trustVerification.reason || "release_key_not_trusted"
+        };
+      }
+    }
+
+    let quorumVerification = null;
+    if (quorumRequired) {
+      quorumVerification = verifySemanticReleaseQuorum(proof, quorumEndorsements, quorumPolicy, { expectedPolicySha256: expectedQuorumPolicySha256 });
+      if (!quorumVerification.verified) {
+        return {
+          ...base,
+          release_proof_valid: true,
+          release_key_trusted: trustPolicy === null ? null : true,
+          trust_policy_fingerprint_valid: trustVerification?.policy_fingerprint_valid ?? null,
+          trust_policy_id: trustVerification?.policy_id ?? null,
+          trust_policy_sha256: trustVerification?.policy_sha256 ?? null,
+          quorum_verified: false,
+          quorum_threshold: quorumVerification.threshold,
+          quorum_valid_trusted_endorsements: quorumVerification.valid_trusted_endorsements,
+          quorum_policy_id: quorumVerification.policy_id,
+          quorum_policy_sha256: quorumVerification.policy_sha256,
+          quorum_policy_fingerprint_valid: quorumVerification.policy_sha256_valid,
+          public_key_sha256: proof.public_key_sha256 ?? null,
+          release_id: proof.release_id ?? null,
+          reason: quorumVerification.reason || "quorum_not_met"
         };
       }
     }
@@ -136,6 +174,12 @@ export function verifyGitHubSemanticAttestationEvidence({
       trust_policy_fingerprint_valid: trustVerification?.policy_fingerprint_valid ?? null,
       trust_policy_id: trustVerification?.policy_id ?? null,
       trust_policy_sha256: trustVerification?.policy_sha256 ?? null,
+      quorum_verified: quorumRequired ? true : null,
+      quorum_threshold: quorumVerification?.threshold ?? null,
+      quorum_valid_trusted_endorsements: quorumVerification?.valid_trusted_endorsements ?? null,
+      quorum_policy_id: quorumVerification?.policy_id ?? null,
+      quorum_policy_sha256: quorumVerification?.policy_sha256 ?? null,
+      quorum_policy_fingerprint_valid: quorumVerification?.policy_sha256_valid ?? null,
       matched_attestations: matched,
       proof_file_sha256: fileHash,
       signer: verified ? proofVerification.signer : null,
