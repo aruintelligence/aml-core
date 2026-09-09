@@ -38,7 +38,7 @@ export { hashContent, createContentAddressedBundle, verifyContentAddressedBundle
 export { createDisclosureCommitment, discloseClaims, verifyDisclosureProof } from "./runtime/selectiveDisclosure.js";
 export { createFederatedExchange } from "./runtime/federatedExchange.js";
 export { createCausalEvent, createCausalExecutionGraph, verifyCausalExecutionGraph } from "./runtime/causalExecutionGraph.js";
-export { createTrustDelegation, verifyTrustDelegation, verifyDelegationChain } from "./runtime/trustDelegation.js";
+export { createTrustDelegation, createSignedTrustDelegation, verifyTrustDelegation, verifyDelegationChain } from "./runtime/trustDelegation.js";
 export { createTransparencyLog, appendTransparencyEntry, verifyTransparencyLog } from "./runtime/transparencyLog.js";
 export { createThresholdAuthorization, verifyThresholdAuthorization } from "./runtime/thresholdAuthorization.js";
 export { signCapabilityToken, verifyCapabilityToken } from "./runtime/capabilityToken.js";
