@@ -15,6 +15,8 @@ const ALLOWED = new Set([
 const RESULTS = new Set(['PASS', 'FAIL', 'MIXED']);
 const WITNESS_ID = /^[a-z0-9][a-z0-9._-]{2,127}$/;
 const ISO_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/;
+const SHA256 = /^[0-9a-f]{64}$/;
+const EXTERNAL_VERIFIER_CHALLENGE = 'aml-external-verifier-challenge/1';
 
 function publicHttpsUrl(value, field, failures) {
   if (typeof value !== 'string' || value.length < 8) {
@@ -81,6 +83,9 @@ export function validateWitnessRecord(record) {
   if (record.artifact_hash !== undefined && record.artifact_hash !== null && typeof record.artifact_hash !== 'string') {
     failures.push('artifact_hash must be a string or null');
   }
+  if (record.artifact_type === EXTERNAL_VERIFIER_CHALLENGE && !SHA256.test(String(record.artifact_hash || ''))) {
+    failures.push('artifact_hash must be the lowercase SHA-256 of the exact external verifier challenge bytes');
+  }
   for (const field of ['verifier', 'runtime']) {
     if (record[field] !== undefined && record[field] !== null && typeof record[field] !== 'string') {
       failures.push(`${field} must be a string or null`);
@@ -104,7 +109,8 @@ export function validateWitnessRecord(record) {
     witness_id: typeof record.witness_id === 'string' ? record.witness_id : null,
     result: RESULTS.has(record.result) ? record.result : null,
     source_url: sourceUrl?.href || null,
-    acceptance_boundary: 'Syntax and canonical-source exclusion are machine-checkable. Independent maintenance and truth of the external report still require human/public-evidence review.'
+    artifact_hash: SHA256.test(String(record.artifact_hash || '')) ? record.artifact_hash : null,
+    acceptance_boundary: 'Syntax, exact challenge hashing for verifier-challenge records, and canonical-source exclusion are machine-checkable. Independent maintenance and truth of the external report still require human/public-evidence review.'
   };
 }
 
