@@ -30,6 +30,32 @@ const intent = {
 
 const timestamp = "2030-01-01T00:00:00.000Z";
 
+function stableStringify(value) {
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().filter(key => value[key] !== undefined).map(key => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function sha256(value) {
+  return crypto.createHash("sha256").update(typeof value === "string" ? value : stableStringify(value)).digest("hex");
+}
+
+function refreshOuterReceiptHash(receipt) {
+  const { receipt_sha256, signature, ...payload } = receipt;
+  receipt.receipt_sha256 = sha256(payload);
+  return receipt;
+}
+
+function freshReceipt() {
+  return executeAccountableIntent(intent, {
+    timestamp,
+    profile: "calm_default",
+    context: { consent_granted: true }
+  });
+}
+
 test("policy profiles are discoverable", () => {
   const profiles = listPolicyProfiles();
   assert.ok(profiles.some(item => item.id === "calm_default"));
@@ -68,11 +94,7 @@ test("session attention budget can suppress otherwise restorative content", () =
 });
 
 test("accountable AI pipeline emits a verifiable execution receipt", () => {
-  const receipt = executeAccountableIntent(intent, {
-    timestamp,
-    profile: "calm_default",
-    context: { consent_granted: true }
-  });
+  const receipt = freshReceipt();
 
   assert.equal(receipt.protocol, "ĀML Accountable Execution Receipt");
   assert.equal(receipt.profile.id, "calm_default");
@@ -82,11 +104,7 @@ test("accountable AI pipeline emits a verifiable execution receipt", () => {
 });
 
 test("default accountable receipt survives a JSON serialization round trip", () => {
-  const receipt = executeAccountableIntent(intent, {
-    timestamp,
-    profile: "calm_default",
-    context: { consent_granted: true }
-  });
+  const receipt = freshReceipt();
 
   assert.equal(receipt.attention_ledger.initial_budget, null);
   assert.equal(receipt.attention_ledger.remaining, null);
@@ -98,13 +116,100 @@ test("default accountable receipt survives a JSON serialization round trip", () 
 });
 
 test("execution receipt verification detects mutation", () => {
-  const receipt = executeAccountableIntent(intent, {
-    timestamp,
-    profile: "calm_default",
-    context: { consent_granted: true }
-  });
+  const receipt = freshReceipt();
   receipt.context.consent_granted = false;
   assert.equal(verifyExecutionReceipt(receipt).verified, false);
+});
+
+test("receipt verification rejects re-hashed intent binding mismatch", () => {
+  const receipt = freshReceipt();
+  receipt.intent.nodes[0].identifier = "tamperedIdentifier";
+  refreshOuterReceiptHash(receipt);
+
+  const verification = verifyExecutionReceipt(receipt);
+  assert.equal(verification.receipt_hash_valid, true);
+  assert.equal(verification.intent_binding_valid, false);
+  assert.equal(verification.verified, false);
+});
+
+test("receipt verification rejects re-hashed AML source binding mismatch", () => {
+  const receipt = freshReceipt();
+  receipt.aml_source += "\n// tampered";
+  refreshOuterReceiptHash(receipt);
+
+  const verification = verifyExecutionReceipt(receipt);
+  assert.equal(verification.receipt_hash_valid, true);
+  assert.equal(verification.aml_binding_valid, false);
+  assert.equal(verification.verified, false);
+});
+
+test("receipt verification rejects re-hashed simulation binding mismatch", () => {
+  const receipt = freshReceipt();
+  receipt.simulations.policy_count += 1;
+  refreshOuterReceiptHash(receipt);
+
+  const verification = verifyExecutionReceipt(receipt);
+  assert.equal(verification.receipt_hash_valid, true);
+  assert.equal(verification.simulation_binding_valid, false);
+  assert.equal(verification.verified, false);
+});
+
+test("receipt verification rejects re-hashed decision binding mismatch", () => {
+  const receipt = freshReceipt();
+  receipt.selected_render.decisions[0].render_allowed = !receipt.selected_render.decisions[0].render_allowed;
+  refreshOuterReceiptHash(receipt);
+
+  const verification = verifyExecutionReceipt(receipt);
+  assert.equal(verification.receipt_hash_valid, true);
+  assert.equal(verification.decision_binding_valid, false);
+  assert.equal(verification.verified, false);
+});
+
+test("receipt verification rejects re-hashed output binding mismatch", () => {
+  const receipt = freshReceipt();
+  receipt.selected_render.html += "<!-- tampered but outer hash refreshed -->";
+  refreshOuterReceiptHash(receipt);
+
+  const verification = verifyExecutionReceipt(receipt);
+  assert.equal(verification.receipt_hash_valid, true);
+  assert.equal(verification.output_binding_valid, false);
+  assert.equal(verification.verified, false);
+});
+
+test("receipt verification rejects re-hashed selected-render count mismatch", () => {
+  const receipt = freshReceipt();
+  receipt.selected_render.allowed += 1;
+  refreshOuterReceiptHash(receipt);
+
+  const verification = verifyExecutionReceipt(receipt);
+  assert.equal(verification.receipt_hash_valid, true);
+  assert.equal(verification.selected_render_counts_valid, false);
+  assert.equal(verification.verified, false);
+});
+
+test("receipt verification rejects re-hashed audit verification flag mismatch", () => {
+  const receipt = freshReceipt();
+  receipt.runtime_audit_verified = !receipt.runtime_audit_verified;
+  refreshOuterReceiptHash(receipt);
+
+  const verification = verifyExecutionReceipt(receipt);
+  assert.equal(verification.receipt_hash_valid, true);
+  assert.equal(verification.runtime_audit_flag_valid, false);
+  assert.equal(verification.verified, false);
+});
+
+test("receipt verification rejects a structurally invalid ledger even when its hashes are refreshed", () => {
+  const receipt = freshReceipt();
+  const entry = receipt.attention_ledger.entries[0];
+  entry.allowed = false;
+  receipt.attention_ledger_sha256 = sha256(receipt.attention_ledger);
+  refreshOuterReceiptHash(receipt);
+
+  const verification = verifyExecutionReceipt(receipt);
+  assert.equal(verification.receipt_hash_valid, true);
+  assert.equal(verification.attention_ledger_hash_valid, true);
+  assert.equal(verification.attention_ledger_structure_valid, false);
+  assert.equal(verification.verified, false);
 });
 
 test("same AI intent produces different selected render when consent changes", () => {
@@ -125,11 +230,7 @@ test("same AI intent produces different selected render when consent changes", (
 test("accountable execution receipts can be Ed25519 signed and verified", () => {
   const { privateKey } = crypto.generateKeyPairSync("ed25519");
   const privateKeyPem = privateKey.export({ type: "pkcs8", format: "pem" });
-  const receipt = executeAccountableIntent(intent, {
-    timestamp,
-    profile: "calm_default",
-    context: { consent_granted: true }
-  });
+  const receipt = freshReceipt();
   const signed = signExecutionReceipt(receipt, privateKeyPem, {
     timestamp,
     signer: "test-suite"
@@ -143,11 +244,7 @@ test("accountable execution receipts can be Ed25519 signed and verified", () => 
 test("signed accountable receipt survives a JSON serialization round trip", () => {
   const { privateKey } = crypto.generateKeyPairSync("ed25519");
   const privateKeyPem = privateKey.export({ type: "pkcs8", format: "pem" });
-  const receipt = executeAccountableIntent(intent, {
-    timestamp,
-    profile: "calm_default",
-    context: { consent_granted: true }
-  });
+  const receipt = freshReceipt();
   const signed = signExecutionReceipt(receipt, privateKeyPem, {
     timestamp,
     signer: "round-trip-test"
@@ -162,11 +259,7 @@ test("signed accountable receipt survives a JSON serialization round trip", () =
 test("signed receipt verification fails after receipt mutation", () => {
   const { privateKey } = crypto.generateKeyPairSync("ed25519");
   const privateKeyPem = privateKey.export({ type: "pkcs8", format: "pem" });
-  const receipt = executeAccountableIntent(intent, {
-    timestamp,
-    profile: "calm_default",
-    context: { consent_granted: true }
-  });
+  const receipt = freshReceipt();
   const signed = signExecutionReceipt(receipt, privateKeyPem, { timestamp });
   signed.selected_render.html += "<!-- mutated -->";
   assert.equal(verifySignedExecutionReceipt(signed).verified, false);
