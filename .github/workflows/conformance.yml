@@ -95,3 +95,30 @@ jobs:
       - name: Test JavaScript as an external executable
         if: matrix.runner == 'javascript'
         run: node conformance/run-external.mjs -- node conformance/independent-javascript/decision_cli.mjs
+
+  canonical-json-1:
+    name: Canonical JSON 1 / ${{ matrix.runner }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [python, javascript]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        if: matrix.runner == 'python'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Set up Node.js
+        if: matrix.runner == 'javascript'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify canonical vectors in Python
+        if: matrix.runner == 'python'
+        run: python3 independent/python/check_canonical_vectors.py
+      - name: Verify canonical vectors in JavaScript
+        if: matrix.runner == 'javascript'
+        run: node conformance/independent-javascript/verify_canonical_json.mjs
