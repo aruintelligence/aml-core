@@ -25,6 +25,9 @@ export { createConsentLedger, grantConsent, revokeConsent, verifyConsentLedger, 
 export { buildReceiptMerkleTree, createReceiptInclusionProof, verifyReceiptInclusionProof } from "./runtime/receiptMerkle.js";
 export { auditAccessibilityNode, auditAccessibilityTree } from "./runtime/accessibilityAudit.js";
 export { createInterfaceFirewall, enforceInterfaceIntent } from "./runtime/interfaceFirewall.js";
+export { createDecisionCache } from "./runtime/decisionCache.js";
+export { createDeploymentFirewall, evaluateDeploymentIntent } from "./runtime/deploymentFirewall.js";
+export { createStreamingInterfaceFirewall } from "./runtime/streamingInterfaceFirewall.js";
 export { negotiateCapabilities } from "./runtime/capabilityNegotiation.js";
 export { createPolicyPassport, verifyPolicyPassport, passportContext } from "./runtime/policyPassport.js";
 export { hashContent, createContentAddressedBundle, verifyContentAddressedBundle } from "./runtime/contentAddressedBundle.js";
