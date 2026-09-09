@@ -9,10 +9,26 @@
 1. [Start Here — ĀML in 5 minutes](publications/START_HERE.md)
 2. [ĀML in one page](publications/AML_IN_ONE_PAGE.md)
 3. [ĀML Library — numbered papers, casebooks, comparisons, and 100 use cases](library/README.md)
-4. [Why AI-generated UI needs a firewall](publications/WHY_AI_UI_NEEDS_A_FIREWALL.md)
-5. [90-second demo script](publications/DEMO_SCRIPT_90_SECONDS.md)
-6. Live proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
-7. View Meaning: https://aruintelligence.github.io/aml-core/view-meaning.html
+4. [Claims Ledger — what is SHIPPED, SPEC, DRAFT, or PITCH](CLAIMS.md)
+5. [Proof Map — claim → shortest evidence path](publications/PROOF_MAP.md)
+6. [Evaluate ĀML in 15 minutes](publications/EVALUATE_AML_IN_15_MINUTES.md)
+7. [Why AI-generated UI needs a firewall](publications/WHY_AI_UI_NEEDS_A_FIREWALL.md)
+8. Live proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
+9. View Meaning: https://aruintelligence.github.io/aml-core/view-meaning.html
+
+## Trust the evidence, not the volume
+
+The publication system now has a machine-readable [claims ledger](claims.json). A claim labeled **SHIPPED** in that ledger must point to repository evidence. The CI claims guard rejects unsupported SHIPPED claims.
+
+Useful trust surfaces:
+
+- [Public Claims Ledger](CLAIMS.md)
+- [Machine-readable claims ledger](claims.json)
+- [Proof Map](publications/PROOF_MAP.md)
+- [15-minute evaluation path](publications/EVALUATE_AML_IN_15_MINUTES.md)
+- [Press fact sheet](publications/PRESS_FACT_SHEET.md)
+- [Category brief — interface accountability](publications/CATEGORY_BRIEF.md)
+- [Buyer decision tree](publications/BUYER_DECISION_TREE.md)
 
 ## ĀML Library
 
@@ -97,6 +113,7 @@ The scores are declared/model inputs. ĀML is a working research prototype, not 
 - Inspect the receipt.
 - Run the 10-minute reproduction.
 - Verify an artifact without trusting the original page.
+- Check the claim against `CLAIMS.md`.
 - Publish disagreement if you find it.
 
 **Witness ask:** Open the proof. Change `restoration_value`. Screenshot the decision and receipt. File what happened.
