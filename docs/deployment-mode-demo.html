@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="aml-mode" content="shadow">
+  <meta name="aml-failure-mode" content="open">
+  <title>ĀML Deployment Mode Demo</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:900px;margin:0 auto;padding:32px;line-height:1.5;background:#0b1020;color:#eef2ff}
+    button{font:inherit;padding:10px 14px;margin:4px;border-radius:8px;border:1px solid #6574a8;background:#121a32;color:inherit;cursor:pointer}
+    .panel{border:1px solid #303b63;border-radius:12px;padding:18px;margin:18px 0;background:#11182c}
+    code,pre{background:#080d19;border-radius:8px;padding:3px 6px} pre{padding:14px;overflow:auto}
+    [data-aml-decision="suppress"]{outline:2px solid #ff8f8f}
+    [data-aml-decision="allow"]{outline:2px solid #8fffbd}
+  </style>
+</head>
+<body>
+  <h1>ĀML deployment rollout</h1>
+  <p><strong>SHIPPED prototype.</strong> Start in shadow mode: AML evaluates the interface but does not hide a suppressed element. Switch to enforce and the same policy decision becomes effective rendering behavior.</p>
+
+  <div class="panel">
+    <button id="shadow">Shadow</button>
+    <button id="enforce">Enforce</button>
+    <button id="open">Fail open</button>
+    <button id="closed">Fail closed</button>
+    <p>Current posture: <strong id="posture">loading…</strong></p>
+  </div>
+
+  <div class="panel">
+    <h2>Pressure element</h2>
+    <div id="pressure"
+      data-aml-purpose="Create purchase urgency"
+      data-aml-attention-cost="5"
+      data-aml-restoration-value="1">
+      Offer expires soon — act now.
+    </div>
+    <p>AML policy result: <code id="policy">waiting</code></p>
+    <p>Effective rendering: <code id="effective">waiting</code></p>
+  </div>
+
+  <div class="panel">
+    <h2>Helpful element</h2>
+    <div id="helpful"
+      data-aml-purpose="Explain the next step"
+      data-aml-attention-cost="1"
+      data-aml-restoration-value="2">
+      Continue when you are ready.
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Latest receipt</h2>
+    <pre id="receipt">Waiting for AML…</pre>
+  </div>
+
+  <script type="module" src="./aml.js"></script>
+  <script type="module">
+    const posture = document.querySelector('#posture');
+    const policy = document.querySelector('#policy');
+    const effective = document.querySelector('#effective');
+    const receipt = document.querySelector('#receipt');
+    const pressure = document.querySelector('#pressure');
+
+    function render() {
+      if (!globalThis.AML) return;
+      posture.textContent = `${AML.getDeploymentMode()} / fail-${AML.getFailureMode()}`;
+      policy.textContent = pressure.dataset.amlDecision || 'waiting';
+      effective.textContent = pressure.hidden ? 'suppressed' : 'rendered';
+      receipt.textContent = JSON.stringify(globalThis.__AML_RECEIPT__ || {}, null, 2);
+    }
+
+    document.querySelector('#shadow').onclick = () => { AML.setDeploymentMode('shadow'); render(); };
+    document.querySelector('#enforce').onclick = () => { AML.setDeploymentMode('enforce'); render(); };
+    document.querySelector('#open').onclick = () => { AML.setFailureMode('open'); render(); };
+    document.querySelector('#closed').onclick = () => { AML.setFailureMode('closed'); render(); };
+    document.addEventListener('aml-receipt', render);
+    document.addEventListener('aml-ready', render);
+    setTimeout(render, 0);
+  </script>
+</body>
+</html>
