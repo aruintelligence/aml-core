@@ -1,0 +1,82 @@
+name: Publish AML npm Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm-package-name:
+        description: "Must exactly match package.json name"
+        required: true
+        type: string
+      npm-tag:
+        description: "npm dist-tag to publish"
+        required: true
+        default: "latest"
+        type: string
+      allow-new-package:
+        description: "Set true only after confirming this npm identity is intended and available"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm-production
+    steps:
+      - name: Check out selected release ref
+        uses: actions/checkout@v4
+      - name: Set up Node.js registry
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+      - name: Install package metadata
+        run: npm install --ignore-scripts
+      - name: Require exact package name and release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          PACKAGE_NAME="$(node -p "require('./package.json').name")"
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          if [[ "${{ inputs.confirm-package-name }}" != "$PACKAGE_NAME" ]]; then
+            echo "Package confirmation does not match package.json: $PACKAGE_NAME" >&2
+            exit 1
+          fi
+          if [[ "$GITHUB_REF" != "refs/tags/v${PACKAGE_VERSION}" ]]; then
+            echo "Ref must be exact immutable package tag refs/tags/v${PACKAGE_VERSION}; got $GITHUB_REF" >&2
+            exit 1
+          fi
+          if [[ ! "${{ inputs.npm-tag }}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "Invalid npm dist-tag" >&2
+            exit 1
+          fi
+      - name: Audit installable tarball
+        run: node scripts/check-package-artifact.mjs
+      - name: Check npm identity collision
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          PACKAGE_NAME="$(node -p "require('./package.json').name")"
+          REPOSITORY="$(node -p "require('./package.json').repository.url")"
+          if npm view "$PACKAGE_NAME" name >/dev/null 2>&1; then
+            EXISTING_REPO="$(npm view "$PACKAGE_NAME" repository.url 2>/dev/null || true)"
+            if [[ "$EXISTING_REPO" != "$REPOSITORY" ]]; then
+              echo "Existing npm package identity does not point to this canonical repository." >&2
+              echo "Expected: $REPOSITORY" >&2
+              echo "Found:    $EXISTING_REPO" >&2
+              exit 1
+            fi
+          elif [[ "${{ inputs.allow-new-package }}" != "true" ]]; then
+            echo "Package does not appear to exist. Re-run only after intentional identity review with allow-new-package=true." >&2
+            exit 1
+          fi
+      - name: Publish exact tagged artifact with provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance --tag "${{ inputs.npm-tag }}"
