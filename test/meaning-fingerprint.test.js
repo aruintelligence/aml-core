@@ -46,6 +46,17 @@ test("meaning fingerprint changes when declared meaning changes", () => {
   assert.notEqual(left.fingerprint, right.fingerprint);
 });
 
+test("meaning fingerprint does not execute or depend on render policy", () => {
+  const normal = meaningFingerprint(base);
+  const withExplodingPolicy = meaningFingerprint(base, {
+    policy() {
+      throw new Error("fingerprinting must never execute render policy");
+    },
+    context: { anything: "ignored by AMT identity" }
+  });
+  assert.deepEqual(withExplodingPolicy, normal);
+});
+
 test("meaning equivalence report exposes both fingerprints", () => {
   const same = compareMeaningFingerprints(base, reformatted);
   assert.equal(same.equivalent, true);
