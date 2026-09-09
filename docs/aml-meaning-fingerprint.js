@@ -1,4 +1,4 @@
-import { compileSourceBrowser } from "./aml-browser.js";
+import { tokenize, parse, buildAMT } from "./aml-browser.js";
 import { canonicalJSONStringifyBrowser, sha256Browser } from "./aml-browser-integrity.js";
 
 const MATERIAL_PROTOCOL = "aml-meaning-material/1";
@@ -22,8 +22,7 @@ export async function fingerprintAMTBrowser(amt) {
 
 export async function meaningFingerprintBrowser(source) {
   if (typeof source !== "string") throw new TypeError("AML source must be a string.");
-  const compiled = compileSourceBrowser(source);
-  return fingerprintAMTBrowser(compiled.amt);
+  return fingerprintAMTBrowser(buildAMT(parse(tokenize(source))));
 }
 
 export async function compareMeaningFingerprintsBrowser(leftSource, rightSource) {
