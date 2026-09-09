@@ -1,0 +1,96 @@
+name: AML Stable Package Rehearsal
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  stable-package-rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release control plane
+        uses: actions/checkout@v4
+        with:
+          path: control
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Resolve canonical stable release
+        id: stable
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd control
+          STABLE_VERSION="$(node -p "require('./project-contract.json').release.stableVersion")"
+          STABLE_TAG="$(node -p "require('./project-contract.json').release.stableTag")"
+          PACKAGE_NAME="$(node -p "require('./package.json').name")"
+          REPOSITORY="$(node -p "require('./package.json').repository.url")"
+          [[ "$STABLE_TAG" == "v$STABLE_VERSION" ]] || { echo "Stable tag/version mismatch" >&2; exit 1; }
+          echo "version=$STABLE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$STABLE_TAG" >> "$GITHUB_OUTPUT"
+          echo "package_name=$PACKAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "repository=$REPOSITORY" >> "$GITHUB_OUTPUT"
+
+      - name: Check out immutable stable source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.stable.outputs.tag }}
+          path: release-src
+          fetch-depth: 1
+
+      - name: Verify tagged package metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./release-src/package.json').version")"
+          NAME="$(node -p "require('./release-src/package.json').name")"
+          REPO="$(node -p "require('./release-src/package.json').repository.url")"
+          [[ "$VERSION" == "${{ steps.stable.outputs.version }}" ]] || { echo "Version mismatch" >&2; exit 1; }
+          [[ "$NAME" == "${{ steps.stable.outputs.package_name }}" ]] || { echo "Name mismatch" >&2; exit 1; }
+          [[ "$REPO" == "${{ steps.stable.outputs.repository }}" ]] || { echo "Repository mismatch" >&2; exit 1; }
+
+      - name: Pack immutable stable source
+        id: pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir artifact
+          cd release-src
+          npm install --ignore-scripts
+          npm pack --json --pack-destination ../artifact > ../pack.json
+          cd ..
+          echo "filename=$(node -p "require('./pack.json')[0].filename")" >> "$GITHUB_OUTPUT"
+          echo "integrity=$(node -p "require('./pack.json')[0].integrity")" >> "$GITHUB_OUTPUT"
+          echo "shasum=$(node -p "require('./pack.json')[0].shasum")" >> "$GITHUB_OUTPUT"
+
+      - name: Clean-install stable artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir consumer
+          printf '{"private":true,"type":"module"}\n' > consumer/package.json
+          cd consumer
+          npm install --ignore-scripts "../artifact/${{ steps.pack.outputs.filename }}"
+          node -e "import('${{ steps.stable.outputs.package_name }}').then(m=>{if(!m)process.exit(2)}).catch(e=>{console.error(e);process.exit(1)})"
+          ./node_modules/.bin/aml validate ../control/examples/simple.aml
+
+      - name: Probe npm stable identity
+        working-directory: control
+        run: node scripts/check-npm-identity.mjs --allow-unpublished --soft-unavailable
+
+      - name: Print immutable artifact identity
+        run: |
+          echo "stable=${{ steps.stable.outputs.package_name }}@${{ steps.stable.outputs.version }}"
+          echo "source_tag=${{ steps.stable.outputs.tag }}"
+          echo "integrity=${{ steps.pack.outputs.integrity }}"
+          echo "shasum=${{ steps.pack.outputs.shasum }}"
