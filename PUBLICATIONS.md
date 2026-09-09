@@ -13,9 +13,10 @@
 5. [Proof Map — claim → shortest evidence path](publications/PROOF_MAP.md)
 6. [Evaluate ĀML in 15 minutes](publications/EVALUATE_AML_IN_15_MINUTES.md)
 7. [Deploy ĀML without breaking production](publications/DEPLOY_AML_WITHOUT_BREAKING_PRODUCTION.md)
-8. [Why AI-generated UI needs a firewall](publications/WHY_AI_UI_NEEDS_A_FIREWALL.md)
-9. Live proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
-10. View Meaning: https://aruintelligence.github.io/aml-core/view-meaning.html
+8. [Security hardening bulletin — September 8, 2026](publications/SECURITY_HARDENING_BULLETIN_2026-09-08.md)
+9. [Why AI-generated UI needs a firewall](publications/WHY_AI_UI_NEEDS_A_FIREWALL.md)
+10. Live proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
+11. View Meaning: https://aruintelligence.github.io/aml-core/view-meaning.html
 
 ## Trust the evidence, not the volume
 
@@ -28,6 +29,7 @@ Useful trust surfaces:
 - [Proof Map](publications/PROOF_MAP.md)
 - [15-minute evaluation path](publications/EVALUATE_AML_IN_15_MINUTES.md)
 - [Deployment rollout brief](publications/DEPLOY_AML_WITHOUT_BREAKING_PRODUCTION.md)
+- [Security hardening bulletin — September 8, 2026](publications/SECURITY_HARDENING_BULLETIN_2026-09-08.md)
 - [Press fact sheet](publications/PRESS_FACT_SHEET.md)
 - [Category brief — interface accountability](publications/CATEGORY_BRIEF.md)
 - [Buyer decision tree](publications/BUYER_DECISION_TREE.md)
