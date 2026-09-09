@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   conformance:
     runs-on: ubuntu-latest
@@ -17,3 +20,53 @@ jobs:
       - run: npm install --ignore-scripts
       - name: Run AML conformance suite
         run: node scripts/check-conformance.js
+
+  decision-core-1:
+    name: Decision Core 1 / ${{ matrix.runner }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [python, javascript]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        if: matrix.runner == 'python'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Set up Node.js
+        if: matrix.runner == 'javascript'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run independent Python verifier
+        if: matrix.runner == 'python'
+        run: python3 conformance/independent-python/verify.py
+      - name: Run independent JavaScript verifier
+        if: matrix.runner == 'javascript'
+        run: node conformance/independent-javascript/verify.mjs
+
+  cross-language-agreement:
+    name: Decision Core 1 / cross-language agreement
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Require identical PASS result
+        shell: bash
+        run: |
+          set -euo pipefail
+          py="$(python3 conformance/independent-python/verify.py)"
+          js="$(node conformance/independent-javascript/verify.mjs)"
+          test "$py" = "$js"
+          printf '%s\n' "$py"
