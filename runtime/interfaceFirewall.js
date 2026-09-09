@@ -20,7 +20,8 @@ export function createInterfaceFirewall(options = {}) {
       const receipt = executeAccountableIntent(intent, {
         profile: selectedProfile,
         context,
-        timestamp: runOptions.timestamp
+        timestamp: runOptions.timestamp,
+        stream_id: runOptions.stream_id
       });
       const compilation = compileSource(receipt.aml_source, {
         timestamp: runOptions.timestamp,
