@@ -10,8 +10,10 @@
   },
   "release": {
     "stableVersion": "1.3.0",
-    "channel": "stable",
-    "stableTag": "v1.3.0"
+    "stableTag": "v1.3.0",
+    "previewVersion": "1.4.0-rc.2",
+    "previewTag": "v1.4.0-rc.2",
+    "defaultChannel": "stable"
   },
   "claimBoundary": {
     "projectStatus": "working research prototype",
@@ -26,6 +28,7 @@
     "claimsLedger": "claims.json",
     "claimsHuman": "CLAIMS.md",
     "readme": "README.md",
+    "changelog": "CHANGELOG.md",
     "conformanceManifest": "conformance/manifest.json"
   }
 }
