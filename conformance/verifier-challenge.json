@@ -11,6 +11,12 @@
     "success_exit_code_for_valid_bundle": 0,
     "nonzero_exit_code_for_invalid_bundle": true
   },
+  "result_contract": {
+    "schema": "aml-verifier-conformance-result/1",
+    "must_bind_exact_challenge_sha256": true,
+    "must_bind_exact_witness_vector_sha256": true,
+    "verifier": "scripts/verify-verifier-conformance-result.mjs"
+  },
   "cases": [
     {
       "id": "golden-valid",
