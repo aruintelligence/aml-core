@@ -71,7 +71,7 @@ test("legacy audit checkpoint signatures verify checkpoint but do not authentica
     version: "1.0",
     stream_id: stream.stream_id,
     entries: stream.entries.length,
-    head_hash: stream.head_hash,
+    head_hash: stream.entries.at(-1)?.entry_hash ?? null,
     checkpointed_at: "2033-01-01T00:00:02.000Z"
   };
   const signature = crypto.sign(null, Buffer.from(JSON.stringify(checkpoint)), key.privateKey);
