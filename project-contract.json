@@ -1,0 +1,30 @@
+{
+  "schema": "aml-project-contract/1",
+  "project": {
+    "name": "ĀML",
+    "expandedName": "ĀRU Meaning Language",
+    "repository": "https://github.com/aruintelligence/aml-core",
+    "homepage": "https://aruintelligence.github.io/aml-core/",
+    "author": "Daniel Jacob Read IV",
+    "steward": "ĀRU Intelligence Inc.™"
+  },
+  "release": {
+    "stableVersion": "1.3.0",
+    "channel": "stable",
+    "stableTag": "v1.3.0"
+  },
+  "claimBoundary": {
+    "projectStatus": "working research prototype",
+    "ratifiedStandard": false,
+    "broadProductionAdoptionClaim": false,
+    "objectiveHumanCognitionMeasurementClaim": false,
+    "automaticEthicsOrComplianceClaim": false
+  },
+  "canonicalFiles": {
+    "package": "package.json",
+    "citation": "CITATION.cff",
+    "claims": "CLAIMS.md",
+    "readme": "README.md",
+    "conformanceManifest": "conformance/manifest.json"
+  }
+}
