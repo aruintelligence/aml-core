@@ -1,6 +1,7 @@
 import http from "node:http";
 import { executeAccountableIntent, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { verifyOfficialBrandAuthorization } from "../runtime/brandTrust.js";
+import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
 import { verifyWitnessBundle } from "../docs/aml-witness-bundle.js";
 import fs from "node:fs";
 
@@ -111,6 +112,40 @@ export function createAmlHttpServer(options = {}) {
         }, headers);
       } catch (error) {
         return send(res, error.statusCode ?? 400, { error: error.message || "evaluation_failed" }, headers);
+      }
+    }
+
+    if (req.method === "POST" && url.pathname === "/v1/deployment/evaluate") {
+      try {
+        const body = await readJson(req, maxBodyBytes);
+        if (!body.intent) return send(res, 400, { error: "intent_required" }, headers);
+        const firewall = createDeploymentFirewall({
+          profile: body.profile ?? defaultProfile,
+          context: body.context ?? {},
+          mode: body.mode ?? "enforce",
+          failure_mode: body.failure_mode ?? "closed"
+        });
+        const result = firewall.evaluate(body.intent, {
+          timestamp: body.timestamp,
+          stream_id: body.stream_id,
+          profile: body.profile ?? defaultProfile,
+          context: body.context ?? {},
+          mode: body.mode ?? "enforce",
+          failure_mode: body.failure_mode ?? "closed"
+        });
+        return send(res, result.evaluation_error ? 422 : 200, {
+          protocol: "aml-http-deployment-evaluation/1",
+          mode: result.mode,
+          failure_mode: result.failure_mode,
+          aml_allowed: result.aml_allowed,
+          effective_allowed: result.effective_allowed,
+          would_suppress: result.would_suppress,
+          evaluation_error: result.evaluation_error,
+          selected_render: result.result?.receipt?.selected_render ?? null,
+          receipt: result.result?.receipt ?? null
+        }, headers);
+      } catch (error) {
+        return send(res, error.statusCode ?? 400, { error: error.message || "deployment_evaluation_failed" }, headers);
       }
     }
 
