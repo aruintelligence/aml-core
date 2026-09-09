@@ -35,11 +35,15 @@ jobs:
           STABLE_TAG="$(node -p "require('./project-contract.json').release.stableTag")"
           PACKAGE_NAME="$(node -p "require('./package.json').name")"
           REPOSITORY="$(node -p "require('./package.json').repository.url")"
+          HOMEPAGE="$(node -p "require('./package.json').homepage")"
+          BUGS_URL="$(node -p "require('./package.json').bugs.url")"
           [[ "$STABLE_TAG" == "v$STABLE_VERSION" ]] || { echo "Stable tag/version mismatch" >&2; exit 1; }
           echo "version=$STABLE_VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$STABLE_TAG" >> "$GITHUB_OUTPUT"
           echo "package_name=$PACKAGE_NAME" >> "$GITHUB_OUTPUT"
           echo "repository=$REPOSITORY" >> "$GITHUB_OUTPUT"
+          echo "homepage=$HOMEPAGE" >> "$GITHUB_OUTPUT"
+          echo "bugs_url=$BUGS_URL" >> "$GITHUB_OUTPUT"
 
       - name: Check out immutable stable source
         uses: actions/checkout@v4
@@ -48,18 +52,50 @@ jobs:
           path: release-src
           fetch-depth: 1
 
-      - name: Verify tagged package metadata
+      - name: Verify stable code identity
         shell: bash
         run: |
           set -euo pipefail
           VERSION="$(node -p "require('./release-src/package.json').version")"
           NAME="$(node -p "require('./release-src/package.json').name")"
-          REPO="$(node -p "require('./release-src/package.json').repository.url")"
           [[ "$VERSION" == "${{ steps.stable.outputs.version }}" ]] || { echo "Version mismatch" >&2; exit 1; }
           [[ "$NAME" == "${{ steps.stable.outputs.package_name }}" ]] || { echo "Name mismatch" >&2; exit 1; }
-          [[ "$REPO" == "${{ steps.stable.outputs.repository }}" ]] || { echo "Repository mismatch" >&2; exit 1; }
 
-      - name: Pack immutable stable source
+      - name: Apply deterministic npm metadata overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp release-src/package.json release-src/package.original.json
+          node <<'NODE'
+          const fs = require('fs');
+          const file = 'release-src/package.json';
+          const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
+          pkg.repository = { type: 'git', url: '${{ steps.stable.outputs.repository }}' };
+          pkg.homepage = '${{ steps.stable.outputs.homepage }}';
+          pkg.bugs = { url: '${{ steps.stable.outputs.bugs_url }}' };
+          fs.writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
+          NODE
+
+      - name: Prove overlay changed only distribution metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const before = JSON.parse(fs.readFileSync('release-src/package.original.json', 'utf8'));
+          const after = JSON.parse(fs.readFileSync('release-src/package.json', 'utf8'));
+          for (const key of ['repository', 'homepage', 'bugs']) {
+            delete before[key];
+            delete after[key];
+          }
+          if (JSON.stringify(before) !== JSON.stringify(after)) {
+            console.error('Registry metadata overlay changed package contract fields outside repository/homepage/bugs');
+            process.exit(1);
+          }
+          NODE
+          rm release-src/package.original.json
+
+      - name: Pack stable registry artifact
         id: pack
         shell: bash
         run: |
@@ -73,7 +109,7 @@ jobs:
           echo "integrity=$(node -p "require('./pack.json')[0].integrity")" >> "$GITHUB_OUTPUT"
           echo "shasum=$(node -p "require('./pack.json')[0].shasum")" >> "$GITHUB_OUTPUT"
 
-      - name: Clean-install stable artifact
+      - name: Clean-install stable registry artifact
         shell: bash
         run: |
           set -euo pipefail
@@ -88,9 +124,10 @@ jobs:
         working-directory: control
         run: node scripts/check-npm-identity.mjs --allow-unpublished --soft-unavailable
 
-      - name: Print immutable artifact identity
+      - name: Print registry artifact identity
         run: |
           echo "stable=${{ steps.stable.outputs.package_name }}@${{ steps.stable.outputs.version }}"
           echo "source_tag=${{ steps.stable.outputs.tag }}"
+          echo "metadata_overlay=repository,homepage,bugs"
           echo "integrity=${{ steps.pack.outputs.integrity }}"
           echo "shasum=${{ steps.pack.outputs.shasum }}"
