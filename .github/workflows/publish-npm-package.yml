@@ -7,9 +7,6 @@ on:
         description: "Type PUBLISH STABLE AML to confirm registry publication"
         required: true
         type: string
-  push:
-    branches:
-      - release/npm-publish-stable-v1.3.0
 
 permissions:
   contents: read
@@ -47,10 +44,7 @@ jobs:
           BUGS_URL="$(node -p "require('./package.json').bugs.url")"
           [[ "$STABLE_TAG" == "v$STABLE_VERSION" ]] || { echo "Stable tag/version contract mismatch" >&2; exit 1; }
           [[ "$PACKAGE_VERSION" == "$STABLE_VERSION" ]] || { echo "Control-plane package version mismatch" >&2; exit 1; }
-          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && "${{ inputs.confirm }}" != "PUBLISH STABLE AML" ]]; then
-            echo "Manual publication confirmation did not match exactly" >&2
-            exit 1
-          fi
+          [[ "${{ inputs.confirm }}" == "PUBLISH STABLE AML" ]] || { echo "Manual publication confirmation did not match exactly" >&2; exit 1; }
           echo "version=$STABLE_VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$STABLE_TAG" >> "$GITHUB_OUTPUT"
           echo "package_name=$PACKAGE_NAME" >> "$GITHUB_OUTPUT"
