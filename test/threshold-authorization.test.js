@@ -62,3 +62,49 @@ test("legacy threshold authorizations fail closed because quorum was not signed"
   assert.equal(result.reason, "legacy_threshold_unbound");
   assert.equal(result.threshold_bound, false);
 });
+
+test("threshold verifier fails closed on a non-array signatures field", () => {
+  const authorization = createThresholdAuthorization(
+    { action: "publish-policy", policy_hash: "abc123" },
+    [privatePem()],
+    { threshold: 1 }
+  );
+  authorization.signatures = { attacker: "not-an-array" };
+
+  assert.doesNotThrow(() => verifyThresholdAuthorization(authorization));
+  const result = verifyThresholdAuthorization(authorization);
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, "invalid_signatures");
+  assert.equal(result.valid_signatures, 0);
+});
+
+test("threshold verifier fails closed when canonical payload material is invalid", () => {
+  const authorization = {
+    type: "aml-threshold-authorization/1",
+    version: "1.1",
+    threshold: 1,
+    payload: { impossible_over_json: 1n },
+    signatures: []
+  };
+
+  assert.doesNotThrow(() => verifyThresholdAuthorization(authorization));
+  const result = verifyThresholdAuthorization(authorization);
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, "invalid_payload");
+  assert.equal(result.valid_signatures, 0);
+});
+
+test("threshold verifier tolerates malformed individual signer entries", () => {
+  const authorization = createThresholdAuthorization(
+    { action: "publish-policy", policy_hash: "abc123" },
+    [privatePem()],
+    { threshold: 1 }
+  );
+  authorization.signatures = [null, 42, { public_key_pem: "not-a-key" }];
+
+  assert.doesNotThrow(() => verifyThresholdAuthorization(authorization));
+  const result = verifyThresholdAuthorization(authorization);
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, "threshold_not_met");
+  assert.equal(result.valid_signatures, 0);
+});
