@@ -1,0 +1,14 @@
+{
+  "protocol": "aml-conformance/decision-core-1",
+  "rule": "render_allowed = restoration_value >= attention_cost",
+  "vectors": [
+    {"id":"zero-equal","attention_cost":0,"restoration_value":0,"expected_decision":"ALLOW"},
+    {"id":"positive-equal","attention_cost":1,"restoration_value":1,"expected_decision":"ALLOW"},
+    {"id":"restoration-wins","attention_cost":2,"restoration_value":5,"expected_decision":"ALLOW"},
+    {"id":"attention-wins","attention_cost":5,"restoration_value":1,"expected_decision":"SUPPRESS"},
+    {"id":"fraction-equal","attention_cost":1.5,"restoration_value":1.5,"expected_decision":"ALLOW"},
+    {"id":"fraction-below","attention_cost":1.5,"restoration_value":1.49,"expected_decision":"SUPPRESS"},
+    {"id":"large-allow","attention_cost":1000000,"restoration_value":1000001,"expected_decision":"ALLOW"},
+    {"id":"large-suppress","attention_cost":1000001,"restoration_value":1000000,"expected_decision":"SUPPRESS"}
+  ]
+}
