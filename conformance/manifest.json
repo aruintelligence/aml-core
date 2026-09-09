@@ -2,6 +2,8 @@
   "project": "AML Core",
   "language": "ARU Meaning Language",
   "version": "1.3.0",
+  "author": "Daniel Jacob Read IV",
+  "steward": "ĀRU Intelligence Inc.™",
   "artifactContract": [
     "index.html",
     "tokens.json",
@@ -21,5 +23,19 @@
     {"path": "examples/accessibility_first.aml", "domain": "accessibility"},
     {"path": "examples/ai_assistant_response.aml", "domain": "ai-assistant"},
     {"path": "examples/calm_checkout.aml", "domain": "commerce"}
+  ],
+  "protocols": [
+    {
+      "name": "ĀML Decision Core 1",
+      "protocol": "aml-conformance/decision-core-1",
+      "status": "experimental",
+      "normativeDocument": "CONFORMANCE.md",
+      "vectors": "conformance/decision-core-1.json",
+      "independentExamples": [
+        "conformance/independent-python/verify.py",
+        "conformance/independent-javascript/verify.mjs"
+      ],
+      "scope": "Deterministic ALLOW/SUPPRESS decision from declared attention_cost and restoration_value inputs"
+    }
   ]
 }
