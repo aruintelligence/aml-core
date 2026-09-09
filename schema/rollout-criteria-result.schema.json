@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/schema/rollout-criteria-result.schema.json",
+  "title": "ĀML Rollout Criteria Result",
+  "description": "Prototype result for operator-supplied mechanical rollout thresholds. criteria_met does not prove safety, correctness, ethics, compliance, or production readiness.",
+  "type": "object",
+  "required": ["protocol", "version", "criteria_met", "checks", "observed", "claim_boundary"],
+  "properties": {
+    "protocol": { "const": "ĀML Rollout Criteria Result" },
+    "version": { "const": "1.0" },
+    "criteria_met": { "type": "boolean" },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["criterion", "expected", "observed", "passed"],
+        "properties": {
+          "criterion": { "enum": ["min_evaluations", "max_evaluation_error_rate", "max_aml_suppression_rate", "min_shadow_rate"] },
+          "expected": { "type": "number" },
+          "observed": { "type": "number" },
+          "passed": { "type": "boolean" }
+        }
+      }
+    },
+    "observed": {
+      "type": "object",
+      "required": ["total", "aml_suppression_rate", "evaluation_error_rate", "shadow_rate"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "aml_suppression_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evaluation_error_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "shadow_rate": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "claim_boundary": { "type": "string" }
+  }
+}
