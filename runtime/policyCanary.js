@@ -3,13 +3,10 @@
 // This reports decision changes; it does not label either policy morally correct.
 
 import { createInterfaceFirewall } from "./interfaceFirewall.js";
+import { buildPairedComparisonIndexes } from "./comparisonIdentity.js";
 
 function decisionKey(decision, index) {
-  return decision.identifier ?? decision.id ?? decision.node_id ?? `index:${index}`;
-}
-
-function indexDecisions(decisions) {
-  return new Map(decisions.map((decision, index) => [decisionKey(decision, index), decision]));
+  return decision.identifier ?? decision.id ?? decision.node_id ?? decision.name ?? `index:${index}`;
 }
 
 export function evaluatePolicyCanary(intent, options = {}) {
@@ -29,9 +26,10 @@ export function evaluatePolicyCanary(intent, options = {}) {
     timestamp
   });
 
-  const baselineByKey = indexDecisions(baseline.decisions);
-  const candidateByKey = indexDecisions(candidate.decisions);
-  const keys = [...new Set([...baselineByKey.keys(), ...candidateByKey.keys()])];
+  const paired = buildPairedComparisonIndexes(baseline.decisions, candidate.decisions, decisionKey);
+  const baselineByKey = paired.left.index;
+  const candidateByKey = paired.right.index;
+  const keys = [...new Set([...baselineByKey.keys(), ...candidateByKey.keys()])].sort();
 
   const changes = keys.map((key) => {
     const before = baselineByKey.get(key) || null;
@@ -40,6 +38,7 @@ export function evaluatePolicyCanary(intent, options = {}) {
     const afterAllowed = after?.render_allowed ?? null;
     return {
       key,
+      identity_ambiguous: paired.ambiguous_identity_keys.some(entry => key.startsWith(`${entry.key}#`)),
       baseline_render_allowed: beforeAllowed,
       candidate_render_allowed: afterAllowed,
       changed: beforeAllowed !== afterAllowed,
@@ -54,6 +53,8 @@ export function evaluatePolicyCanary(intent, options = {}) {
     version: "1.0",
     baseline_profile: baselineProfile,
     candidate_profile: candidateProfile,
+    ambiguous_identity_keys: paired.ambiguous_identity_keys,
+    identity_ambiguity_detected: paired.ambiguous_identity_keys.length > 0,
     total_decisions: changes.length,
     changed_decisions: changed.length,
     candidate_new_suppressions: changed.filter(item => item.baseline_render_allowed === true && item.candidate_render_allowed === false).length,
