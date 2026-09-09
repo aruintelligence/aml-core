@@ -70,3 +70,28 @@ jobs:
           js="$(node conformance/independent-javascript/verify.mjs)"
           test "$py" = "$js"
           printf '%s\n' "$py"
+
+  black-box-executables:
+    name: Decision Core 1 / black-box ${{ matrix.runner }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [python, javascript]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Test Python as an external executable
+        if: matrix.runner == 'python'
+        run: node conformance/run-external.mjs -- python3 conformance/independent-python/decision_cli.py
+      - name: Test JavaScript as an external executable
+        if: matrix.runner == 'javascript'
+        run: node conformance/run-external.mjs -- node conformance/independent-javascript/decision_cli.mjs
