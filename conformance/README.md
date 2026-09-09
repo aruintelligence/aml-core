@@ -15,24 +15,36 @@ Steward: ĀRU Intelligence Inc.™
 
 Decision Core 1 is intentionally small. It gives implementers a first target that does not require the reference parser, runtime, package, browser layer, receipt stack, or trust system.
 
-## Run the independent verifier
+## Run the independent verifiers
 
 From the repository root:
 
 ```bash
 python3 conformance/independent-python/verify.py
+node conformance/independent-javascript/verify.mjs
 ```
 
-The verifier uses only the Python standard library and does not import the ĀML JavaScript runtime.
+The Python verifier uses only the standard library. The JavaScript verifier uses only Node.js built-ins. Neither imports the ĀML reference runtime.
+
+## Test an external implementation as a black box
+
+Implement the stdin/stdout contract in [`BLACK_BOX_PROTOCOL.md`](BLACK_BOX_PROTOCOL.md), then point the generic runner at your executable:
+
+```bash
+node conformance/run-external.mjs -- python3 my_aml_decision_core.py
+```
+
+The runner feeds published valid and must-reject vectors to the process and grades only observable behavior. Your implementation can be written in any language.
 
 ## Implement it yourself
 
 1. Read [`../CONFORMANCE.md`](../CONFORMANCE.md).
-2. Load [`decision-core-1.json`](decision-core-1.json).
+2. Load [`decision-core-1.json`](decision-core-1.json) and [`decision-core-1-invalid.json`](decision-core-1-invalid.json).
 3. Implement the published rule directly.
-4. Require every vector to match.
-5. Publish an implementation declaration using [`implementation-declaration.schema.json`](implementation-declaration.schema.json).
-6. State the exact protocol identifier you pass; do not claim broader ĀML conformance.
+4. Require every valid vector to match and every invalid vector to be rejected.
+5. Optionally expose the black-box executable protocol.
+6. Publish an implementation declaration using [`implementation-declaration.schema.json`](implementation-declaration.schema.json).
+7. State the exact protocol identifier you pass; do not claim broader ĀML conformance.
 
 ## Why levels are narrow
 
