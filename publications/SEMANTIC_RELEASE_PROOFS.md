@@ -78,6 +78,27 @@ Exit codes:
 - `1` — the artifact was parsed but verification failed;
 - `2` — invocation, file, or JSON error.
 
+## Semantic Release Gate — GitHub Action
+
+A repository can make a verified semantic release proof a deployment prerequisite:
+
+```yaml
+- id: semantic-release
+  uses: aruintelligence/aml-core/actions/semantic-release-proof@main
+  with:
+    proof-file: release-proof.json
+
+- run: |
+    echo "Signer: ${{ steps.semantic-release.outputs.signer }}"
+    echo "Before: ${{ steps.semantic-release.outputs.before-root }}"
+    echo "After: ${{ steps.semantic-release.outputs.after-root }}"
+    echo "Changed paths: ${{ steps.semantic-release.outputs.changed }}"
+```
+
+The action exits nonzero unless the complete proof verifies. On success it exposes authenticated or recomputed values including the signer, release IDs, before/after semantic roots, lineage head, proof hash, semantic-change flag, and added/removed/changed/unchanged counts.
+
+The action does not make a deployment decision by itself. It supplies a cryptographically verified semantic release state that a repository can combine with its own approval, testing, policy, and rollout requirements.
+
 ## Why source snapshots appear only for changed paths
 
 The signed Meaning Manifests already bind the complete project path set and every file's AMT fingerprint. For an unchanged path, identical signed fingerprints are enough to establish equality under the Meaning Fingerprint contract.
