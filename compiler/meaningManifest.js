@@ -11,6 +11,10 @@ function sha256Utf8(value) {
   return crypto.createHash("sha256").update(value, "utf8").digest("hex");
 }
 
+function comparePortablePaths(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
 function assertManifestPath(value) {
   if (typeof value !== "string" || value.length === 0) throw new TypeError("Meaning Manifest path must be a non-empty string.");
   if (value.includes("\\") || value.includes("\0") || value.startsWith("/") || /^[A-Za-z]:\//.test(value)) {
@@ -43,7 +47,7 @@ function normalizeSources(sources) {
     seen.add(path);
     if (typeof source !== "string") throw new TypeError(`Meaning Manifest source must be a string: ${path}`);
     return { path, source };
-  }).sort((a, b) => a.path.localeCompare(b.path));
+  }).sort((a, b) => comparePortablePaths(a.path, b.path));
 }
 
 function manifestMaterial(files) {
@@ -62,12 +66,12 @@ function rootFor(files) {
   return sha256Utf8(canonicalJSONStringify(manifestMaterial(files)));
 }
 
-export function createMeaningManifest(sources, options = {}) {
+export function createMeaningManifest(sources) {
   const entries = normalizeSources(sources);
   if (entries.length === 0) throw new Error("Meaning Manifest requires at least one AML source.");
 
   const files = entries.map(entry => {
-    const record = meaningFingerprint(entry.source, options);
+    const record = meaningFingerprint(entry.source);
     return {
       path: entry.path,
       fingerprint: record.fingerprint,
@@ -87,7 +91,7 @@ export function createMeaningManifest(sources, options = {}) {
   };
 }
 
-export function verifyMeaningManifest(manifest, sources, options = {}) {
+export function verifyMeaningManifest(manifest, sources) {
   try {
     if (!manifest || manifest.protocol !== MANIFEST_PROTOCOL || manifest.version !== "1.0") {
       return { verified: false, reason: "invalid_manifest_protocol" };
@@ -108,12 +112,15 @@ export function verifyMeaningManifest(manifest, sources, options = {}) {
       const path = assertManifestPath(file?.path);
       if (manifestPaths.has(path)) return { verified: false, reason: "duplicate_manifest_path", path };
       manifestPaths.add(path);
-      if (previousPath !== null && previousPath.localeCompare(path) >= 0) {
+      if (previousPath !== null && comparePortablePaths(previousPath, path) >= 0) {
         return { verified: false, reason: "manifest_paths_not_sorted", path };
       }
       previousPath = path;
       if (typeof file.fingerprint !== "string" || !/^[a-f0-9]{64}$/.test(file.fingerprint)) {
         return { verified: false, reason: "invalid_file_fingerprint", path };
+      }
+      if (typeof file.amt_version !== "string" || file.amt_version.length === 0) {
+        return { verified: false, reason: "invalid_amt_version", path };
       }
     }
 
@@ -125,7 +132,7 @@ export function verifyMeaningManifest(manifest, sources, options = {}) {
 
     const sourceByPath = new Map(normalized.map(entry => [entry.path, entry.source]));
     const recomputedFiles = manifest.files.map(file => {
-      const record = meaningFingerprint(sourceByPath.get(file.path), options);
+      const record = meaningFingerprint(sourceByPath.get(file.path));
       return { path: file.path, fingerprint: record.fingerprint, amt_version: record.amt_version };
     });
 
@@ -133,9 +140,11 @@ export function verifyMeaningManifest(manifest, sources, options = {}) {
       .map((file, index) => ({
         path: file.path,
         expected: file.fingerprint,
-        observed: recomputedFiles[index].fingerprint
+        observed: recomputedFiles[index].fingerprint,
+        expected_amt_version: file.amt_version,
+        observed_amt_version: recomputedFiles[index].amt_version
       }))
-      .filter(item => item.expected !== item.observed);
+      .filter(item => item.expected !== item.observed || item.expected_amt_version !== item.observed_amt_version);
 
     const expectedRoot = rootFor(manifest.files);
     const observedRoot = rootFor(recomputedFiles);
