@@ -1,0 +1,55 @@
+name: "ĀML Semantic Release Gate"
+description: "Verify a signed ĀML Semantic Release Proof and expose trusted semantic release metadata as workflow outputs."
+inputs:
+  proof-file:
+    description: "Path to an aml-semantic-release-proof/1 JSON artifact"
+    required: true
+outputs:
+  verified:
+    description: "true only when the full Semantic Release Proof verifies"
+    value: ${{ steps.verify.outputs.verified }}
+  signer:
+    description: "Authenticated proof signer; empty when verification fails"
+    value: ${{ steps.verify.outputs.signer }}
+  release-id:
+    description: "Current release identifier bound by the proof"
+    value: ${{ steps.verify.outputs.release_id }}
+  previous-release-id:
+    description: "Previous release identifier bound by the proof"
+    value: ${{ steps.verify.outputs.previous_release_id }}
+  before-root:
+    description: "Before Meaning Manifest semantic root"
+    value: ${{ steps.verify.outputs.before_root }}
+  after-root:
+    description: "After Meaning Manifest semantic root"
+    value: ${{ steps.verify.outputs.after_root }}
+  lineage-head:
+    description: "Verified Meaning Lineage head hash"
+    value: ${{ steps.verify.outputs.lineage_head }}
+  proof-sha256:
+    description: "Recomputed Semantic Release Proof SHA-256"
+    value: ${{ steps.verify.outputs.proof_sha256 }}
+  semantic-changed:
+    description: "Whether the before and after semantic project roots differ"
+    value: ${{ steps.verify.outputs.semantic_changed }}
+  added:
+    description: "Added AML path count"
+    value: ${{ steps.verify.outputs.added }}
+  removed:
+    description: "Removed AML path count"
+    value: ${{ steps.verify.outputs.removed }}
+  changed:
+    description: "Changed AML path count"
+    value: ${{ steps.verify.outputs.changed }}
+  unchanged:
+    description: "Unchanged AML path count"
+    value: ${{ steps.verify.outputs.unchanged }}
+runs:
+  using: "composite"
+  steps:
+    - id: verify
+      shell: bash
+      run: node "$GITHUB_ACTION_PATH/../../scripts/semantic-release-gate.js" "${{ inputs.proof-file }}"
+branding:
+  icon: "shield"
+  color: "purple"
