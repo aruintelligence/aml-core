@@ -3,20 +3,10 @@ name: Publish AML npm Package
 on:
   workflow_dispatch:
     inputs:
-      confirm-package-name:
-        description: "Must exactly match package.json name"
+      confirm:
+        description: "Type PUBLISH STABLE AML to confirm registry publication"
         required: true
         type: string
-      npm-tag:
-        description: "npm dist-tag to publish"
-        required: true
-        default: "latest"
-        type: string
-      allow-new-package:
-        description: "Set true only after confirming this npm identity is intended and available"
-        required: true
-        default: false
-        type: boolean
 
 permissions:
   contents: read
@@ -27,56 +17,179 @@ jobs:
     runs-on: ubuntu-latest
     environment: npm-production
     steps:
-      - name: Check out selected release ref
+      - name: Check out release control plane
         uses: actions/checkout@v4
+        with:
+          path: control
+          fetch-depth: 0
+
       - name: Set up Node.js registry
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
-      - name: Install package metadata
-        run: npm install --ignore-scripts
-      - name: Require exact package name and release tag
+
+      - name: Resolve canonical stable release
+        id: stable
         shell: bash
         run: |
           set -euo pipefail
+          cd control
+          STABLE_VERSION="$(node -p "require('./project-contract.json').release.stableVersion")"
+          STABLE_TAG="$(node -p "require('./project-contract.json').release.stableTag")"
           PACKAGE_NAME="$(node -p "require('./package.json').name")"
           PACKAGE_VERSION="$(node -p "require('./package.json').version")"
-          if [[ "${{ inputs.confirm-package-name }}" != "$PACKAGE_NAME" ]]; then
-            echo "Package confirmation does not match package.json: $PACKAGE_NAME" >&2
+          REPOSITORY="$(node -p "require('./package.json').repository.url")"
+          HOMEPAGE="$(node -p "require('./package.json').homepage")"
+          BUGS_URL="$(node -p "require('./package.json').bugs.url")"
+          [[ "$STABLE_TAG" == "v$STABLE_VERSION" ]] || { echo "Stable tag/version contract mismatch" >&2; exit 1; }
+          [[ "$PACKAGE_VERSION" == "$STABLE_VERSION" ]] || { echo "Control-plane package version mismatch" >&2; exit 1; }
+          [[ "${{ inputs.confirm }}" == "PUBLISH STABLE AML" ]] || { echo "Manual publication confirmation did not match exactly" >&2; exit 1; }
+          echo "version=$STABLE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$STABLE_TAG" >> "$GITHUB_OUTPUT"
+          echo "package_name=$PACKAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "repository=$REPOSITORY" >> "$GITHUB_OUTPUT"
+          echo "homepage=$HOMEPAGE" >> "$GITHUB_OUTPUT"
+          echo "bugs_url=$BUGS_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Check out immutable stable source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.stable.outputs.tag }}
+          path: release-src
+          fetch-depth: 1
+
+      - name: Verify stable code identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          RELEASE_VERSION="$(node -p "require('./release-src/package.json').version")"
+          RELEASE_NAME="$(node -p "require('./release-src/package.json').name")"
+          [[ "$RELEASE_VERSION" == "${{ steps.stable.outputs.version }}" ]] || { echo "Stable tag package version mismatch" >&2; exit 1; }
+          [[ "$RELEASE_NAME" == "${{ steps.stable.outputs.package_name }}" ]] || { echo "Stable tag package name mismatch" >&2; exit 1; }
+
+      - name: Apply deterministic npm metadata overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp release-src/package.json release-src/package.original.json
+          node <<'NODE'
+          const fs = require('fs');
+          const file = 'release-src/package.json';
+          const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
+          pkg.repository = { type: 'git', url: '${{ steps.stable.outputs.repository }}' };
+          pkg.homepage = '${{ steps.stable.outputs.homepage }}';
+          pkg.bugs = { url: '${{ steps.stable.outputs.bugs_url }}' };
+          fs.writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
+          NODE
+
+      - name: Prove overlay changed only distribution metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const before = JSON.parse(fs.readFileSync('release-src/package.original.json', 'utf8'));
+          const after = JSON.parse(fs.readFileSync('release-src/package.json', 'utf8'));
+          for (const key of ['repository', 'homepage', 'bugs']) {
+            delete before[key];
+            delete after[key];
+          }
+          if (JSON.stringify(before) !== JSON.stringify(after)) {
+            console.error('Registry metadata overlay changed package contract fields outside repository/homepage/bugs');
+            process.exit(1);
+          }
+          NODE
+          rm release-src/package.original.json
+
+      - name: Build stable registry tarball
+        id: pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          cd release-src
+          npm install --ignore-scripts
+          npm pack --json --pack-destination ../artifact > ../pack.json
+          cd ..
+          echo "filename=$(node -p "require('./pack.json')[0].filename")" >> "$GITHUB_OUTPUT"
+          echo "integrity=$(node -p "require('./pack.json')[0].integrity")" >> "$GITHUB_OUTPUT"
+          echo "shasum=$(node -p "require('./pack.json')[0].shasum")" >> "$GITHUB_OUTPUT"
+
+      - name: Reject obvious secret material in tarball
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARBALL="artifact/${{ steps.pack.outputs.filename }}"
+          tar -tzf "$TARBALL" > package-files.txt
+          if grep -Eiq '(^|/)(\.env($|\.)|.*private[-_. ]?key|id_(rsa|ed25519)(\.|$)|.*\.(p12|pfx|key)$|\.npmrc$|secrets?(/|$))' package-files.txt; then
+            echo "Potential secret/private-key path found in stable package tarball" >&2
+            grep -Ei '(^|/)(\.env($|\.)|.*private[-_. ]?key|id_(rsa|ed25519)(\.|$)|.*\.(p12|pfx|key)$|\.npmrc$|secrets?(/|$))' package-files.txt >&2 || true
             exit 1
           fi
-          if [[ "$GITHUB_REF" != "refs/tags/v${PACKAGE_VERSION}" ]]; then
-            echo "Ref must be exact immutable package tag refs/tags/v${PACKAGE_VERSION}; got $GITHUB_REF" >&2
-            exit 1
+
+      - name: Clean-install stable registry artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir consumer
+          printf '{"private":true,"type":"module"}\n' > consumer/package.json
+          cd consumer
+          npm install --ignore-scripts "../artifact/${{ steps.pack.outputs.filename }}"
+          node -e "import('${{ steps.stable.outputs.package_name }}').then(m=>{if(!m)process.exit(2)}).catch(e=>{console.error(e);process.exit(1)})"
+          ./node_modules/.bin/aml validate ../control/examples/simple.aml
+
+      - name: Require canonical or unclaimed npm identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          PACKAGE_NAME="${{ steps.stable.outputs.package_name }}"
+          EXPECTED_REPO="${{ steps.stable.outputs.repository }}"
+          if npm view "$PACKAGE_NAME" name >/dev/null 2>&1; then
+            EXISTING_REPO="$(npm view "$PACKAGE_NAME" repository.url 2>/dev/null || true)"
+            if [[ "$EXISTING_REPO" != "$EXPECTED_REPO" ]]; then
+              echo "npm identity collision: $PACKAGE_NAME points to $EXISTING_REPO, expected $EXPECTED_REPO" >&2
+              exit 1
+            fi
+            if npm view "$PACKAGE_NAME@${{ steps.stable.outputs.version }}" version >/dev/null 2>&1; then
+              echo "npm version $PACKAGE_NAME@${{ steps.stable.outputs.version }} already exists; refusing republish" >&2
+              exit 1
+            fi
+          else
+            echo "npm identity $PACKAGE_NAME is currently unclaimed; proceeding with intentional first publication."
           fi
-          if [[ ! "${{ inputs.npm-tag }}" =~ ^[A-Za-z0-9._-]+$ ]]; then
-            echo "Invalid npm dist-tag" >&2
-            exit 1
-          fi
-      - name: Audit installable tarball
-        run: node scripts/check-package-artifact.mjs
-      - name: Check npm identity collision
+
+      - name: Require npm publishing credential
         shell: bash
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
-          PACKAGE_NAME="$(node -p "require('./package.json').name")"
-          REPOSITORY="$(node -p "require('./package.json').repository.url")"
-          if npm view "$PACKAGE_NAME" name >/dev/null 2>&1; then
-            EXISTING_REPO="$(npm view "$PACKAGE_NAME" repository.url 2>/dev/null || true)"
-            if [[ "$EXISTING_REPO" != "$REPOSITORY" ]]; then
-              echo "Existing npm package identity does not point to this canonical repository." >&2
-              echo "Expected: $REPOSITORY" >&2
-              echo "Found:    $EXISTING_REPO" >&2
-              exit 1
-            fi
-          elif [[ "${{ inputs.allow-new-package }}" != "true" ]]; then
-            echo "Package does not appear to exist. Re-run only after intentional identity review with allow-new-package=true." >&2
+          if [[ -z "${NODE_AUTH_TOKEN:-}" ]]; then
+            echo "NPM_TOKEN is not configured for npm-production; publication cannot proceed." >&2
             exit 1
           fi
-      - name: Publish exact tagged artifact with provenance
+          npm whoami
+
+      - name: Publish stable registry artifact with provenance
+        working-directory: release-src
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public --provenance --tag "${{ inputs.npm-tag }}"
+        run: npm publish --access public --provenance --tag latest
+
+      - name: Verify registry publication and canonical repository metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          PACKAGE="${{ steps.stable.outputs.package_name }}@${{ steps.stable.outputs.version }}"
+          for attempt in 1 2 3 4 5; do
+            FOUND="$(npm view "$PACKAGE" version 2>/dev/null || true)"
+            FOUND_REPO="$(npm view "$PACKAGE" repository.url 2>/dev/null || true)"
+            if [[ "$FOUND" == "${{ steps.stable.outputs.version }}" && "$FOUND_REPO" == "${{ steps.stable.outputs.repository }}" ]]; then
+              echo "Published and visible with canonical repository metadata: $PACKAGE"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Registry verification did not observe the expected version/repository metadata for $PACKAGE" >&2
+          exit 1
