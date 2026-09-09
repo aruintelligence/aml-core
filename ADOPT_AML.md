@@ -20,7 +20,11 @@ AI-generated interfaces are getting easier to create. The missing layer is accou
 
 ## Try it in under 60 seconds
 
-Live proof:
+**Live one-click starter:**
+
+https://aruintelligence.github.io/aml-core/quickstart.html
+
+Or open the exact-state proof:
 
 https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
 
@@ -143,6 +147,7 @@ If you found this while researching any of these, you are in the right repositor
 
 ## Start here next
 
+- [Copy-and-run AI Interface Firewall starter](starters/ai-interface-firewall/)
 - [ĀML in 5 minutes](publications/START_HERE.md)
 - [ĀML in one page](publications/AML_IN_ONE_PAGE.md)
 - [Why AI-generated UI needs a firewall](publications/WHY_AI_UI_NEEDS_A_FIREWALL.md)
