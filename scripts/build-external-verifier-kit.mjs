@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 
 export const KIT_FILES = [
   'conformance/verifier-challenge.json',
+  'conformance/verifier-challenge-cases.json',
   'conformance/witness-record.example.json',
   'independent/python/witness-vector.json',
   'protocol/sorted-json-v1.md',
@@ -69,7 +70,7 @@ export function buildExternalVerifierKit(outputDir = 'dist/external-verifier-kit
   }
   entries.sort((a, b) => codeUnitCompare(a.path, b.path));
 
-  const readme = `# ĀML External Verifier Kit\n\nThis artifact is intentionally **reference-code-free**. It contains public protocol text, JSON Schemas, canonicalization/test vectors, the black-box verifier challenge, one JSON witness fixture, and witness-submission material. It does not contain the JavaScript, Python, Go, or other reference verifier implementations from aml-core.\n\nImplement the published contract in your own runtime, then run the External Verifier Challenge from your own repository. PASS, FAIL, and MIXED results are all useful.\n\nCommand contract:\n\n\`\`\`text\n<verifier-command> --now <ISO-8601> <bundle.json>\n\`\`\`\n\nA valid bundle must emit JSON with \`valid: true\` and exit 0. Invalid challenge cases must be rejected with a nonzero exit.\n\nThis kit reduces accidental dependence on reference implementation code. Possessing or using the kit does not itself prove an implementation is independent.\n`;
+  const readme = `# ĀML External Verifier Kit\n\nThis artifact is intentionally **reference-code-free**. It contains public protocol text, JSON Schemas, canonicalization/test vectors, the black-box verifier challenge, its language-neutral case corpus, one JSON witness fixture, and witness-submission material. It does not contain the JavaScript, Python, Go, or other reference verifier implementations from aml-core.\n\nImplement the published contract in your own runtime, then run the External Verifier Challenge from your own repository. PASS, FAIL, and MIXED results are all useful.\n\nThe challenge cases are data-defined in \`conformance/verifier-challenge-cases.json\` using RFC 6901 JSON Pointer replacement operations.\n\nCommand contract:\n\n\`\`\`text\n<verifier-command> --now <ISO-8601> <bundle.json>\n\`\`\`\n\nA valid bundle must emit JSON with \`valid: true\` and exit 0. Invalid challenge cases must be rejected with a nonzero exit.\n\nThis kit reduces accidental dependence on reference implementation code. Possessing or using the kit does not itself prove an implementation is independent.\n`;
   const readmeBytes = Buffer.from(readme, 'utf8');
   fs.writeFileSync(path.join(outputDir, 'README.md'), readmeBytes);
   entries.push({ path: 'README.md', bytes: readmeBytes.length, sha256: sha256(readmeBytes) });
