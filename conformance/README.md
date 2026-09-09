@@ -7,13 +7,16 @@
 Author: Daniel Jacob Read IV  
 Steward: ĀRU Intelligence Inc.™
 
-## Current level
+## Current levels
 
 | Level | Protocol | Scope | Status |
 |---|---|---|---|
 | Decision Core 1 | `aml-conformance/decision-core-1` | deterministic ALLOW/SUPPRESS decision rule | experimental |
+| Sorted JSON 1 | `aml-conformance/sorted-json-1` | exact `sorted-json-v1` byte serialization + SHA-256 for the published vector domain | experimental |
 
 Decision Core 1 is intentionally small. It gives implementers a first target that does not require the reference parser, runtime, package, browser layer, receipt stack, or trust system.
+
+Sorted JSON 1 is also deliberately narrow. It is not a claim to define general JSON canonicalization; it freezes only the behavior explicitly covered by the published vectors. See [`SORTED_JSON_1.md`](SORTED_JSON_1.md).
 
 ## Run the independent verifiers
 
@@ -22,13 +25,15 @@ From the repository root:
 ```bash
 python3 conformance/independent-python/verify.py
 node conformance/independent-javascript/verify.mjs
+python3 independent/python/check_canonical_vectors.py
+node conformance/independent-javascript/verify_canonical_json.mjs
 ```
 
-The Python verifier uses only the standard library. The JavaScript verifier uses only Node.js built-ins. Neither imports the ĀML reference runtime.
+These checks do not import the ĀML reference runtime for the behavior they reproduce.
 
 ## Test an external implementation as a black box
 
-Implement the stdin/stdout contract in [`BLACK_BOX_PROTOCOL.md`](BLACK_BOX_PROTOCOL.md), then point the generic runner at your executable:
+Implement the stdin/stdout contract in [`BLACK_BOX_PROTOCOL.md`](BLACK_BOX_PROTOCOL.md), then point the generic runner at your Decision Core 1 executable:
 
 ```bash
 node conformance/run-external.mjs -- python3 my_aml_decision_core.py
@@ -39,12 +44,13 @@ The runner feeds published valid and must-reject vectors to the process and grad
 ## Implement it yourself
 
 1. Read [`../CONFORMANCE.md`](../CONFORMANCE.md).
-2. Load [`decision-core-1.json`](decision-core-1.json) and [`decision-core-1-invalid.json`](decision-core-1-invalid.json).
-3. Implement the published rule directly.
-4. Require every valid vector to match and every invalid vector to be rejected.
-5. Optionally expose the black-box executable protocol.
-6. Publish an implementation declaration using [`implementation-declaration.schema.json`](implementation-declaration.schema.json).
-7. State the exact protocol identifier you pass; do not claim broader ĀML conformance.
+2. Choose an exact protocol identifier from [`manifest.json`](manifest.json).
+3. Read that protocol's normative document and published vectors.
+4. Implement the published behavior directly.
+5. Require every applicable positive and negative vector to pass.
+6. Optionally expose the Decision Core black-box executable protocol.
+7. Publish an implementation declaration using [`implementation-declaration.schema.json`](implementation-declaration.schema.json).
+8. State only the exact protocol identifier you pass; do not claim broader ĀML conformance.
 
 ## Why levels are narrow
 
@@ -57,10 +63,15 @@ A single vague "ĀML compatible" label would hide too much. Versioned levels let
 Acceptable experimental wording:
 
 - `Passes aml-conformance/decision-core-1`
+- `Passes aml-conformance/sorted-json-1`
 - `Independent implementation of ĀML Decision Core 1`
-- `Tested against the published Decision Core 1 vectors`
+- `Tested against the published Sorted JSON 1 vectors`
 
-Avoid wording that implies standards-body approval, security certification, accessibility certification, or endorsement by ĀRU Intelligence Inc.™ unless a separate written program explicitly grants it.
+Avoid wording that implies standards-body approval, security certification, accessibility certification, general JSON-standard equivalence, or endorsement by ĀRU Intelligence Inc.™ unless a separate written program explicitly grants it.
+
+## Registry integrity
+
+`conformance/manifest.json` is the machine-readable protocol catalog. CI checks that protocol identifiers agree with the implementation declaration schema and GitHub submission form, and that referenced normative documents, vectors, and independent examples actually exist.
 
 ## Roadmap
 
