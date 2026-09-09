@@ -9,6 +9,7 @@
   "type": "module",
   "bin": {
     "aml": "./bin/aml.js",
+    "aml-meaning": "./bin/aml-meaning.js",
     "aml-lsp": "./bin/aml-lsp.js",
     "aml-serve": "./bin/aml-serve.js",
     "aml-brand-verify": "./bin/aml-brand-verify.js"
@@ -22,6 +23,7 @@
     "explain": "node bin/aml.js explain examples/simple.aml",
     "lint": "node bin/aml.js lint examples/simple.aml",
     "verify": "node bin/aml.js verify dist/build_manifest.json",
+    "fingerprint": "node bin/aml-meaning.js",
     "check:links": "node scripts/check-local-links.js",
     "meaning-gate": "node scripts/meaning-gate.js",
     "benchmark": "node benchmarks/run.js",
@@ -40,6 +42,8 @@
     "interface-firewall",
     "view-meaning",
     "meaning-gate",
+    "meaning-fingerprint",
+    "semantic-equivalence",
     "proof-carrying-interface",
     "proof-carrying-ui",
     "react-accountability",
