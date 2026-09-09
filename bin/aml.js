@@ -25,6 +25,8 @@ import { signPolicyPack, verifySignedPolicyPack } from "../runtime/policyPack.js
 import { verifyAuditStream } from "../runtime/auditStream.js";
 import { enforceCumulativeAttentionBudget } from "../runtime/attentionLedger.js";
 import { signBrandAuthorization, verifyBrandAuthorization } from "../runtime/brandAuthorization.js";
+import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
+import { evaluatePolicyCanary } from "../runtime/policyCanary.js";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -39,6 +41,8 @@ Usage:
   aml compile <file.aml> [outputDir]
   aml generate <intent.json> [output.aml]
   aml execute <intent.json> [profile] [context.json] [receipt.json]
+  aml deploy <intent.json> [--mode shadow|enforce] [--profile profile] [--failure-mode open|closed] [--context context.json] [--timestamp ISO] [--require-effective-allow]
+  aml canary <intent.json> [--baseline profile] [--candidate profile] [--context context.json] [--timestamp ISO] [--fail-on-change]
   aml verify-receipt <receipt.json>
   aml sign-receipt <receipt.json> <private-key.pem> [signed-receipt.json]
   aml verify-signed-receipt <signed-receipt.json>
@@ -67,6 +71,8 @@ Commands:
   compile                     Compile AML into HTML and accountability artifacts
   generate                    Deterministically generate AML source from machine-readable intent JSON
   execute                     Run intent → AML → simulations → policy profile → audit/attention receipt
+  deploy                      Evaluate intent with enforce/shadow rollout and explicit failure posture
+  canary                      Compare the same intent under baseline and candidate policy profiles
   verify-receipt              Verify receipt hash, audit stream, and attention-ledger integrity
   sign-receipt                Add an Ed25519 attestation to a valid execution receipt
   verify-signed-receipt       Verify receipt integrity, signature, and public-key fingerprint
@@ -92,6 +98,9 @@ Commands:
   version                     Show AML CLI version
 
 Examples:
+  aml deploy examples/intent-checkout.json --mode shadow --profile calm_default
+  aml deploy examples/intent-checkout.json --mode enforce --failure-mode closed --require-effective-allow
+  aml canary examples/intent-checkout.json --baseline calm_default --candidate human_first --fail-on-change
   aml semantic-diff before.aml after.aml
   aml policy-diff examples/simple.aml restorative_v1 attention_conservative_v1
   aml sign-policy-pack policy-pack.json private-key.pem signed-policy-pack.json
@@ -120,6 +129,18 @@ function writeOrPrint(value, outputPath, label = "WROTE") {
   } else {
     process.stdout.write(serialized);
   }
+}
+
+function flagValue(name, fallback = null) {
+  const index = args.indexOf(name);
+  if (index < 0) return fallback;
+  const value = args[index + 1];
+  if (!value || value.startsWith("--")) throw new Error(`${name} requires a value.`);
+  return value;
+}
+
+function hasFlag(name) {
+  return args.includes(name);
 }
 
 try {
@@ -161,6 +182,43 @@ try {
     const receipt = executeAccountableIntent(intent, { profile, context });
     writeOrPrint(receipt, args[4], "EXECUTED");
     if (args[4]) console.log(`Receipt SHA-256: ${receipt.receipt_sha256}`);
+    process.exit(0);
+  }
+  if (command === "deploy") {
+    const intent = JSON.parse(readSource(inputPath));
+    const mode = flagValue("--mode", "shadow");
+    const profile = flagValue("--profile", "human_first");
+    const failureMode = flagValue("--failure-mode", "closed");
+    const contextPath = flagValue("--context", null);
+    const context = contextPath ? JSON.parse(readSource(contextPath)) : {};
+    const timestamp = flagValue("--timestamp", process.env.AML_TIMESTAMP || undefined);
+    const result = createDeploymentFirewall({ mode, profile, failure_mode: failureMode, context }).evaluate(intent, {
+      mode,
+      profile,
+      failure_mode: failureMode,
+      context,
+      timestamp
+    });
+    console.log(JSON.stringify(result, null, 2));
+    if (result.evaluation_error) process.exit(2);
+    if (hasFlag("--require-effective-allow") && !result.effective_allowed) process.exit(3);
+    process.exit(0);
+  }
+  if (command === "canary") {
+    const intent = JSON.parse(readSource(inputPath));
+    const baseline = flagValue("--baseline", "calm_default");
+    const candidate = flagValue("--candidate", "human_first");
+    const contextPath = flagValue("--context", null);
+    const context = contextPath ? JSON.parse(readSource(contextPath)) : {};
+    const timestamp = flagValue("--timestamp", process.env.AML_TIMESTAMP || undefined);
+    const result = evaluatePolicyCanary(intent, {
+      baseline_profile: baseline,
+      candidate_profile: candidate,
+      context,
+      timestamp
+    });
+    console.log(JSON.stringify(result, null, 2));
+    if (hasFlag("--fail-on-change") && result.changed_decisions > 0) process.exit(4);
     process.exit(0);
   }
   if (command === "verify-receipt") {
