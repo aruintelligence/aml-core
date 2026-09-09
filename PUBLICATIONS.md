@@ -8,10 +8,47 @@
 
 1. [Start Here — ĀML in 5 minutes](publications/START_HERE.md)
 2. [ĀML in one page](publications/AML_IN_ONE_PAGE.md)
-3. [Why AI-generated UI needs a firewall](publications/WHY_AI_UI_NEEDS_A_FIREWALL.md)
-4. [90-second demo script](publications/DEMO_SCRIPT_90_SECONDS.md)
-5. Live proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
-6. View Meaning: https://aruintelligence.github.io/aml-core/view-meaning.html
+3. [ĀML Library — numbered papers, casebooks, comparisons, and 100 use cases](library/README.md)
+4. [Why AI-generated UI needs a firewall](publications/WHY_AI_UI_NEEDS_A_FIREWALL.md)
+5. [90-second demo script](publications/DEMO_SCRIPT_90_SECONDS.md)
+6. Live proof: https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
+7. View Meaning: https://aruintelligence.github.io/aml-core/view-meaning.html
+
+## ĀML Library
+
+The [ĀML Library](library/README.md) is the stable, numbered publication shelf. Each item has a library ID and an explicit status/claim boundary.
+
+### Numbered papers
+
+- [AML-LIB-001 — The Interface Firewall](library/AML-LIB-001-THE-INTERFACE-FIREWALL.md)
+- [AML-LIB-002 — Receipts for Generated Interfaces](library/AML-LIB-002-RECEIPTS-FOR-GENERATED-INTERFACES.md)
+- [AML-LIB-003 — Why Generated UI Needs a Decision Boundary](library/AML-LIB-003-WHY-GENERATED-UI-NEEDS-A-DECISION-BOUNDARY.md)
+- [AML-LIB-004 — View Meaning](library/AML-LIB-004-VIEW-MEANING.md)
+- [AML-LIB-005 — Meaning Gate](library/AML-LIB-005-MEANING-GATE.md)
+- [AML-LIB-006 — Reproducible Interface Decisions](library/AML-LIB-006-REPRODUCIBLE-INTERFACE-DECISIONS.md)
+- [AML-LIB-007 — Independent Verification](library/AML-LIB-007-INDEPENDENT-VERIFICATION.md)
+- [AML-LIB-008 — The Case for Declared Interface Intent](library/AML-LIB-008-DECLARED-INTERFACE-INTENT.md)
+
+### Industry casebooks
+
+- [AI assistants](library/AML-CASE-001-AI-ASSISTANTS.md)
+- [E-commerce](library/AML-CASE-002-E-COMMERCE.md)
+- [Social feeds](library/AML-CASE-003-SOCIAL-FEEDS.md)
+- [Health interfaces](library/AML-CASE-004-HEALTH-INTERFACES.md)
+- [Financial interfaces](library/AML-CASE-005-FINANCIAL-INTERFACES.md)
+- [Education](library/AML-CASE-006-EDUCATION.md)
+
+Casebooks are proposed application areas unless independent evidence is explicitly linked. They are not claims of industry adoption.
+
+### Comparisons and adoption catalog
+
+- [ĀML and Content Security Policy](library/AML-COMP-001-AML-AND-CSP.md)
+- [ĀML and consent banners](library/AML-COMP-002-AML-AND-CONSENT-BANNERS.md)
+- [ĀML and general policy engines](library/AML-COMP-003-AML-AND-POLICY-ENGINES.md)
+- [100 Ways to Use an Interface Firewall](library/AML-100-WAYS-TO-USE-AN-INTERFACE-FIREWALL.md)
+- [Executive brief](library/AML-EXEC-001-EXECUTIVE-BRIEF.md)
+- [Citation rules](library/CITATION.md)
+- [Machine-readable catalog](library/catalog.json)
 
 ## By audience
 
