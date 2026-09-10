@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>What is ĀML™? ĀRU Meaning Language™ and the AI Interface Firewall™</title>
+  <meta name="description" content="ĀML™ — ĀRU Meaning Language™ is an open research prototype for inspectable meaning, policy, provenance, and evidence in AI-generated interfaces. Explore the AI Interface Firewall™, View Meaning™, Meaning Gate™, receipts, conformance, and independent verification.">
+  <meta name="keywords" content="AML, ĀML, ĀRU Meaning Language, AI Interface Firewall, generative UI governance, AI interface accountability, agentic UI governance, policy-aware rendering, interface provenance, verifiable generated interfaces, View Meaning, Meaning Gate, AI UI receipts">
+  <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
+  <link rel="canonical" href="https://aruintelligence.github.io/aml-core/what-is-aml.html">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="What is ĀML™? ĀRU Meaning Language™">
+  <meta property="og:description" content="A meaning, policy, provenance, and evidence layer for AI-generated interfaces — with public proof and independent verification paths.">
+  <meta property="og:url" content="https://aruintelligence.github.io/aml-core/what-is-aml.html">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="What is ĀML™? ĀRU Meaning Language™">
+  <meta name="twitter:description" content="Explore AML's AI Interface Firewall™, View Meaning™, Meaning Gate™, public proof, receipts, conformance, and independent verification paths.">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareSourceCode",
+    "name": "ĀML — ĀRU Meaning Language",
+    "alternateName": "AML",
+    "description": "Open research prototype for inspectable meaning, policy, provenance, and evidence in AI-generated and machine-generated interfaces.",
+    "codeRepository": "https://github.com/aruintelligence/aml-core",
+    "url": "https://aruintelligence.github.io/aml-core/what-is-aml.html",
+    "license": "https://github.com/aruintelligence/aml-core/blob/main/LICENSE",
+    "creator": {
+      "@type": "Organization",
+      "name": "ĀRU Intelligence Inc."
+    },
+    "keywords": [
+      "AI interface accountability",
+      "AI Interface Firewall",
+      "generative UI governance",
+      "agentic UI governance",
+      "policy-aware rendering",
+      "interface provenance",
+      "verifiable generated interfaces"
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is ĀML?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "ĀML — ĀRU Meaning Language — is a working research prototype for making the declared meaning, purpose, policy, authority, provenance, and evidence behind AI-generated interface decisions more inspectable."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does ĀML replace HTML?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. AML can sit above existing HTML, React, Next.js, and browser infrastructure as a meaning and policy accountability layer around the decision to render."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is ĀML a ratified global standard?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. AML is an open research prototype and evolving specification with public RFCs, schemas, conformance fixtures, and independent implementation challenges."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How can ĀML be independently tested?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Start with the public proof, reproduce the behavior locally, inspect the claims ledger, run conformance paths, or attempt an independent verifier without importing the reference implementation."
+        }
+      }
+    ]
+  }
+  </script>
+  <style>
+    :root{color-scheme:dark;--bg:#07111f;--panel:#0d1a2c;--text:#eef6ff;--muted:#a9bad0;--line:#243957;--accent:#7df9ff;--accent2:#9cffb0;--gold:#f2ce72}
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#07111f 0%,#091522 100%);color:var(--text);font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    main{width:min(980px,calc(100% - 32px));margin:0 auto;padding:56px 0 80px}
+    .eyebrow{font-weight:700;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;font-size:.82rem}
+    h1{font-size:clamp(2.4rem,7vw,5.6rem);line-height:1.02;margin:.3rem 0 1rem;letter-spacing:-.045em}
+    h2{font-size:clamp(1.5rem,3.6vw,2.25rem);line-height:1.2;margin:2.6rem 0 .8rem}
+    p{max-width:820px}
+    .lead{font-size:clamp(1.15rem,2.4vw,1.5rem);color:#d9e8f8}
+    .quote{font-size:clamp(1.25rem,3vw,1.8rem);font-weight:700;border-left:4px solid var(--gold);padding:.5rem 0 .5rem 1.1rem;margin:2rem 0}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:1.4rem 0}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+    .card strong{display:block;margin-bottom:.35rem}
+    code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    pre{background:#050c15;border:1px solid var(--line);padding:16px;border-radius:14px;overflow:auto}
+    a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:3px}
+    .cta{display:flex;gap:12px;flex-wrap:wrap;margin:1.5rem 0}
+    .button{display:inline-block;border:1px solid var(--accent);border-radius:999px;padding:.7rem 1rem;text-decoration:none;font-weight:700}
+    .button.secondary{border-color:var(--line);color:var(--text)}
+    .boundary{border:1px solid var(--gold);border-radius:16px;padding:18px;margin-top:2rem}
+    footer{margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--line);color:var(--muted)}
+  </style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">ĀML™ — ĀRU Meaning Language™</div>
+  <h1>What if an AI interface had to explain why it was allowed to exist?</h1>
+  <p class="lead">ĀML is a working research prototype for making the meaning, policy, authority, provenance, and evidence behind AI-generated interfaces more inspectable before and after rendering.</p>
+
+  <div class="quote">HTML tells the browser what to display. ĀML tells the system why it deserves to be displayed.</div>
+
+  <div class="cta">
+    <a class="button" href="proof.html?attention=5&amp;restoration=1&amp;lang=en">Run the live proof</a>
+    <a class="button secondary" href="https://github.com/aruintelligence/aml-core">Open the GitHub repository</a>
+    <a class="button secondary" href="view-meaning.html">Open View Meaning™</a>
+  </div>
+
+  <h2>The category: AI interface accountability</h2>
+  <p>Generative and agentic systems can now select, assemble, personalize, rank, or generate human-facing interfaces dynamically. Traditional frontend stacks are excellent at representation and rendering, but the pixels alone may not tell an evaluator what purpose was declared, which policy ran, what authority existed, or why output was allowed or suppressed.</p>
+  <p>ĀML explores an <strong>AI Interface Firewall™</strong>: a decision boundary between machine/app intent and the rendered interface.</p>
+
+  <pre>AI / app intent
+      ↓
+ĀML meaning + policy layer
+      ↓
+ALLOW / SUPPRESS / explain / receipt
+      ↓
+HTML / React / existing UI</pre>
+
+  <h2>What exists in the public prototype</h2>
+  <div class="grid">
+    <div class="card"><strong>Meaning + policy</strong>Lexer/parser, AST, Abstract Meaning Tree, semantic diffs, policy evaluation, policy consensus, and pluggable profiles.</div>
+    <div class="card"><strong>Accountability evidence</strong>Execution receipts, signed evidence experiments, provenance, audit structures, and verification paths.</div>
+    <div class="card"><strong>Human-context controls</strong>Consent, privacy, accessibility, and declared attention/restoration policy surfaces.</div>
+    <div class="card"><strong>Adoption bridges</strong>Existing-HTML annotations, an <code>&lt;aml-gate&gt;</code> custom element, React-compatible paths, HTTP service, and GitHub Action integration.</div>
+    <div class="card"><strong>View Meaning™</strong>A human-readable inspection concept for the declared purpose, policy, decision, rationale, and receipt behind an interface result.</div>
+    <div class="card"><strong>Meaning Gate™</strong>CI-oriented semantic checks for generated or changed interfaces.</div>
+  </div>
+
+  <h2>Try the shortest proof</h2>
+  <p>Open the public proof with <code>attention=5</code> and <code>restoration=1</code>. The reference prototype applies:</p>
+  <pre>render_allowed = restoration_value &gt;= attention_cost</pre>
+  <p>Change <code>restoration_value</code> from <code>1</code> to <code>5</code>. Inspect the decision and receipt. Then reproduce the behavior locally from the public repository.</p>
+
+  <div class="cta">
+    <a class="button" href="proof.html?attention=5&amp;restoration=1&amp;lang=en">Try the proof</a>
+    <a class="button secondary" href="https://github.com/aruintelligence/aml-core/blob/main/docs/TRY_AML_10_MINUTES.md">10-minute reproduction</a>
+    <a class="button secondary" href="https://github.com/aruintelligence/aml-core/blob/main/CHALLENGES.md">Public challenge map</a>
+  </div>
+
+  <h2>AML and HTML are different layers</h2>
+  <p>AML does not require teams to abandon HTML, CSS, JavaScript, React, Next.js, or browser infrastructure. A useful mental model is:</p>
+  <pre>ĀML = meaning + policy + accountability decision layer
+HTML = rendering and interface substrate</pre>
+  <p>The relevant question is not whether AML replaces HTML. It is whether AI-generated interfaces benefit from explicit, machine-readable meaning and evidence around the decision to render.</p>
+
+  <h2>Independent verification is part of the design</h2>
+  <p>AML publishes a claims ledger, verification guide, conformance fixtures, RFCs, schemas, protocol vectors, security documentation, public challenge paths, and independent implementation challenges. PASS, FAIL, and MIXED reports can all improve the specification when they are reproducible.</p>
+  <div class="grid">
+    <div class="card"><strong>Claims ledger</strong><a href="https://github.com/aruintelligence/aml-core/blob/main/CLAIMS.md">SHIPPED / SPEC / DRAFT / PITCH</a></div>
+    <div class="card"><strong>Verify</strong><a href="https://github.com/aruintelligence/aml-core/blob/main/VERIFY.md">Verify AML without trusting AML</a></div>
+    <div class="card"><strong>Challenges</strong><a href="https://github.com/aruintelligence/aml-core/blob/main/CHALLENGES.md">Try to reproduce or break it</a></div>
+    <div class="card"><strong>Standards path</strong><a href="https://github.com/aruintelligence/aml-core/blob/main/STANDARDIZATION.md">Specifications and independent implementation</a></div>
+  </div>
+
+  <h2>Discovery paths</h2>
+  <div class="grid">
+    <div class="card"><strong>AI / agent builders</strong><a href="https://github.com/aruintelligence/aml-core/blob/main/publications/AML_FOR_AI_AGENTS.md">AML for AI Agents</a></div>
+    <div class="card"><strong>Developers</strong><a href="https://github.com/aruintelligence/aml-core/blob/main/publications/AML_FOR_DEVELOPERS.md">AML for Developers</a></div>
+    <div class="card"><strong>Enterprise</strong><a href="https://github.com/aruintelligence/aml-core/blob/main/publications/AML_FOR_ENTERPRISE.md">AML for Enterprise</a></div>
+    <div class="card"><strong>Research / standards</strong><a href="https://github.com/aruintelligence/aml-core/blob/main/publications/AML_STANDARDS_AND_RESEARCH.md">AML Standards and Research</a></div>
+    <div class="card"><strong>Generative UI governance</strong><a href="https://github.com/aruintelligence/aml-core/blob/main/publications/GENERATIVE_UI_GOVERNANCE.md">Read the governance brief</a></div>
+    <div class="card"><strong>AML vs. HTML</strong><a href="https://github.com/aruintelligence/aml-core/blob/main/publications/AML_VS_HTML.md">Read the comparison</a></div>
+  </div>
+
+  <h2>Machine-readable project discovery</h2>
+  <p>Automated evaluators and AI systems can use the project discovery files rather than infer project claims from snippets:</p>
+  <div class="cta">
+    <a class="button secondary" href="llms.txt">llms.txt</a>
+    <a class="button secondary" href="aml-discovery.json">aml-discovery.json</a>
+    <a class="button secondary" href=".well-known/aml.json">.well-known/aml.json</a>
+  </div>
+
+  <div class="boundary">
+    <strong>Evidence boundary</strong>
+    <p>ĀML is a working research prototype and evolving specification. This page does not represent AML as a ratified global standard, universally adopted technology, independently validated scientific measure of human cognition or wellbeing, or third-party-certified system. Technical conformance does not automatically grant official ĀRU authorization, endorsement, partnership, certification, OEM rights, or trademark rights.</p>
+  </div>
+
+  <footer>
+    <p>ĀML™ / ĀRU Meaning Language™ is developed by ĀRU Intelligence Inc. Open-source code is governed by the repository license; official marks and commercial authorization are separate.</p>
+  </footer>
+</main>
+</body>
+</html>
