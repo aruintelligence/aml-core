@@ -1,0 +1,134 @@
+{
+  "schema": "aru-aml-implementation-matrix/1",
+  "project": "ĀML — ĀRU Meaning Language",
+  "repository": "https://github.com/aruintelligence/aml-core",
+  "status": "working research prototype and evolving specification",
+  "standards_status": "not a ratified industry or Internet standard",
+  "generated_from_project_evidence": true,
+  "entries": [
+    {
+      "id": "aml-js-reference",
+      "name": "ĀML JavaScript reference runtime",
+      "ownership": "project-controlled",
+      "independence": "reference",
+      "language": "JavaScript",
+      "source": "https://github.com/aruintelligence/aml-core",
+      "role": [
+        "reference compiler/runtime",
+        "CLI/service surfaces",
+        "browser integration",
+        "accountability and policy execution"
+      ],
+      "contracts": [
+        "broad reference implementation surface; consult repository specifications for exact contract boundaries"
+      ],
+      "canonical_vectors_tested": true,
+      "negative_tests_present": true,
+      "evidence_level": "E2",
+      "interoperability_level": "I0",
+      "external_witness": false,
+      "third_party_adoption": false,
+      "notes": "Project-controlled reference implementation. Do not count its self-tests as independent replication."
+    },
+    {
+      "id": "aml-python-witness-reference",
+      "name": "Dependency-Free Python Witness Verifier",
+      "ownership": "project-controlled",
+      "independence": "separate-reference-path",
+      "language": "Python",
+      "source": "https://github.com/aruintelligence/aml-core/tree/main/independent/python",
+      "role": [
+        "reference interoperability verifier"
+      ],
+      "contracts": [
+        "aml-witness-bundle/1",
+        "sorted-json-v1 safe-domain canonicalization",
+        "receipt SHA-256 integrity",
+        "browser-evidence SHA-256 integrity",
+        "witness-bundle SHA-256 integrity",
+        "challenge binding and expiry",
+        "P-256 public-JWK validation and fingerprinting",
+        "raw P-256 ECDSA/SHA-256 verification"
+      ],
+      "canonical_vectors_tested": true,
+      "negative_tests_present": true,
+      "evidence_level": "E2",
+      "interoperability_level": "I1",
+      "external_witness": false,
+      "third_party_adoption": false,
+      "notes": "Separately written in Python without importing AML JavaScript verifier internals for the stated witness contract, but maintained inside aml-core and therefore not an external independent witness."
+    },
+    {
+      "id": "aml-go-witness-reference",
+      "name": "Go Witness Verifier",
+      "ownership": "project-controlled",
+      "independence": "separate-reference-path",
+      "language": "Go",
+      "source": "https://github.com/aruintelligence/aml-core/tree/main/independent/go",
+      "role": [
+        "reference interoperability verifier"
+      ],
+      "contracts": [
+        "aml-witness-bundle/1",
+        "sorted-json-v1 safe-domain canonicalization",
+        "receipt SHA-256 integrity",
+        "browser-evidence SHA-256 integrity",
+        "witness-bundle SHA-256 integrity",
+        "challenge binding and expiry",
+        "P-256 public-JWK validation and fingerprinting",
+        "raw P-256 ECDSA/SHA-256 verification"
+      ],
+      "canonical_vectors_tested": true,
+      "negative_tests_present": true,
+      "evidence_level": "E2",
+      "interoperability_level": "I1",
+      "external_witness": false,
+      "third_party_adoption": false,
+      "notes": "Separately written in Go without importing JavaScript or Python verifier internals for the stated witness contract, but maintained inside aml-core and therefore not an external independent witness."
+    }
+  ],
+  "open_external_targets": [
+    {
+      "issue": 1,
+      "title": "Independent AML conformance implementation",
+      "url": "https://github.com/aruintelligence/aml-core/issues/1"
+    },
+    {
+      "issue": 15,
+      "title": "Third-runtime challenge: verify the AML witness vector outside JavaScript and Python",
+      "url": "https://github.com/aruintelligence/aml-core/issues/15"
+    },
+    {
+      "issue": 56,
+      "title": "Independent implementation challenge: verify ĀML semantic release proofs without importing aml-core",
+      "url": "https://github.com/aruintelligence/aml-core/issues/56"
+    },
+    {
+      "issue": 88,
+      "title": "Call for independent verification: test ĀML, break it, publish what you find",
+      "url": "https://github.com/aruintelligence/aml-core/issues/88"
+    }
+  ],
+  "compatibility_levels": [
+    "Core",
+    "Accountable",
+    "Federated",
+    "Verifiable",
+    "Governed"
+  ],
+  "interoperability_levels": {
+    "I0": "one implementation with internal tests",
+    "I1": "separate implementation path under project control",
+    "I2": "external independent reproduction",
+    "I3": "external independent implementation",
+    "I4": "cross-implementation artifact exchange",
+    "I5": "negotiated interoperability",
+    "I6": "repeated multi-party interoperability"
+  },
+  "claim_boundaries": [
+    "Project-controlled Python and Go implementations are not external witnesses or third-party adoption.",
+    "Passing one contract does not imply whole-language compatibility.",
+    "Technical interoperability does not imply official ĀRU authorization, certification, regulatory compliance, scientific validation, market adoption, or standards-body approval.",
+    "Unknown implementation support must not be inferred."
+  ]
+}
