@@ -10,6 +10,8 @@ It is deliberately plain HTML so you can answer one question before reading the 
 
 Download or clone this folder and open `index.html` in a modern browser with internet access.
 
+Prefer a packaged copy? Open the [`AML Starter Artifact`](https://github.com/aruintelligence/aml-core/actions/workflows/starter-artifact.yml) workflow, choose a successful run, and download the `aml-ai-interface-firewall-starter-*` artifact. Each artifact contains the exact starter files plus `manifest.json` and `SHA256SUMS` so the downloaded bytes can be checked independently.
+
 The page loads the published browser bridge:
 
 ```html
@@ -56,6 +58,12 @@ For existing DOM without a wrapper, see [`docs/HTML_BRIDGE.md`](../../docs/HTML_
 For the broader adoption map, see [`ADOPT_AML.md`](../../ADOPT_AML.md).
 
 For independent verification, see [`VERIFY.md`](../../VERIFY.md).
+
+## Artifact integrity
+
+The repository builds the downloadable starter from this directory in CI. The builder copies only `README.md` and `index.html`, calculates a SHA-256 for each file, writes a sorted `SHA256SUMS`, computes an aggregate root over that exact material, and records the result in `manifest.json` under schema `aml-ai-interface-firewall-starter/1`.
+
+That makes the downloadable starter reproducible and byte-checkable. It does not turn a GitHub Actions artifact into an external witness or independent certification.
 
 ## What this starter proves — and what it does not
 
