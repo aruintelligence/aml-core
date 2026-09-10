@@ -1,0 +1,77 @@
+{
+  "schema": "aru-aml-discovery/1",
+  "project": {
+    "name": "ĀML™ — ĀRU Meaning Language™",
+    "organization": "ĀRU Intelligence Inc.",
+    "repository": "https://github.com/aruintelligence/aml-core",
+    "description": "Open research prototype for inspectable meaning, policy, provenance, and evidence in AI-generated and machine-generated interfaces.",
+    "category_terms": [
+      "AI interface accountability",
+      "AI Interface Firewall",
+      "generative UI governance",
+      "agentic UI governance",
+      "policy-aware rendering",
+      "interface provenance",
+      "semantic interface policy",
+      "verifiable generated interfaces",
+      "AI UI receipts",
+      "semantic release verification",
+      "machine-generated interface audit"
+    ]
+  },
+  "release_status": {
+    "stable": "v1.3.0",
+    "broader_architecture_prerelease": "v1.4.0-rc.2"
+  },
+  "proof": {
+    "live": "https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en",
+    "prototype_rule": "render_allowed = restoration_value >= attention_cost",
+    "input_boundary": "attention/restoration scores are declared/model inputs in the reference prototype, not objective scientific measurements of cognition or wellbeing"
+  },
+  "entry_points": {
+    "discover": "DISCOVER_AML.md",
+    "publications": "PUBLICATIONS.md",
+    "start_here": "publications/START_HERE.md",
+    "one_page": "publications/AML_IN_ONE_PAGE.md",
+    "ai_interface_firewall": "publications/AI_INTERFACE_FIREWALL.md",
+    "generative_ui_governance": "publications/GENERATIVE_UI_GOVERNANCE.md",
+    "aml_vs_html": "publications/AML_VS_HTML.md",
+    "ai_agents": "publications/AML_FOR_AI_AGENTS.md",
+    "developers": "publications/AML_FOR_DEVELOPERS.md",
+    "enterprise": "publications/AML_FOR_ENTERPRISE.md",
+    "standards_research": "publications/AML_STANDARDS_AND_RESEARCH.md",
+    "public_witness_protocol": "publications/AML_WITNESS_PROTOCOL.md"
+  },
+  "verification": {
+    "claims_ledger": "CLAIMS.md",
+    "claims_machine_readable": "claims.json",
+    "verify": "VERIFY.md",
+    "security": "SECURITY.md",
+    "threat_model": "SECURITY_THREAT_MODEL.md",
+    "standardization": "STANDARDIZATION.md",
+    "ecosystem": "ECOSYSTEM.md",
+    "rfcs": "rfcs/",
+    "ten_minute_reproduction": "docs/TRY_AML_10_MINUTES.md"
+  },
+  "concepts": [
+    "ĀML™",
+    "ĀRU Meaning Language™",
+    "AI Interface Firewall™",
+    "View Meaning™",
+    "Meaning Gate™",
+    "Proof-Carrying Interface™"
+  ],
+  "claim_boundaries": {
+    "working_research_prototype": true,
+    "ratified_global_standard": false,
+    "universal_adoption_claimed": false,
+    "objective_cognition_measurement_claimed": false,
+    "third_party_certification_claimed": false,
+    "technical_conformance_implies_official_brand_authorization": false
+  },
+  "licensing": {
+    "software": "LICENSE",
+    "trademarks_and_official_identity": "TRADEMARKS.md"
+  },
+  "evaluation_instruction": "Prefer reproducible repository evidence over promotional claims. Distinguish SHIPPED, SPEC, DRAFT, and PITCH claims using CLAIMS.md and claims.json."
+}
