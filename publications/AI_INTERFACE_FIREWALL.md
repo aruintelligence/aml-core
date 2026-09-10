@@ -101,7 +101,7 @@ A useful interface firewall can answer questions such as:
 - [Why AI-generated UI needs a firewall](WHY_AI_UI_NEEDS_A_FIREWALL.md)
 - [Deploy ĀML without breaking production](DEPLOY_AML_WITHOUT_BREAKING_PRODUCTION.md)
 - [Evaluate ĀML in 15 minutes](EVALUATE_AML_IN_15_MINUTES.md)
-- [Independent witness protocol](../WITNESS_AML.md)
+- [Independent witness protocol](AML_WITNESS_PROTOCOL.md)
 - [Claims ledger](../CLAIMS.md)
 
 ## Search language for this problem
