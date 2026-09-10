@@ -1,0 +1,34 @@
+{
+  "schema": "aru-aml-external-evidence-registry/1",
+  "project": "ĀML — ĀRU Meaning Language",
+  "canonical_repository": "https://github.com/aruintelligence/aml-core",
+  "status": "public registry",
+  "external_evidence_count": 0,
+  "allowed_evidence_levels": ["E3", "E4", "E5", "E6", "E7"],
+  "allowed_results": ["PASS", "FAIL", "MIXED", "UNSUPPORTED"],
+  "records": [],
+  "acceptance": {
+    "requires_public_evidence_url": true,
+    "requires_source_outside_canonical_repository": true,
+    "requires_independence_statement": true,
+    "requires_scope_boundary": true,
+    "requires_exact_target_when_applicable": true,
+    "requires_reproducibility_information": true,
+    "negative_results_allowed": true,
+    "project_controlled_evidence_allowed": false,
+    "automatic_level_grant_from_issue_submission": false
+  },
+  "specialized_registries": {
+    "verifier_witnesses": "WITNESSES.json"
+  },
+  "submission_paths": {
+    "benchmark": ".github/ISSUE_TEMPLATE/independent-benchmark-report.yml",
+    "implementation_interoperability": ".github/ISSUE_TEMPLATE/implementation-interoperability-report.yml",
+    "general_verification": ".github/ISSUE_TEMPLATE/aml-independent-verification.md",
+    "external_verifier": ".github/ISSUE_TEMPLATE/external-verifier-report.yml",
+    "independent_replication": ".github/ISSUE_TEMPLATE/independent-replication.yml",
+    "witness_reproduction": ".github/ISSUE_TEMPLATE/witness-reproduction.yml"
+  },
+  "claim_boundary": "A registry record is a citation to scoped external evidence, not a certificate. It does not automatically establish standards-body approval, certification, regulatory compliance, scientific validation, market adoption, official ĀRU authorization, reporter endorsement, or correctness outside the tested scope.",
+  "note": "The registry intentionally begins empty. No project-controlled artifact is promoted to E3+ merely because it is public."
+}
