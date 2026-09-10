@@ -102,7 +102,7 @@ That makes AML relevant to AI-generated UI, agentic interfaces, adaptive interfa
 - [View Meaning™](VIEW_MEANING_EXPLAINER.md)
 - [Meaning Gate™](MEANING_GATE_EXPLAINER.md)
 - [Claims ledger](../CLAIMS.md)
-- [Independent witness protocol](../WITNESS_AML.md)
+- [Independent witness protocol](AML_WITNESS_PROTOCOL.md)
 
 ## Evidence boundary
 
