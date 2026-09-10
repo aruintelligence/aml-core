@@ -29,6 +29,8 @@ jobs:
         run: npm install --ignore-scripts
       - name: Check local documentation links
         run: npm run check:links
+      - name: Guard public machine-readable contracts
+        run: node scripts/check-public-contracts.mjs > "${RUNNER_TEMP}/aml-public-contracts.json"
       - name: Run automated tests
         run: npm test
       - name: Guard deployment rollout surfaces
