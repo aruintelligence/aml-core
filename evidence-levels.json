@@ -1,0 +1,27 @@
+{
+  "schema": "aru-aml-evidence-levels/1",
+  "project": "ĀML™ — ĀRU Meaning Language™",
+  "principle": "Use the strongest label the evidence actually earns, and no stronger.",
+  "levels": [
+    {"id":"E0","name":"concept-or-proposal","project_controlled":true,"description":"Draft architecture, proposed use cases, research questions, and candidate protocol directions."},
+    {"id":"E1","name":"project-authored-demonstration","project_controlled":true,"description":"Reference demos, proof pages, example receipts, and project-maintained reproductions."},
+    {"id":"E2","name":"automated-repository-verification","project_controlled":true,"description":"CI, conformance, deterministic replay, tamper rejection, claims guards, package rehearsal, and release-coherence checks."},
+    {"id":"E3","name":"independent-reproduction","project_controlled":false,"description":"An external evaluator reproduces a defined result in an external environment."},
+    {"id":"E4","name":"independent-implementation","project_controlled":false,"description":"A separate implementation consumes public specifications, schemas, fixtures, or vectors without importing reference internals for the tested behavior."},
+    {"id":"E5","name":"external-pilot-evidence","project_controlled":false,"description":"A real external team evaluates AML in a bounded shadow, canary, or controlled pilot."},
+    {"id":"E6","name":"production-deployment-evidence","project_controlled":false,"description":"A documented external production environment uses AML for a defined scope."},
+    {"id":"E7","name":"multi-party-ecosystem-evidence","project_controlled":false,"description":"Multiple independent implementations, deployments, or evaluators produce compatible or comparable scoped results."}
+  ],
+  "separate_axes": [
+    "standards-body status",
+    "certification",
+    "regulatory approval",
+    "legal compliance",
+    "scientific validation",
+    "official ĀRU authorization",
+    "market adoption"
+  ],
+  "negative_results": "FAIL and MIXED results are valid evidence and should remain citable when reproducible.",
+  "canonical_human_readable": "EVIDENCE.md",
+  "report_template": "docs/EVIDENCE_REPORT_TEMPLATE.md"
+}
