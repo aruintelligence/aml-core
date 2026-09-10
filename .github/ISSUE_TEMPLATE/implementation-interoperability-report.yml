@@ -1,0 +1,161 @@
+name: AML implementation / interoperability report
+description: Submit an independent implementation, reproduction, or cross-runtime interoperability result.
+title: "[INTEROP] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report an AML implementation or interoperability result precisely enough to reproduce. PASS, FAIL, MIXED, and UNSUPPORTED results are welcome. Passing one contract does not imply whole-language compatibility, adoption, certification, standards approval, or official ARU authorization.
+
+  - type: input
+    id: source_url
+    attributes:
+      label: Public implementation source URL
+      placeholder: https://...
+    validations:
+      required: true
+
+  - type: input
+    id: report_url
+    attributes:
+      label: Public report / evidence URL
+      placeholder: https://...
+    validations:
+      required: true
+
+  - type: textarea
+    id: independence
+    attributes:
+      label: Independence and ownership statement
+      description: State who controls the implementation and whether it imports, executes, wraps, copies generated output from, or otherwise depends on aml-core for the behavior claimed as independently implemented.
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation identity
+      description: Include implementation name, exact commit/tag, language, runtime/compiler version, OS/architecture, and license.
+    validations:
+      required: true
+
+  - type: input
+    id: aml_target
+    attributes:
+      label: Exact AML specification target
+      description: Provide the aml-core release/commit and the public contract or specification version used.
+      placeholder: aml-core commit/release; contract/version
+    validations:
+      required: true
+
+  - type: textarea
+    id: contracts
+    attributes:
+      label: Contracts implemented and tested
+      description: List each contract separately with PASS / FAIL / MIXED / UNSUPPORTED and evidence. Do not claim whole-language compatibility from one passing contract.
+    validations:
+      required: true
+
+  - type: textarea
+    id: vectors
+    attributes:
+      label: Canonical / golden vectors
+      description: Identify exact vector versions/hashes, expected output, actual output, and result. Write NOT APPLICABLE only when the tested contract has no relevant vectors.
+    validations:
+      required: true
+
+  - type: textarea
+    id: negative_tests
+    attributes:
+      label: Negative / tamper tests
+      description: Document deliberately invalid cases and whether the implementation rejected them as required.
+    validations:
+      required: true
+
+  - type: textarea
+    id: exchange
+    attributes:
+      label: Cross-implementation artifact exchange
+      description: If tested, identify producer, consumer, exact artifact/contract, commands, artifact hash, and result. Otherwise write NOT TESTED.
+    validations:
+      required: true
+
+  - type: textarea
+    id: ambiguities
+    attributes:
+      label: Specification disagreements or ambiguities
+      description: Identify anything that could not be reproduced from the public contract without reading reference internals. NONE is acceptable.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: overall_result
+    attributes:
+      label: Overall result
+      options:
+        - PASS
+        - FAIL
+        - MIXED
+        - UNSUPPORTED
+    validations:
+      required: true
+
+  - type: dropdown
+    id: evidence_level
+    attributes:
+      label: Requested evidence level
+      description: See EVIDENCE.md. This is a request subject to review.
+      options:
+        - E2 — Automated project verification
+        - E3 — Independent reproduction
+        - E4 — Independent implementation
+        - E5 — External pilot
+        - E6 — Production deployment
+        - E7 — Multi-party ecosystem evidence
+    validations:
+      required: true
+
+  - type: dropdown
+    id: interoperability_level
+    attributes:
+      label: Requested interoperability level
+      description: See INTEROPERABILITY.md. This is a request subject to review.
+      options:
+        - I0 — One implementation / internal tests
+        - I1 — Separate implementation path under project control
+        - I2 — External independent reproduction
+        - I3 — External independent implementation
+        - I4 — Cross-implementation artifact exchange
+        - I5 — Negotiated interoperability
+        - I6 — Repeated multi-party interoperability
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Exact reproduction commands
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: boundary
+    attributes:
+      label: Claim boundary
+      description: State exactly what this evidence supports and what it does not support.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Evidence acknowledgements
+      options:
+        - label: I understand that requested E/I levels are not automatically granted by submitting this issue.
+          required: true
+        - label: I understand that passing one contract does not imply whole-language compatibility.
+          required: true
+        - label: I have not represented this report as standards-body approval, certification, market adoption, regulatory compliance, scientific validation, or official ARU authorization without separate evidence.
+          required: true
