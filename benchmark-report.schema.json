@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/benchmark-report.schema.json",
+  "title": "ĀML Benchmark Report",
+  "description": "Machine-readable envelope for reproducible AML benchmark reports. Performance results do not imply adoption, certification, standards status, scientific validation, regulatory compliance, or official authorization.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema", "target", "implementation", "environment", "method", "fixtures", "results", "correctness"],
+  "properties": {
+    "schema": { "const": "aru-aml-benchmark-report/1" },
+    "target": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["repository", "commit"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "release": { "type": ["string", "null"] },
+        "commit": { "type": "string", "minLength": 7 }
+      }
+    },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["name", "ownership", "language", "runtime"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "ownership": { "enum": ["reference", "independent"] },
+        "language": { "type": "string", "minLength": 1 },
+        "runtime": { "type": "string", "minLength": 1 },
+        "source_url": { "type": ["string", "null"], "format": "uri" }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["os", "arch"],
+      "properties": {
+        "os": { "type": "string", "minLength": 1 },
+        "arch": { "type": "string", "minLength": 1 },
+        "cpu": { "type": ["string", "null"] },
+        "memory_bytes": { "type": ["integer", "null"], "minimum": 0 },
+        "browser": { "type": ["string", "null"] },
+        "virtualized": { "type": ["boolean", "null"] }
+      }
+    },
+    "method": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["benchmark_class", "warmup_iterations", "measured_iterations", "runs"],
+      "properties": {
+        "benchmark_class": {
+          "enum": [
+            "compiler-throughput",
+            "semantic-policy-analysis",
+            "decision-receipt-generation",
+            "verification-tamper-rejection",
+            "protocol-interoperability",
+            "browser-integration",
+            "http-service",
+            "end-to-end"
+          ]
+        },
+        "warmup_iterations": { "type": "integer", "minimum": 0 },
+        "measured_iterations": { "type": "integer", "minimum": 1 },
+        "runs": { "type": "integer", "minimum": 1 },
+        "concurrency": { "type": ["integer", "null"], "minimum": 1 },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+    "fixtures": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "sha256": { "type": ["string", "null"], "pattern": "^[a-fA-F0-9]{64}$" },
+          "bytes": { "type": ["integer", "null"], "minimum": 0 }
+        }
+      }
+    },
+    "results": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["fixture", "status"],
+        "properties": {
+          "fixture": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["PASS", "FAIL", "MIXED", "UNSUPPORTED"] },
+          "median_ms": { "type": ["number", "null"], "minimum": 0 },
+          "p95_ms": { "type": ["number", "null"], "minimum": 0 },
+          "average_ms": { "type": ["number", "null"], "minimum": 0 },
+          "min_ms": { "type": ["number", "null"], "minimum": 0 },
+          "max_ms": { "type": ["number", "null"], "minimum": 0 },
+          "operations_per_second": { "type": ["number", "null"], "minimum": 0 },
+          "failures": { "type": ["integer", "null"], "minimum": 0 },
+          "raw_samples_ms": {
+            "type": ["array", "null"],
+            "items": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "correctness": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["conformance_checked", "negative_tests_checked"],
+      "properties": {
+        "conformance_checked": { "type": "boolean" },
+        "conformance_status": { "enum": ["PASS", "FAIL", "MIXED", "NOT_CHECKED"] },
+        "negative_tests_checked": { "type": "boolean" },
+        "negative_test_status": { "enum": ["PASS", "FAIL", "MIXED", "NOT_CHECKED"] },
+        "details_url": { "type": ["string", "null"], "format": "uri" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "requested_level": { "enum": ["E0", "E1", "E2", "E3", "E4", "E5", "E6", "E7"] },
+        "report_url": { "type": ["string", "null"], "format": "uri" },
+        "independence_statement": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
