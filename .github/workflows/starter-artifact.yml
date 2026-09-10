@@ -1,0 +1,39 @@
+name: AML Starter Artifact
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  starter-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Build exact starter artifact
+        run: node scripts/build-ai-interface-firewall-starter.mjs
+      - name: Smoke-check copied starter
+        run: |
+          test -s dist/ai-interface-firewall-starter/index.html
+          test -s dist/ai-interface-firewall-starter/README.md
+          test -s dist/ai-interface-firewall-starter/manifest.json
+          test -s dist/ai-interface-firewall-starter/SHA256SUMS
+          grep -F 'aml-gate.js' dist/ai-interface-firewall-starter/index.html
+          grep -F 'aml-ai-interface-firewall-starter/1' dist/ai-interface-firewall-starter/manifest.json
+      - name: Upload audited starter
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-ai-interface-firewall-starter-${{ github.sha }}
+          path: dist/ai-interface-firewall-starter/
+          if-no-files-found: error
+          retention-days: 30
