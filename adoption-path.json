@@ -1,0 +1,76 @@
+{
+  "schema": "aru-aml-adoption-path/1",
+  "project": {
+    "name": "ĀML™ — ĀRU Meaning Language™",
+    "repository": "https://github.com/aruintelligence/aml-core",
+    "status": "working research prototype and evolving specification"
+  },
+  "principle": "Do not begin with a platform rewrite. Begin with a falsifiable interface decision.",
+  "stages": [
+    {
+      "id": 0,
+      "name": "understand",
+      "goal": "Understand AML's category and claim boundary before evaluation.",
+      "entrypoints": ["what-is-aml.html", "DISCOVER_AML.md", "publications/AML_IN_ONE_PAGE.md", "publications/AML_VS_HTML.md", "publications/AI_INTERFACE_FIREWALL.md"]
+    },
+    {
+      "id": 1,
+      "name": "reproduce-one-decision",
+      "goal": "Reproduce a deterministic ALLOW/SUPPRESS decision and inspect the evidence.",
+      "entrypoints": ["https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en", "docs/TRY_AML_10_MINUTES.md"]
+    },
+    {
+      "id": 2,
+      "name": "evaluate-contract",
+      "goal": "Test repository claims and software behavior before discussing deployment.",
+      "entrypoints": ["CLAIMS.md", "VERIFY.md", "CHALLENGES.md", "publications/AML_WITNESS_PROTOCOL.md", "conformance/"]
+    },
+    {
+      "id": 3,
+      "name": "integrate-narrowly",
+      "goal": "Integrate one bounded surface without a platform rewrite.",
+      "entrypoints": ["publications/DEVELOPER_INTEGRATION_BRIEF.md", "docs/OUT_OF_THE_BOX.md", "docs/HTML_BRIDGE.md", "docs/AML_GATE_ELEMENT.md", "protocol/aml-http.openapi.yaml"]
+    },
+    {
+      "id": 4,
+      "name": "shadow",
+      "goal": "Observe AML decisions without changing production behavior.",
+      "required_evidence": ["input snapshot", "purpose", "policy/profile", "AML decision", "production decision", "receipt/hash", "disagreement review", "latency", "ambiguity log"]
+    },
+    {
+      "id": 5,
+      "name": "canary",
+      "goal": "Enforce AML only on a reversible bounded surface with explicit rollback criteria.",
+      "entrypoints": ["publications/DEPLOY_AML_WITHOUT_BREAKING_PRODUCTION.md"]
+    },
+    {
+      "id": 6,
+      "name": "independent-verification",
+      "goal": "Obtain reproduction outside the implementation path.",
+      "entrypoints": [
+        "https://github.com/aruintelligence/aml-core/issues/1",
+        "https://github.com/aruintelligence/aml-core/issues/15",
+        "https://github.com/aruintelligence/aml-core/issues/56",
+        "https://github.com/aruintelligence/aml-core/issues/88"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "production-readiness",
+      "goal": "Decide whether the evaluated deployment is operationally and security-ready.",
+      "entrypoints": ["docs/SECURITY_EVALUATION_CHECKLIST.md", "SECURITY.md", "SECURITY_THREAT_MODEL.md"]
+    },
+    {
+      "id": 8,
+      "name": "publish-evidence",
+      "goal": "Publish scoped results without turning a pilot into a universal claim."
+    }
+  ],
+  "nonclaims": [
+    "AML is not represented as a ratified global standard.",
+    "AML is not represented as universally adopted infrastructure.",
+    "AML does not claim objective scientific measurement of cognition or wellbeing.",
+    "AML does not replace a production security stack.",
+    "AML does not guarantee safe, ethical, legal, or compliant interfaces."
+  ]
+}
