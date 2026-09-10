@@ -31,6 +31,8 @@ jobs:
         run: npm run check:links
       - name: Guard public machine-readable contracts
         run: node scripts/check-public-contracts.mjs > "${RUNNER_TEMP}/aml-public-contracts.json"
+      - name: Enforce external evidence registry integrity
+        run: node scripts/check-external-evidence-registry.mjs > "${RUNNER_TEMP}/aml-external-evidence-registry.json"
       - name: Run automated tests
         run: npm test
       - name: Guard deployment rollout surfaces
