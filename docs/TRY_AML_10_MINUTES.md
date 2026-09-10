@@ -47,17 +47,28 @@ restoration_value: 6
 
 Compile again. The same element should now be allowed under the prototype rule.
 
-## 5. Reproduce locally
+## 5. Reproduce locally with one command
 
 ```bash
 git clone https://github.com/aruintelligence/aml-core.git
 cd aml-core
 npm install --ignore-scripts
+npm run proof
+```
+
+`npm run proof` performs two checks:
+
+1. replays the same fixed intent twice and requires identical receipt, decision, and output hashes;
+2. runs the balanced ALLOW/SUPPRESS flood fixtures used to catch one-sided or silently permissive behavior.
+
+A nonzero exit code is a failed reproduction and should be reported as such. Do not convert a failed run into a PASS because another project test succeeded.
+
+For manual comparison, the command is equivalent to:
+
+```bash
 node demos/undeniable-proof/replay-proof.mjs
 node scripts/check-flood-fixtures.js
 ```
-
-The replay proof executes the same fixed intent twice and requires identical receipt, decision, and output hashes.
 
 ## 6. Inspect meaning
 
@@ -65,6 +76,10 @@ https://aruintelligence.github.io/aml-core/view-meaning.html
 
 ## 7. File your result
 
-If you reproduce it, disagree with it, or break it, open a GitHub issue and include the exact input and observed decision.
+Use the canonical independent-verification issue:
 
-ĀML is a working prototype, not a ratified global standard. Its attention/restoration values are model inputs, not objective measures of human cognition.
+https://github.com/aruintelligence/aml-core/issues/88
+
+Report **PASS / FAIL / MIXED** and include the exact commit or release, environment, command, and observed output. Negative results are useful.
+
+ĀML is a working prototype, not a ratified global standard. Its attention/restoration values are declared or model-supplied inputs, not objective measures of human cognition or wellbeing.
