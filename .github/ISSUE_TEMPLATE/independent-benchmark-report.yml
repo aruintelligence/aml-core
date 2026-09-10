@@ -1,0 +1,170 @@
+name: Independent AML benchmark report
+description: Submit a reproducible AML benchmark, regression, or performance reproduction.
+title: "[BENCHMARK] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Submit performance evidence that another party can reproduce. PASS, FAIL, MIXED, regression, and unsupported results are useful. Benchmark timing does not by itself establish adoption, certification, standards status, regulatory compliance, scientific validation, official ARU authorization, or general technological superiority.
+
+  - type: input
+    id: report_url
+    attributes:
+      label: Public report or source URL
+      description: Link to the public report, repository, gist, artifact, or other stable evidence.
+      placeholder: https://...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: relationship
+    attributes:
+      label: Evidence relationship
+      options:
+        - Independent reproduction of the AML reference implementation
+        - Independent implementation benchmark
+        - External pilot benchmark
+        - External production benchmark
+        - Other / mixed relationship
+    validations:
+      required: true
+
+  - type: textarea
+    id: independence
+    attributes:
+      label: Independence statement
+      description: Explain who controls the implementation, harness, infrastructure, and report. State any AML reference code that is imported, executed, or wrapped.
+    validations:
+      required: true
+
+  - type: input
+    id: target
+    attributes:
+      label: Exact AML target
+      description: Provide the exact aml-core commit SHA and release/tag if applicable.
+      placeholder: commit SHA; release/tag
+    validations:
+      required: true
+
+  - type: dropdown
+    id: benchmark_class
+    attributes:
+      label: Benchmark class
+      description: See BENCHMARKING.md.
+      options:
+        - B1 — Compiler throughput
+        - B2 — Semantic and policy analysis
+        - B3 — Decision and receipt generation
+        - B4 — Verification and tamper rejection
+        - B5 — Protocol / interoperability
+        - B6 — Browser integration
+        - B7 — HTTP / service evaluation
+        - B8 — End-to-end interface decision
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include OS/version, architecture, CPU, memory, runtime/compiler versions, browser if relevant, virtualization/container/cloud details, and material execution flags.
+    validations:
+      required: true
+
+  - type: textarea
+    id: fixtures
+    attributes:
+      label: Fixtures / corpus identity
+      description: List every fixture or corpus item, including path/name, byte size, SHA-256 when available, and whether it is canonical or modified.
+    validations:
+      required: true
+
+  - type: textarea
+    id: method
+    attributes:
+      label: Method
+      description: State warmup iterations, measured iterations, independent samples/runs, concurrency, timing boundary, cache/process policy, network assumptions, and setup excluded/included from timing.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: correctness
+    attributes:
+      label: Correctness / conformance status
+      options:
+        - PASS
+        - FAIL
+        - MIXED
+        - NOT CHECKED
+    validations:
+      required: true
+
+  - type: textarea
+    id: negative_tests
+    attributes:
+      label: Negative / tamper tests
+      description: State which invalid or tampered cases were tested and the outcomes. Write NOT APPLICABLE or NOT CHECKED when appropriate.
+    validations:
+      required: true
+
+  - type: textarea
+    id: results
+    attributes:
+      label: Results
+      description: Include PASS/FAIL/MIXED/UNSUPPORTED status, raw samples or link, median/p95/average when available, throughput, failures/timeouts, and any regression observed.
+    validations:
+      required: true
+
+  - type: input
+    id: machine_report
+    attributes:
+      label: Machine-readable benchmark report URL
+      description: Prefer a report conforming to benchmark-report.schema.json. Leave NONE only if unavailable.
+      placeholder: https://... or NONE
+    validations:
+      required: true
+
+  - type: dropdown
+    id: evidence_level
+    attributes:
+      label: Requested evidence level
+      description: See EVIDENCE.md. This is a request, not an automatic classification.
+      options:
+        - E2 — Automated project verification
+        - E3 — Independent reproduction
+        - E4 — Independent implementation
+        - E5 — External pilot
+        - E6 — Production deployment
+        - E7 — Multi-party ecosystem evidence
+    validations:
+      required: true
+
+  - type: textarea
+    id: limitations
+    attributes:
+      label: Limitations, confounders, and nonclaims
+      description: Explain what this result directly supports and what it does not support.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Exact reproduction commands
+      description: Provide commands and setup needed for another party to attempt reproduction.
+      render: shell
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Evidence acknowledgements
+      options:
+        - label: I understand that a faster result that fails the required correctness contract is not a valid performance win.
+          required: true
+        - label: I understand that the requested evidence level is subject to review and must not be presented as granted merely by filing this issue.
+          required: true
+        - label: I have not represented this benchmark as proof of standards approval, certification, adoption, scientific validation, regulatory compliance, or official ARU authorization unless separate evidence is explicitly supplied.
+          required: true
