@@ -91,7 +91,7 @@ No standards-body adoption is implied by this terminology.
 - [Claims ledger](../CLAIMS.md)
 - [Critic's guide](CRITICS_GUIDE.md)
 - [Evaluate AML in 15 minutes](EVALUATE_AML_IN_15_MINUTES.md)
-- [Independent witness protocol](../WITNESS_AML.md)
+- [Independent witness protocol](AML_WITNESS_PROTOCOL.md)
 - [Security threat model](../SECURITY_THREAT_MODEL.md)
 
 **Generated interfaces need governance that can itself be inspected. ĀML is one concrete attempt to build it.**
