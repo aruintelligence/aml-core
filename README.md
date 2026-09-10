@@ -179,8 +179,8 @@ A failure, bypass, contradictory implementation, or **MIXED** result can be more
 
 ## Status
 
-- `v1.3.0` is the stable package / CLI / capability contract.
-- `v1.4.0-rc.2` is the current prerelease snapshot of the broader architecture on `main`.
+- `v1.3.0` remains the stable package/CLI/capability contract.
+- `v1.4.0-rc.2` is the current GitHub prerelease snapshot of the broader architecture on `main`.
 - ĀML is **not** a ratified industry or Internet standard.
 - No claim is made here of universal adoption, standards-body approval, third-party certification, regulatory approval, scientific validation, or production suitability for every environment.
 
