@@ -22,6 +22,8 @@
     "aml-governance-stream-serve": "./bin/aml-governance-stream-serve.js",
     "aml-governance-transcript": "./bin/aml-governance-transcript.js",
     "aml-governance-transcript-verify": "./bin/aml-governance-transcript-verify.js",
+    "aml-governance-transcript-sign": "./bin/aml-governance-transcript-sign.js",
+    "aml-governance-transcript-signature-verify": "./bin/aml-governance-transcript-signature-verify.js",
     "aml-brand-verify": "./bin/aml-brand-verify.js"
   },
   "scripts": {
@@ -97,6 +99,7 @@
     "continuous-governance",
     "streaming-governance",
     "replayable-governance",
+    "signed-governance-transcript",
     "hash-chained-transcript",
     "ndjson",
     "federated-ai",
