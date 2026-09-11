@@ -97,7 +97,7 @@ The project must not promote internal CI, project-maintained reference runtimes,
 
 ## 7. The governance boundary can cross process and language boundaries
 
-The Agent UI governance contract is now exposed through three equivalent project surfaces:
+The Agent UI governance contract is exposed through three project surfaces:
 
 - JavaScript API: `evaluateAgentUI(...)`;
 - CLI: `aml-agent-ui`;
@@ -105,7 +105,7 @@ The Agent UI governance contract is now exposed through three equivalent project
 
 Machine-readable input/output schemas and a mixed ALLOW/SUPPRESS golden vector are included in the repository.
 
-That changes the integration boundary materially: an external renderer or agent runtime no longer needs to import ĀML internals to ask whether generated components are renderable. It can hand a JSON envelope to a separate governance process and receive the governed component sets and decision evidence back.
+An external renderer or agent runtime therefore does not need to import ĀML internals to ask whether generated components are renderable. It can hand a JSON envelope to a separate governance process and receive governed component sets and decision evidence back.
 
 Documentation:
 
@@ -173,17 +173,50 @@ This makes a live interface-governance session easier to archive, challenge, rep
 
 A critical limit remains explicit: a hash chain is not a signature. An unsigned transcript does not prove who created it or turn project-controlled evidence into independent evidence.
 
+## 10. Transcript integrity, signature validity, and trust can remain separate
+
+Replayable transcripts can now be signed with Ed25519 after the transcript itself passes hash-chain and deterministic-replay verification.
+
+The signed artifact records the transcript, signature algorithm, key id, public-key fingerprint, public key, signature bytes, optional signer label, optional signing timestamp label, and scope.
+
+Verification reports separate properties rather than collapsing everything into one vague “verified” result:
+
+- transcript validity;
+- hash-chain validity;
+- deterministic replay validity;
+- Ed25519 signature validity;
+- whether the key fingerprint belongs to an explicitly supplied trust set.
+
+Project surfaces:
+
+- `signGovernanceStreamTranscript(...)`;
+- `verifySignedGovernanceStreamTranscript(...)`;
+- `aml-governance-transcript-sign`;
+- `aml-governance-transcript-signature-verify`;
+- `docs/SIGNED_GOVERNANCE_TRANSCRIPTS.md`;
+- `publications/SIGNED_REPLAYABLE_GOVERNANCE.md`.
+
+Signed transcript protocol:
+
+```text
+aml-signed-governance-stream-transcript/1
+```
+
+A valid signature only demonstrates possession of the matching private key. An embedded public key is not itself a trust root. The verifier can therefore require a separately obtained trusted fingerprint.
+
+Generic transcript signing does not create official ĀRU authorization. Production ĀRU private signing material remains outside GitHub, and official identity must be checked through the applicable trust-root and authorization mechanisms.
+
 ## The frontier
 
 The next technical frontiers are:
 
-1. independently reproduced Agent UI, continuous-stream, and transcript verification;
+1. independently reproduced Agent UI, continuous-stream, transcript, and signature verification;
 2. external adapters for distinct generative-UI protocols;
 3. a second independently maintained runtime implementing the public contracts;
-4. cross-runtime transcript replay and disagreement localization;
-5. signed transcript authenticity with explicit trust roots, revocation, and signer scope;
+4. cross-runtime transcript replay with precise disagreement localization;
+5. scoped transcript signer authorization, rotation, revocation, and multi-party witness signatures;
 6. bounded real-application pilots comparing shadow and enforce modes;
-7. adversarial attempts to produce false ALLOW decisions, ambiguous receipts, stream truncation errors, rehashed false transcripts, or replay divergence;
+7. adversarial attempts to produce false ALLOW decisions, ambiguous receipts, truncated streams, rehashed false transcripts, signature substitution, trust-root confusion, or replay divergence;
 8. policy changes and capability negotiation during live sessions without weakening auditability.
 
 The goal is not to make ĀML impossible to criticize. The goal is to make its claims increasingly precise, executable, portable, and falsifiable.
