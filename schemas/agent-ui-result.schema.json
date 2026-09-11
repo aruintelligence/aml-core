@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/schemas/agent-ui-result.schema.json",
+  "title": "ĀML Agent UI Governance Result",
+  "type": "object",
+  "required": ["protocol", "surface_id", "mode", "policy_profile", "total", "allowed", "suppressed", "errors", "decisions", "renderable_components", "suppressed_components"],
+  "properties": {
+    "protocol": { "const": "aml-agent-ui-governance-result/1" },
+    "surface_id": { "type": "string" },
+    "mode": { "enum": ["enforce", "shadow"] },
+    "policy_profile": { "type": "string" },
+    "total": { "type": "integer", "minimum": 0 },
+    "allowed": { "type": "integer", "minimum": 0 },
+    "suppressed": { "type": "integer", "minimum": 0 },
+    "errors": { "type": "integer", "minimum": 0 },
+    "decisions": { "type": "array" },
+    "renderable_components": { "type": "array" },
+    "suppressed_components": { "type": "array" },
+    "streaming_result": { "type": "object" }
+  },
+  "additionalProperties": true
+}
