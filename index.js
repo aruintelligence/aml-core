@@ -55,7 +55,7 @@ export { verifyBrandTrustRegistry, verifyOfficialBrandAuthorization } from "./ru
 export { canonicalize, canonicalJSONStringify } from "./protocol/canonicalJson.js";
 export { createWireEnvelope, validateWireEnvelope, negotiateWireSession } from "./protocol/wireProtocol.js";
 export { createReplayGuard, acceptWireEnvelope } from "./protocol/replayGuard.js";
-export { createGovernanceStreamSession, AML_GOVERNANCE_STREAM_OPEN, AML_GOVERNANCE_STREAM_NODE, AML_GOVERNANCE_STREAM_DECISION, AML_GOVERNANCE_STREAM_FINALIZE, AML_GOVERNANCE_STREAM_RESULT, AML_GOVERNANCE_STREAM_ERROR } from "./protocol/governanceStream.js";
+export { createGovernanceStreamSession, AML_GOVERNANCE_STREAM_OPEN, AML_GOVERNANCE_STREAM_NODE, AML_GOVERNANCE_STREAM_DECISION, AML_GOVERNANCE_STREAM_POLICY_UPDATE, AML_GOVERNANCE_STREAM_POLICY_APPLIED, AML_GOVERNANCE_STREAM_FINALIZE, AML_GOVERNANCE_STREAM_RESULT, AML_GOVERNANCE_STREAM_ERROR } from "./protocol/governanceStream.js";
 export { createGovernanceStreamTranscript, verifyGovernanceStreamTranscript, AML_GOVERNANCE_TRANSCRIPT, AML_GOVERNANCE_TRANSCRIPT_VERIFICATION } from "./protocol/governanceTranscript.js";
 export { signGovernanceStreamTranscript, verifySignedGovernanceStreamTranscript, AML_SIGNED_GOVERNANCE_TRANSCRIPT, AML_SIGNED_GOVERNANCE_TRANSCRIPT_VERIFICATION } from "./protocol/governanceTranscriptSignature.js";
 export { evaluateGovernanceWitnessQuorum, verifyGovernanceWitnessQuorum, AML_GOVERNANCE_WITNESS_QUORUM, AML_GOVERNANCE_WITNESS_QUORUM_VERIFICATION } from "./protocol/governanceWitnessQuorum.js";
