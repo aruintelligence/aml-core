@@ -62,6 +62,7 @@ export { evaluateGovernanceWitnessQuorum, verifyGovernanceWitnessQuorum, AML_GOV
 export { localizeRuntimeDisagreement, AML_RUNTIME_DISAGREEMENT_REPORT } from "./protocol/runtimeDisagreement.js";
 export { createGovernanceDisclosure, verifyGovernanceDisclosure, AML_GOVERNANCE_DISCLOSURE, AML_GOVERNANCE_DISCLOSURE_VERIFICATION } from "./protocol/governanceDisclosure.js";
 export { createGovernanceDisclosureCommitment, signGovernanceDisclosureCommitment, verifySignedGovernanceDisclosureCommitment, verifyGovernanceDisclosureAgainstSignedCommitment, AML_GOVERNANCE_DISCLOSURE_COMMITMENT, AML_SIGNED_GOVERNANCE_DISCLOSURE_COMMITMENT, AML_SIGNED_GOVERNANCE_DISCLOSURE_COMMITMENT_VERIFICATION } from "./protocol/governanceDisclosureSignature.js";
+export { createGovernancePolicyTransition, signGovernancePolicyTransition, createGovernancePolicyTransitionAuthorization, verifyGovernancePolicyTransitionAuthorization, transitionMatchesUpdate, AML_GOVERNANCE_POLICY_TRANSITION, AML_GOVERNANCE_POLICY_TRANSITION_AUTHORIZATION, AML_GOVERNANCE_POLICY_TRANSITION_AUTHORIZATION_VERIFICATION } from "./protocol/governancePolicyAuthorization.js";
 export { createAmlHttpServer } from "./server/httpServer.js";
 export { createAgentUiGateway } from "./server/agentUiGateway.js";
 export { createGovernanceStreamGateway } from "./server/governanceStreamGateway.js";
