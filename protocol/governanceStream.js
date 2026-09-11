@@ -46,14 +46,7 @@ export function createGovernanceStreamSession(open = {}) {
   let policyEpoch = 0;
   validatePolicyState({ profile, mode, failure_mode: failureMode, context });
 
-  const firewall = createStreamingInterfaceFirewall({
-    transmission,
-    profile,
-    mode,
-    failure_mode: failureMode,
-    context
-  });
-
+  const firewall = createStreamingInterfaceFirewall({ transmission, profile, mode, failure_mode: failureMode, context });
   let finalized = false;
 
   function policyState() {
@@ -129,7 +122,7 @@ export function createGovernanceStreamSession(open = {}) {
         errors: result.errors,
         effective_allowed: result.effective_allowed,
         entries: result.entries,
-        policy_epochs: policyEpoch
+        ...(policyEpoch > 0 ? { policy_epochs: policyEpoch, final_policy_sha256: sha256(policyState()) } : {})
       };
     }
 
@@ -144,11 +137,7 @@ export function createGovernanceStreamSession(open = {}) {
     get failure_mode() { return failureMode; },
     get policy_epoch() { return policyEpoch; },
     accept,
-    snapshot() {
-      return firewall.snapshot();
-    },
-    get finalized() {
-      return finalized;
-    }
+    snapshot() { return firewall.snapshot(); },
+    get finalized() { return finalized; }
   };
 }
