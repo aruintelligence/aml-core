@@ -39,8 +39,19 @@
       "type": "object",
       "required": ["protocol"],
       "properties": {
-        "protocol": { "const": "aml-governance-stream-finalize/1" }
+        "protocol": { "const": "aml-governance-stream-policy-update/1" },
+        "profile": { "type": "string", "minLength": 1 },
+        "mode": { "enum": ["enforce", "shadow"] },
+        "failure_mode": { "enum": ["closed", "open"] },
+        "context": { "type": "object" },
+        "context_mode": { "enum": ["merge", "replace"] }
       },
+      "additionalProperties": true
+    },
+    {
+      "type": "object",
+      "required": ["protocol"],
+      "properties": { "protocol": { "const": "aml-governance-stream-finalize/1" } },
       "additionalProperties": true
     }
   ]
