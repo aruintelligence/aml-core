@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.com/aml/schemas/runtime-disagreement-report.schema.json",
+  "title": "ĀML Runtime Disagreement Report",
+  "type": "object",
+  "required": ["protocol", "equivalent", "same_root", "same_entry_count", "first_divergence", "compared_entries", "claim_boundary"],
+  "properties": {
+    "protocol": { "const": "aml-runtime-disagreement-report/1" },
+    "equivalent": { "type": "boolean" },
+    "same_root": { "type": "boolean" },
+    "same_entry_count": { "type": "boolean" },
+    "left_root_sha256": { "type": ["string", "null"] },
+    "right_root_sha256": { "type": ["string", "null"] },
+    "left_runtime": { "type": ["string", "null"] },
+    "right_runtime": { "type": ["string", "null"] },
+    "compared_entries": { "type": "integer", "minimum": 0 },
+    "first_divergence": {
+      "type": ["object", "null"],
+      "properties": {
+        "sequence": { "type": "integer", "minimum": 1 },
+        "divergence_type": { "enum": ["missing-entry", "direction-mismatch", "protocol-mismatch", "decision-mismatch", "input-mismatch", "output-mismatch"] },
+        "left_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "right_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "claim_boundary": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": true
+}
