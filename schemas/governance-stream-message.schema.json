@@ -13,7 +13,19 @@
         "mode": { "enum": ["enforce", "shadow"] },
         "failure_mode": { "enum": ["closed", "open"] },
         "context": { "type": "object" },
-        "timestamp": { "type": "string" }
+        "timestamp": { "type": "string" },
+        "policy_authorization": {
+          "type": "object",
+          "properties": {
+            "required": { "type": "boolean" },
+            "threshold": { "type": "integer", "minimum": 1 },
+            "trusted_fingerprints": { "type": "array", "items": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "uniqueItems": true },
+            "revoked_fingerprints": { "type": "array", "items": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "uniqueItems": true },
+            "required_scope": { "type": "string", "minLength": 1 },
+            "require_trusted_keys": { "type": "boolean" }
+          },
+          "additionalProperties": true
+        }
       },
       "additionalProperties": true
     },
@@ -44,7 +56,8 @@
         "mode": { "enum": ["enforce", "shadow"] },
         "failure_mode": { "enum": ["closed", "open"] },
         "context": { "type": "object" },
-        "context_mode": { "enum": ["merge", "replace"] }
+        "context_mode": { "enum": ["merge", "replace"] },
+        "authorization": { "type": "object" }
       },
       "additionalProperties": true
     },

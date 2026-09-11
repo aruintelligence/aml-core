@@ -106,25 +106,7 @@ Because transitions are part of the same transcript as interface nodes and decis
 
 ## 15. A partial disclosure can be anchored by a signed commitment
 
-ĀML can now sign the compact commitment behind a selective governance disclosure with Ed25519.
-
-The signed material deliberately contains only the disclosure anchor:
-
-- source governance-transcript root;
-- source transcript entry count;
-- Merkle root committing to every transcript entry hash.
-
-Project surfaces:
-
-- `createGovernanceDisclosureCommitment(...)`;
-- `signGovernanceDisclosureCommitment(...)`;
-- `verifySignedGovernanceDisclosureCommitment(...)`;
-- `verifyGovernanceDisclosureAgainstSignedCommitment(...)`;
-- `aml-governance-disclosure-sign`;
-- `aml-governance-disclosure-signed-verify`;
-- `schemas/signed-governance-disclosure-commitment.schema.json`;
-- `docs/SIGNED_SELECTIVE_GOVERNANCE_DISCLOSURE.md`;
-- `publications/SIGNED_SELECTIVE_GOVERNANCE_DISCLOSURE.md`.
+ĀML can sign the compact commitment behind a selective governance disclosure with Ed25519. The signed material contains the source transcript root, source entry count, and Merkle root committing to every transcript entry hash.
 
 Protocols:
 
@@ -133,24 +115,55 @@ aml-governance-disclosure-commitment/1
 aml-signed-governance-disclosure-commitment/1
 ```
 
-The verifier keeps separate the signature's mathematical validity, verifier-controlled key trust, supplied revocation policy, signer scope, and whether the selective disclosure actually matches the signed roots and entry count.
+The verifier separates signature validity, verifier-controlled key trust, revocation policy, signer scope, and whether the disclosure matches the signed commitment. A valid signature still does not establish real-world identity, independent witnessing, certification, external adoption, or official ĀRU authorization.
 
-That gives a future verifier a path to authenticate a compact disclosure anchor without receiving the full governance transcript.
+## 16. A live policy transition can require threshold cryptographic authority
 
-A valid signature still does not establish a real-world identity, independent witnessing, certification, external adoption, or official ĀRU authorization. An embedded public key is not a trust root. This also remains selective disclosure rather than zero-knowledge proof.
+ĀML can now optionally protect live governance-policy changes with a threshold of trusted Ed25519 signatures before policy state is allowed to mutate.
+
+The transition that gets signed is bound to four things:
+
+- the exact governance-stream transmission;
+- the expected current policy epoch;
+- the SHA-256 of the exact previous policy state;
+- the exact requested update fields.
+
+Protocols:
+
+```text
+aml-governance-policy-transition/1
+aml-governance-policy-transition-authorization/1
+```
+
+A protected stream can specify a verifier-controlled policy containing a signature threshold, trusted key fingerprints, revoked fingerprints, required signer scope, and trusted-key requirements. Duplicate signing keys cannot satisfy a distinct-key threshold.
+
+If authorization is missing, the eligible-signature threshold is not met, or the signed transition is bound to a different epoch, prior state, transmission, or requested change, the policy update is rejected **before state mutation**.
+
+Project surfaces:
+
+- `createGovernancePolicyTransition(...)`;
+- `signGovernancePolicyTransition(...)`;
+- `createGovernancePolicyTransitionAuthorization(...)`;
+- `verifyGovernancePolicyTransitionAuthorization(...)`;
+- `transitionMatchesUpdate(...)`;
+- `schemas/governance-policy-transition-authorization.schema.json`;
+- `docs/AUTHORIZED_LIVE_POLICY_TRANSITIONS.md`;
+- `publications/AUTHORIZED_LIVE_POLICY_TRANSITIONS.md`.
+
+This advances live governance from replayable mutation toward cryptographically constrained mutation. It is still not universal identity proofing, organizational approval, regulatory authorization, external validation, or official ĀRU authorization. The verifier's trusted-key configuration remains an explicit authority decision.
 
 ## The frontier
 
 The next technical frontiers are:
 
-1. independent reproduction of Agent UI, streaming, transcript, signature, witness-quorum, disagreement-localization, disclosure, policy-epoch, and signed-disclosure contracts;
+1. independent reproduction of the growing governance contract stack;
 2. external adapters for distinct generative-UI protocols;
 3. a genuinely independently maintained runtime implementing the public contracts;
-4. cryptographically authorized live policy transitions with scoped signers and threshold approval;
-5. multi-party witness quorums over disclosure commitments rather than only complete transcript artifacts;
+4. policy-transition authorization delegated through explicit trust chains instead of static key lists;
+5. multi-party witness quorums over selective-disclosure commitments;
 6. stronger privacy proofs, including research toward zero-knowledge statements about governed decisions without revealing message bodies;
-7. machine-readable adjudication policies for known cross-runtime disagreements;
+7. machine-readable adjudication policies for cross-runtime disagreement;
 8. bounded real-application pilots comparing shadow and enforce modes;
-9. adversarial tests for false ALLOW decisions, unauthorized policy transitions, truncated streams, rehashed false transcripts, signature substitution, trust-root confusion, witness duplication, quorum splitting, cross-runtime divergence, disclosure-root substitution, and signed-commitment substitution.
+9. adversarial testing for false ALLOW decisions, unauthorized policy transitions, replay across epochs, revoked-key reuse, threshold bypass, transcript substitution, disclosure substitution, and cross-runtime divergence.
 
 The goal is not to make ĀML impossible to criticize. The goal is to make its claims increasingly precise, executable, portable, privacy-aware, and falsifiable.
