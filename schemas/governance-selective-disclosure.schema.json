@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.com/aml/schemas/governance-selective-disclosure.schema.json",
+  "title": "ĀML Governance Selective Disclosure",
+  "type": "object",
+  "required": ["protocol", "source_transcript_protocol", "source_transcript_root_sha256", "source_entry_count", "disclosure_merkle_root_sha256", "disclosed_entries", "leakage_notice"],
+  "properties": {
+    "protocol": { "const": "aml-governance-selective-disclosure/1" },
+    "source_transcript_protocol": { "const": "aml-governance-stream-transcript/1" },
+    "source_transcript_root_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "source_entry_count": { "type": "integer", "minimum": 1 },
+    "disclosure_merkle_root_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "disclosed_entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["index", "entry", "inclusion_proof"],
+        "properties": {
+          "index": { "type": "integer", "minimum": 0 },
+          "entry": { "type": "object" },
+          "inclusion_proof": { "type": "object" }
+        }
+      }
+    },
+    "leakage_notice": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": true
+}
