@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/schemas/governance-stream-message.schema.json",
+  "title": "ĀML Continuous Governance Stream Message",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["protocol"],
+      "properties": {
+        "protocol": { "const": "aml-governance-stream-open/1" },
+        "transmission": { "type": "string", "minLength": 1 },
+        "profile": { "type": "string", "minLength": 1 },
+        "mode": { "enum": ["enforce", "shadow"] },
+        "failure_mode": { "enum": ["closed", "open"] },
+        "context": { "type": "object" },
+        "timestamp": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "type": "object",
+      "required": ["protocol", "node"],
+      "properties": {
+        "protocol": { "const": "aml-governance-stream-node/1" },
+        "node": {
+          "type": "object",
+          "required": ["type", "properties"],
+          "properties": {
+            "type": { "type": "string", "minLength": 1 },
+            "identifier": { "type": "string", "minLength": 1 },
+            "properties": { "type": "object" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    {
+      "type": "object",
+      "required": ["protocol"],
+      "properties": {
+        "protocol": { "const": "aml-governance-stream-finalize/1" }
+      },
+      "additionalProperties": true
+    }
+  ]
+}
