@@ -76,3 +76,4 @@ export { SEMANTIC_RELEASE_ENDORSEMENT_PROTOCOL, SEMANTIC_RELEASE_QUORUM_POLICY_P
 export { RELEASE_AUTHORIZATION_PROFILE_PROTOCOL, RELEASE_AUTHORIZATION_PROFILE_MATERIAL_PROTOCOL, validateReleaseAuthorizationProfile, releaseAuthorizationProfileFingerprint, resolveReleaseAuthorizationProfile } from "./tooling/releaseAuthorizationProfile.js";
 export { buildGitHubAttestationVerifyArgs, verifyGitHubSemanticAttestationEvidence } from "./tooling/githubSemanticAttestation.js";
 export { getCompletionItems, getHoverInfo, getLanguageCatalog } from "./tooling/languageService.js";
+export { runAmlDoctor } from "./tooling/doctor.js";
