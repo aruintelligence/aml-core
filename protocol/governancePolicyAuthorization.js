@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { canonicalJSONStringify } from "./canonicalJson.js";
+import { verifyDelegationChain } from "../runtime/trustDelegation.js";
 
 export const AML_GOVERNANCE_POLICY_TRANSITION = "aml-governance-policy-transition/1";
 export const AML_GOVERNANCE_POLICY_TRANSITION_AUTHORIZATION = "aml-governance-policy-transition-authorization/1";
@@ -21,6 +22,45 @@ function normalizeUpdate(update = {}) {
     if (update[key] !== undefined) normalized[key] = structuredClone(update[key]);
   }
   return normalized;
+}
+
+function verifyDelegatedAuthority(signature, { trusted, revoked, requiredScope, now, allowDelegatedAuthority }) {
+  if (!allowDelegatedAuthority || !Array.isArray(signature.delegation_chain) || signature.delegation_chain.length === 0) {
+    return { valid: false, root_fingerprint_sha256: null, reason: "delegated authority unavailable" };
+  }
+
+  const chain = signature.delegation_chain;
+  const rootFingerprint = chain[0]?.issuer_key_fingerprint || null;
+  if (!rootFingerprint || !trusted.has(rootFingerprint)) {
+    return { valid: false, root_fingerprint_sha256: rootFingerprint, reason: "delegation root not trusted" };
+  }
+
+  for (const delegation of chain) {
+    for (const keyFp of [delegation?.issuer_key_fingerprint, delegation?.delegate_key_fingerprint]) {
+      if (keyFp && revoked.has(keyFp)) {
+        return { valid: false, root_fingerprint_sha256: rootFingerprint, reason: "delegation chain contains revoked key" };
+      }
+    }
+  }
+
+  const verified = verifyDelegationChain(chain, {
+    rootKeyFingerprint: rootFingerprint,
+    now: now || null,
+    requiredCapability: requiredScope
+  });
+  if (!verified.valid) {
+    return { valid: false, root_fingerprint_sha256: rootFingerprint, reason: `delegation chain invalid: ${verified.reason}` };
+  }
+  if (verified.leaf_key_fingerprint !== signature.public_key_fingerprint_sha256) {
+    return { valid: false, root_fingerprint_sha256: rootFingerprint, reason: "delegation leaf does not match signing key" };
+  }
+
+  return {
+    valid: true,
+    root_fingerprint_sha256: rootFingerprint,
+    leaf_fingerprint_sha256: verified.leaf_key_fingerprint,
+    reason: null
+  };
 }
 
 export function createGovernancePolicyTransition({ transmission, expected_policy_epoch, previous_policy_sha256, update }) {
@@ -53,7 +93,10 @@ export function signGovernancePolicyTransition(transition, privateKeyPem, option
     signature_base64: crypto.sign(null, material(transition), privateKey).toString("base64"),
     signer: options.signer || null,
     scope: options.scope || "governance-policy-transition",
-    signed_at: options.signed_at || null
+    signed_at: options.signed_at || null,
+    ...(Array.isArray(options.delegation_chain) && options.delegation_chain.length > 0
+      ? { delegation_chain: structuredClone(options.delegation_chain) }
+      : {})
   };
 }
 
@@ -80,6 +123,7 @@ export function verifyGovernancePolicyTransitionAuthorization(authorization, pol
   const revoked = new Set(policy.revoked_fingerprints || []);
   const requiredScope = policy.required_scope || "governance-policy-transition";
   const requireTrusted = policy.require_trusted_keys !== false;
+  const allowDelegatedAuthority = policy.allow_delegated_authority === true;
   const seen = new Set();
   const eligible = [];
   const signature_results = [];
@@ -97,15 +141,37 @@ export function verifyGovernancePolicyTransitionAuthorization(authorization, pol
     } catch (error) {
       resultErrors.push(error.message || String(error));
     }
+
     if (signature.scope !== requiredScope) resultErrors.push("signature scope mismatch");
     if (fp && revoked.has(fp)) resultErrors.push("signing key revoked");
-    const isTrusted = fp != null && trusted.has(fp) && !revoked.has(fp);
-    if (requireTrusted && !isTrusted) resultErrors.push("signing key not trusted by supplied policy");
+
+    const directlyTrusted = fp != null && trusted.has(fp) && !revoked.has(fp);
+    const delegated = fp
+      ? verifyDelegatedAuthority(signature, { trusted, revoked, requiredScope, now: policy.now, allowDelegatedAuthority })
+      : { valid: false, root_fingerprint_sha256: null, reason: "signing key unavailable" };
+    const isTrusted = directlyTrusted || delegated.valid;
+
+    if (requireTrusted && !isTrusted) {
+      if (allowDelegatedAuthority && Array.isArray(signature.delegation_chain) && signature.delegation_chain.length > 0 && delegated.reason) {
+        resultErrors.push(delegated.reason);
+      } else {
+        resultErrors.push("signing key not trusted by supplied policy");
+      }
+    }
     if (fp && seen.has(fp)) resultErrors.push("duplicate signing key");
     if (fp) seen.add(fp);
+
     const isEligible = signatureValid && signature.scope === requiredScope && !revoked.has(fp) && (!requireTrusted || isTrusted) && !resultErrors.includes("duplicate signing key");
     if (isEligible) eligible.push(fp);
-    signature_results.push({ fingerprint_sha256: fp, signature_valid: signatureValid, trusted_key: isTrusted, eligible: isEligible, errors: resultErrors });
+    signature_results.push({
+      fingerprint_sha256: fp,
+      signature_valid: signatureValid,
+      trusted_key: isTrusted,
+      authority_source: directlyTrusted ? "direct" : delegated.valid ? "delegated" : null,
+      delegation_root_fingerprint_sha256: delegated.valid ? delegated.root_fingerprint_sha256 : null,
+      eligible: isEligible,
+      errors: resultErrors
+    });
   }
 
   const authorized = errors.length === 0 && eligible.length >= threshold;
