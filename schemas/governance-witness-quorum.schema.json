@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/schemas/governance-witness-quorum.schema.json",
+  "title": "ĀML Governance Witness Quorum",
+  "type": "object",
+  "required": ["protocol", "policy", "quorum_met", "threshold", "eligible_witness_count", "root_groups", "witnesses"],
+  "properties": {
+    "protocol": { "const": "aml-governance-witness-quorum/1" },
+    "policy": {
+      "type": "object",
+      "required": ["threshold", "trusted_fingerprints", "revoked_fingerprints", "required_scope", "require_unique_keys"]
+    },
+    "quorum_met": { "type": "boolean" },
+    "threshold": { "type": "integer", "minimum": 1 },
+    "winning_transcript_root_sha256": { "type": ["string", "null"] },
+    "winning_witness_count": { "type": "integer", "minimum": 0 },
+    "eligible_witness_count": { "type": "integer", "minimum": 0 },
+    "conflicting_eligible_roots": { "type": "boolean" },
+    "root_groups": { "type": "array" },
+    "witnesses": { "type": "array" }
+  },
+  "additionalProperties": true
+}
