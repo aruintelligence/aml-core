@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import crypto from "node:crypto";
 import { spawnSync } from "node:child_process";
+import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 import {
   createGovernanceStreamTranscript,
   verifyGovernanceStreamTranscript
@@ -42,14 +44,12 @@ test("governance transcript detects internally rehashed false output by determin
   fake.entries[decisionIndex].message.would_suppress = !fake.entries[decisionIndex].message.would_suppress;
 
   let previous = null;
-  const crypto = await import("node:crypto");
-  const { canonicalJSONStringify } = await import("../protocol/canonicalJson.js");
   for (let index = 0; index < fake.entries.length; index += 1) {
     const entry = fake.entries[index];
     entry.sequence = index + 1;
     entry.previous_sha256 = previous;
     const material = { sequence: entry.sequence, direction: entry.direction, previous_sha256: entry.previous_sha256, message: entry.message };
-    entry.entry_sha256 = crypto.default.createHash("sha256").update(canonicalJSONStringify(material)).digest("hex");
+    entry.entry_sha256 = crypto.createHash("sha256").update(canonicalJSONStringify(material)).digest("hex");
     previous = entry.entry_sha256;
   }
   fake.root_sha256 = previous;
