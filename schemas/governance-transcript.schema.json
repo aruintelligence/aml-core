@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/schemas/governance-transcript.schema.json",
+  "title": "ĀML Governance Stream Transcript",
+  "type": "object",
+  "required": ["protocol", "transmission", "hash_algorithm", "canonicalization", "entry_count", "root_sha256", "entries"],
+  "properties": {
+    "protocol": { "const": "aml-governance-stream-transcript/1" },
+    "transmission": { "type": "string" },
+    "hash_algorithm": { "const": "sha256" },
+    "canonicalization": { "const": "aml-canonical-json" },
+    "entry_count": { "type": "integer", "minimum": 0 },
+    "root_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sequence", "direction", "previous_sha256", "message", "entry_sha256"],
+        "properties": {
+          "sequence": { "type": "integer", "minimum": 1 },
+          "direction": { "enum": ["input", "output"] },
+          "previous_sha256": { "type": ["string", "null"] },
+          "message": { "type": "object" },
+          "entry_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

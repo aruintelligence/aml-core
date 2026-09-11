@@ -20,6 +20,8 @@
     "aml-agent-ui-serve": "./bin/aml-agent-ui-serve.js",
     "aml-governance-stream": "./bin/aml-governance-stream.js",
     "aml-governance-stream-serve": "./bin/aml-governance-stream-serve.js",
+    "aml-governance-transcript": "./bin/aml-governance-transcript.js",
+    "aml-governance-transcript-verify": "./bin/aml-governance-transcript-verify.js",
     "aml-brand-verify": "./bin/aml-brand-verify.js"
   },
   "scripts": {
@@ -29,6 +31,7 @@
     "agent-ui:serve": "node bin/aml-agent-ui-serve.js",
     "governance-stream": "node bin/aml-governance-stream.js conformance/governance-stream/mixed.ndjson",
     "governance-stream:serve": "node bin/aml-governance-stream-serve.js",
+    "governance-transcript": "node bin/aml-governance-transcript.js conformance/governance-stream/mixed.ndjson",
     "compile": "node bin/aml.js compile examples/transmission-061.aml",
     "validate": "node bin/aml.js validate examples/transmission-061.aml",
     "inspect": "node bin/aml.js inspect examples/transmission-061.aml",
@@ -93,6 +96,8 @@
     "generative-ui-governance",
     "continuous-governance",
     "streaming-governance",
+    "replayable-governance",
+    "hash-chained-transcript",
     "ndjson",
     "federated-ai",
     "capability-security",

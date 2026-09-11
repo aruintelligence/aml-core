@@ -56,6 +56,7 @@ export { canonicalize, canonicalJSONStringify } from "./protocol/canonicalJson.j
 export { createWireEnvelope, validateWireEnvelope, negotiateWireSession } from "./protocol/wireProtocol.js";
 export { createReplayGuard, acceptWireEnvelope } from "./protocol/replayGuard.js";
 export { createGovernanceStreamSession, AML_GOVERNANCE_STREAM_OPEN, AML_GOVERNANCE_STREAM_NODE, AML_GOVERNANCE_STREAM_DECISION, AML_GOVERNANCE_STREAM_FINALIZE, AML_GOVERNANCE_STREAM_RESULT, AML_GOVERNANCE_STREAM_ERROR } from "./protocol/governanceStream.js";
+export { createGovernanceStreamTranscript, verifyGovernanceStreamTranscript, AML_GOVERNANCE_TRANSCRIPT, AML_GOVERNANCE_TRANSCRIPT_VERIFICATION } from "./protocol/governanceTranscript.js";
 export { createAmlHttpServer } from "./server/httpServer.js";
 export { createAgentUiGateway } from "./server/agentUiGateway.js";
 export { createGovernanceStreamGateway } from "./server/governanceStreamGateway.js";

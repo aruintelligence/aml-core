@@ -143,16 +143,47 @@ This matters for agentic and generative interfaces that stream, progressively re
 
 The current reference transport is HTTP/NDJSON. It does not claim distributed consensus, exactly-once delivery, native compatibility with another UI protocol, or production network-security guarantees.
 
+## 9. A live governance session can become replayable evidence
+
+ĀML governance-stream transcripts convert a completed continuous-governance session into a portable artifact that records the exact input/output sequence.
+
+Each entry is canonicalized and chained to the previous entry with SHA-256. Verification then performs two distinct checks:
+
+1. **Hash-chain integrity** — detects ordinary mutation, deletion, insertion, or reordering.
+2. **Deterministic replay** — re-executes the recorded inputs and requires the runtime to reproduce the recorded outputs.
+
+The second check matters because someone could falsify an output and recompute a perfectly valid new hash chain. Replay verification is designed to reject that case when the changed output does not follow from the recorded inputs.
+
+Project surfaces:
+
+- `aml-governance-transcript`;
+- `aml-governance-transcript-verify`;
+- `createGovernanceStreamTranscript(...)`;
+- `verifyGovernanceStreamTranscript(...)`;
+- `schemas/governance-transcript.schema.json`;
+- `docs/REPLAYABLE_GOVERNANCE_TRANSCRIPTS.md`.
+
+Transcript protocol:
+
+```text
+aml-governance-stream-transcript/1
+```
+
+This makes a live interface-governance session easier to archive, challenge, reproduce, and compare across runtimes.
+
+A critical limit remains explicit: a hash chain is not a signature. An unsigned transcript does not prove who created it or turn project-controlled evidence into independent evidence.
+
 ## The frontier
 
 The next technical frontiers are:
 
-1. independent reproduction of the Agent UI and continuous-stream governance boundaries;
-2. adapters maintained outside this repository for distinct generative-UI protocols;
+1. independently reproduced Agent UI, continuous-stream, and transcript verification;
+2. external adapters for distinct generative-UI protocols;
 3. a second independently maintained runtime implementing the public contracts;
-4. bounded real-application pilots that compare shadow-mode and enforced decisions;
-5. adversarial attempts to produce false ALLOW decisions, ambiguous receipts, stream truncation errors, or cross-runtime disagreement;
-6. policy changes and capability negotiation during a live governance session without weakening auditability;
-7. portable stream transcripts that can be independently replayed and verified after the session ends.
+4. cross-runtime transcript replay and disagreement localization;
+5. signed transcript authenticity with explicit trust roots, revocation, and signer scope;
+6. bounded real-application pilots comparing shadow and enforce modes;
+7. adversarial attempts to produce false ALLOW decisions, ambiguous receipts, stream truncation errors, rehashed false transcripts, or replay divergence;
+8. policy changes and capability negotiation during live sessions without weakening auditability.
 
 The goal is not to make ĀML impossible to criticize. The goal is to make its claims increasingly precise, executable, portable, and falsifiable.
