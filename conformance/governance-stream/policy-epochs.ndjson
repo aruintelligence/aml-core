@@ -1,0 +1,6 @@
+{"protocol":"aml-governance-stream-open/1","transmission":"stream_policy_epochs","profile":"calm_default","mode":"enforce","failure_mode":"closed","timestamp":"2026-09-10T00:00:00.000Z"}
+{"protocol":"aml-governance-stream-policy-update/1","mode":"shadow","context":{"rollout":"canary"}}
+{"protocol":"aml-governance-stream-node/1","node":{"type":"message","identifier":"pressure-shadow","properties":{"purpose":"Create urgency","content":"Act now","attention_cost":5,"restoration_value":1}}}
+{"protocol":"aml-governance-stream-policy-update/1","mode":"enforce","context":{"rollout":"enforced"}}
+{"protocol":"aml-governance-stream-node/1","node":{"type":"message","identifier":"continue-enforce","properties":{"purpose":"Let the user continue","content":"Continue","attention_cost":1,"restoration_value":2}}}
+{"protocol":"aml-governance-stream-finalize/1"}
