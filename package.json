@@ -24,6 +24,8 @@
     "aml-governance-transcript-signature-verify": "./bin/aml-governance-transcript-signature-verify.js",
     "aml-governance-witness-quorum": "./bin/aml-governance-witness-quorum.js",
     "aml-runtime-disagreement": "./bin/aml-runtime-disagreement.js",
+    "aml-governance-disclose": "./bin/aml-governance-disclose.js",
+    "aml-governance-disclosure-verify": "./bin/aml-governance-disclosure-verify.js",
     "aml-brand-verify": "./bin/aml-brand-verify.js"
   },
   "scripts": {
@@ -54,7 +56,7 @@
     "test": "node --test"
   },
   "keywords": [
-    "aml", "aru", "aru-meaning-language", "meaning-language", "meaning-native-computing", "accountable-ai", "accountable-rendering", "ai-interface-firewall", "interface-firewall", "view-meaning", "meaning-gate", "meaning-fingerprint", "meaning-manifest", "semantic-release-proof", "semantic-release-quorum", "release-authorization-profile", "threshold-authorization", "semantic-provenance", "semantic-equivalence", "semantic-lockfile", "proof-carrying-interface", "proof-carrying-ui", "react-accountability", "github-action", "semantic-pr-gate", "ai-execution-receipts", "signed-policy-pack", "semantic-diff", "policy-diff", "runtime-audit-stream", "accessibility-policy", "cumulative-attention", "attention-budget", "privacy-aware-ui", "consent-aware-ui", "policy-engine", "policy-profiles", "ethical-render-gate", "semantic-ui", "ai-generated-ui", "agent-ui-governance", "generative-ui-governance", "continuous-governance", "streaming-governance", "replayable-governance", "signed-governance-transcript", "multiparty-governance", "governance-witness-quorum", "runtime-disagreement", "cross-runtime-verification", "hash-chained-transcript", "ndjson", "federated-ai", "capability-security", "trust-delegation", "transparency-log", "conformance", "interoperability", "http-api", "ai-middleware", "brand-authorization", "official-brand-verification", "language-server", "ed25519-attestation"
+    "aml", "aru", "aru-meaning-language", "meaning-language", "meaning-native-computing", "accountable-ai", "accountable-rendering", "ai-interface-firewall", "interface-firewall", "view-meaning", "meaning-gate", "meaning-fingerprint", "meaning-manifest", "semantic-release-proof", "semantic-release-quorum", "release-authorization-profile", "threshold-authorization", "semantic-provenance", "semantic-equivalence", "semantic-lockfile", "proof-carrying-interface", "proof-carrying-ui", "react-accountability", "github-action", "semantic-pr-gate", "ai-execution-receipts", "signed-policy-pack", "semantic-diff", "policy-diff", "runtime-audit-stream", "accessibility-policy", "cumulative-attention", "attention-budget", "privacy-aware-ui", "consent-aware-ui", "policy-engine", "policy-profiles", "ethical-render-gate", "semantic-ui", "ai-generated-ui", "agent-ui-governance", "generative-ui-governance", "continuous-governance", "streaming-governance", "replayable-governance", "signed-governance-transcript", "multiparty-governance", "governance-witness-quorum", "runtime-disagreement", "cross-runtime-verification", "selective-disclosure", "governance-disclosure", "merkle-proof", "hash-chained-transcript", "ndjson", "federated-ai", "capability-security", "trust-delegation", "transparency-log", "conformance", "interoperability", "http-api", "ai-middleware", "brand-authorization", "official-brand-verification", "language-server", "ed25519-attestation"
   ],
   "author": "ĀRU Intelligence Inc.",
   "license": "MIT",
