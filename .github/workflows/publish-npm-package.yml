@@ -128,7 +128,7 @@ jobs:
             exit 1
           fi
 
-      - name: Clean-install stable registry artifact
+      - name: Clean-install stable registry artifact before publication
         shell: bash
         run: |
           set -euo pipefail
@@ -177,19 +177,83 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public --provenance --tag latest
 
-      - name: Verify registry publication and canonical repository metadata
+      - name: Wait for exact registry version and metadata
         shell: bash
         run: |
           set -euo pipefail
           PACKAGE="${{ steps.stable.outputs.package_name }}@${{ steps.stable.outputs.version }}"
-          for attempt in 1 2 3 4 5; do
+          for attempt in 1 2 3 4 5 6 7 8; do
             FOUND="$(npm view "$PACKAGE" version 2>/dev/null || true)"
             FOUND_REPO="$(npm view "$PACKAGE" repository.url 2>/dev/null || true)"
             if [[ "$FOUND" == "${{ steps.stable.outputs.version }}" && "$FOUND_REPO" == "${{ steps.stable.outputs.repository }}" ]]; then
               echo "Published and visible with canonical repository metadata: $PACKAGE"
               exit 0
             fi
-            sleep 3
+            sleep 5
           done
           echo "Registry verification did not observe the expected version/repository metadata for $PACKAGE" >&2
           exit 1
+
+      - name: Clean-install exact package from public npm registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf registry-consumer
+          mkdir registry-consumer
+          printf '{"private":true,"type":"module"}\n' > registry-consumer/package.json
+          cd registry-consumer
+          npm install --ignore-scripts --save-exact "${{ steps.stable.outputs.package_name }}@${{ steps.stable.outputs.version }}"
+          node -e "import('${{ steps.stable.outputs.package_name }}').then(m=>{if(!m||Object.keys(m).length===0)process.exit(2);console.log('API import OK')}).catch(e=>{console.error(e);process.exit(1)})"
+          ./node_modules/.bin/aml version
+          ./node_modules/.bin/aml validate ../control/examples/simple.aml
+
+      - name: Capture publication evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          PACKAGE="${{ steps.stable.outputs.package_name }}@${{ steps.stable.outputs.version }}"
+          REGISTRY_VERSION="$(npm view "$PACKAGE" version)"
+          REGISTRY_REPO="$(npm view "$PACKAGE" repository.url)"
+          REGISTRY_INTEGRITY="$(npm view "$PACKAGE" dist.integrity)"
+          REGISTRY_SHASUM="$(npm view "$PACKAGE" dist.shasum)"
+          REGISTRY_TARBALL="$(npm view "$PACKAGE" dist.tarball)"
+          node <<'NODE'
+          const fs = require('fs');
+          const evidence = {
+            protocol: 'aml-npm-publication-evidence/1',
+            package: '${{ steps.stable.outputs.package_name }}',
+            version: '${{ steps.stable.outputs.version }}',
+            stable_tag: '${{ steps.stable.outputs.tag }}',
+            repository: process.env.REGISTRY_REPO,
+            registry_version: process.env.REGISTRY_VERSION,
+            registry_integrity: process.env.REGISTRY_INTEGRITY,
+            registry_shasum: process.env.REGISTRY_SHASUM,
+            registry_tarball: process.env.REGISTRY_TARBALL,
+            prepublish_pack_integrity: '${{ steps.pack.outputs.integrity }}',
+            prepublish_pack_shasum: '${{ steps.pack.outputs.shasum }}',
+            github_repository: '${{ github.repository }}',
+            workflow_run_id: '${{ github.run_id }}',
+            control_plane_sha: '${{ github.sha }}',
+            public_registry_clean_install: true,
+            api_import_smoke_test: true,
+            cli_version_smoke_test: true,
+            cli_validate_smoke_test: true,
+            claim_boundary: 'Project-generated release evidence; not independent external verification.'
+          };
+          fs.mkdirSync('publication-evidence', { recursive: true });
+          fs.writeFileSync('publication-evidence/npm-publication-evidence.json', `${JSON.stringify(evidence, null, 2)}\n`);
+          NODE
+        env:
+          REGISTRY_VERSION: ${{ steps.stable.outputs.version }}
+          REGISTRY_REPO: ${{ steps.stable.outputs.repository }}
+          REGISTRY_INTEGRITY: ${{ steps.pack.outputs.integrity }}
+          REGISTRY_SHASUM: ${{ steps.pack.outputs.shasum }}
+          REGISTRY_TARBALL: https://registry.npmjs.org/${{ steps.stable.outputs.package_name }}/-/${{ steps.pack.outputs.filename }}
+
+      - name: Upload publication evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-npm-publication-evidence-${{ steps.stable.outputs.version }}-${{ github.run_id }}
+          path: publication-evidence/npm-publication-evidence.json
+          if-no-files-found: error
+          retention-days: 90
