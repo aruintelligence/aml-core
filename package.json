@@ -18,6 +18,8 @@
     "aml-serve": "./bin/aml-serve.js",
     "aml-agent-ui": "./bin/aml-agent-ui.js",
     "aml-agent-ui-serve": "./bin/aml-agent-ui-serve.js",
+    "aml-governance-stream": "./bin/aml-governance-stream.js",
+    "aml-governance-stream-serve": "./bin/aml-governance-stream-serve.js",
     "aml-brand-verify": "./bin/aml-brand-verify.js"
   },
   "scripts": {
@@ -25,6 +27,8 @@
     "serve": "node bin/aml-serve.js",
     "agent-ui": "node bin/aml-agent-ui.js conformance/agent-ui/mixed.json",
     "agent-ui:serve": "node bin/aml-agent-ui-serve.js",
+    "governance-stream": "node bin/aml-governance-stream.js conformance/governance-stream/mixed.ndjson",
+    "governance-stream:serve": "node bin/aml-governance-stream-serve.js",
     "compile": "node bin/aml.js compile examples/transmission-061.aml",
     "validate": "node bin/aml.js validate examples/transmission-061.aml",
     "inspect": "node bin/aml.js inspect examples/transmission-061.aml",
@@ -87,6 +91,9 @@
     "ai-generated-ui",
     "agent-ui-governance",
     "generative-ui-governance",
+    "continuous-governance",
+    "streaming-governance",
+    "ndjson",
     "federated-ai",
     "capability-security",
     "trust-delegation",
