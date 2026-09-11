@@ -1,6 +1,10 @@
 import crypto from "node:crypto";
 import { createStreamingInterfaceFirewall } from "../runtime/streamingInterfaceFirewall.js";
 import { canonicalJSONStringify } from "./canonicalJson.js";
+import {
+  verifyGovernancePolicyTransitionAuthorization,
+  transitionMatchesUpdate
+} from "./governancePolicyAuthorization.js";
 
 export const AML_GOVERNANCE_STREAM_OPEN = "aml-governance-stream-open/1";
 export const AML_GOVERNANCE_STREAM_NODE = "aml-governance-stream-node/1";
@@ -31,6 +35,14 @@ function validatePolicyState(state) {
   assertObject(state.context, "policy context");
 }
 
+function transitionUpdateFromMessage(message) {
+  const update = {};
+  for (const key of ["profile", "mode", "failure_mode", "context", "context_mode"]) {
+    if (message[key] !== undefined) update[key] = structuredClone(message[key]);
+  }
+  return update;
+}
+
 export function createGovernanceStreamSession(open = {}) {
   assertObject(open, "open");
   if (open.protocol && open.protocol !== AML_GOVERNANCE_STREAM_OPEN) {
@@ -44,6 +56,8 @@ export function createGovernanceStreamSession(open = {}) {
   let context = structuredClone(open.context || {});
   const timestamp = open.timestamp;
   let policyEpoch = 0;
+  const authorizationPolicy = open.policy_authorization ? structuredClone(open.policy_authorization) : null;
+  if (authorizationPolicy) assertObject(authorizationPolicy, "open.policy_authorization");
   validatePolicyState({ profile, mode, failure_mode: failureMode, context });
 
   const firewall = createStreamingInterfaceFirewall({ transmission, profile, mode, failure_mode: failureMode, context });
@@ -53,12 +67,34 @@ export function createGovernanceStreamSession(open = {}) {
     return { profile, mode, failure_mode: failureMode, context: structuredClone(context) };
   }
 
+  function currentPolicyHash() {
+    return sha256(policyState());
+  }
+
   function accept(message) {
     assertObject(message, "message");
     if (finalized) throw new Error("AML_GOVERNANCE_STREAM_ALREADY_FINALIZED");
 
     if (message.protocol === AML_GOVERNANCE_STREAM_POLICY_UPDATE) {
       const previous = policyState();
+      const previousPolicySha256 = sha256(previous);
+      let authorizationResult = null;
+      if (authorizationPolicy?.required === true) {
+        if (!message.authorization) throw new Error("AML_POLICY_TRANSITION_AUTHORIZATION_REQUIRED");
+        authorizationResult = verifyGovernancePolicyTransitionAuthorization(message.authorization, authorizationPolicy);
+        if (!authorizationResult.authorized) {
+          throw new Error(`AML_POLICY_TRANSITION_UNAUTHORIZED:${authorizationResult.errors.join(";")}`);
+        }
+        if (!transitionMatchesUpdate(message.authorization.transition, {
+          transmission,
+          policy_epoch: policyEpoch,
+          previous_policy_sha256: previousPolicySha256,
+          update: transitionUpdateFromMessage(message)
+        })) {
+          throw new Error("AML_POLICY_TRANSITION_AUTHORIZATION_MISMATCH");
+        }
+      }
+
       const next = {
         profile: message.profile ?? profile,
         mode: message.mode ?? mode,
@@ -77,12 +113,20 @@ export function createGovernanceStreamSession(open = {}) {
         protocol: AML_GOVERNANCE_STREAM_POLICY_APPLIED,
         transmission,
         policy_epoch: policyEpoch,
-        previous_policy_sha256: sha256(previous),
-        policy_sha256: sha256(policyState()),
+        previous_policy_sha256: previousPolicySha256,
+        policy_sha256: currentPolicyHash(),
         profile,
         mode,
         failure_mode: failureMode,
-        context_sha256: sha256(context)
+        context_sha256: sha256(context),
+        ...(authorizationResult ? {
+          authorization: {
+            authorized: true,
+            threshold: authorizationResult.threshold,
+            eligible_signatures: authorizationResult.eligible_signatures,
+            distinct_eligible_fingerprints: authorizationResult.distinct_eligible_fingerprints
+          }
+        } : {})
       };
     }
 
@@ -122,7 +166,7 @@ export function createGovernanceStreamSession(open = {}) {
         errors: result.errors,
         effective_allowed: result.effective_allowed,
         entries: result.entries,
-        ...(policyEpoch > 0 ? { policy_epochs: policyEpoch, final_policy_sha256: sha256(policyState()) } : {})
+        ...(policyEpoch > 0 ? { policy_epochs: policyEpoch, final_policy_sha256: currentPolicyHash() } : {})
       };
     }
 
@@ -136,6 +180,7 @@ export function createGovernanceStreamSession(open = {}) {
     get mode() { return mode; },
     get failure_mode() { return failureMode; },
     get policy_epoch() { return policyEpoch; },
+    get policy_sha256() { return currentPolicyHash(); },
     accept,
     snapshot() { return firewall.snapshot(); },
     get finalized() { return finalized; }
