@@ -28,6 +28,7 @@
     "lint": "node bin/aml.js lint examples/simple.aml",
     "verify": "node bin/aml.js verify dist/build_manifest.json",
     "proof": "node demos/undeniable-proof/replay-proof.mjs && node scripts/check-flood-fixtures.js",
+    "proof:report": "node scripts/proof-report.mjs",
     "fingerprint": "node bin/aml-meaning.js",
     "meaning-manifest": "node bin/aml-meaning.js manifest",
     "release-proof": "node bin/aml-release-proof.js",

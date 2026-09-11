@@ -70,16 +70,41 @@ node demos/undeniable-proof/replay-proof.mjs
 node scripts/check-flood-fixtures.js
 ```
 
-## 6. Inspect meaning
+## 6. Generate a publishable machine-readable report
+
+```bash
+npm run proof:report
+```
+
+This writes `aml-proof-report.json` in the current directory. The report includes:
+
+- PASS / FAIL result;
+- Node, platform, architecture, and OS release;
+- deterministic replay hashes;
+- balanced fixture counts;
+- the canonical independent-verification issue;
+- an explicit evidence-boundary statement.
+
+You can also choose the output path directly:
+
+```bash
+node scripts/proof-report.mjs ./my-aml-proof-report.json
+```
+
+The generated file is intentionally self-describing so an outside tester can publish the exact artifact they observed instead of rewriting results by hand.
+
+Important: a report generated inside this repository is still project-authored engineering evidence. It becomes independent external evidence only when an outside tester runs the command in their own environment and publishes their own reproducible result.
+
+## 7. Inspect meaning
 
 https://aruintelligence.github.io/aml-core/view-meaning.html
 
-## 7. File your result
+## 8. File your result
 
 Use the canonical independent-verification issue:
 
 https://github.com/aruintelligence/aml-core/issues/88
 
-Report **PASS / FAIL / MIXED** and include the exact commit or release, environment, command, and observed output. Negative results are useful.
+Report **PASS / FAIL / MIXED** and include the exact commit or release, environment, command, and observed output. Attach or link your `aml-proof-report.json` when useful. Negative results are useful.
 
 ĀML is a working prototype, not a ratified global standard. Its attention/restoration values are declared or model-supplied inputs, not objective measures of human cognition or wellbeing.
