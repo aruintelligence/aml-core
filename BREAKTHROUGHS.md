@@ -34,8 +34,6 @@ npm run proof:report
 
 The project ships browser bridges, a React adapter, a streaming interface firewall, deployment/shadow-mode wrappers, and a renderer-agnostic agent-UI governance adapter.
 
-The adapter accepts generated components plus explicit governance metadata, evaluates each component through the existing streaming/deployment firewall, and returns components permitted to render separately from components suppressed before rendering.
-
 ## 3. Generated-interface decisions can carry evidence
 
 ĀML execution paths can emit deterministic receipts and hashes that can be inspected after the decision. Project-controlled reports remain project evidence until an outside party independently runs and publishes them.
@@ -70,28 +68,9 @@ Replayable transcripts can be signed with Ed25519. Verification separately repor
 
 ## 11. Multiple trusted keys can witness the same governed interface decision
 
-ĀML now includes a project-defined multi-party governance witness quorum.
+ĀML includes a project-defined multi-party governance witness quorum. Signed, replay-valid governance transcripts can be evaluated under a threshold policy requiring enough distinct eligible signing keys to attest to the same transcript root.
 
-Signed, replay-valid governance transcripts can be evaluated under a threshold policy requiring enough **distinct eligible signing keys** to attest to the same transcript root.
-
-The policy can independently specify:
-
-- a minimum witness threshold;
-- trusted key fingerprints;
-- revoked key fingerprints;
-- required signer scope;
-- unique-key enforcement.
-
-Witnesses are grouped by transcript root. Duplicate signing keys do not inflate a quorum. Revoked keys are excluded. Signatures from keys outside the verifier's explicit trust set do not become trusted merely because their public keys are embedded in the artifact.
-
-Project surfaces:
-
-- `evaluateGovernanceWitnessQuorum(...)`;
-- `verifyGovernanceWitnessQuorum(...)`;
-- `aml-governance-witness-quorum`;
-- `schemas/governance-witness-quorum.schema.json`;
-- `docs/MULTIPARTY_GOVERNANCE_WITNESS.md`;
-- `publications/MULTIPARTY_GOVERNANCE_WITNESS.md`.
+The policy can independently specify witness threshold, trusted fingerprints, revoked fingerprints, signer scope, and unique-key enforcement. Duplicate keys do not inflate quorum counts.
 
 Protocol:
 
@@ -99,20 +78,53 @@ Protocol:
 aml-governance-witness-quorum/1
 ```
 
-This creates a threshold-attestation primitive for governed AI interface evidence. It is **not** Byzantine consensus, identity proofing, a timestamp authority, independent external validation, standards-body recognition, or evidence that outside organizations currently operate witness nodes.
+This is a threshold-attestation primitive, not Byzantine consensus, identity proofing, a timestamp authority, independent external validation, standards-body recognition, or evidence that outside organizations currently operate witness nodes.
+
+## 12. Cross-runtime disagreement can be localized instead of hidden
+
+ĀML now includes a project-defined cross-runtime disagreement report.
+
+Two governance transcripts can be compared entry by entry. When their observable executions diverge, the report identifies the **first** divergent sequence and classifies the boundary as one of:
+
+- missing entry;
+- direction mismatch;
+- protocol mismatch;
+- governance-decision mismatch;
+- input mismatch;
+- other output mismatch.
+
+Both sides of the disputed entry receive canonical SHA-256 hashes, making the disagreement precise enough to archive, reference, reproduce, and adjudicate.
+
+Project surfaces:
+
+- `localizeRuntimeDisagreement(...)`;
+- `aml-runtime-disagreement`;
+- `schemas/runtime-disagreement-report.schema.json`;
+- `docs/CROSS_RUNTIME_DISAGREEMENT.md`;
+- `publications/CROSS_RUNTIME_DISAGREEMENT.md`.
+
+Protocol:
+
+```text
+aml-runtime-disagreement-report/1
+```
+
+The localizer deliberately does **not** declare the project runtime correct. It says where two observable executions part company. Correctness still requires an external contract, conformance vector, witness policy, or explicit adjudication rule.
+
+That distinction is essential if ĀML is ever implemented by independently maintained runtimes: interoperability becomes something that can fail visibly at an exact boundary rather than something asserted by branding.
 
 ## The frontier
 
 The next technical frontiers are:
 
-1. independently reproduced Agent UI, continuous-stream, transcript, signature, and witness-quorum verification;
+1. independent reproduction of Agent UI, streaming, transcript, signature, witness-quorum, and disagreement-localization contracts;
 2. external adapters for distinct generative-UI protocols;
-3. a second independently maintained runtime implementing the public contracts;
-4. cross-runtime transcript replay with precise disagreement localization;
-5. signer authorization rotation and revocation with externally maintained witness trust roots;
-6. bounded real-application pilots comparing shadow and enforce modes;
-7. adversarial tests for false ALLOW decisions, truncated streams, rehashed false transcripts, signature substitution, trust-root confusion, witness duplication, and quorum splitting;
-8. policy changes and capability negotiation during live sessions without weakening auditability;
-9. privacy-preserving witness proofs that reveal enough to verify a decision without necessarily disclosing the entire governed interface.
+3. a genuinely independently maintained runtime implementing the public contracts;
+4. machine-readable adjudication policies for known cross-runtime disagreements;
+5. signer authorization rotation and revocation with externally maintained trust roots;
+6. privacy-preserving witness proofs that verify a decision without necessarily disclosing the entire governed interface;
+7. live policy and capability changes during a governance stream without destroying replayability;
+8. bounded real-application pilots comparing shadow and enforce modes;
+9. adversarial tests for false ALLOW decisions, truncated streams, rehashed false transcripts, signature substitution, trust-root confusion, witness duplication, quorum splitting, and cross-runtime divergence.
 
 The goal is not to make ĀML impossible to criticize. The goal is to make its claims increasingly precise, executable, portable, and falsifiable.
