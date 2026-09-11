@@ -1,0 +1,26 @@
+{
+  "protocol": "aml-agent-ui-envelope/1",
+  "surface_id": "golden_mixed_surface",
+  "components": [
+    {
+      "id": "pressure",
+      "type": "button",
+      "props": { "label": "Act now" },
+      "governance": {
+        "purpose": "Create urgency",
+        "attention_cost": 5,
+        "restoration_value": 1
+      }
+    },
+    {
+      "id": "continue",
+      "type": "button",
+      "props": { "label": "Continue" },
+      "governance": {
+        "purpose": "Let the user continue",
+        "attention_cost": 1,
+        "restoration_value": 2
+      }
+    }
+  ]
+}

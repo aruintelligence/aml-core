@@ -32,9 +32,9 @@ npm run proof:report
 
 ## 2. Meaning and policy can remain separate from the renderer
 
-The project ships browser bridges, a React adapter, a streaming interface firewall, deployment/shadow-mode wrappers, and now a renderer-agnostic agent-UI governance adapter.
+The project ships browser bridges, a React adapter, a streaming interface firewall, deployment/shadow-mode wrappers, and a renderer-agnostic agent-UI governance adapter.
 
-The new adapter accepts generated components plus explicit governance metadata, evaluates each component through the existing streaming/deployment firewall, and returns two outputs:
+The adapter accepts generated components plus explicit governance metadata, evaluates each component through the existing streaming/deployment firewall, and returns two outputs:
 
 - components permitted to render;
 - components suppressed before rendering.
@@ -95,6 +95,27 @@ Evidence ladder:
 
 The project must not promote internal CI, project-maintained reference runtimes, clone counts, or outreach activity into external evidence.
 
+## 7. The governance boundary can cross process and language boundaries
+
+The Agent UI governance contract is now exposed through three equivalent project surfaces:
+
+- JavaScript API: `evaluateAgentUI(...)`;
+- CLI: `aml-agent-ui`;
+- HTTP: `POST /v1/agent-ui/evaluate` via `aml-agent-ui-serve`.
+
+Machine-readable input/output schemas and a mixed ALLOW/SUPPRESS golden vector are included in the repository.
+
+That changes the integration boundary materially: an external renderer or agent runtime no longer needs to import ĀML internals to ask whether generated components are renderable. It can hand a JSON envelope to a separate governance process and receive the governed component sets and decision evidence back.
+
+Documentation:
+
+- `docs/AGENT_UI_GATEWAY.md`
+- `schemas/agent-ui-envelope.schema.json`
+- `schemas/agent-ui-result.schema.json`
+- `conformance/agent-ui/mixed.json`
+
+This is a shipped project technical milestone, not evidence that another language, vendor, runtime, or protocol has independently implemented the contract.
+
 ## The frontier
 
 The next technical frontiers are:
@@ -103,6 +124,7 @@ The next technical frontiers are:
 2. adapters maintained outside this repository for distinct generative-UI protocols;
 3. a second independently maintained runtime implementing the public contracts;
 4. bounded real-application pilots that compare shadow-mode and enforced decisions;
-5. adversarial attempts to produce false ALLOW decisions, ambiguous receipts, or cross-runtime disagreement.
+5. adversarial attempts to produce false ALLOW decisions, ambiguous receipts, or cross-runtime disagreement;
+6. streaming cross-process governance where partial interfaces are evaluated continuously rather than only as complete envelopes.
 
 The goal is not to make ĀML impossible to criticize. The goal is to make its claims increasingly precise, executable, portable, and falsifiable.
