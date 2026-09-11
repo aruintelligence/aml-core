@@ -60,6 +60,7 @@ export { createGovernanceStreamTranscript, verifyGovernanceStreamTranscript, AML
 export { signGovernanceStreamTranscript, verifySignedGovernanceStreamTranscript, AML_SIGNED_GOVERNANCE_TRANSCRIPT, AML_SIGNED_GOVERNANCE_TRANSCRIPT_VERIFICATION } from "./protocol/governanceTranscriptSignature.js";
 export { evaluateGovernanceWitnessQuorum, verifyGovernanceWitnessQuorum, AML_GOVERNANCE_WITNESS_QUORUM, AML_GOVERNANCE_WITNESS_QUORUM_VERIFICATION } from "./protocol/governanceWitnessQuorum.js";
 export { localizeRuntimeDisagreement, AML_RUNTIME_DISAGREEMENT_REPORT } from "./protocol/runtimeDisagreement.js";
+export { createGovernanceDisclosure, verifyGovernanceDisclosure, AML_GOVERNANCE_DISCLOSURE, AML_GOVERNANCE_DISCLOSURE_VERIFICATION } from "./protocol/governanceDisclosure.js";
 export { createAmlHttpServer } from "./server/httpServer.js";
 export { createAgentUiGateway } from "./server/agentUiGateway.js";
 export { createGovernanceStreamGateway } from "./server/governanceStreamGateway.js";

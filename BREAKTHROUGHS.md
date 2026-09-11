@@ -70,8 +70,6 @@ Replayable transcripts can be signed with Ed25519. Verification separately repor
 
 ĀML includes a project-defined multi-party governance witness quorum. Signed, replay-valid governance transcripts can be evaluated under a threshold policy requiring enough distinct eligible signing keys to attest to the same transcript root.
 
-The policy can independently specify witness threshold, trusted fingerprints, revoked fingerprints, signer scope, and unique-key enforcement. Duplicate keys do not inflate quorum counts.
-
 Protocol:
 
 ```text
@@ -82,49 +80,50 @@ This is a threshold-attestation primitive, not Byzantine consensus, identity pro
 
 ## 12. Cross-runtime disagreement can be localized instead of hidden
 
-ĀML now includes a project-defined cross-runtime disagreement report.
+Two governance transcripts can be compared entry by entry. When executions diverge, `aml-runtime-disagreement-report/1` identifies the first observable disagreement and hashes both sides of that boundary.
 
-Two governance transcripts can be compared entry by entry. When their observable executions diverge, the report identifies the **first** divergent sequence and classifies the boundary as one of:
+The localizer does not declare the project runtime correct. Correctness still requires an external contract, conformance vector, witness policy, or adjudication rule.
 
-- missing entry;
-- direction mismatch;
-- protocol mismatch;
-- governance-decision mismatch;
-- input mismatch;
-- other output mismatch.
+## 13. Governance evidence can be selectively disclosed
 
-Both sides of the disputed entry receive canonical SHA-256 hashes, making the disagreement precise enough to archive, reference, reproduce, and adjudicate.
+ĀML now includes a project-defined selective-disclosure format for governance transcripts.
+
+A Merkle commitment is built over all transcript entry hashes. Selected entries can then be revealed with inclusion proofs while undisclosed message bodies remain absent from the disclosure artifact.
 
 Project surfaces:
 
-- `localizeRuntimeDisagreement(...)`;
-- `aml-runtime-disagreement`;
-- `schemas/runtime-disagreement-report.schema.json`;
-- `docs/CROSS_RUNTIME_DISAGREEMENT.md`;
-- `publications/CROSS_RUNTIME_DISAGREEMENT.md`.
+- `createGovernanceDisclosure(...)`;
+- `verifyGovernanceDisclosure(...)`;
+- `aml-governance-disclose`;
+- `aml-governance-disclosure-verify`;
+- `schemas/governance-selective-disclosure.schema.json`;
+- `docs/SELECTIVE_GOVERNANCE_DISCLOSURE.md`;
+- `publications/SELECTIVE_GOVERNANCE_DISCLOSURE.md`.
 
 Protocol:
 
 ```text
-aml-runtime-disagreement-report/1
+aml-governance-selective-disclosure/1
 ```
 
-The localizer deliberately does **not** declare the project runtime correct. It says where two observable executions part company. Correctness still requires an external contract, conformance vector, witness policy, or explicit adjudication rule.
+Verification checks disclosed-entry hashes and their Merkle inclusion paths. It can also require externally supplied expected transcript and Merkle roots so a verifier does not have to trust roots embedded in the disclosure artifact itself.
 
-That distinction is essential if ĀML is ever implemented by independently maintained runtimes: interoperability becomes something that can fail visibly at an exact boundary rather than something asserted by branding.
+This is **selective disclosure, not zero-knowledge proof**. It still reveals metadata including the source entry count, selected indices, disclosed entries, transcript root, and Merkle commitment. A valid Merkle proof demonstrates membership in a commitment; authenticity still requires the commitment or transcript root to come from a trusted signed, witnessed, published, or otherwise authenticated source.
+
+The architectural point is that future AI-interface accountability does not have to require publishing every governed detail to prove a smaller fact about the session.
 
 ## The frontier
 
 The next technical frontiers are:
 
-1. independent reproduction of Agent UI, streaming, transcript, signature, witness-quorum, and disagreement-localization contracts;
+1. independent reproduction of Agent UI, streaming, transcript, signature, witness-quorum, disagreement-localization, and disclosure contracts;
 2. external adapters for distinct generative-UI protocols;
 3. a genuinely independently maintained runtime implementing the public contracts;
-4. machine-readable adjudication policies for known cross-runtime disagreements;
-5. signer authorization rotation and revocation with externally maintained trust roots;
-6. privacy-preserving witness proofs that verify a decision without necessarily disclosing the entire governed interface;
+4. signed or witnessed disclosure commitments with explicit revocation and signer scope;
+5. stronger privacy proofs, including research toward zero-knowledge statements about governed decisions without revealing message bodies;
+6. machine-readable adjudication policies for known cross-runtime disagreements;
 7. live policy and capability changes during a governance stream without destroying replayability;
 8. bounded real-application pilots comparing shadow and enforce modes;
-9. adversarial tests for false ALLOW decisions, truncated streams, rehashed false transcripts, signature substitution, trust-root confusion, witness duplication, quorum splitting, and cross-runtime divergence.
+9. adversarial tests for false ALLOW decisions, truncated streams, rehashed false transcripts, signature substitution, trust-root confusion, witness duplication, quorum splitting, cross-runtime divergence, and disclosure-root substitution.
 
-The goal is not to make ĀML impossible to criticize. The goal is to make its claims increasingly precise, executable, portable, and falsifiable.
+The goal is not to make ĀML impossible to criticize. The goal is to make its claims increasingly precise, executable, portable, privacy-aware, and falsifiable.
