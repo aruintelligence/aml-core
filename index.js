@@ -57,6 +57,7 @@ export { createWireEnvelope, validateWireEnvelope, negotiateWireSession } from "
 export { createReplayGuard, acceptWireEnvelope } from "./protocol/replayGuard.js";
 export { createAmlHttpServer } from "./server/httpServer.js";
 export { evaluateAccountableProps, createAccountableUI } from "./adapters/react.js";
+export { evaluateAgentUI, AML_AGENT_UI_ENVELOPE, AML_AGENT_UI_RESULT } from "./adapters/agent-ui.js";
 export { viewMeaning, formatMeaningReport } from "./tooling/viewMeaning.js";
 export { evaluatePullRequestChange, formatPullRequestGate } from "./tooling/prGate.js";
 export { AML_CONFORMANCE_LEVELS, evaluateConformanceLevel, createConformanceClaim, verifyConformanceClaim } from "./tooling/conformanceLevel.js";
