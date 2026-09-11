@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/schemas/agent-ui-envelope.schema.json",
+  "title": "ĀML Agent UI Governance Envelope",
+  "type": "object",
+  "required": ["protocol", "components"],
+  "properties": {
+    "protocol": { "const": "aml-agent-ui-envelope/1" },
+    "surface_id": { "type": "string", "minLength": 1 },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "governance"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "identifier": { "type": "string", "minLength": 1 },
+          "type": { "type": "string", "minLength": 1 },
+          "props": { "type": "object" },
+          "governance": {
+            "type": "object",
+            "required": ["purpose", "attention_cost", "restoration_value"],
+            "properties": {
+              "purpose": { "type": "string", "minLength": 1 },
+              "attention_cost": { "type": "number" },
+              "restoration_value": { "type": "number" },
+              "content": {},
+              "aml_type": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}
