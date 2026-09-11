@@ -116,15 +116,43 @@ Documentation:
 
 This is a shipped project technical milestone, not evidence that another language, vendor, runtime, or protocol has independently implemented the contract.
 
+## 8. Governance can remain present while an interface is still being generated
+
+The continuous governance stream extends the cross-process boundary from complete envelopes to incremental semantic nodes.
+
+A session is opened once, nodes are evaluated as they arrive, and each node can receive a decision before later nodes exist. The stream is finalized explicitly and produces a session summary.
+
+Project surfaces:
+
+- `aml-governance-stream` CLI;
+- `aml-governance-stream-serve` HTTP gateway;
+- `POST /v1/governance/stream` using NDJSON;
+- `createGovernanceStreamSession(...)` programmatic API;
+- `schemas/governance-stream-message.schema.json`;
+- `conformance/governance-stream/mixed.ndjson`.
+
+Core stream contracts:
+
+- `aml-governance-stream-open/1`
+- `aml-governance-stream-node/1`
+- `aml-governance-stream-decision/1`
+- `aml-governance-stream-finalize/1`
+- `aml-governance-stream-result/1`
+
+This matters for agentic and generative interfaces that stream, progressively reveal, or mutate UI over time. Governance no longer has to wait for a completed interface artifact.
+
+The current reference transport is HTTP/NDJSON. It does not claim distributed consensus, exactly-once delivery, native compatibility with another UI protocol, or production network-security guarantees.
+
 ## The frontier
 
 The next technical frontiers are:
 
-1. independent reproduction of the agent-UI governance boundary;
+1. independent reproduction of the Agent UI and continuous-stream governance boundaries;
 2. adapters maintained outside this repository for distinct generative-UI protocols;
 3. a second independently maintained runtime implementing the public contracts;
 4. bounded real-application pilots that compare shadow-mode and enforced decisions;
-5. adversarial attempts to produce false ALLOW decisions, ambiguous receipts, or cross-runtime disagreement;
-6. streaming cross-process governance where partial interfaces are evaluated continuously rather than only as complete envelopes.
+5. adversarial attempts to produce false ALLOW decisions, ambiguous receipts, stream truncation errors, or cross-runtime disagreement;
+6. policy changes and capability negotiation during a live governance session without weakening auditability;
+7. portable stream transcripts that can be independently replayed and verified after the session ends.
 
 The goal is not to make ĀML impossible to criticize. The goal is to make its claims increasingly precise, executable, portable, and falsifiable.
