@@ -119,14 +119,9 @@ The verifier separates signature validity, verifier-controlled key trust, revoca
 
 ## 16. A live policy transition can require threshold cryptographic authority
 
-ĀML can now optionally protect live governance-policy changes with a threshold of trusted Ed25519 signatures before policy state is allowed to mutate.
+ĀML can optionally protect live governance-policy changes with a threshold of trusted Ed25519 signatures before policy state is allowed to mutate.
 
-The transition that gets signed is bound to four things:
-
-- the exact governance-stream transmission;
-- the expected current policy epoch;
-- the SHA-256 of the exact previous policy state;
-- the exact requested update fields.
+The transition that gets signed is bound to the exact governance-stream transmission, expected current policy epoch, SHA-256 of the exact previous policy state, and exact requested update fields.
 
 Protocols:
 
@@ -139,18 +134,34 @@ A protected stream can specify a verifier-controlled policy containing a signatu
 
 If authorization is missing, the eligible-signature threshold is not met, or the signed transition is bound to a different epoch, prior state, transmission, or requested change, the policy update is rejected **before state mutation**.
 
+## 17. Root trust can delegate operational governance authority
+
+Protected policy transitions no longer require every operational signing key to appear directly in the verifier's root trust list.
+
+When `allow_delegated_authority` is explicitly enabled, a transition signature can carry a signed `aml-trust-delegation/2` chain. The verifier accepts that signer only when:
+
+- the chain begins at a root key already present in the verifier-supplied trust set;
+- cryptographic key continuity holds through every delegation hop;
+- every hop delegates the required capability, normally `governance-policy-transition`;
+- the final delegated key is exactly the key that signed the bound transition;
+- no issuer, intermediate, or leaf key appears in the supplied revocation set;
+- configured expiry/time checks pass;
+- and the transition signature remains valid for the exact stream, policy epoch, prior-policy hash, and requested update.
+
+Delegation is disabled by default. Directly trusted keys continue to work without a delegation chain.
+
 Project surfaces:
 
-- `createGovernancePolicyTransition(...)`;
-- `signGovernancePolicyTransition(...)`;
-- `createGovernancePolicyTransitionAuthorization(...)`;
-- `verifyGovernancePolicyTransitionAuthorization(...)`;
-- `transitionMatchesUpdate(...)`;
-- `schemas/governance-policy-transition-authorization.schema.json`;
-- `docs/AUTHORIZED_LIVE_POLICY_TRANSITIONS.md`;
-- `publications/AUTHORIZED_LIVE_POLICY_TRANSITIONS.md`.
+- `createSignedTrustDelegation(...)`;
+- `verifyDelegationChain(...)`;
+- `signGovernancePolicyTransition(..., { delegation_chain })`;
+- `verifyGovernancePolicyTransitionAuthorization(...)` with `allow_delegated_authority`;
+- `docs/DELEGATED_GOVERNANCE_AUTHORITY.md`;
+- `publications/DELEGATED_GOVERNANCE_AUTHORITY.md`.
 
-This advances live governance from replayable mutation toward cryptographically constrained mutation. It is still not universal identity proofing, organizational approval, regulatory authorization, external validation, or official ĀRU authorization. The verifier's trusted-key configuration remains an explicit authority decision.
+This separates long-lived root trust from short-lived operational signing authority while keeping root selection, capability scope, revocation, time, and threshold policy under verifier control.
+
+It does not establish legal identity, employment, organizational approval, regulatory authority, certification, independent validation, or official ĀRU authorization. Those remain separate external claims.
 
 ## The frontier
 
@@ -159,11 +170,11 @@ The next technical frontiers are:
 1. independent reproduction of the growing governance contract stack;
 2. external adapters for distinct generative-UI protocols;
 3. a genuinely independently maintained runtime implementing the public contracts;
-4. policy-transition authorization delegated through explicit trust chains instead of static key lists;
+4. transmission-, environment-, epoch-, and time-bounded delegation constraints beyond capability-only delegation;
 5. multi-party witness quorums over selective-disclosure commitments;
 6. stronger privacy proofs, including research toward zero-knowledge statements about governed decisions without revealing message bodies;
 7. machine-readable adjudication policies for cross-runtime disagreement;
 8. bounded real-application pilots comparing shadow and enforce modes;
-9. adversarial testing for false ALLOW decisions, unauthorized policy transitions, replay across epochs, revoked-key reuse, threshold bypass, transcript substitution, disclosure substitution, and cross-runtime divergence.
+9. adversarial testing for false ALLOW decisions, unauthorized policy transitions, replay across epochs, revoked-key reuse, delegation-chain substitution, privilege expansion, threshold bypass, transcript substitution, disclosure substitution, and cross-runtime divergence.
 
 The goal is not to make ĀML impossible to criticize. The goal is to make its claims increasingly precise, executable, portable, privacy-aware, and falsifiable.
