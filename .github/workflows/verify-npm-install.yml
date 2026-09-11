@@ -1,0 +1,113 @@
+name: Verify AML npm Install
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_spec:
+        description: "Exact npm package spec to verify, for example aml-core@1.3.0"
+        required: true
+        default: "aml-core@1.3.0"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify-public-install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out verification fixtures only
+        uses: actions/checkout@v4
+        with:
+          path: repo
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Reject non-exact or non-canonical package spec
+        id: spec
+        shell: bash
+        run: |
+          set -euo pipefail
+          SPEC="${{ inputs.package_spec }}"
+          if [[ ! "$SPEC" =~ ^aml-core@[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Verification requires an exact canonical aml-core version, not a tag or range: $SPEC" >&2
+            exit 1
+          fi
+          echo "spec=$SPEC" >> "$GITHUB_OUTPUT"
+          echo "version=${SPEC#aml-core@}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve registry metadata before install
+        id: registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          SPEC="${{ steps.spec.outputs.spec }}"
+          VERSION="$(npm view "$SPEC" version)"
+          REPOSITORY="$(npm view "$SPEC" repository.url)"
+          INTEGRITY="$(npm view "$SPEC" dist.integrity)"
+          SHASUM="$(npm view "$SPEC" dist.shasum)"
+          TARBALL="$(npm view "$SPEC" dist.tarball)"
+          [[ "$VERSION" == "${{ steps.spec.outputs.version }}" ]] || { echo "Registry version mismatch" >&2; exit 1; }
+          [[ "$REPOSITORY" == "git+https://github.com/aruintelligence/aml-core.git" ]] || { echo "Unexpected repository metadata: $REPOSITORY" >&2; exit 1; }
+          echo "repository=$REPOSITORY" >> "$GITHUB_OUTPUT"
+          echo "integrity=$INTEGRITY" >> "$GITHUB_OUTPUT"
+          echo "shasum=$SHASUM" >> "$GITHUB_OUTPUT"
+          echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
+
+      - name: Install only from the public registry in a clean consumer
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir consumer
+          printf '{"private":true,"type":"module"}\n' > consumer/package.json
+          cd consumer
+          npm install --ignore-scripts --save-exact "${{ steps.spec.outputs.spec }}"
+          node -e "import('aml-core').then(m=>{if(!m||Object.keys(m).length===0)process.exit(2);console.log('AML API import OK')}).catch(e=>{console.error(e);process.exit(1)})"
+          ./node_modules/.bin/aml version
+          ./node_modules/.bin/aml validate ../repo/examples/simple.aml
+
+      - name: Emit machine-readable verification report
+        shell: bash
+        env:
+          AML_SPEC: ${{ steps.spec.outputs.spec }}
+          AML_VERSION: ${{ steps.spec.outputs.version }}
+          AML_REPOSITORY: ${{ steps.registry.outputs.repository }}
+          AML_INTEGRITY: ${{ steps.registry.outputs.integrity }}
+          AML_SHASUM: ${{ steps.registry.outputs.shasum }}
+          AML_TARBALL: ${{ steps.registry.outputs.tarball }}
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const report = {
+            protocol: 'aml-public-registry-install-verification/1',
+            package_spec: process.env.AML_SPEC,
+            package: 'aml-core',
+            version: process.env.AML_VERSION,
+            repository: process.env.AML_REPOSITORY,
+            registry_integrity: process.env.AML_INTEGRITY,
+            registry_shasum: process.env.AML_SHASUM,
+            registry_tarball: process.env.AML_TARBALL,
+            node_version: process.version,
+            public_registry_install: true,
+            api_import: true,
+            cli_version: true,
+            cli_validate: true,
+            verifier: 'GitHub Actions workflow in the canonical project repository',
+            evidence_level_note: 'Project-controlled verification. This is not independent external evidence.'
+          };
+          fs.mkdirSync('verification-evidence', { recursive: true });
+          fs.writeFileSync('verification-evidence/npm-install-verification.json', `${JSON.stringify(report, null, 2)}\n`);
+          NODE
+
+      - name: Upload verification report
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-public-install-verification-${{ steps.spec.outputs.version }}-${{ github.run_id }}
+          path: verification-evidence/npm-install-verification.json
+          if-no-files-found: error
+          retention-days: 90
