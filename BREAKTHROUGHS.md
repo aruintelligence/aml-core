@@ -86,19 +86,7 @@ The localizer does not declare the project runtime correct. Correctness still re
 
 ## 13. Governance evidence can be selectively disclosed
 
-ĀML now includes a project-defined selective-disclosure format for governance transcripts.
-
-A Merkle commitment is built over all transcript entry hashes. Selected entries can then be revealed with inclusion proofs while undisclosed message bodies remain absent from the disclosure artifact.
-
-Project surfaces:
-
-- `createGovernanceDisclosure(...)`;
-- `verifyGovernanceDisclosure(...)`;
-- `aml-governance-disclose`;
-- `aml-governance-disclosure-verify`;
-- `schemas/governance-selective-disclosure.schema.json`;
-- `docs/SELECTIVE_GOVERNANCE_DISCLOSURE.md`;
-- `publications/SELECTIVE_GOVERNANCE_DISCLOSURE.md`.
+A Merkle commitment can be built over transcript entry hashes and selected entries can be revealed with inclusion proofs while undisclosed message bodies remain absent.
 
 Protocol:
 
@@ -106,24 +94,50 @@ Protocol:
 aml-governance-selective-disclosure/1
 ```
 
-Verification checks disclosed-entry hashes and their Merkle inclusion paths. It can also require externally supplied expected transcript and Merkle roots so a verifier does not have to trust roots embedded in the disclosure artifact itself.
+This is selective disclosure, not zero-knowledge proof. Authenticity still requires a trusted signed, witnessed, published, or otherwise authenticated commitment or transcript root.
 
-This is **selective disclosure, not zero-knowledge proof**. It still reveals metadata including the source entry count, selected indices, disclosed entries, transcript root, and Merkle commitment. A valid Merkle proof demonstrates membership in a commitment; authenticity still requires the commitment or transcript root to come from a trusted signed, witnessed, published, or otherwise authenticated source.
+## 14. Policy can change during generation without disappearing from history
 
-The architectural point is that future AI-interface accountability does not have to require publishing every governed detail to prove a smaller fact about the session.
+ĀML continuous-governance sessions can now make default policy changes explicit while an interface is still streaming.
+
+A live transition enters the stream as:
+
+```text
+aml-governance-stream-policy-update/1
+```
+
+and is acknowledged as:
+
+```text
+aml-governance-stream-policy-applied/1
+```
+
+Each accepted update advances a monotonically increasing policy epoch and records hashes of the previous policy state, the new policy state, and the active context. Mutable defaults include profile, enforce/shadow mode, open/closed failure behavior, and context using explicit merge or replace semantics.
+
+Because the update and acknowledgement are part of the same governance transcript as interface nodes and render decisions, policy mutation remains deterministically replayable. A later evaluator can see **when** the default policy state changed rather than discovering only the final configuration.
+
+Project surfaces:
+
+- `AML_GOVERNANCE_STREAM_POLICY_UPDATE`;
+- `AML_GOVERNANCE_STREAM_POLICY_APPLIED`;
+- `conformance/governance-stream/policy-epochs.ndjson`;
+- `docs/LIVE_POLICY_EPOCHS.md`;
+- `publications/LIVE_POLICY_EPOCHS.md`.
+
+This mechanism records and applies policy changes. It does not by itself authorize them. Signer authority, approval, witness quorum, deployment permissions, or organizational controls remain separate layers.
 
 ## The frontier
 
 The next technical frontiers are:
 
-1. independent reproduction of Agent UI, streaming, transcript, signature, witness-quorum, disagreement-localization, and disclosure contracts;
+1. independent reproduction of Agent UI, streaming, transcript, signature, witness-quorum, disagreement-localization, disclosure, and policy-epoch contracts;
 2. external adapters for distinct generative-UI protocols;
 3. a genuinely independently maintained runtime implementing the public contracts;
-4. signed or witnessed disclosure commitments with explicit revocation and signer scope;
-5. stronger privacy proofs, including research toward zero-knowledge statements about governed decisions without revealing message bodies;
-6. machine-readable adjudication policies for known cross-runtime disagreements;
-7. live policy and capability changes during a governance stream without destroying replayability;
+4. cryptographically authorized live policy transitions with scoped signers and threshold approval;
+5. signed or witnessed disclosure commitments with explicit revocation and signer scope;
+6. stronger privacy proofs, including research toward zero-knowledge statements about governed decisions without revealing message bodies;
+7. machine-readable adjudication policies for known cross-runtime disagreements;
 8. bounded real-application pilots comparing shadow and enforce modes;
-9. adversarial tests for false ALLOW decisions, truncated streams, rehashed false transcripts, signature substitution, trust-root confusion, witness duplication, quorum splitting, cross-runtime divergence, and disclosure-root substitution.
+9. adversarial tests for false ALLOW decisions, unauthorized policy transitions, truncated streams, rehashed false transcripts, signature substitution, trust-root confusion, witness duplication, quorum splitting, cross-runtime divergence, and disclosure-root substitution.
 
 The goal is not to make ĀML impossible to criticize. The goal is to make its claims increasingly precise, executable, portable, privacy-aware, and falsifiable.
