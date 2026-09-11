@@ -1,0 +1,46 @@
+{
+  "protocol": "aml-package-surface/1",
+  "package": "aml-core",
+  "node": ">=18.0.0",
+  "stable_release": {
+    "version": "1.3.0",
+    "tag": "v1.3.0",
+    "channel": "stable"
+  },
+  "preview_release": {
+    "version": "1.4.0-rc.2",
+    "tag": "v1.4.0-rc.2",
+    "channel": "preview"
+  },
+  "javascript": {
+    "root_export": ".",
+    "target": "./index.js"
+  },
+  "cli": {
+    "aml": "./bin/aml.js",
+    "aml-doctor": "./bin/aml-doctor.js",
+    "aml-meaning": "./bin/aml-meaning.js",
+    "aml-release-proof": "./bin/aml-release-proof.js",
+    "aml-release-quorum": "./bin/aml-release-quorum.js",
+    "aml-release-profile": "./bin/aml-release-profile.js",
+    "aml-github-attestation": "./bin/aml-github-attestation.js",
+    "aml-lsp": "./bin/aml-lsp.js",
+    "aml-serve": "./bin/aml-serve.js",
+    "aml-agent-ui": "./bin/aml-agent-ui.js",
+    "aml-agent-ui-serve": "./bin/aml-agent-ui-serve.js",
+    "aml-governance-stream": "./bin/aml-governance-stream.js",
+    "aml-governance-stream-serve": "./bin/aml-governance-stream-serve.js",
+    "aml-governance-transcript": "./bin/aml-governance-transcript.js",
+    "aml-governance-transcript-verify": "./bin/aml-governance-transcript-verify.js",
+    "aml-governance-transcript-sign": "./bin/aml-governance-transcript-sign.js",
+    "aml-governance-transcript-signature-verify": "./bin/aml-governance-transcript-signature-verify.js",
+    "aml-governance-witness-quorum": "./bin/aml-governance-witness-quorum.js",
+    "aml-runtime-disagreement": "./bin/aml-runtime-disagreement.js",
+    "aml-governance-disclose": "./bin/aml-governance-disclose.js",
+    "aml-governance-disclosure-verify": "./bin/aml-governance-disclosure-verify.js",
+    "aml-governance-disclosure-sign": "./bin/aml-governance-disclosure-sign.js",
+    "aml-governance-disclosure-signed-verify": "./bin/aml-governance-disclosure-signed-verify.js",
+    "aml-brand-verify": "./bin/aml-brand-verify.js"
+  },
+  "claim_boundary": "This manifest declares project-controlled package surfaces. It does not imply registry publication, independent adoption, certification, or standards status."
+}
