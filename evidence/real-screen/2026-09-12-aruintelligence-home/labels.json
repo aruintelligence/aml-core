@@ -1,0 +1,91 @@
+{
+  "protocol": "aml-real-screen-labels/1",
+  "screen_sha256": "d18e0d75cebe1f4db4ea83047901ec120c234e0f9ec47a933ac9be3165c77845",
+  "assessment_boundary": "The numeric values are explicit reviewer judgments for this production viewport. They are not objective measurements of attention, benefit, wellbeing, restoration, or user behavior.",
+  "items": [
+    {
+      "id": "hero-proposition",
+      "purpose": "State the page's primary research proposition and orient the visitor",
+      "attention_cost": 2.5,
+      "restoration_value": 8,
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 e07ba9a3cfb0d74e00d16176ece925b58aae325d038726b6a95264b7d60f910b"
+      }
+    },
+    {
+      "id": "ask-aru-guide",
+      "purpose": "Open the site's AI guide for direct visitor questions",
+      "attention_cost": 3.5,
+      "restoration_value": 7,
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 e07ba9a3cfb0d74e00d16176ece925b58aae325d038726b6a95264b7d60f910b"
+      }
+    },
+    {
+      "id": "live-demo",
+      "purpose": "Let the visitor inspect a live demonstration of the research",
+      "attention_cost": 2.5,
+      "restoration_value": 8,
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 e07ba9a3cfb0d74e00d16176ece925b58aae325d038726b6a95264b7d60f910b"
+      }
+    },
+    {
+      "id": "orcid-papers",
+      "purpose": "Provide access to the public research publication record",
+      "attention_cost": 1.5,
+      "restoration_value": 6,
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 e07ba9a3cfb0d74e00d16176ece925b58aae325d038726b6a95264b7d60f910b"
+      }
+    },
+    {
+      "id": "aml-lab",
+      "purpose": "Take the visitor to the live ĀML™ demonstration",
+      "attention_cost": 2,
+      "restoration_value": 7,
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 e07ba9a3cfb0d74e00d16176ece925b58aae325d038726b6a95264b7d60f910b"
+      }
+    },
+    {
+      "id": "founding-circle",
+      "purpose": "Promote the Founding Circle from the persistent primary navigation",
+      "attention_cost": 4.5,
+      "restoration_value": 2,
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 e07ba9a3cfb0d74e00d16176ece925b58aae325d038726b6a95264b7d60f910b"
+      }
+    },
+    {
+      "id": "persistent-guide-launcher",
+      "purpose": "Keep the AI guide available while the visitor moves through the page",
+      "attention_cost": 4,
+      "restoration_value": 5,
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 e07ba9a3cfb0d74e00d16176ece925b58aae325d038726b6a95264b7d60f910b"
+      }
+    }
+  ]
+}
