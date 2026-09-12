@@ -4,6 +4,7 @@ for (const script of [
   'scripts/check-release-integrity-contract.mjs',
   'scripts/check-immutable-release-manifest-contract.mjs',
   'scripts/check-compromise-response-contract.mjs',
+  'scripts/check-release-integrity-status.mjs',
   'scripts/check-release-integrity-response.mjs',
   'scripts/check-release-incident-evidence.mjs'
 ]) {
