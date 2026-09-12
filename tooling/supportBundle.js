@@ -11,6 +11,7 @@ const CONTRACT_FILES = [
   "package-surface.json",
   "api-stability.json",
   "api-surface.snapshot.json",
+  "cli-contract.json",
   "upgrade-contract.json",
   "security-baseline.json",
   "external-evidence.json"
