@@ -1,0 +1,44 @@
+name: AML Enterprise Readiness
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  enterprise-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify protected API surface
+        run: npm run api:stability
+      - name: Verify upgrade contract
+        run: npm run upgrade:check
+      - name: Generate CycloneDX SBOM
+        run: node scripts/generate-sbom.mjs "${RUNNER_TEMP}/aml-core.cdx.json"
+      - name: Validate generated SBOM shape
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const p = `${process.env.RUNNER_TEMP}/aml-core.cdx.json`;
+          const sbom = JSON.parse(fs.readFileSync(p,'utf8'));
+          if (sbom.bomFormat !== 'CycloneDX' || sbom.specVersion !== '1.5') process.exit(1);
+          if (sbom.metadata?.component?.name !== 'aml-core') process.exit(2);
+          console.log(JSON.stringify({protocol:'aml-sbom-verification/1',valid:true,component:sbom.metadata.component.name,version:sbom.metadata.component.version,components:sbom.components.length},null,2));
+          NODE
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-core-cyclonedx-sbom-${{ github.sha }}
+          path: ${{ runner.temp }}/aml-core.cdx.json
+          if-no-files-found: error
+          retention-days: 90
