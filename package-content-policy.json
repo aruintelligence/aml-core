@@ -15,7 +15,6 @@
     ".npmrc"
   ],
   "forbidden_suffixes": [
-    ".pem",
     ".key",
     ".p12",
     ".pfx"
@@ -23,7 +22,11 @@
   "forbidden_fragments": [
     "private-key",
     "private_key",
+    "private.pem",
     "id_rsa"
   ],
-  "claim_boundary": "This policy constrains project-controlled package contents. It is not a substitute for independent supply-chain review, secret scanning, or registry-side provenance verification."
+  "allowed_public_key_suffixes": [
+    "-public.pem"
+  ],
+  "claim_boundary": "This policy constrains project-controlled package contents while permitting declared public-key PEM material. It is not a substitute for independent supply-chain review, secret scanning, or registry-side provenance verification."
 }
