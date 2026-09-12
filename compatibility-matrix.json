@@ -1,0 +1,22 @@
+{
+  "protocol": "aml-consumer-compatibility-matrix/1",
+  "package": "aml-core",
+  "runtime": {
+    "node_engine": ">=18.0.0",
+    "tested_node_majors": [18, 20, 22, 24]
+  },
+  "operating_systems": [
+    "ubuntu-latest",
+    "windows-latest",
+    "macos-latest"
+  ],
+  "consumer_checks": [
+    "npm-pack",
+    "clean-tarball-install",
+    "javascript-api-import",
+    "aml-doctor",
+    "aml-cli-validate"
+  ],
+  "expected_matrix_jobs": 12,
+  "claim_boundary": "Project-controlled CI compatibility evidence. Passing this matrix does not establish independent verification, production suitability, certification, standards status, or support for environments outside the declared matrix."
+}
