@@ -1,0 +1,52 @@
+name: AML Release Quorum and Artifact Binding
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  provenance-quorum:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify threshold signatures, revocation, freshness, and tamper rejection
+        run: node scripts/check-release-provenance-quorum.mjs
+
+  artifact-provenance-binding:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out artifact producer
+        uses: actions/checkout@v4
+        with:
+          path: producer
+          fetch-depth: 0
+      - name: Check out clean verifier copy
+        uses: actions/checkout@v4
+        with:
+          path: verifier
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Build packed artifact binding
+        working-directory: producer
+        run: node scripts/build-artifact-provenance-binding.mjs "${RUNNER_TEMP}/aml-artifact-provenance-binding.json"
+      - name: Verify binding from clean checkout
+        working-directory: verifier
+        run: node scripts/verify-artifact-provenance-binding.mjs "${RUNNER_TEMP}/aml-artifact-provenance-binding.json"
+      - name: Upload artifact provenance binding
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-artifact-provenance-binding
+          path: ${{ runner.temp }}/aml-artifact-provenance-binding.json
+          if-no-files-found: error
