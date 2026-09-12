@@ -26,7 +26,8 @@
     "id_rsa"
   ],
   "allowed_public_key_suffixes": [
-    "-public.pem"
+    "-public.pem",
+    ".pub.pem"
   ],
   "claim_boundary": "This policy constrains project-controlled package contents while permitting declared public-key PEM material. It is not a substitute for independent supply-chain review, secret scanning, or registry-side provenance verification."
 }
