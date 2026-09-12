@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
   actions: read
 
 jobs:
@@ -25,7 +24,14 @@ jobs:
         with:
           languages: javascript-typescript
           queries: security-extended
-      - name: Perform CodeQL analysis
+      - name: Perform read-only CodeQL analysis
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:javascript-typescript"
+          upload: false
+          output: codeql-results
+      - name: Upload CodeQL SARIF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-codeql-sarif
+          path: codeql-results
