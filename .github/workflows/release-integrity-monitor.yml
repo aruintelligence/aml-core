@@ -1,0 +1,49 @@
+name: AML Release Integrity Monitor
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  integrity-response-rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify immutable manifest and compromise response
+        run: node scripts/check-release-integrity-response.mjs
+
+  live-registry-integrity:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+      - name: Verify live npm registry integrity or report inactive unpublished state
+        run: node scripts/monitor-live-release-integrity.mjs | tee aml-live-release-integrity.json
+      - name: Upload live integrity observation
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-live-release-integrity
+          path: aml-live-release-integrity.json
+          if-no-files-found: error
