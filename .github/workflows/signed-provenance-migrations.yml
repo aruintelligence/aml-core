@@ -1,0 +1,64 @@
+name: AML Signed Provenance and Migrations
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-provenance-signature:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify Ed25519 provenance signing, trust separation, and tamper rejection
+        run: node --test test/release-provenance-signature.test.js
+
+  persisted-state-migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify explicit major migration behavior
+        run: node scripts/check-persisted-state-migrations.mjs
+
+  clean-provenance-reproduction:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out provenance producer
+        uses: actions/checkout@v4
+        with:
+          path: producer
+          fetch-depth: 0
+      - name: Check out independent project verifier copy
+        uses: actions/checkout@v4
+        with:
+          path: verifier
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Produce provenance from first clean checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd producer && node scripts/build-release-provenance-evidence.mjs "${RUNNER_TEMP}/aml-release-provenance.json" >/dev/null)
+      - name: Verify provenance from second clean checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd verifier && node scripts/verify-release-provenance-evidence.mjs "${RUNNER_TEMP}/aml-release-provenance.json")
+      - name: Upload clean-checkout provenance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-clean-checkout-release-provenance
+          path: ${{ runner.temp }}/aml-release-provenance.json
+          if-no-files-found: error
