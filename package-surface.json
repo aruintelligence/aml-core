@@ -12,6 +12,7 @@
   "cli": {
     "aml": "./bin/aml.js",
     "aml-doctor": "./bin/aml-doctor.js",
+    "aml-support-bundle": "./bin/aml-support-bundle.js",
     "aml-meaning": "./bin/aml-meaning.js",
     "aml-release-proof": "./bin/aml-release-proof.js",
     "aml-release-quorum": "./bin/aml-release-quorum.js",
