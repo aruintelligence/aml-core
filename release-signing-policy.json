@@ -1,0 +1,25 @@
+{
+  "protocol": "aml-release-signing-policy/1",
+  "evidence_protocol": "aml-release-provenance-evidence/1",
+  "signature_algorithm": "Ed25519",
+  "authorization": {
+    "production_threshold": 2,
+    "distinct_signers_required": true,
+    "trust_is_verifier_supplied": true,
+    "embedded_keys_are_not_implicitly_trusted": true,
+    "revoked_keys_are_rejected": true
+  },
+  "freshness": {
+    "sequence_required": true,
+    "current_release_sequence": 1,
+    "reject_sequence_below_verifier_minimum": true,
+    "sequence_advances_only_with_reviewed_release_control_change": true
+  },
+  "rotation": {
+    "overlap_allowed": true,
+    "old_keys_may_be_revoked": true,
+    "new_key_requires_explicit_trust_configuration": true,
+    "no_production_private_key_in_repository": true
+  },
+  "claim_boundary": "Project-controlled release-signing policy. It defines verification behavior but does not itself create an official ARU signature, third-party attestation, npm publication, or external trust."
+}
