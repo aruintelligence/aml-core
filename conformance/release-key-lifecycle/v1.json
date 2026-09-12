@@ -1,0 +1,20 @@
+{
+  "protocol": "aml-release-key-lifecycle-vectors/1",
+  "vectors": [
+    {"name":"trust-proposed-key","from":"proposed","to":"trusted","allowed":true},
+    {"name":"enter-overlap","from":"trusted","to":"overlap","allowed":true},
+    {"name":"revoke-trusted-key","from":"trusted","to":"revoked","allowed":true},
+    {"name":"retire-trusted-key","from":"trusted","to":"retired","allowed":true},
+    {"name":"revoked-cannot-return","from":"revoked","to":"trusted","allowed":false},
+    {"name":"retired-cannot-return","from":"retired","to":"trusted","allowed":false},
+    {"name":"proposed-cannot-revoke-directly","from":"proposed","to":"revoked","allowed":false},
+    {"name":"overlap-can-revoke","from":"overlap","to":"revoked","allowed":true}
+  ],
+  "quorum_vectors": [
+    {"name":"two-distinct-trusted","threshold":2,"trusted_signers":["key-a","key-b"],"valid":true},
+    {"name":"one-trusted","threshold":2,"trusted_signers":["key-a"],"valid":false},
+    {"name":"duplicate-does-not-count","threshold":2,"trusted_signers":["key-a","key-a"],"valid":false},
+    {"name":"revoked-does-not-count","threshold":2,"trusted_signers":["key-a"],"revoked_signers":["key-b"],"valid":false}
+  ],
+  "claim_boundary": "Conformance-only lifecycle and quorum vectors. Key identifiers are synthetic and are not production credentials."
+}

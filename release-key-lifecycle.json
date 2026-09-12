@@ -1,0 +1,23 @@
+{
+  "protocol": "aml-release-key-lifecycle/1",
+  "algorithm": "Ed25519",
+  "production_private_keys_in_repository": false,
+  "states": ["proposed", "trusted", "overlap", "revoked", "retired"],
+  "transitions": {
+    "proposed": ["trusted"],
+    "trusted": ["overlap", "revoked", "retired"],
+    "overlap": ["trusted", "revoked", "retired"],
+    "revoked": [],
+    "retired": []
+  },
+  "rules": {
+    "trust_must_be_explicit": true,
+    "revocation_is_monotonic": true,
+    "retired_keys_cannot_reenter_trust": true,
+    "revoked_keys_cannot_reenter_trust": true,
+    "overlap_requires_distinct_key_ids": true,
+    "production_release_threshold_must_remain_satisfied_during_rotation": true,
+    "private_key_material_must_not_appear_in_repository": true
+  },
+  "claim_boundary": "Project-controlled key-lifecycle policy. It models trust, rotation, retirement, and revocation semantics but does not create, store, rotate, revoke, or attest any external production credential."
+}
