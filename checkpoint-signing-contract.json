@@ -1,0 +1,26 @@
+{
+  "protocol": "aml-checkpoint-signing-contract/1",
+  "checkpoint_protocol": "aml-release-transparency-checkpoint/1",
+  "signed_checkpoint_protocol": "aml-signed-release-transparency-checkpoint/1",
+  "witness_receipt_protocol": "aml-release-witness-receipt/1",
+  "signature_algorithm": "Ed25519",
+  "trust": {
+    "verifier_supplied": true,
+    "embedded_public_key_is_not_implicitly_trusted": true,
+    "revoked_or_retired_signers_are_rejected": true
+  },
+  "succession": {
+    "checkpoint_sequence_starts_at_one": true,
+    "checkpoint_sequence_is_monotonic": true,
+    "previous_checkpoint_root_required_after_first": true,
+    "forked_successor_is_rejected_when_prior_head_is_known": true,
+    "rollback_below_verifier_minimum_sequence_is_rejected": true
+  },
+  "witness": {
+    "receipt_binds_checkpoint_root": true,
+    "receipt_binds_checkpoint_sequence": true,
+    "receipt_binds_witness_id": true,
+    "receipt_signature_verification_is_separate_from_trust": true
+  },
+  "claim_boundary": "Project-controlled checkpoint signing, succession, and witness-receipt semantics. Test signatures do not create production ARU authorization, an external transparency service, an independent witness, a timestamp authority, or third-party certification."
+}
