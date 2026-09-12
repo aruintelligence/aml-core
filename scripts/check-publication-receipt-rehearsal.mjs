@@ -39,23 +39,24 @@ fs.writeFileSync(registryPath, `${JSON.stringify(synthetic, null, 2)}\n`);
 run(['scripts/build-publication-receipt.mjs', transactionPath, registryPath, receiptPath]);
 run(['scripts/verify-publication-receipt.mjs', receiptPath, transactionPath]);
 
-for (const mutation of [
-  r => { r.dist_integrity = 'sha512-tampered'; },
-  r => { r.dist_shasum = '0'.repeat(40); },
-  r => { r.dist_tag = 'next'; },
-  r => { r.version = '9.9.9'; },
-  r => { r.checks.clean_registry_install_passes = false; }
-]) {
+const negativeCases = [
+  ['integrity', r => { r.dist_integrity = 'sha512-tampered'; }],
+  ['shasum', r => { r.dist_shasum = '0'.repeat(40); }],
+  ['dist-tag', r => { r.dist_tag = 'next'; }],
+  ['version', r => { r.version = '9.9.9'; }],
+  ['clean-install', r => { r.checks.clean_registry_install_passes = false; }]
+];
+for (const [name, mutation] of negativeCases) {
   const copy = structuredClone(synthetic);
   mutation(copy);
-  const tampered = path.join(temp, `tampered-${Math.random().toString(16).slice(2)}.json`);
+  const tampered = path.join(temp, `tampered-${name}.json`);
   fs.writeFileSync(tampered, `${JSON.stringify(copy, null, 2)}\n`);
   expectFailure(['scripts/build-publication-receipt.mjs', transactionPath, tampered, path.join(temp, 'should-not-exist.json')]);
 }
 
 const receipt = JSON.parse(fs.readFileSync(receiptPath, 'utf8'));
 receipt.receipt_root_sha256 = 'f'.repeat(64);
-const tamperedReceipt = path.join(temp, 'tampered-receipt.json');
+const tamperedReceipt = path.join(temp, 'tampered-receipt-root.json');
 fs.writeFileSync(tamperedReceipt, `${JSON.stringify(receipt, null, 2)}\n`);
 expectFailure(['scripts/verify-publication-receipt.mjs', tamperedReceipt, transactionPath]);
 
