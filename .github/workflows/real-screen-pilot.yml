@@ -1,0 +1,51 @@
+name: AML Real Screen Pilot
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-screen-pilot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run synthetic screen pilot
+        run: |
+          node tools/real-screen/aml-real-screen-pilot.mjs \
+            --screen conformance/real-screen/synthetic-checkout.html \
+            --labels conformance/real-screen/synthetic-checkout-labels.json \
+            --out aml-real-screen-receipt.json
+      - name: Verify expected decisions and evidence boundary
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const r = JSON.parse(readFileSync('aml-real-screen-receipt.json', 'utf8'));
+          if (r.protocol !== 'aml-real-screen-pilot-receipt/1') throw new Error('wrong receipt protocol');
+          if (r.summary.allow !== 1 || r.summary.suppress !== 1) throw new Error('unexpected decision counts');
+          if (r.summary.real_screen_evidence_eligible !== false) throw new Error('synthetic fixture must never count as real-screen evidence');
+          if (!/^[a-f0-9]{64}$/.test(r.receipt_root_sha256)) throw new Error('invalid receipt root');
+          const byId = Object.fromEntries(r.decisions.map(x => [x.id, x.decision]));
+          if (byId['checkout-summary'] !== 'ALLOW') throw new Error('checkout summary should ALLOW');
+          if (byId['upsell-banner'] !== 'SUPPRESS') throw new Error('upsell banner should SUPPRESS');
+          NODE
+      - name: Reject tampered screen binding
+        run: |
+          cp conformance/real-screen/synthetic-checkout.html /tmp/tampered.html
+          printf '\n<!-- tampered -->\n' >> /tmp/tampered.html
+          if node tools/real-screen/aml-real-screen-pilot.mjs --screen /tmp/tampered.html --labels conformance/real-screen/synthetic-checkout-labels.json >/tmp/tampered.out 2>/tmp/tampered.err; then
+            echo 'tampered screen unexpectedly verified'
+            exit 1
+          fi
+      - name: Upload receipt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-real-screen-pilot-receipt
+          path: aml-real-screen-receipt.json
