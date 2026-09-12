@@ -1,0 +1,12 @@
+{
+  "protocol": "aml-protocol-negotiation-vectors/1",
+  "vectors": [
+    {"offered":"aml-governance-stream-open/1","supported":["aml-governance-stream-open/1"],"expected":"accept_exact"},
+    {"offered":"aml-governance-stream-open/2","supported":["aml-governance-stream-open/1"],"expected":"reject_unknown_major"},
+    {"offered":"aml-governance-stream-open/1","supported":["aml-governance-stream-open/2"],"expected":"reject_downgrade_major"},
+    {"offered":"aml-governance-stream-transcript/1","supported":["aml-governance-stream-transcript/1","aml-signed-governance-stream-transcript/1"],"expected":"accept_exact"},
+    {"offered":"aml-unknown-protocol/1","supported":["aml-governance-stream-open/1"],"expected":"reject_unknown_protocol"},
+    {"offered":"aml-governance-witness-quorum/1","supported":["aml-governance-witness-quorum/1"],"expected":"accept_exact"}
+  ],
+  "claim_boundary": "Project-controlled negotiation vectors for AML protocol identifiers. They do not demonstrate independent interoperability or compatibility with an external protocol ecosystem."
+}
