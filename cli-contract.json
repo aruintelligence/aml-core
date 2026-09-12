@@ -1,0 +1,27 @@
+{
+  "protocol": "aml-cli-contract/1",
+  "package": "aml-core",
+  "cli": "aml",
+  "stable_version": "1.3.0",
+  "commands": [
+    "help", "version", "compile", "generate", "execute", "deploy", "canary",
+    "verify-receipt", "sign-receipt", "verify-signed-receipt", "simulate",
+    "semantic-diff", "policy-diff", "sign-policy-pack", "verify-policy-pack",
+    "sign-brand-authorization", "verify-brand-authorization", "verify-audit",
+    "attention-account", "policies", "profiles", "inspect", "explain", "validate",
+    "lint", "verify", "sign", "verify-attestation"
+  ],
+  "exit_contract": {
+    "success": 0,
+    "usage_or_unknown_command": 1,
+    "deploy_evaluation_error": 2,
+    "deploy_effective_deny_when_required": 3,
+    "canary_changed_when_fail_on_change": 4
+  },
+  "output_contract": {
+    "help_must_list_every_command": true,
+    "version_must_report_package_version": true,
+    "unknown_command_must_fail": true
+  },
+  "claim_boundary": "Project-maintained CLI compatibility contract for declared stable behavior. It is not independent certification and does not freeze unreleased preview-only behavior."
+}
