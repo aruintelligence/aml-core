@@ -1,0 +1,20 @@
+{
+  "protocol": "aml-release-transparency-contract/1",
+  "checkpoint_protocol": "aml-release-transparency-checkpoint/1",
+  "event_protocol": "aml-release-transparency-event/1",
+  "hash_algorithm": "sha256",
+  "required_event_fields": ["sequence", "event_type", "subject", "subject_sha256", "previous_event_sha256"],
+  "allowed_event_types": ["release_manifest", "key_trust", "key_overlap", "key_revocation", "key_retirement", "incident_evidence", "recovery_verification"],
+  "rules": {
+    "event_sequence_starts_at_one": true,
+    "event_sequence_is_contiguous": true,
+    "previous_event_hash_is_required_after_first_event": true,
+    "checkpoint_binds_repository_commit": true,
+    "checkpoint_binds_source_tag_commit": true,
+    "checkpoint_binds_release_signing_policy": true,
+    "checkpoint_binds_key_lifecycle_policy": true,
+    "checkpoint_binds_compromise_response_policy": true,
+    "checkpoint_tamper_must_fail_verification": true
+  },
+  "claim_boundary": "Project-controlled transparency log and checkpoint contract. It is not an external transparency service, public witness, timestamp authority, certificate log, or third-party attestation."
+}
