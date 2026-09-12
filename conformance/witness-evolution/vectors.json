@@ -1,0 +1,15 @@
+{
+  "protocol": "aml-witness-evolution-vectors/1",
+  "vectors": [
+    {"id":"valid-successor-proof","kind":"consistency","from_sequence":7,"to_sequence":8,"predecessor_matches":true,"accept":true},
+    {"id":"skipped-successor-proof","kind":"consistency","from_sequence":7,"to_sequence":9,"predecessor_matches":true,"accept":false},
+    {"id":"forked-successor-proof","kind":"consistency","from_sequence":7,"to_sequence":8,"predecessor_matches":false,"accept":false},
+    {"id":"rollback-proof","kind":"consistency","from_sequence":8,"to_sequence":7,"predecessor_matches":true,"accept":false},
+    {"id":"valid-witness-rotation","kind":"rotation","prior_version":3,"next_version":4,"prior_root_matches":true,"distinct_ids":true,"distinct_keys":true,"quorum_preserved":true,"contains_revoked":false,"accept":true},
+    {"id":"collapsed-quorum-rotation","kind":"rotation","prior_version":3,"next_version":4,"prior_root_matches":true,"distinct_ids":true,"distinct_keys":true,"quorum_preserved":false,"contains_revoked":false,"accept":false},
+    {"id":"forked-witness-set","kind":"rotation","prior_version":3,"next_version":4,"prior_root_matches":false,"distinct_ids":true,"distinct_keys":true,"quorum_preserved":true,"contains_revoked":false,"accept":false},
+    {"id":"revoked-witness-reentry","kind":"rotation","prior_version":3,"next_version":4,"prior_root_matches":true,"distinct_ids":true,"distinct_keys":true,"quorum_preserved":true,"contains_revoked":true,"accept":false},
+    {"id":"duplicate-witness-id","kind":"rotation","prior_version":3,"next_version":4,"prior_root_matches":true,"distinct_ids":false,"distinct_keys":true,"quorum_preserved":true,"contains_revoked":false,"accept":false},
+    {"id":"duplicate-witness-key","kind":"rotation","prior_version":3,"next_version":4,"prior_root_matches":true,"distinct_ids":true,"distinct_keys":false,"quorum_preserved":true,"contains_revoked":false,"accept":false}
+  ]
+}

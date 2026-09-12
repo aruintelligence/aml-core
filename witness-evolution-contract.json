@@ -1,0 +1,34 @@
+{
+  "protocol": "aml-witness-evolution-contract/1",
+  "consistency_proof_protocol": "aml-checkpoint-consistency-proof/1",
+  "witness_set_protocol": "aml-witness-set/1",
+  "external_submission_protocol": "aml-external-witness-submission/1",
+  "signature_algorithm": "Ed25519",
+  "consistency_proof": {
+    "binds_from_root": true,
+    "binds_from_sequence": true,
+    "binds_to_root": true,
+    "binds_to_sequence": true,
+    "to_sequence_must_equal_from_sequence_plus_one": true,
+    "proof_must_bind_to_checkpoint_predecessor": true,
+    "rollback_is_rejected": true,
+    "forked_predecessor_is_rejected": true
+  },
+  "witness_set_rotation": {
+    "set_version_is_monotonic": true,
+    "new_set_must_bind_previous_set_root": true,
+    "rotation_must_preserve_minimum_quorum": true,
+    "duplicate_witness_ids_are_rejected": true,
+    "duplicate_public_key_fingerprints_are_rejected": true,
+    "revoked_witnesses_cannot_enter_new_set": true,
+    "overlap_is_allowed": true
+  },
+  "external_submission": {
+    "signature_validity_is_separate_from_trust": true,
+    "submission_must_bind_checkpoint_root_and_sequence": true,
+    "embedded_public_key_is_not_implicitly_trusted": true,
+    "independent_status_is_verifier_asserted": true,
+    "project_generated_submissions_cannot_self_claim_independence": true
+  },
+  "claim_boundary": "Project-controlled consistency-proof, witness-set-rotation, and external-submission semantics. Test witnesses are synthetic. Imported receipts become independent evidence only when a verifier establishes signer identity, trust, and independence outside this repository."
+}
