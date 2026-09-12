@@ -1,0 +1,29 @@
+name: AML Verify Public npm Binding
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-public-registry-binding:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: https://registry.npmjs.org
+      - name: Build current artifact provenance binding
+        run: node scripts/build-artifact-provenance-binding.mjs "${RUNNER_TEMP}/aml-artifact-provenance-binding.json"
+      - name: Verify public npm registry integrity and shasum against bound artifact
+        run: node scripts/verify-public-npm-binding.mjs "${RUNNER_TEMP}/aml-artifact-provenance-binding.json"
+      - name: Upload verified binding
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-public-npm-binding
+          path: ${{ runner.temp }}/aml-artifact-provenance-binding.json
+          if-no-files-found: error
