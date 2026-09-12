@@ -1,0 +1,16 @@
+{
+  "protocol": "aml-release-integrity-status/1",
+  "stable_target": {
+    "package": "aml-core",
+    "version": "1.3.0",
+    "dist_tag": "latest",
+    "source_tag": "v1.3.0"
+  },
+  "registry_monitoring_state": "inactive_until_publication",
+  "interpretation": {
+    "inactive_until_publication_is_not_pass": true,
+    "synthetic_rehearsal_is_not_live_registry_evidence": true,
+    "live_registry_verification_required_after_publication": true
+  },
+  "claim_boundary": "This status file describes the project-controlled monitoring state. It does not claim that aml-core@1.3.0 is currently published to npm."
+}

@@ -1,0 +1,21 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+
+const sha256 = value => crypto.createHash('sha256').update(value).digest('hex');
+const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-incident-evidence-'));
+const observed = path.join(temp, 'observed.json');
+const out = path.join(temp, 'incident.json');
+fs.writeFileSync(observed, `${JSON.stringify({ package: 'aml-core', status: 'drift', integrity: 'observed-example' }, null, 2)}\n`);
+const r = spawnSync(process.execPath, ['scripts/build-release-incident-evidence.mjs', 'artifact_integrity_drift', observed, out], { encoding: 'utf8', shell: false });
+if (r.status !== 0) throw new Error(r.stderr || r.stdout || 'Incident evidence builder failed');
+const evidence = JSON.parse(fs.readFileSync(out, 'utf8'));
+if (evidence.observed_sha256 !== sha256(fs.readFileSync(observed))) throw new Error('Observed incident bytes not preserved');
+if (!evidence.prescribed_actions.includes('contain') || !evidence.prescribed_actions.includes('revoke') || !evidence.prescribed_actions.includes('verify')) throw new Error('Incident response actions incomplete');
+const root = evidence.incident_root_sha256;
+const copy = structuredClone(evidence);
+delete copy.incident_root_sha256;
+if (sha256(JSON.stringify(copy)) !== root) throw new Error('Incident root invalid');
+console.log(JSON.stringify({ protocol: 'aml-release-incident-evidence-check/1', passed: true, incident_root_sha256: root }, null, 2));

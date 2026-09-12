@@ -1,0 +1,26 @@
+{
+  "protocol": "aml-immutable-release-manifest-contract/1",
+  "manifest_protocol": "aml-immutable-release-manifest/1",
+  "required_bindings": [
+    "package",
+    "version",
+    "dist_tag",
+    "source_git_tag",
+    "source_git_tag_commit",
+    "release_sequence",
+    "release_signing_threshold",
+    "release_readiness_sha256",
+    "release_provenance_root_sha256",
+    "artifact_sha256",
+    "artifact_npm_integrity",
+    "artifact_npm_shasum",
+    "publication_transaction_root_sha256"
+  ],
+  "immutability": {
+    "manifest_root_sha256_required": true,
+    "source_tag_must_resolve_to_recorded_commit": true,
+    "published_artifact_identity_must_not_be_rewritten": true,
+    "replacement_release_requires_new_version_or_reviewed_channel_change": true
+  },
+  "claim_boundary": "A project-generated immutable release manifest binds release-control evidence to one stable artifact identity. It is not proof that the artifact was published, adopted, independently attested, or uncompromisable."
+}

@@ -1,0 +1,22 @@
+{
+  "protocol": "aml-release-compromise-response/1",
+  "severity_order": ["observe", "contain", "revoke", "rotate", "repair", "verify", "recover"],
+  "triggers": {
+    "registry_metadata_drift": ["contain", "verify"],
+    "artifact_integrity_drift": ["contain", "revoke", "repair", "verify"],
+    "dist_tag_drift": ["contain", "repair", "verify"],
+    "trusted_signing_key_compromise": ["contain", "revoke", "rotate", "verify"],
+    "source_tag_commit_drift": ["contain", "revoke", "repair", "verify"],
+    "manifest_root_tamper": ["contain", "revoke", "repair", "verify"]
+  },
+  "controls": {
+    "do_not_delete_or_rewrite_published_artifact": true,
+    "freeze_automatic_promotion_during_containment": true,
+    "revoked_signers_do_not_count_toward_quorum": true,
+    "replacement_key_requires_explicit_trust_configuration": true,
+    "recovery_requires_fresh_integrity_receipt": true,
+    "recovery_requires_release_sequence_not_older_than_last_accepted": true,
+    "incident_evidence_must_preserve_observed_hashes": true
+  },
+  "claim_boundary": "Project-controlled compromise-response semantics. This contract does not itself revoke external credentials, mutate npm, guarantee containment, or replace an organizational incident-response program."
+}

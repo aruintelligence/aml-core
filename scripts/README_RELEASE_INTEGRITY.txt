@@ -1,0 +1,1 @@
+Release integrity checks are orchestrated by scripts/check-release-integrity-all.mjs and .github/workflows/release-integrity-monitor.yml. This marker exists to make the aggregate entrypoint discoverable to repository tooling.
