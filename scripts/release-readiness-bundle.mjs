@@ -22,13 +22,19 @@ const packageManifestBytes = fs.readFileSync(packageManifestPath);
 const packageManifest = JSON.parse(packageManifestBytes.toString('utf8'));
 
 const contractPaths = [
+  'project-contract.json',
   'package.json',
   'package-surface.json',
   'api-stability.json',
+  'api-surface.snapshot.json',
+  'cli-contract.json',
   'upgrade-contract.json',
   'security-baseline.json',
   'external-evidence.json'
-].filter(file => fs.existsSync(file));
+];
+for (const file of contractPaths) {
+  if (!fs.existsSync(file) || !fs.statSync(file).isFile()) throw new Error(`Required release contract missing: ${file}`);
+}
 const contracts = contractPaths.map(file => {
   const bytes = fs.readFileSync(file);
   return { path: file, bytes: bytes.length, sha256: sha256(bytes) };
@@ -52,6 +58,7 @@ const bundle = {
     package_content_manifest_generated: true,
     sbom_generated: true,
     contract_hashes_generated: true,
+    complete_required_contract_set: contracts.length === contractPaths.length,
     package_identity_matches: packageManifest.package === pkg.name,
     package_version_matches: packageManifest.version === pkg.version
   },
