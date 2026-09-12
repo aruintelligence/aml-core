@@ -55,15 +55,21 @@ const transaction = {
   artifact: {
     binding_sha256: sha256(bindingBytes),
     provenance_root_sha256: provenanceRoot,
+    filename: artifact.filename || null,
+    bytes: artifact.bytes || null,
     sha256: artifact.sha256 || null,
     npm_integrity: artifact.npm_integrity || artifact.integrity || null,
-    npm_shasum: artifact.npm_shasum || artifact.shasum || null
+    npm_shasum_sha1: artifact.npm_shasum_sha1 || artifact.npm_shasum || artifact.shasum || null
   },
   preconditions: contract.required_preconditions,
   postconditions: contract.postconditions,
   rollback: contract.rollback,
   claim_boundary: contract.claim_boundary
 };
+if (!/^[a-f0-9]{64}$/.test(transaction.artifact.sha256 || '')) throw new Error('Packed artifact SHA-256 missing');
+if (!transaction.artifact.npm_integrity) throw new Error('Packed artifact npm integrity missing');
+if (!/^[a-f0-9]{40}$/.test(transaction.artifact.npm_shasum_sha1 || '')) throw new Error('Packed artifact npm shasum missing');
+if (transaction.artifact.provenance_root_sha256 !== transaction.release_readiness.release_provenance_root_sha256) throw new Error('Artifact and readiness provenance roots disagree');
 transaction.transaction_root_sha256 = sha256(JSON.stringify(transaction));
 const output = `${JSON.stringify(transaction, null, 2)}\n`;
 fs.writeFileSync(process.argv[2] || 'aml-publication-transaction.json', output);
