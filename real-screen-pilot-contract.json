@@ -1,0 +1,35 @@
+{
+  "protocol": "aml-real-screen-pilot-contract/1",
+  "purpose": "Apply the declared AML render gate to an actual captured interface screen using separately supplied labels with auditable provenance.",
+  "screen": {
+    "format": "html_snapshot",
+    "marker_attribute": "data-aml-id",
+    "snapshot_sha256_required": true,
+    "network_fetch_by_verifier": false
+  },
+  "labels": {
+    "protocol": "aml-real-screen-labels/1",
+    "required_fields": ["id", "purpose", "attention_cost", "restoration_value", "provenance"],
+    "attention_cost_type": "non_negative_number",
+    "restoration_value_type": "non_negative_number",
+    "all_screen_markers_must_be_labeled": true,
+    "all_labels_must_match_a_screen_marker": true,
+    "project_demo_labels_cannot_satisfy_real_screen_evidence": true,
+    "allowed_source_kinds": ["independent_review", "operator_review", "user_research", "measured_proxy", "synthetic_fixture"]
+  },
+  "decision": {
+    "rule": "render_allowed = restoration_value >= attention_cost",
+    "allow": "ALLOW",
+    "deny": "SUPPRESS",
+    "degrade": "Not assigned by this minimal gate; DEGRADE requires an additional declared policy rather than an invented threshold."
+  },
+  "evidence": {
+    "bind_screen_sha256": true,
+    "bind_labels_sha256": true,
+    "bind_each_label_provenance": true,
+    "emit_receipt_root_sha256": true,
+    "real_screen_evidence_requires_declared_by_project_false": true,
+    "real_screen_evidence_requires_non_synthetic_source_kind": true
+  },
+  "claim_boundary": "This contract proves deterministic application of declared labels to a captured interface. It does not prove that attention_cost or restoration_value objectively measure human attention, harm, wellbeing, or restoration; it does not stop a dishonest label author; and project-controlled fixtures are not independent product validation."
+}

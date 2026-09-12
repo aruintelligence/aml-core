@@ -1,0 +1,30 @@
+{
+  "protocol": "aml-real-screen-labels/1",
+  "screen_sha256": "a91418d5d73749b7d3135ed5da7ce382847ff0e69e2ad4aca64f152a8a261ce8",
+  "items": [
+    {
+      "id": "checkout-summary",
+      "purpose": "Show the transaction summary the user requested",
+      "attention_cost": 1,
+      "restoration_value": 4,
+      "provenance": {
+        "source_kind": "synthetic_fixture",
+        "declared_by_project": true,
+        "author": "AML project CI fixture",
+        "source_reference": "conformance/real-screen/synthetic-checkout.html"
+      }
+    },
+    {
+      "id": "upsell-banner",
+      "purpose": "Offer an optional paid shipping upgrade during checkout",
+      "attention_cost": 5,
+      "restoration_value": 1,
+      "provenance": {
+        "source_kind": "synthetic_fixture",
+        "declared_by_project": true,
+        "author": "AML project CI fixture",
+        "source_reference": "conformance/real-screen/synthetic-checkout.html"
+      }
+    }
+  ]
+}
