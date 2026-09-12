@@ -1,0 +1,30 @@
+{
+  "protocol": "aml-release-integrity-contract/1",
+  "release_manifest_protocol": "aml-immutable-release-manifest/1",
+  "stable_channel": "latest",
+  "monitoring": {
+    "scheduled_registry_check_hours": 6,
+    "verify_package": true,
+    "verify_version": true,
+    "verify_dist_tag": true,
+    "verify_integrity": true,
+    "verify_shasum": true,
+    "verify_clean_install": true,
+    "verify_api_import": true,
+    "verify_cli_smoke_test": true,
+    "unpublished_state_is_inactive_not_passing": true
+  },
+  "drift_classes": [
+    "package_identity_drift",
+    "version_drift",
+    "dist_tag_drift",
+    "integrity_drift",
+    "shasum_drift",
+    "clean_install_failure",
+    "api_import_failure",
+    "cli_smoke_failure",
+    "source_tag_commit_drift",
+    "manifest_root_tamper"
+  ],
+  "claim_boundary": "Project-controlled release-integrity policy. A passing project check is not third-party certification, external attestation, adoption evidence, or a guarantee that a registry or downstream environment cannot be compromised."
+}
