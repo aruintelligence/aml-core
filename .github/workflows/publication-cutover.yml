@@ -1,0 +1,57 @@
+name: AML Publication Cutover Rehearsal
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publication-transaction:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Build deterministic publication transaction
+        run: |
+          node scripts/build-publication-transaction.mjs /tmp/tx1.json >/dev/null
+          node scripts/build-publication-transaction.mjs /tmp/tx2.json >/dev/null
+          cmp /tmp/tx1.json /tmp/tx2.json
+      - name: Verify publication transaction
+        run: node scripts/verify-publication-transaction.mjs /tmp/tx1.json
+      - name: Upload publication transaction evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-publication-transaction
+          path: /tmp/tx1.json
+          if-no-files-found: error
+
+  clean-cutover-reproduction:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out producer
+        uses: actions/checkout@v4
+        with:
+          path: producer
+          fetch-depth: 0
+      - name: Check out verifier
+        uses: actions/checkout@v4
+        with:
+          path: verifier
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Produce transaction in first clean checkout
+        working-directory: producer
+        run: node scripts/build-publication-transaction.mjs "$RUNNER_TEMP/publication-transaction.json" >/dev/null
+      - name: Verify transaction in second clean checkout
+        working-directory: verifier
+        run: node scripts/verify-publication-transaction.mjs "$RUNNER_TEMP/publication-transaction.json"
