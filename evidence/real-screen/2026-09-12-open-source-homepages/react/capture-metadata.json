@@ -1,0 +1,15 @@
+{
+  "source_url": "https://react.dev/",
+  "captured_at": "2026-09-12T18:23:16.790Z",
+  "browser_environment": "OpenAI Work cloud browser",
+  "viewport_css_pixels": {"width": 1363, "height": 936},
+  "device_pixel_ratio": 1,
+  "scroll_css_pixels": {"x": 0, "y": 0},
+  "production_screenshot_sha256": "2a422e6ea033634aeba1e6c5fc3d216bcecceac8a21e15c377210cb11af977bd",
+  "production_rendered_html_sha256": "db5efaebe107241d571e3e22215b8a547131dc8e5eb915ffa34a11bd774906b2",
+  "production_dom_snapshot_sha256": "340e7651950417e2bbf6777fa2632594e8221e042dc060bf6be79a58812da040",
+  "repository": "https://github.com/reactjs/react.dev",
+  "contribution_guide": "https://github.com/reactjs/react.dev/blob/main/CONTRIBUTING.md",
+  "collection_boundary": "Public unauthenticated homepage; one ordinary page load; no form submission, crawling, access-control testing, or circumvention.",
+  "preservation_boundary": "Exact screenshot, rendered HTML, and DOM snapshot were preserved in the operator workspace and hashed. Only hashes and a semantic extraction are committed to avoid redistributing third-party page assets."
+}
