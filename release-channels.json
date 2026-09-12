@@ -1,0 +1,25 @@
+{
+  "protocol": "aml-release-channels/1",
+  "package": "aml-core",
+  "channels": {
+    "stable": {
+      "npm_dist_tag": "latest",
+      "version": "1.3.0",
+      "git_tag": "v1.3.0",
+      "prerelease_allowed": false
+    },
+    "preview": {
+      "npm_dist_tag": "next",
+      "version": "1.4.0-rc.2",
+      "git_tag": "v1.4.0-rc.2",
+      "prerelease_required": true
+    }
+  },
+  "isolation_rules": {
+    "stable_must_never_resolve_to_prerelease": true,
+    "preview_must_never_replace_latest": true,
+    "stable_and_preview_versions_must_differ": true,
+    "stable_and_preview_git_tags_must_differ": true
+  },
+  "claim_boundary": "Project-controlled release-channel contract. It does not prove registry publication or guarantee third-party package-manager behavior."
+}

@@ -1,0 +1,67 @@
+name: AML Release Channel and Rollback
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-channel-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify stable/preview isolation and rollback contract
+        run: node scripts/check-release-channels.mjs
+
+  stable-rollback-rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release control plane
+        uses: actions/checkout@v4
+        with:
+          path: control
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Resolve canonical rollback target
+        id: rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./control/rollback-contract.json').rollback_target.version")"
+          TAG="$(node -p "require('./control/rollback-contract.json').rollback_target.git_tag")"
+          PACKAGE="$(node -p "require('./control/rollback-contract.json').package")"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "package=$PACKAGE" >> "$GITHUB_OUTPUT"
+      - name: Check out immutable rollback target
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.rollback.outputs.tag }}
+          path: rollback-src
+          fetch-depth: 1
+      - name: Verify and clean-install rollback artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./rollback-src/package.json').version")"
+          PACKAGE="$(node -p "require('./rollback-src/package.json').name")"
+          [[ "$VERSION" == "${{ steps.rollback.outputs.version }}" ]] || { echo "Rollback version mismatch" >&2; exit 1; }
+          [[ "$PACKAGE" == "${{ steps.rollback.outputs.package }}" ]] || { echo "Rollback package mismatch" >&2; exit 1; }
+          mkdir artifact consumer
+          (cd rollback-src && npm install --ignore-scripts && npm pack --pack-destination ../artifact >/dev/null)
+          TARBALL="$(find artifact -maxdepth 1 -name '*.tgz' -print -quit)"
+          test -n "$TARBALL"
+          printf '{"private":true,"type":"module"}\n' > consumer/package.json
+          (cd consumer && npm install --ignore-scripts "../$TARBALL")
+          (cd consumer && node -e "import('${{ steps.rollback.outputs.package }}').then(m=>{if(!m||Object.keys(m).length===0)process.exit(2)}).catch(e=>{console.error(e);process.exit(1)})")
+          ./consumer/node_modules/.bin/aml version
+          ./consumer/node_modules/.bin/aml validate control/examples/simple.aml

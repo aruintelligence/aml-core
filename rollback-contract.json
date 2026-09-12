@@ -1,0 +1,22 @@
+{
+  "protocol": "aml-rollback-contract/1",
+  "package": "aml-core",
+  "rollback_target": {
+    "channel": "stable",
+    "version": "1.3.0",
+    "git_tag": "v1.3.0"
+  },
+  "verification": {
+    "clean_install_required": true,
+    "api_import_required": true,
+    "cli_version_required": true,
+    "cli_validate_required": true,
+    "fixture": "examples/simple.aml"
+  },
+  "policy": {
+    "rollback_is_explicit": true,
+    "rollback_does_not_rewrite_published_versions": true,
+    "rollback_uses_immutable_version_or_tag": true
+  },
+  "claim_boundary": "Project rollback-verification contract only. A passing rehearsal does not guarantee application-level rollback safety for downstream consumers."
+}
