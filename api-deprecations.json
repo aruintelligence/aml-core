@@ -1,0 +1,11 @@
+{
+  "protocol": "aml-api-deprecations/1",
+  "package": "aml-core",
+  "entries": [],
+  "rules": {
+    "deprecation_requires_replacement_or_reason": true,
+    "protected_removal_requires_prior_deprecation": true,
+    "published_stable_removal_requires_semver_major": true
+  },
+  "claim_boundary": "This registry records project-maintained API evolution intent. Empty entries mean no protected consumer export is currently scheduled for removal."
+}
