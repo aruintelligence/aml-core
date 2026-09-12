@@ -1,0 +1,26 @@
+{
+  "protocol": "aml-persisted-state-migration-vectors/1",
+  "vectors": [
+    {
+      "id": "v1-to-synthetic-v2-preserve-semantics",
+      "source_fixture": "conformance/persisted-state/v1.json",
+      "source_protocol": "aml-persisted-governance-state/1",
+      "target_protocol": "aml-persisted-governance-state/2",
+      "synthetic_target_major": true,
+      "migration_required": true,
+      "preserve": ["source", "source_sha256", "semantic_expectation", "extension_data"],
+      "expected": "explicit_migration_required"
+    },
+    {
+      "id": "v1-same-major-roundtrip",
+      "source_fixture": "conformance/persisted-state/v1.json",
+      "source_protocol": "aml-persisted-governance-state/1",
+      "target_protocol": "aml-persisted-governance-state/1",
+      "synthetic_target_major": false,
+      "migration_required": false,
+      "preserve": ["source", "source_sha256", "semantic_expectation", "extension_data"],
+      "expected": "roundtrip_without_migration"
+    }
+  ],
+  "claim_boundary": "Project-controlled migration regression vectors. The /2 target is synthetic and does not announce a shipped v2 persisted-state protocol or guarantee downstream database migrations."
+}
