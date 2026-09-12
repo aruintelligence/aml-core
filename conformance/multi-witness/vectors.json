@@ -1,0 +1,13 @@
+{
+  "protocol": "aml-multi-witness-consistency-vectors/1",
+  "vectors": [
+    {"id":"two-trusted-agree","minimum_sequence":4,"receipts":[{"witness_id":"w1","fingerprint":"f1","trusted":true,"revoked":false,"sequence":4,"root":"r4"},{"witness_id":"w2","fingerprint":"f2","trusted":true,"revoked":false,"sequence":4,"root":"r4"}],"accept":true},
+    {"id":"split-view-root","minimum_sequence":4,"receipts":[{"witness_id":"w1","fingerprint":"f1","trusted":true,"revoked":false,"sequence":4,"root":"r4a"},{"witness_id":"w2","fingerprint":"f2","trusted":true,"revoked":false,"sequence":4,"root":"r4b"}],"accept":false},
+    {"id":"split-view-sequence","minimum_sequence":4,"receipts":[{"witness_id":"w1","fingerprint":"f1","trusted":true,"revoked":false,"sequence":4,"root":"r4"},{"witness_id":"w2","fingerprint":"f2","trusted":true,"revoked":false,"sequence":5,"root":"r5"}],"accept":false},
+    {"id":"duplicate-witness-id","minimum_sequence":4,"receipts":[{"witness_id":"w1","fingerprint":"f1","trusted":true,"revoked":false,"sequence":4,"root":"r4"},{"witness_id":"w1","fingerprint":"f2","trusted":true,"revoked":false,"sequence":4,"root":"r4"}],"accept":false},
+    {"id":"duplicate-key","minimum_sequence":4,"receipts":[{"witness_id":"w1","fingerprint":"f1","trusted":true,"revoked":false,"sequence":4,"root":"r4"},{"witness_id":"w2","fingerprint":"f1","trusted":true,"revoked":false,"sequence":4,"root":"r4"}],"accept":false},
+    {"id":"untrusted-does-not-count","minimum_sequence":4,"receipts":[{"witness_id":"w1","fingerprint":"f1","trusted":true,"revoked":false,"sequence":4,"root":"r4"},{"witness_id":"w2","fingerprint":"f2","trusted":false,"revoked":false,"sequence":4,"root":"r4"}],"accept":false},
+    {"id":"revoked-does-not-count","minimum_sequence":4,"receipts":[{"witness_id":"w1","fingerprint":"f1","trusted":true,"revoked":false,"sequence":4,"root":"r4"},{"witness_id":"w2","fingerprint":"f2","trusted":true,"revoked":true,"sequence":4,"root":"r4"}],"accept":false},
+    {"id":"rollback","minimum_sequence":5,"receipts":[{"witness_id":"w1","fingerprint":"f1","trusted":true,"revoked":false,"sequence":4,"root":"r4"},{"witness_id":"w2","fingerprint":"f2","trusted":true,"revoked":false,"sequence":4,"root":"r4"}],"accept":false}
+  ]
+}
