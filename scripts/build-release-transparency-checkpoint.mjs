@@ -16,7 +16,7 @@ const eventSubjects = [
   ['release_manifest','release-integrity-contract.json'],
   ['key_trust','release-signing-policy.json'],
   ['key_overlap','release-key-lifecycle.json'],
-  ['incident_evidence','release-compromise-response.json']
+  ['incident_evidence','compromise-response-contract.json']
 ];
 let previous = null;
 const events = eventSubjects.map(([event_type, subject], i) => {
@@ -40,7 +40,7 @@ const checkpoint = {
   policies: {
     release_signing_policy_sha256: sha256(read('release-signing-policy.json')),
     key_lifecycle_policy_sha256: sha256(read('release-key-lifecycle.json')),
-    compromise_response_policy_sha256: sha256(read('release-compromise-response.json'))
+    compromise_response_policy_sha256: sha256(read('compromise-response-contract.json'))
   },
   event_count: events.length,
   head_event_sha256: events.at(-1)?.event_sha256 || null,
