@@ -1,0 +1,73 @@
+name: Real screen pilot result
+description: Publish an AML result from an actual captured interface screen
+title: "[REAL SCREEN] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for a screen that is or was part of an actual product or operational interface. Synthetic project fixtures do not count as real-screen evidence.
+  - type: input
+    id: product
+    attributes:
+      label: Product / interface
+      description: Name or neutral description of the product and screen tested.
+    validations:
+      required: true
+  - type: input
+    id: screen_hash
+    attributes:
+      label: Screen snapshot SHA-256
+      placeholder: 64 lowercase hex characters
+    validations:
+      required: true
+  - type: input
+    id: labels_hash
+    attributes:
+      label: Labels file SHA-256
+      placeholder: 64 lowercase hex characters
+    validations:
+      required: true
+  - type: dropdown
+    id: provenance
+    attributes:
+      label: Label source
+      options:
+        - independent_review
+        - operator_review
+        - user_research
+        - measured_proxy
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Exact reproduction command
+      description: Include the exact command used to generate the receipt.
+    validations:
+      required: true
+  - type: textarea
+    id: decisions
+    attributes:
+      label: Result
+      description: Report ALLOW/SUPPRESS counts and identify any suppressed element that the product team would or would not actually ship.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Link or attach the receipt and any non-sensitive supporting evidence.
+    validations:
+      required: true
+  - type: checkboxes
+    id: declarations
+    attributes:
+      label: Declarations
+      options:
+        - label: I understand the AML numbers are declared/model inputs and this pilot does not prove an objective measurement of human attention, harm, wellbeing, or restoration.
+          required: true
+        - label: The screen described here is not an AML project synthetic fixture.
+          required: true
+        - label: I did not expose private keys, credentials, tokens, personal data, or other secrets in this submission.
+          required: true
