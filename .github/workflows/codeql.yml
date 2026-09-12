@@ -1,0 +1,37 @@
+name: AML CodeQL Security Analysis
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  analyze:
+    name: CodeQL JavaScript/TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+      - name: Perform read-only CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"
+          upload: false
+          output: codeql-results
+      - name: Upload CodeQL SARIF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-codeql-sarif
+          path: codeql-results

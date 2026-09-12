@@ -1,0 +1,9 @@
+{
+  "protocol": "aml-security-baseline/1",
+  "package": "aml-core",
+  "runtime_dependency_policy": "zero-runtime-dependencies-unless-reviewed",
+  "require_security_policy": true,
+  "require_codeql": true,
+  "minimum_node": ">=18.0.0",
+  "claim_boundary": "Project-controlled security baseline. It does not imply vulnerability-free software, certification, penetration-test coverage, or external security review."
+}
