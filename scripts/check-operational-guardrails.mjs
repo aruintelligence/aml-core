@@ -32,14 +32,18 @@ const slow = report.results.filter(item => item.average_ms > perf.max_average_ms
 if (slow.length) fail(`Performance budget exceeded: ${slow.map(item => `${item.fixture}=${item.average_ms}ms`).join(', ')}`);
 if (total > perf.max_total_ms_all_fixtures) fail(`Total benchmark budget exceeded: ${total}ms`);
 
-const fuzzSource = fs.readFileSync('scripts/check-deterministic-fuzz.mjs', 'utf8');
 const limits = resources.deterministic_fuzz;
-for (const [needle, label] of [
-  [`${limits.max_case_bytes}`, 'max_case_bytes'],
-  [`timeout: ${limits.per_case_timeout_ms}`, 'per_case_timeout_ms'],
-  [`maxBuffer: ${limits.max_worker_output_bytes}`, 'max_worker_output_bytes']
-]) {
-  if (!fuzzSource.includes(needle)) fail(`Fuzz implementation drifted from ${label} resource contract`);
+if (!(limits.max_case_bytes > 0 && limits.per_case_timeout_ms > 0 && limits.max_worker_output_bytes > 0)) fail('Invalid fuzz resource limits');
+const fuzz = spawnSync(process.execPath, ['scripts/check-deterministic-fuzz.mjs'], {
+  encoding: 'utf8',
+  maxBuffer: 4 * 1024 * 1024,
+  timeout: 180000
+});
+if (fuzz.error?.code === 'ETIMEDOUT') fail('Deterministic fuzz suite exceeded outer guardrail timeout');
+if (fuzz.status !== 0) fail(`Deterministic fuzz suite failed: ${fuzz.stderr || fuzz.stdout}`);
+const fuzzReport = JSON.parse(fuzz.stdout);
+if (fuzzReport.max_case_bytes !== limits.max_case_bytes || fuzzReport.per_case_timeout_ms !== limits.per_case_timeout_ms || fuzzReport.max_worker_output_bytes !== limits.max_worker_output_bytes) {
+  fail('Fuzz runtime report drifted from resource-limits.json');
 }
 
 console.log(JSON.stringify({
@@ -52,6 +56,11 @@ console.log(JSON.stringify({
     total_ms_observed: Number(total.toFixed(3)),
     max_average_ms_budget: perf.max_average_ms_per_fixture,
     max_total_ms_budget: perf.max_total_ms_all_fixtures
+  },
+  fuzz: {
+    cases: fuzzReport.cases,
+    accepted: fuzzReport.accepted,
+    rejected: fuzzReport.rejected
   },
   resource_limits: limits,
   claim_boundary: 'Project-controlled operational regression checks only; not certification, an SLA, or proof of immunity to denial-of-service attacks.'
