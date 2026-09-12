@@ -1,0 +1,9 @@
+{
+  "protocol": "aml-api-surface-snapshot/1",
+  "package": "aml-core",
+  "source_contract": "api-stability.json",
+  "protected_export_count": 32,
+  "protected_exports_sha256": "0f696326bfd7b03c541db5da26a040ea5405725ffcf56c233b138860d1012a79",
+  "hash_material": "protected exports joined in declared order with a trailing newline",
+  "claim_boundary": "Project-controlled compatibility snapshot. It detects protected API drift; it does not imply registry publication, certification, or external adoption."
+}
