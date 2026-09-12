@@ -1,0 +1,30 @@
+name: AML Witness Evolution
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  witness-evolution:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify consistency proofs, witness rotation, and external submission trust
+        run: node scripts/check-witness-evolution.mjs > aml-witness-evolution-report.json
+      - name: Validate report boundaries
+        run: |
+          node -e "const r=require('./aml-witness-evolution-report.json'); if(!r.passed||!r.synthetic_witnesses_only||r.external_independent_witnesses_claimed) process.exit(1)"
+      - name: Upload witness evolution report
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-witness-evolution-report
+          path: aml-witness-evolution-report.json
