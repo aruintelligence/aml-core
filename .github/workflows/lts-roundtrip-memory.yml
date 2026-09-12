@@ -1,0 +1,44 @@
+name: AML LTS Roundtrip and Memory
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  support-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify support and LTS policy
+        run: node scripts/check-support-policy.mjs
+
+  stable-current-roundtrip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify canonical stable/current compatibility
+        run: node scripts/check-roundtrip-upgrade.mjs
+
+  memory-pressure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run bounded memory-pressure regression
+        run: node scripts/check-memory-pressure.mjs

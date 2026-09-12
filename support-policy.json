@@ -1,0 +1,31 @@
+{
+  "protocol": "aml-support-policy/1",
+  "package": "aml-core",
+  "channels": {
+    "stable": {
+      "version": "1.3.0",
+      "tag": "v1.3.0",
+      "support_class": "maintained-stable",
+      "security_fixes": true,
+      "breaking_changes": false
+    },
+    "preview": {
+      "version": "1.4.0-rc.2",
+      "tag": "v1.4.0-rc.2",
+      "support_class": "preview",
+      "security_fixes": "best-effort",
+      "breaking_changes": true
+    }
+  },
+  "lts": {
+    "declared": false,
+    "reason": "No AML release is currently designated Long-Term Support. LTS status must be explicitly declared in this contract before being claimed publicly."
+  },
+  "policy": {
+    "stable_receives_compatible_hardening": true,
+    "stable_breaking_changes_require_major_release": true,
+    "preview_may_change_before_stable": true,
+    "unsupported_versions_must_not_be_described_as_lts": true
+  },
+  "claim_boundary": "Project maintenance policy only; not an SLA, warranty, regulatory commitment, or guarantee of support duration."
+}
