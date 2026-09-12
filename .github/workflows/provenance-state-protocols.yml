@@ -1,0 +1,56 @@
+name: AML Provenance State and Protocols
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  protocol-negotiation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify protocol upgrade and downgrade vectors
+        run: node scripts/check-protocol-negotiation.mjs
+
+  persisted-state:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify persisted governance state contract
+        run: node scripts/check-persisted-state.mjs
+
+  release-provenance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Build deterministic rollback-bound provenance evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/build-release-provenance-evidence.mjs >/dev/null
+          cp aml-release-provenance-evidence.json /tmp/first.json
+          node scripts/build-release-provenance-evidence.mjs >/dev/null
+          cmp /tmp/first.json aml-release-provenance-evidence.json
+          node -e "const r=require('./aml-release-provenance-evidence.json'); if(!/^[a-f0-9]{64}$/.test(r.evidence_root_sha256)) process.exit(1); if(!/^[a-f0-9]{40}$/.test(r.rollback_target.commit)) process.exit(2)"
+      - name: Upload provenance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-release-provenance-evidence
+          path: aml-release-provenance-evidence.json
+          if-no-files-found: error
