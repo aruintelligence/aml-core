@@ -1,0 +1,21 @@
+{
+  "protocol": "aml-upgrade-contract/1",
+  "package": "aml-core",
+  "release": {
+    "stable_version": "1.3.0",
+    "stable_tag": "v1.3.0",
+    "preview_version": "1.4.0-rc.2",
+    "preview_tag": "v1.4.0-rc.2"
+  },
+  "semver_policy": {
+    "patch": "bug fixes and compatible hardening; no intentional protected API removals",
+    "minor": "backward-compatible additions; no intentional protected API removals",
+    "major": "may contain intentional breaking changes when documented with migration guidance",
+    "prerelease": "preview behavior may evolve before stable release"
+  },
+  "deprecation_policy": {
+    "published_stable_api": "prefer deprecation before removal where security or correctness does not require immediate change",
+    "removal_requires_migration_note": true
+  },
+  "claim_boundary": "This contract governs project release discipline. It is not a warranty, SLA, external certification, or statement that preview APIs are frozen."
+}
