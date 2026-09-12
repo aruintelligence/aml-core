@@ -1,8 +1,8 @@
 import crypto from 'node:crypto';
 import { compileSource } from '../compiler/compiler.js';
 
-const encoded = process.argv[2];
-if (!encoded) process.exit(2);
+if (process.argv.length < 3) process.exit(2);
+const encoded = process.argv[2] ?? '';
 const source = Buffer.from(encoded, 'base64').toString('utf8');
 
 function outcome() {
