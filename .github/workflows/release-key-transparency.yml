@@ -1,0 +1,37 @@
+name: AML Release Key Lifecycle and Transparency
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  key-lifecycle-and-transparency:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify key lifecycle and transparency checkpoint
+        run: node scripts/check-release-transparency.mjs
+      - name: Build deterministic transparency checkpoint twice
+        run: |
+          node scripts/build-release-transparency-checkpoint.mjs checkpoint-a.json >/dev/null
+          node scripts/build-release-transparency-checkpoint.mjs checkpoint-b.json >/dev/null
+          cmp checkpoint-a.json checkpoint-b.json
+          node scripts/verify-release-transparency-checkpoint.mjs checkpoint-a.json
+      - name: Upload transparency checkpoint
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-release-transparency-checkpoint
+          path: checkpoint-a.json
+          if-no-files-found: error
