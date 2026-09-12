@@ -1,5 +1,7 @@
+import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
+const limits = JSON.parse(fs.readFileSync('resource-limits.json', 'utf8')).deterministic_fuzz;
 const base = `transmission "fuzz" {
   engram card {
     value: "Deterministic fuzz baseline"
@@ -52,14 +54,14 @@ let accepted = 0;
 let rejected = 0;
 for (let i = 0; i < corpus.length; i++) {
   const source = corpus[i];
-  if (Buffer.byteLength(source, 'utf8') > 256 * 1024) throw new Error(`Corpus case ${i} exceeded size bound`);
+  if (Buffer.byteLength(source, 'utf8') > limits.max_case_bytes) throw new Error(`Corpus case ${i} exceeded size bound`);
   const encoded = Buffer.from(source).toString('base64');
   const run = spawnSync(process.execPath, ['scripts/aml-fuzz-worker.mjs', encoded], {
     encoding: 'utf8',
-    timeout: 2000,
-    maxBuffer: 1024 * 1024
+    timeout: limits.per_case_timeout_ms,
+    maxBuffer: limits.max_worker_output_bytes
   });
-  if (run.error?.code === 'ETIMEDOUT') throw new Error(`Fuzz case ${i} exceeded 2s execution bound`);
+  if (run.error?.code === 'ETIMEDOUT') throw new Error(`Fuzz case ${i} exceeded ${limits.per_case_timeout_ms}ms execution bound`);
   if (run.status !== 0) throw new Error(`Fuzz case ${i} failed worker contract: status=${run.status} stderr=${run.stderr}`);
   const report = JSON.parse(run.stdout);
   if (!report.deterministic) throw new Error(`Fuzz case ${i} produced nondeterministic result`);
@@ -73,7 +75,8 @@ console.log(JSON.stringify({
   cases: corpus.length,
   accepted,
   rejected,
-  per_case_timeout_ms: 2000,
-  max_case_bytes: 262144,
+  per_case_timeout_ms: limits.per_case_timeout_ms,
+  max_case_bytes: limits.max_case_bytes,
+  max_worker_output_bytes: limits.max_worker_output_bytes,
   claim_boundary: 'Deterministic bounded project fuzz regression only; not proof of absence of vulnerabilities or an independent security audit.'
 }, null, 2));
