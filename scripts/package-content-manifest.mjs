@@ -28,9 +28,13 @@ for (const required of policy.required_files || []) {
   if (!pathSet.has(required)) fail(`Required package file missing: ${required}`);
 }
 for (const file of paths) {
+  const lower = file.toLowerCase();
   if ((policy.forbidden_exact || []).includes(file)) fail(`Forbidden package file: ${file}`);
-  if ((policy.forbidden_suffixes || []).some(suffix => file.toLowerCase().endsWith(suffix.toLowerCase()))) fail(`Forbidden package suffix: ${file}`);
-  if ((policy.forbidden_fragments || []).some(fragment => file.toLowerCase().includes(fragment.toLowerCase()))) fail(`Forbidden package filename fragment: ${file}`);
+  if ((policy.forbidden_suffixes || []).some(suffix => lower.endsWith(suffix.toLowerCase()))) fail(`Forbidden package suffix: ${file}`);
+  if ((policy.forbidden_fragments || []).some(fragment => lower.includes(fragment.toLowerCase()))) fail(`Forbidden package filename fragment: ${file}`);
+  if (lower.endsWith('.pem') && !(policy.allowed_public_key_suffixes || []).some(suffix => lower.endsWith(suffix.toLowerCase()))) {
+    fail(`PEM material is not explicitly declared public: ${file}`);
+  }
 }
 
 const files = paths.map(file => {
