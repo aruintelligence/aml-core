@@ -1,0 +1,30 @@
+name: AML Package Reproducibility
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  package-reproducibility:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Generate package content manifest
+        run: node scripts/package-content-manifest.mjs "${RUNNER_TEMP}/aml-package-content-manifest.json"
+      - name: Verify repeated package selection is deterministic
+        run: node scripts/check-package-reproducibility.mjs
+      - name: Upload package content manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-package-content-manifest
+          path: ${{ runner.temp }}/aml-package-content-manifest.json
