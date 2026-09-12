@@ -28,7 +28,7 @@ if (git('rev-parse', `${checkpoint.source_tag}^{commit}`) !== checkpoint.source_
 for (const [field, file] of [
   ['release_signing_policy_sha256','release-signing-policy.json'],
   ['key_lifecycle_policy_sha256','release-key-lifecycle.json'],
-  ['compromise_response_policy_sha256','release-compromise-response.json']
+  ['compromise_response_policy_sha256','compromise-response-contract.json']
 ]) {
   if (checkpoint.policies[field] !== sha256(fs.readFileSync(file))) throw new Error(`Policy hash mismatch: ${field}`);
 }
