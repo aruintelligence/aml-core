@@ -1,0 +1,13 @@
+{
+  "protocol": "aml-persisted-state-contract/1",
+  "envelope_protocol": "aml-persisted-governance-state/1",
+  "required_fields": ["protocol","source_sha256","source","semantic_expectation"],
+  "compatibility_policy": {
+    "unknown_major": "reject",
+    "source_hash_must_match": true,
+    "unknown_fields": "preserve",
+    "migration_required_for_major_change": true,
+    "silent_destructive_rewrite": false
+  },
+  "claim_boundary": "Project-controlled persisted-state compatibility contract. It does not prove arbitrary downstream application-state compatibility or migration safety."
+}
