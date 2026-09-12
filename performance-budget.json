@@ -1,0 +1,10 @@
+{
+  "protocol": "aml-performance-budget/1",
+  "benchmark": "aml-core compileSource",
+  "ci_iterations": 50,
+  "warmup_iterations": 10,
+  "max_average_ms_per_fixture": 50,
+  "max_total_ms_all_fixtures": 22500,
+  "scope": "reference-runtime-ci-regression-budget",
+  "claim_boundary": "A generous project-controlled regression ceiling intended to catch severe performance regressions. It is not a latency SLA, independent benchmark, or production capacity guarantee."
+}
