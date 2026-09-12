@@ -34,6 +34,7 @@
   "scripts": {
     "start": "node bin/aml.js help",
     "doctor": "node bin/aml-doctor.js",
+    "compatibility:consumer": "node scripts/check-consumer-compatibility.mjs",
     "serve": "node bin/aml-serve.js",
     "agent-ui": "node bin/aml-agent-ui.js conformance/agent-ui/mixed.json",
     "agent-ui:serve": "node bin/aml-agent-ui-serve.js",
