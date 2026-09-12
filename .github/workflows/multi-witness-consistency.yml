@@ -1,0 +1,29 @@
+name: AML Multi-Witness Consistency
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  multi-witness-consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify multi-witness quorum and split-view rejection
+        run: node scripts/check-multi-witness-consistency.mjs aml-multi-witness-consistency-report.json
+      - name: Upload consistency report
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-multi-witness-consistency-report
+          path: aml-multi-witness-consistency-report.json
+          if-no-files-found: error
