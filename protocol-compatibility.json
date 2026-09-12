@@ -1,0 +1,23 @@
+{
+  "protocol": "aml-protocol-compatibility/1",
+  "policy": {
+    "unknown_major": "reject",
+    "protocol_identifier_format": "<name>/<positive-major>",
+    "major_version_change": "breaking"
+  },
+  "stable_protocols": [
+    "aml-doctor-report/1",
+    "aml-support-bundle/1",
+    "aml-package-surface/1",
+    "aml-governance-stream-open/1",
+    "aml-governance-stream-node/1",
+    "aml-governance-stream-decision/1",
+    "aml-governance-stream-finalize/1",
+    "aml-governance-stream-result/1",
+    "aml-governance-stream-transcript/1",
+    "aml-signed-governance-stream-transcript/1",
+    "aml-governance-witness-quorum/1",
+    "aml-governance-witness-quorum-verification/1"
+  ],
+  "claim_boundary": "Project-maintained compatibility registry for named AML protocols. It is not standards-body registration, certification, or independent interoperability evidence."
+}
