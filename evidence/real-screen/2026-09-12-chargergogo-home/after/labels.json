@@ -1,0 +1,35 @@
+{
+  "protocol": "aml-real-screen-labels/1",
+  "screen_sha256": "c765971803beec0c32f8981b9b1b68ed60cf7ae237477f6d2510dfe5fcd558cb",
+  "assessment_boundary": "The values are explicit reviewer judgments about the shipped corrected viewport. They are not objective measurements. The bailment label changed because the rendered prominence changed, not because the disclosure purpose changed.",
+  "items": [
+    {
+      "id": "header-request-placement", "purpose": "Keep the primary placement conversion action available in persistent navigation", "attention_cost": 2, "restoration_value": 6,
+      "provenance": {"source_kind": "operator_review", "declared_by_project": true, "author": "OpenAI Codex, project-directed post-remediation review", "source_reference": "capture-metadata.json; shipped viewport screenshot SHA-256 e2f2c92bf9d5347c33300afb15ca7cdaf4931103b5c14857ceb218e5bd9e41cf"}
+    },
+    {
+      "id": "bailment-venue-note", "purpose": "Retain a lower-prominence disclosure that staff custody of guest phones may create bailment concerns", "attention_cost": 2.5, "restoration_value": 5,
+      "provenance": {"source_kind": "operator_review", "declared_by_project": true, "author": "OpenAI Codex, project-directed post-remediation review", "source_reference": "capture-metadata.json; shipped viewport screenshot SHA-256 e2f2c92bf9d5347c33300afb15ca7cdaf4931103b5c14857ceb218e5bd9e41cf"}
+    },
+    {
+      "id": "hero-proposition", "purpose": "Explain the venue benefit and the qualified-placement offer", "attention_cost": 2.5, "restoration_value": 8,
+      "provenance": {"source_kind": "operator_review", "declared_by_project": true, "author": "OpenAI Codex, project-directed post-remediation review", "source_reference": "capture-metadata.json; shipped viewport screenshot SHA-256 e2f2c92bf9d5347c33300afb15ca7cdaf4931103b5c14857ceb218e5bd9e41cf"}
+    },
+    {
+      "id": "hero-request-placement", "purpose": "Let an interested venue request placement from the hero section", "attention_cost": 2, "restoration_value": 8,
+      "provenance": {"source_kind": "operator_review", "declared_by_project": true, "author": "OpenAI Codex, project-directed post-remediation review", "source_reference": "capture-metadata.json; shipped viewport screenshot SHA-256 e2f2c92bf9d5347c33300afb15ca7cdaf4931103b5c14857ceb218e5bd9e41cf"}
+    },
+    {
+      "id": "see-how-it-works", "purpose": "Offer a lower-commitment path for visitors who need placement details before converting", "attention_cost": 1.5, "restoration_value": 7,
+      "provenance": {"source_kind": "operator_review", "declared_by_project": true, "author": "OpenAI Codex, project-directed post-remediation review", "source_reference": "capture-metadata.json; shipped viewport screenshot SHA-256 e2f2c92bf9d5347c33300afb15ca7cdaf4931103b5c14857ceb218e5bd9e41cf"}
+    },
+    {
+      "id": "venue-advantage", "purpose": "Summarize guest-experience and business benefits beside the primary offer", "attention_cost": 3, "restoration_value": 7,
+      "provenance": {"source_kind": "operator_review", "declared_by_project": true, "author": "OpenAI Codex, project-directed post-remediation review", "source_reference": "capture-metadata.json; shipped viewport screenshot SHA-256 e2f2c92bf9d5347c33300afb15ca7cdaf4931103b5c14857ceb218e5bd9e41cf"}
+    },
+    {
+      "id": "placement-assistant-launcher", "purpose": "Provide immediate help with venue-placement questions", "attention_cost": 4.5, "restoration_value": 6,
+      "provenance": {"source_kind": "operator_review", "declared_by_project": true, "author": "OpenAI Codex, project-directed post-remediation review", "source_reference": "capture-metadata.json; shipped viewport screenshot SHA-256 e2f2c92bf9d5347c33300afb15ca7cdaf4931103b5c14857ceb218e5bd9e41cf"}
+    }
+  ]
+}
