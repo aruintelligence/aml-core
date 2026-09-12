@@ -21,7 +21,8 @@ const files = [
   'upgrade-contract.json',
   'support-policy.json',
   'protocol-compatibility.json',
-  'persisted-state-contract.json'
+  'persisted-state-contract.json',
+  'persisted-state-migration-vectors.json'
 ];
 const contracts = Object.fromEntries(files.sort().map(file => [file, sha256(fs.readFileSync(file))]));
 const controlCommit = git('rev-parse', 'HEAD');
@@ -44,5 +45,6 @@ const report = {
   evidence_root_sha256: sha256(bindingMaterial),
   claim_boundary: 'Project-generated release provenance binding over repository contracts and Git commits. It is not a third-party attestation, registry publication proof, signature, or independent supply-chain certification.'
 };
-fs.writeFileSync('aml-release-provenance-evidence.json', `${JSON.stringify(report, null, 2)}\n`);
+const target = process.argv[2] || 'aml-release-provenance-evidence.json';
+fs.writeFileSync(target, `${JSON.stringify(report, null, 2)}\n`);
 console.log(JSON.stringify(report, null, 2));
