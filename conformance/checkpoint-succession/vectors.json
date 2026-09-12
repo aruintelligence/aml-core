@@ -1,0 +1,11 @@
+{
+  "protocol": "aml-checkpoint-succession-vectors/1",
+  "vectors": [
+    {"id":"genesis","prior_sequence":0,"prior_root":null,"candidate_sequence":1,"candidate_previous_root":null,"accept":true},
+    {"id":"valid-successor","prior_sequence":1,"prior_root":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","candidate_sequence":2,"candidate_previous_root":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","accept":true},
+    {"id":"sequence-skip","prior_sequence":1,"prior_root":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","candidate_sequence":3,"candidate_previous_root":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","accept":false},
+    {"id":"forked-predecessor","prior_sequence":1,"prior_root":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","candidate_sequence":2,"candidate_previous_root":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","accept":false},
+    {"id":"rollback","prior_sequence":4,"prior_root":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","candidate_sequence":3,"candidate_previous_root":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","accept":false}
+  ],
+  "claim_boundary": "Synthetic succession vectors exercise anti-fork and anti-rollback rules only. They are not evidence of an external witness network or production checkpoint history."
+}
