@@ -1,0 +1,22 @@
+name: AML Operational Guardrails
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  operational-guardrails:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify protocol, performance, and resource guardrails
+        run: node scripts/check-operational-guardrails.mjs
