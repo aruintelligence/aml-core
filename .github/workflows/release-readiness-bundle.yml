@@ -1,0 +1,32 @@
+name: AML Release Readiness Bundle
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  release-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Generate release-readiness bundle
+        run: node scripts/release-readiness-bundle.mjs "${RUNNER_TEMP}/aml-release-readiness.json"
+      - name: Regenerate and verify deterministic output
+        run: |
+          node scripts/release-readiness-bundle.mjs "${RUNNER_TEMP}/aml-release-readiness-2.json"
+          cmp "${RUNNER_TEMP}/aml-release-readiness.json" "${RUNNER_TEMP}/aml-release-readiness-2.json"
+      - name: Upload release-readiness bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-release-readiness
+          path: ${{ runner.temp }}/aml-release-readiness.json
