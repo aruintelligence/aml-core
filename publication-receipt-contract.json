@@ -1,0 +1,35 @@
+{
+  "protocol": "aml-publication-receipt-contract/1",
+  "transaction_protocol": "aml-publication-transaction/1",
+  "receipt_protocol": "aml-publication-receipt/1",
+  "registry": "https://registry.npmjs.org/",
+  "required_registry_fields": [
+    "package",
+    "version",
+    "dist_tag",
+    "dist_integrity",
+    "dist_shasum"
+  ],
+  "required_matches": [
+    "package",
+    "version",
+    "dist_tag",
+    "dist_integrity",
+    "dist_shasum"
+  ],
+  "required_post_publish_checks": [
+    "registry_metadata_matches_transaction",
+    "clean_registry_install_passes",
+    "installed_package_version_matches",
+    "installed_api_import_passes",
+    "installed_cli_smoke_test_passes"
+  ],
+  "drift_policy": {
+    "integrity_change_is_failure": true,
+    "shasum_change_is_failure": true,
+    "dist_tag_change_is_failure": true,
+    "version_identity_change_is_failure": true,
+    "receipt_root_mismatch_is_failure": true
+  },
+  "claim_boundary": "A valid receipt proves only that supplied registry observations matched a specific AML publication transaction and declared post-publication checks. A project-generated receipt is not third-party attestation, independent verification, adoption evidence, certification, or a guarantee of future registry state."
+}

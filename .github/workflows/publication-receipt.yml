@@ -1,0 +1,88 @@
+name: AML Publication Receipt
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  receipt-rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+      - name: Rehearse publication receipt and negative drift cases
+        run: node scripts/check-publication-receipt-rehearsal.mjs
+
+  live-registry-receipt:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+      - name: Build publication transaction
+        run: node scripts/build-publication-transaction.mjs aml-publication-transaction.json
+      - name: Observe live npm registry and perform clean install checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import os from 'node:os';
+          import path from 'node:path';
+          import { spawnSync } from 'node:child_process';
+          const tx = JSON.parse(fs.readFileSync('aml-publication-transaction.json', 'utf8'));
+          const npm = (args, cwd = process.cwd()) => {
+            const r = spawnSync('npm', args, { cwd, encoding: 'utf8', shell: false });
+            if (r.status !== 0) throw new Error(r.stderr || r.stdout || `npm ${args.join(' ')} failed`);
+            return r.stdout.trim();
+          };
+          const metadata = JSON.parse(npm(['view', `${tx.package}@${tx.version}`, '--json']));
+          const latest = npm(['view', `${tx.package}@${tx.dist_tag}`, 'version']);
+          const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-live-registry-'));
+          fs.writeFileSync(path.join(temp, 'package.json'), '{"private":true,"type":"module"}\n');
+          npm(['install', '--ignore-scripts', '--no-audit', '--no-fund', `${tx.package}@${tx.version}`], temp);
+          const versionCheck = spawnSync(process.execPath, ['--input-type=module', '-e', `import p from '${tx.package}/package.json' with { type: 'json' }; if (p.version !== '${tx.version}') process.exit(1);`], { cwd: temp, encoding: 'utf8', shell: false });
+          const importCheck = spawnSync(process.execPath, ['--input-type=module', '-e', `await import('${tx.package}')`], { cwd: temp, encoding: 'utf8', shell: false });
+          const cliCheck = spawnSync(process.execPath, [path.join(temp, 'node_modules', tx.package, 'bin', 'aml.js'), '--help'], { cwd: temp, encoding: 'utf8', shell: false });
+          if (versionCheck.status !== 0 || importCheck.status !== 0 || cliCheck.status !== 0) throw new Error('Clean registry install checks failed');
+          const observation = {
+            package: tx.package,
+            version: tx.version,
+            dist_tag: tx.dist_tag,
+            dist_integrity: metadata.dist?.integrity,
+            dist_shasum: metadata.dist?.shasum,
+            checks: {
+              registry_metadata_matches_transaction: true,
+              clean_registry_install_passes: true,
+              installed_package_version_matches: true,
+              installed_api_import_passes: true,
+              installed_cli_smoke_test_passes: true
+            }
+          };
+          if (latest !== tx.version) throw new Error(`dist-tag ${tx.dist_tag} points to ${latest}, expected ${tx.version}`);
+          fs.writeFileSync('aml-live-registry-observation.json', `${JSON.stringify(observation, null, 2)}\n`);
+          NODE
+      - name: Build and verify live publication receipt
+        run: |
+          node scripts/build-publication-receipt.mjs aml-publication-transaction.json aml-live-registry-observation.json aml-publication-receipt.json
+          node scripts/verify-publication-receipt.mjs aml-publication-receipt.json aml-publication-transaction.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aml-publication-receipt
+          path: |
+            aml-publication-transaction.json
+            aml-live-registry-observation.json
+            aml-publication-receipt.json
