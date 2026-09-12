@@ -1,0 +1,38 @@
+{
+  "protocol": "aml-external-witness-submission-contract/1",
+  "submission_protocol": "aml-external-witness-submission/1",
+  "signed_submission_protocol": "aml-external-witness-submission-signed/1",
+  "signature_algorithm": "Ed25519",
+  "results": ["PASS", "FAIL", "MIXED"],
+  "required_submission_fields": [
+    "protocol",
+    "subject",
+    "result",
+    "reproduction",
+    "evidence",
+    "claim_boundary"
+  ],
+  "subject": {
+    "required_fields": ["repository", "commit_sha"],
+    "commit_sha_pattern": "^[0-9a-f]{40}$"
+  },
+  "evidence": {
+    "minimum_items": 1,
+    "required_fields": ["type", "sha256", "description"],
+    "sha256_pattern": "^[0-9a-f]{64}$"
+  },
+  "signed_submission": {
+    "binds_canonical_submission": true,
+    "embeds_public_key": true,
+    "binds_public_key_fingerprint_sha256": true,
+    "signature_validity_does_not_imply_trust": true,
+    "signature_validity_does_not_imply_independence": true
+  },
+  "intake": {
+    "canonical_issue": 88,
+    "public_result_values": ["PASS", "FAIL", "MIXED"],
+    "private_keys_must_not_be_submitted": true,
+    "raw_secrets_must_not_be_submitted": true
+  },
+  "claim_boundary": "A cryptographically valid external-witness submission proves only that the holder of the corresponding private key signed the canonical submission bytes. Trust, organizational identity, independence, reproduction quality, scientific validity, adoption, certification, and standards status must be established separately by the verifier."
+}

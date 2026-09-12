@@ -1,0 +1,71 @@
+name: External witness result
+description: Publish an independent PASS, FAIL, or MIXED reproduction result for an exact ĀML commit.
+title: "[External witness] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Publish reproducible evidence for an exact commit. Do not include private keys, secrets, credentials, or confidential data. Cryptographic signature validity does not by itself establish identity, trust, or independence.
+  - type: input
+    id: commit
+    attributes:
+      label: Exact commit SHA
+      description: 40-character commit SHA tested.
+      placeholder: 0123456789abcdef0123456789abcdef01234567
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options:
+        - PASS
+        - FAIL
+        - MIXED
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Exact reproduction command(s)
+      description: Include the commands another engineer can run.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, runtime version, architecture, and other material environment details.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence links and SHA-256 hashes
+      description: Link public evidence and include a SHA-256 for each referenced artifact when practical.
+    validations:
+      required: true
+  - type: textarea
+    id: observations
+    attributes:
+      label: Observations
+      description: What reproduced, what did not, and any material caveats.
+    validations:
+      required: true
+  - type: input
+    id: signed_submission
+    attributes:
+      label: Signed witness submission link (optional)
+      description: Public link to an aml-external-witness-submission-signed/1 artifact. Never attach a private key.
+  - type: checkboxes
+    id: declarations
+    attributes:
+      label: Declarations
+      options:
+        - label: I tested the exact commit listed above.
+          required: true
+        - label: I have not included private keys, credentials, tokens, or confidential data.
+          required: true
+        - label: I understand that signature validity, identity, trust, and independence are separate questions.
+          required: true

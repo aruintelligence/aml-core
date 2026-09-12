@@ -1,0 +1,39 @@
+name: AML External Witness Kit
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  witness-kit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify external witness kit
+        run: node scripts/check-external-witness-kit.mjs > aml-external-witness-kit-check.json
+      - name: Build reproducible witness kit
+        run: node scripts/build-external-witness-kit.mjs dist/external-witness-kit
+      - name: Assert no private signing material is bundled
+        shell: bash
+        run: |
+          if grep -R --line-number --fixed-strings 'BEGIN PRIVATE KEY' dist/external-witness-kit; then
+            echo 'Private key material found in external witness kit' >&2
+            exit 1
+          fi
+      - name: Upload witness kit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-external-witness-kit
+          path: |
+            dist/external-witness-kit
+            aml-external-witness-kit-check.json
