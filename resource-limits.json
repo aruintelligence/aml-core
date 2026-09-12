@@ -1,0 +1,10 @@
+{
+  "protocol": "aml-resource-limits/1",
+  "deterministic_fuzz": {
+    "max_case_bytes": 262144,
+    "per_case_timeout_ms": 2000,
+    "max_worker_output_bytes": 1048576
+  },
+  "purpose": "Bound project fuzz and malformed-input regression work so hostile or pathological inputs cannot silently turn CI into an unbounded resource sink.",
+  "claim_boundary": "These are project test-harness resource ceilings, not a universal runtime sandbox or production denial-of-service guarantee."
+}
