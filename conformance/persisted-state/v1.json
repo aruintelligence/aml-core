@@ -1,0 +1,13 @@
+{
+  "protocol": "aml-persisted-governance-state/1",
+  "source_sha256": "324185529adb5d5041cfc945f5df8e7d504748664f9b0f492b1b162bf25a56a3",
+  "source": "transmission \"persisted-state-v1\" {\n  engram card {\n    value: \"Persisted governance state\"\n    purpose: \"verify state compatibility boundaries\"\n    memory_role: \"diagnostic\"\n    user_effect: \"clarity\"\n    attention_cost: 1\n    restoration_value: 2\n  }\n}\n",
+  "semantic_expectation": {
+    "render_allowed": true,
+    "attention_cost": 1,
+    "restoration_value": 2
+  },
+  "extension_data": {
+    "preserve_me": "unknown fields must survive read/write compatibility checks"
+  }
+}
