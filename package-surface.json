@@ -2,19 +2,12 @@
   "protocol": "aml-package-surface/1",
   "package": "aml-core",
   "node": ">=18.0.0",
-  "stable_release": {
-    "version": "1.3.0",
-    "tag": "v1.3.0",
-    "channel": "stable"
-  },
-  "preview_release": {
-    "version": "1.4.0-rc.2",
-    "tag": "v1.4.0-rc.2",
-    "channel": "preview"
-  },
+  "stable_release": {"version":"1.3.0","tag":"v1.3.0","channel":"stable"},
+  "preview_release": {"version":"1.4.0-rc.2","tag":"v1.4.0-rc.2","channel":"preview"},
   "javascript": {
     "root_export": ".",
-    "target": "./index.js"
+    "target": "./index.js",
+    "types": "./index.d.ts"
   },
   "cli": {
     "aml": "./bin/aml.js",
