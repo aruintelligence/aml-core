@@ -1,0 +1,21 @@
+{
+  "protocol": "aml-multi-witness-consistency-contract/1",
+  "witness_receipt_protocol": "aml-release-witness-receipt/1",
+  "consistency_report_protocol": "aml-multi-witness-consistency-report/1",
+  "signature_algorithm": "Ed25519",
+  "quorum": {
+    "minimum_distinct_trusted_witnesses": 2,
+    "distinct_witness_ids_required": true,
+    "distinct_public_key_fingerprints_required": true,
+    "untrusted_witnesses_do_not_count": true,
+    "revoked_witnesses_do_not_count": true
+  },
+  "consistency": {
+    "all_counted_receipts_must_bind_same_checkpoint_root": true,
+    "all_counted_receipts_must_bind_same_checkpoint_sequence": true,
+    "split_view_is_rejected": true,
+    "duplicate_receipts_do_not_increase_quorum": true,
+    "rollback_below_verifier_minimum_sequence_is_rejected": true
+  },
+  "claim_boundary": "Project-controlled multi-witness quorum and split-view detection semantics. CI witnesses are synthetic and do not constitute independent external verification, a public witness network, timestamp authority, standards-body approval, or third-party certification."
+}
