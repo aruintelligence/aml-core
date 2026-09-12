@@ -1,0 +1,37 @@
+{
+  "protocol": "aml-production-screen-capture/1",
+  "source_url": "https://aruintelligence.com/",
+  "page_title": "ĀRU Intelligence™",
+  "capture_date": "2026-09-12",
+  "capture_agent": "OpenAI Work cloud browser",
+  "viewport": {
+    "width": 1363,
+    "height": 936,
+    "device_pixel_ratio": 1,
+    "scroll_x": 0,
+    "scroll_y": 0
+  },
+  "artifacts": {
+    "viewport_screenshot": {
+      "sha256": "e07ba9a3cfb0d74e00d16176ece925b58aae325d038726b6a95264b7d60f910b",
+      "bytes": 80416
+    },
+    "rendered_html": {
+      "sha256": "dc2392b2545df2dafd439d39e5de2ae944dbbe934cb7af9ee93b7bdae2a0f29e",
+      "bytes": 160095
+    },
+    "browser_dom_snapshot": {
+      "sha256": "098923454731205376cbbf910b1a648fa1840664aa2b4e5ca0f45faa5c74e1b9",
+      "bytes": 33450
+    }
+  },
+  "harness_input": {
+    "path": "screen.html",
+    "description": "Marker-bearing semantic snapshot derived from the captured production viewport; not represented as the untouched pixel artifact."
+  },
+  "limitations": [
+    "The screenshot, rendered HTML, and browser DOM hashes bind the browser capture made during this run.",
+    "The marker-bearing HTML is a semantic extraction used by the pilot harness and does not claim pixel equivalence.",
+    "A hash proves byte identity, not the truth or independence of a label."
+  ]
+}
