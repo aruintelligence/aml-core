@@ -23,8 +23,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Verify immutable manifest and compromise response
-        run: node scripts/check-release-integrity-response.mjs
+      - name: Verify release integrity control plane
+        run: node scripts/check-release-integrity-control-plane.mjs
 
   live-registry-integrity:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
