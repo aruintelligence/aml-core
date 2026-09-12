@@ -35,7 +35,7 @@ const manifest = {
   artifact: {
     sha256: tx.artifact.sha256,
     npm_integrity: tx.artifact.npm_integrity,
-    npm_shasum: tx.artifact.npm_shasum
+    npm_shasum: tx.artifact.npm_shasum_sha1
   },
   publication_transaction_root_sha256: tx.transaction_root_sha256,
   claim_boundary: contract.claim_boundary
