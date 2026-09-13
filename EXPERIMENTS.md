@@ -19,6 +19,7 @@ The numeric inputs are declared operator judgments. They are not objective measu
 | [ĀRU Intelligence homepage](evidence/real-screen/2026-09-12-aruintelligence-home/) | Can a real production screen be captured, labeled, hashed and deterministically gated? | Real-screen pilot |
 | [ChargerGoGo Placements](evidence/real-screen/2026-09-12-chargergogo-home/) | Can a suppression decision lead to a responsible before/after remediation rather than blind deletion? | Before/after package |
 | [Portland ATM Placement](evidence/real-screen/2026-09-12-portland-atm-placement/) | Can redundant desktop presentation be reduced while important functions and regional content remain available? | Remediation documented; exact after-capture pending |
+| [Kinthria homepage](evidence/real-screen/2026-09-12-kinthria-home/) | Can navigation, first-screen comprehension, and process density be reduced while research integrity and restoration paths remain intact? | Three source experiments documented; exact production after-capture pending |
 
 ## Public-site research cohort
 
