@@ -1,0 +1,125 @@
+{
+  "protocol": "aml-real-screen-pilot-receipt/1",
+  "rule": "render_allowed = restoration_value >= attention_cost",
+  "screen": {
+    "sha256": "57e9985e7b6cb311c228897df7a20d3f20575fcd7adf3d8a873652e6d80198b4",
+    "marker_count": 8
+  },
+  "labels": {
+    "sha256": "dd97be6fab82f96d35c3f9f99c4e5b8dfe3f9b78688b3542eab87e2091bf0e51",
+    "count": 8
+  },
+  "decisions": [
+    {
+      "id": "bailment-warning",
+      "purpose": "Warn venue operators that taking custody of guest phones may create bailment concerns and link to more information",
+      "attention_cost": 5.5,
+      "restoration_value": 5,
+      "decision": "SUPPRESS",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 93c59a2fa4a56c20d6896b80d23d731db71379e67cc02e85881e2ddd32fa9b65"
+      }
+    },
+    {
+      "id": "header-request-placement",
+      "purpose": "Keep the primary placement conversion action available in persistent navigation",
+      "attention_cost": 2,
+      "restoration_value": 6,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 93c59a2fa4a56c20d6896b80d23d731db71379e67cc02e85881e2ddd32fa9b65"
+      }
+    },
+    {
+      "id": "hero-proposition",
+      "purpose": "Explain the venue benefit and the qualified-placement offer",
+      "attention_cost": 2.5,
+      "restoration_value": 8,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 93c59a2fa4a56c20d6896b80d23d731db71379e67cc02e85881e2ddd32fa9b65"
+      }
+    },
+    {
+      "id": "hero-request-placement",
+      "purpose": "Let an interested venue request placement from the hero section",
+      "attention_cost": 2,
+      "restoration_value": 8,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 93c59a2fa4a56c20d6896b80d23d731db71379e67cc02e85881e2ddd32fa9b65"
+      }
+    },
+    {
+      "id": "placement-assistant-launcher",
+      "purpose": "Provide immediate help with venue-placement questions",
+      "attention_cost": 4.5,
+      "restoration_value": 6,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 93c59a2fa4a56c20d6896b80d23d731db71379e67cc02e85881e2ddd32fa9b65"
+      }
+    },
+    {
+      "id": "sales-hours-banner",
+      "purpose": "Advertise sales availability in a full-width announcement bar",
+      "attention_cost": 3.5,
+      "restoration_value": 2,
+      "decision": "SUPPRESS",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 93c59a2fa4a56c20d6896b80d23d731db71379e67cc02e85881e2ddd32fa9b65"
+      }
+    },
+    {
+      "id": "see-how-it-works",
+      "purpose": "Offer a lower-commitment path for visitors who need placement details before converting",
+      "attention_cost": 1.5,
+      "restoration_value": 7,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 93c59a2fa4a56c20d6896b80d23d731db71379e67cc02e85881e2ddd32fa9b65"
+      }
+    },
+    {
+      "id": "venue-advantage",
+      "purpose": "Summarize guest-experience and business benefits beside the primary offer",
+      "attention_cost": 3,
+      "restoration_value": 7,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 93c59a2fa4a56c20d6896b80d23d731db71379e67cc02e85881e2ddd32fa9b65"
+      }
+    }
+  ],
+  "summary": {
+    "allow": 6,
+    "suppress": 2,
+    "real_screen_evidence_eligible": false
+  },
+  "claim_boundary": "Deterministic policy result over declared labels. Label provenance is auditable metadata, not proof that the numeric values objectively measure human cost or benefit.",
+  "receipt_root_sha256": "c22acf30c095b3ff5f1a8befa0c735f6c00c106d736dfa361469b56c3a5f7409"
+}

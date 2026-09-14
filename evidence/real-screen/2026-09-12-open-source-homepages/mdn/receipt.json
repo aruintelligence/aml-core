@@ -1,0 +1,138 @@
+{
+  "protocol": "aml-real-screen-pilot-receipt/1",
+  "rule": "render_allowed = restoration_value >= attention_cost",
+  "screen": {
+    "sha256": "7500f65731528475b1d75a131af1782e342ff55e4146d27309cec7425a91a744",
+    "marker_count": 9
+  },
+  "labels": {
+    "sha256": "8123837beb8ce1f03f9c81579b88429b7508d2908819964f41084473b9dfe32a",
+    "count": 9
+  },
+  "decisions": [
+    {
+      "id": "featured-articles",
+      "purpose": "Surface timely documentation and editorial entry points",
+      "attention_cost": 2,
+      "restoration_value": 7,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed public-screen review",
+        "source_reference": "capture-metadata.json; screenshot SHA-256 21e2529ffdbf40d15944ba9518157a688737c4bc8b8e5c6c08259177e38abffb"
+      }
+    },
+    {
+      "id": "hero-decoration",
+      "purpose": "Provide a decorative syntax-themed illustration beside the hero message",
+      "attention_cost": 3,
+      "restoration_value": 2,
+      "decision": "SUPPRESS",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed public-screen review",
+        "source_reference": "capture-metadata.json; screenshot SHA-256 21e2529ffdbf40d15944ba9518157a688737c4bc8b8e5c6c08259177e38abffb"
+      }
+    },
+    {
+      "id": "hero-proposition",
+      "purpose": "Identify MDN as a long-running developer documentation resource",
+      "attention_cost": 2,
+      "restoration_value": 9,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed public-screen review",
+        "source_reference": "capture-metadata.json; screenshot SHA-256 21e2529ffdbf40d15944ba9518157a688737c4bc8b8e5c6c08259177e38abffb"
+      }
+    },
+    {
+      "id": "hero-search",
+      "purpose": "Provide a prominent entry into documentation search",
+      "attention_cost": 1.5,
+      "restoration_value": 8,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed public-screen review",
+        "source_reference": "capture-metadata.json; screenshot SHA-256 21e2529ffdbf40d15944ba9518157a688737c4bc8b8e5c6c08259177e38abffb"
+      }
+    },
+    {
+      "id": "inline-advertisement",
+      "purpose": "Display a large paid advertiser message between the hero and editorial content",
+      "attention_cost": 7,
+      "restoration_value": 2,
+      "decision": "SUPPRESS",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed public-screen review",
+        "source_reference": "capture-metadata.json; screenshot SHA-256 21e2529ffdbf40d15944ba9518157a688737c4bc8b8e5c6c08259177e38abffb"
+      }
+    },
+    {
+      "id": "primary-navigation",
+      "purpose": "Expose the main web-technology, learning, tools, and editorial destinations",
+      "attention_cost": 3,
+      "restoration_value": 8,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed public-screen review",
+        "source_reference": "capture-metadata.json; screenshot SHA-256 21e2529ffdbf40d15944ba9518157a688737c4bc8b8e5c6c08259177e38abffb"
+      }
+    },
+    {
+      "id": "search-and-signin",
+      "purpose": "Provide compact global search and account access",
+      "attention_cost": 1.5,
+      "restoration_value": 7,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed public-screen review",
+        "source_reference": "capture-metadata.json; screenshot SHA-256 21e2529ffdbf40d15944ba9518157a688737c4bc8b8e5c6c08259177e38abffb"
+      }
+    },
+    {
+      "id": "theme-and-language",
+      "purpose": "Let visitors change display theme and locale",
+      "attention_cost": 1,
+      "restoration_value": 3,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed public-screen review",
+        "source_reference": "capture-metadata.json; screenshot SHA-256 21e2529ffdbf40d15944ba9518157a688737c4bc8b8e5c6c08259177e38abffb"
+      }
+    },
+    {
+      "id": "top-advertisement",
+      "purpose": "Display a paid advertiser message and outbound call to action above MDN navigation",
+      "attention_cost": 5,
+      "restoration_value": 1.5,
+      "decision": "SUPPRESS",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed public-screen review",
+        "source_reference": "capture-metadata.json; screenshot SHA-256 21e2529ffdbf40d15944ba9518157a688737c4bc8b8e5c6c08259177e38abffb"
+      }
+    }
+  ],
+  "summary": {
+    "allow": 6,
+    "suppress": 3,
+    "real_screen_evidence_eligible": false
+  },
+  "claim_boundary": "Deterministic policy result over declared labels. Label provenance is auditable metadata, not proof that the numeric values objectively measure human cost or benefit.",
+  "receipt_root_sha256": "eaa2da67526039242eecaa526d8855704defaf6085b3eb686b61174015e986d0"
+}

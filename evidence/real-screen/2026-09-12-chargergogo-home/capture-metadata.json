@@ -1,0 +1,19 @@
+{
+  "protocol": "aml-production-screen-capture/1",
+  "source_url": "https://chargergogoplacements.com/",
+  "page_title": "ChargerGoGo Venue Placement | Phone Charging for Businesses",
+  "capture_date": "2026-09-12",
+  "capture_agent": "OpenAI Work cloud browser",
+  "viewport": {"width": 1363, "height": 936, "device_pixel_ratio": 1, "scroll_x": 0, "scroll_y": 0},
+  "artifacts": {
+    "viewport_screenshot": {"sha256": "93c59a2fa4a56c20d6896b80d23d731db71379e67cc02e85881e2ddd32fa9b65", "bytes": 126334},
+    "rendered_html": {"sha256": "c9e2629121b949a3d1dff87fe03e01b987c1be73b61d76928fef1d7d6760dccf", "bytes": 89003},
+    "browser_dom_snapshot": {"sha256": "edea60f5680dc0985d86b6d0cefc4ef40758bcca547c8a11a99937033412627d", "bytes": 12024}
+  },
+  "harness_input": {"path": "screen.html", "description": "Marker-bearing semantic snapshot derived from the captured production viewport; not represented as the untouched pixel artifact."},
+  "limitations": [
+    "The browser artifact hashes bind the capture made during this run.",
+    "The harness HTML is a semantic extraction and does not claim pixel equivalence.",
+    "Hashes prove byte identity, not label truth or independence."
+  ]
+}

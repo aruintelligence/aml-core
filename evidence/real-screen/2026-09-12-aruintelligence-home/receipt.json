@@ -1,0 +1,112 @@
+{
+  "protocol": "aml-real-screen-pilot-receipt/1",
+  "rule": "render_allowed = restoration_value >= attention_cost",
+  "screen": {
+    "sha256": "d18e0d75cebe1f4db4ea83047901ec120c234e0f9ec47a933ac9be3165c77845",
+    "marker_count": 7
+  },
+  "labels": {
+    "sha256": "2311a0ec73d787ac04e12d174377aa71901f5351fb3359727d9dae56504180d5",
+    "count": 7
+  },
+  "decisions": [
+    {
+      "id": "aml-lab",
+      "purpose": "Take the visitor to the live ĀML™ demonstration",
+      "attention_cost": 2,
+      "restoration_value": 7,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 e07ba9a3cfb0d74e00d16176ece925b58aae325d038726b6a95264b7d60f910b"
+      }
+    },
+    {
+      "id": "ask-aru-guide",
+      "purpose": "Open the site's AI guide for direct visitor questions",
+      "attention_cost": 3.5,
+      "restoration_value": 7,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 e07ba9a3cfb0d74e00d16176ece925b58aae325d038726b6a95264b7d60f910b"
+      }
+    },
+    {
+      "id": "founding-circle",
+      "purpose": "Promote the Founding Circle from the persistent primary navigation",
+      "attention_cost": 4.5,
+      "restoration_value": 2,
+      "decision": "SUPPRESS",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 e07ba9a3cfb0d74e00d16176ece925b58aae325d038726b6a95264b7d60f910b"
+      }
+    },
+    {
+      "id": "hero-proposition",
+      "purpose": "State the page's primary research proposition and orient the visitor",
+      "attention_cost": 2.5,
+      "restoration_value": 8,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 e07ba9a3cfb0d74e00d16176ece925b58aae325d038726b6a95264b7d60f910b"
+      }
+    },
+    {
+      "id": "live-demo",
+      "purpose": "Let the visitor inspect a live demonstration of the research",
+      "attention_cost": 2.5,
+      "restoration_value": 8,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 e07ba9a3cfb0d74e00d16176ece925b58aae325d038726b6a95264b7d60f910b"
+      }
+    },
+    {
+      "id": "orcid-papers",
+      "purpose": "Provide access to the public research publication record",
+      "attention_cost": 1.5,
+      "restoration_value": 6,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 e07ba9a3cfb0d74e00d16176ece925b58aae325d038726b6a95264b7d60f910b"
+      }
+    },
+    {
+      "id": "persistent-guide-launcher",
+      "purpose": "Keep the AI guide available while the visitor moves through the page",
+      "attention_cost": 4,
+      "restoration_value": 5,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed real-screen review",
+        "source_reference": "capture-metadata.json; viewport screenshot SHA-256 e07ba9a3cfb0d74e00d16176ece925b58aae325d038726b6a95264b7d60f910b"
+      }
+    }
+  ],
+  "summary": {
+    "allow": 6,
+    "suppress": 1,
+    "real_screen_evidence_eligible": false
+  },
+  "claim_boundary": "Deterministic policy result over declared labels. Label provenance is auditable metadata, not proof that the numeric values objectively measure human cost or benefit.",
+  "receipt_root_sha256": "9e77955425864e91557f2adb9c9473d4461d56408aecce5bc3cafb3b32b83294"
+}

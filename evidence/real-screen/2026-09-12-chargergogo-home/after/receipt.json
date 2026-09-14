@@ -1,0 +1,112 @@
+{
+  "protocol": "aml-real-screen-pilot-receipt/1",
+  "rule": "render_allowed = restoration_value >= attention_cost",
+  "screen": {
+    "sha256": "c765971803beec0c32f8981b9b1b68ed60cf7ae237477f6d2510dfe5fcd558cb",
+    "marker_count": 7
+  },
+  "labels": {
+    "sha256": "5715270c50930d9476e16976b5b143434ead27a1c32144b18c001ec4811f01cb",
+    "count": 7
+  },
+  "decisions": [
+    {
+      "id": "bailment-venue-note",
+      "purpose": "Retain a lower-prominence disclosure that staff custody of guest phones may create bailment concerns",
+      "attention_cost": 2.5,
+      "restoration_value": 5,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed post-remediation review",
+        "source_reference": "capture-metadata.json; shipped viewport screenshot SHA-256 e2f2c92bf9d5347c33300afb15ca7cdaf4931103b5c14857ceb218e5bd9e41cf"
+      }
+    },
+    {
+      "id": "header-request-placement",
+      "purpose": "Keep the primary placement conversion action available in persistent navigation",
+      "attention_cost": 2,
+      "restoration_value": 6,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed post-remediation review",
+        "source_reference": "capture-metadata.json; shipped viewport screenshot SHA-256 e2f2c92bf9d5347c33300afb15ca7cdaf4931103b5c14857ceb218e5bd9e41cf"
+      }
+    },
+    {
+      "id": "hero-proposition",
+      "purpose": "Explain the venue benefit and the qualified-placement offer",
+      "attention_cost": 2.5,
+      "restoration_value": 8,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed post-remediation review",
+        "source_reference": "capture-metadata.json; shipped viewport screenshot SHA-256 e2f2c92bf9d5347c33300afb15ca7cdaf4931103b5c14857ceb218e5bd9e41cf"
+      }
+    },
+    {
+      "id": "hero-request-placement",
+      "purpose": "Let an interested venue request placement from the hero section",
+      "attention_cost": 2,
+      "restoration_value": 8,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed post-remediation review",
+        "source_reference": "capture-metadata.json; shipped viewport screenshot SHA-256 e2f2c92bf9d5347c33300afb15ca7cdaf4931103b5c14857ceb218e5bd9e41cf"
+      }
+    },
+    {
+      "id": "placement-assistant-launcher",
+      "purpose": "Provide immediate help with venue-placement questions",
+      "attention_cost": 4.5,
+      "restoration_value": 6,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed post-remediation review",
+        "source_reference": "capture-metadata.json; shipped viewport screenshot SHA-256 e2f2c92bf9d5347c33300afb15ca7cdaf4931103b5c14857ceb218e5bd9e41cf"
+      }
+    },
+    {
+      "id": "see-how-it-works",
+      "purpose": "Offer a lower-commitment path for visitors who need placement details before converting",
+      "attention_cost": 1.5,
+      "restoration_value": 7,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed post-remediation review",
+        "source_reference": "capture-metadata.json; shipped viewport screenshot SHA-256 e2f2c92bf9d5347c33300afb15ca7cdaf4931103b5c14857ceb218e5bd9e41cf"
+      }
+    },
+    {
+      "id": "venue-advantage",
+      "purpose": "Summarize guest-experience and business benefits beside the primary offer",
+      "attention_cost": 3,
+      "restoration_value": 7,
+      "decision": "ALLOW",
+      "provenance": {
+        "source_kind": "operator_review",
+        "declared_by_project": true,
+        "author": "OpenAI Codex, project-directed post-remediation review",
+        "source_reference": "capture-metadata.json; shipped viewport screenshot SHA-256 e2f2c92bf9d5347c33300afb15ca7cdaf4931103b5c14857ceb218e5bd9e41cf"
+      }
+    }
+  ],
+  "summary": {
+    "allow": 7,
+    "suppress": 0,
+    "real_screen_evidence_eligible": false
+  },
+  "claim_boundary": "Deterministic policy result over declared labels. Label provenance is auditable metadata, not proof that the numeric values objectively measure human cost or benefit.",
+  "receipt_root_sha256": "74bd6a8d84c5dde4412b970aaa0d98ce011da58138f36a656d0c7c83915bf30a"
+}

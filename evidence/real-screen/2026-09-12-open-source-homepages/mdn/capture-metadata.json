@@ -1,0 +1,15 @@
+{
+  "source_url": "https://developer.mozilla.org/en-US/",
+  "captured_at": "2026-09-12T18:24:02.056Z",
+  "browser_environment": "OpenAI Work cloud browser",
+  "viewport_css_pixels": {"width": 1363, "height": 936},
+  "device_pixel_ratio": 1,
+  "scroll_css_pixels": {"x": 0, "y": 0},
+  "production_screenshot_sha256": "21e2529ffdbf40d15944ba9518157a688737c4bc8b8e5c6c08259177e38abffb",
+  "production_rendered_html_sha256": "4d27a750cd31e27d02a4f88bc9bf7a777c4eaac6e7d447556b74ae95fb07ce57",
+  "production_dom_snapshot_sha256": "9f156b1718066b3390701e4474fb5da3dc074393161b9e8e3bf99a8d595c74c7",
+  "repository": "https://github.com/mdn/yari",
+  "contribution_guide": "https://github.com/mdn/yari/blob/main/CONTRIBUTING.md",
+  "collection_boundary": "Public unauthenticated homepage; one ordinary page load; no form submission, crawling, access-control testing, or circumvention.",
+  "preservation_boundary": "Exact screenshot, rendered HTML, and DOM snapshot were preserved in the operator workspace and hashed. Only hashes and a semantic extraction are committed to avoid redistributing third-party page assets."
+}
