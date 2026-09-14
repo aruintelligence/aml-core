@@ -1,0 +1,36 @@
+{
+  "schema": "aml-verification-contract-migration/1",
+  "migration_id": "aml-verifier-contract-migration-2026-09-09-01-to-2026-09-14-01",
+  "from_snapshot": "aml-verifier-contract-2026-09-09-01",
+  "to_snapshot": "aml-verifier-contract-2026-09-14-01",
+  "classification": "breaking",
+  "changed_locked_paths": [
+    "conformance/verifier-challenge.json",
+    "scripts/run-verifier-conformance.mjs"
+  ],
+  "historical_artifacts": {
+    "old_snapshot_verification_required": true,
+    "new_snapshot_may_reinterpret_old_artifacts": false
+  },
+  "behavior_changes": [
+    {
+      "area": "verifier challenge case definition",
+      "before": "the four challenge mutations and evaluation times were represented in the challenge document and implemented directly by the reference harness",
+      "after": "the same four challenge cases are defined as language-neutral data in conformance/verifier-challenge-cases.json and consumed by the harness",
+      "compatibility": "incompatible"
+    },
+    {
+      "area": "black-box verifier outcomes",
+      "before": "golden valid, receipt-purpose tamper, challenge-nonce tamper, and expired challenge cases",
+      "after": "the same four verifier command cases and expected validity outcomes",
+      "compatibility": "compatible"
+    },
+    {
+      "area": "case corpus evidence binding",
+      "before": "the harness bound the exact challenge and witness-vector bytes",
+      "after": "the harness retains those bindings and additionally reports the SHA-256 of the exact language-neutral case corpus",
+      "compatibility": "conditionally-compatible"
+    }
+  ],
+  "notes": "Snapshot 2 remains the immutable target for Snapshot 2 artifacts. Snapshot 3 makes the challenge cases independently readable as data instead of requiring inspection of reference harness code. Passing remains project-defined black-box interoperability evidence, not certification or proof of implementation independence."
+}
