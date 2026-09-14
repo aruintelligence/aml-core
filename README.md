@@ -214,13 +214,17 @@ The covered software is available under the [MIT License](LICENSE). Official ĀM
 
 Technical conformance is independently testable. It does **not** automatically grant official ĀRU authorization, endorsement, partnership, certification, or trademark rights.
 
-Official identity and trust resources:
+For the current rights and commercialization architecture, start here:
 
-- [TRADEMARKS.md](TRADEMARKS.md)
+- [LICENSING.md](LICENSING.md) — canonical boundary between MIT-covered software and separately controlled rights/services
+- [NOTICE.md](NOTICE.md) — concise public rights notice
+- [TRADEMARKS.md](TRADEMARKS.md) — trademark and brand-use policy
+- [COMMERCIAL.md](COMMERCIAL.md) — enterprise, OEM, managed-service, and official-branding paths
+- [IP_PROTECTION_ROADMAP.md](IP_PROTECTION_ROADMAP.md) — operational checklist for registrations, chain of title, patent timing, trade-secret boundaries, contributor rights, and written agreements
+- [CONTRIBUTING.md](CONTRIBUTING.md) — contribution licensing and no-silent-relicensing boundary
 - [OFFICIAL_MARKS.json](OFFICIAL_MARKS.json)
 - [OFFICIAL_AUTHORIZATIONS.json](OFFICIAL_AUTHORIZATIONS.json)
 - [BRAND_TRUST_ROOTS.json](BRAND_TRUST_ROOTS.json)
-- [COMMERCIAL.md](COMMERCIAL.md)
 - [RFC 0011 — Official Brand Authorization](rfcs/0011-official-brand-authorization.md)
 
 Current production public trust root:

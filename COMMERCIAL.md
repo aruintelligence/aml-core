@@ -2,6 +2,8 @@
 
 ĀML™ is designed to spread broadly as open technology while preserving a controlled official brand, compatibility identity, enterprise ecosystem, and commercial relationship layer.
 
+For the canonical licensing boundary, see `LICENSING.md`. For the operational IP-protection checklist, see `IP_PROTECTION_ROADMAP.md`.
+
 ## Open-source software stays open
 
 The software covered by `LICENSE` is available under the MIT License. You do **not** need to pay ĀRU Intelligence Inc.™ merely to exercise rights that the MIT License already grants.
@@ -64,6 +66,12 @@ Future or negotiated services may include:
 
 Availability and commercial terms are determined by written agreement and should not be inferred merely from this roadmap.
 
+### Future separately licensed products
+
+ĀRU may create future products, private modules, hosted services, enterprise policy packs, datasets, signing services, deployment tooling, or other components under separate commercial terms.
+
+A future component is only outside the repository MIT grant when its applicable license or controlling written agreement actually says so. A marketing label such as “enterprise” or “commercial” does not itself change licensing.
+
 ### Strategic partnerships
 
 ĀRU is open to serious discussions with:
@@ -108,9 +116,9 @@ See:
 ĀML intentionally separates:
 
 1. **software freedom and interoperability**, which accelerate adoption; from
-2. **official brand authority, official compatibility identity, endorsement, commercial services, and partnerships**, which remain controlled.
+2. **official brand authority, official compatibility identity, endorsement, commercial services, managed infrastructure, and future separately licensed offerings**, which remain controlled when the relevant rights and agreements support that control.
 
-A company can implement the open protocol without buying a license to the code. A company that wants to present itself as officially authorized, officially compatible, partnered, co-branded, or endorsed under reserved AML/ĀRU branding should contact the rights holder.
+A company can implement the open protocol without buying a license to the MIT-covered code. A company that wants to present itself as officially authorized, officially compatible, partnered, co-branded, or endorsed under reserved AML/ĀRU branding should contact the rights holder.
 
 ## Start a commercial conversation
 
@@ -134,4 +142,4 @@ Contact, technical conformance, contribution, use of MIT-licensed code, or parti
 
 Any such rights must be granted in an appropriate written agreement by an authorized rights holder.
 
-See `TRADEMARKS.md` for the brand-use policy.
+See `TRADEMARKS.md` for the brand-use policy and `NOTICE.md` for the concise public rights notice.

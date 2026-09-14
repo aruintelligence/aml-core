@@ -4,6 +4,8 @@ Copyright © 2026 Daniel Jacob Read IV. Stewarded by ĀRU Intelligence Inc.™
 
 This repository contains open-source software and separate brand assets. The MIT License applies to the software as stated in `LICENSE`. It does **not** grant permission to use trademarks, service marks, logos, certification-style marks, trade dress, or other source-identifying branding except as expressly permitted here or by applicable law.
 
+For the broader licensing structure, see `LICENSING.md`. For the operational protection checklist, see `IP_PROTECTION_ROADMAP.md`.
+
 ## Marks claimed
 
 The following names and designations are used as claimed trademarks and/or service marks of Daniel Jacob Read IV and/or ĀRU Intelligence Inc.™ as applicable:
