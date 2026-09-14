@@ -1,15 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 
 const challenge = JSON.parse(fs.readFileSync('conformance/verifier-challenge.json', 'utf8'));
-const cases = JSON.parse(fs.readFileSync(challenge.cases_file, 'utf8'));
+const casesBytes = fs.readFileSync(challenge.cases_file);
+const cases = JSON.parse(casesBytes.toString('utf8'));
 const harness = fs.readFileSync('scripts/run-verifier-conformance.mjs', 'utf8');
 const action = fs.readFileSync('actions/verifier-conformance/action.yml', 'utf8');
+const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 
-test('external verifier challenge publishes a language-neutral exact case corpus', () => {
+test('external verifier challenge publishes and binds a language-neutral exact case corpus', () => {
   assert.equal(challenge.schema, 'aml-external-verifier-challenge/1');
   assert.equal(challenge.cases_file, 'conformance/verifier-challenge-cases.json');
+  assert.equal(challenge.cases_sha256, sha256(casesBytes));
   assert.equal(cases.schema, 'aml-verifier-challenge-cases/1');
   assert.equal(cases.bundle_source, challenge.witness_vector);
   assert.equal(cases.mutation_language.schema, 'aml-json-pointer-replace/1');
@@ -36,11 +40,11 @@ test('external verifier challenge publishes a language-neutral exact case corpus
 
 test('external verifier harness consumes the case corpus instead of hard-coding cases', () => {
   assert.match(harness, /challenge\.cases_file/);
+  assert.match(harness, /challenge\.cases_sha256/);
   assert.match(harness, /casesContract\.cases\.map/);
   assert.match(harness, /aml-json-pointer-replace\/1/);
   assert.doesNotMatch(harness, /purposeTamper/);
   assert.doesNotMatch(harness, /challengeTamper/);
-  assert.match(harness, /challenge_cases_sha256/);
 });
 
 test('external verifier action drives the canonical black-box harness', () => {
