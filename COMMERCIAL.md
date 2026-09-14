@@ -2,7 +2,7 @@
 
 ĀML™ is designed to spread broadly as open technology while preserving a controlled official brand, compatibility identity, enterprise ecosystem, and commercial relationship layer.
 
-For the licensing boundary between MIT-covered code and separately controlled commercial rights, see [`LICENSING.md`](LICENSING.md).
+For the canonical licensing boundary, see `LICENSING.md`. For the operational IP-protection checklist, see `IP_PROTECTION_ROADMAP.md`.
 
 ## Open-source software stays open
 
@@ -10,15 +10,11 @@ The software covered by `LICENSE` is available under the MIT License. You do **n
 
 That open-software position is intentional: adoption and interoperability should be easy.
 
-Rights already granted under MIT for a validly distributed copy are not retroactively revoked by a later business-model or repository change.
+## The official layer is separate
 
-## The commercial layer is separate
+Organizations should contact ĀRU when they want rights or services beyond the open software license, including official branding, formal commercial relationships, managed infrastructure, or direct support.
 
-Organizations should contact ĀRU when they want rights, services, infrastructure, support, or official identity beyond the open software license.
-
-The commercial layer can include official branding, formal commercial relationships, managed infrastructure, enterprise implementation, OEM/co-branding, private or separately licensed components, and direct support.
-
-### Official ĀML compatibility branding
+### Official AML compatibility branding
 
 Potential arrangements include:
 
@@ -55,7 +51,7 @@ Potential commercial arrangements include:
 - OEM/co-branding;
 - white-label infrastructure where separately agreed;
 - product-specific official authorization;
-- marketplace, platform, browser, runtime, agent, or device integrations.
+- marketplace, platform, or device integrations.
 
 ### Managed infrastructure and verification
 
@@ -66,17 +62,15 @@ Future or negotiated services may include:
 - signed authorization/credential issuance;
 - transparency/revocation infrastructure;
 - enterprise conformance reporting;
-- managed proof/receipt infrastructure;
-- managed trust-root and authorization services;
-- enterprise support and service-level commitments where separately agreed.
+- managed proof/receipt infrastructure.
 
 Availability and commercial terms are determined by written agreement and should not be inferred merely from this roadmap.
 
-### Separately licensed future products
+### Future separately licensed products
 
-Future private modules, enterprise components, hosted services, policy packs, signing services, datasets, or other products may be distributed under terms separate from the MIT License.
+ĀRU may create future products, private modules, hosted services, enterprise policy packs, datasets, signing services, deployment tooling, or other components under separate commercial terms.
 
-A component is subject to separate commercial terms only when those terms are actually stated for that component or included in the controlling written agreement. The existence of a commercial roadmap does not change the license of code already released under MIT.
+A future component is only outside the repository MIT grant when its applicable license or controlling written agreement actually says so. A marketing label such as “enterprise” or “commercial” does not itself change licensing.
 
 ### Strategic partnerships
 
@@ -117,34 +111,18 @@ See:
 - `OFFICIAL_MARKS.json`
 - `OFFICIAL_AUTHORIZATIONS.json`
 
-## Revenue architecture
-
-The intended commercial model is not “pay merely to run MIT-licensed code.” The intended model is to create value around the open technology through controlled official identity and paid commercial relationships.
-
-Potential revenue-bearing categories include:
-
-1. official compatibility and brand authorization;
-2. enterprise implementation and architecture;
-3. OEM / embedded / co-branding agreements;
-4. managed verification, policy, trust, receipt, and authorization infrastructure;
-5. support, training, implementation review, and deployment assistance;
-6. separately licensed future products or services where expressly identified;
-7. strategic partnerships and negotiated commercial programs.
-
-No specific fee, royalty, exclusivity right, certification right, or service commitment exists unless agreed in writing.
-
 ## Why the distinction exists
 
 ĀML intentionally separates:
 
 1. **software freedom and interoperability**, which accelerate adoption; from
-2. **official brand authority, official compatibility identity, endorsement, commercial services, managed infrastructure, and partnerships**, which remain controlled.
+2. **official brand authority, official compatibility identity, endorsement, commercial services, managed infrastructure, and future separately licensed offerings**, which remain controlled when the relevant rights and agreements support that control.
 
-A company can implement the open protocol without buying a license to the MIT-covered code. A company that wants to present itself as officially authorized, officially compatible, partnered, co-branded, or endorsed under reserved ĀML/ĀRU branding—or wants commercial services or separately licensed products—should contact the appropriate rights holder.
+A company can implement the open protocol without buying a license to the MIT-covered code. A company that wants to present itself as officially authorized, officially compatible, partnered, co-branded, or endorsed under reserved AML/ĀRU branding should contact the rights holder.
 
 ## Start a commercial conversation
 
-For official branding, enterprise, OEM, managed infrastructure, compatibility-brand authorization, separately licensed offerings, or strategic partnership discussions:
+For official branding, enterprise, OEM, managed infrastructure, compatibility-brand authorization, or strategic partnership discussions:
 
 **Office@aruintelligence.com**
 
@@ -160,8 +138,8 @@ Do **not** place trade secrets, passwords, private keys, customer data, confiden
 
 ## No implied commercial relationship
 
-Contact, technical conformance, contribution, use of MIT-licensed code, or participation in the open-source project does not itself create a trademark license, official compatibility authorization, certification, endorsement, partnership, exclusivity right, NDA, support obligation, service-level commitment, or other commercial relationship.
+Contact, technical conformance, contribution, use of MIT-licensed code, or participation in the open-source project does not itself create a trademark license, official compatibility authorization, certification, endorsement, partnership, exclusivity right, or other commercial relationship.
 
-Any such rights or obligations must be created in an appropriate written agreement by a person or entity authorized to grant them.
+Any such rights must be granted in an appropriate written agreement by an authorized rights holder.
 
-See `TRADEMARKS.md` for the brand-use policy and `LICENSING.md` for the software/commercial licensing boundary.
+See `TRADEMARKS.md` for the brand-use policy and `NOTICE.md` for the concise public rights notice.
