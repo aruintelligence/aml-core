@@ -9,28 +9,32 @@ import { checkExternalVerifierKit } from '../scripts/check-external-verifier-kit
 
 const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 
-test('external verifier kit is reference-code-free, Snapshot 2 aware, and self-consistent', () => {
+test('external verifier kit is reference-code-free, current-snapshot aware, and self-consistent', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-verifier-kit-'));
   try {
     const output = path.join(root, 'kit');
     const built = buildExternalVerifierKit(output);
     const checked = checkExternalVerifierKit(output);
+    const catalog = JSON.parse(fs.readFileSync('protocol/verification-contract-catalog.json', 'utf8'));
     assert.equal(checked.valid, true, JSON.stringify(checked.failures));
     assert.equal(built.manifest.reference_code_included, false);
-    assert.equal(built.manifest.current_contract_snapshot_id, 'aml-verifier-contract-2026-09-09-01');
-    assert.equal(built.manifest.contract_snapshot_count, 2);
-    assert.equal(built.manifest.contract_migration_count, 1);
+    assert.equal(built.manifest.current_contract_snapshot_id, catalog.current_snapshot);
+    assert.equal(built.manifest.contract_snapshot_count, catalog.snapshots.length);
+    assert.equal(built.manifest.contract_migration_count, catalog.migrations.length);
     assert.equal(built.manifest.challenge_sha256, sha256(fs.readFileSync('conformance/verifier-challenge.json')));
     assert.equal(built.manifest.witness_vector_sha256, sha256(fs.readFileSync('independent/python/witness-vector.json')));
     for (const required of [
       'conformance/verifier-challenge.json',
+      'conformance/verifier-challenge-cases.json',
       'independent/python/witness-vector.json',
       'protocol/sorted-json-v1.md',
       'protocol/verification-contract-v1.json',
       'protocol/verification-contract-v2.json',
+      'protocol/verification-contract-v3.json',
       'protocol/verification-contract-catalog.json',
       'protocol/verification-contract-lineage.json',
-      'protocol/migrations/aml-verifier-contract-2026-09-08-01_to_2026-09-09-01.json'
+      'protocol/migrations/aml-verifier-contract-2026-09-08-01_to_2026-09-09-01.json',
+      'protocol/migrations/aml-verifier-contract-2026-09-09-01_to_2026-09-14-01.json'
     ]) {
       assert.ok(built.manifest.files.some((entry) => entry.path === required), required);
     }
