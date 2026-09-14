@@ -1,0 +1,37 @@
+{
+  "experiment_id": "phs-status-ticker-human-override-2026-09-14",
+  "property": "Portland Home Security",
+  "element": "top-sales-status-ticker",
+  "purpose": "communicate-live-sales-availability-and-contact",
+  "labels": {
+    "attention_cost": {
+      "value": 4,
+      "source": "project_owner_declared"
+    },
+    "restoration_value": {
+      "value": 2,
+      "source": "project_owner_declared"
+    }
+  },
+  "policy": "restoration_value >= attention_cost",
+  "gate_result": "SUPPRESS",
+  "business_rule_override": {
+    "applied": true,
+    "final_disposition": "RETAIN-BY-BUSINESS-RULE",
+    "reason": "live-sales-availability-and-hours-provide-distinct-operational-utility"
+  },
+  "before": {
+    "base44_checkpoint": "6aa813b67e289e6e7f560d86",
+    "source_commit": "7f890be3ac6402f651d79c0e42d5f635039fa3a3"
+  },
+  "after": {
+    "base44_checkpoint": "6aa813d7c1e184d9c68e2a2d",
+    "source_commit": "e85e2d2d1dfc51e4ab49f687acebdc210f868159",
+    "ui_change": "none; element retained",
+    "metadata_change": "AML provenance and override metadata added to element",
+    "build": "PASS"
+  },
+  "evidence_class": "project-authored field evidence",
+  "caveat": "Attention/restoration values are declared prototype inputs, not objective measurements.",
+  "receipt_sha256": "314568875bd433d9bf75f4686b43086b10b5b2581bfeb6268924234bcc7760d2"
+}
