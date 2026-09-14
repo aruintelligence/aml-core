@@ -53,6 +53,20 @@ Contributors retain whatever copyright they legally own in their original contri
 
 The project’s brand-use rules are separate from the software license. See `TRADEMARKS.md`.
 
+### No silent relicensing assumption
+
+Submission under the MIT contribution terms above should not be interpreted as a separate copyright assignment to ĀRU Intelligence Inc. or Daniel Jacob Read IV, nor as a blanket agreement allowing the project to relicense a contributor's original work under arbitrary future proprietary terms beyond rights actually granted.
+
+If ĀRU later wants to incorporate an outside contribution into a separately licensed commercial component, dual-licensed product, or other offering that requires rights beyond the applicable MIT grant, the project should obtain any additional contributor permission or agreement that is legally necessary before relying on that contribution for such a purpose.
+
+This protects both the project and contributors from ambiguity about future commercial rights.
+
+### Future contributor agreements
+
+The project may adopt a separate contributor license agreement, developer certificate of origin process, or other written contribution framework for future contributions if broader relicensing, patent, provenance, or commercial-distribution rights become necessary.
+
+Such a framework should be prospective and explicit. This file does not pretend that a future policy can retroactively manufacture rights that were never granted.
+
 ## Standards and conformance contributions
 
 Technical participation in the RFC, registry, protocol, conformance, or test process does not by itself grant:
