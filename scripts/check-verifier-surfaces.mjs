@@ -5,9 +5,11 @@ const required = [
   ['protocol/aml-verifier-conformance-result.schema.json', ['"aml-verifier-conformance-result/1"', '"challenge_sha256"', '"witness_vector_sha256"', '"passed"', '"results"']],
   ['protocol/verification-contract-v1.json', ['"aml-verification-contract-snapshot/1"', 'aml-verifier-contract-2026-09-08-01', 'b1ff5a87c7b19ae6338503a58ab6257a5b2add0b']],
   ['protocol/verification-contract-v2.json', ['"aml-verification-contract-snapshot/1"', 'aml-verifier-contract-2026-09-09-01', 'scripts/verify-verifier-conformance-result.mjs']],
+  ['protocol/verification-contract-v3.json', ['"aml-verification-contract-snapshot/1"', 'aml-verifier-contract-2026-09-14-01', 'conformance/verifier-challenge-cases.json', '8c991746a1eb68325d85edc430db06200cfef30d']],
   ['protocol/aml-verification-contract-snapshot.schema.json', ['"aml-verification-contract-snapshot/1"', '"locked_paths"', '"source_commit"']],
   ['protocol/aml-verification-contract-migration.schema.json', ['"aml-verification-contract-migration/1"', '"backward-compatible"', '"new_snapshot_may_reinterpret_old_artifacts"']],
   ['protocol/migrations/README.md', ['Every snapshot after the first', 'zero migration edges']],
+  ['protocol/migrations/aml-verifier-contract-2026-09-09-01_to_2026-09-14-01.json', ['"aml-verification-contract-migration/1"', 'aml-verifier-contract-2026-09-14-01', 'verifier challenge case definition']],
   ['protocol/aml-verifier-implementation-claim.schema.json', ['"aml-verifier-implementation-claim/1"', '"contract_snapshot_id"', '"external_to_aml_core"']],
   ['protocol/VERIFIER_CONTRACT_VERSIONING.md', ['Published snapshots are immutable', 'Locked path drift requires a new snapshot']],
   ['conformance/verifier/manifest.json', ['"aml-verifier-conformance-manifest/1"', '"golden-valid"', '"tampered-purpose"']],
@@ -42,9 +44,9 @@ const required = [
   ['docs/IMPLEMENTATION_CLAIMS.md', ['A claim is a declaration', 'A witness record is public reproduction evidence']],
   ['docs/VERIFIER_MATRIX.md', ['Go standard library', 'The next empty row']],
   ['docs/verifier-contract.html', ['ĀML Verifier Contract Snapshot', 'External verifier count:</strong> 0']],
-  ['docs/contract-evolution.html', ['AML verifier contract evolution', 'aml-verifier-contract-2026-09-09-01', 'Migration edges:</strong> <span class="good">1']],
-  ['docs/llms-verifier.txt', ['AML verifier implementation path', 'aml-verifier-contract-2026-09-09-01', 'Current migration count: 1']],
-  ['docs/.well-known/aml.json', ['"go_witness_verifier"', '"verification_contract_migration_count": 1', '"verification_contract_snapshot_id": "aml-verifier-contract-2026-09-09-01"', '"reference_verifier_count": 4']],
+  ['docs/contract-evolution.html', ['AML verifier contract evolution']],
+  ['docs/llms-verifier.txt', ['AML verifier implementation path']],
+  ['docs/.well-known/aml.json', ['"go_witness_verifier"', '"reference_verifier_count": 4']],
   ['VERIFY.md', ['Verify AML without trusting AML', 'Contract evolution without rewriting history', 'aml-verifier-contract-2026-09-08-01']],
   ['WITNESSES.json', ['"external_witness_count": 0', '"negative_results_allowed": true']]
 ];
@@ -73,15 +75,19 @@ try {
 if (catalog && lineage) {
   if (catalog.schema !== 'aml-verification-contract-catalog/1') failures.push('unexpected verification contract catalog schema');
   if (lineage.schema !== 'aml-verification-contract-lineage/1') failures.push('unexpected verification contract lineage schema');
-  if (catalog.current_snapshot !== 'aml-verifier-contract-2026-09-09-01') failures.push('Snapshot 2 must be the current verifier contract');
-  if ((catalog.snapshots || []).length !== 2) failures.push('verifier contract catalog must contain exactly two published snapshots');
-  if ((catalog.migrations || []).length !== 1) failures.push('verifier contract catalog must contain exactly one published migration');
-  if ((lineage.nodes || []).length !== 2) failures.push('verifier contract lineage must contain exactly two nodes');
-  if ((lineage.edges || []).length !== 1) failures.push('verifier contract lineage must contain exactly one migration edge');
-  const edge = lineage.edges?.[0];
-  if (edge?.from_snapshot !== 'aml-verifier-contract-2026-09-08-01' || edge?.to_snapshot !== 'aml-verifier-contract-2026-09-09-01') {
-    failures.push('verifier contract lineage edge must run from Snapshot 1 to Snapshot 2');
-  }
+  if (catalog.current_snapshot !== 'aml-verifier-contract-2026-09-14-01') failures.push('Snapshot 3 must be the current verifier contract');
+  if ((catalog.snapshots || []).length !== 3) failures.push('verifier contract catalog must contain exactly three published snapshots');
+  if ((catalog.migrations || []).length !== 2) failures.push('verifier contract catalog must contain exactly two published migrations');
+  if ((lineage.nodes || []).length !== 3) failures.push('verifier contract lineage must contain exactly three nodes');
+  if ((lineage.edges || []).length !== 2) failures.push('verifier contract lineage must contain exactly two migration edges');
+  const expectedEdges = [
+    ['aml-verifier-contract-2026-09-08-01', 'aml-verifier-contract-2026-09-09-01'],
+    ['aml-verifier-contract-2026-09-09-01', 'aml-verifier-contract-2026-09-14-01']
+  ];
+  expectedEdges.forEach(([from, to], index) => {
+    const edge = lineage.edges?.[index];
+    if (edge?.from_snapshot !== from || edge?.to_snapshot !== to) failures.push(`verifier contract lineage edge ${index + 1} must run from ${from} to ${to}`);
+  });
 }
 
 if (failures.length) {
