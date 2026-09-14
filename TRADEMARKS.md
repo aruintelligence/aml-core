@@ -4,6 +4,8 @@ Copyright © 2026 Daniel Jacob Read IV. Stewarded by ĀRU Intelligence Inc.™
 
 This repository contains open-source software and separate brand assets. The MIT License applies to the software as stated in `LICENSE`. It does **not** grant permission to use trademarks, service marks, logos, certification-style marks, trade dress, or other source-identifying branding except as expressly permitted here or by applicable law.
 
+For the broader boundary between MIT-covered software, official brand rights, and separately controlled commercial offerings, see [`LICENSING.md`](LICENSING.md).
+
 ## Marks claimed
 
 The following names and designations are used as claimed trademarks and/or service marks of Daniel Jacob Read IV and/or ĀRU Intelligence Inc.™ as applicable:
@@ -102,7 +104,7 @@ Forks are welcome under the software license. Fork operators should:
 
 ## Commercial licensing and partnerships
 
-Commercial trademark licensing, certification programs, OEM/co-branding, enterprise integration, sponsorship, and strategic partnerships may be available by written agreement.
+Commercial trademark licensing, certification programs, OEM/co-branding, enterprise integration, sponsorship, managed infrastructure, separately licensed offerings, and strategic partnerships may be available by written agreement.
 
 Start here:
 
@@ -122,3 +124,5 @@ Nothing in this policy is intended to restrict lawful nominative fair use, comme
 ## Legal status
 
 This file is a public brand-use policy, not a representation that any listed mark is federally registered or registered in any particular jurisdiction. Registration status should be verified before using the ® symbol or making registration claims.
+
+Nothing in this policy retroactively changes the license governing software already distributed under MIT, transfers intellectual property between parties, or substitutes for a signed commercial agreement or government registration where one is required.
