@@ -19,10 +19,14 @@ const repoRoot = path.resolve(scriptDir, '..');
 const challengePath = path.join(repoRoot, 'conformance/verifier-challenge.json');
 const challengeBytes = fs.readFileSync(challengePath);
 const challenge = JSON.parse(challengeBytes.toString('utf8'));
+const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 if (typeof challenge.cases_file !== 'string' || !challenge.cases_file) throw new Error('Verifier challenge must declare cases_file');
+if (!/^[0-9a-f]{64}$/.test(String(challenge.cases_sha256 || ''))) throw new Error('Verifier challenge must bind cases_sha256');
 
 const casesPath = path.join(repoRoot, challenge.cases_file);
 const casesBytes = fs.readFileSync(casesPath);
+const casesSha256 = sha256(casesBytes);
+if (casesSha256 !== challenge.cases_sha256) throw new Error('Verifier challenge case corpus hash mismatch');
 const casesContract = JSON.parse(casesBytes.toString('utf8'));
 if (casesContract.schema !== 'aml-verifier-challenge-cases/1') throw new Error('Unsupported verifier challenge case schema');
 if (casesContract.mutation_language?.schema !== 'aml-json-pointer-replace/1') throw new Error('Unsupported verifier challenge mutation language');
@@ -33,9 +37,7 @@ if (challenge.witness_vector !== casesContract.bundle_source) throw new Error('C
 const vectorPath = path.join(repoRoot, casesContract.bundle_source);
 const vectorBytes = fs.readFileSync(vectorPath);
 const source = JSON.parse(vectorBytes.toString('utf8'));
-const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 const challengeSha256 = sha256(challengeBytes);
-const challengeCasesSha256 = sha256(casesBytes);
 const witnessVectorSha256 = sha256(vectorBytes);
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-verifier-conformance-'));
 
@@ -100,13 +102,11 @@ console.log(JSON.stringify({
   challenge_schema: challenge.schema,
   challenge_sha256: challengeSha256,
   witness_vector_sha256: witnessVectorSha256,
-  challenge_cases: challenge.cases_file,
-  challenge_cases_sha256: challengeCasesSha256,
   harness_root: repoRoot,
   command: [command, ...baseArgs],
   passed,
   results,
-  claim_boundary: 'PASS is project-defined black-box compatibility evidence bound to the exact published challenge, language-neutral case corpus, and witness-vector bytes; it is not certification or proof of verifier independence.'
+  claim_boundary: 'PASS is project-defined black-box compatibility evidence bound through the exact challenge to the language-neutral case corpus and exact witness-vector bytes; it is not certification or proof of verifier independence.'
 }, null, 2));
 
 process.exit(passed ? 0 : 1);
