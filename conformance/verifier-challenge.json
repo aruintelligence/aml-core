@@ -5,6 +5,7 @@
   "harness": "scripts/run-verifier-conformance.mjs",
   "witness_vector": "independent/python/witness-vector.json",
   "cases_file": "conformance/verifier-challenge-cases.json",
+  "cases_sha256": "15409d9b921b8d8e16a54d9cb83760c102fa43ef4e9a349f195e4551e1beaa56",
   "command_contract": {
     "invocation": "<verifier-command> --now <ISO-8601> <bundle.json>",
     "stdout": "single JSON object",
