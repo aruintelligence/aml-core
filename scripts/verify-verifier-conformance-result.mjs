@@ -22,13 +22,19 @@ try {
 }
 
 const challengePath = path.resolve('conformance/verifier-challenge.json');
-const vectorPath = path.resolve('independent/python/witness-vector.json');
 const challengeBytes = fs.readFileSync(challengePath);
-const vectorBytes = fs.readFileSync(vectorPath);
 const challenge = JSON.parse(challengeBytes.toString('utf8'));
+const casesPath = path.resolve(challenge.cases_file || '');
+const casesBytes = fs.readFileSync(casesPath);
+const casesContract = JSON.parse(casesBytes.toString('utf8'));
+const vectorPath = path.resolve(challenge.witness_vector || casesContract.bundle_source || '');
+const vectorBytes = fs.readFileSync(vectorPath);
 const expectedChallengeHash = sha256(challengeBytes);
+const expectedCasesHash = sha256(casesBytes);
 const expectedVectorHash = sha256(vectorBytes);
 
+if (challenge.cases_sha256 !== expectedCasesHash) failures.push('local challenge cases_sha256 does not match exact local case-corpus bytes');
+if (casesContract.bundle_source !== challenge.witness_vector) failures.push('challenge witness_vector does not match case-corpus bundle_source');
 if (result?.schema !== challenge.result_contract?.schema) failures.push('result schema does not match challenge result contract');
 if (result?.challenge_schema !== challenge.schema) failures.push('challenge_schema mismatch');
 if (!/^[0-9a-f]{64}$/.test(String(result?.challenge_sha256 || ''))) failures.push('challenge_sha256 must be lowercase SHA-256 hex');
@@ -37,7 +43,7 @@ if (result?.challenge_sha256 !== expectedChallengeHash) failures.push('challenge
 if (result?.witness_vector_sha256 !== expectedVectorHash) failures.push('witness_vector_sha256 does not match exact local witness-vector bytes');
 if (!Array.isArray(result?.results)) failures.push('results must be an array');
 
-const expectedCases = Array.isArray(challenge.cases) ? challenge.cases : [];
+const expectedCases = Array.isArray(casesContract.cases) ? casesContract.cases : [];
 if (Array.isArray(result?.results)) {
   if (result.results.length !== expectedCases.length) failures.push('result case count mismatch');
   const seen = new Set();
@@ -69,9 +75,10 @@ console.log(JSON.stringify({
   verified,
   passed: verified ? result.passed === true : false,
   challenge_sha256: expectedChallengeHash,
+  cases_sha256: expectedCasesHash,
   witness_vector_sha256: expectedVectorHash,
   failures,
-  claim_boundary: 'Verification proves that this result is structurally consistent with the exact local challenge and witness-vector bytes. It does not prove the tested verifier is independent, trustworthy, secure, or broadly adopted.'
+  claim_boundary: 'Verification proves that this result is structurally consistent with the exact local challenge, its bound case corpus, and witness-vector bytes. It does not prove the tested verifier is independent, trustworthy, secure, or broadly adopted.'
 }, null, 2));
 
 process.exit(verified ? 0 : 1);
