@@ -12,8 +12,9 @@ const required = [
   ['protocol/VERIFIER_CONTRACT_VERSIONING.md', ['Published snapshots are immutable', 'Locked path drift requires a new snapshot']],
   ['conformance/verifier/manifest.json', ['"aml-verifier-conformance-manifest/1"', '"golden-valid"', '"tampered-purpose"']],
   ['conformance/verifier/README.md', ['Verifier conformance target', 'Negative results are welcome']],
-  ['conformance/verifier-challenge.json', ['"aml-external-verifier-challenge/1"', '"must_bind_exact_challenge_sha256": true', '"must_bind_exact_witness_vector_sha256": true']],
-  ['scripts/run-verifier-conformance.mjs', ['challenge_sha256', 'witness_vector_sha256', 'tampered-purpose', 'expired-challenge']],
+  ['conformance/verifier-challenge.json', ['"aml-external-verifier-challenge/1"', '"cases_file": "conformance/verifier-challenge-cases.json"', '"must_bind_exact_challenge_sha256": true', '"must_bind_exact_witness_vector_sha256": true']],
+  ['conformance/verifier-challenge-cases.json', ['"aml-verifier-challenge-cases/1"', '"aml-json-pointer-replace/1"', '"golden-valid"', '"tampered-purpose"', '"tampered-challenge"', '"expired-challenge"']],
+  ['scripts/run-verifier-conformance.mjs', ['challenge.cases_file', 'casesContract.cases.map', 'challenge_sha256', 'challenge_cases_sha256', 'witness_vector_sha256', 'aml-json-pointer-replace/1']],
   ['scripts/verify-verifier-conformance-result.mjs', ['challenge_sha256 does not match exact local challenge bytes', 'witness_vector_sha256 does not match exact local witness-vector bytes']],
   ['scripts/check-verification-contract-snapshot.mjs', ['current verifier snapshot', 'source_commit']],
   ['scripts/check-verification-contract-drift.mjs', ['byte-identical', 'Publish a new verifier contract snapshot']],
@@ -94,8 +95,9 @@ console.log(JSON.stringify({
   contract_source_commit: catalog.snapshots.find((entry) => entry.snapshot_id === catalog.current_snapshot)?.source_commit || null,
   contract_snapshot_count: catalog.snapshots.length,
   contract_migration_count: catalog.migrations.length,
+  verifier_case_source: 'conformance/verifier-challenge-cases.json',
   reference_languages: ['JavaScript', 'Python', 'Go'],
   reference_claim_count: 4,
   external_witness_count: 0,
-  promise: 'The public verifier CLI, immutable historical snapshots, explicit evolution lineage, migration rules, byte-drift guard, implementation claims, conformance harness, challenge-bound evidence, cross-language reference implementations, discovery metadata, and honest external-witness boundary remain present.'
+  promise: 'The public verifier CLI, immutable historical snapshots, explicit evolution lineage, migration rules, byte-drift guard, implementation claims, data-defined conformance challenge, challenge-bound evidence, cross-language reference implementations, discovery metadata, and honest external-witness boundary remain present.'
 }, null, 2));
