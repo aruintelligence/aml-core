@@ -58,6 +58,8 @@ No repository policy should be read as claiming ownership of third-party code, t
 
 Before incorporating outside contributions into a separately licensed commercial component, ĀRU should confirm that it has the rights necessary for that licensing model.
 
+See `CONTRIBUTING.md` for the present contribution terms and the explicit no-silent-relicensing boundary.
+
 ## 6. Creator, steward, and public notices
 
 ĀML™ was created by Daniel Jacob Read IV and is stewarded by ĀRU Intelligence Inc.™
@@ -66,13 +68,21 @@ Repository notices may identify the creator, copyright holder, project steward, 
 
 For commercial agreements, licensing should be executed by the person or entity that actually owns or is authorized to license the relevant rights.
 
+See `NOTICE.md` for the concise public rights notice.
+
 ## 7. No implied patent license beyond the applicable software license
 
 Nothing in the trademark policy, commercial materials, or first-use declarations should be interpreted as a patent filing, patent grant, or statement that any patent exists.
 
 Potentially patentable inventions should be evaluated separately by qualified counsel, particularly before additional public disclosure.
 
-## 8. Commercial contact
+## 8. Operational protection roadmap
+
+The repository includes `IP_PROTECTION_ROADMAP.md`, which identifies the practical work that cannot be accomplished merely by adding GitHub notices, including chain-of-title documentation, trademark evaluation, copyright-registration review, patent timing, trade-secret boundaries, contributor-rights controls, and written commercial agreements.
+
+That roadmap is an operational checklist, not legal advice.
+
+## 9. Commercial contact
 
 For official branding, OEM/co-branding, enterprise integration, managed infrastructure, support, strategic partnerships, or separately licensed offerings:
 
@@ -86,11 +96,15 @@ For public, non-confidential first contact, use:
 
 Do not post confidential pricing, private keys, customer data, trade secrets, or confidential deal terms in a public GitHub issue.
 
-## 9. Related documents
+## 10. Related documents
 
 - `LICENSE` — license governing MIT-covered software
+- `LICENSING.md` — canonical licensing architecture
+- `NOTICE.md` — concise public rights notice
+- `IP_PROTECTION_ROADMAP.md` — operational IP-protection checklist
 - `TRADEMARKS.md` — trademark and brand-use policy
 - `COMMERCIAL.md` — commercial relationship and services framework
+- `CONTRIBUTING.md` — contribution and contributor-rights boundary
 - `OFFICIAL_MARKS.json` — machine-readable official-mark registry
 - `OFFICIAL_AUTHORIZATIONS.json` — public authorization index
 - `rfcs/0011-official-brand-authorization.md` — signed authorization format
