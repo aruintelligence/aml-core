@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 
 export const KIT_FILES = [
   'conformance/verifier-challenge.json',
+  'conformance/verifier-challenge-cases.json',
   'conformance/witness-record.example.json',
   'independent/python/witness-vector.json',
   'protocol/sorted-json-v1.md',
@@ -67,6 +68,7 @@ export function buildExternalVerifierKit(outputDir = 'dist/external-verifier-kit
   if (!currentSnapshot?.manifest || !currentSnapshot?.source_commit) throw new Error('current verifier snapshot is not resolvable from catalog');
 
   const challengeBytes = fs.readFileSync('conformance/verifier-challenge.json');
+  const challengeCasesBytes = fs.readFileSync('conformance/verifier-challenge-cases.json');
   const witnessVectorBytes = fs.readFileSync('independent/python/witness-vector.json');
 
   fs.rmSync(outputDir, { recursive: true, force: true });
@@ -82,7 +84,7 @@ export function buildExternalVerifierKit(outputDir = 'dist/external-verifier-kit
   }
   entries.sort((a, b) => codeUnitCompare(a.path, b.path));
 
-  const readme = `# ĀML External Verifier Kit\n\nThis artifact is intentionally **reference-code-free**. It contains the current and historical verifier-contract snapshots, explicit migration lineage, public protocol text, JSON Schemas, canonicalization/test vectors, the black-box verifier challenge, one JSON witness fixture, and witness-submission material. It does not contain the JavaScript, Python, Go, or other reference verifier implementations from aml-core.\n\nCurrent verifier snapshot: **${catalog.current_snapshot}**\nMigration count: **${(catalog.migrations || []).length}**\n\nImplement the published contract in your own runtime, then run the External Verifier Challenge from your own repository. PASS, FAIL, and MIXED results are all useful.\n\nCommand contract:\n\n\`\`\`text\n<verifier-command> --now <ISO-8601> <bundle.json>\n\`\`\`\n\nA valid bundle must emit JSON with \`valid: true\` and exit 0. Invalid challenge cases must be rejected with a nonzero exit. Snapshot 2 conformance results identify the exact challenge and golden witness-vector bytes by SHA-256.\n\nThis kit reduces accidental dependence on reference implementation code. Possessing or using the kit does not itself prove an implementation is independent.\n`;
+  const readme = `# ĀML External Verifier Kit\n\nThis artifact is intentionally **reference-code-free**. It contains the current and historical verifier-contract snapshots, explicit migration lineage, public protocol text, JSON Schemas, canonicalization/test vectors, the black-box verifier challenge, its language-neutral case corpus, one JSON witness fixture, and witness-submission material. It does not contain the JavaScript, Python, Go, or other reference verifier implementations from aml-core.\n\nCurrent verifier snapshot: **${catalog.current_snapshot}**\nMigration count: **${(catalog.migrations || []).length}**\n\nImplement the published contract in your own runtime, then run the External Verifier Challenge from your own repository. PASS, FAIL, and MIXED results are all useful. The exact challenge cases are data-defined in \`conformance/verifier-challenge-cases.json\` using a narrow RFC 6901 JSON Pointer replacement profile, so an implementer does not need to inspect the canonical JavaScript harness to discover the mutation bytes.\n\nCommand contract:\n\n\`\`\`text\n<verifier-command> --now <ISO-8601> <bundle.json>\n\`\`\`\n\nA valid bundle must emit JSON with \`valid: true\` and exit 0. Invalid challenge cases must be rejected with a nonzero exit. Snapshot 2 conformance results identify the exact challenge and golden witness-vector bytes by SHA-256; the kit manifest additionally identifies the exact language-neutral case corpus.\n\nThis kit reduces accidental dependence on reference implementation code. Possessing or using the kit does not itself prove an implementation is independent.\n`;
   const readmeBytes = Buffer.from(readme, 'utf8');
   fs.writeFileSync(path.join(outputDir, 'README.md'), readmeBytes);
   entries.push({ path: 'README.md', bytes: readmeBytes.length, sha256: sha256(readmeBytes) });
@@ -99,6 +101,7 @@ export function buildExternalVerifierKit(outputDir = 'dist/external-verifier-kit
     contract_snapshot_count: (catalog.snapshots || []).length,
     contract_migration_count: (catalog.migrations || []).length,
     challenge_sha256: sha256(challengeBytes),
+    challenge_cases_sha256: sha256(challengeCasesBytes),
     witness_vector_sha256: sha256(witnessVectorBytes),
     file_count: entries.length,
     root_algorithm: 'SHA-256 over UTF-8 sorted SHA256SUMS material',

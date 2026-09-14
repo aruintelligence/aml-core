@@ -9,10 +9,11 @@ import { spawnSync } from 'node:child_process';
 const challengeBytes = fs.readFileSync('conformance/verifier-challenge.json');
 const vectorBytes = fs.readFileSync('independent/python/witness-vector.json');
 const challenge = JSON.parse(challengeBytes.toString('utf8'));
+const cases = JSON.parse(fs.readFileSync(challenge.cases_file, 'utf8'));
 const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 
 function goodResult() {
-  const results = challenge.cases.map((entry) => ({
+  const results = cases.cases.map((entry) => ({
     id: entry.id,
     expected_valid: entry.expected_valid,
     passed: true,
@@ -52,6 +53,8 @@ test('challenge contract requires exact challenge and vector bindings', () => {
   assert.equal(challenge.result_contract.must_bind_exact_challenge_sha256, true);
   assert.equal(challenge.result_contract.must_bind_exact_witness_vector_sha256, true);
   assert.equal(challenge.result_contract.verifier, 'scripts/verify-verifier-conformance-result.mjs');
+  assert.equal(challenge.cases_file, 'conformance/verifier-challenge-cases.json');
+  assert.equal(cases.bundle_source, challenge.witness_vector);
 });
 
 test('archived conformance result verifies against exact local challenge bytes', () => {
