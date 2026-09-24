@@ -8,7 +8,8 @@
 **Source repository baseline:** `aruintelligence/aml-core@2fd09f6c214f943af471cabeceda67fab1b2d191`  
 **Browser compiler source:** `docs/aml-browser.js`, GitHub blob `e4e64a00d20718c1b74d8e5dd9f9dd08b1b84865` (MIT)  
 **Site before checkpoint:** `6ab4ce056a832bf1911dfaf7`, site commit `bcb71487548e71313e6ea6742100c1b51eaa169d`  
-**Site after checkpoint:** `6ab4cec89a3a59ff008b720f`, site commit `13695730daeca10034af24ab4f8d135e49211b57`
+**Site integration checkpoint:** `6ab4cec89a3a59ff008b720f`, site commit `13695730daeca10034af24ab4f8d135e49211b57`  
+**Final site checkpoint (PR link):** `6ab4d0385e097e2e2490dcf9`, site commit `2ff1f221f7cae96c354224cfd605672405aa14b7`
 
 ## Question and scope
 
