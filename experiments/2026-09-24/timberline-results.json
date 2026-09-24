@@ -1,0 +1,101 @@
+{
+  "source_blob": "e4e64a00d20718c1b74d8e5dd9f9dd08b1b84865",
+  "results": [
+    {
+      "path": "/",
+      "fallback": false,
+      "decisions": [
+        {
+          "id": "SamplesAction",
+          "attention_cost": 2,
+          "restoration_value": 4,
+          "render_allowed": true
+        },
+        {
+          "id": "BuildKitAction",
+          "attention_cost": 2,
+          "restoration_value": 4,
+          "render_allowed": true
+        },
+        {
+          "id": "CallAction",
+          "attention_cost": 1,
+          "restoration_value": 5,
+          "render_allowed": true
+        }
+      ]
+    },
+    {
+      "path": "/samples",
+      "fallback": false,
+      "decisions": [
+        {
+          "id": "SamplesAction",
+          "attention_cost": 3,
+          "restoration_value": 1,
+          "render_allowed": false
+        },
+        {
+          "id": "BuildKitAction",
+          "attention_cost": 2,
+          "restoration_value": 4,
+          "render_allowed": true
+        },
+        {
+          "id": "CallAction",
+          "attention_cost": 1,
+          "restoration_value": 5,
+          "render_allowed": true
+        }
+      ]
+    },
+    {
+      "path": "/ridge-kit",
+      "fallback": false,
+      "decisions": [
+        {
+          "id": "SamplesAction",
+          "attention_cost": 2,
+          "restoration_value": 4,
+          "render_allowed": true
+        },
+        {
+          "id": "BuildKitAction",
+          "attention_cost": 3,
+          "restoration_value": 1,
+          "render_allowed": false
+        },
+        {
+          "id": "CallAction",
+          "attention_cost": 1,
+          "restoration_value": 5,
+          "render_allowed": true
+        }
+      ]
+    },
+    {
+      "path": "/putting-greens",
+      "fallback": false,
+      "decisions": [
+        {
+          "id": "SamplesAction",
+          "attention_cost": 2,
+          "restoration_value": 4,
+          "render_allowed": true
+        },
+        {
+          "id": "BuildKitAction",
+          "attention_cost": 2,
+          "restoration_value": 4,
+          "render_allowed": true
+        },
+        {
+          "id": "CallAction",
+          "attention_cost": 1,
+          "restoration_value": 5,
+          "render_allowed": true
+        }
+      ]
+    }
+  ]
+}
