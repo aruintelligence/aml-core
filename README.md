@@ -67,6 +67,7 @@ npm test
 For the smallest deterministic reproduction, start with:
 
 - [10-minute reproduction](docs/TRY_AML_10_MINUTES.md)
+- [Five-minute installed-package quickstart](docs/CONSUMER_QUICKSTART.md)
 - [Undeniable proof demo](demos/undeniable-proof/)
 - [Benchmarking protocol](BENCHMARKING.md)
 - [Interoperability challenge](INTEROPERABILITY.md)
