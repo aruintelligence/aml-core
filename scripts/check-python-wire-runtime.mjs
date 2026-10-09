@@ -57,6 +57,9 @@ try {
   assert.equal(validateWireEnvelope(badEnvelope).valid, false);
   verify("envelope", "bad-envelope", badEnvelope, false);
   verify("envelope", "expired-envelope", envelope, false, ["--now", "2030-01-02T00:00:00Z"]);
+  const extraEnvelope = { ...envelope, unregistered_field: true };
+  assert.equal(validateWireEnvelope(extraEnvelope).valid, true);
+  assert.equal(verify("envelope", "extra-envelope", extraEnvelope, false).reason, "invalid_structure");
 
   const passport = createPolicyPassport({
     subject: "example", profile: "calm_default", preferences: { reduced_motion: true, attention_budget: 3 },
@@ -76,6 +79,9 @@ try {
   badBundle.files["note.txt"].value = "changed";
   assert.equal(verifyContentAddressedBundle(badBundle).valid, false);
   verify("bundle", "bad-bundle", badBundle, false);
+  const fractionalBundle = createContentAddressedBundle({ "ratio.json": { ratio: 0.5 } });
+  assert.equal(verifyContentAddressedBundle(fractionalBundle).valid, true);
+  assert.equal(verify("bundle", "fractional-bundle", fractionalBundle, false).reason, "unsupported_canonical_value");
 
   const disclosure = discloseClaims(createDisclosureCommitment({ region: "west", tier: "pro" }), ["region"]);
   assert.equal(verifyDisclosureProof(disclosure).valid, true);
@@ -84,6 +90,9 @@ try {
   badDisclosure.disclosed[0].value = "east";
   assert.equal(verifyDisclosureProof(badDisclosure).valid, false);
   verify("disclosure", "bad-disclosure", badDisclosure, false);
+  const mixedCaseDisclosure = discloseClaims(createDisclosureCommitment({ Region: "west" }), ["Region"]);
+  assert.equal(verifyDisclosureProof(mixedCaseDisclosure).valid, true);
+  assert.equal(verify("disclosure", "mixed-case-disclosure", mixedCaseDisclosure, false).reason, "unsupported_key_order");
 
   const received = createCausalEvent({ kind: "received", payload: { request: 1 } });
   const evaluated = createCausalEvent({ kind: "evaluated", payload: { allowed: true }, parents: [received.event_hash] });
