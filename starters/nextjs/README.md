@@ -17,6 +17,8 @@ Open <http://localhost:3000>, then inspect `/meaning` and `/api/receipt`. `npm r
 
 The server constructs `candidateIntent` in `lib/demo.mjs`, enforces the `calm_default` profile, and verifies the receipt before responding. The urgency node is suppressed, while the calm continuation appears. The page maps allowed decisions to application-owned React components and lets React escape displayed text. It does not inject the generated AML HTML.
 
+The semantic diff reports the added interface node. Repeated property names can also produce an identity-ambiguity flag in the current diff format, which the page surfaces for review instead of treating the node mapping as proven unique.
+
 The example's `/api/receipt` endpoint is deliberately public and contains only a fixed demonstration fixture. In a real app, authenticate and authorize receipt access, avoid exposing private context, validate machine intent, choose policy and context on the server, and keep ordinary Next.js/XSS controls. AML checks declared meaning; it does not prove that the declaration matches the UI or sanitize untrusted HTML.
 
 ## Meaning Gate in CI
