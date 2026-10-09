@@ -102,6 +102,37 @@ test("AML HTTP returns 503 when an authentication callback stalls", async () => 
   }, { auth_timeout_ms: 20, request_auth: () => new Promise(() => {}) });
 });
 
+test("AML HTTP rejects excess in-flight work and releases the slot", async () => {
+  let release;
+  let entered;
+  const held = new Promise(resolve => { release = resolve; });
+  const started = new Promise(resolve => { entered = resolve; });
+  let authenticated = 0;
+  await withServer(async (base) => {
+    const post = () => fetch(`${base}/v1/deployment/evaluate`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ intent: intent() })
+    });
+    const first = post();
+    await started;
+    const overloaded = await post();
+    assert.equal(overloaded.status, 503);
+    assert.equal(overloaded.headers.get("retry-after"), "1");
+    assert.equal((await overloaded.json()).error, "server_busy");
+    assert.equal(authenticated, 1);
+    release();
+    const completed = await first;
+    assert.equal(completed.status, 200);
+    await completed.text();
+    assert.equal((await post()).status, 200);
+  }, { max_inflight_requests: 1, request_auth: async () => {
+    authenticated += 1;
+    entered();
+    await held;
+    return true;
+  } });
+});
+
 test("AML HTTP health and capabilities endpoints respond", async () => {
   await withServer(async (base) => {
     const health = await fetch(`${base}/health`).then((res) => res.json());

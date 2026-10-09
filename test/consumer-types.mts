@@ -66,6 +66,7 @@ const finalized: boolean = session.finalized;
 
 const server = createAmlHttpServer({
   max_batch_items: 100,
+  max_inflight_requests: 100,
   auth_timeout_ms: 2000,
   request_auth: { bearer_token: "0123456789abcdef0123456789abcdef" },
   locked_policy: { profile: "human_first", resolve_context_timeout_ms: 2000, resolve_context: async (req, { signal }) => ({
@@ -75,8 +76,8 @@ const server = createAmlHttpServer({
 });
 server.listen(0, "127.0.0.1");
 server.close();
-createAgentUiGateway({ locked_policy: { profile: "calm_default" }, auth_timeout_ms: 2000, max_body_bytes: 1024, max_components: 256 });
-createGovernanceStreamGateway({ auth_timeout_ms: 2000, max_line_bytes: 1024, max_stream_bytes: 4096, max_messages: 10 });
+createAgentUiGateway({ locked_policy: { profile: "calm_default" }, auth_timeout_ms: 2000, max_body_bytes: 1024, max_components: 256, max_inflight_requests: 10 });
+createGovernanceStreamGateway({ auth_timeout_ms: 2000, max_line_bytes: 1024, max_stream_bytes: 4096, max_messages: 10, max_inflight_requests: 10 });
 createAmlHttpServer({ request_auth: async (_req, { signal }) => !signal.aborted });
 
 // @ts-expect-error the runtime session exposes accept(), never handle().
@@ -87,6 +88,8 @@ createAmlHttpServer({ locked_policy: { mode: "permissive" } });
 createAmlHttpServer({ request_auth: { bearer_token: 123 } });
 // @ts-expect-error callback deadlines are numeric milliseconds.
 createAmlHttpServer({ auth_timeout_ms: "slow" });
+// @ts-expect-error concurrency ceilings are numeric.
+createAmlHttpServer({ max_inflight_requests: "unlimited" });
 // @ts-expect-error context deadlines are numeric milliseconds.
 createAmlHttpServer({ locked_policy: { resolve_context_timeout_ms: "slow" } });
 // @ts-expect-error a firewall run cannot request a made-up timestamp type.

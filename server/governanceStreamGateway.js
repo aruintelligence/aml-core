@@ -1,5 +1,6 @@
 import http from "node:http";
 import { createRequestAuthenticator } from "./requestAuth.js";
+import { createInflightLimit } from "./inflightLimit.js";
 import { createLockedHttpPolicy } from "./lockedPolicy.js";
 import { readNdjsonLines } from "./readNdjsonLines.js";
 import { writeNdjson } from "./writeNdjson.js";
@@ -39,6 +40,7 @@ export function createGovernanceStreamGateway(options = {}) {
     throw new TypeError("max_messages must be a safe integer of at least 2");
   }
   const authorize = createRequestAuthenticator(options.request_auth, { timeout_ms: options.auth_timeout_ms });
+  const inflight = createInflightLimit(options.max_inflight_requests);
   const bearerChallenge = options.request_auth && typeof options.request_auth === "object"
     ? { "www-authenticate": 'Bearer realm="aml"' } : {};
   const lockedPolicy = createLockedHttpPolicy(options.locked_policy, "calm_default");
@@ -52,6 +54,11 @@ export function createGovernanceStreamGateway(options = {}) {
         service: "aml-governance-stream-gateway",
         protocol: "aml-governance-stream-http/1"
       });
+    }
+
+    if (req.method === "POST" && !inflight.acquire(res)) {
+      req.pause();
+      return json(res, 503, { error: "server_busy" }, { "retry-after": "1" });
     }
 
     if (authorize && req.method === "POST") {

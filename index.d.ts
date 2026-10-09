@@ -407,6 +407,7 @@ export interface AmlHttpServerOptions {
   allowed_origin?: string | null;
   max_body_bytes?: number;
   max_batch_items?: number;
+  max_inflight_requests?: number;
   brand_trust_roots?: unknown;
   request_auth?: RequestAuthenticator;
   auth_timeout_ms?: number;
@@ -419,6 +420,7 @@ export interface AgentUiGatewayOptions {
   default_failure_mode?: AmlFailureMode;
   max_body_bytes?: number;
   max_components?: number;
+  max_inflight_requests?: number;
   request_auth?: RequestAuthenticator;
   auth_timeout_ms?: number;
   locked_policy?: LockedHttpPolicy;
@@ -428,6 +430,7 @@ export interface GovernanceStreamGatewayOptions {
   max_line_bytes?: number;
   max_stream_bytes?: number;
   max_messages?: number;
+  max_inflight_requests?: number;
   request_auth?: RequestAuthenticator;
   auth_timeout_ms?: number;
   locked_policy?: LockedHttpPolicy;

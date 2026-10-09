@@ -323,6 +323,9 @@ Application authentication and trusted-context callbacks have a 5000 ms deadline
 configure `auth_timeout_ms` on each gateway and `locked_policy.resolve_context_timeout_ms`
 for the respective limits. Both callbacks receive an optional second `{ signal }` argument
 for cancelling their own downstream lookups. Timeouts return generic 503 errors.
+Each gateway also limits concurrent POST requests to 100 by default; set
+`max_inflight_requests` for a different per-instance ceiling. Excess work returns
+`503 server_busy` with `Retry-After: 1` before authentication or evaluation.
 
 Production deployments still require normal authentication, authorization, transport security, rate limiting, logging, and secure key management.
 
