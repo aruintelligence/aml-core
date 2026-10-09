@@ -1,11 +1,16 @@
 import http from "node:http";
 import readline from "node:readline";
 import { createRequestAuthenticator } from "./requestAuth.js";
+import { createLockedHttpPolicy } from "./lockedPolicy.js";
 import {
   createGovernanceStreamSession,
   AML_GOVERNANCE_STREAM_OPEN,
+  AML_GOVERNANCE_STREAM_POLICY_UPDATE,
   AML_GOVERNANCE_STREAM_ERROR
 } from "../protocol/governanceStream.js";
+
+const STREAM_CONTROLS = ["profile", "mode", "failure_mode", "context", "timestamp"];
+const hasOwn = (value, key) => value !== null && typeof value === "object" && Object.hasOwn(value, key);
 
 function json(res, status, body) {
   const payload = JSON.stringify(body);
@@ -28,6 +33,7 @@ export function createGovernanceStreamGateway(options = {}) {
     throw new TypeError("max_line_bytes must be a positive safe integer");
   }
   const authorize = createRequestAuthenticator(options.request_auth);
+  const lockedPolicy = createLockedHttpPolicy(options.locked_policy, "calm_default");
 
   return http.createServer(async (req, res) => {
     const url = new URL(req.url || "/", "http://localhost");
@@ -76,18 +82,34 @@ export function createGovernanceStreamGateway(options = {}) {
           if (message.protocol !== AML_GOVERNANCE_STREAM_OPEN) {
             throw new Error("first NDJSON message must be aml-governance-stream-open/1");
           }
-          session = createGovernanceStreamSession(message);
+          if (lockedPolicy && hasOwn(message, "policy_authorization")) {
+            throw new Error("policy_override_forbidden");
+          }
+          const controls = lockedPolicy ? await lockedPolicy.select(message, req) : null;
+          session = createGovernanceStreamSession(controls ? {
+            ...message,
+            profile: controls.profile,
+            mode: controls.mode,
+            failure_mode: controls.failure_mode,
+            context: controls.context,
+            timestamp: controls.timestamp
+          } : message);
           writeNdjson(res, {
             protocol: AML_GOVERNANCE_STREAM_OPEN,
             accepted: true,
             transmission: session.transmission,
             profile: session.profile,
             mode: session.mode,
-            failure_mode: session.failure_mode
+            failure_mode: session.failure_mode,
+            ...(lockedPolicy ? { policy_source: "server" } : {})
           });
           continue;
         }
 
+        if (lockedPolicy && (message?.protocol === AML_GOVERNANCE_STREAM_POLICY_UPDATE ||
+            STREAM_CONTROLS.some(key => hasOwn(message, key)))) {
+          throw new Error("policy_override_forbidden");
+        }
         writeNdjson(res, session.accept(message));
       }
 

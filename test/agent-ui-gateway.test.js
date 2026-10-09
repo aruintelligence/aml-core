@@ -29,6 +29,33 @@ test("Agent UI HTTP gateway authenticates POST requests", async (t) => {
   assert.equal((await allowed.json()).protocol, "aml-agent-ui-governance-result/1");
 });
 
+test("Agent UI locked policy rejects caller controls and selects enforce/closed on the server", async (t) => {
+  const server = createAgentUiGateway({
+    request_auth: { bearer_token: token },
+    locked_policy: { profile: "calm_default", context: { attention_budget_remaining: 10 } }
+  });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const url = `http://127.0.0.1:${server.address().port}/v1/agent-ui/evaluate`;
+  const evaluate = (body) => fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+    body: JSON.stringify(body)
+  });
+  for (const override of [{ mode: "shadow" }, { failure_mode: "open" }, { context: null }, { timestamp: null }]) {
+    const denied = await evaluate({ envelope: vector, ...override });
+    assert.equal(denied.status, 403);
+    assert.equal((await denied.json()).error, "policy_override_forbidden");
+  }
+  const allowed = await evaluate({ envelope: vector });
+  assert.equal(allowed.status, 200);
+  const result = await allowed.json();
+  assert.equal(result.policy_source, "server");
+  assert.equal(result.mode, "enforce");
+  assert.equal(result.allowed, 1);
+  assert.equal(result.suppressed, 1);
+});
+
 test("Agent UI HTTP gateway returns a readable 413 for oversized JSON", async (t) => {
   const server = createAgentUiGateway({ max_body_bytes: 32 });
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));

@@ -31,6 +31,45 @@ test("governance stream HTTP authenticates before opening the NDJSON response", 
   assert.equal(lines.at(-1).protocol, "aml-governance-stream-result/1");
 });
 
+test("governance stream locked policy rejects open, node, and transition overrides", async (t) => {
+  const server = createGovernanceStreamGateway({
+    request_auth: { bearer_token: token },
+    locked_policy: { profile: "calm_default" }
+  });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const url = `http://127.0.0.1:${server.address().port}/v1/governance/stream`;
+  const [fixtureOpen, firstNode, secondNode, finalize] = fixture.trim().split(/\r?\n/).map(line => JSON.parse(line));
+  const open = { protocol: fixtureOpen.protocol, transmission: fixtureOpen.transmission };
+  const request = async (messages) => {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/x-ndjson", authorization: `Bearer ${token}` },
+      body: `${messages.map(message => JSON.stringify(message)).join("\n")}\n`
+    });
+    assert.equal(response.status, 200);
+    return (await response.text()).trim().split(/\r?\n/).map(line => JSON.parse(line));
+  };
+
+  const openedWithOverride = await request([{ ...open, mode: "shadow" }, firstNode, finalize]);
+  assert.equal(openedWithOverride.at(-1).protocol, "aml-governance-stream-error/1");
+  assert.equal(openedWithOverride.at(-1).error, "policy_override_forbidden");
+
+  const nodeOverride = await request([open, { ...firstNode, failure_mode: "open" }, finalize]);
+  assert.equal(nodeOverride[0].policy_source, "server");
+  assert.equal(nodeOverride.at(-1).error, "policy_override_forbidden");
+  assert.equal(nodeOverride.some(message => message.protocol === "aml-governance-stream-decision/1"), false);
+
+  const transition = await request([open, { protocol: "aml-governance-stream-policy-update/1", mode: "shadow" }, finalize]);
+  assert.equal(transition.at(-1).error, "policy_override_forbidden");
+
+  const valid = await request([open, firstNode, secondNode, finalize]);
+  assert.equal(valid[0].mode, "enforce");
+  assert.equal(valid[0].failure_mode, "closed");
+  assert.equal(valid.at(-1).protocol, "aml-governance-stream-result/1");
+  assert.equal(valid.at(-1).suppressed, 1);
+});
+
 test("governance stream CLI emits open, two decisions, and final result", () => {
   const run = spawnSync(process.execPath, ["bin/aml-governance-stream.js", "conformance/governance-stream/mixed.ndjson"], {
     encoding: "utf8"

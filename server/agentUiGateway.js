@@ -2,6 +2,7 @@ import http from "node:http";
 import { evaluateAgentUI, AML_AGENT_UI_ENVELOPE, AML_AGENT_UI_RESULT } from "../adapters/agent-ui.js";
 import { readJson } from "./readJson.js";
 import { createRequestAuthenticator } from "./requestAuth.js";
+import { createLockedHttpPolicy } from "./lockedPolicy.js";
 
 function send(res, status, body) {
   const payload = JSON.stringify(body, null, 2);
@@ -23,6 +24,7 @@ export function createAgentUiGateway(options = {}) {
   const defaultMode = options.default_mode ?? "enforce";
   const defaultFailureMode = options.default_failure_mode ?? "closed";
   const authorize = createRequestAuthenticator(options.request_auth);
+  const lockedPolicy = createLockedHttpPolicy(options.locked_policy, defaultProfile);
 
   return http.createServer(async (req, res) => {
     const url = new URL(req.url || "/", "http://localhost");
@@ -52,14 +54,18 @@ export function createAgentUiGateway(options = {}) {
       try {
         const body = await readJson(req, maxBodyBytes);
         const envelope = body.envelope ?? body;
-        const result = evaluateAgentUI(envelope, {
+        const controls = lockedPolicy ? await lockedPolicy.select(body, req) : {
           profile: body.profile ?? defaultProfile,
           mode: body.mode ?? defaultMode,
           failure_mode: body.failure_mode ?? defaultFailureMode,
           context: body.context ?? {},
           timestamp: body.timestamp
+        };
+        const result = evaluateAgentUI(envelope, {
+          ...controls
         });
-        return send(res, result.errors > 0 ? 422 : 200, result);
+        return send(res, result.errors > 0 ? 422 : 200,
+          lockedPolicy ? { ...result, policy_source: "server" } : result);
       } catch (error) {
         return send(res, error.statusCode ?? 400, {
           protocol: "aml-agent-ui-gateway-error/1",
