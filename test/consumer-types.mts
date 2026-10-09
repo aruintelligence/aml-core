@@ -15,7 +15,9 @@ import {
   executeAccountableIntent,
   formatMeaningReport,
   generateAMLFromIntent,
+  policyDiff,
   semanticDiff,
+  simulatePolicies,
   verifyExecutionReceipt,
   viewMeaning,
   type AmlIntent
@@ -46,6 +48,11 @@ const comparison = semanticDiff(generateAMLFromIntent(intent), generateAMLFromIn
 const additions: number = comparison.summary.added;
 const ambiguous: boolean = comparison.identity_ambiguity_detected;
 const addedIdentifier: string | null | undefined = comparison.added[0]?.identifier;
+const source = generateAMLFromIntent(intent);
+const policyComparison = policyDiff(source, "calm_default", "strict_attention", { context: {} });
+const changedDecisions: number = policyComparison.changed_decisions;
+const simulation = simulatePolicies(source, ["restorative_v1", "attention_conservative_v1"]);
+const simulatedRuns: number = simulation.runs.length;
 
 const ui = evaluateAgentUI({ protocol: AML_AGENT_UI_ENVELOPE, components: [{
   id: "continue", governance: { purpose: "Continue", attention_cost: 1, restoration_value: 3 }
@@ -76,6 +83,10 @@ createAmlHttpServer({ locked_policy: { mode: "permissive" } });
 createAmlHttpServer({ request_auth: { bearer_token: 123 } });
 // @ts-expect-error a firewall run cannot request a made-up timestamp type.
 firewall.enforce(intent, { timestamp: 123 });
+// @ts-expect-error policy comparison requires both the left and right targets.
+policyDiff(source, "calm_default");
+// @ts-expect-error a simulation needs a list of policies, not one string.
+simulatePolicies(source, "restorative_v1");
 
 void [html, receiptHash, verified, decision, renderable, finalized, allowedCount, provenanceValid,
-  meaningLine, suppressed, additions, ambiguous, addedIdentifier];
+  meaningLine, suppressed, additions, ambiguous, addedIdentifier, changedDecisions, simulatedRuns];

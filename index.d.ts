@@ -154,6 +154,54 @@ export interface SemanticDiffResult {
   unchanged: string[];
 }
 
+export interface AmlPolicyObject {
+  id?: string;
+  evaluate(element: Record<string, unknown>, execution?: {
+    node?: unknown;
+    metadata?: Record<string, unknown>;
+    context?: AmlContext;
+  }): { render_allowed: boolean; policy_id?: string; rationale?: unknown; [key: string]: unknown };
+}
+
+export type AmlPolicyFunction = AmlPolicyObject["evaluate"];
+
+export type AmlPolicyTarget = string | AmlPolicyObject | {
+  id?: string;
+  description?: string;
+  policies: string[];
+};
+
+export interface PolicyDiffResult {
+  protocol: "ĀML Policy Diff";
+  version: "1.0";
+  context: AmlContext;
+  left: { id: string; kind: "policy" | "profile" };
+  right: { id: string; kind: "policy" | "profile" };
+  ambiguous_identity_keys: { key: string; count: number }[];
+  identity_ambiguity_detected: boolean;
+  changed_decisions: number;
+  changes: {
+    key: string;
+    identity_ambiguous: boolean;
+    left: { render_allowed: boolean; policy_id: string; rationale: unknown } | null;
+    right: { render_allowed: boolean; policy_id: string; rationale: unknown } | null;
+  }[];
+}
+
+export interface PolicySimulationResult {
+  protocol: "ĀML Counterfactual Policy Simulation";
+  version: "1.0";
+  policy_count: number;
+  decision_nodes: number;
+  context: AmlContext;
+  runs: {
+    policy: string;
+    allowed: number;
+    suppressed: number;
+    decisions: RenderDecision[];
+  }[];
+}
+
 export interface ViewMeaningReport {
   protocol: "ĀML View Meaning";
   version: "1.0";
@@ -404,9 +452,9 @@ export function executeAccountableIntent(intent: AmlIntent, options?: Deployment
 export function verifyExecutionReceipt(receipt: ExecutionReceipt): ReceiptVerification;
 export function createDeploymentFirewall(options?: DeploymentOptions): DeploymentFirewall;
 export function evaluateDeploymentIntent(intent: AmlIntent, options?: DeploymentOptions): DeploymentResult;
-export function simulatePolicies(input: unknown, policies?: unknown): unknown;
+export function simulatePolicies(source: string, policies: (string | AmlPolicyObject | AmlPolicyFunction)[], options?: { timestamp?: string; context?: AmlContext }): PolicySimulationResult;
 export function semanticDiff(beforeSource: string, afterSource: string, options?: CompileOptions): SemanticDiffResult;
-export function policyDiff(before: unknown, after: unknown, options?: Record<string, unknown>): unknown;
+export function policyDiff(source: string, left: AmlPolicyTarget, right: AmlPolicyTarget, options?: { timestamp?: string; context?: AmlContext }): PolicyDiffResult;
 export function ethicalRenderGate(input: unknown, context?: AmlContext): unknown;
 export function createInterfaceFirewall(options?: InterfaceFirewallOptions): InterfaceFirewall;
 export function enforceInterfaceIntent(intent: AmlIntent, options?: InterfaceFirewallRunOptions): InterfaceEnforcement;
