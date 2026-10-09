@@ -51,6 +51,17 @@ try {
   const installedRoot = path.join(tempRoot, 'node_modules', pkg.name);
   const doctorOutput = run(process.execPath, [path.join(installedRoot, 'bin', 'aml-doctor.js')], tempRoot);
   const validateOutput = run(process.execPath, [path.join(installedRoot, 'bin', 'aml.js'), 'validate', 'sample.aml'], tempRoot);
+  fs.copyFileSync(path.join(root, 'examples', 'consumer', 'quickstart.mjs'), path.join(tempRoot, 'quickstart.mjs'));
+  const quickstart = JSON.parse(run(process.execPath, ['quickstart.mjs'], tempRoot));
+  if (quickstart.allowed !== 1 || quickstart.suppressed !== 1 || quickstart.verified !== true) {
+    throw new Error('Installed-package API quickstart did not reproduce ALLOW/SUPPRESS with a verified receipt');
+  }
+  runNpm(['exec', '--', 'aml', 'execute', 'intent.json', 'calm_default', 'context.json', 'cli-receipt.json'], tempRoot);
+  const cliReceipt = JSON.parse(fs.readFileSync(path.join(tempRoot, 'cli-receipt.json'), 'utf8'));
+  const cliVerification = JSON.parse(runNpm(['exec', '--', 'aml', 'verify-receipt', 'cli-receipt.json'], tempRoot));
+  if (cliReceipt.selected_render?.allowed !== 1 || cliReceipt.selected_render?.suppressed !== 1 || !cliVerification.verified) {
+    throw new Error('Installed-package CLI execution or receipt verification failed');
+  }
 
   const report = {
     protocol: 'aml-consumer-compatibility-report/1',
@@ -70,7 +81,10 @@ try {
       javascript_api_import: true,
       exported_symbol_count: Number(apiOutput),
       aml_doctor: doctorOutput.length > 0,
-      aml_cli_validate: /VALID:/i.test(validateOutput)
+      aml_cli_validate: /VALID:/i.test(validateOutput),
+      consumer_quickstart_api: true,
+      consumer_quickstart_cli: true,
+      consumer_receipt_sha256: quickstart.receipt_sha256
     },
     claim_boundary: matrix.claim_boundary
   };
