@@ -1,0 +1,55 @@
+name: AML Next.js Example
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "starters/nextjs/**"
+      - ".github/workflows/nextjs-example.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "starters/nextjs/**"
+      - ".github/workflows/nextjs-example.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  nextjs-example:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Meaning Gate for example snapshots
+        run: node scripts/meaning-gate.js starters/nextjs/fixtures/before.aml starters/nextjs/fixtures/after.aml calm_default calm_default
+      - name: Pack the exact local AML source
+        run: npm pack --ignore-scripts --silent
+      - name: Install local AML package and Next.js
+        working-directory: starters/nextjs
+        run: npm install --ignore-scripts
+      - name: Test the policy and receipt contract
+        working-directory: starters/nextjs
+        run: npm test
+      - name: Build production app
+        working-directory: starters/nextjs
+        run: npm run build
+      - name: Smoke-test rendered page and receipt route
+        working-directory: starters/nextjs
+        shell: bash
+        run: |
+          npm start -- --port 3100 > /tmp/aml-nextjs.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:3100/ -o /tmp/aml-nextjs-page.html; then break; fi
+            sleep 1
+          done
+          grep -Fq 'Urgency prompt withheld by policy' /tmp/aml-nextjs-page.html
+          grep -Fq 'Review your order at your own pace.' /tmp/aml-nextjs-page.html
+          curl -fsS http://127.0.0.1:3100/meaning -o /tmp/aml-nextjs-meaning.html
+          grep -Fq 'SUPPRESS' /tmp/aml-nextjs-meaning.html
+          curl -fsS http://127.0.0.1:3100/api/receipt -o /tmp/aml-nextjs-receipt.json
+          node --input-type=module -e 'import fs from "node:fs"; import {verifyExecutionReceipt} from "aml-core"; const receipt=JSON.parse(fs.readFileSync("/tmp/aml-nextjs-receipt.json", "utf8")); if (!verifyExecutionReceipt(receipt).verified || receipt.selected_render.allowed !== 1 || receipt.selected_render.suppressed !== 1) process.exit(1);'

@@ -1,0 +1,8 @@
+transmission "checkout_assistant" {
+  message "continue" {
+    purpose: "Let the person review the order"
+    content: "Take your time reviewing the order."
+    attention_cost: 1
+    restoration_value: 3
+  }
+}
