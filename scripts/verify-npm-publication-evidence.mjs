@@ -40,6 +40,14 @@ export function verifyNpmPublicationEvidence(pack, tarball, registry, expected) 
       !tarballUrl.pathname.endsWith(`/${entry.filename}`)) {
     throw new Error('Registry tarball URL does not identify the expected npm artifact');
   }
+  let attestationUrl;
+  try { attestationUrl = new URL(registry.dist.attestations?.url); } catch {
+    throw new Error('Registry provenance attestation URL is missing or invalid');
+  }
+  if (attestationUrl.protocol !== 'https:' || attestationUrl.hostname !== 'registry.npmjs.org' ||
+      !attestationUrl.pathname.startsWith('/-/npm/v1/attestations/')) {
+    throw new Error('Registry provenance attestation URL is outside npm');
+  }
 
   return {
     protocol: 'aml-npm-registry-binding/1',
@@ -50,6 +58,7 @@ export function verifyNpmPublicationEvidence(pack, tarball, registry, expected) 
     registry_integrity: registry.dist.integrity,
     registry_shasum: registry.dist.shasum,
     registry_tarball: registry.dist.tarball,
+    registry_attestations_url: registry.dist.attestations.url,
     prepublish_pack_integrity: entry.integrity,
     prepublish_pack_shasum: entry.shasum,
     tarball_sha256: digest('sha256', tarball).toString('hex'),

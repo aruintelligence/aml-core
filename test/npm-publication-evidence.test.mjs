@@ -13,7 +13,11 @@ const expected = {
 const pack = [{ name: expected.name, version: expected.version, filename: expected.filename, shasum: sha1, integrity }];
 const registry = {
   name: expected.name, version: expected.version, repository: { url: expected.repository },
-  dist: { shasum: sha1, integrity, tarball: 'https://registry.npmjs.org/aml-core/-/aml-core-1.3.0.tgz' }
+  dist: {
+    shasum: sha1, integrity,
+    tarball: 'https://registry.npmjs.org/aml-core/-/aml-core-1.3.0.tgz',
+    attestations: { url: 'https://registry.npmjs.org/-/npm/v1/attestations/aml-core@1.3.0' }
+  }
 };
 
 test('binds actual registry metadata to the selected tarball bytes', () => {
@@ -21,6 +25,7 @@ test('binds actual registry metadata to the selected tarball bytes', () => {
   assert.equal(result.exact_tarball_binding_verified, true);
   assert.equal(result.registry_integrity, integrity);
   assert.equal(result.registry_shasum, sha1);
+  assert.equal(result.registry_attestations_url, registry.dist.attestations.url);
 });
 
 test('rejects changed tarball, forged pack checksum, and registry drift', () => {
@@ -35,4 +40,10 @@ test('rejects changed tarball, forged pack checksum, and registry drift', () => 
   assert.throws(() => verifyNpmPublicationEvidence(pack, tarball, {
     ...registry, dist: { ...registry.dist, tarball: 'https://other.example/aml-core-1.3.0.tgz' }
   }, expected), /Registry tarball URL/);
+  assert.throws(() => verifyNpmPublicationEvidence(pack, tarball, {
+    ...registry, dist: { ...registry.dist, attestations: undefined }
+  }, expected), /provenance attestation URL/);
+  assert.throws(() => verifyNpmPublicationEvidence(pack, tarball, {
+    ...registry, dist: { ...registry.dist, attestations: { url: 'https://other.example/provenance' } }
+  }, expected), /outside npm/);
 });

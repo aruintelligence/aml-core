@@ -203,6 +203,10 @@ jobs:
           ./node_modules/.bin/aml version
           ./node_modules/.bin/aml validate ../control/examples/simple.aml
 
+      - name: Verify installed registry signature and provenance attestation
+        working-directory: registry-consumer
+        run: npm audit signatures
+
       - name: Capture observed publication evidence
         shell: bash
         run: |
@@ -221,6 +225,7 @@ jobs:
             api_import_smoke_test: true,
             cli_version_smoke_test: true,
             cli_validate_smoke_test: true,
+            npm_signature_audit_passed: true,
             claim_boundary: 'Project-generated release evidence bound to observed npm registry checksums; not independent external verification.'
           };
           fs.mkdirSync('publication-evidence', { recursive: true });
