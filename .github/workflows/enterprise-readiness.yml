@@ -35,6 +35,17 @@ jobs:
           if (sbom.metadata?.component?.name !== 'aml-core') process.exit(2);
           console.log(JSON.stringify({protocol:'aml-sbom-verification/1',valid:true,component:sbom.metadata.component.name,version:sbom.metadata.component.version,components:sbom.components.length},null,2));
           NODE
+      - name: Run enterprise decision pilot
+        run: node pilots/enterprise-30min/run.mjs > "${RUNNER_TEMP}/aml-enterprise-pilot.json"
+      - name: Replay and verify enterprise pilot report
+        run: node pilots/enterprise-30min/verify-report.mjs "${RUNNER_TEMP}/aml-enterprise-pilot.json"
+      - name: Upload enterprise pilot evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-enterprise-pilot-${{ github.sha }}
+          path: ${{ runner.temp }}/aml-enterprise-pilot.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
         with:

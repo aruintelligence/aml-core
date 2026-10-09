@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
+import http from "node:http";
 import fs from "node:fs";
 import { once } from "node:events";
 import { createAmlHttpServer } from "../server/httpServer.js";
@@ -303,4 +304,29 @@ test("AML HTTP official brand verification succeeds only for configured trusted 
       revoked_keys: []
     }
   });
+});
+
+
+test("AML HTTP returns 413 for advertised and streaming oversized bodies", async () => {
+  await withServer(async (base) => {
+    const advertised = await fetch(`${base}/v1/evaluate`, {
+      method: "POST",
+      body: "x".repeat(33)
+    });
+    assert.equal(advertised.status, 413);
+    assert.equal((await advertised.json()).error, "request_too_large");
+
+    const streaming = await new Promise((resolve, reject) => {
+      const req = http.request(`${base}/v1/evaluate`, { method: "POST" }, (res) => {
+        let body = "";
+        res.on("data", (chunk) => { body += chunk; });
+        res.on("end", () => resolve({ status: res.statusCode, body: JSON.parse(body) }));
+      });
+      req.on("error", reject);
+      req.write("x".repeat(33));
+      req.end();
+    });
+    assert.equal(streaming.status, 413);
+    assert.equal(streaming.body.error, "request_too_large");
+  }, { max_body_bytes: 32 });
 });
