@@ -315,8 +315,9 @@ Reference endpoints include:
 The deployment routes are specified in [the OpenAPI contract](protocol/aml-http.openapi.yaml).
 For an enforcement boundary, configure `locked_policy` so the server owns policy controls and
 trusted context; this disables the canary and direct `/v1/evaluate` routes. Configure
-`max_batch_items` for the unlocked server batch ceiling (100 by default). With `request_auth`,
-all POST requests require bearer authentication. See [server-owned deployment policy](docs/LOCKED_HTTP_POLICY.md)
+`max_batch_items` for the unlocked server batch ceiling (100 by default). A configured
+`request_auth.bearer_token` requires bearer authentication for POST requests; a `request_auth`
+callback can use the embedding application's authentication. See [server-owned deployment policy](docs/LOCKED_HTTP_POLICY.md)
 and [HTTP ingress authentication](docs/HTTP_INGRESS_AUTH.md).
 
 Production deployments still require normal authentication, authorization, transport security, rate limiting, logging, and secure key management.

@@ -6,7 +6,8 @@ info:
     Reference HTTP contract for evaluating machine intent through the ĀML accountability pipeline,
     verifying execution receipts, verifying challenge-bound browser witness bundles, and checking
     official AML brand-authorization trust. The contract does not imply hosted service availability.
-    When request_auth is configured, POST endpoints require bearer authentication.
+    POST endpoints use optional request_auth. A configured bearer_token requires bearer authentication;
+    an application callback may use another authentication scheme.
 servers:
   - url: http://127.0.0.1:8787
 paths:
@@ -338,7 +339,7 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
-      description: Optional server configuration; required for POST operations when request_auth is configured.
+      description: Required for POST operations when request_auth uses bearer_token; callback authentication may differ.
   schemas:
     DeploymentEvaluation:
       type: object
