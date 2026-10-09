@@ -82,6 +82,109 @@ export interface ReceiptVerification {
   [key: string]: unknown;
 }
 
+export interface InterfaceFirewallOptions {
+  profile?: string;
+  context?: AmlContext;
+}
+
+export interface InterfaceFirewallRunOptions extends InterfaceFirewallOptions {
+  timestamp?: string;
+  stream_id?: string;
+}
+
+export interface InterfaceInspection {
+  profile: string;
+  receipt: ExecutionReceipt;
+  receipt_verification: ReceiptVerification;
+  provenance: unknown;
+  provenance_verification: unknown;
+  accessibility: unknown;
+}
+
+export interface InterfaceEnforcement {
+  allowed: boolean;
+  denied_count: number;
+  allowed_count: number;
+  html: string;
+  decisions: RenderDecision[];
+  receipt: ExecutionReceipt;
+  report: InterfaceInspection;
+}
+
+export interface InterfaceFirewall {
+  readonly protocol: "ĀML Interface Firewall";
+  readonly version: "1.0";
+  readonly profile: string;
+  inspect(intent: AmlIntent, options?: InterfaceFirewallRunOptions): InterfaceInspection;
+  enforce(intent: AmlIntent, options?: InterfaceFirewallRunOptions): InterfaceEnforcement;
+}
+
+export interface SemanticDiffNode {
+  key: string;
+  base_key: string;
+  structural_path: string;
+  type: string;
+  name: string | null;
+  identifier: string | null;
+  properties: Record<string, unknown>;
+  render_metadata: Record<string, unknown>;
+  identity_ambiguous: boolean;
+  identity_occurrence: number;
+}
+
+export interface SemanticDiffResult {
+  protocol: "ĀML Semantic Diff";
+  version: "1.0";
+  meaning_equivalent: boolean;
+  left_meaning_fingerprint: string;
+  right_meaning_fingerprint: string;
+  fingerprint_protocol: string;
+  ambiguous_identity_keys: { key: string; count: number }[];
+  identity_ambiguity_detected: boolean;
+  summary: { added: number; removed: number; changed: number; unchanged: number };
+  added: SemanticDiffNode[];
+  removed: SemanticDiffNode[];
+  changed: {
+    key: string;
+    identity_ambiguous: boolean;
+    structural_changes: Record<string, { before: unknown; after: unknown }>;
+    property_changes: Record<string, { before: unknown; after: unknown }>;
+    meaning_changes: Record<string, { before: unknown; after: unknown }>;
+  }[];
+  unchanged: string[];
+}
+
+export interface ViewMeaningReport {
+  protocol: "ĀML View Meaning";
+  version: "1.0";
+  profile: string | null;
+  summary: {
+    total_nodes: number;
+    allowed: number;
+    suppressed: number;
+    attention_consumed: number | null;
+    attention_remaining: number | null;
+    runtime_audit_verified: boolean;
+  };
+  nodes: {
+    identifier: string | null;
+    node_type: string | null;
+    purpose: string | null;
+    attention_cost: number | null;
+    restoration_value: number | null;
+    policy_id: string | null;
+    render_allowed: boolean;
+    rationale: unknown;
+    fallback_triggered: boolean;
+  }[];
+  integrity: {
+    receipt_sha256: string | null;
+    audit_stream_sha256: string | null;
+    attention_ledger_sha256: string | null;
+    signed: boolean;
+  };
+}
+
 export interface DeploymentOptions {
   profile?: string;
   mode?: AmlMode;
@@ -302,11 +405,13 @@ export function verifyExecutionReceipt(receipt: ExecutionReceipt): ReceiptVerifi
 export function createDeploymentFirewall(options?: DeploymentOptions): DeploymentFirewall;
 export function evaluateDeploymentIntent(intent: AmlIntent, options?: DeploymentOptions): DeploymentResult;
 export function simulatePolicies(input: unknown, policies?: unknown): unknown;
-export function semanticDiff(before: unknown, after: unknown, options?: Record<string, unknown>): unknown;
+export function semanticDiff(beforeSource: string, afterSource: string, options?: CompileOptions): SemanticDiffResult;
 export function policyDiff(before: unknown, after: unknown, options?: Record<string, unknown>): unknown;
 export function ethicalRenderGate(input: unknown, context?: AmlContext): unknown;
-export function createInterfaceFirewall(options?: Record<string, unknown>): unknown;
-export function enforceInterfaceIntent(input: unknown, options?: Record<string, unknown>): unknown;
+export function createInterfaceFirewall(options?: InterfaceFirewallOptions): InterfaceFirewall;
+export function enforceInterfaceIntent(intent: AmlIntent, options?: InterfaceFirewallRunOptions): InterfaceEnforcement;
+export function viewMeaning(receipt: ExecutionReceipt): ViewMeaningReport;
+export function formatMeaningReport(report: ViewMeaningReport): string;
 export function evaluateAgentUI(input: AgentUiEnvelope, options?: AgentUiOptions): AgentUiGovernanceResult;
 export function createGovernanceStreamSession(open?: GovernanceStreamOpen): GovernanceStreamSession;
 export function createGovernanceStreamTranscript(messages: unknown[], options?: Record<string, unknown>): unknown;

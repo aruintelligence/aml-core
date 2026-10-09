@@ -10,9 +10,14 @@ import {
   createDeploymentFirewall,
   createGovernanceStreamGateway,
   createGovernanceStreamSession,
+  createInterfaceFirewall,
   evaluateAgentUI,
   executeAccountableIntent,
+  formatMeaningReport,
+  generateAMLFromIntent,
+  semanticDiff,
   verifyExecutionReceipt,
+  viewMeaning,
   type AmlIntent
 } from "aml-core";
 
@@ -30,6 +35,17 @@ const receiptHash: string = receipt.receipt_sha256;
 const verified: boolean = verifyExecutionReceipt(receipt).verified;
 const decision: boolean = createDeploymentFirewall({ mode: "enforce", failure_mode: "closed" })
   .evaluate(intent).effective_allowed;
+const firewall = createInterfaceFirewall({ profile: "calm_default" });
+const enforced = firewall.enforce(intent, { timestamp: "2030-01-01T00:00:00Z" });
+const allowedCount: number = enforced.allowed_count;
+const provenanceValid: unknown = firewall.inspect(intent).provenance_verification;
+const meaning = viewMeaning(enforced.receipt);
+const meaningLine: string = formatMeaningReport(meaning);
+const suppressed: number = meaning.summary.suppressed;
+const comparison = semanticDiff(generateAMLFromIntent(intent), generateAMLFromIntent(intent));
+const additions: number = comparison.summary.added;
+const ambiguous: boolean = comparison.identity_ambiguity_detected;
+const addedIdentifier: string | null | undefined = comparison.added[0]?.identifier;
 
 const ui = evaluateAgentUI({ protocol: AML_AGENT_UI_ENVELOPE, components: [{
   id: "continue", governance: { purpose: "Continue", attention_cost: 1, restoration_value: 3 }
@@ -58,5 +74,8 @@ session.handle({ protocol: AML_GOVERNANCE_STREAM_FINALIZE });
 createAmlHttpServer({ locked_policy: { mode: "permissive" } });
 // @ts-expect-error bearer tokens are strings.
 createAmlHttpServer({ request_auth: { bearer_token: 123 } });
+// @ts-expect-error a firewall run cannot request a made-up timestamp type.
+firewall.enforce(intent, { timestamp: 123 });
 
-void [html, receiptHash, verified, decision, renderable, finalized];
+void [html, receiptHash, verified, decision, renderable, finalized, allowedCount, provenanceValid,
+  meaningLine, suppressed, additions, ambiguous, addedIdentifier];
