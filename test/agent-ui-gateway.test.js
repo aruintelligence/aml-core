@@ -71,6 +71,25 @@ test("Agent UI HTTP gateway returns a readable 413 for oversized JSON", async (t
   assert.equal((await response.json()).error, "request_too_large");
 });
 
+test("Agent UI HTTP gateway bounds component work before evaluation", async (t) => {
+  assert.throws(() => createAgentUiGateway({ max_components: 0 }), /positive safe integer/);
+  const server = createAgentUiGateway({ max_components: 1 });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const url = `http://127.0.0.1:${server.address().port}/v1/agent-ui/evaluate`;
+  const post = (components) => fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ envelope: { ...vector, components } })
+  });
+  const oversized = await post(vector.components);
+  assert.equal(oversized.status, 413);
+  assert.equal((await oversized.json()).error, "component_limit_exceeded");
+  const withinLimit = await post([vector.components[0]]);
+  assert.equal(withinLimit.status, 200);
+  assert.equal((await withinLimit.json()).total, 1);
+});
+
 test("Agent UI CLI produces deterministic mixed governance result", () => {
   const run = spawnSync(process.execPath, ["bin/aml-agent-ui.js", "conformance/agent-ui/mixed.json", "--timestamp", "2026-09-10T00:00:00.000Z"], {
     encoding: "utf8"

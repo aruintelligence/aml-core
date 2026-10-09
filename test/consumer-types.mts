@@ -65,6 +65,7 @@ session.accept({ protocol: AML_GOVERNANCE_STREAM_FINALIZE });
 const finalized: boolean = session.finalized;
 
 const server = createAmlHttpServer({
+  max_batch_items: 100,
   request_auth: { bearer_token: "0123456789abcdef0123456789abcdef" },
   locked_policy: { profile: "human_first", resolve_context: async (req) => ({
     session: req.headers["x-session-id"]
@@ -72,7 +73,7 @@ const server = createAmlHttpServer({
 });
 server.listen(0, "127.0.0.1");
 server.close();
-createAgentUiGateway({ locked_policy: { profile: "calm_default" }, max_body_bytes: 1024 });
+createAgentUiGateway({ locked_policy: { profile: "calm_default" }, max_body_bytes: 1024, max_components: 256 });
 createGovernanceStreamGateway({ max_line_bytes: 1024, max_stream_bytes: 4096, max_messages: 10 });
 
 // @ts-expect-error the runtime session exposes accept(), never handle().

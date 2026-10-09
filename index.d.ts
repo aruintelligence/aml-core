@@ -405,6 +405,7 @@ export interface AmlHttpServerOptions {
   default_profile?: string;
   allowed_origin?: string | null;
   max_body_bytes?: number;
+  max_batch_items?: number;
   brand_trust_roots?: unknown;
   request_auth?: RequestAuthenticator;
   locked_policy?: LockedHttpPolicy;
@@ -415,6 +416,7 @@ export interface AgentUiGatewayOptions {
   default_mode?: AmlMode;
   default_failure_mode?: AmlFailureMode;
   max_body_bytes?: number;
+  max_components?: number;
   request_auth?: RequestAuthenticator;
   locked_policy?: LockedHttpPolicy;
 }

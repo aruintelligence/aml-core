@@ -203,6 +203,23 @@ test("AML HTTP deployment batch preserves aggregate and per-intent evidence", as
   });
 });
 
+test("unlocked HTTP batch keeps a server-owned ceiling when callers raise max_items", async () => {
+  await withServer(async (base) => {
+    const post = (intents) => fetch(`${base}/v1/deployment/batch`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ intents, max_items: 1000000 })
+    });
+    const oversized = await post([intent(), suppressedIntent()]);
+    assert.equal(oversized.status, 413);
+    assert.equal((await oversized.json()).error, "batch_limit_exceeded");
+    const withinLimit = await post([intent()]);
+    assert.equal(withinLimit.status, 200);
+    assert.equal((await withinLimit.json()).total, 1);
+  }, { max_batch_items: 1 });
+  assert.throws(() => createAmlHttpServer({ max_batch_items: 0 }), /positive safe integer/);
+});
+
 test("AML HTTP policy canary reports decision changes without choosing policy correctness", async () => {
   await withServer(async (base) => {
     const privacyIntent = {
