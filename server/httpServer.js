@@ -1,5 +1,6 @@
 import http from "node:http";
 import { readJson } from "./readJson.js";
+import { createLockedHttpPolicy } from "./lockedPolicy.js";
 import { executeAccountableIntent, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { verifyOfficialBrandAuthorization } from "../runtime/brandTrust.js";
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
@@ -50,6 +51,7 @@ export function createAmlHttpServer(options = {}) {
   const defaultProfile = options.default_profile ?? "human_first";
   const allowedOrigin = options.allowed_origin ?? null;
   const trustRoots = options.brand_trust_roots ?? loadBrandTrustRoots();
+  const lockedPolicy = createLockedHttpPolicy(options.locked_policy, defaultProfile);
 
   return http.createServer(async (req, res) => {
     const headers = allowedOrigin ? { "access-control-allow-origin": allowedOrigin } : {};
@@ -74,6 +76,11 @@ export function createAmlHttpServer(options = {}) {
         "access-control-allow-headers": "content-type"
       });
       return res.end();
+    }
+
+    if (lockedPolicy && req.method === "POST" &&
+      (url.pathname === "/v1/evaluate" || url.pathname === "/v1/deployment/canary")) {
+      return send(res, 403, { error: "endpoint_disabled_under_locked_policy" }, headers);
     }
 
     if (req.method === "POST" && url.pathname === "/v1/evaluate") {
@@ -101,22 +108,21 @@ export function createAmlHttpServer(options = {}) {
       try {
         const body = await readJson(req, maxBodyBytes);
         if (!body.intent) return send(res, 400, { error: "intent_required" }, headers);
-        const firewall = createDeploymentFirewall({
+        const controls = lockedPolicy ? await lockedPolicy.select(body, req) : {
           profile: body.profile ?? defaultProfile,
           context: body.context ?? {},
           mode: body.mode ?? "enforce",
-          failure_mode: body.failure_mode ?? "closed"
-        });
+          failure_mode: body.failure_mode ?? "closed",
+          timestamp: body.timestamp
+        };
+        const firewall = createDeploymentFirewall(controls);
         const result = firewall.evaluate(body.intent, {
-          timestamp: body.timestamp,
+          ...controls,
           stream_id: body.stream_id,
-          profile: body.profile ?? defaultProfile,
-          context: body.context ?? {},
-          mode: body.mode ?? "enforce",
-          failure_mode: body.failure_mode ?? "closed"
         });
         return send(res, result.evaluation_error ? 422 : 200, {
           protocol: "aml-http-deployment-evaluation/1",
+          policy_source: lockedPolicy ? "server" : "request_or_default",
           mode: result.mode,
           failure_mode: result.failure_mode,
           aml_allowed: result.aml_allowed,
@@ -135,17 +141,21 @@ export function createAmlHttpServer(options = {}) {
       try {
         const body = await readJson(req, maxBodyBytes);
         if (!Array.isArray(body.intents)) return send(res, 400, { error: "intents_array_required" }, headers);
-        const result = evaluateInterfaceBatch(body.intents, {
+        const controls = lockedPolicy ? await lockedPolicy.select(body, req) : {
           profile: body.profile ?? defaultProfile,
           context: body.context ?? {},
           mode: body.mode ?? "enforce",
           failure_mode: body.failure_mode ?? "closed",
           timestamp: body.timestamp,
           max_items: body.max_items ?? 100
+        };
+        const result = evaluateInterfaceBatch(body.intents, {
+          ...controls
         });
         return send(res, 200, {
           ...result,
           protocol: "aml-http-deployment-batch/1",
+          policy_source: lockedPolicy ? "server" : "request_or_default",
           runtime_protocol: result.protocol
         }, headers);
       } catch (error) {

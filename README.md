@@ -211,6 +211,7 @@ It does not replace production authentication, authorization, TLS, rate limiting
 - [Security policy](SECURITY.md)
 - [Threat model](SECURITY_THREAT_MODEL.md)
 - [Security evaluation checklist](docs/SECURITY_EVALUATION_CHECKLIST.md)
+- [Server-owned HTTP deployment policy](docs/LOCKED_HTTP_POLICY.md)
 
 ## Open technology. Controlled official identity.
 

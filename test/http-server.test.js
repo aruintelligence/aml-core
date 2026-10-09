@@ -330,3 +330,99 @@ test("AML HTTP returns 413 for advertised and streaming oversized bodies", async
     assert.equal(streaming.body.error, "request_too_large");
   }, { max_body_bytes: 32 });
 });
+
+test("locked HTTP policy rejects request-selected profile, mode, failure, context, and time", async () => {
+  await withServer(async (base) => {
+    const post = (route, body) => fetch(`${base}${route}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    for (const control of [
+      { profile: "calm_default" },
+      { mode: "shadow" },
+      { failure_mode: "open" },
+      { context: { consent_granted: true } },
+      { timestamp: "2030-01-01T00:00:00.000Z" },
+      { max_items: 1000 }
+    ]) {
+      const response = await post("/v1/deployment/evaluate", { intent: suppressedIntent(), ...control });
+      assert.equal(response.status, 403);
+      assert.equal((await response.json()).error, "policy_override_forbidden");
+    }
+
+    const batchOverride = await post("/v1/deployment/batch", {
+      intents: [intent()], mode: "shadow"
+    });
+    assert.equal(batchOverride.status, 403);
+    const direct = await post("/v1/evaluate", { intent: intent() });
+    assert.equal(direct.status, 403);
+    const canary = await post("/v1/deployment/canary", { intent: intent() });
+    assert.equal(canary.status, 403);
+  }, { locked_policy: { profile: "human_first", context: { consent_granted: false } } });
+});
+
+test("locked HTTP policy enforces server controls and bounds batches", async () => {
+  await withServer(async (base) => {
+    const post = (route, body) => fetch(`${base}${route}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const blocked = await post("/v1/deployment/evaluate", { intent: suppressedIntent() });
+    assert.equal(blocked.status, 200);
+    const decision = await blocked.json();
+    assert.equal(decision.policy_source, "server");
+    assert.equal(decision.mode, "enforce");
+    assert.equal(decision.failure_mode, "closed");
+    assert.equal(decision.effective_allowed, false);
+    assert.equal(decision.receipt.profile.id, "human_first");
+
+    const invalid = { transmission: "bad", nodes: [{ type: "not valid type", properties: {} }] };
+    const failure = await post("/v1/deployment/evaluate", { intent: invalid });
+    assert.equal(failure.status, 422);
+    assert.equal((await failure.json()).effective_allowed, false);
+
+    const batch = await post("/v1/deployment/batch", { intents: [suppressedIntent()] });
+    assert.equal(batch.status, 200);
+    assert.equal((await batch.json()).effective_allowed, 0);
+    const oversized = await post("/v1/deployment/batch", { intents: [intent(), suppressedIntent()] });
+    assert.equal(oversized.status, 400);
+    assert.match((await oversized.json()).error, /AML_BATCH_LIMIT_EXCEEDED/);
+  }, { locked_policy: { max_batch_items: 1 } });
+});
+
+test("locked HTTP policy fails closed if trusted context is unavailable", async () => {
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/v1/deployment/evaluate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ intent: intent() })
+    });
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { error: "trusted_context_unavailable" });
+  }, { locked_policy: { resolve_context: async () => { throw new Error("private session detail"); } } });
+});
+
+test("locked HTTP policy uses a trusted resolver for consent context", async () => {
+  const collecting = intent();
+  collecting.nodes[0].properties.collects_personal_data = true;
+  collecting.nodes[0].properties.consent_required = true;
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/v1/deployment/evaluate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ intent: collecting })
+    });
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(result.effective_allowed, true);
+    assert.equal(result.receipt.context.consent_granted, true);
+    assert.equal(result.receipt.context.privacy_consent, true);
+  }, {
+    locked_policy: {
+      resolve_context: async () => ({ consent_granted: true, privacy_consent: true })
+    }
+  });
+});
