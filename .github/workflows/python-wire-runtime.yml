@@ -1,0 +1,34 @@
+name: AML Python Wire Runtime
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "independent/python/wire_runtime.py"
+      - "independent/python/WIRE_RUNTIME.md"
+      - "scripts/check-python-wire-runtime.mjs"
+      - ".github/workflows/python-wire-runtime.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "independent/python/wire_runtime.py"
+      - "independent/python/WIRE_RUNTIME.md"
+      - "scripts/check-python-wire-runtime.mjs"
+      - ".github/workflows/python-wire-runtime.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  cross-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify reference-produced artifacts with standalone Python
+        run: node scripts/check-python-wire-runtime.mjs
