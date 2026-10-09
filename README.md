@@ -106,6 +106,10 @@ flowchart LR
 - [A critic's guide to ĀML](publications/CRITICS_GUIDE.md)
 - [Publications index](PUBLICATIONS.md)
 
+### Evaluate it with a reproducible enterprise pilot
+
+Run the [30-minute enterprise pilot](pilots/enterprise-30min/README.md) to generate a decision report with full receipts, declared fixture hashes, three asserted outcomes, deterministic replay, and a tamper-rejection check. The CI workflow saves the report for review. This is project-authored evidence, with explicit deployment and claim boundaries.
+
 ### 2. Put it in front of an existing interface
 
 Zero-install custom element:

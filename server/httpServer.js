@@ -1,4 +1,5 @@
 import http from "node:http";
+import { readJson } from "./readJson.js";
 import { executeAccountableIntent, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { verifyOfficialBrandAuthorization } from "../runtime/brandTrust.js";
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
@@ -13,34 +14,10 @@ function send(res, status, body, headers = {}) {
     "content-type": "application/json; charset=utf-8",
     "content-length": Buffer.byteLength(payload),
     "cache-control": "no-store",
-    ...headers
+    ...headers,
+    ...(status === 413 ? { connection: "close" } : {})
   });
   res.end(payload);
-}
-
-function readJson(req, maxBytes = 1024 * 1024) {
-  return new Promise((resolve, reject) => {
-    let size = 0;
-    const chunks = [];
-    req.on("data", (chunk) => {
-      size += chunk.length;
-      if (size > maxBytes) {
-        reject(Object.assign(new Error("request_too_large"), { statusCode: 413 }));
-        req.destroy();
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on("end", () => {
-      try {
-        const raw = Buffer.concat(chunks).toString("utf8");
-        resolve(raw ? JSON.parse(raw) : {});
-      } catch {
-        reject(Object.assign(new Error("invalid_json"), { statusCode: 400 }));
-      }
-    });
-    req.on("error", reject);
-  });
 }
 
 function loadJson(relativePath, fallback) {
@@ -67,6 +44,9 @@ function loadBrandTrustRoots() {
 
 export function createAmlHttpServer(options = {}) {
   const maxBodyBytes = options.max_body_bytes ?? 1024 * 1024;
+  if (!Number.isSafeInteger(maxBodyBytes) || maxBodyBytes < 1) {
+    throw new TypeError("max_body_bytes must be a positive safe integer");
+  }
   const defaultProfile = options.default_profile ?? "human_first";
   const allowedOrigin = options.allowed_origin ?? null;
   const trustRoots = options.brand_trust_roots ?? loadBrandTrustRoots();
