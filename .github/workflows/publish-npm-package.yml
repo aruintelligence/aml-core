@@ -140,23 +140,17 @@ jobs:
           ./node_modules/.bin/aml validate ../control/examples/simple.aml
 
       - name: Require canonical or unclaimed npm identity
+        working-directory: control
+        run: node scripts/check-npm-identity.mjs --allow-unpublished
+
+      - name: Refuse an existing stable registry version
         shell: bash
         run: |
           set -euo pipefail
           PACKAGE_NAME="${{ steps.stable.outputs.package_name }}"
-          EXPECTED_REPO="${{ steps.stable.outputs.repository }}"
-          if npm view "$PACKAGE_NAME" name >/dev/null 2>&1; then
-            EXISTING_REPO="$(npm view "$PACKAGE_NAME" repository.url 2>/dev/null || true)"
-            if [[ "$EXISTING_REPO" != "$EXPECTED_REPO" ]]; then
-              echo "npm identity collision: $PACKAGE_NAME points to $EXISTING_REPO, expected $EXPECTED_REPO" >&2
-              exit 1
-            fi
-            if npm view "$PACKAGE_NAME@${{ steps.stable.outputs.version }}" version >/dev/null 2>&1; then
-              echo "npm version $PACKAGE_NAME@${{ steps.stable.outputs.version }} already exists; refusing republish" >&2
-              exit 1
-            fi
-          else
-            echo "npm identity $PACKAGE_NAME is currently unclaimed; proceeding with intentional first publication."
+          if npm view "$PACKAGE_NAME@${{ steps.stable.outputs.version }}" version --prefer-online >/dev/null 2>&1; then
+            echo "npm version $PACKAGE_NAME@${{ steps.stable.outputs.version }} already exists; refusing republish" >&2
+            exit 1
           fi
 
       - name: Require npm publishing credential
@@ -171,27 +165,29 @@ jobs:
           fi
           npm whoami
 
-      - name: Publish stable registry artifact with provenance
+      - name: Publish the exact audited tarball with provenance
         working-directory: release-src
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public --provenance --tag latest
+        run: npm publish "../artifact/${{ steps.pack.outputs.filename }}" --access public --provenance --tag latest
 
-      - name: Wait for exact registry version and metadata
+      - name: Wait for the public registry to expose the exact tarball
         shell: bash
         run: |
           set -euo pipefail
           PACKAGE="${{ steps.stable.outputs.package_name }}@${{ steps.stable.outputs.version }}"
           for attempt in 1 2 3 4 5 6 7 8; do
-            FOUND="$(npm view "$PACKAGE" version 2>/dev/null || true)"
-            FOUND_REPO="$(npm view "$PACKAGE" repository.url 2>/dev/null || true)"
-            if [[ "$FOUND" == "${{ steps.stable.outputs.version }}" && "$FOUND_REPO" == "${{ steps.stable.outputs.repository }}" ]]; then
-              echo "Published and visible with canonical repository metadata: $PACKAGE"
+            if npm view "$PACKAGE" --json --prefer-online > registry.json 2>/dev/null; then
+              node control/scripts/verify-npm-publication-evidence.mjs \
+                pack.json "artifact/${{ steps.pack.outputs.filename }}" registry.json \
+                "${{ steps.stable.outputs.package_name }}" "${{ steps.stable.outputs.version }}" \
+                "${{ steps.stable.outputs.repository }}" > registry-binding.json
+              echo "Public registry checksums match the exact audited tarball: $PACKAGE"
               exit 0
             fi
             sleep 5
           done
-          echo "Registry verification did not observe the expected version/repository metadata for $PACKAGE" >&2
+          echo "Registry verification did not observe the expected version: $PACKAGE" >&2
           exit 1
 
       - name: Clean-install exact package from public npm registry
@@ -207,30 +203,17 @@ jobs:
           ./node_modules/.bin/aml version
           ./node_modules/.bin/aml validate ../control/examples/simple.aml
 
-      - name: Capture publication evidence
+      - name: Capture observed publication evidence
         shell: bash
         run: |
           set -euo pipefail
-          PACKAGE="${{ steps.stable.outputs.package_name }}@${{ steps.stable.outputs.version }}"
-          REGISTRY_VERSION="$(npm view "$PACKAGE" version)"
-          REGISTRY_REPO="$(npm view "$PACKAGE" repository.url)"
-          REGISTRY_INTEGRITY="$(npm view "$PACKAGE" dist.integrity)"
-          REGISTRY_SHASUM="$(npm view "$PACKAGE" dist.shasum)"
-          REGISTRY_TARBALL="$(npm view "$PACKAGE" dist.tarball)"
           node <<'NODE'
           const fs = require('fs');
+          const binding = JSON.parse(fs.readFileSync('registry-binding.json', 'utf8'));
           const evidence = {
             protocol: 'aml-npm-publication-evidence/1',
-            package: '${{ steps.stable.outputs.package_name }}',
-            version: '${{ steps.stable.outputs.version }}',
+            ...binding,
             stable_tag: '${{ steps.stable.outputs.tag }}',
-            repository: process.env.REGISTRY_REPO,
-            registry_version: process.env.REGISTRY_VERSION,
-            registry_integrity: process.env.REGISTRY_INTEGRITY,
-            registry_shasum: process.env.REGISTRY_SHASUM,
-            registry_tarball: process.env.REGISTRY_TARBALL,
-            prepublish_pack_integrity: '${{ steps.pack.outputs.integrity }}',
-            prepublish_pack_shasum: '${{ steps.pack.outputs.shasum }}',
             github_repository: '${{ github.repository }}',
             workflow_run_id: '${{ github.run_id }}',
             control_plane_sha: '${{ github.sha }}',
@@ -238,17 +221,11 @@ jobs:
             api_import_smoke_test: true,
             cli_version_smoke_test: true,
             cli_validate_smoke_test: true,
-            claim_boundary: 'Project-generated release evidence; not independent external verification.'
+            claim_boundary: 'Project-generated release evidence bound to observed npm registry checksums; not independent external verification.'
           };
           fs.mkdirSync('publication-evidence', { recursive: true });
           fs.writeFileSync('publication-evidence/npm-publication-evidence.json', `${JSON.stringify(evidence, null, 2)}\n`);
           NODE
-        env:
-          REGISTRY_VERSION: ${{ steps.stable.outputs.version }}
-          REGISTRY_REPO: ${{ steps.stable.outputs.repository }}
-          REGISTRY_INTEGRITY: ${{ steps.pack.outputs.integrity }}
-          REGISTRY_SHASUM: ${{ steps.pack.outputs.shasum }}
-          REGISTRY_TARBALL: https://registry.npmjs.org/${{ steps.stable.outputs.package_name }}/-/${{ steps.pack.outputs.filename }}
 
       - name: Upload publication evidence
         uses: actions/upload-artifact@v4
