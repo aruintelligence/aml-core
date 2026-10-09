@@ -18,7 +18,7 @@ curl -H "Authorization: Bearer $AML_API_TOKEN" \
 
 `bin/aml-agent-ui-serve.js` and `bin/aml-governance-stream-serve.js` use the same variable, with their own ports. An invalid token fails server startup; it is never printed by the CLI. The default bind address is loopback. When exposing a service over a network, terminate TLS in a trusted reverse proxy, protect the token in a secret store, and limit access and request rates there. Keep the proxy from forwarding untrusted `Authorization` headers when it supplies its own identity.
 
-The `AML_LOCKED_POLICY=1` setting is separate: it fixes policy controls for the main deployment evaluation endpoints. Use both settings when testing an authenticated enforcement boundary. Other gateways do not inherit the main server's `locked_policy`; configure their defaults and trust boundary for your application.
+The `AML_LOCKED_POLICY=1` setting is separate: it fixes policy controls for the main deployment evaluation endpoints and, independently, for each adjacent gateway started with that flag. Use both settings when testing an authenticated enforcement boundary. See [server-owned policy](LOCKED_HTTP_POLICY.md) for each route's behavior.
 
 ## Embedding API
 

@@ -5,15 +5,20 @@ import { createGovernanceStreamGateway } from "../server/governanceStreamGateway
 const port = Number(process.env.AML_GOVERNANCE_STREAM_PORT || process.argv[2] || 8791);
 const host = process.env.AML_GOVERNANCE_STREAM_HOST || "127.0.0.1";
 const apiToken = process.env.AML_API_TOKEN;
+const lockedPolicy = process.env.AML_LOCKED_POLICY === "1";
 
 if (!Number.isInteger(port) || port <= 0 || port > 65535) {
   console.error("Invalid AML_GOVERNANCE_STREAM_PORT / port argument.");
   process.exit(1);
 }
 
-const server = createGovernanceStreamGateway(apiToken !== undefined ? { request_auth: { bearer_token: apiToken } } : {});
+const server = createGovernanceStreamGateway({
+  ...(apiToken !== undefined ? { request_auth: { bearer_token: apiToken } } : {}),
+  ...(lockedPolicy ? { locked_policy: { profile: "calm_default" } } : {})
+});
 server.listen(port, host, () => {
   console.log(`ĀML governance stream gateway listening on http://${host}:${port}`);
   console.log("POST /v1/governance/stream (application/x-ndjson)");
   console.log(`POST authentication: ${apiToken !== undefined ? "enabled" : "disabled"}`);
+  console.log(`Deployment policy: ${lockedPolicy ? "server-owned enforce/closed" : "request-selectable"}`);
 });

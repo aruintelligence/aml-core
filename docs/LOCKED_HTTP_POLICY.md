@@ -42,4 +42,15 @@ const server = createAmlHttpServer({
 
 In locked mode, `POST /v1/deployment/evaluate` and `/v1/deployment/batch` return `policy_source: "server"`. The batch ceiling comes from `max_batch_items` (default 100). Caller attempts to supply `max_items`, `timestamp`, `profile`, `mode`, `failure_mode`, or `context` are rejected. `POST /v1/evaluate` and `/v1/deployment/canary` are disabled in this mode. Receipt and witness verification endpoints remain available.
 
+## Agent UI and governance stream gateways
+
+The same opt-in `locked_policy` option is available in `createAgentUiGateway` and `createGovernanceStreamGateway`. The Agent UI gateway rejects caller-supplied `profile`, `mode`, `failure_mode`, `context`, and `timestamp` (even `null`), resolves server context, and returns `policy_source: "server"`. The stream gateway rejects those controls in the open message and each subsequent message, rejects policy transition messages entirely, and reports `policy_source: "server"` in its accepted open event. An invalid stream message emits an `aml-governance-stream-error/1` event and ends the stream; a successful stream still returns NDJSON with HTTP 200.
+
+```bash
+AML_LOCKED_POLICY=1 AML_API_TOKEN="$AML_API_TOKEN" node bin/aml-agent-ui-serve.js
+AML_LOCKED_POLICY=1 AML_API_TOKEN="$AML_API_TOKEN" node bin/aml-governance-stream-serve.js
+```
+
+These CLIs use `calm_default`, `enforce`, `closed`, and empty trusted context when locked. Embedding applications can pass a trusted `resolve_context` callback in `locked_policy`, just as with the main server. Their locked settings are independent of the main service; configure each gateway you expose. The stream protocol still accepts untrusted intent nodes, so inspect decisions before rendering and enforce appropriate upload and connection limits at the edge.
+
 The caller still supplies **intent**, which must be treated as untrusted input. The application must use `effective_allowed` before rendering and must prevent alternate render paths that bypass this service. This option does not provide authentication, authorization, TLS, rate limiting, secure session validation, or proof that declared intent is truthful. Configure ingress authentication separately and review the remaining controls with the [security evaluation checklist](SECURITY_EVALUATION_CHECKLIST.md) before production use.
