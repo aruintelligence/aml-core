@@ -23,6 +23,7 @@ test("Agent UI HTTP gateway authenticates POST requests", async (t) => {
   });
   const denied = await request();
   assert.equal(denied.status, 401);
+  assert.equal(denied.headers.get("www-authenticate"), 'Bearer realm="aml"');
   assert.equal((await denied.json()).error, "unauthorized");
   const allowed = await request(`Bearer ${token}`);
   assert.equal(allowed.status, 200);

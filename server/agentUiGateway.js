@@ -4,12 +4,13 @@ import { readJson } from "./readJson.js";
 import { createRequestAuthenticator } from "./requestAuth.js";
 import { createLockedHttpPolicy } from "./lockedPolicy.js";
 
-function send(res, status, body) {
+function send(res, status, body, headers = {}) {
   const payload = JSON.stringify(body, null, 2);
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "content-length": Buffer.byteLength(payload),
     "cache-control": "no-store",
+    ...headers,
     ...([401, 413, 503].includes(status) ? { connection: "close" } : {})
   });
   res.end(payload);
@@ -24,6 +25,8 @@ export function createAgentUiGateway(options = {}) {
   const defaultMode = options.default_mode ?? "enforce";
   const defaultFailureMode = options.default_failure_mode ?? "closed";
   const authorize = createRequestAuthenticator(options.request_auth);
+  const bearerChallenge = options.request_auth && typeof options.request_auth === "object"
+    ? { "www-authenticate": 'Bearer realm="aml"' } : {};
   const lockedPolicy = createLockedHttpPolicy(options.locked_policy, defaultProfile);
 
   return http.createServer(async (req, res) => {
@@ -46,7 +49,7 @@ export function createAgentUiGateway(options = {}) {
         return send(res, error.statusCode ?? 503, {
           protocol: "aml-agent-ui-gateway-error/1",
           error: error.message
-        });
+        }, error.statusCode === 401 ? bearerChallenge : {});
       }
     }
 

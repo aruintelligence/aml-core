@@ -23,6 +23,7 @@ test("governance stream HTTP authenticates before opening the NDJSON response", 
   });
   const denied = await request();
   assert.equal(denied.status, 401);
+  assert.equal(denied.headers.get("www-authenticate"), 'Bearer realm="aml"');
   assert.match(denied.headers.get("content-type"), /application\/json/);
   assert.equal((await denied.json()).error, "unauthorized");
   const allowed = await request(`Bearer ${token}`);
