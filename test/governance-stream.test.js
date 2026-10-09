@@ -5,6 +5,31 @@ import { spawnSync } from "node:child_process";
 import { createGovernanceStreamGateway } from "../server/governanceStreamGateway.js";
 
 const fixture = fs.readFileSync("conformance/governance-stream/mixed.ndjson", "utf8");
+const token = "0123456789abcdef0123456789abcdef0123456789abcdef";
+
+test("governance stream HTTP authenticates before opening the NDJSON response", async (t) => {
+  const server = createGovernanceStreamGateway({ request_auth: { bearer_token: token } });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const base = `http://127.0.0.1:${server.address().port}`;
+  assert.equal((await fetch(`${base}/health`)).status, 200);
+  const request = (authorization) => fetch(`${base}/v1/governance/stream`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/x-ndjson",
+      ...(authorization ? { authorization } : {})
+    },
+    body: fixture
+  });
+  const denied = await request();
+  assert.equal(denied.status, 401);
+  assert.match(denied.headers.get("content-type"), /application\/json/);
+  assert.equal((await denied.json()).error, "unauthorized");
+  const allowed = await request(`Bearer ${token}`);
+  assert.equal(allowed.status, 200);
+  const lines = (await allowed.text()).trim().split(/\r?\n/).map(line => JSON.parse(line));
+  assert.equal(lines.at(-1).protocol, "aml-governance-stream-result/1");
+});
 
 test("governance stream CLI emits open, two decisions, and final result", () => {
   const run = spawnSync(process.execPath, ["bin/aml-governance-stream.js", "conformance/governance-stream/mixed.ndjson"], {

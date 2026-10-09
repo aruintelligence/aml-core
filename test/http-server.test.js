@@ -56,6 +56,40 @@ async function withServer(fn, options = {}) {
   }
 }
 
+test("AML HTTP protects POST routes before reading bodies when authentication is configured", async () => {
+  const token = "0123456789abcdef0123456789abcdef0123456789abcdef";
+  await withServer(async (base) => {
+    const health = await fetch(`${base}/health`);
+    assert.equal(health.status, 200);
+
+    const request = (authorization) => fetch(`${base}/v1/deployment/evaluate`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...(authorization ? { authorization } : {})
+      },
+      body: JSON.stringify({ intent: intent() })
+    });
+    const missing = await request();
+    assert.equal(missing.status, 401);
+    assert.equal((await missing.json()).error, "unauthorized");
+    assert.equal((await request("Bearer wrong")).status, 401);
+    const allowed = await request(`Bearer ${token}`);
+    assert.equal(allowed.status, 200);
+    assert.equal((await allowed.json()).policy_source, "server");
+  }, { request_auth: { bearer_token: token }, locked_policy: { profile: "human_first" } });
+});
+
+test("AML HTTP masks authentication callback failures", async () => {
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/v1/deployment/evaluate`, {
+      method: "POST", body: "{}"
+    });
+    assert.equal(response.status, 503);
+    assert.equal((await response.json()).error, "authentication_unavailable");
+  }, { request_auth: async () => { throw new Error("sensitive session detail"); } });
+});
+
 test("AML HTTP health and capabilities endpoints respond", async () => {
   await withServer(async (base) => {
     const health = await fetch(`${base}/health`).then((res) => res.json());

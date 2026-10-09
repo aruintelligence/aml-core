@@ -1,46 +1,28 @@
 import http from "node:http";
 import { evaluateAgentUI, AML_AGENT_UI_ENVELOPE, AML_AGENT_UI_RESULT } from "../adapters/agent-ui.js";
+import { readJson } from "./readJson.js";
+import { createRequestAuthenticator } from "./requestAuth.js";
 
 function send(res, status, body) {
   const payload = JSON.stringify(body, null, 2);
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "content-length": Buffer.byteLength(payload),
-    "cache-control": "no-store"
+    "cache-control": "no-store",
+    ...([401, 413, 503].includes(status) ? { connection: "close" } : {})
   });
   res.end(payload);
 }
 
-function readJson(req, maxBytes) {
-  return new Promise((resolve, reject) => {
-    let size = 0;
-    const chunks = [];
-    req.on("data", chunk => {
-      size += chunk.length;
-      if (size > maxBytes) {
-        reject(Object.assign(new Error("request_too_large"), { statusCode: 413 }));
-        req.destroy();
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on("end", () => {
-      try {
-        const raw = Buffer.concat(chunks).toString("utf8");
-        resolve(raw ? JSON.parse(raw) : {});
-      } catch {
-        reject(Object.assign(new Error("invalid_json"), { statusCode: 400 }));
-      }
-    });
-    req.on("error", reject);
-  });
-}
-
 export function createAgentUiGateway(options = {}) {
   const maxBodyBytes = options.max_body_bytes ?? 1024 * 1024;
+  if (!Number.isSafeInteger(maxBodyBytes) || maxBodyBytes < 1) {
+    throw new TypeError("max_body_bytes must be a positive safe integer");
+  }
   const defaultProfile = options.default_profile ?? "calm_default";
   const defaultMode = options.default_mode ?? "enforce";
   const defaultFailureMode = options.default_failure_mode ?? "closed";
+  const authorize = createRequestAuthenticator(options.request_auth);
 
   return http.createServer(async (req, res) => {
     const url = new URL(req.url || "/", "http://localhost");
@@ -53,6 +35,17 @@ export function createAgentUiGateway(options = {}) {
         accepts: AML_AGENT_UI_ENVELOPE,
         returns: AML_AGENT_UI_RESULT
       });
+    }
+
+    if (authorize && req.method === "POST") {
+      try {
+        await authorize(req);
+      } catch (error) {
+        return send(res, error.statusCode ?? 503, {
+          protocol: "aml-agent-ui-gateway-error/1",
+          error: error.message
+        });
+      }
     }
 
     if (req.method === "POST" && url.pathname === "/v1/agent-ui/evaluate") {

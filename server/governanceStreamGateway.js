@@ -1,5 +1,6 @@
 import http from "node:http";
 import readline from "node:readline";
+import { createRequestAuthenticator } from "./requestAuth.js";
 import {
   createGovernanceStreamSession,
   AML_GOVERNANCE_STREAM_OPEN,
@@ -11,7 +12,8 @@ function json(res, status, body) {
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "content-length": Buffer.byteLength(payload),
-    "cache-control": "no-store"
+    "cache-control": "no-store",
+    ...([401, 503].includes(status) ? { connection: "close" } : {})
   });
   res.end(payload);
 }
@@ -22,6 +24,10 @@ function writeNdjson(res, value) {
 
 export function createGovernanceStreamGateway(options = {}) {
   const maxLineBytes = options.max_line_bytes ?? 256 * 1024;
+  if (!Number.isSafeInteger(maxLineBytes) || maxLineBytes < 1) {
+    throw new TypeError("max_line_bytes must be a positive safe integer");
+  }
+  const authorize = createRequestAuthenticator(options.request_auth);
 
   return http.createServer(async (req, res) => {
     const url = new URL(req.url || "/", "http://localhost");
@@ -32,6 +38,14 @@ export function createGovernanceStreamGateway(options = {}) {
         service: "aml-governance-stream-gateway",
         protocol: "aml-governance-stream-http/1"
       });
+    }
+
+    if (authorize && req.method === "POST") {
+      try {
+        await authorize(req);
+      } catch (error) {
+        return json(res, error.statusCode ?? 503, { error: error.message });
+      }
     }
 
     if (req.method !== "POST" || url.pathname !== "/v1/governance/stream") {
