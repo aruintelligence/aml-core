@@ -54,6 +54,8 @@ export function createAmlHttpServer(options = {}) {
   const trustRoots = options.brand_trust_roots ?? loadBrandTrustRoots();
   const lockedPolicy = createLockedHttpPolicy(options.locked_policy, defaultProfile);
   const authorize = createRequestAuthenticator(options.request_auth);
+  const bearerChallenge = options.request_auth && typeof options.request_auth === "object"
+    ? { "www-authenticate": 'Bearer realm="aml"' } : {};
 
   return http.createServer(async (req, res) => {
     const headers = allowedOrigin ? { "access-control-allow-origin": allowedOrigin } : {};
@@ -84,7 +86,10 @@ export function createAmlHttpServer(options = {}) {
       try {
         await authorize(req);
       } catch (error) {
-        return send(res, error.statusCode ?? 503, { error: error.message }, headers);
+        return send(res, error.statusCode ?? 503, { error: error.message }, {
+          ...headers,
+          ...(error.statusCode === 401 ? bearerChallenge : {})
+        });
       }
     }
 

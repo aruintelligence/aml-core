@@ -12,12 +12,13 @@ import {
 const STREAM_CONTROLS = ["profile", "mode", "failure_mode", "context", "timestamp"];
 const hasOwn = (value, key) => value !== null && typeof value === "object" && Object.hasOwn(value, key);
 
-function json(res, status, body) {
+function json(res, status, body, headers = {}) {
   const payload = JSON.stringify(body);
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "content-length": Buffer.byteLength(payload),
     "cache-control": "no-store",
+    ...headers,
     ...([400, 401, 413, 503].includes(status) ? { connection: "close" } : {})
   });
   res.end(payload);
@@ -41,6 +42,8 @@ export function createGovernanceStreamGateway(options = {}) {
     throw new TypeError("max_messages must be a safe integer of at least 2");
   }
   const authorize = createRequestAuthenticator(options.request_auth);
+  const bearerChallenge = options.request_auth && typeof options.request_auth === "object"
+    ? { "www-authenticate": 'Bearer realm="aml"' } : {};
   const lockedPolicy = createLockedHttpPolicy(options.locked_policy, "calm_default");
 
   return http.createServer(async (req, res) => {
@@ -58,7 +61,8 @@ export function createGovernanceStreamGateway(options = {}) {
       try {
         await authorize(req);
       } catch (error) {
-        return json(res, error.statusCode ?? 503, { error: error.message });
+        return json(res, error.statusCode ?? 503, { error: error.message },
+          error.statusCode === 401 ? bearerChallenge : {});
       }
     }
 

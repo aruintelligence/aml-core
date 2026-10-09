@@ -72,6 +72,7 @@ test("AML HTTP protects POST routes before reading bodies when authentication is
     });
     const missing = await request();
     assert.equal(missing.status, 401);
+    assert.equal(missing.headers.get("www-authenticate"), 'Bearer realm="aml"');
     assert.equal((await missing.json()).error, "unauthorized");
     assert.equal((await request("Bearer wrong")).status, 401);
     const allowed = await request(`Bearer ${token}`);
@@ -86,6 +87,7 @@ test("AML HTTP masks authentication callback failures", async () => {
       method: "POST", body: "{}"
     });
     assert.equal(response.status, 503);
+    assert.equal(response.headers.get("www-authenticate"), null);
     assert.equal((await response.json()).error, "authentication_unavailable");
   }, { request_auth: async () => { throw new Error("sensitive session detail"); } });
 });

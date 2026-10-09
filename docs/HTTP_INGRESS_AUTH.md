@@ -1,10 +1,10 @@
 # HTTP ingress authentication
 
-The reference HTTP service, Agent UI gateway, and governance stream gateway accept an optional `request_auth` option. When configured, each gateway checks POST requests before reading the body or opening a response stream. Missing or invalid credentials return `401 unauthorized`; authentication callback failures return `503 authentication_unavailable` without exposing the callback error. `GET /health` remains public. The main service also leaves its public capabilities and brand trust roots GET endpoints available.
+The reference HTTP service, Agent UI gateway, and governance stream gateway accept an optional `request_auth` option. When configured, each gateway checks POST requests before reading the body or opening a response stream. Missing or invalid credentials return `401 unauthorized`; static bearer authentication also sends `WWW-Authenticate: Bearer realm="aml"`. Authentication callback failures return `503 authentication_unavailable` without exposing the callback error. `GET /health` remains public. The main service also leaves its public capabilities and brand trust roots GET endpoints available.
 
 ## CLI with a bearer token
 
-Set a secret of at least 32 non-whitespace UTF-8 bytes in the process environment, then start any of the three servers with `AML_API_TOKEN`:
+Set a secret of 32–4096 ASCII bearer-token characters in the process environment, then start any of the three servers with `AML_API_TOKEN`. The example generates a random base64url secret:
 
 ```bash
 export AML_API_TOKEN="$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('base64url'))")"
@@ -46,4 +46,4 @@ const server = createAmlHttpServer({
 });
 ```
 
-The static bearer option compares SHA-256 digests with a timing-safe equality check, rejects duplicate `Authorization` headers, and requires a 32–4096 byte token. It is suitable for a controlled service boundary, not per-user authorization. This option does not provide TLS, token rotation, rate limiting, audit logging, SSO, or verification that declared intent is truthful. See [server-owned policy](LOCKED_HTTP_POLICY.md) and the [security evaluation checklist](SECURITY_EVALUATION_CHECKLIST.md).
+The static bearer option compares SHA-256 digests with a timing-safe equality check, rejects duplicate `Authorization` headers, and accepts the [RFC 6750](https://www.rfc-editor.org/rfc/rfc6750) `b64token` alphabet (`A–Z`, `a–z`, `0–9`, `-._~+/` with optional trailing `=`). It is suitable for a controlled service boundary, not per-user authorization. This option does not provide TLS, token rotation, rate limiting, audit logging, SSO, or verification that declared intent is truthful. See [server-owned policy](LOCKED_HTTP_POLICY.md) and the [security evaluation checklist](SECURITY_EVALUATION_CHECKLIST.md).

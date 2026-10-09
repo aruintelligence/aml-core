@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 
 const error = (message, statusCode) => Object.assign(new Error(message), { statusCode });
+const bearerToken = /^[A-Za-z0-9._~+\/-]+=*$/;
 
 // Shared, opt-in ingress guard. A callback can delegate identity to an
 // application's trusted authentication layer; a bearer token is for bounded
@@ -26,9 +27,9 @@ export function createRequestAuthenticator(config) {
   }
 
   const secret = config.bearer_token;
-  if (typeof secret !== "string" || Buffer.byteLength(secret) < 32 ||
-      Buffer.byteLength(secret) > 4096 || /\s/.test(secret)) {
-    throw new TypeError("request_auth.bearer_token must be 32-4096 non-whitespace bytes");
+  if (typeof secret !== "string" || secret.length < 32 ||
+      secret.length > 4096 || !bearerToken.test(secret)) {
+    throw new TypeError("request_auth.bearer_token must be 32-4096 ASCII bearer-token characters");
   }
   const expected = crypto.createHash("sha256").update(secret, "utf8").digest();
 
@@ -38,10 +39,11 @@ export function createRequestAuthenticator(config) {
       ? raw.filter((name, index) => index % 2 === 0 && name.toLowerCase() === "authorization").length
       : 0;
     const header = req.headers?.authorization;
-    if (count > 1 || typeof header !== "string" || !/^Bearer [^\s]+$/i.test(header)) {
+    const match = typeof header === "string" ? /^Bearer +([A-Za-z0-9._~+\/-]+=*)$/i.exec(header) : null;
+    if (count > 1 || !match) {
       throw error("unauthorized", 401);
     }
-    const candidate = header.slice(7);
+    const candidate = match[1];
     if (Buffer.byteLength(candidate) > 4096) throw error("unauthorized", 401);
     const actual = crypto.createHash("sha256").update(candidate, "utf8").digest();
     if (!crypto.timingSafeEqual(actual, expected)) throw error("unauthorized", 401);
