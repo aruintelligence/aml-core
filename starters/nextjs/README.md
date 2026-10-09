@@ -7,13 +7,14 @@ A runnable App Router example that evaluates machine intent on the server, rende
 Requires Node.js 20.9 or newer (Node 24 is used in CI). From the repository root:
 
 ```bash
+npm pack --ignore-scripts
 cd starters/nextjs
 npm install --ignore-scripts
 npm test
 npm run dev
 ```
 
-Open <http://localhost:3000>, then inspect `/meaning` and `/api/receipt`. `npm run build && npm start` rehearses the production server. The `file:../..` dependency installs the local repository package; it does not assume that `aml-core` has been published to a registry. Keep the package, example, and tests at the same commit.
+Open <http://localhost:3000>, then inspect `/meaning` and `/api/receipt`. `npm run build && npm start` rehearses the production server. The `file:../../aml-core-1.3.0.tgz` dependency installs a tarball built from this checkout; it does not assume that `aml-core` has been published to a registry. Repack and reinstall when changing the root package. Keep the package, example, and tests at the same commit.
 
 The server constructs `candidateIntent` in `lib/demo.mjs`, enforces the `calm_default` profile, and verifies the receipt before responding. The urgency node is suppressed, while the calm continuation appears. The page maps allowed decisions to application-owned React components and lets React escape displayed text. It does not inject the generated AML HTML.
 

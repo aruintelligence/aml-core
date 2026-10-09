@@ -10,7 +10,7 @@
     "test": "node --test checks/demo.mjs"
   },
   "dependencies": {
-    "aml-core": "file:../..",
+    "aml-core": "file:../../aml-core-1.3.0.tgz",
     "next": "16.4.0",
     "react": "19.2.0",
     "react-dom": "19.2.0"

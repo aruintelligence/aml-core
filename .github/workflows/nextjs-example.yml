@@ -25,6 +25,8 @@ jobs:
           node-version: "24"
       - name: Meaning Gate for example snapshots
         run: node scripts/meaning-gate.js starters/nextjs/fixtures/before.aml starters/nextjs/fixtures/after.aml calm_default calm_default
+      - name: Pack the exact local AML source
+        run: npm pack --ignore-scripts --silent
       - name: Install local AML package and Next.js
         working-directory: starters/nextjs
         run: npm install --ignore-scripts
