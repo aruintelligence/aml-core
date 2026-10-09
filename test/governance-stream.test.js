@@ -70,6 +70,50 @@ test("governance stream locked policy rejects open, node, and transition overrid
   assert.equal(valid.at(-1).suppressed, 1);
 });
 
+test("governance stream gateway rejects advertised oversized uploads with a readable 413", async (t) => {
+  const server = createGovernanceStreamGateway({ max_stream_bytes: 32 });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/v1/governance/stream`, {
+    method: "POST",
+    headers: { "content-type": "application/x-ndjson" },
+    body: fixture
+  });
+  assert.equal(response.status, 413);
+  assert.equal(response.headers.get("connection"), "close");
+  assert.equal((await response.json()).error, "governance stream exceeds max_stream_bytes");
+});
+
+test("governance stream gateway rejects an overlong first line before opening NDJSON", async (t) => {
+  const server = createGovernanceStreamGateway({ max_line_bytes: 16 });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/v1/governance/stream`, {
+    method: "POST",
+    headers: { "content-type": "application/x-ndjson" },
+    body: fixture
+  });
+  assert.equal(response.status, 413);
+  assert.equal((await response.json()).error, "governance stream line exceeds max_line_bytes");
+});
+
+test("governance stream gateway enforces a message ceiling after accepting open", async (t) => {
+  const server = createGovernanceStreamGateway({ max_messages: 2 });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/v1/governance/stream`, {
+    method: "POST",
+    headers: { "content-type": "application/x-ndjson" },
+    body: fixture
+  });
+  assert.equal(response.status, 200);
+  const messages = (await response.text()).trim().split(/\r?\n/).map(line => JSON.parse(line));
+  assert.equal(messages[0].accepted, true);
+  assert.equal(messages.at(-1).protocol, "aml-governance-stream-error/1");
+  assert.equal(messages.at(-1).error, "governance stream exceeds max_messages");
+  assert.equal(messages.some(message => message.protocol === "aml-governance-stream-result/1"), false);
+});
+
 test("governance stream CLI emits open, two decisions, and final result", () => {
   const run = spawnSync(process.execPath, ["bin/aml-governance-stream.js", "conformance/governance-stream/mixed.ndjson"], {
     encoding: "utf8"
