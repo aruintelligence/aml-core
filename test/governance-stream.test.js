@@ -47,27 +47,80 @@ test("governance stream locked policy rejects open, node, and transition overrid
       headers: { "content-type": "application/x-ndjson", authorization: `Bearer ${token}` },
       body: `${messages.map(message => JSON.stringify(message)).join("\n")}\n`
     });
-    assert.equal(response.status, 200);
-    return (await response.text()).trim().split(/\r?\n/).map(line => JSON.parse(line));
+    if (response.status !== 200) {
+      return { status: response.status, messages: [await response.json()] };
+    }
+    return {
+      status: response.status,
+      messages: (await response.text()).trim().split(/\r?\n/).map(line => JSON.parse(line))
+    };
   };
 
   const openedWithOverride = await request([{ ...open, mode: "shadow" }, firstNode, finalize]);
-  assert.equal(openedWithOverride.at(-1).protocol, "aml-governance-stream-error/1");
-  assert.equal(openedWithOverride.at(-1).error, "policy_override_forbidden");
+  assert.equal(openedWithOverride.status, 403);
+  assert.equal(openedWithOverride.messages[0].protocol, "aml-governance-stream-error/1");
+  assert.equal(openedWithOverride.messages[0].error, "policy_override_forbidden");
 
   const nodeOverride = await request([open, { ...firstNode, failure_mode: "open" }, finalize]);
-  assert.equal(nodeOverride[0].policy_source, "server");
-  assert.equal(nodeOverride.at(-1).error, "policy_override_forbidden");
-  assert.equal(nodeOverride.some(message => message.protocol === "aml-governance-stream-decision/1"), false);
+  assert.equal(nodeOverride.status, 200);
+  assert.equal(nodeOverride.messages[0].policy_source, "server");
+  assert.equal(nodeOverride.messages.at(-1).error, "policy_override_forbidden");
+  assert.equal(nodeOverride.messages.some(message => message.protocol === "aml-governance-stream-decision/1"), false);
 
   const transition = await request([open, { protocol: "aml-governance-stream-policy-update/1", mode: "shadow" }, finalize]);
-  assert.equal(transition.at(-1).error, "policy_override_forbidden");
+  assert.equal(transition.status, 200);
+  assert.equal(transition.messages.at(-1).error, "policy_override_forbidden");
 
   const valid = await request([open, firstNode, secondNode, finalize]);
-  assert.equal(valid[0].mode, "enforce");
-  assert.equal(valid[0].failure_mode, "closed");
-  assert.equal(valid.at(-1).protocol, "aml-governance-stream-result/1");
-  assert.equal(valid.at(-1).suppressed, 1);
+  assert.equal(valid.status, 200);
+  assert.equal(valid.messages[0].mode, "enforce");
+  assert.equal(valid.messages[0].failure_mode, "closed");
+  assert.equal(valid.messages.at(-1).protocol, "aml-governance-stream-result/1");
+  assert.equal(valid.messages.at(-1).suppressed, 1);
+});
+
+test("governance stream gateway rejects advertised oversized uploads with a readable 413", async (t) => {
+  const server = createGovernanceStreamGateway({ max_stream_bytes: 32 });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/v1/governance/stream`, {
+    method: "POST",
+    headers: { "content-type": "application/x-ndjson" },
+    body: fixture
+  });
+  assert.equal(response.status, 413);
+  assert.equal(response.headers.get("connection"), "close");
+  assert.equal((await response.json()).error, "governance stream exceeds max_stream_bytes");
+});
+
+test("governance stream gateway rejects an overlong first line before opening NDJSON", async (t) => {
+  const server = createGovernanceStreamGateway({ max_line_bytes: 16 });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/v1/governance/stream`, {
+    method: "POST",
+    headers: { "content-type": "application/x-ndjson" },
+    body: fixture
+  });
+  assert.equal(response.status, 413);
+  assert.equal((await response.json()).error, "governance stream line exceeds max_line_bytes");
+});
+
+test("governance stream gateway enforces a message ceiling after accepting open", async (t) => {
+  const server = createGovernanceStreamGateway({ max_messages: 2 });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/v1/governance/stream`, {
+    method: "POST",
+    headers: { "content-type": "application/x-ndjson" },
+    body: fixture
+  });
+  assert.equal(response.status, 200);
+  const messages = (await response.text()).trim().split(/\r?\n/).map(line => JSON.parse(line));
+  assert.equal(messages[0].accepted, true);
+  assert.equal(messages.at(-1).protocol, "aml-governance-stream-error/1");
+  assert.equal(messages.at(-1).error, "governance stream exceeds max_messages");
+  assert.equal(messages.some(message => message.protocol === "aml-governance-stream-result/1"), false);
 });
 
 test("governance stream CLI emits open, two decisions, and final result", () => {
