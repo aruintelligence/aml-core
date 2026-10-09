@@ -2,6 +2,7 @@ import http from "node:http";
 import { createRequestAuthenticator } from "./requestAuth.js";
 import { createLockedHttpPolicy } from "./lockedPolicy.js";
 import { readNdjsonLines } from "./readNdjsonLines.js";
+import { writeNdjson } from "./writeNdjson.js";
 import {
   createGovernanceStreamSession,
   AML_GOVERNANCE_STREAM_OPEN,
@@ -22,10 +23,6 @@ function json(res, status, body, headers = {}) {
     ...([400, 401, 413, 503].includes(status) ? { connection: "close" } : {})
   });
   res.end(payload);
-}
-
-function writeNdjson(res, value) {
-  res.write(`${JSON.stringify(value)}\n`);
 }
 
 export function createGovernanceStreamGateway(options = {}) {
@@ -114,7 +111,7 @@ export function createGovernanceStreamGateway(options = {}) {
             "cache-control": "no-store",
             "x-content-type-options": "nosniff"
           });
-          writeNdjson(res, {
+          await writeNdjson(res, {
             protocol: AML_GOVERNANCE_STREAM_OPEN,
             accepted: true,
             transmission: session.transmission,
@@ -130,21 +127,26 @@ export function createGovernanceStreamGateway(options = {}) {
             STREAM_CONTROLS.some(key => hasOwn(message, key)))) {
           throw new Error("policy_override_forbidden");
         }
-        writeNdjson(res, session.accept(message));
+        await writeNdjson(res, session.accept(message));
       }
 
       if (!session) throw new Error("governance stream contained no open message");
       if (!session.finalized) throw new Error("governance stream ended before aml-governance-stream-finalize/1");
       res.end();
     } catch (error) {
+      if (res.destroyed || res.writableEnded || error.code === "AML_RESPONSE_CLOSED") return;
       const failure = {
         protocol: AML_GOVERNANCE_STREAM_ERROR,
         line: lineNumber || null,
         error: error.message || String(error)
       };
       if (!res.headersSent) return json(res, error.statusCode ?? 400, failure);
-      writeNdjson(res, failure);
-      res.end();
+      try {
+        await writeNdjson(res, failure);
+        res.end();
+      } catch {
+        res.destroy();
+      }
     }
   });
 }
