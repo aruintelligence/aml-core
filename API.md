@@ -319,6 +319,10 @@ trusted context; this disables the canary and direct `/v1/evaluate` routes. Conf
 `request_auth.bearer_token` requires bearer authentication for POST requests; a `request_auth`
 callback can use the embedding application's authentication. See [server-owned deployment policy](docs/LOCKED_HTTP_POLICY.md)
 and [HTTP ingress authentication](docs/HTTP_INGRESS_AUTH.md).
+Application authentication and trusted-context callbacks have a 5000 ms deadline by default;
+configure `auth_timeout_ms` on each gateway and `locked_policy.resolve_context_timeout_ms`
+for the respective limits. Both callbacks receive an optional second `{ signal }` argument
+for cancelling their own downstream lookups. Timeouts return generic 503 errors.
 
 Production deployments still require normal authentication, authorization, transport security, rate limiting, logging, and secure key management.
 

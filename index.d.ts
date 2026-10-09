@@ -390,14 +390,15 @@ export interface AmlHttpServer {
 
 export type RequestAuthenticator =
   | { bearer_token: string }
-  | ((request: AmlHttpRequest) => boolean | Promise<boolean>);
+  | ((request: AmlHttpRequest, controls: { signal: AbortSignal }) => boolean | Promise<boolean>);
 
 export interface LockedHttpPolicy {
   profile?: string;
   mode?: AmlMode;
   failure_mode?: AmlFailureMode;
   context?: AmlContext;
-  resolve_context?: (request: AmlHttpRequest) => AmlContext | Promise<AmlContext>;
+  resolve_context?: (request: AmlHttpRequest, controls: { signal: AbortSignal }) => AmlContext | Promise<AmlContext>;
+  resolve_context_timeout_ms?: number;
   max_batch_items?: number;
 }
 
@@ -408,6 +409,7 @@ export interface AmlHttpServerOptions {
   max_batch_items?: number;
   brand_trust_roots?: unknown;
   request_auth?: RequestAuthenticator;
+  auth_timeout_ms?: number;
   locked_policy?: LockedHttpPolicy;
 }
 
@@ -418,6 +420,7 @@ export interface AgentUiGatewayOptions {
   max_body_bytes?: number;
   max_components?: number;
   request_auth?: RequestAuthenticator;
+  auth_timeout_ms?: number;
   locked_policy?: LockedHttpPolicy;
 }
 
@@ -426,6 +429,7 @@ export interface GovernanceStreamGatewayOptions {
   max_stream_bytes?: number;
   max_messages?: number;
   request_auth?: RequestAuthenticator;
+  auth_timeout_ms?: number;
   locked_policy?: LockedHttpPolicy;
 }
 

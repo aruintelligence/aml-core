@@ -36,11 +36,27 @@ test("trusted context resolver fails closed and never falls back to request cont
   });
 });
 
+test("locked policy bounds stalled context lookup and signals cancellation", async () => {
+  let signal;
+  const policy = createLockedHttpPolicy({
+    resolve_context_timeout_ms: 10,
+    resolve_context: (_req, controls) => {
+      signal = controls.signal;
+      return new Promise(() => {});
+    }
+  });
+  await assert.rejects(policy.select({}, {}), {
+    message: "trusted_context_unavailable", statusCode: 503
+  });
+  assert.equal(signal.aborted, true);
+});
+
 test("invalid server policy configuration is rejected at startup", () => {
   assert.throws(() => createLockedHttpPolicy({ profile: "unknown" }), /Unknown ĀML policy profile/);
   assert.throws(() => createLockedHttpPolicy({ mode: "observe" }), /locked_policy.mode/);
   assert.throws(() => createLockedHttpPolicy({ failure_mode: "maybe" }), /locked_policy.failure_mode/);
   assert.throws(() => createLockedHttpPolicy({ context: {}, resolve_context: () => ({}) }), /mutually exclusive/);
   assert.throws(() => createLockedHttpPolicy({ max_batch_items: 0 }), /positive safe integer/);
+  assert.throws(() => createLockedHttpPolicy({ resolve_context_timeout_ms: 0 }), /resolve_context_timeout_ms/);
   assert.throws(() => createLockedHttpPolicy({ typo: true }), /unknown locked_policy option/);
 });

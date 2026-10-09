@@ -28,7 +28,7 @@ export function createAgentUiGateway(options = {}) {
   const defaultProfile = options.default_profile ?? "calm_default";
   const defaultMode = options.default_mode ?? "enforce";
   const defaultFailureMode = options.default_failure_mode ?? "closed";
-  const authorize = createRequestAuthenticator(options.request_auth);
+  const authorize = createRequestAuthenticator(options.request_auth, { timeout_ms: options.auth_timeout_ms });
   const bearerChallenge = options.request_auth && typeof options.request_auth === "object"
     ? { "www-authenticate": 'Bearer realm="aml"' } : {};
   const lockedPolicy = createLockedHttpPolicy(options.locked_policy, defaultProfile);

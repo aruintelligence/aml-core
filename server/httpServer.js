@@ -57,7 +57,7 @@ export function createAmlHttpServer(options = {}) {
   if (!Number.isSafeInteger(maxBatchItems) || maxBatchItems < 1) {
     throw new TypeError("max_batch_items must be a positive safe integer");
   }
-  const authorize = createRequestAuthenticator(options.request_auth);
+  const authorize = createRequestAuthenticator(options.request_auth, { timeout_ms: options.auth_timeout_ms });
   const bearerChallenge = options.request_auth && typeof options.request_auth === "object"
     ? { "www-authenticate": 'Bearer realm="aml"' } : {};
 

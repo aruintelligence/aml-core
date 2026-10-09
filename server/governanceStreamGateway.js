@@ -38,7 +38,7 @@ export function createGovernanceStreamGateway(options = {}) {
   if (!Number.isSafeInteger(maxMessages) || maxMessages < 2) {
     throw new TypeError("max_messages must be a safe integer of at least 2");
   }
-  const authorize = createRequestAuthenticator(options.request_auth);
+  const authorize = createRequestAuthenticator(options.request_auth, { timeout_ms: options.auth_timeout_ms });
   const bearerChallenge = options.request_auth && typeof options.request_auth === "object"
     ? { "www-authenticate": 'Bearer realm="aml"' } : {};
   const lockedPolicy = createLockedHttpPolicy(options.locked_policy, "calm_default");

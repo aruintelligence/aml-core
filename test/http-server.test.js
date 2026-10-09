@@ -92,6 +92,16 @@ test("AML HTTP masks authentication callback failures", async () => {
   }, { request_auth: async () => { throw new Error("sensitive session detail"); } });
 });
 
+test("AML HTTP returns 503 when an authentication callback stalls", async () => {
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/v1/deployment/evaluate`, {
+      method: "POST", body: "{}"
+    });
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { error: "authentication_unavailable" });
+  }, { auth_timeout_ms: 20, request_auth: () => new Promise(() => {}) });
+});
+
 test("AML HTTP health and capabilities endpoints respond", async () => {
   await withServer(async (base) => {
     const health = await fetch(`${base}/health`).then((res) => res.json());
@@ -456,6 +466,21 @@ test("locked HTTP policy fails closed if trusted context is unavailable", async 
     assert.equal(response.status, 503);
     assert.deepEqual(await response.json(), { error: "trusted_context_unavailable" });
   }, { locked_policy: { resolve_context: async () => { throw new Error("private session detail"); } } });
+});
+
+test("locked HTTP policy returns 503 when trusted context lookup stalls", async () => {
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/v1/deployment/evaluate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ intent: intent() })
+    });
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { error: "trusted_context_unavailable" });
+  }, { locked_policy: {
+    resolve_context_timeout_ms: 20,
+    resolve_context: () => new Promise(() => {})
+  } });
 });
 
 test("locked HTTP policy uses a trusted resolver for consent context", async () => {

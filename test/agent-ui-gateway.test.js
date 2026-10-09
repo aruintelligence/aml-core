@@ -30,6 +30,17 @@ test("Agent UI HTTP gateway authenticates POST requests", async (t) => {
   assert.equal((await allowed.json()).protocol, "aml-agent-ui-governance-result/1");
 });
 
+test("Agent UI gateway bounds stalled authentication before reading the envelope", async (t) => {
+  const server = createAgentUiGateway({ auth_timeout_ms: 20, request_auth: () => new Promise(() => {}) });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/v1/agent-ui/evaluate`, {
+    method: "POST", body: "{}"
+  });
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).error, "authentication_unavailable");
+});
+
 test("Agent UI locked policy rejects caller controls and selects enforce/closed on the server", async (t) => {
   const server = createAgentUiGateway({
     request_auth: { bearer_token: token },

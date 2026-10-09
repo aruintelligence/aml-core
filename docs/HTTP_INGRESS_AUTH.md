@@ -1,6 +1,6 @@
 # HTTP ingress authentication
 
-The reference HTTP service, Agent UI gateway, and governance stream gateway accept an optional `request_auth` option. When configured, each gateway checks POST requests before reading the body or opening a response stream. Missing or invalid credentials return `401 unauthorized`; static bearer authentication also sends `WWW-Authenticate: Bearer realm="aml"`. Authentication callback failures return `503 authentication_unavailable` without exposing the callback error. `GET /health` remains public. The main service also leaves its public capabilities and brand trust roots GET endpoints available.
+The reference HTTP service, Agent UI gateway, and governance stream gateway accept an optional `request_auth` option. When configured, each gateway checks POST requests before reading the body or opening a response stream. Missing or invalid credentials return `401 unauthorized`; static bearer authentication also sends `WWW-Authenticate: Bearer realm="aml"`. Authentication callback failures or timeouts return `503 authentication_unavailable` without exposing the callback error. `GET /health` remains public. The main service also leaves its public capabilities and brand trust roots GET endpoints available.
 
 ## CLI with a bearer token
 
@@ -31,12 +31,13 @@ const server = createAmlHttpServer({
 });
 ```
 
-For an application session or an identity-aware proxy, supply an async callback instead. It receives the Node `IncomingMessage` and must return exactly `true` for an authorized request. `false` (or any other result) denies it. Exceptions fail closed with a generic 503. The callback should validate the identity through a trusted source, enforce the needed permission for the requested route, and never trust caller-provided identity headers without proxy controls.
+For an application session or an identity-aware proxy, supply an async callback instead. It receives the Node `IncomingMessage` and an optional second argument `{ signal }`, and must return exactly `true` for an authorized request. `false` (or any other result) denies it. Exceptions fail closed with a generic 503. The callback should validate the identity through a trusted source, enforce the needed permission for the requested route, and never trust caller-provided identity headers without proxy controls.
 
 ```js
 const server = createAmlHttpServer({
-  request_auth: async (req) => {
-    const session = await lookupAuthenticatedSession(req);
+  auth_timeout_ms: 2000,
+  request_auth: async (req, { signal }) => {
+    const session = await lookupAuthenticatedSession(req, { signal });
     return session?.permissions.includes("aml:evaluate") === true;
   },
   locked_policy: {
@@ -45,5 +46,7 @@ const server = createAmlHttpServer({
   }
 });
 ```
+
+The callback deadline defaults to 5000 ms for all three gateways. `auth_timeout_ms` must be a positive safe integer. A deadline returns 503 and aborts the supplied signal. Pass that signal to network/database clients that support cancellation; a callback that ignores it may continue its own work after the HTTP request has ended. The bearer-token comparison does not need an application callback deadline. Configure reverse-proxy connection and rate limits separately.
 
 The static bearer option compares SHA-256 digests with a timing-safe equality check, rejects duplicate `Authorization` headers, and accepts the [RFC 6750](https://www.rfc-editor.org/rfc/rfc6750) `b64token` alphabet (`A–Z`, `a–z`, `0–9`, `-._~+/` with optional trailing `=`). It is suitable for a controlled service boundary, not per-user authorization. This option does not provide TLS, token rotation, rate limiting, audit logging, SSO, or verification that declared intent is truthful. See [server-owned policy](LOCKED_HTTP_POLICY.md) and the [security evaluation checklist](SECURITY_EVALUATION_CHECKLIST.md).
