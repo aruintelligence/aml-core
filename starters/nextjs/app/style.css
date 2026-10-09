@@ -1,0 +1,18 @@
+:root { color-scheme: light; font-family: system-ui, sans-serif; color: #182735; background: #f1f5f6; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 800px; margin: 0 auto; padding: 4rem 1.5rem; }
+header { margin-bottom: 2.5rem; }
+h1 { font-size: clamp(2rem, 5vw, 3.4rem); letter-spacing: -.04em; line-height: 1.1; margin: .5rem 0; }
+h2 { margin: 0 0 1.25rem; font-size: 1.3rem; }
+p { line-height: 1.6; }
+.eyebrow { color: #14665d; font-weight: 750; letter-spacing: .13em; font-size: .75rem; }
+section { background: white; padding: 1.75rem; margin: 1.25rem 0; border: 1px solid #dce4e6; border-radius: 1rem; }
+.decision { margin: .75rem 0; }
+.message { border-left: 4px solid #1c8775; padding: .9rem 1.1rem; background: #eaf7f2; }
+.fallback { border-left: 4px solid #ba7950; padding: .9rem 1.1rem; background: #fcf2e8; }
+li { margin: .8rem 0; }
+.hash { overflow-wrap: anywhere; color: #3c515d; font-size: .85rem; }
+nav { display: flex; flex-wrap: wrap; gap: 1.2rem; margin-top: 1.5rem; }
+a { color: #075c52; font-weight: 700; }
+footer { color: #51636c; font-size: .85rem; margin-top: 3rem; }
