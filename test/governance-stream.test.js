@@ -32,6 +32,18 @@ test("governance stream HTTP authenticates before opening the NDJSON response", 
   assert.equal(lines.at(-1).protocol, "aml-governance-stream-result/1");
 });
 
+test("governance stream bounds stalled authentication before opening NDJSON", async (t) => {
+  const server = createGovernanceStreamGateway({ auth_timeout_ms: 20, request_auth: () => new Promise(() => {}) });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/v1/governance/stream`, {
+    method: "POST", body: fixture
+  });
+  assert.equal(response.status, 503);
+  assert.match(response.headers.get("content-type"), /application\/json/);
+  assert.equal((await response.json()).error, "authentication_unavailable");
+});
+
 test("governance stream locked policy rejects open, node, and transition overrides", async (t) => {
   const server = createGovernanceStreamGateway({
     request_auth: { bearer_token: token },

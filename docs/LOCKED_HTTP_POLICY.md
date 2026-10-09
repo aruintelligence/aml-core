@@ -23,10 +23,11 @@ const server = createAmlHttpServer({
     mode: "enforce",
     failure_mode: "closed",
     max_batch_items: 50,
-    resolve_context: async (req) => {
+    resolve_context_timeout_ms: 2000,
+    resolve_context: async (req, { signal }) => {
       // Look up and validate a session through your own trusted middleware.
       // Never copy consent or privacy claims from an unauthenticated request.
-      const session = await lookupAuthenticatedSession(req);
+      const session = await lookupAuthenticatedSession(req, { signal });
       if (!session) throw new Error("session unavailable");
       return {
         consent_granted: session.consent_granted,
@@ -38,7 +39,7 @@ const server = createAmlHttpServer({
 });
 ```
 
-`lookupAuthenticatedSession` is an application function, not an ĀML API. A static `context` object may be configured instead of `resolve_context`; the two are mutually exclusive. The server snapshots static context at startup. A resolver error or invalid result returns `503 trusted_context_unavailable` without using caller-supplied context.
+`lookupAuthenticatedSession` is an application function, not an ĀML API. A static `context` object may be configured instead of `resolve_context`; the two are mutually exclusive. The server snapshots static context at startup. A resolver error, timeout, or invalid result returns `503 trusted_context_unavailable` without using caller-supplied context. The resolver deadline defaults to 5000 ms for all three gateways; `resolve_context_timeout_ms` must be a positive safe integer. A deadline aborts the optional `{ signal }` passed to the callback. Forward it to cancellable database/network operations. A callback that ignores the signal can continue its own work after the HTTP response ends.
 
 In locked mode, `POST /v1/deployment/evaluate` and `/v1/deployment/batch` return `policy_source: "server"`. The batch ceiling comes from `max_batch_items` (default 100). Caller attempts to supply `max_items`, `timestamp`, `profile`, `mode`, `failure_mode`, or `context` are rejected. `POST /v1/evaluate` and `/v1/deployment/canary` are disabled in this mode. Receipt and witness verification endpoints remain available.
 

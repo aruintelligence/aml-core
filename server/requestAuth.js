@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { DEFAULT_TRUSTED_CALLBACK_TIMEOUT_MS, runTrustedCallback, validateTrustedCallbackTimeout } from "./trustedCallback.js";
 
 const error = (message, statusCode) => Object.assign(new Error(message), { statusCode });
 const bearerToken = /^[A-Za-z0-9._~+\/-]+=*$/;
@@ -6,14 +7,15 @@ const bearerToken = /^[A-Za-z0-9._~+\/-]+=*$/;
 // Shared, opt-in ingress guard. A callback can delegate identity to an
 // application's trusted authentication layer; a bearer token is for bounded
 // local or reverse-proxy deployments, never a replacement for transport TLS.
-export function createRequestAuthenticator(config) {
+export function createRequestAuthenticator(config, { timeout_ms = DEFAULT_TRUSTED_CALLBACK_TIMEOUT_MS } = {}) {
+  validateTrustedCallbackTimeout(timeout_ms, "auth_timeout_ms");
   if (config == null) return null;
 
   if (typeof config === "function") {
     return async (req) => {
       let allowed;
       try {
-        allowed = await config(req);
+        allowed = await runTrustedCallback(config, req, timeout_ms);
       } catch {
         throw error("authentication_unavailable", 503);
       }

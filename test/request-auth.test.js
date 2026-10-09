@@ -42,6 +42,19 @@ test("callback guard requires explicit true and masks internal failures", async 
   });
 });
 
+test("callback guard bounds stalled authentication and signals cancellation", async () => {
+  let signal;
+  const authorize = createRequestAuthenticator(async (_req, controls) => {
+    signal = controls.signal;
+    return new Promise(() => {});
+  }, { timeout_ms: 10 });
+  await assert.rejects(authorize(request(undefined, [])), {
+    message: "authentication_unavailable", statusCode: 503
+  });
+  assert.equal(signal.aborted, true);
+  assert.throws(() => createRequestAuthenticator(null, { timeout_ms: 0 }), /auth_timeout_ms/);
+});
+
 test("weak or malformed authentication configuration fails at startup", () => {
   assert.throws(() => createRequestAuthenticator({ bearer_token: "short" }), /32-4096/);
   assert.throws(() => createRequestAuthenticator({ bearer_token: token, typo: true }), /request_auth/);
