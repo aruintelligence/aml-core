@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test checks/demo.mjs"
   },
   "dependencies": {
     "aml-core": "file:../..",
