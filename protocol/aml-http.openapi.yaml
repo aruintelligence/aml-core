@@ -6,6 +6,7 @@ info:
     Reference HTTP contract for evaluating machine intent through the ĀML accountability pipeline,
     verifying execution receipts, verifying challenge-bound browser witness bundles, and checking
     official AML brand-authorization trust. The contract does not imply hosted service availability.
+    When request_auth is configured, POST endpoints require bearer authentication.
 servers:
   - url: http://127.0.0.1:8787
 paths:
@@ -76,6 +77,171 @@ paths:
                     type: object
         '400':
           description: Invalid request or AML evaluation error
+        '413':
+          description: Request body exceeds configured size limit
+  /v1/deployment/evaluate:
+    post:
+      summary: Evaluate intent through the deployment firewall
+      description: >-
+        Returns both the AML decision and the effective deployment decision. In shadow mode,
+        effective_allowed is true even when AML would suppress content. An evaluation error returns
+        422 with a decision governed by failure_mode; a client must inspect effective_allowed and
+        evaluation_error. With locked_policy, the server owns profile, mode, failure_mode, context,
+        and timestamp, and rejects caller overrides, including explicit null values.
+      security:
+        - {}
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [intent]
+              properties:
+                intent:
+                  type: object
+                profile:
+                  type: string
+                  default: human_first
+                mode:
+                  type: string
+                  enum: [enforce, shadow]
+                  default: enforce
+                failure_mode:
+                  type: string
+                  enum: [closed, open]
+                  default: closed
+                context:
+                  type: object
+                timestamp:
+                  type: string
+                stream_id:
+                  type: string
+      responses:
+        '200':
+          description: Deployment evaluation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentEvaluation'
+        '422':
+          description: Evaluation failed; the response still carries the effective decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentEvaluation'
+        '400':
+          description: Invalid request
+        '401':
+          description: Authentication required or bearer token rejected when request_auth is configured
+        '403':
+          description: Caller attempted to override a server-owned control under locked_policy
+        '413':
+          description: Request body exceeds configured size limit
+        '503':
+          description: Trusted context or authentication service unavailable
+  /v1/deployment/batch:
+    post:
+      summary: Evaluate multiple intents under one deployment policy
+      description: >-
+        The server limits batch size before evaluation. Unlocked max_batch_items defaults to 100;
+        caller max_items cannot raise that ceiling. With locked_policy, the server owns controls
+        and max_batch_items (default 100), and rejects caller controls including max_items.
+        Each result carries its own decision, error, and receipt hash when available.
+      security:
+        - {}
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [intents]
+              properties:
+                intents:
+                  type: array
+                  items:
+                    type: object
+                profile:
+                  type: string
+                  default: human_first
+                mode:
+                  type: string
+                  enum: [enforce, shadow]
+                  default: enforce
+                failure_mode:
+                  type: string
+                  enum: [closed, open]
+                  default: closed
+                context:
+                  type: object
+                timestamp:
+                  type: string
+                max_items:
+                  type: integer
+                  minimum: 1
+                  description: Optional caller limit in unlocked mode; cannot increase the server ceiling.
+      responses:
+        '200':
+          description: Batch evaluated with aggregate counts and per-intent evidence
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentBatch'
+        '400':
+          description: Invalid request or batch options
+        '401':
+          description: Authentication required or bearer token rejected when request_auth is configured
+        '403':
+          description: Caller attempted to override a server-owned control under locked_policy
+        '413':
+          description: Batch exceeds server ceiling or request body exceeds configured size limit
+        '503':
+          description: Trusted context or authentication service unavailable
+  /v1/deployment/canary:
+    post:
+      summary: Compare baseline and candidate policy profiles for an intent
+      description: >-
+        Reports decision differences without declaring either profile correct. This endpoint is
+        disabled with locked_policy because callers can select profiles and context.
+      security:
+        - {}
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [intent]
+              properties:
+                intent:
+                  type: object
+                baseline_profile:
+                  type: string
+                  default: calm_default
+                candidate_profile:
+                  type: string
+                  default: human_first
+                context:
+                  type: object
+                timestamp:
+                  type: string
+      responses:
+        '200':
+          description: Policy comparison and receipt evidence
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyCanary'
+        '400':
+          description: Invalid request or evaluation error
+        '401':
+          description: Authentication required or bearer token rejected when request_auth is configured
+        '403':
+          description: Endpoint disabled under locked_policy
         '413':
           description: Request body exceeds configured size limit
   /v1/verify-receipt:
@@ -167,3 +333,132 @@ paths:
           description: Credential is not officially trusted, is invalid, expired, revoked, or signed by an untrusted key
         '400':
           description: Invalid request
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Optional server configuration; required for POST operations when request_auth is configured.
+  schemas:
+    DeploymentEvaluation:
+      type: object
+      required: [protocol, policy_source, mode, failure_mode, aml_allowed, effective_allowed, would_suppress, evaluation_error, selected_render, receipt]
+      properties:
+        protocol:
+          const: aml-http-deployment-evaluation/1
+        policy_source:
+          type: string
+          enum: [server, request_or_default]
+        mode:
+          type: string
+          enum: [enforce, shadow]
+        failure_mode:
+          type: string
+          enum: [closed, open]
+        aml_allowed:
+          type: [boolean, 'null']
+        effective_allowed:
+          type: boolean
+        would_suppress:
+          type: boolean
+        evaluation_error:
+          type: [object, 'null']
+        selected_render:
+          type: [object, 'null']
+        receipt:
+          type: [object, 'null']
+    DeploymentBatch:
+      type: object
+      required: [protocol, policy_source, runtime_protocol, mode, failure_mode, total, aml_allowed, aml_suppressed, evaluation_errors, effective_allowed, results]
+      properties:
+        protocol:
+          const: aml-http-deployment-batch/1
+        policy_source:
+          type: string
+          enum: [server, request_or_default]
+        runtime_protocol:
+          type: string
+        mode:
+          type: string
+          enum: [enforce, shadow]
+        failure_mode:
+          type: string
+          enum: [closed, open]
+        total:
+          type: integer
+        aml_allowed:
+          type: integer
+        aml_suppressed:
+          type: integer
+        evaluation_errors:
+          type: integer
+        effective_allowed:
+          type: integer
+        results:
+          type: array
+          items:
+            type: object
+            required: [index, aml_allowed, effective_allowed, would_suppress, evaluation_error, receipt_sha256, evaluation]
+            properties:
+              index:
+                type: integer
+              transmission:
+                description: Caller-supplied transmission identifier, if present.
+              aml_allowed:
+                type: [boolean, 'null']
+              effective_allowed:
+                type: boolean
+              would_suppress:
+                type: boolean
+              evaluation_error:
+                type: [object, 'null']
+              receipt_sha256:
+                type: [string, 'null']
+              evaluation:
+                type: object
+    PolicyCanary:
+      type: object
+      required: [protocol, runtime_protocol, baseline_profile, candidate_profile, total_decisions, changed_decisions, candidate_new_suppressions, candidate_new_allows, changes, baseline, candidate]
+      properties:
+        protocol:
+          const: aml-http-policy-canary/1
+        runtime_protocol:
+          type: string
+        baseline_profile:
+          type: string
+        candidate_profile:
+          type: string
+        total_decisions:
+          type: integer
+        changed_decisions:
+          type: integer
+        candidate_new_suppressions:
+          type: integer
+        candidate_new_allows:
+          type: integer
+        identity_ambiguity_detected:
+          type: boolean
+        ambiguous_identity_keys:
+          type: array
+          items:
+            type: object
+        changes:
+          type: array
+          items:
+            type: object
+        baseline:
+          $ref: '#/components/schemas/CanarySide'
+        candidate:
+          $ref: '#/components/schemas/CanarySide'
+    CanarySide:
+      type: object
+      required: [allowed, denied_count, receipt_sha256, receipt]
+      properties:
+        allowed:
+          type: boolean
+        denied_count:
+          type: integer
+        receipt_sha256:
+          type: string
+        receipt:
+          type: object
