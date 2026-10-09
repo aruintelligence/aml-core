@@ -27,7 +27,7 @@ export default function HomePage() {
       <ul>
         <li>{meaning.summary.allowed} allowed · {meaning.summary.suppressed} suppressed</li>
         <li>Receipt integrity: {verification.verified ? "verified" : "failed"}</li>
-        <li>Semantic diff: {diff.summary.added} added node</li>
+        <li>Semantic diff: {diff.added.filter(node => node.identifier).length} added interface node</li>
       </ul>
       <p className="hash">Receipt SHA-256: <code>{result.receipt.receipt_sha256}</code></p>
       <nav><a href="/meaning">View Meaning</a><a href="/api/receipt">Download receipt JSON</a></nav>

@@ -11,7 +11,7 @@ test("Next.js example enforces the policy and exposes bound evidence", () => {
   assert.equal(verification.verified, true);
   assert.equal(meaning.summary.allowed, 1);
   assert.equal(meaning.summary.suppressed, 1);
-  assert.equal(diff.summary.added, 1);
+  assert.equal(diff.added.filter(node => node.identifier === "pressure").length, 1);
   assert.equal(diff.identity_ambiguity_detected, false);
   const mutated = structuredClone(result.receipt);
   mutated.selected_render.html = "changed after evaluation";
