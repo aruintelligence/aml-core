@@ -10,7 +10,7 @@ The reference HTTP service normally accepts `profile`, `mode`, `failure_mode`, `
 AML_LOCKED_POLICY=1 node bin/aml-serve.js
 ```
 
-This binds to `127.0.0.1` by default, uses `human_first`, `enforce`, `closed`, and an empty trusted context. Consent-gated content remains suppressed until an embedding application supplies a trusted context resolver. The CLI flag does not add authentication or TLS.
+This binds to `127.0.0.1` by default, uses `human_first`, `enforce`, `closed`, and an empty trusted context. Consent-gated content remains suppressed until an embedding application supplies a trusted context resolver. Set `AML_API_TOKEN` for the opt-in [HTTP ingress guard](HTTP_INGRESS_AUTH.md); the CLI flag does not add authentication or TLS by itself.
 
 ## Embedding API
 
@@ -42,4 +42,4 @@ const server = createAmlHttpServer({
 
 In locked mode, `POST /v1/deployment/evaluate` and `/v1/deployment/batch` return `policy_source: "server"`. The batch ceiling comes from `max_batch_items` (default 100). Caller attempts to supply `max_items`, `timestamp`, `profile`, `mode`, `failure_mode`, or `context` are rejected. `POST /v1/evaluate` and `/v1/deployment/canary` are disabled in this mode. Receipt and witness verification endpoints remain available.
 
-The caller still supplies **intent**, which must be treated as untrusted input. The application must use `effective_allowed` before rendering and must prevent alternate render paths that bypass this service. This option does not provide authentication, authorization, TLS, rate limiting, secure session validation, or proof that declared intent is truthful. Review those controls with the [security evaluation checklist](SECURITY_EVALUATION_CHECKLIST.md) before production use.
+The caller still supplies **intent**, which must be treated as untrusted input. The application must use `effective_allowed` before rendering and must prevent alternate render paths that bypass this service. This option does not provide authentication, authorization, TLS, rate limiting, secure session validation, or proof that declared intent is truthful. Configure ingress authentication separately and review the remaining controls with the [security evaluation checklist](SECURITY_EVALUATION_CHECKLIST.md) before production use.

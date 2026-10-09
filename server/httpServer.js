@@ -1,6 +1,7 @@
 import http from "node:http";
 import { readJson } from "./readJson.js";
 import { createLockedHttpPolicy } from "./lockedPolicy.js";
+import { createRequestAuthenticator } from "./requestAuth.js";
 import { executeAccountableIntent, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { verifyOfficialBrandAuthorization } from "../runtime/brandTrust.js";
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
@@ -16,7 +17,7 @@ function send(res, status, body, headers = {}) {
     "content-length": Buffer.byteLength(payload),
     "cache-control": "no-store",
     ...headers,
-    ...(status === 413 ? { connection: "close" } : {})
+    ...([401, 413, 503].includes(status) ? { connection: "close" } : {})
   });
   res.end(payload);
 }
@@ -52,6 +53,7 @@ export function createAmlHttpServer(options = {}) {
   const allowedOrigin = options.allowed_origin ?? null;
   const trustRoots = options.brand_trust_roots ?? loadBrandTrustRoots();
   const lockedPolicy = createLockedHttpPolicy(options.locked_policy, defaultProfile);
+  const authorize = createRequestAuthenticator(options.request_auth);
 
   return http.createServer(async (req, res) => {
     const headers = allowedOrigin ? { "access-control-allow-origin": allowedOrigin } : {};
@@ -73,9 +75,17 @@ export function createAmlHttpServer(options = {}) {
       res.writeHead(204, {
         ...headers,
         "access-control-allow-methods": "GET,POST,OPTIONS",
-        "access-control-allow-headers": "content-type"
+        "access-control-allow-headers": authorize ? "content-type, authorization" : "content-type"
       });
       return res.end();
+    }
+
+    if (authorize && req.method === "POST") {
+      try {
+        await authorize(req);
+      } catch (error) {
+        return send(res, error.statusCode ?? 503, { error: error.message }, headers);
+      }
     }
 
     if (lockedPolicy && req.method === "POST" &&
