@@ -21,6 +21,10 @@ export function createAgentUiGateway(options = {}) {
   if (!Number.isSafeInteger(maxBodyBytes) || maxBodyBytes < 1) {
     throw new TypeError("max_body_bytes must be a positive safe integer");
   }
+  const maxComponents = options.max_components ?? 256;
+  if (!Number.isSafeInteger(maxComponents) || maxComponents < 1) {
+    throw new TypeError("max_components must be a positive safe integer");
+  }
   const defaultProfile = options.default_profile ?? "calm_default";
   const defaultMode = options.default_mode ?? "enforce";
   const defaultFailureMode = options.default_failure_mode ?? "closed";
@@ -57,6 +61,12 @@ export function createAgentUiGateway(options = {}) {
       try {
         const body = await readJson(req, maxBodyBytes);
         const envelope = body.envelope ?? body;
+        if (Array.isArray(envelope?.components) && envelope.components.length > maxComponents) {
+          return send(res, 413, {
+            protocol: "aml-agent-ui-gateway-error/1",
+            error: "component_limit_exceeded"
+          });
+        }
         const controls = lockedPolicy ? await lockedPolicy.select(body, req) : {
           profile: body.profile ?? defaultProfile,
           mode: body.mode ?? defaultMode,

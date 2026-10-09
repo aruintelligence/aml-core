@@ -53,6 +53,10 @@ export function createAmlHttpServer(options = {}) {
   const allowedOrigin = options.allowed_origin ?? null;
   const trustRoots = options.brand_trust_roots ?? loadBrandTrustRoots();
   const lockedPolicy = createLockedHttpPolicy(options.locked_policy, defaultProfile);
+  const maxBatchItems = options.max_batch_items ?? 100;
+  if (!Number.isSafeInteger(maxBatchItems) || maxBatchItems < 1) {
+    throw new TypeError("max_batch_items must be a positive safe integer");
+  }
   const authorize = createRequestAuthenticator(options.request_auth);
   const bearerChallenge = options.request_auth && typeof options.request_auth === "object"
     ? { "www-authenticate": 'Bearer realm="aml"' } : {};
@@ -156,13 +160,16 @@ export function createAmlHttpServer(options = {}) {
       try {
         const body = await readJson(req, maxBodyBytes);
         if (!Array.isArray(body.intents)) return send(res, 400, { error: "intents_array_required" }, headers);
+        if (!lockedPolicy && body.intents.length > maxBatchItems) {
+          return send(res, 413, { error: "batch_limit_exceeded" }, headers);
+        }
         const controls = lockedPolicy ? await lockedPolicy.select(body, req) : {
           profile: body.profile ?? defaultProfile,
           context: body.context ?? {},
           mode: body.mode ?? "enforce",
           failure_mode: body.failure_mode ?? "closed",
           timestamp: body.timestamp,
-          max_items: body.max_items ?? 100
+          max_items: body.max_items ?? maxBatchItems
         };
         const result = evaluateInterfaceBatch(body.intents, {
           ...controls

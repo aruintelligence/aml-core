@@ -42,6 +42,8 @@ const server = createAmlHttpServer({
 
 In locked mode, `POST /v1/deployment/evaluate` and `/v1/deployment/batch` return `policy_source: "server"`. The batch ceiling comes from `max_batch_items` (default 100). Caller attempts to supply `max_items`, `timestamp`, `profile`, `mode`, `failure_mode`, or `context` are rejected. `POST /v1/evaluate` and `/v1/deployment/canary` are disabled in this mode. Receipt and witness verification endpoints remain available.
 
+Without `locked_policy`, the HTTP service also applies a server-owned `max_batch_items` ceiling (default 100) before evaluating intents. A caller cannot raise this ceiling with `max_items`; configure `max_batch_items` on `createAmlHttpServer` to change the unlocked ceiling. The Agent UI gateway separately limits an envelope to 256 components by default; set `max_components` on `createAgentUiGateway` for a different server-owned limit. Oversized unlocked batches or Agent UI envelopes return HTTP 413.
+
 ## Agent UI and governance stream gateways
 
 The same opt-in `locked_policy` option is available in `createAgentUiGateway` and `createGovernanceStreamGateway`. The Agent UI gateway rejects caller-supplied `profile`, `mode`, `failure_mode`, `context`, and `timestamp` (even `null`), resolves server context, and returns `policy_source: "server"`. The stream gateway rejects those controls in the open message and each subsequent message, rejects policy transition messages entirely, and reports `policy_source: "server"` in its accepted open event. An invalid message after the open event emits an `aml-governance-stream-error/1` event and ends the NDJSON stream; errors before acceptance return JSON with an HTTP error status.
