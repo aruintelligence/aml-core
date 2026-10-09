@@ -44,6 +44,34 @@ test("governance stream bounds stalled authentication before opening NDJSON", as
   assert.equal((await response.json()).error, "authentication_unavailable");
 });
 
+test("governance stream gateway rejects excess in-flight work before opening NDJSON", async (t) => {
+  let release;
+  let entered;
+  const held = new Promise(resolve => { release = resolve; });
+  const started = new Promise(resolve => { entered = resolve; });
+  const server = createGovernanceStreamGateway({
+    max_inflight_requests: 1,
+    request_auth: async () => { entered(); await held; return true; }
+  });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const url = `http://127.0.0.1:${server.address().port}/v1/governance/stream`;
+  const post = () => fetch(url, { method: "POST", body: fixture });
+  const first = post();
+  await started;
+  const overloaded = await post();
+  assert.equal(overloaded.status, 503);
+  assert.match(overloaded.headers.get("content-type"), /application\/json/);
+  assert.equal((await overloaded.json()).error, "server_busy");
+  release();
+  const accepted = await first;
+  assert.equal(accepted.status, 200);
+  await accepted.text();
+  const retry = await post();
+  assert.equal(retry.status, 200);
+  await retry.text();
+});
+
 test("governance stream locked policy rejects open, node, and transition overrides", async (t) => {
   const server = createGovernanceStreamGateway({
     request_auth: { bearer_token: token },

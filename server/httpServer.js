@@ -2,6 +2,7 @@ import http from "node:http";
 import { readJson } from "./readJson.js";
 import { createLockedHttpPolicy } from "./lockedPolicy.js";
 import { createRequestAuthenticator } from "./requestAuth.js";
+import { createInflightLimit } from "./inflightLimit.js";
 import { executeAccountableIntent, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { verifyOfficialBrandAuthorization } from "../runtime/brandTrust.js";
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
@@ -58,6 +59,7 @@ export function createAmlHttpServer(options = {}) {
     throw new TypeError("max_batch_items must be a positive safe integer");
   }
   const authorize = createRequestAuthenticator(options.request_auth, { timeout_ms: options.auth_timeout_ms });
+  const inflight = createInflightLimit(options.max_inflight_requests);
   const bearerChallenge = options.request_auth && typeof options.request_auth === "object"
     ? { "www-authenticate": 'Bearer realm="aml"' } : {};
 
@@ -84,6 +86,11 @@ export function createAmlHttpServer(options = {}) {
         "access-control-allow-headers": authorize ? "content-type, authorization" : "content-type"
       });
       return res.end();
+    }
+
+    if (req.method === "POST" && !inflight.acquire(res)) {
+      req.pause();
+      return send(res, 503, { error: "server_busy" }, { ...headers, "retry-after": "1" });
     }
 
     if (authorize && req.method === "POST") {

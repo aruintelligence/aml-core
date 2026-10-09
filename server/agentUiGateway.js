@@ -2,6 +2,7 @@ import http from "node:http";
 import { evaluateAgentUI, AML_AGENT_UI_ENVELOPE, AML_AGENT_UI_RESULT } from "../adapters/agent-ui.js";
 import { readJson } from "./readJson.js";
 import { createRequestAuthenticator } from "./requestAuth.js";
+import { createInflightLimit } from "./inflightLimit.js";
 import { createLockedHttpPolicy } from "./lockedPolicy.js";
 
 function send(res, status, body, headers = {}) {
@@ -29,6 +30,7 @@ export function createAgentUiGateway(options = {}) {
   const defaultMode = options.default_mode ?? "enforce";
   const defaultFailureMode = options.default_failure_mode ?? "closed";
   const authorize = createRequestAuthenticator(options.request_auth, { timeout_ms: options.auth_timeout_ms });
+  const inflight = createInflightLimit(options.max_inflight_requests);
   const bearerChallenge = options.request_auth && typeof options.request_auth === "object"
     ? { "www-authenticate": 'Bearer realm="aml"' } : {};
   const lockedPolicy = createLockedHttpPolicy(options.locked_policy, defaultProfile);
@@ -43,6 +45,13 @@ export function createAgentUiGateway(options = {}) {
         protocol: "aml-agent-ui-gateway/1",
         accepts: AML_AGENT_UI_ENVELOPE,
         returns: AML_AGENT_UI_RESULT
+      });
+    }
+
+    if (req.method === "POST" && !inflight.acquire(res)) {
+      req.pause();
+      return send(res, 503, { protocol: "aml-agent-ui-gateway-error/1", error: "server_busy" }, {
+        "retry-after": "1"
       });
     }
 

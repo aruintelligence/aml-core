@@ -41,6 +41,32 @@ test("Agent UI gateway bounds stalled authentication before reading the envelope
   assert.equal((await response.json()).error, "authentication_unavailable");
 });
 
+test("Agent UI gateway rejects excess in-flight work", async (t) => {
+  let release;
+  let entered;
+  const held = new Promise(resolve => { release = resolve; });
+  const started = new Promise(resolve => { entered = resolve; });
+  const server = createAgentUiGateway({
+    max_inflight_requests: 1,
+    request_auth: async () => { entered(); await held; return true; }
+  });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const url = `http://127.0.0.1:${server.address().port}/v1/agent-ui/evaluate`;
+  const post = () => fetch(url, { method: "POST", body: JSON.stringify({ envelope: vector }) });
+  const first = post();
+  await started;
+  const overloaded = await post();
+  assert.equal(overloaded.status, 503);
+  assert.equal(overloaded.headers.get("retry-after"), "1");
+  assert.equal((await overloaded.json()).error, "server_busy");
+  release();
+  const completed = await first;
+  assert.equal(completed.status, 200);
+  await completed.text();
+  assert.equal((await post()).status, 200);
+});
+
 test("Agent UI locked policy rejects caller controls and selects enforce/closed on the server", async (t) => {
   const server = createAgentUiGateway({
     request_auth: { bearer_token: token },
