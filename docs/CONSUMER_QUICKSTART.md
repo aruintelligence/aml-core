@@ -17,7 +17,7 @@ npm init -y
 npm install --ignore-scripts ../aml-core/aml-core-1.3.0.tgz
 ```
 
-This is a package rehearsal, not evidence of a published registry package. Record the tag, tarball checksum, and Node version if you share a result. The stable tag provides the `aml` CLI and the API functions used below. A preview checkout from `main` is a different artifact even while its package metadata says `1.3.0`; identify its exact commit and keep it separate from stable claims.
+This is a package rehearsal, not evidence of a published registry package. Record the tag, tarball checksum, and Node version if you share a result. The stable `v1.3.0` tag resolved to commit `7c5f2ad4008fb62f6f80fac39e8e8926fdd80711` when this guide was checked; compare that target before relying on the tag. CI also packs that exact commit and runs the example below from a clean consumer directory on Node 18 and 24. A preview checkout from `main` is a different artifact even while its package metadata says `1.3.0`; identify its exact commit and keep it separate from stable claims.
 
 ## 2. Run a self-contained API example
 
