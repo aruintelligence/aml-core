@@ -306,8 +306,18 @@ Reference endpoints include:
 - `GET /health`
 - `GET /v1/capabilities`
 - `POST /v1/evaluate`
+- `POST /v1/deployment/evaluate` — deployment decision, shadow mode, failure behavior, and receipt
+- `POST /v1/deployment/batch` — bounded batch evaluation with per-intent evidence
+- `POST /v1/deployment/canary` — compare two profiles before rollout
 - `POST /v1/verify-receipt`
 - official authorization/trust verification endpoints documented in `protocol/aml-http.openapi.yaml`
+
+The deployment routes are specified in [the OpenAPI contract](protocol/aml-http.openapi.yaml).
+For an enforcement boundary, configure `locked_policy` so the server owns policy controls and
+trusted context; this disables the canary and direct `/v1/evaluate` routes. Configure
+`max_batch_items` for the unlocked server batch ceiling (100 by default). With `request_auth`,
+all POST requests require bearer authentication. See [server-owned deployment policy](docs/LOCKED_HTTP_POLICY.md)
+and [HTTP ingress authentication](docs/HTTP_INGRESS_AUTH.md).
 
 Production deployments still require normal authentication, authorization, transport security, rate limiting, logging, and secure key management.
 
