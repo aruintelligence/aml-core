@@ -82,3 +82,4 @@ export { createEvidenceRenewal, attestEvidenceRenewal, verifyEvidenceRenewalChai
 export { createEvidenceArchive, verifyEvidenceArchive } from "./runtime/evidenceArchive.js";
 export { createEvidenceMigration, verifyEvidenceMigration } from "./runtime/evidenceMigration.js";
 export { createEvidenceShards, recoverEvidenceShards } from "./runtime/evidenceShards.js";
+export { runEvidenceDrill } from "./runtime/evidenceDrill.js";
