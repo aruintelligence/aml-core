@@ -274,6 +274,8 @@ export interface EvidenceDrillReport {
 export function runEvidenceDrill(shares: [EvidenceShard, EvidenceShard, EvidenceShard],
   trustedPolicy: EvidenceMigrationTrustPolicy): EvidenceDrillReport;
 
+export function renderEvidenceDrillHtml(report: EvidenceDrillReport): string;
+
 export interface InterfaceFirewallOptions {
   profile?: string;
   context?: AmlContext;
