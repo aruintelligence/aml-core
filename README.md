@@ -78,6 +78,7 @@ For the smallest deterministic reproduction, start with:
 - [Renew its evidence](docs/EVIDENCE_RENEWAL.md) — link the original capsule into an append-only SHA3-512 chain with verifier-trusted witness quorum.
 - [Keep a cold archive](docs/EVIDENCE_ARCHIVE.md) — preserve canonical capsule and renewal bytes with an offline recovery path and externally supplied trust.
 - [Recheck a versioned handoff](docs/EVIDENCE_MIGRATION.md) — retain v1 bytes in a v2 layout and verify exact component equivalence before recovery.
+- [Repair a cold storage handoff](docs/EVIDENCE_SHARDS.md) — reconstruct canonical handoff bytes from any two of three separately stored shares, then recheck external trust.
 - [Undeniable proof demo](demos/undeniable-proof/)
 - [Benchmarking protocol](BENCHMARKING.md)
 - [Interoperability challenge](INTEROPERABILITY.md)
