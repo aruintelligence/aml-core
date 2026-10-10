@@ -27,7 +27,7 @@
   <g font-family="Arial, Helvetica, sans-serif">
     <rect x="544" y="54" width="270" height="104" rx="18" fill="#101f33" stroke="#35516a"/>
     <text x="565" y="84" fill="#8baabd" font-size="14" font-weight="700" letter-spacing="2">01 / INTENT</text>
-    <text x="565" y="116" fill="#edf7ff" font-size="20" font-weight="700">An element asks to render</text>
+    <text x="565" y="116" fill="#edf7ff" font-size="20" font-weight="700">Element requests display</text>
     <text x="565" y="143" fill="#a9bdd0" font-size="15">attention 5 · restoration 1</text>
     <path d="M814 106 H850" stroke="#7df9ff" stroke-width="2"/>
     <path d="m841 99 9 7-9 7" fill="none" stroke="#7df9ff" stroke-width="2"/>
