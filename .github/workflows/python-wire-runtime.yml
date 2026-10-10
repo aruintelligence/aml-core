@@ -18,6 +18,12 @@ on:
       - "independent/vectors/migration-v1/**"
       - "runtime/evidenceMigration.js"
       - "docs/EVIDENCE_MIGRATION.md"
+      - "independent/python/recover_evidence_shards.py"
+      - "scripts/check-evidence-shards-python.mjs"
+      - "scripts/check-evidence-shards-vector.mjs"
+      - "independent/vectors/shards-v1/**"
+      - "runtime/evidenceShards.js"
+      - "docs/EVIDENCE_SHARDS.md"
       - "independent/vectors/archive-v1/**"
       - "runtime/evidenceArchive.js"
       - "runtime/evidenceRenewal.js"
@@ -42,6 +48,12 @@ on:
       - "independent/vectors/migration-v1/**"
       - "runtime/evidenceMigration.js"
       - "docs/EVIDENCE_MIGRATION.md"
+      - "independent/python/recover_evidence_shards.py"
+      - "scripts/check-evidence-shards-python.mjs"
+      - "scripts/check-evidence-shards-vector.mjs"
+      - "independent/vectors/shards-v1/**"
+      - "runtime/evidenceShards.js"
+      - "docs/EVIDENCE_SHARDS.md"
       - "independent/vectors/archive-v1/**"
       - "runtime/evidenceArchive.js"
       - "runtime/evidenceRenewal.js"
@@ -80,3 +92,7 @@ jobs:
         run: node scripts/check-evidence-migration-vector.mjs
       - name: Verify migration and recovery across JavaScript and Python
         run: node scripts/check-evidence-migration-python.mjs
+      - name: Check fixed cold storage share bytes and digests
+        run: node scripts/check-evidence-shards-vector.mjs
+      - name: Recover cold storage shares across JavaScript and Python
+        run: node scripts/check-evidence-shards-python.mjs
