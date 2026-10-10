@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independent offline verifier for the unsigned-capsule ĀML archive subset.
+"""Independent offline verifier for the ĀML archive JSON subset.
 
 Uses Python's JSON/hash libraries and cryptography's Ed25519 implementation,
 not the JavaScript archive or renewal modules. Trust comes only from a second
@@ -147,14 +147,14 @@ def verify(archive, policy):
     capsule = component(archive, "capsule_base64", "capsule_sha3_512")
     entries = component(archive, "renewals_base64", "renewals_sha3_512")
     component(archive, "policy_hint_base64", "policy_hint_sha3_512")  # Never used as authority.
-    require(isinstance(capsule, dict) and verify_capsule(capsule)["verified"], "invalid_or_unsupported_capsule")
+    require(isinstance(capsule, dict) and verify_capsule(capsule, policy)["verified"], "invalid_or_unsupported_capsule")
     chain_head, freshness_bound = verify_chain(capsule, entries, policy)
     summary = {"receipt_sha256": capsule["receipt"]["receipt_sha256"], "renewal_count": len(entries), "head_root_sha3_512": chain_head}
     require(canonical(archive["summary"]) == canonical(summary), "summary_mismatch")
     return {"protocol": "aml-evidence-archive-python-report/1", "verified": True, "policy_hint_trusted": False,
             "receipt_sha256": summary["receipt_sha256"], "renewal_count": len(entries),
             "head_root_sha3_512": chain_head, "freshness_bound": freshness_bound,
-            "scope": "Project-authored cross-runtime check of unsigned capsules and verifier-trusted Ed25519 renewals; not independent witnessing or historical truth."}
+            "scope": "Project-authored cross-runtime check of capsules and verifier-trusted Ed25519 renewals; signed v1.1 receipts require separately trusted receipt keys. No independent witnessing or historical truth."}
 
 
 if __name__ == "__main__":
