@@ -11,6 +11,8 @@ on:
       - "scripts/check-evidence-capsule-python.mjs"
       - "independent/python/verify_evidence_archive.py"
       - "scripts/check-evidence-archive-python.mjs"
+      - "scripts/check-evidence-archive-vector.mjs"
+      - "independent/vectors/archive-v1/**"
       - "runtime/evidenceArchive.js"
       - "runtime/evidenceRenewal.js"
       - "docs/EVIDENCE_ARCHIVE.md"
@@ -27,6 +29,8 @@ on:
       - "scripts/check-evidence-capsule-python.mjs"
       - "independent/python/verify_evidence_archive.py"
       - "scripts/check-evidence-archive-python.mjs"
+      - "scripts/check-evidence-archive-vector.mjs"
+      - "independent/vectors/archive-v1/**"
       - "runtime/evidenceArchive.js"
       - "runtime/evidenceRenewal.js"
       - "docs/EVIDENCE_ARCHIVE.md"
@@ -52,7 +56,11 @@ jobs:
         run: node scripts/check-python-wire-runtime.mjs
       - name: Verify evidence capsules across JavaScript and Python
         run: node scripts/check-evidence-capsule-python.mjs
+      - name: Check fixed archive wire bytes and digests
+        run: node scripts/check-evidence-archive-vector.mjs
       - name: Install Python Ed25519 verifier dependency
         run: python -m pip install 'cryptography>=42,<51'
       - name: Verify archives and renewal witnesses across JavaScript and Python
         run: node scripts/check-evidence-archive-python.mjs
+      - name: Verify fixed archive vector with Python
+        run: python independent/python/verify_evidence_archive.py independent/vectors/archive-v1/archive.json independent/vectors/archive-v1/trusted-policy.json
