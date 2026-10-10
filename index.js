@@ -78,3 +78,4 @@ export { buildGitHubAttestationVerifyArgs, verifyGitHubSemanticAttestationEviden
 export { getCompletionItems, getHoverInfo, getLanguageCatalog } from "./tooling/languageService.js";
 export { runAmlDoctor } from "./tooling/doctor.js";
 export { createEvidenceCapsule, verifyEvidenceCapsule } from "./runtime/evidenceCapsule.js";
+export { createEvidenceRenewal, attestEvidenceRenewal, verifyEvidenceRenewalChain } from "./runtime/evidenceRenewal.js";
