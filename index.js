@@ -84,3 +84,4 @@ export { createEvidenceMigration, verifyEvidenceMigration } from "./runtime/evid
 export { createEvidenceShards, recoverEvidenceShards } from "./runtime/evidenceShards.js";
 export { runEvidenceDrill } from "./runtime/evidenceDrill.js";
 export { repairEvidenceShare } from "./runtime/evidenceShards.js";
+export { renderEvidenceDrillHtml } from "./runtime/evidenceDrillHtml.js";
