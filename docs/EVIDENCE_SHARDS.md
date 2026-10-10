@@ -13,4 +13,6 @@ The create command refuses an existing directory. Recovery accepts two or three 
 
 The [fixed share wire vector](../independent/vectors/shards-v1/README.md) is recovered independently by Python. CI checks all three pairs, a damaged file, rehashed corruption, rollback, overwrite refusal, signed receipts, missing receipt trust, and revocation. The independent Python reader verifies the full versioned handoff and its original archive after reconstruction.
 
+Run the [three-pair recovery drill](EVIDENCE_DRILL.md) against the copies actually stored in separate locations. Its readiness report flags a damaged set while recovery from the remaining two is still possible.
+
 This is **redundancy, not secret sharing**. A single share reveals part of the handoff; two shares reveal all of it. Encrypt separately when confidentiality is needed. Self-contained hashes detect corruption but anyone can recompute them. Receipt signers, witness keys, revocations, and a previously accepted head must come from outside the share set. Two files on one failing device do not provide useful physical resilience, so place copies in distinct failure domains and rehearse recovery. This prototype does not establish historical truth, independent witnesses, storage durability, or a 5,000-year cryptographic guarantee.

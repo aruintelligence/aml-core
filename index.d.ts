@@ -240,6 +240,35 @@ export function recoverEvidenceShards(shares: EvidenceShard[], trustedPolicy: Ev
       payload_sha512: string; shares_examined: number; valid_pairs: number }
   | { recovered: false; reason: string; policy_hint_trusted: false };
 
+export interface EvidenceDrillReport {
+  protocol: "aml-evidence-recovery-drill/1";
+  claim_boundary: string;
+  ready: boolean;
+  recovery_possible: boolean;
+  health: "ready" | "degraded" | "unrecoverable" | "unbounded" | "conflict";
+  policy_hint_trusted: false;
+  policy_sha256: string | null;
+  subject: null | {
+    payload_sha512: string;
+    migration_root_sha3_512: string;
+    source_archive_root_sha3_512: string;
+    accepted_head_bound: boolean;
+  };
+  passed_pairs: number;
+  required_pairs: 3;
+  pairs: Array<{
+    shares: [number, number];
+    recovered: boolean;
+    reason?: string;
+    payload_sha512?: string;
+    migration_root_sha3_512?: string;
+  }>;
+  reason: string | null;
+}
+
+export function runEvidenceDrill(shares: [EvidenceShard, EvidenceShard, EvidenceShard],
+  trustedPolicy: EvidenceMigrationTrustPolicy): EvidenceDrillReport;
+
 export interface InterfaceFirewallOptions {
   profile?: string;
   context?: AmlContext;

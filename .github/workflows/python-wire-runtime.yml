@@ -24,6 +24,12 @@ on:
       - "independent/vectors/shards-v1/**"
       - "runtime/evidenceShards.js"
       - "docs/EVIDENCE_SHARDS.md"
+      - "independent/python/evidence_drill.py"
+      - "scripts/check-evidence-drill-python.mjs"
+      - "independent/vectors/drill-v1/**"
+      - "runtime/evidenceDrill.js"
+      - "scripts/evidence-drill.mjs"
+      - "docs/EVIDENCE_DRILL.md"
       - "independent/vectors/archive-v1/**"
       - "runtime/evidenceArchive.js"
       - "runtime/evidenceRenewal.js"
@@ -54,6 +60,12 @@ on:
       - "independent/vectors/shards-v1/**"
       - "runtime/evidenceShards.js"
       - "docs/EVIDENCE_SHARDS.md"
+      - "independent/python/evidence_drill.py"
+      - "scripts/check-evidence-drill-python.mjs"
+      - "independent/vectors/drill-v1/**"
+      - "runtime/evidenceDrill.js"
+      - "scripts/evidence-drill.mjs"
+      - "docs/EVIDENCE_DRILL.md"
       - "independent/vectors/archive-v1/**"
       - "runtime/evidenceArchive.js"
       - "runtime/evidenceRenewal.js"
@@ -96,3 +108,5 @@ jobs:
         run: node scripts/check-evidence-shards-vector.mjs
       - name: Recover cold storage shares across JavaScript and Python
         run: node scripts/check-evidence-shards-python.mjs
+      - name: Compare deterministic recovery drill reports across runtimes
+        run: node scripts/check-evidence-drill-python.mjs
