@@ -77,3 +77,4 @@ export { RELEASE_AUTHORIZATION_PROFILE_PROTOCOL, RELEASE_AUTHORIZATION_PROFILE_M
 export { buildGitHubAttestationVerifyArgs, verifyGitHubSemanticAttestationEvidence } from "./tooling/githubSemanticAttestation.js";
 export { getCompletionItems, getHoverInfo, getLanguageCatalog } from "./tooling/languageService.js";
 export { runAmlDoctor } from "./tooling/doctor.js";
+export { createEvidenceCapsule, verifyEvidenceCapsule } from "./runtime/evidenceCapsule.js";
