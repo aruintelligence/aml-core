@@ -12,6 +12,12 @@ on:
       - "independent/python/verify_evidence_archive.py"
       - "scripts/check-evidence-archive-python.mjs"
       - "scripts/check-evidence-archive-vector.mjs"
+      - "independent/python/verify_evidence_migration.py"
+      - "scripts/check-evidence-migration-python.mjs"
+      - "scripts/check-evidence-migration-vector.mjs"
+      - "independent/vectors/migration-v1/**"
+      - "runtime/evidenceMigration.js"
+      - "docs/EVIDENCE_MIGRATION.md"
       - "independent/vectors/archive-v1/**"
       - "runtime/evidenceArchive.js"
       - "runtime/evidenceRenewal.js"
@@ -30,6 +36,12 @@ on:
       - "independent/python/verify_evidence_archive.py"
       - "scripts/check-evidence-archive-python.mjs"
       - "scripts/check-evidence-archive-vector.mjs"
+      - "independent/python/verify_evidence_migration.py"
+      - "scripts/check-evidence-migration-python.mjs"
+      - "scripts/check-evidence-migration-vector.mjs"
+      - "independent/vectors/migration-v1/**"
+      - "runtime/evidenceMigration.js"
+      - "docs/EVIDENCE_MIGRATION.md"
       - "independent/vectors/archive-v1/**"
       - "runtime/evidenceArchive.js"
       - "runtime/evidenceRenewal.js"
@@ -64,3 +76,7 @@ jobs:
         run: node scripts/check-evidence-archive-python.mjs
       - name: Verify fixed archive vector with Python
         run: python independent/python/verify_evidence_archive.py independent/vectors/archive-v1/archive.json independent/vectors/archive-v1/trusted-policy.json
+      - name: Check fixed migration handoff bytes and digests
+        run: node scripts/check-evidence-migration-vector.mjs
+      - name: Verify migration and recovery across JavaScript and Python
+        run: node scripts/check-evidence-migration-python.mjs
