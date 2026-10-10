@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">ĀML: from intent to evidence</title>
+  <desc id="desc">An illustrative interface decision. Declared attention cost 5 and restoration value 1 enter a policy gate, which suppresses the element and produces an inspectable receipt.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#0d1e37"/>
+      <stop offset=".55" stop-color="#080e1d"/>
+      <stop offset="1" stop-color="#061923"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#7df9ff"/>
+      <stop offset="1" stop-color="#f2ce72"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="360" rx="26" fill="url(#background)"/>
+  <rect x="1" y="1" width="1198" height="358" rx="25" fill="none" stroke="#35516a"/>
+  <path d="M0 302 C268 240 390 393 612 309 S1012 279 1200 230" fill="none" stroke="#1b5664" opacity=".38"/>
+  <circle cx="1126" cy="69" r="124" fill="#1c9da8" opacity=".07"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="54" y="65" fill="#7df9ff" font-size="17" font-weight="700" letter-spacing="4">ĀML™ / INTERFACE FIREWALL</text>
+    <text x="54" y="133" fill="#f5f7ff" font-size="49" font-weight="700">From intent</text>
+    <text x="54" y="189" fill="url(#accent)" font-size="49" font-weight="700">to evidence.</text>
+    <text x="56" y="231" fill="#bdcadd" font-size="19">Declare meaning. Apply policy.</text>
+    <text x="56" y="259" fill="#bdcadd" font-size="19">Inspect the decision.</text>
+    <text x="56" y="324" fill="#91a9bc" font-size="14">Research prototype · declared inputs · reproducible result</text>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <rect x="544" y="54" width="270" height="104" rx="18" fill="#101f33" stroke="#35516a"/>
+    <text x="565" y="84" fill="#8baabd" font-size="14" font-weight="700" letter-spacing="2">01 / INTENT</text>
+    <text x="565" y="116" fill="#edf7ff" font-size="20" font-weight="700">An element asks to render</text>
+    <text x="565" y="143" fill="#a9bdd0" font-size="15">attention 5 · restoration 1</text>
+    <path d="M814 106 H850" stroke="#7df9ff" stroke-width="2"/>
+    <path d="m841 99 9 7-9 7" fill="none" stroke="#7df9ff" stroke-width="2"/>
+    <rect x="852" y="54" width="294" height="104" rx="18" fill="#241722" stroke="#a64b63"/>
+    <text x="873" y="84" fill="#ef9aab" font-size="14" font-weight="700" letter-spacing="2">02 / POLICY GATE</text>
+    <text x="873" y="125" fill="#ff8198" font-size="31" font-weight="700">SUPPRESS</text>
+    <rect x="544" y="181" width="602" height="105" rx="18" fill="#10222b" stroke="#3d777d"/>
+    <text x="566" y="211" fill="#8fe5e8" font-size="14" font-weight="700" letter-spacing="2">03 / INSPECTABLE RECEIPT</text>
+    <text x="566" y="246" fill="#e3f7f6" font-size="21" font-weight="700">What was requested · which policy ran · why it was blocked</text>
+    <text x="566" y="270" fill="#9db7ba" font-size="14">Illustrative decision: restoration 1 &lt; attention 5</text>
+  </g>
+</svg>
