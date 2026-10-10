@@ -182,6 +182,42 @@ export function verifyEvidenceArchive(archive: unknown, trustedPolicy: EvidenceR
   freshness_bound?: boolean;
 };
 
+export interface EvidenceMigrationTrustPolicy extends EvidenceRenewalPolicy {
+  trusted_receipt_fingerprints?: string[];
+  revoked_receipt_fingerprints?: string[];
+}
+
+export interface EvidenceMigration {
+  protocol: "aml-evidence-migration/1";
+  encoding: "canonical-json-utf8-base64/2";
+  claim_boundary: string;
+  readme: string;
+  source_archive_base64: string;
+  capsule_base64: string;
+  renewals_base64: string;
+  policy_hint_base64: string;
+  summary: EvidenceArchive["summary"] & { source_archive_root_sha3_512: string };
+  manifest: Record<"source_archive_sha3_512" | "source_archive_sha512" |
+    "capsule_sha3_512" | "capsule_sha512" | "renewals_sha3_512" | "renewals_sha512" |
+    "policy_hint_sha3_512" | "policy_hint_sha512", string>;
+  root_sha3_512: string;
+  root_sha512: string;
+}
+
+export function createEvidenceMigration(sourceArchive: EvidenceArchive, trustedPolicy: EvidenceMigrationTrustPolicy): EvidenceMigration;
+export function verifyEvidenceMigration(migration: unknown, trustedPolicy: EvidenceMigrationTrustPolicy): {
+  verified: boolean;
+  reason: string | null;
+  policy_hint_trusted: false;
+  source_archive_root_sha3_512?: string;
+  migration_root_sha3_512?: string;
+  migration_root_sha512?: string;
+  receipt_sha256?: string;
+  renewal_count?: number;
+  freshness_bound?: boolean;
+  component_equivalent?: boolean;
+};
+
 export interface InterfaceFirewallOptions {
   profile?: string;
   context?: AmlContext;
