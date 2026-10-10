@@ -81,3 +81,4 @@ export { createEvidenceCapsule, verifyEvidenceCapsule } from "./runtime/evidence
 export { createEvidenceRenewal, attestEvidenceRenewal, verifyEvidenceRenewalChain } from "./runtime/evidenceRenewal.js";
 export { createEvidenceArchive, verifyEvidenceArchive } from "./runtime/evidenceArchive.js";
 export { createEvidenceMigration, verifyEvidenceMigration } from "./runtime/evidenceMigration.js";
+export { createEvidenceShards, recoverEvidenceShards } from "./runtime/evidenceShards.js";
