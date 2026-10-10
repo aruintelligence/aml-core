@@ -155,6 +155,33 @@ export function verifyEvidenceRenewalChain(capsule: EvidenceCapsule, entries: Ar
   witness_threshold?: number;
 };
 
+export interface EvidenceArchive {
+  protocol: "aml-evidence-archive/1";
+  encoding: "canonical-json-utf8-base64/1";
+  claim_boundary: string;
+  readme: string;
+  capsule_base64: string;
+  renewals_base64: string;
+  policy_hint_base64: string;
+  summary: { receipt_sha256: string; renewal_count: number; head_root_sha3_512: string };
+  manifest: { capsule_sha3_512: string; renewals_sha3_512: string; policy_hint_sha3_512: string };
+  root_sha3_512: string;
+}
+
+export function createEvidenceArchive(capsule: EvidenceCapsule, entries: Array<{
+  record: EvidenceRenewalRecord;
+  witnesses: EvidenceRenewalAttestation[];
+}>, policy: EvidenceRenewalPolicy): EvidenceArchive;
+export function verifyEvidenceArchive(archive: unknown, trustedPolicy: EvidenceRenewalPolicy): {
+  verified: boolean;
+  reason: string | null;
+  policy_hint_trusted: false;
+  receipt_sha256?: string;
+  renewal_count?: number;
+  head_root_sha3_512?: string;
+  freshness_bound?: boolean;
+};
+
 export interface InterfaceFirewallOptions {
   profile?: string;
   context?: AmlContext;

@@ -1,0 +1,17 @@
+# Cold archive for ĀML decisions
+
+The archive is one JSON file containing exact canonical UTF-8 bytes for an evidence capsule, its renewal records, and a policy snapshot, encoded as base64. A SHA3-512 manifest binds the three components and an archive root binds the manifest, readable summary, and recovery note. Decoding does not require the original UI or a network connection.
+
+The policy snapshot is a **hint about what someone claimed at archive time**. It is not an authority. Verification always requires trusted public-key fingerprints and any previously accepted head supplied from outside the archive. The CLI never imports trust from `policy-hint.json` on extraction.
+
+```bash
+node scripts/evidence-archive.mjs create capsule.json renewals.json policy.json > archive.json
+node scripts/evidence-archive.mjs verify archive.json trusted-policy.json
+node scripts/evidence-archive.mjs extract archive.json trusted-policy.json recovered-archive
+```
+
+`create` requires a valid capsule and a valid renewal chain under the supplied policy. `verify` returns a nonzero exit code if the archive root, component hashes, canonical bytes, capsule bindings, renewal succession, signatures, quorum, or external trust policy fails. `extract` verifies first, then creates a **new** directory with `capsule.json`, `renewals.json`, `policy-hint.json`, and `README.txt`; it will not overwrite an existing directory.
+
+Use the [renewal API](EVIDENCE_RENEWAL.md) to construct the `renewals.json` array. The archive file remains inspectable as plain JSON, while its base64 fields preserve exactly one canonical byte representation of each component. The `summary` is derived and checked again; a changed summary is rejected. Rehashing the unkeyed archive root cannot forge signatures from verifier-trusted keys.
+
+The archive is a prototype preservation format, not a substitute for redundant storage, key custody, trustworthy timestamping, independent witnessing, source and policy preservation, or periodic migration. SHA3-512 and Ed25519 are current algorithms; future replacement requires a new protocol and an independently reviewable migration. Repository tests use synthetic keys and project-authored evidence.
