@@ -6,9 +6,13 @@
 node scripts/evidence-migration.mjs create archive-v1.json trusted-policy.json > handoff.json
 node scripts/evidence-migration.mjs verify handoff.json trusted-policy.json
 node scripts/evidence-migration.mjs recover handoff.json trusted-policy.json recovered-v1.json
+python3 independent/python/verify_evidence_migration.py handoff.json trusted-policy.json
+python3 independent/python/verify_evidence_migration.py recover handoff.json trusted-policy.json recovered-v1-python.json
 ```
 
 `recover` verifies first, then writes canonical v1 archive bytes with a final newline to a **new** file. It refuses to overwrite a destination. The recovery drill using the frozen archive v1 vector produces a file that compares byte-for-byte with that vector.
+
+The [fixed handoff vector](../independent/vectors/migration-v1/README.md) is checked by a project-authored independent Python reader. It parses strict JSON, verifies both handoff roots and all component digests, compares the repeated bytes with v1, and runs the independent v1 archive, receipt, and Ed25519 witness checks under the caller's external policy. The Python recovery command also refuses to overwrite an existing file.
 
 For signed v1.1 receipts, the external policy must contain `trusted_receipt_fingerprints` in addition to the renewal witness `trusted_fingerprints`. `revoked_receipt_fingerprints` can withdraw receipt trust. Legacy v1.0 receipt signatures are not accepted for this handoff because their signer and signed time were not bound. The embedded policy hint is never used as authority. An `accepted_head` obtained and remembered separately is needed to bound rollback.
 
