@@ -82,6 +82,30 @@ export interface ReceiptVerification {
   [key: string]: unknown;
 }
 
+export interface EvidenceCapsule {
+  protocol: "aml-evidence-capsule/1";
+  canonicalization: "aml-sorted-json/1";
+  claim_boundary: string;
+  summary: {
+    timestamp: string;
+    profile_id: string;
+    allowed: number;
+    suppressed: number;
+    receipt_sha256: string;
+    signed: boolean;
+  };
+  receipt: ExecutionReceipt;
+  digests: { sha256: string; sha512: string };
+}
+
+export function createEvidenceCapsule(receipt: ExecutionReceipt): EvidenceCapsule;
+export function verifyEvidenceCapsule(capsule: unknown): {
+  verified: boolean;
+  reason: string | null;
+  receipt_sha256?: string;
+  signed?: boolean;
+};
+
 export interface InterfaceFirewallOptions {
   profile?: string;
   context?: AmlContext;
