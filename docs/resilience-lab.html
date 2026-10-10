@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07131c">
+  <meta name="description" content="ĀML Resilience Lab: explore common failure domains for three cold storage shares without uploading files.">
+  <title>ĀML™ Resilience Lab · Design for recovery</title>
+  <style>
+    :root{color-scheme:dark;--bg:#07131c;--panel:#112432;--panel2:#152e3d;--line:#31505c;--ink:#edf8fb;--muted:#a5bdc6;--cyan:#77eee9;--mint:#a7f3cb;--amber:#f7cf8c;--red:#ffaaa3}
+    *{box-sizing:border-box}body{margin:0;color:var(--ink);background:radial-gradient(circle at 85% 2%,#21495a 0,transparent 37%),radial-gradient(circle at 0 35%,#15323f 0,transparent 36%),var(--bg);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}a{color:var(--cyan)}button,input{font:inherit}button{cursor:pointer}
+    .shell{max-width:1210px;margin:auto;padding:25px 24px 80px}.nav{display:flex;justify-content:space-between;gap:20px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:23px}.brand{font-size:18px;font-weight:900;letter-spacing:.13em}.navlinks{display:flex;gap:18px;font-size:13px}.navlinks a{text-decoration:none}
+    .eyebrow,.tag{font:800 11px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.17em;text-transform:uppercase;color:var(--cyan)}.hero{padding:72px 0 44px}.hero h1{max-width:930px;margin:15px 0 23px;font-size:clamp(42px,7vw,84px);letter-spacing:-.065em;line-height:1.02}.hero h1 em{font-style:normal;color:var(--cyan)}.hero p{max-width:790px;color:var(--muted);font-size:18px}.boundary{max-width:940px;color:#cbd9df;border-left:3px solid var(--amber);padding:8px 0 8px 17px;margin-top:26px;font-size:14px}
+    .toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:0 0 22px}.toolbar button,.download{border:1px solid var(--line);border-radius:999px;padding:9px 15px;background:var(--panel);color:var(--ink);font-weight:700;font-size:13px}.toolbar button:hover,.toolbar button:focus-visible,.download:hover,.download:focus-visible{border-color:var(--cyan);outline:none}.toolbar button[aria-pressed=true]{background:var(--cyan);color:#06232b}.toolbar span{color:var(--muted);font-size:12px;margin-right:5px}
+    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card{border:1px solid var(--line);border-radius:22px;background:linear-gradient(155deg,var(--panel2),var(--panel));padding:22px;min-width:0}.card-head{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:19px;margin-bottom:17px}.card-number{font-size:39px;line-height:1;font-weight:900;letter-spacing:-.06em}.card-head .tag{color:var(--mint)}label{display:block;margin:13px 0 5px;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}input{width:100%;min-height:43px;border:1px solid var(--line);border-radius:9px;background:#0a1b26;color:var(--ink);padding:10px 12px}input:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}.hint{margin:17px 0 0;color:var(--muted);font-size:12px}
+    .result{display:grid;grid-template-columns:minmax(250px,.7fr) 1.3fr;gap:15px;margin-top:24px}.verdict,.scenarios{border:1px solid var(--line);border-radius:22px;background:var(--panel);padding:25px}.verdict h2{font-size:clamp(26px,3.2vw,42px);line-height:1.1;letter-spacing:-.04em;margin:18px 0}.verdict p{color:var(--muted)}.verdict[data-state=pass] h2{color:var(--mint)}.verdict[data-state=fail] h2{color:var(--red)}.verdict[data-state=incomplete] h2{color:var(--amber)}.count{display:block;color:var(--ink);font-size:13px;font-weight:800;margin:25px 0 8px}.progress{height:9px;background:#2b4350;border-radius:20px;overflow:hidden}.progress span{display:block;height:100%;background:var(--mint);transition:width .25s}.verdict[data-state=fail] .progress span{background:var(--red)}.verdict[data-state=incomplete] .progress span{background:var(--amber)}
+    .scenarios h2{margin:0 0 4px;font-size:23px;letter-spacing:-.03em}.scenarios .intro{margin:0 0 16px;color:var(--muted);font-size:13px}.rows{display:grid;gap:8px}.row{display:grid;grid-template-columns:130px minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:#0b1d28;font-size:13px}.row .dimension{text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-size:10px;font-weight:900}.row .detail{min-width:0;overflow-wrap:anywhere}.row .detail small{display:block;color:var(--muted)}.row strong{color:var(--mint);font-size:11px;letter-spacing:.08em}.row.fail{border-color:#875456;background:#2d2028}.row.fail strong{color:var(--red)}
+    .handoff{margin-top:24px;padding:24px;border:1px solid var(--line);border-radius:22px;background:#102633;display:flex;justify-content:space-between;align-items:center;gap:20px}.handoff h2{margin:0 0 6px;font-size:20px}.handoff p{margin:0;color:var(--muted);max-width:700px;font-size:14px}.download{white-space:nowrap;background:var(--cyan);color:#06232b}.download:disabled{opacity:.5;cursor:not-allowed}.scope{padding:28px 0 0;color:var(--muted);font-size:13px;max-width:900px}footer{border-top:1px solid var(--line);margin-top:45px;padding-top:20px;color:var(--muted);font-size:12px}
+    @media(max-width:800px){.shell{padding:18px 15px 55px}.hero{padding:48px 0 30px}.cards,.result{grid-template-columns:1fr}.handoff{align-items:flex-start;flex-direction:column}.row{grid-template-columns:95px minmax(0,1fr) auto}.navlinks{gap:8px}}
+    @media(prefers-reduced-motion:reduce){.progress span{transition:none}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <nav class="nav" aria-label="Primary"><div class="brand">ĀML™ / RESILIENCE LAB</div><div class="navlinks"><a href="index.html">Live lab</a><a href="https://github.com/aruintelligence/aml-core/blob/main/docs/EVIDENCE_PLACEMENT.md">Method ↗</a></div></nav>
+    <header class="hero"><div class="eyebrow">Cold storage · Three shares · One failure at a time</div><h1>Design for <em>recovery.</em></h1><p>Three files can all be valid and still fail together. Change the declared dependencies below to see what remains when one site, infrastructure system, or custodian becomes unavailable.</p><div class="boundary">Planning simulation only. It assumes all three share files are valid. It does not read or upload your evidence, verify physical placement, or replace the cryptographic recovery drill.</div></header>
+    <div class="toolbar" role="group" aria-label="Example configurations"><span>TRY A SCENARIO</span><button type="button" data-preset="separate" aria-pressed="true">Separate domains</button><button type="button" data-preset="site" aria-pressed="false">Shared site</button><button type="button" data-preset="platform" aria-pressed="false">Shared platform</button><button type="button" data-preset="custodian" aria-pressed="false">Shared custodian</button></div>
+    <section class="cards" aria-label="Share placement declarations">
+      <article class="card"><div class="card-head"><span class="card-number">00</span><span class="tag">Data share</span></div><label for="site-0">Site</label><input id="site-0" maxlength="128" autocomplete="off"><label for="infrastructure-0">Infrastructure</label><input id="infrastructure-0" maxlength="128" autocomplete="off"><label for="custodian-0">Custodian</label><input id="custodian-0" maxlength="128" autocomplete="off"><p class="hint">Use identical labels where the dependency is truly shared.</p></article>
+      <article class="card"><div class="card-head"><span class="card-number">01</span><span class="tag">Data share</span></div><label for="site-1">Site</label><input id="site-1" maxlength="128" autocomplete="off"><label for="infrastructure-1">Infrastructure</label><input id="infrastructure-1" maxlength="128" autocomplete="off"><label for="custodian-1">Custodian</label><input id="custodian-1" maxlength="128" autocomplete="off"><p class="hint">A different filename on the same system is still one infrastructure domain.</p></article>
+      <article class="card"><div class="card-head"><span class="card-number">02</span><span class="tag">Parity share</span></div><label for="site-2">Site</label><input id="site-2" maxlength="128" autocomplete="off"><label for="infrastructure-2">Infrastructure</label><input id="infrastructure-2" maxlength="128" autocomplete="off"><label for="custodian-2">Custodian</label><input id="custodian-2" maxlength="128" autocomplete="off"><p class="hint">Any two distinct healthy shares reconstruct the handoff.</p></article>
+    </section>
+    <section class="result" aria-label="Simulation results"><div class="verdict" id="verdict" data-state="pass" aria-live="polite"><div class="eyebrow">Declared topology</div><h2 id="status">All single-domain losses leave two shares</h2><p id="explanation"></p><span class="count" id="count"></span><div class="progress" aria-hidden="true"><span id="bar"></span></div></div><div class="scenarios"><h2>Failure rehearsal</h2><p class="intro">Each row removes every share with the same declared label. A recovery path needs at least two surviving shares.</p><div id="rows" class="rows"></div></div></section>
+    <section class="handoff"><div><h2>Take the plan to the actual copies</h2><p>Download this placement manifest, then run the JavaScript or independent Python assessment against three retrieved share files and your separately held trusted policy. The lab alone cannot mark storage ready.</p></div><button type="button" id="download" class="download">Download manifest ↓</button></section>
+    <p class="scope">The full assessment recomputes the three-pair drill under an external accepted head and tests recovery after each declared loss. Keep the trust policy outside the shares. A passing result remains a project-authored local check, not independent custody proof.</p>
+    <footer>ĀML™ · ĀRU Intelligence Inc. · Open-source research prototype. No information is sent from this page.</footer>
+  </main>
+  <script>
+    const dimensions=["site","infrastructure","custodian"];
+    const defaults=[0,1,2].map(index=>({index,site:`site-${index+1}`,infrastructure:`system-${index+1}`,custodian:`keeper-${index+1}`}));
+    function simulatePlacementTopology(shares){
+      if(!Array.isArray(shares)||shares.length!==3||shares.some((share,index)=>share?.index!==index||dimensions.some(d=>typeof share[d]!=="string"||!share[d].trim())))return {valid:false,ready:false,scenarios:[]};
+      const scenarios=[];
+      for(const dimension of dimensions){
+        for(const value of [...new Set(shares.map(share=>share[dimension]))].sort()){
+          const lost=shares.filter(share=>share[dimension]===value).map(share=>share.index);
+          scenarios.push({dimension,value,lost,survivors:shares.filter(share=>share[dimension]!==value).map(share=>share.index),recoveryPossible:3-lost.length>=2});
+        }
+      }
+      return {valid:true,ready:scenarios.every(scenario=>scenario.recoveryPossible),scenarios};
+    }
+    if(typeof document!=="undefined"){
+      const input=(dimension,index)=>document.getElementById(`${dimension}-${index}`);
+      const read=()=>[0,1,2].map(index=>({index,...Object.fromEntries(dimensions.map(d=>[d,input(d,index).value.trim()]))}));
+      function render(){
+        const result=simulatePlacementTopology(read());
+        const rows=document.getElementById("rows");rows.replaceChildren();
+        for(const scenario of result.scenarios){
+          const row=document.createElement("div");row.className=`row ${scenario.recoveryPossible?"pass":"fail"}`;
+          const dimension=document.createElement("span");dimension.className="dimension";dimension.textContent=scenario.dimension;
+          const detail=document.createElement("span");detail.className="detail";detail.textContent=scenario.value;
+          const sub=document.createElement("small");sub.textContent=`Lose ${scenario.lost.map(n=>`0${n}`).join(" + ")} · keep ${scenario.survivors.map(n=>`0${n}`).join(" + ")||"none"}`;detail.appendChild(sub);
+          const state=document.createElement("strong");state.textContent=scenario.recoveryPossible?"PATH OPEN":"PATH LOST";
+          row.append(dimension,detail,state);rows.appendChild(row);
+        }
+        const passing=result.scenarios.filter(scenario=>scenario.recoveryPossible).length;
+        const verdict=document.getElementById("verdict");verdict.dataset.state=!result.valid?"incomplete":result.ready?"pass":"fail";
+        document.getElementById("status").textContent=!result.valid?"Complete every label":result.ready?"All single-domain losses leave two shares":"A shared dependency can defeat recovery";
+        document.getElementById("explanation").textContent=!result.valid?"Every share needs a site, infrastructure, and custodian label.":result.ready?"The declared topology leaves at least two copies after each modeled loss. Retrieve the real files and run the full verifier.":"At least one modeled loss removes two or more shares. Separate that dependency and test again.";
+        document.getElementById("count").textContent=`${passing} / ${result.scenarios.length} declared failure cases retain two shares`;
+        document.getElementById("bar").style.width=`${result.scenarios.length?100*passing/result.scenarios.length:0}%`;
+        document.getElementById("download").disabled=!result.valid;
+      }
+      function preset(kind){
+        const shares=defaults.map(item=>({...item}));
+        if(kind==="site")shares[1].site=shares[0].site;
+        if(kind==="platform")shares[2].infrastructure=shares[0].infrastructure;
+        if(kind==="custodian")shares[1].custodian=shares[0].custodian;
+        for(const share of shares)for(const dimension of dimensions)input(dimension,share.index).value=share[dimension];
+        for(const button of document.querySelectorAll("[data-preset]"))button.setAttribute("aria-pressed",String(button.dataset.preset===kind));
+        render();
+      }
+      for(const button of document.querySelectorAll("[data-preset]"))button.addEventListener("click",()=>preset(button.dataset.preset));
+      for(const dimension of dimensions)for(let index=0;index<3;index++)input(dimension,index).addEventListener("input",()=>{for(const button of document.querySelectorAll("[data-preset]"))button.setAttribute("aria-pressed","false");render()});
+      document.getElementById("download").addEventListener("click",()=>{
+        const manifest={protocol:"aml-evidence-placement/1",shares:read()};
+        const url=URL.createObjectURL(new Blob([`${JSON.stringify(manifest,null,2)}\n`],{type:"application/json"}));
+        const link=document.createElement("a");link.href=url;link.download="aml-placement.json";document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+      });
+      preset("separate");
+    }
+  </script>
+</body>
+</html>
