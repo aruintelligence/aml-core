@@ -2,7 +2,7 @@
 
 The three-pair [recovery drill](EVIDENCE_DRILL.md) checks the files. It cannot tell whether two copies sit in the same building, rely on the same storage provider, or are controlled by one custodian. `aml-evidence-placement-assessment/1` adds an **operator-declared** failure-domain simulation. It removes every share with a matching label, one domain at a time, and verifies that the remaining shares still recover the same handoff under the separate trust policy.
 
-Try the [visual Resilience Lab](resilience-lab.html) to explore shared dependencies and download a manifest. The browser page runs a topology-only simulation with no share files or policy; use the commands below for the full verified assessment.
+Try the [visual Resilience Lab](resilience-lab.html) to explore shared dependencies. Select a failure row to highlight lost and surviving shares. Download a placement manifest and reopen it locally in the lab to review the same declarations later. The browser page runs a topology-only simulation with no share files or policy; the manifest is read in the browser and is not uploaded. Use the commands below for the full verified assessment.
 
 Create a local JSON manifest with exactly three indexed entries:
 
