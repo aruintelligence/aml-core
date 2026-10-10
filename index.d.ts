@@ -218,6 +218,28 @@ export function verifyEvidenceMigration(migration: unknown, trustedPolicy: Evide
   component_equivalent?: boolean;
 };
 
+export interface EvidenceShard {
+  protocol: "aml-evidence-shard/1";
+  encoding: "canonical-json-utf8-base64/1";
+  scheme: "xor-2-of-3/1";
+  claim_boundary: string;
+  index: 0 | 1 | 2;
+  total_bytes: number;
+  segment_bytes: number;
+  payload_sha512: string;
+  migration_root_sha3_512: string;
+  migration_root_sha512: string;
+  segment_base64: string;
+  segment_sha512: string;
+  root_sha3_512: string;
+}
+
+export function createEvidenceShards(migration: EvidenceMigration, trustedPolicy: EvidenceMigrationTrustPolicy): [EvidenceShard, EvidenceShard, EvidenceShard];
+export function recoverEvidenceShards(shares: EvidenceShard[], trustedPolicy: EvidenceMigrationTrustPolicy):
+  | { recovered: true; reason: null; policy_hint_trusted: false; migration: EvidenceMigration;
+      payload_sha512: string; shares_examined: number; valid_pairs: number }
+  | { recovered: false; reason: string; policy_hint_trusted: false };
+
 export interface InterfaceFirewallOptions {
   profile?: string;
   context?: AmlContext;
