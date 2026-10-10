@@ -53,6 +53,8 @@ def verify_signature(receipt, policy):
         raise ValueError("external_receipt_trust_required")
     trusted = policy.get("trusted_receipt_fingerprints")
     revoked = policy.get("revoked_receipt_fingerprints", [])
+    if trusted is None:
+        raise ValueError("external_receipt_trust_required")
     if (not isinstance(trusted, list) or not trusted or
         not isinstance(revoked, list) or
         any(not isinstance(item, str) or not FINGERPRINT.fullmatch(item) for item in trusted + revoked)):
