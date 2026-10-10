@@ -26,6 +26,12 @@ on:
       - "independent/vectors/repair-record-v1/**"
       - "runtime/evidenceRepairRecord.js"
       - "scripts/evidence-repair-record.mjs"
+      - "independent/python/evidence_placement.py"
+      - "scripts/check-evidence-placement-python.mjs"
+      - "independent/vectors/placement-v1/**"
+      - "runtime/evidencePlacement.js"
+      - "scripts/evidence-placement.mjs"
+      - "docs/EVIDENCE_PLACEMENT.md"
       - "scripts/check-evidence-shards-python.mjs"
       - "scripts/check-evidence-shards-vector.mjs"
       - "independent/vectors/shards-v1/**"
@@ -72,6 +78,12 @@ on:
       - "independent/vectors/repair-record-v1/**"
       - "runtime/evidenceRepairRecord.js"
       - "scripts/evidence-repair-record.mjs"
+      - "independent/python/evidence_placement.py"
+      - "scripts/check-evidence-placement-python.mjs"
+      - "independent/vectors/placement-v1/**"
+      - "runtime/evidencePlacement.js"
+      - "scripts/evidence-placement.mjs"
+      - "docs/EVIDENCE_PLACEMENT.md"
       - "scripts/check-evidence-shards-python.mjs"
       - "scripts/check-evidence-shards-vector.mjs"
       - "independent/vectors/shards-v1/**"
@@ -134,3 +146,5 @@ jobs:
         run: node scripts/check-evidence-repair-python.mjs
       - name: Verify deterministic repair records across runtimes
         run: node scripts/check-evidence-repair-record-python.mjs
+      - name: Simulate declared common failures across runtimes
+        run: node scripts/check-evidence-placement-python.mjs
