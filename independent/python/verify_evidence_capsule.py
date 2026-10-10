@@ -52,7 +52,7 @@ def valid_ledger(ledger):
         allowed = budget is None or amount <= remaining
         charged = amount if allowed else 0
         after = None if budget is None else max(0, remaining - charged)
-        if (entry.get("sequence") != index or entry.get("allowed") is not allowed or
+        if (type(entry.get("sequence")) is not int or entry.get("sequence") != index or entry.get("allowed") is not allowed or
             entry.get("budget_before") != remaining or entry.get("amount_consumed") != charged or
             entry.get("budget_after") != after):
             return False
@@ -67,7 +67,7 @@ def valid_audit(stream):
     previous = None
     for index, entry in enumerate(stream["entries"]):
         core = {key: entry[key] for key in ("sequence", "timestamp", "event_type", "payload", "previous_hash")}
-        if entry["sequence"] != index or entry["previous_hash"] != previous or entry["entry_hash"] != hash_value(core):
+        if type(entry["sequence"]) is not int or entry["sequence"] != index or entry["previous_hash"] != previous or entry["entry_hash"] != hash_value(core):
             return False
         previous = entry["entry_hash"]
     return True
@@ -96,7 +96,8 @@ def verify(capsule):
         "simulation": hash_value(receipt["simulations"]) == receipt["simulation_sha256"],
         "decision": hash_value(decisions) == receipt["decision_sha256"],
         "output": hash_text(selected["html"]) == receipt["output_sha256"],
-        "counts": selected["allowed"] == sum(item["render_allowed"] is True for item in decisions)
+        "counts": type(selected["allowed"]) is int and type(selected["suppressed"]) is int
+                  and selected["allowed"] == sum(item["render_allowed"] is True for item in decisions)
                   and selected["suppressed"] == sum(item["render_allowed"] is not True for item in decisions),
         "audit": hash_value(receipt["runtime_audit_stream"]) == receipt["audit_stream_sha256"]
                  and valid_audit(receipt["runtime_audit_stream"]) and receipt["runtime_audit_verified"] is True,
@@ -106,7 +107,7 @@ def verify(capsule):
     summary = {"timestamp": receipt["timestamp"], "profile_id": receipt["profile"]["id"],
                "allowed": selected["allowed"], "suppressed": selected["suppressed"],
                "receipt_sha256": receipt["receipt_sha256"], "signed": False}
-    checks["summary"] = capsule["summary"] == summary
+    checks["summary"] = canonical(capsule["summary"]) == canonical(summary)
     return {"protocol": "aml-evidence-capsule-python-report/1", "verified": all(checks.values()),
             "checks": checks, "scope": "Project-authored Python check of unsigned capsules on the canonical JSON subset; no trusted identity or independent witness."}
 
