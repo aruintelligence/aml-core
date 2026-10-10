@@ -6,8 +6,11 @@
 node scripts/evidence-shards.mjs create handoff.json trusted-policy.json new-share-directory
 node scripts/evidence-shards.mjs recover new-share-directory/share-0.json new-share-directory/share-2.json trusted-policy.json recovered-handoff.json
 node scripts/evidence-migration.mjs recover recovered-handoff.json trusted-policy.json recovered-v1.json
+python3 independent/python/recover_evidence_shards.py new-share-directory/share-0.json new-share-directory/share-2.json trusted-policy.json recovered-handoff-python.json
 ```
 
 The create command refuses an existing directory. Recovery accepts two or three share paths and writes only to a new destination. It tries all valid distinct pairs when three are supplied, so one damaged file can be ignored. If no pair reconstructs a handoff that verifies under the caller's trust policy, recovery fails. Preserve the original v1 archive, the handoff, and external trust material as well as the shares.
+
+The [fixed share wire vector](../independent/vectors/shards-v1/README.md) is recovered independently by Python. CI checks all three pairs, a damaged file, rehashed corruption, rollback, overwrite refusal, signed receipts, missing receipt trust, and revocation. The independent Python reader verifies the full versioned handoff and its original archive after reconstruction.
 
 This is **redundancy, not secret sharing**. A single share reveals part of the handoff; two shares reveal all of it. Encrypt separately when confidentiality is needed. Self-contained hashes detect corruption but anyone can recompute them. Receipt signers, witness keys, revocations, and a previously accepted head must come from outside the share set. Two files on one failing device do not provide useful physical resilience, so place copies in distinct failure domains and rehearse recovery. This prototype does not establish historical truth, independent witnesses, storage durability, or a 5,000-year cryptographic guarantee.
