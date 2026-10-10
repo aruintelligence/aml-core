@@ -22,6 +22,8 @@ Its trust file must come from a separate, authenticated source. For a signed cap
 
 The [fixed archive v1 wire vector](../independent/vectors/archive-v1/README.md) records byte-for-byte archive and policy files plus expected digests. CI checks that the producer still emits those exact bytes and that the independent Python verifier accepts the frozen archive. Its published keys are synthetic test data and must never be used as real witnesses.
 
+The [versioned migration handoff](EVIDENCE_MIGRATION.md) retains the complete canonical v1 archive while repacking the components into a v2 layout. It verifies exact component equivalence and can recover the original canonical archive bytes. This demonstrates an explicit format transition, not an upgrade in cryptographic strength.
+
 Use the [renewal API](EVIDENCE_RENEWAL.md) to construct the `renewals.json` array. The archive file remains inspectable as plain JSON, while its base64 fields preserve exactly one canonical byte representation of each component. The `summary` is derived and checked again; a changed summary is rejected. Rehashing the unkeyed archive root cannot forge signatures from verifier-trusted keys.
 
 The archive is a prototype preservation format, not a substitute for redundant storage, key custody, trustworthy timestamping, independent witnessing, source and policy preservation, or periodic migration. SHA3-512 and Ed25519 are current algorithms; future replacement requires a new protocol and an independently reviewable migration. Repository tests use synthetic keys and project-authored evidence.

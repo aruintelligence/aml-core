@@ -77,6 +77,7 @@ For the smallest deterministic reproduction, start with:
 - [Preserve a decision](docs/EVIDENCE_CAPSULE.md) — create and recheck a self-contained evidence capsule after an interface changes.
 - [Renew its evidence](docs/EVIDENCE_RENEWAL.md) — link the original capsule into an append-only SHA3-512 chain with verifier-trusted witness quorum.
 - [Keep a cold archive](docs/EVIDENCE_ARCHIVE.md) — preserve canonical capsule and renewal bytes with an offline recovery path and externally supplied trust.
+- [Recheck a versioned handoff](docs/EVIDENCE_MIGRATION.md) — retain v1 bytes in a v2 layout and verify exact component equivalence before recovery.
 - [Undeniable proof demo](demos/undeniable-proof/)
 - [Benchmarking protocol](BENCHMARKING.md)
 - [Interoperability challenge](INTEROPERABILITY.md)
