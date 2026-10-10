@@ -5,11 +5,15 @@
 ```bash
 node scripts/evidence-shards.mjs create handoff.json trusted-policy.json new-share-directory
 node scripts/evidence-shards.mjs recover new-share-directory/share-0.json new-share-directory/share-2.json trusted-policy.json recovered-handoff.json
+node scripts/evidence-shards.mjs repair new-share-directory/share-0.json new-share-directory/share-2.json trusted-policy.json replacement-share-1.json
 node scripts/evidence-migration.mjs recover recovered-handoff.json trusted-policy.json recovered-v1.json
 python3 independent/python/recover_evidence_shards.py new-share-directory/share-0.json new-share-directory/share-2.json trusted-policy.json recovered-handoff-python.json
+python3 independent/python/repair_evidence_share.py new-share-directory/share-0.json new-share-directory/share-2.json trusted-policy.json replacement-share-1-python.json
 ```
 
 The create command refuses an existing directory. Recovery accepts two or three share paths and writes only to a new destination. It tries all valid distinct pairs when three are supplied, so one damaged file can be ignored. If no pair reconstructs a handoff that verifies under the caller's trust policy, recovery fails. Preserve the original v1 archive, the handoff, and external trust material as well as the shares.
+
+Repair accepts exactly two valid, distinct surviving shares and an external policy with an accepted head. It independently verifies the recovered handoff, checks that both survivors exactly match the regenerated canonical set, and rehearses all three pairs before writing the missing share to a new path. It refuses to overwrite a file. The Python implementation independently recreates the exact share bytes. Replace a damaged carrier only after inspecting the new file and report; keep the policy outside the share set. This is local verification, not a claim that the physical copy reached another location.
 
 The [fixed share wire vector](../independent/vectors/shards-v1/README.md) is recovered independently by Python. CI checks all three pairs, a damaged file, rehashed corruption, rollback, overwrite refusal, signed receipts, missing receipt trust, and revocation. The independent Python reader verifies the full versioned handoff and its original archive after reconstruction.
 
