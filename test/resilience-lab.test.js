@@ -9,6 +9,7 @@ assert.ok(script, "inline simulation must be present");
 const context = vm.createContext({});
 vm.runInContext(script, context, { timeout: 1000 });
 const simulate = context.simulatePlacementTopology;
+const parseManifest = context.parsePlacementManifest;
 const separated = [0, 1, 2].map(index => ({ index, site: `site-${index}`,
   infrastructure: `system-${index}`, custodian: `keeper-${index}` }));
 
@@ -34,4 +35,24 @@ test("empty labels cannot pass and the UI states its verification boundary", () 
   assert.match(html, /It does not read or upload your evidence/);
   assert.match(html, /The lab alone cannot mark storage ready/);
   assert.doesNotMatch(html, /<script[^>]+src=/);
+});
+
+test("a downloaded manifest can be reopened with the same declared failure cases", () => {
+  const shared = structuredClone(separated);
+  shared[1].site = shared[0].site;
+  const opened = parseManifest(JSON.stringify({ protocol: "aml-evidence-placement/1", shares: shared }));
+  assert.deepEqual(JSON.parse(JSON.stringify(opened)), shared);
+  assert.deepEqual(JSON.parse(JSON.stringify(simulate(opened))), JSON.parse(JSON.stringify(simulate(shared))));
+  assert.match(html, /Open manifest/);
+  assert.match(html, /Select a failure to see its impact/);
+});
+
+test("manifest import rejects malformed, oversized, or incomplete declarations", () => {
+  const manifest = { protocol: "aml-evidence-placement/1", shares: separated };
+  assert.throws(() => parseManifest("not json"), /valid JSON/);
+  assert.throws(() => parseManifest(" ".repeat(65537)), /too large/);
+  assert.throws(() => parseManifest(JSON.stringify({ ...manifest, protocol: "other" })), /Expected/);
+  assert.throws(() => parseManifest(JSON.stringify({ ...manifest, shares: [separated[0], separated[0], separated[2]] })), /indexed/);
+  assert.throws(() => parseManifest(JSON.stringify({ ...manifest, shares: [{ ...separated[0], site: " " }, separated[1], separated[2]] })), /nonempty/);
+  assert.throws(() => parseManifest(JSON.stringify({ ...manifest, shares: [{ ...separated[0], site: "x".repeat(129) }, separated[1], separated[2]] })), /128/);
 });
