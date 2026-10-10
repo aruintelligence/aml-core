@@ -111,3 +111,31 @@ export function recoverEvidenceShards(shares, trustedPolicy) {
     migration: candidates[0], payload_sha512: hash("sha512", pack(candidates[0])),
     shares_examined: shares.length, valid_pairs: candidates.length };
 }
+
+// Reconstitute one physical carrier only after the two surviving carriers
+// recover the externally accepted history. Never mutate either input.
+export function repairEvidenceShare(shares, trustedPolicy) {
+  const fail = reason => ({ repaired: false, reason, policy_hint_trusted: false });
+  if (!trustedPolicy || !trustedPolicy.accepted_head) return fail("external_accepted_head_required");
+  if (!Array.isArray(shares) || shares.length !== 2) return fail("exactly_two_shares_required");
+  const parsed = shares.map(readShare);
+  if (parsed.some(item => !item)) return fail("invalid_surviving_share");
+  const indices = parsed.map(item => item.share.index);
+  if (indices[0] === indices[1]) return fail("distinct_share_indices_required");
+  const recovered = recoverEvidenceShards(shares, trustedPolicy);
+  if (!recovered.recovered) return fail(recovered.reason);
+  const canonical = createEvidenceShards(recovered.migration, trustedPolicy);
+  if (shares.some(share => canonicalJSONStringify(share) !== canonicalJSONStringify(canonical[share.index]))) {
+    return fail("survivors_do_not_match_canonical_set");
+  }
+  const missingIndex = [0, 1, 2].find(index => !indices.includes(index));
+  const repairedShare = canonical[missingIndex];
+  // Prove each pair in the complete, repaired set still returns the same handoff.
+  const pairs = [[0, 1], [0, 2], [1, 2]];
+  if (pairs.some(([a, b]) => {
+    const result = recoverEvidenceShards([canonical[a], canonical[b]], trustedPolicy);
+    return !result.recovered || result.payload_sha512 !== recovered.payload_sha512;
+  })) return fail("repaired_set_failed_drill");
+  return { repaired: true, reason: null, policy_hint_trusted: false, missing_index: missingIndex,
+    payload_sha512: recovered.payload_sha512, share: repairedShare, verified_pairs: 3 };
+}
