@@ -21,6 +21,11 @@ on:
       - "independent/python/recover_evidence_shards.py"
       - "independent/python/repair_evidence_share.py"
       - "scripts/check-evidence-repair-python.mjs"
+      - "independent/python/evidence_repair_record.py"
+      - "scripts/check-evidence-repair-record-python.mjs"
+      - "independent/vectors/repair-record-v1/**"
+      - "runtime/evidenceRepairRecord.js"
+      - "scripts/evidence-repair-record.mjs"
       - "scripts/check-evidence-shards-python.mjs"
       - "scripts/check-evidence-shards-vector.mjs"
       - "independent/vectors/shards-v1/**"
@@ -62,6 +67,11 @@ on:
       - "independent/python/recover_evidence_shards.py"
       - "independent/python/repair_evidence_share.py"
       - "scripts/check-evidence-repair-python.mjs"
+      - "independent/python/evidence_repair_record.py"
+      - "scripts/check-evidence-repair-record-python.mjs"
+      - "independent/vectors/repair-record-v1/**"
+      - "runtime/evidenceRepairRecord.js"
+      - "scripts/evidence-repair-record.mjs"
       - "scripts/check-evidence-shards-python.mjs"
       - "scripts/check-evidence-shards-vector.mjs"
       - "independent/vectors/shards-v1/**"
@@ -122,3 +132,5 @@ jobs:
         run: node scripts/check-evidence-drill-python.mjs
       - name: Rebuild and rehearse missing shares across runtimes
         run: node scripts/check-evidence-repair-python.mjs
+      - name: Verify deterministic repair records across runtimes
+        run: node scripts/check-evidence-repair-record-python.mjs
