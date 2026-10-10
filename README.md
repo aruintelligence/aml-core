@@ -79,6 +79,7 @@ For the smallest deterministic reproduction, start with:
 - [Keep a cold archive](docs/EVIDENCE_ARCHIVE.md) — preserve canonical capsule and renewal bytes with an offline recovery path and externally supplied trust.
 - [Recheck a versioned handoff](docs/EVIDENCE_MIGRATION.md) — retain v1 bytes in a v2 layout and verify exact component equivalence before recovery.
 - [Repair a cold storage handoff](docs/EVIDENCE_SHARDS.md) — reconstruct canonical handoff bytes from any two of three separately stored shares, then recheck external trust.
+- [Rehearse every recovery pair](docs/EVIDENCE_DRILL.md) — get a machine-readable readiness report before a damaged share becomes a loss.
 - [Undeniable proof demo](demos/undeniable-proof/)
 - [Benchmarking protocol](BENCHMARKING.md)
 - [Interoperability challenge](INTEROPERABILITY.md)
