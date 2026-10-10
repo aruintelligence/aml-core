@@ -15,13 +15,14 @@ node scripts/evidence-capsule.mjs verify capsule.json
 
 Verification returns `verified: true` and exits 0 only when both capsule digests, the receipt's internal bindings, a present Ed25519 signature, and the derived summary all validate. A failed verification exits 1. An unsupported protocol, canonicalization, field, or malformed value fails closed.
 
-A separate project-authored Python verifier checks **unsigned capsules** on the JSON subset for which its serializer reproduces the exact capsule digests. It also checks the receipt hash, intent/output/decision bindings, audit chain, ledger, counts, and derived summary:
+A separate project-authored Python verifier checks capsules on the JSON subset for which its serializer reproduces the exact capsule digests. It also checks the receipt hash, intent/output/decision bindings, audit chain, ledger, counts, and derived summary. For signed v1.1 receipts it verifies Ed25519 and requires a separately supplied trusted receipt-key fingerprint; install `cryptography>=42,<51`:
 
 ```bash
 python3 independent/python/verify_evidence_capsule.py capsule.json
+python3 independent/python/verify_evidence_capsule.py signed-capsule.json trusted-policy.json
 ```
 
-It rejects signed capsules until trusted-key signature verification is implemented in that runtime. The two implementations and their mutation cases are exercised with `node scripts/check-evidence-capsule-python.mjs` on CI. This is cross-runtime engineering evidence maintained by the project, not an independent external witness.
+Unsigned capsules need one argument. Signed v1.1 capsules require a second JSON file with `trusted_receipt_fingerprints` (an array of SHA-256 SPKI DER fingerprints) and optional `revoked_receipt_fingerprints`. The embedded key is not a trust source. Legacy v1.0 signatures are unsupported in Python because their signer and signed time were not bound. The two implementations and their mutation cases are exercised with `node scripts/check-evidence-capsule-python.mjs` on CI. This is cross-runtime engineering evidence maintained by the project, not an independent external witness.
 
 ## Frozen v1 contract
 
