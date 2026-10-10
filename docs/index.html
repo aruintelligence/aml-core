@@ -65,7 +65,7 @@
         <div class="continuity-step"><span>01 / CAPTURE</span><b>Keep the original receipt</b><small>Declared intent, policy decisions, output, and audit evidence travel together.</small></div>
         <div class="continuity-step"><span>02 / VERIFY</span><b>Recheck every binding</b><small>Recalculate capsule digests, receipt integrity, summary, and any present signature.</small></div>
         <div class="continuity-step"><span>03 / RENEW</span><b>Link the next record</b><small>Preserve the original bytes. A SHA3-512 successor requires verifier-trusted witness quorum.</small></div>
-        <div class="continuity-step"><span>04 / RECOVER</span><b>Verify across runtimes</b><small>Open a cold archive offline. Python checks unsigned capsules and trusted renewal witnesses.</small></div>
+        <div class="continuity-step"><span>04 / RECOVER</span><b>Verify across runtimes</b><small>Open a cold archive offline. Python checks capsules, signatures, and witnesses with external trust.</small></div>
       </div>
       <div class="continuity-foot"><code>CAPSULE v1 · SHA-256 + SHA-512 · STRICT JSON</code><a href="https://github.com/aruintelligence/aml-core/blob/main/docs/EVIDENCE_CAPSULE.md">Explore the preservation contract ↗</a></div>
       <p class="continuity-caveat"><a href="https://github.com/aruintelligence/aml-core/blob/main/docs/EVIDENCE_RENEWAL.md">Read the append-only renewal contract ↗</a> · <a href="https://github.com/aruintelligence/aml-core/blob/main/docs/EVIDENCE_ARCHIVE.md">Pack an offline archive ↗</a></p>
