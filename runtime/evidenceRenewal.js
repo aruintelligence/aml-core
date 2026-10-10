@@ -125,7 +125,9 @@ export function verifyEvidenceRenewalChain(capsule, entries, policy = {}) {
         typeof record.created_at !== "string" || !UTC_TIME.test(record.created_at) || !HEX.test(record.root_sha3_512) || recordRoot(record) !== record.root_sha3_512) {
       return fail("invalid_record_or_succession", sequence);
     }
-    const fingerprints = policy.trusted_fingerprints_by_sequence?.[sequence] ?? policy.trusted_fingerprints;
+    const fingerprints = policy.trusted_fingerprints_by_sequence === undefined
+      ? policy.trusted_fingerprints
+      : policy.trusted_fingerprints_by_sequence[sequence];
     if (!Array.isArray(fingerprints) || fingerprints.some(value => typeof value !== "string" || !FINGERPRINT.test(value))) return fail("invalid_trust_policy", sequence);
     const trusted = new Set(fingerprints);
     const seen = new Set();
