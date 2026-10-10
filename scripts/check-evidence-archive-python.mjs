@@ -83,6 +83,10 @@ try {
   const forged = structuredClone(archive);
   const alteredCapsule = structuredClone(capsule);
   alteredCapsule.receipt.selected_render.html = "changed after receipt";
+  const { digests, ...alteredPayload } = alteredCapsule;
+  const alteredBytes = canonicalJSONStringify(alteredPayload);
+  alteredCapsule.digests = Object.fromEntries(["sha256", "sha512"].map(algorithm =>
+    [algorithm, crypto.createHash(algorithm).update(alteredBytes).digest("hex")]));
   forged.capsule_base64 = Buffer.from(canonicalJSONStringify(alteredCapsule)).toString("base64");
   forged.manifest.capsule_sha3_512 = crypto.createHash("sha3-512").update(Buffer.from(forged.capsule_base64, "base64")).digest("hex");
   rehash(forged);
