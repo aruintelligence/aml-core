@@ -54,12 +54,12 @@ jobs:
           python-version: "3.12"
       - name: Verify reference-produced artifacts with standalone Python
         run: node scripts/check-python-wire-runtime.mjs
+      - name: Install Python Ed25519 verifier dependency
+        run: python -m pip install 'cryptography>=42,<51'
       - name: Verify evidence capsules across JavaScript and Python
         run: node scripts/check-evidence-capsule-python.mjs
       - name: Check fixed archive wire bytes and digests
         run: node scripts/check-evidence-archive-vector.mjs
-      - name: Install Python Ed25519 verifier dependency
-        run: python -m pip install 'cryptography>=42,<51'
       - name: Verify archives and renewal witnesses across JavaScript and Python
         run: node scripts/check-evidence-archive-python.mjs
       - name: Verify fixed archive vector with Python

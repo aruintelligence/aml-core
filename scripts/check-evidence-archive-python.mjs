@@ -95,13 +95,18 @@ try {
   const duplicate = JSON.stringify(archive).replace('"protocol":"aml-evidence-archive/1"', '"protocol":"aml-evidence-archive/1","protocol":"aml-evidence-archive/1"');
   results.push(check("duplicate-json-key", duplicate, policy, false, "duplicate JSON key"));
 
-  const signedReceipt = signExecutionReceipt(executeAccountableIntent(intent, { profile: "human_first", timestamp: "2026-10-10T00:00:00.000Z" }), keys[0]);
+  const signedReceipt = signExecutionReceipt(executeAccountableIntent(intent, { profile: "human_first", timestamp: "2026-10-10T00:00:00.000Z" }), keys[0],
+    { signer: "synthetic-receipt", timestamp: "2026-10-10T00:30:00.000Z" });
   const signedCapsule = createEvidenceCapsule(signedReceipt);
   const signedRecord = createEvidenceRenewal(signedCapsule, { sequence: 1, created_at: "2026-10-10T01:00:00.000Z" });
   const signedWitness = attest(signedRecord, keys[0], "synthetic");
-  const signedPolicy = { threshold: 1, trusted_fingerprints: [signedWitness.public_key_fingerprint_sha256] };
+  const signedPolicy = { threshold: 1, trusted_fingerprints: [signedWitness.public_key_fingerprint_sha256],
+    trusted_receipt_fingerprints: [signedReceipt.signature.public_key_sha256] };
   const signedArchive = createEvidenceArchive(signedCapsule, [{ record: signedRecord, witnesses: [signedWitness] }], signedPolicy);
-  results.push(check("signed-capsule-unsupported", signedArchive, signedPolicy, false, "unsupported receipt or signature"));
+  results.push(check("signed-archive-valid", signedArchive, signedPolicy, true));
+  results.push(check("signed-archive-trust-missing", signedArchive, { threshold: 1, trusted_fingerprints: signedPolicy.trusted_fingerprints }, false, "external_receipt_trust_required"));
+  results.push(check("signed-archive-key-revoked", signedArchive,
+    { ...signedPolicy, revoked_receipt_fingerprints: signedPolicy.trusted_receipt_fingerprints }, false, "invalid_or_unsupported_capsule"));
 
   process.stdout.write(`${JSON.stringify({ protocol: "aml-archive-cross-runtime-check/1", passed: true, results }, null, 2)}\n`);
 } finally {
