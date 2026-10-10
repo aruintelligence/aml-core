@@ -106,6 +106,55 @@ export function verifyEvidenceCapsule(capsule: unknown): {
   signed?: boolean;
 };
 
+export interface EvidenceRenewalRecord {
+  protocol: "aml-evidence-renewal/1";
+  sequence: number;
+  previous_root_sha3_512: string | null;
+  created_at: string;
+  capsule_sha512: string;
+  capsule_sha3_512: string;
+  algorithm: "SHA3-512";
+  root_sha3_512: string;
+}
+
+export interface EvidenceRenewalAttestation {
+  protocol: "aml-evidence-renewal-attestation/1";
+  signer: string | null;
+  signed_at: string;
+  public_key_pem: string;
+  public_key_fingerprint_sha256: string;
+  signature_base64: string;
+}
+
+export interface EvidenceRenewalPolicy {
+  threshold: number;
+  trusted_fingerprints: string[];
+  trusted_fingerprints_by_sequence?: Record<number, string[]>;
+  revoked_fingerprints?: string[];
+  accepted_head?: { sequence: number; root_sha3_512: string };
+}
+
+export function createEvidenceRenewal(capsule: EvidenceCapsule, options: {
+  sequence: number;
+  previous_root_sha3_512?: string | null;
+  created_at?: string;
+}): EvidenceRenewalRecord;
+export function attestEvidenceRenewal(record: EvidenceRenewalRecord, privateKeyPem: string, options?: {
+  signer?: string | null;
+  signed_at?: string;
+}): EvidenceRenewalAttestation;
+export function verifyEvidenceRenewalChain(capsule: EvidenceCapsule, entries: Array<{
+  record: EvidenceRenewalRecord;
+  witnesses: EvidenceRenewalAttestation[];
+}>, policy: EvidenceRenewalPolicy): {
+  verified: boolean;
+  reason: string | null;
+  sequence: number | null;
+  head_root_sha3_512?: string;
+  freshness_bound: boolean;
+  witness_threshold?: number;
+};
+
 export interface InterfaceFirewallOptions {
   profile?: string;
   context?: AmlContext;
