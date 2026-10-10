@@ -1,0 +1,1 @@
+{"protocol":"aml-evidence-placement/1","shares":[{"index":0,"site":"site-a","infrastructure":"system-a","custodian":"keeper-a"},{"index":1,"site":"site-b","infrastructure":"system-b","custodian":"keeper-b"},{"index":2,"site":"site-c","infrastructure":"system-c","custodian":"keeper-c"}]}

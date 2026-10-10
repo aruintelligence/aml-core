@@ -300,6 +300,34 @@ export function runEvidenceDrill(shares: [EvidenceShard, EvidenceShard, Evidence
 
 export function renderEvidenceDrillHtml(report: EvidenceDrillReport): string;
 
+export interface EvidencePlacementManifest {
+  protocol: "aml-evidence-placement/1";
+  shares: [
+    { index: 0; site: string; infrastructure: string; custodian: string },
+    { index: 1; site: string; infrastructure: string; custodian: string },
+    { index: 2; site: string; infrastructure: string; custodian: string }
+  ];
+}
+
+export interface EvidencePlacementReport {
+  protocol: "aml-evidence-placement-assessment/1";
+  claim_boundary: string;
+  ready: boolean;
+  health: "invalid" | "unrecoverable" | "correlated" | "unverified" | "declared_resilient";
+  policy_hint_trusted: false;
+  placement_sha256: string | null;
+  drill_health: EvidenceDrillReport["health"] | null;
+  policy_sha256?: string | null;
+  payload_sha512?: string | null;
+  scenarios: Array<{ dimension: "site" | "infrastructure" | "custodian"; value: string;
+    lost_indices: number[]; surviving_indices: number[]; recovered: boolean; reason: string | null }>;
+  failed_scenarios: number;
+  reason: string | null;
+}
+
+export function assessEvidencePlacement(shares: [EvidenceShard, EvidenceShard, EvidenceShard],
+  trustedPolicy: EvidenceMigrationTrustPolicy, placement: EvidencePlacementManifest): EvidencePlacementReport;
+
 export interface InterfaceFirewallOptions {
   profile?: string;
   context?: AmlContext;
