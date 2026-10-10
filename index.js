@@ -79,3 +79,4 @@ export { getCompletionItems, getHoverInfo, getLanguageCatalog } from "./tooling/
 export { runAmlDoctor } from "./tooling/doctor.js";
 export { createEvidenceCapsule, verifyEvidenceCapsule } from "./runtime/evidenceCapsule.js";
 export { createEvidenceRenewal, attestEvidenceRenewal, verifyEvidenceRenewalChain } from "./runtime/evidenceRenewal.js";
+export { createEvidenceArchive, verifyEvidenceArchive } from "./runtime/evidenceArchive.js";
