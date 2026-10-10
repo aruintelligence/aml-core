@@ -86,3 +86,4 @@ export { runEvidenceDrill } from "./runtime/evidenceDrill.js";
 export { repairEvidenceShare } from "./runtime/evidenceShards.js";
 export { renderEvidenceDrillHtml } from "./runtime/evidenceDrillHtml.js";
 export { createEvidenceRepairRecord, verifyEvidenceRepairRecord } from "./runtime/evidenceRepairRecord.js";
+export { assessEvidencePlacement } from "./runtime/evidencePlacement.js";
