@@ -83,3 +83,4 @@ export { createEvidenceArchive, verifyEvidenceArchive } from "./runtime/evidence
 export { createEvidenceMigration, verifyEvidenceMigration } from "./runtime/evidenceMigration.js";
 export { createEvidenceShards, recoverEvidenceShards } from "./runtime/evidenceShards.js";
 export { runEvidenceDrill } from "./runtime/evidenceDrill.js";
+export { repairEvidenceShare } from "./runtime/evidenceShards.js";

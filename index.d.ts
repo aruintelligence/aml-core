@@ -240,6 +240,11 @@ export function recoverEvidenceShards(shares: EvidenceShard[], trustedPolicy: Ev
       payload_sha512: string; shares_examined: number; valid_pairs: number }
   | { recovered: false; reason: string; policy_hint_trusted: false };
 
+export function repairEvidenceShare(shares: [EvidenceShard, EvidenceShard], trustedPolicy: EvidenceMigrationTrustPolicy):
+  | { repaired: true; reason: null; policy_hint_trusted: false; missing_index: 0 | 1 | 2;
+      payload_sha512: string; share: EvidenceShard; verified_pairs: 3 }
+  | { repaired: false; reason: string; policy_hint_trusted: false };
+
 export interface EvidenceDrillReport {
   protocol: "aml-evidence-recovery-drill/1";
   claim_boundary: string;
