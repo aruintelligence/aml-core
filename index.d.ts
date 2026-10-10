@@ -245,6 +245,30 @@ export function repairEvidenceShare(shares: [EvidenceShard, EvidenceShard], trus
       payload_sha512: string; share: EvidenceShard; verified_pairs: 3 }
   | { repaired: false; reason: string; policy_hint_trusted: false };
 
+export interface EvidenceRepairRecord {
+  protocol: "aml-evidence-repair-record/1";
+  claim_boundary: string;
+  survivor_indices: [number, number];
+  survivor_roots_sha3_512: [string, string];
+  replacement_index: 0 | 1 | 2;
+  replacement_root_sha3_512: string;
+  payload_sha512: string;
+  migration_root_sha3_512: string;
+  policy_sha256: string;
+  accepted_head: { sequence: number; root_sha3_512: string };
+  verified_pairs: 3;
+  policy_hint_trusted: false;
+  root_sha3_512: string;
+}
+
+export function createEvidenceRepairRecord(survivors: [EvidenceShard, EvidenceShard], replacement: EvidenceShard,
+  trustedPolicy: EvidenceMigrationTrustPolicy): EvidenceRepairRecord;
+export function verifyEvidenceRepairRecord(record: EvidenceRepairRecord, survivors: [EvidenceShard, EvidenceShard],
+  replacement: EvidenceShard, trustedPolicy: EvidenceMigrationTrustPolicy):
+  | { verified: true; reason: null; policy_hint_trusted: false; root_sha3_512: string;
+      replacement_index: 0 | 1 | 2; payload_sha512: string }
+  | { verified: false; reason: string; policy_hint_trusted: false };
+
 export interface EvidenceDrillReport {
   protocol: "aml-evidence-recovery-drill/1";
   claim_boundary: string;
