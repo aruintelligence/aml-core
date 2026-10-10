@@ -15,6 +15,14 @@ node scripts/evidence-capsule.mjs verify capsule.json
 
 Verification returns `verified: true` and exits 0 only when both capsule digests, the receipt's internal bindings, a present Ed25519 signature, and the derived summary all validate. A failed verification exits 1. An unsupported protocol, canonicalization, field, or malformed value fails closed.
 
+A separate project-authored Python verifier checks **unsigned capsules** on the JSON subset for which its serializer reproduces the exact capsule digests. It also checks the receipt hash, intent/output/decision bindings, audit chain, ledger, counts, and derived summary:
+
+```bash
+python3 independent/python/verify_evidence_capsule.py capsule.json
+```
+
+It rejects signed capsules until trusted-key signature verification is implemented in that runtime. The two implementations and their mutation cases are exercised with `node scripts/check-evidence-capsule-python.mjs` on CI. This is cross-runtime engineering evidence maintained by the project, not an independent external witness.
+
 ## Frozen v1 contract
 
 The capsule has exactly six top-level keys: `protocol`, `canonicalization`, `claim_boundary`, `summary`, `receipt`, and `digests`. The digest material consists of the first five keys, serialized with `canonicalJSONStringify` from `protocol/canonicalJson.js`: ordinary JSON values, object keys sorted by JavaScript UTF-16 code-unit order, no whitespace, JSON string escaping, and JSON number serialization. `undefined`, non-finite numbers, executable values, and non-plain objects are rejected. Hash the resulting UTF-8 bytes with SHA-256 and SHA-512 as lowercase hexadecimal.

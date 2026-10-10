@@ -7,6 +7,10 @@ on:
       - "independent/python/wire_runtime.py"
       - "independent/python/WIRE_RUNTIME.md"
       - "scripts/check-python-wire-runtime.mjs"
+      - "independent/python/verify_evidence_capsule.py"
+      - "scripts/check-evidence-capsule-python.mjs"
+      - "runtime/evidenceCapsule.js"
+      - "docs/EVIDENCE_CAPSULE.md"
       - ".github/workflows/python-wire-runtime.yml"
   pull_request:
     branches: [main]
@@ -14,6 +18,10 @@ on:
       - "independent/python/wire_runtime.py"
       - "independent/python/WIRE_RUNTIME.md"
       - "scripts/check-python-wire-runtime.mjs"
+      - "independent/python/verify_evidence_capsule.py"
+      - "scripts/check-evidence-capsule-python.mjs"
+      - "runtime/evidenceCapsule.js"
+      - "docs/EVIDENCE_CAPSULE.md"
       - ".github/workflows/python-wire-runtime.yml"
 
 permissions:
@@ -32,3 +40,5 @@ jobs:
           python-version: "3.12"
       - name: Verify reference-produced artifacts with standalone Python
         run: node scripts/check-python-wire-runtime.mjs
+      - name: Verify evidence capsules across JavaScript and Python
+        run: node scripts/check-evidence-capsule-python.mjs
