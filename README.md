@@ -74,6 +74,7 @@ For the smallest deterministic reproduction, start with:
 
 - [10-minute reproduction](docs/TRY_AML_10_MINUTES.md)
 - [Five-minute installed-package quickstart](docs/CONSUMER_QUICKSTART.md)
+- [Preserve a decision](docs/EVIDENCE_CAPSULE.md) — create and recheck a self-contained evidence capsule after an interface changes.
 - [Undeniable proof demo](demos/undeniable-proof/)
 - [Benchmarking protocol](BENCHMARKING.md)
 - [Interoperability challenge](INTEROPERABILITY.md)
