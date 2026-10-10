@@ -19,6 +19,8 @@ on:
       - "runtime/evidenceMigration.js"
       - "docs/EVIDENCE_MIGRATION.md"
       - "independent/python/recover_evidence_shards.py"
+      - "independent/python/repair_evidence_share.py"
+      - "scripts/check-evidence-repair-python.mjs"
       - "scripts/check-evidence-shards-python.mjs"
       - "scripts/check-evidence-shards-vector.mjs"
       - "independent/vectors/shards-v1/**"
@@ -55,6 +57,8 @@ on:
       - "runtime/evidenceMigration.js"
       - "docs/EVIDENCE_MIGRATION.md"
       - "independent/python/recover_evidence_shards.py"
+      - "independent/python/repair_evidence_share.py"
+      - "scripts/check-evidence-repair-python.mjs"
       - "scripts/check-evidence-shards-python.mjs"
       - "scripts/check-evidence-shards-vector.mjs"
       - "independent/vectors/shards-v1/**"
@@ -110,3 +114,5 @@ jobs:
         run: node scripts/check-evidence-shards-python.mjs
       - name: Compare deterministic recovery drill reports across runtimes
         run: node scripts/check-evidence-drill-python.mjs
+      - name: Rebuild and rehearse missing shares across runtimes
+        run: node scripts/check-evidence-repair-python.mjs
