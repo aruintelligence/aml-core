@@ -39,6 +39,7 @@ test("rejects missing trust, quorum, duplicate key and revoked key", () => {
   assert.equal(verifyEvidenceRenewalChain(capsule, duplicate, policy).reason, "quorum_not_met");
   assert.equal(verifyEvidenceRenewalChain(capsule, chain, { ...policy, revoked_fingerprints: [fingerprints[1]] }).verified, false);
   assert.equal(verifyEvidenceRenewalChain(capsule, chain, { ...policy, trusted_fingerprints_by_sequence: { 1: fingerprints.slice(0, 2), 2: fingerprints.slice(0, 2) } }).verified, false);
+  assert.equal(verifyEvidenceRenewalChain(capsule, chain, { ...policy, trusted_fingerprints_by_sequence: { 1: fingerprints.slice(0, 2) } }).reason, "invalid_trust_policy");
 });
 
 test("rejects broken succession, rollback, fork and capsule replacement", () => {
