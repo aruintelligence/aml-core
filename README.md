@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="docs/aml-hero.svg" alt="Illustration: declared interface intent enters a policy gate and produces an inspectable suppression receipt" width="100%">
+</div>
+
 # ĀML™ — ĀRU Meaning Language™
 
 ## The accountability layer between AI and the human interface.
@@ -14,31 +18,17 @@
 
 ĀML is a working research prototype for meaning-native, policy-aware, accountable AI interfaces. It can sit between machine intent and human-facing output as an **AI Interface Firewall™** without requiring teams to replace HTML, React, or existing frontend stacks.
 
-## 🔴 Live field experiments — real customer-facing websites
+| Try the decision | Verify the evidence | Integrate a path |
+|---|---|---|
+| [**60-second live proof**](https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en) — change one declared value and watch SUPPRESS become ALLOW. | [**30-minute enterprise pilot**](pilots/enterprise-30min/README.md) — replay receipts, inspect fixture hashes, and reject a mutation. | [**Consumer quickstart**](docs/CONSUMER_QUICKSTART.md) — run an installed-package rehearsal in a clean directory. |
 
-ĀRU Intelligence is actively applying ĀML™ to real customer-facing web properties, including a multi-site Security First Alarm pilot. These are **project-authored field experiments**, not synthetic mockups and not independent validation.
-
-The current work preserves pre-change checkpoints, identifies exact interface elements under test, records label provenance and declared policy inputs, and is designed to publish before/after evidence and decision receipts as each site experiment is completed.
-
-- **Active pilot registry:** [`experiments/2026-09-12/SECURITY_WEBSITE_FIELD_PILOTS.md`](experiments/2026-09-12/SECURITY_WEBSITE_FIELD_PILOTS.md)
-- **Public field-experiments page:** [ARUIntelligence.com/experiments](https://aruintelligence.com/experiments)
-- **Independent verification call:** [Issue #88](https://github.com/aruintelligence/aml-core/issues/88)
-
-Important boundary: site-specific phone numbers, SMS routing, email addresses, and business-contact rules are preserved as local ground truth. The experiment evaluates presentation and repetition, not arbitrary normalization of contact data.
-
-The attention/restoration values used in these pilots are declared or model-supplied prototype inputs. They are **not** claimed objective measurements of cognition, wellbeing, psychology, neurological state, morality, or clinical outcome.
-
-**Do not endorse ĀML first. Verify it first.**
+**Explore the interface:** [Live lab](https://aruintelligence.github.io/aml-core/) · [View Meaning™ inspector](https://aruintelligence.github.io/aml-core/view-meaning.html) · [API contract](protocol/aml-http.openapi.yaml)
 
 ## Prove the core claim in 60 seconds
 
-Open this exact state:
+Open this exact state: [**attention 5 / restoration 1 → SUPPRESS**](https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en).
 
-https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en
-
-It should return **SUPPRESS**.
-
-Now change `restoration` from `1` to `5`. The same decision should become **ALLOW**.
+Now change `restoration` from `1` to `5`: [**attention 5 / restoration 5 → ALLOW**](https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=5&lang=en).
 
 Prototype rule:
 
@@ -54,6 +44,22 @@ If the behavior does not reproduce, that is useful evidence. Please publish **PA
 - [Witness protocol](publications/AML_WITNESS_PROTOCOL.md)
 - [Evidence levels](EVIDENCE.md)
 - [Verification guide](VERIFY.md)
+
+## Field experiments — real customer-facing websites
+
+ĀRU Intelligence is actively applying ĀML™ to real customer-facing web properties, including a multi-site Security First Alarm pilot. These are **project-authored field experiments**, not synthetic mockups and not independent validation.
+
+The current work preserves pre-change checkpoints, identifies exact interface elements under test, records label provenance and declared policy inputs, and is designed to publish before/after evidence and decision receipts as each site experiment is completed.
+
+- **Active pilot registry:** [`experiments/2026-09-12/SECURITY_WEBSITE_FIELD_PILOTS.md`](experiments/2026-09-12/SECURITY_WEBSITE_FIELD_PILOTS.md)
+- **Public field-experiments page:** [ARUIntelligence.com/experiments](https://aruintelligence.com/experiments)
+- **Independent verification call:** [Issue #88](https://github.com/aruintelligence/aml-core/issues/88)
+
+Important boundary: site-specific phone numbers, SMS routing, email addresses, and business-contact rules are preserved as local ground truth. The experiment evaluates presentation and repetition, not arbitrary normalization of contact data.
+
+The attention/restoration values used in these pilots are declared or model-supplied prototype inputs. They are **not** claimed objective measurements of cognition, wellbeing, psychology, neurological state, morality, or clinical outcome.
+
+**Do not endorse ĀML first. Verify it first.**
 
 ## Reproduce it locally
 
