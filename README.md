@@ -32,6 +32,10 @@
 
 [![One local approval grant permits one simulated callback. Reusing it blocks before a second callback.](docs/one-shot-approval.svg)](https://aruintelligence.github.io/aml-core/action-lab.html?scenario=replay)
 
+**Two processes, one claim:** [Inspect the recorded race](https://aruintelligence.github.io/aml-core/approval-race.html) and run `node pilots/action-boundary/file-grant-race-demo.mjs`. Separate Node workers share a trusted local directory and compete to create an exclusive claim marker. The project-authored run records one simulated callback and one blocked replay. It is a local-filesystem prototype, not authenticated approval or a multi-machine production store.
+
+[![Two local workers use one grant: one claim reaches a simulated callback, the replay blocks.](docs/file-grant-race.svg)](https://aruintelligence.github.io/aml-core/approval-race.html)
+
 ## Prove the core claim in 60 seconds
 
 Open this exact state: [**attention 5 / restoration 1 → SUPPRESS**](https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en).

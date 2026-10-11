@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500" role="img" aria-labelledby="title desc">
+  <title id="title">One grant, two processes, one callback</title>
+  <desc id="desc">Two workers request the same short-lived grant from a shared local filesystem. Exclusive claim creation lets one worker reach a simulated callback; the reused grant blocks the other.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#071425"/><stop offset=".52" stop-color="#102942"/><stop offset="1" stop-color="#08131f"/></linearGradient>
+    <linearGradient id="top" x2="1"><stop stop-color="#67e4e6"/><stop offset="1" stop-color="#f6cd76"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="11"/></filter>
+  </defs>
+  <rect width="1200" height="500" rx="28" fill="url(#bg)"/>
+  <circle cx="905" cy="62" r="160" fill="#1ac5d4" opacity=".08" filter="url(#glow)"/>
+  <g fill="none" stroke="#41617b" stroke-width="2"><path d="M397 270H516"/><path d="M684 270H802"/><path d="M600 332V388"/></g>
+  <text x="52" y="64" fill="#7de7ea" font-size="17" font-family="Arial,sans-serif" font-weight="700" letter-spacing="4">ĀML™ / ACTION BOUNDARY</text>
+  <text x="52" y="122" fill="#f4f9ff" font-size="45" font-family="Arial,sans-serif" font-weight="800">ONE GRANT. TWO PROCESSES.</text>
+  <text x="52" y="167" fill="url(#top)" font-size="45" font-family="Arial,sans-serif" font-weight="800">ONE CALLBACK.</text>
+  <g font-family="Arial,sans-serif">
+    <rect x="52" y="215" width="345" height="118" rx="18" fill="#102a3e" stroke="#4d97a1"/>
+    <text x="76" y="246" fill="#a9ced7" font-size="14" font-weight="700" letter-spacing="2">WINNING PROCESS / CLAIM WON</text>
+    <text x="76" y="291" fill="#9bf0be" font-size="31" font-weight="800">DISPATCHED</text>
+    <rect x="516" y="215" width="168" height="118" rx="18" fill="#203443" stroke="#f1cc77" stroke-width="2"/>
+    <text x="539" y="248" fill="#f4d485" font-size="13" font-weight="700" letter-spacing="1">SHARED STORE</text>
+    <text x="539" y="290" fill="#f8f4e7" font-size="24" font-weight="800">1 CLAIM</text>
+    <rect x="802" y="215" width="345" height="118" rx="18" fill="#2a1e31" stroke="#b1748c"/>
+    <text x="826" y="246" fill="#d5b8c9" font-size="14" font-weight="700" letter-spacing="2">OTHER PROCESS / REPLAY</text>
+    <text x="826" y="291" fill="#ff9cae" font-size="31" font-weight="800">BLOCKED</text>
+    <rect x="431" y="388" width="338" height="67" rx="16" fill="#112d3a" stroke="#3b8191"/>
+    <text x="458" y="415" fill="#d0e4ee" font-size="13" font-weight="700" letter-spacing="2">RECORDED LOCAL RACE</text>
+    <text x="458" y="440" fill="#a5f6c6" font-size="19" font-weight="800">TOOL CALLBACKS: 1</text>
+    <text x="52" y="475" fill="#aac2d0" font-size="13">Project-authored two-process fixture · local filesystem only · no external message sent</text>
+  </g>
+</svg>
