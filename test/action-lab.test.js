@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { webcrypto } from "node:crypto";
 import { planAction } from "../pilots/action-boundary/boundary.mjs";
 import { planPreview, rehearse } from "../docs/action-lab-core.js";
+import { actionPathStory } from "../docs/action-lab-story.js";
 
 const vectors = JSON.parse(readFileSync(new URL("../pilots/action-boundary/vectors.json", import.meta.url), "utf8"));
 const html = readFileSync(new URL("../docs/action-lab.html", import.meta.url), "utf8");
@@ -40,11 +41,42 @@ test("malformed and ambiguous host policies deny in the browser mirror", async (
   assert.equal((await planPreview(proposal, { rules: [] }, webcrypto.subtle)).reason, "invalid_policy");
 });
 
+test("the visual path describes plan, approval, and outcome without claiming execution", async () => {
+  const send = vectors.cases[0];
+  const plan = await planPreview(send.proposal, vectors.policy, webcrypto.subtle);
+  const waiting = actionPathStory(send.proposal, plan, null, null);
+  assert.deepEqual([waiting.policy.value, waiting.approval.value, waiting.receipt.value],
+    ["APPROVAL REQUIRED", "AWAITING", "NOT ATTEMPTED"]);
+  const approved = actionPathStory(send.proposal, plan, plan.proposal_sha256,
+    rehearse(plan, plan.proposal_sha256));
+  assert.equal(approved.approval.value, "DIGEST MATCH");
+  assert.equal(approved.receipt.value, "WOULD DISPATCH");
+  assert.match(approved.receipt.detail, /no tool ran/);
+
+  const changed = vectors.cases[3];
+  const changedPlan = await planPreview(changed.proposal, vectors.policy, webcrypto.subtle);
+  const stale = actionPathStory(changed.proposal, changedPlan, plan.proposal_sha256,
+    rehearse(changedPlan, plan.proposal_sha256));
+  assert.equal(stale.approval.value, "STALE");
+  assert.equal(stale.receipt.value, "BLOCKED");
+  const denied = vectors.cases[2];
+  const deniedPlan = await planPreview(denied.proposal, vectors.policy, webcrypto.subtle);
+  assert.equal(actionPathStory(denied.proposal, deniedPlan, null, null).policy.value, "DENY");
+  const read = vectors.cases[4];
+  const readPlan = await planPreview(read.proposal, vectors.policy, webcrypto.subtle);
+  assert.equal(actionPathStory(read.proposal, readPlan, null, null).approval.value, "NOT NEEDED");
+  assert.equal(actionPathStory(send.proposal, plan, plan.proposal_sha256,
+    rehearse(plan, plan.proposal_sha256, true)).receipt.value, "UNKNOWN");
+});
+
 test("the public page exposes its limitations and uses only local browser inputs", () => {
   assert.match(html, /Browser rehearsal only/);
   assert.match(html, /No tool runs, no message is sent/);
   assert.match(html, /Local browser inputs are not uploaded/);
   assert.match(html, /action-lab\.js/);
+  assert.match(html, /id="path-receipt-value"/);
+  assert.match(html, /green simulated path is not tool execution/);
   assert.match(ui, /planPreview\(proposal, policy, crypto\.subtle\)/);
+  assert.match(ui, /actionPathStory\(proposal, plan, approvedDigest, outcome\)/);
   assert.doesNotMatch(ui, /\bfetch\(|XMLHttpRequest|sendBeacon/);
 });
