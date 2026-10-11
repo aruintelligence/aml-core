@@ -11,6 +11,8 @@ on:
       - "scripts/build-file-dispatch-report.mjs"
       - "scripts/build-action-key-order-report.mjs"
       - "scripts/build-grant-directory-report.mjs"
+      - "scripts/build-a2ui-function-report.mjs"
+      - "test/action-boundary-a2ui-gate.test.js"
       - "test/action-boundary-challenge.test.js"
       - "test/action-boundary-file-grant.test.js"
       - "test/action-boundary-dispatch-ledger.test.js"
@@ -22,6 +24,9 @@ on:
       - "docs/grant-directory-report.json"
       - "docs/grant-directory-lab.html"
       - "docs/grant-directory-proof.svg"
+      - "docs/a2ui-function-report.json"
+      - "docs/a2ui-function-lab.html"
+      - "docs/a2ui-function-proof.svg"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
   pull_request:
@@ -33,6 +38,8 @@ on:
       - "scripts/build-file-dispatch-report.mjs"
       - "scripts/build-action-key-order-report.mjs"
       - "scripts/build-grant-directory-report.mjs"
+      - "scripts/build-a2ui-function-report.mjs"
+      - "test/action-boundary-a2ui-gate.test.js"
       - "test/action-boundary-challenge.test.js"
       - "test/action-boundary-file-grant.test.js"
       - "test/action-boundary-dispatch-ledger.test.js"
@@ -44,6 +51,9 @@ on:
       - "docs/grant-directory-report.json"
       - "docs/grant-directory-lab.html"
       - "docs/grant-directory-proof.svg"
+      - "docs/a2ui-function-report.json"
+      - "docs/a2ui-function-lab.html"
+      - "docs/a2ui-function-proof.svg"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
 
@@ -67,6 +77,11 @@ jobs:
         run: |
           node --test test/action-boundary-guarded-tool.test.js
           node pilots/action-boundary/guarded-tool-demo.mjs > "$RUNNER_TEMP/aml-guarded-tool-demo.json"
+      - name: Verify A2UI v1.0 function gate and published visual cases
+        run: |
+          node --test test/action-boundary-a2ui-gate.test.js
+          node pilots/action-boundary/a2ui-function-demo.mjs > "$RUNNER_TEMP/aml-a2ui-function-demo.json"
+          node scripts/build-a2ui-function-report.mjs --check
       - name: Project-owned self-test
         run: node scripts/run-action-boundary-challenge.mjs --self-test
       - name: Exercise black-box process contract
