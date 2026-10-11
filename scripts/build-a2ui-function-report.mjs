@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { createA2UIFunctionGate } from "../pilots/action-boundary/a2ui-function-gate.mjs";
+import { createLocalA2UIInvocationClaims } from "../pilots/action-boundary/a2ui-invocation-claims.mjs";
 
 const outputPath = new URL("../docs/a2ui-function-report.json", import.meta.url);
 const catalogId = "https://example.test/catalog/action.json";
@@ -23,6 +24,7 @@ async function runCase({ id, title, description, change, expected }) {
     tool: "send_message", effect: "send", purpose: "Send a status update",
     resourceFor: args => args.to, policy: policy(),
     requestApproval: async ({ proposal_sha256 }) => ({ approved: true, proposal_sha256 }),
+    claimInvocation: createLocalA2UIInvocationClaims({ sessionFor: context => context.sessionId }).claim,
     execute: async args => {
       callbackCount++;
       observedArguments.push(args);
@@ -32,7 +34,8 @@ async function runCase({ id, title, description, change, expected }) {
   const message = envelope(baseArgs());
   change(config, message);
   const submittedRequest = structuredClone(message);
-  const { response, aml } = await createA2UIFunctionGate(config)(message);
+  const { response, aml, invocation } = await createA2UIFunctionGate(config)(message,
+    { sessionId: "report-host-session" });
   const status = aml?.receipt.execution_status ?? "not_reached";
   const reason = aml?.receipt.reason ?? response.error?.code;
   assert.equal(status, expected.status, id);
@@ -46,7 +49,8 @@ async function runCase({ id, title, description, change, expected }) {
   return {
     id, title, description, request: submittedRequest,
     ...(JSON.stringify(message) !== JSON.stringify(submittedRequest) ? { request_after_approval: message } : {}),
-    response, aml_plan: aml?.plan ?? null, aml_receipt: aml?.receipt ?? null,
+    response, invocation: invocation ?? "not_reached",
+    aml_plan: aml?.plan ?? null, aml_receipt: aml?.receipt ?? null,
     callback_count: callbackCount, observed_arguments: observedArguments
   };
 }
