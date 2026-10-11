@@ -1,4 +1,5 @@
 import { planPreview, rehearse } from "./action-lab-core.js";
+import { actionPathStory } from "./action-lab-story.js";
 
 const policy = {
   protocol: "aml-action-policy/1",
@@ -63,6 +64,13 @@ async function render() {
       "No simulated approval recorded.";
   $("outcome").textContent = outcome ? outcome.outcome.toUpperCase().replaceAll("_", " ") : "NOT ATTEMPTED";
   $("outcome").className = "badge " + (outcome?.outcome || "");
+  const story = actionPathStory(proposal, plan, approvedDigest, outcome);
+  for (const key of ["proposal", "policy", "approval", "receipt"]) {
+    const card = $("path-" + key);
+    card.dataset.tone = story[key].tone;
+    $("path-" + key + "-value").textContent = story[key].value;
+    $("path-" + key + "-detail").textContent = story[key].detail;
+  }
   const report = { protocol: "aml-action-lab-report/1", provenance: "project-authored browser simulation",
     proposal: proposal || null, plan, simulated_approval_matches: approved,
     simulation: outcome, canonical_proposal_json: plan.canonical_json,
