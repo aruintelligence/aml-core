@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" role="img" aria-labelledby="title description">
+  <title id="title">A spent approval accepted twice, then blocked by private-directory checks</title>
+  <desc id="description">Historical local store: first claim accepted, writable directory replaced, same grant accepted again. Hardened store: ownership, mode, and symlink checks reject the weak root before issuance.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1"><stop stop-color="#142e49"/><stop offset="1" stop-color="#0b1428"/></linearGradient>
+    <linearGradient id="pink" x2="1"><stop stop-color="#ffbad1"/><stop offset="1" stop-color="#f58ba9"/></linearGradient>
+    <linearGradient id="mint" x2="1"><stop stop-color="#b9ffdf"/><stop offset="1" stop-color="#84dace"/></linearGradient>
+  </defs>
+  <rect width="1200" height="480" rx="24" fill="url(#background)"/>
+  <rect x="23" y="23" width="1154" height="434" rx="22" fill="none" stroke="#466482"/>
+  <text x="60" y="72" fill="#a9dfe8" font-family="system-ui,sans-serif" font-size="15" font-weight="800" letter-spacing="3">ENGINEERING PROOF 023 / A LOCAL REPLAY GAP</text>
+  <text x="60" y="130" fill="#f3f7ff" font-family="system-ui,sans-serif" font-size="52" font-weight="850" letter-spacing="-3">One grant. <tspan fill="#ffbad1">Two claims.</tspan></text>
+  <text x="62" y="163" fill="#c0d0e3" font-family="system-ui,sans-serif" font-size="19">The old store trusted a directory it never inspected.</text>
+  <rect x="60" y="194" width="525" height="210" rx="18" fill="#39253c" stroke="#a96884"/>
+  <text x="85" y="229" fill="#ffb9cb" font-family="system-ui,sans-serif" font-size="15" font-weight="800" letter-spacing="2">BEFORE / WRITABLE ROOT</text>
+  <text x="85" y="276" fill="#fff3f7" font-family="system-ui,sans-serif" font-size="30" font-weight="750">claim → replace → replay</text>
+  <text x="85" y="316" fill="#edcbd8" font-family="ui-monospace,monospace" font-size="16">same approval ID · two true results</text>
+  <rect x="85" y="337" width="234" height="44" rx="10" fill="url(#pink)"/>
+  <text x="105" y="366" fill="#2f1729" font-family="system-ui,sans-serif" font-size="20" font-weight="850">2 accepted claims</text>
+  <path d="M595 297h50" fill="none" stroke="#a5bfd0" stroke-width="3"/>
+  <path d="m633 288 14 9-14 9" fill="none" stroke="#a5bfd0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="660" y="194" width="480" height="210" rx="18" fill="#173d41" stroke="#69b1a6"/>
+  <text x="685" y="229" fill="#a2efdc" font-family="system-ui,sans-serif" font-size="15" font-weight="800" letter-spacing="2">AFTER / PRIVATE PATH CHECK</text>
+  <text x="685" y="276" fill="#f2fffa" font-family="system-ui,sans-serif" font-size="30" font-weight="750">inspect → reject</text>
+  <text x="685" y="316" fill="#c4e9e2" font-family="ui-monospace,monospace" font-size="16">owner · mode · symlink</text>
+  <rect x="685" y="337" width="267" height="44" rx="10" fill="url(#mint)"/>
+  <text x="705" y="366" fill="#102d30" font-family="system-ui,sans-serif" font-size="20" font-weight="850">0 accepted claims</text>
+  <text x="62" y="434" fill="#99adbf" font-family="system-ui,sans-serif" font-size="14">Project-authored POSIX simulation · misconfigured local storage · no real tool side effect</text>
+</svg>
