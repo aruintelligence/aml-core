@@ -181,6 +181,12 @@ The project now has separate JavaScript and dependency-free Python implementatio
 
 Reproduce with `node scripts/run-action-boundary-challenge.mjs -- python3 pilots/action-boundary/challenge-python-adapter.py` and `node scripts/build-action-cross-runtime-report.mjs --check`. The supported canonical JSON subset is deliberately narrow: safe-range integers and BMP object keys, with unsupported inputs rejected in Python. Both implementations are **project-maintained**; matching internal code paths are not outside verification, generalized interoperability, authenticated approval, or proof of a live side effect.
 
+## 21. An uncertain tool callback can remain claimed without a blind replay
+
+The optional, host-owned `createFileDispatchLedger({ directory })` uses an exclusive local-file claim keyed by a **host-generated operation ID** and bound to the canonical proposal digest. It claims before the tool callback. In the [six-scenario visual trace](https://aruintelligence.github.io/aml-core/dispatch-ledger.html), two actual Node processes compete for one ID and only one reaches the simulated callback; the other attempt is suppressed. Reuse with a changed payload reports a mismatch. A worker exiting after claim or a callback throwing after a possible effect leaves an `unknown` result and never automatically retries. A new operation ID can intentionally permit the same payload again.
+
+Run `node pilots/action-boundary/file-dispatch-ledger-demo.mjs`, then check the published report with `node scripts/build-file-dispatch-report.mjs --check`. Unlike the one-use **approval grant** in milestone 19, this ID represents a host operation and must not be derived from the proposal digest or model text. The ledger stores hashes and outcome labels, not evidence of delivery. It is a project-authored local-filesystem prototype, not an external idempotency service, cross-machine transaction, durable outbox, automatic recovery, authenticated approval, or proof that an external effect happened. The host must own private storage, stable intent IDs, retention, reconciliation, and tool-specific authorization.
+
 ## The frontier
 
 The next technical frontiers are:
