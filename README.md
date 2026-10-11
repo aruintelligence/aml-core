@@ -40,6 +40,10 @@
 
 [![JavaScript and Python match on 13 published action-boundary cases; project-maintained evidence only.](docs/cross-runtime-proof.svg)](https://aruintelligence.github.io/aml-core/action-cross-runtime.html)
 
+**After a timeout, no blind retry:** [Explore the dispatch ledger](https://aruintelligence.github.io/aml-core/dispatch-ledger.html?scenario=crash). A host-generated operation ID is bound to the exact proposal and claimed before a simulated callback. A two-process race yields one callback; a crash or callback error remains `unknown`, while a changed payload cannot reuse the ID. The six-scenario report is regenerated in CI. This is a local, project-maintained fail-closed pilot—not a distributed exactly-once or delivery guarantee.
+
+[![A host operation ID is claimed before a simulated callback; a second worker is suppressed and uncertain results are not blindly retried.](docs/dispatch-ledger-proof.svg)](https://aruintelligence.github.io/aml-core/dispatch-ledger.html)
+
 ## Prove the core claim in 60 seconds
 
 Open this exact state: [**attention 5 / restoration 1 → SUPPRESS**](https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en).
