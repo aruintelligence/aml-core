@@ -63,8 +63,7 @@ export function createFileDispatchLedger({ directory } = {}) {
     operation_sha256: data.operation_sha256, proposal_sha256: data.proposal_sha256,
     status, reason });
 
-  function inspect({ operationId, proposal }) {
-    const data = input(operationId, proposal);
+  function inspectData(data) {
     const claim = readRecord(data.claimFile);
     if (!claim) return fs.existsSync(data.claimFile) ? view(data, "unknown", "incomplete_claim") :
       view(data, "unclaimed", "no_claim");
@@ -79,19 +78,26 @@ export function createFileDispatchLedger({ directory } = {}) {
     return view(data, outcome.status === "returned" ? "already_returned" : "unknown", outcome.reason);
   }
 
-  function claim({ operationId, proposal }) {
-    const data = input(operationId, proposal);
+  function inspect({ operationId, proposal }) {
+    return inspectData(input(operationId, proposal));
+  }
+
+  function claimData(data) {
     if (!createExclusive(data.claimFile, { protocol: "aml-file-dispatch-claim/1",
       operation_sha256: data.operation_sha256, proposal_sha256: data.proposal_sha256 }, root)) {
-      return inspect({ operationId, proposal });
+      return inspectData(data);
     }
     return view(data, "claimed", "claimed_before_callback");
+  }
+
+  function claim({ operationId, proposal }) {
+    return claimData(input(operationId, proposal));
   }
 
   async function run({ operationId, proposal, executeTool }) {
     if (typeof executeTool !== "function") throw new TypeError("host_callback_required");
     const data = input(operationId, proposal);
-    const first = claim({ operationId, proposal });
+    const first = claimData(data);
     if (first.status !== "claimed") return first; // No retry, even after a crash or callback error.
     let result;
     let outcome;
