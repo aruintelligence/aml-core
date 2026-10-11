@@ -1,6 +1,7 @@
 # Bind every recipient in a narrow mail tool
 
 [Open the seven-case visual lab](https://aruintelligence.github.io/aml-core/mail-target-lab.html?case=hidden_bcc).
+[Edit your own intended and proposed arguments in the local workbench](https://aruintelligence.github.io/aml-core/mail-target-workbench.html?preset=hidden_bcc).
 
 The first [target-binding example](TARGET_BINDING.md) uses a host resolver that reads `arguments.to`. That is incomplete for a mail tool that also sends to `cc` or `bcc`. An added BCC under the same approved `to` still reaches a simulated callback. This is a counterexample to that **example mapper**, not a claim that the generic wrapper promised to understand arbitrary tool schemas.
 
@@ -41,6 +42,8 @@ Run the evidence:
 ```sh
 node test/action-boundary-mail-targets.test.js
 node scripts/build-mail-target-report.mjs --check
+node test/action-boundary-mail-workbench.test.js
+node scripts/build-mail-target-workbench.mjs --check
 ```
 
 The report compares the prior to-only example with this full-manifest adapter over seven bounded, project-authored cases. [RFC 5322](https://www.rfc-editor.org/rfc/rfc5322.html) describes To, Cc, and Bcc as message destination fields; it does not define or endorse this ĀML adapter. This experiment is not external validation, a general email authorization system, or a delivery result.
