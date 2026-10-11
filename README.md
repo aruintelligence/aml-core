@@ -24,6 +24,8 @@
 
 **Explore the interface:** [Live lab](https://aruintelligence.github.io/aml-core/) · [View Meaning™ inspector](https://aruintelligence.github.io/aml-core/view-meaning.html) · [API contract](protocol/aml-http.openapi.yaml)
 
+**Explore the next boundary:** [Proposed action pilot](pilots/action-boundary/README.md) — freeze an agent's intended tool call, check an exact host policy, bind host approval to its digest, and dispatch the frozen proposal. It is a project-authored reference pilot with no live tool access.
+
 ## Prove the core claim in 60 seconds
 
 Open this exact state: [**attention 5 / restoration 1 → SUPPRESS**](https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en).
