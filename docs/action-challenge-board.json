@@ -1,0 +1,98 @@
+{
+  "protocol": "aml-action-boundary-challenge/1",
+  "vectors_file": "pilots/action-boundary/vectors.json",
+  "command_contract": {
+    "invocation": "<executable> <case.json>",
+    "stdout": "one JSON object with protocol aml-action-boundary-result/1, plan, receipt, tool_calls, executed_proposal",
+    "exit_code": "zero for a valid response, including denied or unknown outcomes",
+    "no_live_tools": true
+  },
+  "cases": [
+    {
+      "id": "approved-send",
+      "vector": "approved_route",
+      "host": { "approval": "matching", "tool": "return" },
+      "expected": { "decision": "requires_approval", "reason": "exact_rule", "status": "dispatched", "receipt_reason": "host_dispatch_returned", "tool_calls": 1, "executed_vector": "approved_route" }
+    },
+    {
+      "id": "reordered-keys",
+      "vector": "same_action_reordered_keys",
+      "host": { "approval": "matching", "tool": "return" },
+      "expected": { "decision": "requires_approval", "reason": "exact_rule", "status": "dispatched", "receipt_reason": "host_dispatch_returned", "tool_calls": 1, "executed_vector": "same_action_reordered_keys" }
+    },
+    {
+      "id": "changed-destination",
+      "vector": "changed_destination",
+      "host": { "approval": "matching", "tool": "return" },
+      "expected": { "decision": "deny", "reason": "no_exact_rule", "status": "blocked", "receipt_reason": "no_exact_rule", "tool_calls": 0 }
+    },
+    {
+      "id": "stale-body-approval",
+      "vector": "changed_body",
+      "host": { "approval": "fixed", "approval_digest_vector": "approved_route", "tool": "return" },
+      "expected": { "decision": "requires_approval", "reason": "exact_rule", "status": "blocked", "receipt_reason": "approval_missing_or_mismatched", "tool_calls": 0 }
+    },
+    {
+      "id": "allowed-read",
+      "vector": "read_route",
+      "host": { "approval": "missing", "tool": "return" },
+      "expected": { "decision": "allow", "reason": "exact_rule", "status": "dispatched", "receipt_reason": "host_dispatch_returned", "tool_calls": 1, "executed_vector": "read_route" }
+    },
+    {
+      "id": "undeclared-effect",
+      "vector": "undeclared_effect",
+      "host": { "approval": "matching", "tool": "return" },
+      "expected": { "decision": "deny", "reason": "no_exact_rule", "status": "blocked", "receipt_reason": "no_exact_rule", "tool_calls": 0 }
+    },
+    {
+      "id": "missing-approval",
+      "vector": "approved_route",
+      "host": { "approval": "missing", "tool": "return" },
+      "expected": { "decision": "requires_approval", "reason": "exact_rule", "status": "blocked", "receipt_reason": "approval_unavailable", "tool_calls": 0 }
+    },
+    {
+      "id": "approval-error",
+      "vector": "approved_route",
+      "host": { "approval": "throw", "tool": "return" },
+      "expected": { "decision": "requires_approval", "reason": "exact_rule", "status": "blocked", "receipt_reason": "approval_error", "tool_calls": 0 }
+    },
+    {
+      "id": "mutated-while-awaiting",
+      "vector": "approved_route",
+      "host": { "approval": "matching", "mutate_proposal_body": "MUTATED", "tool": "return" },
+      "expected": { "decision": "requires_approval", "reason": "exact_rule", "status": "dispatched", "receipt_reason": "host_dispatch_returned", "tool_calls": 1, "executed_vector": "approved_route" }
+    },
+    {
+      "id": "policy-revoked-while-awaiting",
+      "vector": "approved_route",
+      "host": { "approval": "matching", "remove_policy_rule": true, "tool": "return" },
+      "expected": { "decision": "requires_approval", "reason": "exact_rule", "status": "blocked", "receipt_reason": "policy_changed", "tool_calls": 0 }
+    },
+    {
+      "id": "dispatch-uncertain",
+      "vector": "approved_route",
+      "host": { "approval": "matching", "tool": "throw" },
+      "expected": { "decision": "requires_approval", "reason": "exact_rule", "status": "unknown", "receipt_reason": "host_dispatch_error", "tool_calls": 1, "executed_vector": "approved_route" }
+    },
+    {
+      "id": "ambiguous-policy",
+      "vector": "approved_route",
+      "policy_variant": "duplicate_matching_rule",
+      "host": { "approval": "matching", "tool": "return" },
+      "expected": { "decision": "deny", "reason": "ambiguous_policy", "status": "blocked", "receipt_reason": "ambiguous_policy", "tool_calls": 0, "null_digest": true }
+    },
+    {
+      "id": "malformed-proposal",
+      "vector": "approved_route",
+      "proposal_variant": "extra_top_level_field",
+      "host": { "approval": "matching", "tool": "return" },
+      "expected": { "decision": "deny", "reason": "invalid_proposal", "status": "blocked", "receipt_reason": "invalid_proposal", "tool_calls": 0, "null_digest": true }
+    }
+  ],
+  "independence": {
+    "outside_implementation_required_for_external_witness_credit": true,
+    "must_not_import_or_wrap_the_aml_core_reference": true,
+    "pass_fail_mixed_reports_welcome": true
+  },
+  "claim_boundary": "A passing project-defined black-box run is compatibility evidence for these cases, not production authorization, human consent, independent adoption, certification, or a ratified standard."
+}
