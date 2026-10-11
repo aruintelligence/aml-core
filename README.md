@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/aml-hero.svg" alt="Illustration: declared interface intent enters a policy gate and produces an inspectable suppression receipt" width="100%">
+  <a href="https://aruintelligence.github.io/aml-core/"><img src="docs/aml-social-preview.svg" alt="ĀML: AI proposes. The host decides. An illustrative outside message is blocked by an exact host policy before dispatch." width="100%"></a>
 </div>
 
 # ĀML™ — ĀRU Meaning Language™
