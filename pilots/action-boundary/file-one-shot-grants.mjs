@@ -2,7 +2,7 @@
 // directory race on exclusive creation of one claim marker. The directory must
 // be private to the host; this is not a network-store or multi-machine protocol.
 import { randomUUID } from "node:crypto";
-import { mkdir, open, readFile } from "node:fs/promises";
+import { lstat, mkdir, open, readFile } from "node:fs/promises";
 import path from "node:path";
 
 const DIGEST = /^[a-f0-9]{64}$/;
@@ -16,9 +16,31 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
   const issued = path.join(directory, "issued");
   const claimed = path.join(directory, "claimed");
 
+  async function requirePrivateDirectory(target) {
+    // mkdir's mode only applies to newly created directories. An existing
+    // directory may be writable by someone who can replace a claim marker.
+    const info = await lstat(target); // Do not follow a directory symlink.
+    if (!info.isDirectory() || (info.mode & 0o077) !== 0 ||
+        typeof process.getuid !== "function" || info.uid !== process.getuid()) {
+      throw new Error("private_grant_directory_required");
+    }
+  }
+
   async function prepare() {
+    await mkdir(directory, { recursive: true, mode: 0o700 });
+    await requirePrivateDirectory(directory);
     await mkdir(issued, { recursive: true, mode: 0o700 });
     await mkdir(claimed, { recursive: true, mode: 0o700 });
+    await requirePrivateDirectory(issued);
+    await requirePrivateDirectory(claimed);
+  }
+
+  async function verify() {
+    // Consume must not silently recreate a lost claim directory: doing so
+    // would forget spent grants. Recheck modes before accessing records.
+    await requirePrivateDirectory(directory);
+    await requirePrivateDirectory(issued);
+    await requirePrivateDirectory(claimed);
   }
 
   async function issue(proposal_sha256, { ttlMs = 60_000 } = {}) {
@@ -48,6 +70,7 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
     const id = approval?.approval_id;
     if (typeof id !== "string" || !ID.test(id) || !DIGEST.test(proposal_sha256) ||
         approval.proposal_sha256 !== proposal_sha256) return false;
+    await verify();
     let record;
     try {
       record = JSON.parse(await readFile(path.join(issued, `${id}.json`), "utf8"));
@@ -58,6 +81,8 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
     if (record.approval_id !== id || record.proposal_sha256 !== proposal_sha256 ||
         !Number.isSafeInteger(record.expires_at_ms)) return false;
     if (now() >= record.expires_at_ms) return false;
+
+    await verify();
 
     // Exclusive creation is the linearization point on a local filesystem.
     // A crash after this succeeds leaves the grant spent before any callback.
