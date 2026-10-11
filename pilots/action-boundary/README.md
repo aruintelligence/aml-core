@@ -8,6 +8,8 @@ Agents can propose a tool call; the host must decide whether to dispatch it. Thi
 
 [**Wrap a function tool in your host**](../../docs/AGENT_TOOL_QUICKSTART.md) with `createGuardedToolExecute`, then run `node pilots/action-boundary/guarded-tool-demo.mjs` to see a simulated dispatch and a blocked destination change. The wrapper imports this project's reference boundary and is not an independent implementation.
 
+[**Try a one-use grant replay**](https://aruintelligence.github.io/aml-core/action-lab.html?scenario=replay) or run `node pilots/action-boundary/one-shot-grant-demo.mjs`. The fixture issues one process-local grant for a digest. The first guarded call invokes the simulated callback; a second call with that same grant returns `approval_reused_or_expired` without invoking it again. This is a project-authored demonstration, not authenticated human approval or a durable distributed replay defense.
+
 ```bash
 node pilots/action-boundary/demo.mjs
 node pilots/action-boundary/boundary.test.mjs
@@ -34,7 +36,9 @@ The published [`vectors.json`](vectors.json) contains six exact proposal digests
 
 The separate policy has protocol `aml-action-policy/1` and exact rules with `tool`, `effect`, `resource`, and `requires_approval`. Unknown, malformed, and ambiguous policies deny. No wildcards or URL-prefix rules are supported. Supported effect labels are `read`, `write`, `send`, `pay`, and `delete`; they are declarations, not automatic classifications. The host must map the real tool and resource correctly. The host approval callback must return `{ approved: true, proposal_sha256 }` for the frozen proposal; an untrusted string with that shape is not proof of a person's consent.
 
-The dispatch receipt records `blocked`, `dispatched`, or `unknown`. `dispatched` means the host callback returned; it does not prove delivery or completion. A callback error is `unknown` because a side effect might already have occurred; the boundary never retries it. SHA-256 detects changes in this proposal's canonical JSON, but does not authenticate the policy, approver, tool implementation, or external result. A production host needs authentication, durable audit storage, replay controls, approval expiry, idempotency, and tool-specific authorization. This pilot does not replace those controls or the existing ĀML UI governance stack.
+The dispatch receipt records `blocked`, `dispatched`, or `unknown`. `dispatched` means the host callback returned; it does not prove delivery or completion. A callback error is `unknown` because a side effect might already have occurred; the boundary never retries it. SHA-256 detects changes in this proposal's canonical JSON, but does not authenticate the policy, approver, tool implementation, or external result.
+
+An optional host-owned `consumeApproval` callback can atomically claim a grant after the digest matches and policy is rechecked, before the tool callback. It must return exactly `true` for a successful claim. A `false` result blocks with `approval_reused_or_expired`; a claim error blocks with `approval_consume_error`. Policy is checked again after an asynchronous claim. `createLocalOneShotGrants()` illustrates the contract in one Node process with expiry and a synchronous Map deletion. Production use needs a durable atomic store shared across workers, authenticated approval issuance, bounded expiry, audit storage, idempotency, and tool-specific authorization. The opt-in store does not protect unwrapped tools or other processes. This pilot does not replace those controls or the existing ĀML UI governance stack.
 
 ## Why this wedge
 

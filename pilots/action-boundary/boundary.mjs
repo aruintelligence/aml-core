@@ -51,9 +51,9 @@ export function planAction(proposal, policy) {
   }
 }
 
-// requestApproval and executeTool must be supplied by the trusted host. A model
-// must never supply either callback or the policy. No approval callback => deny.
-export async function dispatchAction(proposal, { policy, requestApproval, executeTool } = {}) {
+// All callbacks and policy must be supplied by the trusted host. A model must
+// never supply them. consumeApproval is an optional atomic, one-use host claim.
+export async function dispatchAction(proposal, { policy, requestApproval, consumeApproval, executeTool } = {}) {
   const plan = planAction(proposal, policy);
   const receipt = (status, reason) => ({ protocol: "aml-action-dispatch/1",
     proposal_sha256: plan.proposal_sha256, policy_decision: plan.decision,
@@ -61,9 +61,9 @@ export async function dispatchAction(proposal, { policy, requestApproval, execut
   if (plan.decision === "deny") return { receipt: receipt("blocked", plan.reason) };
   if (typeof executeTool !== "function") return { receipt: receipt("blocked", "missing_host_dispatch") };
   const frozen = snapshot(proposal);
+  let approval;
   if (plan.decision === "requires_approval") {
     if (typeof requestApproval !== "function") return { receipt: receipt("blocked", "approval_unavailable") };
-    let approval;
     try { approval = await requestApproval({ proposal: JSON.parse(frozen.bytes), proposal_sha256: frozen.digest }); }
     catch { return { receipt: receipt("blocked", "approval_error") }; }
     if (approval?.approved !== true || approval?.proposal_sha256 !== frozen.digest) {
@@ -76,6 +76,23 @@ export async function dispatchAction(proposal, { policy, requestApproval, execut
   if (rechecked.decision !== plan.decision || rechecked.proposal_sha256 !== frozen.digest) {
     return { receipt: receipt("blocked", "policy_changed") };
   }
+  if (plan.decision === "requires_approval" && consumeApproval !== undefined) {
+    if (typeof consumeApproval !== "function") return { receipt: receipt("blocked", "invalid_host_consumer") };
+    let consumed;
+    try {
+      consumed = await consumeApproval({ approval, proposal: JSON.parse(frozen.bytes),
+        proposal_sha256: frozen.digest });
+    } catch {
+      return { receipt: receipt("blocked", "approval_consume_error") };
+    }
+    if (consumed !== true) return { receipt: receipt("blocked", "approval_reused_or_expired") };
+    // An asynchronous host store can outlive the policy snapshot above. A
+    // consumed grant stays spent if the host revokes the rule in the meantime.
+    const finalPlan = planAction(frozen.value, policy);
+    if (finalPlan.decision !== plan.decision || finalPlan.proposal_sha256 !== frozen.digest) {
+      return { receipt: receipt("blocked", "policy_changed") };
+    }
+  }
   try {
     const result = await executeTool(JSON.parse(frozen.bytes));
     return { receipt: receipt("dispatched", "host_dispatch_returned"), result };
@@ -85,3 +102,4 @@ export async function dispatchAction(proposal, { policy, requestApproval, execut
     return { receipt: receipt("unknown", "host_dispatch_error") };
   }
 }
+

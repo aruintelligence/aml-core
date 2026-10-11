@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#080c17">
-  <meta name="description" content="Rehearse an AI agent tool call against an exact host policy. Change one argument, inspect its digest, and see a simulated approval become stale.">
+  <meta name="description" content="Rehearse an AI agent tool call against an exact host policy. Change an argument, inspect its digest, and test a simulated one-use grant against replay.">
   <title>Action Boundary Lab · ĀML™</title>
   <style>
     :root{color-scheme:dark;--bg:#080c17;--panel:#111b2d;--line:#304058;--ink:#f4f7ff;--muted:#b7c5d8;--cyan:#78e8f5;--gold:#f5d27a;--red:#ffa0ac;--green:#9af4bb}
@@ -26,7 +26,7 @@
     <header>
       <div class="eyebrow">PROPOSE · POLICY · APPROVAL · RECEIPT</div>
       <h1>What exactly did the <span>agent ask to do?</span></h1>
-      <p class="lede">Edit a proposed tool call. ĀML's reference contract hashes its exact meaning and asks a host-owned policy for an exact match. Change the destination or body after simulated approval to see why the approval no longer matches.</p>
+      <p class="lede">Edit a proposed tool call. ĀML's reference contract hashes its exact meaning and asks a host-owned policy for an exact match. Try <strong>Replay one-use grant</strong>: approve once, rehearse dispatch twice, and watch the second attempt block.</p>
       <p class="notice"><strong>Browser rehearsal only.</strong> No tool runs, no message is sent, and the button does not obtain a person's consent. The visible policy is a fixed local fixture.</p>
     </header>
     <div id="presets" class="presets" role="group" aria-label="Choose a scenario">
@@ -34,6 +34,7 @@
       <button type="button" data-case="changed" aria-pressed="false">02 · Different destination</button>
       <button type="button" data-case="read" aria-pressed="false">03 · Allowed read</button>
       <button type="button" data-case="timeout" aria-pressed="false">04 · Uncertain result</button>
+      <button type="button" data-case="replay" aria-pressed="false">05 · Replay one-use grant</button>
     </div>
     <section class="path-visual" aria-label="Live action decision path">
       <div class="path-heading"><strong>THE ACTION PATH</strong><span>Changes with the local scenario and your edits</span></div>
@@ -74,7 +75,7 @@
     </main>
     <div class="steps" aria-label="What this proves">
       <div class="step"><b>01 · Exact match</b><p>An undeclared destination or effect is denied by the local fixture.</p></div>
-      <div class="step"><b>02 · Approval binding</b><p>The simulated approval stores one proposal digest. Editing arguments invalidates that match.</p></div>
+      <div class="step"><b>02 · Approval binding and replay</b><p>Editing arguments invalidates the digest. In the replay scenario, a spent local grant blocks the second attempt.</p></div>
       <div class="step"><b>03 · Honest outcome</b><p>A simulated callback error is unknown. It cannot prove an external action happened or did not happen.</p></div>
     </div>
     <footer class="foot">Project-authored reference experiment · <a href="https://github.com/aruintelligence/aml-core/blob/main/pilots/action-boundary/README.md">Read the contract and claim limits</a> · <a href="https://github.com/aruintelligence/aml-core/blob/main/docs/AGENT_TOOL_QUICKSTART.md">Wrap one agent tool</a> · <a href="https://github.com/aruintelligence/aml-core/blob/main/publications/ACTION_BOUNDARY_CHALLENGE.md">Run the outside implementation challenge</a> · <a href="https://github.com/aruintelligence/aml-core/issues/88">Independent verification call</a><br>Local browser inputs are not uploaded by this lab. SHA-256 is a change detector, not proof of trusted identity, policy authority, human approval, or delivery. ĀML™ · ĀRU Intelligence Inc.™</footer>

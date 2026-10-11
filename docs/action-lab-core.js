@@ -54,10 +54,13 @@ export async function planPreview(proposal, policy, subtle) {
   }
 }
 
-export function rehearse(plan, approvedDigest, uncertain = false) {
+export function rehearse(plan, approvedDigest, uncertain = false, grantConsumed = false) {
   if (plan.decision === "deny") return { outcome: "blocked", reason: plan.reason };
   if (plan.decision === "requires_approval" && approvedDigest !== plan.proposal_sha256) {
     return { outcome: "blocked", reason: "approval_missing_or_mismatched" };
+  }
+  if (plan.decision === "requires_approval" && grantConsumed) {
+    return { outcome: "blocked", reason: "approval_reused_or_expired" };
   }
   return uncertain ? { outcome: "unknown", reason: "simulated_dispatch_exception" } :
     { outcome: "would_dispatch", reason: "simulation_only" };
