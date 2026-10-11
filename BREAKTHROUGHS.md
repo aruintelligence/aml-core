@@ -175,6 +175,12 @@ Run `node pilots/action-boundary/one-shot-grant-demo.mjs`: the first call invoke
 
 This is a project-authored local-filesystem prototype. It does not authenticate a person, work across machines or network filesystems, prove delivery, or protect tools that bypass the wrapper. The host must provide private storage, expiry and cleanup policy, trusted clocks, idempotency, and tool-specific authorization.
 
+## 20. A proposed-action boundary can be implemented in two languages
+
+The project now has separate JavaScript and dependency-free Python implementations of its published action-boundary subset. The Python adapter imports no JavaScript boundary code. Both pass the 13-case black-box challenge and produce [matching actual plans, dispatch receipts, callback counts, and frozen proposals](https://aruintelligence.github.io/aml-core/action-cross-runtime.html) for each fixture. A checked-in comparison report is regenerated and checked in CI; any divergence is visible case by case.
+
+Reproduce with `node scripts/run-action-boundary-challenge.mjs -- python3 pilots/action-boundary/challenge-python-adapter.py` and `node scripts/build-action-cross-runtime-report.mjs --check`. The supported canonical JSON subset is deliberately narrow: safe-range integers and BMP object keys, with unsupported inputs rejected in Python. Both implementations are **project-maintained**; matching internal code paths are not outside verification, generalized interoperability, authenticated approval, or proof of a live side effect.
+
 ## The frontier
 
 The next technical frontiers are:
