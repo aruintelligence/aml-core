@@ -1,5 +1,5 @@
-import { planPreview, rehearse } from "./action-lab-core.js";
-import { actionPathStory } from "./action-lab-story.js";
+import { planPreview, rehearse } from "./action-lab-core.js?v=one-use-grant-1";
+import { actionPathStory } from "./action-lab-story.js?v=one-use-grant-1";
 
 const policy = {
   protocol: "aml-action-policy/1",
