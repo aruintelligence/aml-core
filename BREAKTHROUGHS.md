@@ -239,6 +239,14 @@ The opt-in `dispatchTargetBoundAction` snapshots the proposal and requires a hos
 
 The mapper must genuinely reflect every destination a real tool can use, including aliases and secondary recipients; the wrapper cannot prove that on its own. It does not authenticate approval, validate message content, cover bypassing tool paths, or prove external delivery. A changed body with an aligned target still reaches an unreviewed simulated callback. These are project-authored local cases, not independent validation or an official protocol extension.
 
+## 29. A correct target check can still miss a second recipient
+
+The previous target-binding wrapper required a host-owned resolver, but its first mail example returned only `arguments.to`. Add `bcc: ["outside@example.test"]` while keeping the approved `to: "team@example.test"`, and that example reports a matching target. The frozen proposal reaches one simulated callback carrying the unapproved BCC field. The generic wrapper did not claim to discover arbitrary tool destinations; this counterexample shows why mapper completeness is a necessary host responsibility.
+
+For one narrow mail schema, `mailTargetResource` validates To, CC, and BCC, builds a canonical manifest, and uses its SHA-256 as an exact policy resource key. `resolveMailTarget` derives the same key from frozen dispatch arguments. The [seven-case visual lab](https://aruintelligence.github.io/aml-core/mail-target-lab.html?case=hidden_bcc) shows the BCC and CC additions blocked before callbacks, an explicitly authorized multi-recipient control that passes, schema failures, and a changed-body limit. `node scripts/build-mail-target-report.mjs --check` regenerates the machine report; the [guide](pilots/action-boundary/MAIL_TARGET_MANIFEST.md) explains the exact schema and downstream assumptions.
+
+This is a project-authored local simulation, not a sent message, independent validation, or a general email security guarantee. The digest is a comparison key and does not authenticate permission. A real mail adapter must use exactly the mapped delivery fields and account for provider aliases, redirects, forwarding, or other ways to change recipients. Content and approval remain separate host decisions.
+
 ## The frontier
 
 The next technical frontiers are:

@@ -1,0 +1,444 @@
+{
+  "protocol": "aml-mail-target-report/1",
+  "provenance": "Project-authored local Node simulation; both paths use the same target-bound action wrapper with different host mappers and policies. Callbacks append only to memory.",
+  "manifest_contract": "The supported mail tool uses exactly to, cc, bcc, subject, and body. Destination roles and ordered addresses become a canonical JSON manifest. Its SHA-256 is an exact policy resource key, not an approval.",
+  "caveat": "The example assumes the actual mail callback uses exactly these destination fields and rejects other delivery routes. A different API, redirects, aliases, or downstream rewriting needs its own mapper. Message content and human authorization require separate checks. No message was sent.",
+  "cases": [
+    {
+      "id": "aligned",
+      "title": "One intended recipient",
+      "description": "The approved and actual manifests agree.",
+      "input_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "The release is ready."
+      },
+      "approved_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [],
+        "bcc": []
+      },
+      "actual_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [],
+        "bcc": []
+      },
+      "approved_resource": "mail-targets-sha256:446f84ced6195a24890cc08407663f2976202d182e8822362a199614704f89e5",
+      "actual_resource": "mail-targets-sha256:446f84ced6195a24890cc08407663f2976202d182e8822362a199614704f89e5",
+      "primary_only": {
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "9889390ee74917838cd20f5c036f9e6295fb15dbfc5d60cf538bdf7ab5e1694f",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": null,
+            "bcc": null
+          }
+        ]
+      },
+      "full_manifest": {
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b46260fb966f0c59d80beb312ccce38e69e966874950c946f32f6a4b0d6c84d2",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": null,
+            "bcc": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "hidden_bcc",
+      "title": "One visible. Two actual.",
+      "description": "The To field remains approved; a new BCC address reaches the to-only callback.",
+      "input_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "The release is ready.",
+        "bcc": [
+          "outside@example.test"
+        ]
+      },
+      "approved_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [],
+        "bcc": []
+      },
+      "actual_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [],
+        "bcc": [
+          "outside@example.test"
+        ]
+      },
+      "approved_resource": "mail-targets-sha256:446f84ced6195a24890cc08407663f2976202d182e8822362a199614704f89e5",
+      "actual_resource": "mail-targets-sha256:b9a007f17ea204b27fac61e13d5ef1ad1fce918c5dae155380bc79372b7968fc",
+      "primary_only": {
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "7507155ab01c4c4d35e84c4608a25cb62bee4c6a1a268d27a2a10f6bc0318f45",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": null,
+            "bcc": [
+              "outside@example.test"
+            ]
+          }
+        ]
+      },
+      "full_manifest": {
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "1fa989d0f9ec7c2f72d31b978a6d1493560dc0a2f17e7fb7c394bc66c7979ee9",
+          "policy_decision": "allow",
+          "execution_status": "blocked",
+          "reason": "target_mismatch"
+        },
+        "simulated_callbacks": 0,
+        "callback_destinations": []
+      }
+    },
+    {
+      "id": "added_cc",
+      "title": "A second recipient in CC",
+      "description": "A CC addition is also absent from a to-only resource.",
+      "input_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "The release is ready.",
+        "cc": [
+          "outside@example.test"
+        ]
+      },
+      "approved_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [],
+        "bcc": []
+      },
+      "actual_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [
+          "outside@example.test"
+        ],
+        "bcc": []
+      },
+      "approved_resource": "mail-targets-sha256:446f84ced6195a24890cc08407663f2976202d182e8822362a199614704f89e5",
+      "actual_resource": "mail-targets-sha256:b2a7d1d2d7a894452f886a93b569fd928bcbcd1b806ae5ecdd79f7f056ecc672",
+      "primary_only": {
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "87764fdbece0566484d29990d71ce9562867725d7438a87d033f8ee37fc62ef3",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": [
+              "outside@example.test"
+            ],
+            "bcc": null
+          }
+        ]
+      },
+      "full_manifest": {
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "32f011b225182442f92d906d75169a7bd60518337f27732ed0338c142c6d76d4",
+          "policy_decision": "allow",
+          "execution_status": "blocked",
+          "reason": "target_mismatch"
+        },
+        "simulated_callbacks": 0,
+        "callback_destinations": []
+      }
+    },
+    {
+      "id": "authorized_multi",
+      "title": "Multiple recipients can be intentional",
+      "description": "When the host policy names the whole recipient manifest, both destinations are admitted in this local fixture.",
+      "input_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "The release is ready.",
+        "cc": [
+          "editor@example.test"
+        ],
+        "bcc": [
+          "archive@example.test"
+        ]
+      },
+      "approved_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [
+          "editor@example.test"
+        ],
+        "bcc": [
+          "archive@example.test"
+        ]
+      },
+      "actual_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [
+          "editor@example.test"
+        ],
+        "bcc": [
+          "archive@example.test"
+        ]
+      },
+      "approved_resource": "mail-targets-sha256:9ccd4c15f75f1d154d737e0aa67b1cd42cb36311084e72323a327bf550b28579",
+      "actual_resource": "mail-targets-sha256:9ccd4c15f75f1d154d737e0aa67b1cd42cb36311084e72323a327bf550b28579",
+      "primary_only": {
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "56592c60c37de37c944c8bc67a2c8dfe909d0e67eca08a883233edc90f4bcac3",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": [
+              "editor@example.test"
+            ],
+            "bcc": [
+              "archive@example.test"
+            ]
+          }
+        ]
+      },
+      "full_manifest": {
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "fa4ebbb938d89087e57186241ef8e5f464e666f2d03866c5684e6a7c076a6379",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": [
+              "editor@example.test"
+            ],
+            "bcc": [
+              "archive@example.test"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "unknown_field",
+      "title": "Unknown delivery field",
+      "description": "An unsupported recipients field fails the strict schema before the callback.",
+      "input_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "The release is ready.",
+        "recipients": [
+          "outside@example.test"
+        ]
+      },
+      "approved_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [],
+        "bcc": []
+      },
+      "actual_manifest": null,
+      "approved_resource": "mail-targets-sha256:446f84ced6195a24890cc08407663f2976202d182e8822362a199614704f89e5",
+      "actual_resource": null,
+      "primary_only": {
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b17765d23c74407eebf8ce511f29af167d667b84223e03c5983280ff0c62c143",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": null,
+            "bcc": null
+          }
+        ]
+      },
+      "full_manifest": {
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6c36893c71b825b23492c6afc48c6349c745ea23fd0deaec66e9efea1c828aec",
+          "policy_decision": "allow",
+          "execution_status": "blocked",
+          "reason": "target_resolution_error"
+        },
+        "simulated_callbacks": 0,
+        "callback_destinations": []
+      }
+    },
+    {
+      "id": "malformed_bcc",
+      "title": "Malformed BCC field",
+      "description": "A null BCC is not silently treated as an empty destination list.",
+      "input_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "The release is ready.",
+        "bcc": null
+      },
+      "approved_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [],
+        "bcc": []
+      },
+      "actual_manifest": null,
+      "approved_resource": "mail-targets-sha256:446f84ced6195a24890cc08407663f2976202d182e8822362a199614704f89e5",
+      "actual_resource": null,
+      "primary_only": {
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "8e974ad27773dbfe027bf0648098a8bc32b9599a34954a26173c0279daeb4e36",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": null,
+            "bcc": null
+          }
+        ]
+      },
+      "full_manifest": {
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "2b74bfdb2a30f2d10fea3cd4b72eb52a028405b0752ec574d0ce2648a1133d49",
+          "policy_decision": "allow",
+          "execution_status": "blocked",
+          "reason": "target_resolution_error"
+        },
+        "simulated_callbacks": 0,
+        "callback_destinations": []
+      }
+    },
+    {
+      "id": "changed_body",
+      "title": "Same recipients, changed content",
+      "description": "The manifest covers destinations, not message content; the unreviewed rule still permits a changed body.",
+      "input_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Different release text."
+      },
+      "approved_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [],
+        "bcc": []
+      },
+      "actual_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [],
+        "bcc": []
+      },
+      "approved_resource": "mail-targets-sha256:446f84ced6195a24890cc08407663f2976202d182e8822362a199614704f89e5",
+      "actual_resource": "mail-targets-sha256:446f84ced6195a24890cc08407663f2976202d182e8822362a199614704f89e5",
+      "primary_only": {
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "caa05f8661d05e05232c1d1b928b96c06878a485f3506db38aefb23b169378a8",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": null,
+            "bcc": null
+          }
+        ]
+      },
+      "full_manifest": {
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "bdc44ed2396534533617e41a3c965509b11835f828fa5bf0773fea879e4d5431",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": null,
+            "bcc": null
+          }
+        ]
+      }
+    }
+  ]
+}
