@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Try the ĀML interface firewall: change a declared value, inspect the policy decision, and reproduce the result.">
+  <meta name="description" content="AI proposes. The host decides. Try ĀML's two inspectable boundaries: agent tool actions and human-facing interface rendering.">
   <meta name="theme-color" content="#050812">
-  <title>ĀML™ — From intent to evidence</title>
+  <title>ĀML™ — AI proposes. The host decides.</title>
   <style>
     :root{--bg:#050812;--ink:#f5f7ff;--muted:#9aa6bd;--cyan:#7df9ff;--gold:#f2ce72;--green:#9cffb0;--red:#ff6688;--line:rgba(255,255,255,.12);--panel:rgba(14,22,40,.78)}
     *{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;color:var(--ink);background:radial-gradient(circle at 10% 0,rgba(54,104,255,.22),transparent 34rem),radial-gradient(circle at 90% 12%,rgba(0,236,255,.13),transparent 30rem),var(--bg);font:16px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -20,6 +20,8 @@
     @media(max-width:900px){.hero{grid-template-columns:1fr;padding-top:42px}.hero h1{max-width:690px}.proof-console{max-width:690px}.paths{grid-template-columns:1fr 1fr}}
     @media(max-width:800px){.navlinks .ghost{display:none}.compare,.lab,.principles,.paths,.continuity-steps{grid-template-columns:1fr}.section-head{align-items:start;flex-direction:column}.hero h1{font-size:clamp(3.2rem,12vw,5rem)}.console-foot{align-items:flex-start;flex-direction:column}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.element{transition:none}}
+    .boundary-switch{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:9px;background:#06111e;border-bottom:1px solid var(--line)}.boundary-switch button{padding:11px 8px;border:1px solid transparent;border-radius:11px;background:transparent;color:#a9bfce;font:800 .77rem ui-sans-serif,system-ui;cursor:pointer}.boundary-switch button[aria-pressed=true]{border-color:rgba(125,249,255,.43);background:rgba(125,249,255,.12);color:var(--cyan)}.boundary-switch button:focus-visible{outline:3px solid var(--gold);outline-offset:1px}.console-body[hidden]{display:none}.action-target{padding:15px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.035)}.action-target span{display:block;color:var(--muted);font-size:.76rem}.action-target strong{display:block;margin-top:5px;color:var(--red);font:700 clamp(.91rem,1.3vw,1.03rem) ui-monospace,monospace;overflow-wrap:anywhere}.action-target.approved strong{color:var(--green)}.action-rule{margin:15px 0;color:#a9c8ce;font:12px/1.5 ui-monospace,monospace}.action-rule b{color:var(--gold);font-weight:700}.verdict.approval{border-color:rgba(242,206,114,.45);background:rgba(242,206,114,.1)}.verdict.approval strong{color:var(--gold);font-size:clamp(1rem,1.9vw,1.35rem)}.action-count{margin:8px 2px 0;color:var(--muted);font-size:.77rem}.action-case button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+    @media(max-width:520px){.boundary-switch button{font-size:.7rem}.verdict.approval strong{font-size:1rem}.console-body{padding:17px}}
   </style>
 </head>
 <body>
@@ -32,27 +34,37 @@
     <header class="hero">
       <div>
         <div class="eyebrow">ĀRU MEANING LANGUAGE™ · RESEARCH PROTOTYPE</div>
-        <h1>From intent<br>to <span class="gradient">evidence.</span></h1>
-        <p class="lede">ĀML explores an inspectable boundary between what an AI or app wants to show and what a human actually sees. Declare an element's purpose and values, apply a policy, and inspect the result.</p>
-        <div class="hero-actions"><a class="button" href="proof.html?attention=5&amp;restoration=1&amp;lang=en">Try the 60-second proof ↗</a><a class="ghost" href="action-lab.html">Rehearse an agent action ↗</a><a class="ghost" href="#lab">Explore the live lab ↓</a></div>
-        <div class="equation">render_allowed = restoration_value ≥ attention_cost</div>
-        <p class="hero-note">These values are declared prototype inputs, not objective measurements of a person.</p>
+        <h1>AI proposes.<br><span class="gradient">The host decides.</span></h1>
+        <p class="lede">An agent asks to use a tool. An app asks to show an interface. ĀML makes the host's policy decision and its evidence inspectable at both boundaries. Change one input below and follow the exact path.</p>
+        <div class="hero-actions"><a class="button" href="action-lab.html?scenario=changed">Try the Action Boundary Lab ↗</a><a class="ghost" href="proof.html?attention=5&amp;restoration=1&amp;lang=en">Try the interface proof ↗</a><a class="ghost" href="#lab">Explore the live lab ↓</a></div>
+        <div class="equation" id="hero-equation">proposal → exact rule → host decision → receipt</div>
+        <p class="hero-note" id="hero-note">Local illustration only. No tool runs, no message is sent, and no person is asked to approve.</p>
       </div>
-      <div class="proof-console" role="group" aria-label="Interactive declared-value example">
-        <div class="console-top"><span class="console-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>ĀML / DECISION PREVIEW</span></div>
-        <div class="console-body">
+      <div class="proof-console" role="group" aria-label="Choose and inspect an ĀML policy boundary">
+        <div class="console-top"><span class="console-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>ĀML / TWO BOUNDARIES</span></div>
+        <div class="boundary-switch" role="group" aria-label="Select a boundary preview"><button type="button" data-boundary="action" aria-pressed="true">01 / AGENT ACTION</button><button type="button" data-boundary="interface" aria-pressed="false">02 / INTERFACE RENDER</button></div>
+        <div class="console-body" id="action-preview" role="group" aria-label="Illustrative agent action decision">
+          <p class="console-label">AGENT PROPOSAL · SEND_MESSAGE</p>
+          <div class="action-target" id="action-target"><span>Requested destination</span><strong id="action-recipient">outsider@example.test</strong></div>
+          <div class="action-rule">HOST RULE <b>send_message → team@example.test only</b></div>
+          <div id="action-verdict" class="verdict" role="status" aria-live="polite"><span>Host decision</span><strong>BLOCKED</strong></div>
+          <p class="action-count" id="action-count">0 tool callbacks; no exact policy rule.</p>
+          <div class="case-buttons action-case" role="group" aria-label="Choose an illustrative destination"><button type="button" data-action-destination="outside" aria-pressed="true">Outside recipient</button><button type="button" data-action-destination="team" aria-pressed="false">Policy-matched address</button></div>
+          <div class="console-foot"><span>Illustrative local fixture · no live message</span><a id="action-link" href="action-lab.html?scenario=changed">Inspect this path ↗</a></div>
+        </div>
+        <div class="console-body" id="interface-preview" role="group" aria-label="Interactive declared-value example" hidden>
           <p class="console-label">DECLARED ELEMENT · CONVERSION PROMPT</p>
           <div class="console-values"><div class="console-value"><span>Attention cost</span><b>5</b></div><div class="console-value"><span>Restoration value</span><b id="hero-value">1</b></div></div>
           <div class="console-rule">policy: restoration_value ≥ attention_cost</div>
           <div id="hero-verdict" class="verdict" role="status" aria-live="polite"><span>Render decision</span><strong>SUPPRESS</strong></div>
           <div class="case-buttons" role="group" aria-label="Choose a declared restoration value"><button type="button" data-hero-value="1" aria-pressed="true">Value 1 · suppress</button><button type="button" data-hero-value="5" aria-pressed="false">Value 5 · allow</button></div>
-          <div class="console-foot"><span>Project-authored example</span><a id="hero-proof" href="proof.html?attention=5&amp;restoration=1&amp;lang=en">Open this exact proof ↗</a></div>
+          <div class="console-foot"><span>Declared prototype inputs</span><a id="hero-proof" href="proof.html?attention=5&amp;restoration=1&amp;lang=en">Open this exact proof ↗</a></div>
         </div>
       </div>
     </header>
 
     <section class="paths" aria-label="Choose a path into ĀML">
-      <a class="path" href="proof.html?attention=5&amp;restoration=1&amp;lang=en"><span>01 / TRY</span><b>Reproduce a decision ↗</b><small>Change one input; compare SUPPRESS and ALLOW.</small></a>
+      <a class="path" href="action-lab.html?scenario=changed"><span>01 / TRY</span><b>Inspect an agent action ↗</b><small>Change the destination; see the exact host rule and receipt.</small></a>
       <a class="path" href="https://github.com/aruintelligence/aml-core/tree/main/pilots/enterprise-30min"><span>02 / VERIFY</span><b>Run the enterprise pilot ↗</b><small>Replay receipts and test a deliberate mutation.</small></a>
       <a class="path" href="https://github.com/aruintelligence/aml-core/blob/main/docs/CONSUMER_QUICKSTART.md"><span>03 / INTEGRATE</span><b>Start from a clean package ↗</b><small>Use the consumer rehearsal and inspect the release boundary.</small></a>
       <a class="path" href="action-challenge.html"><span>04 / CHALLENGE</span><b>Test an agent boundary ↗</b><small>Inspect 13 published cases; bring an outside implementation.</small></a>
@@ -112,6 +124,25 @@
     function card(x,decision,legacy=false){const el=document.createElement("div");el.className="element "+(legacy?"":decision.rendering_mode);el.innerHTML=`<strong>${x.name}</strong><span class="small">${x.description}</span><br><span class="status">${legacy?"RENDERED":decision.rendering_mode.toUpperCase()}</span>${legacy?"":` <span class="small">Cost ${decision.attention_cost} · Value ${decision.restoration_value}</span>`}`;return el}
     function render(){const t=document.querySelector("#traditional"),a=document.querySelector("#accountable"),out=document.querySelector("#decision");t.replaceChildren();a.replaceChildren();const decisions=items.map(gate);items.forEach((x,i)=>{t.append(card(x,decisions[i],true));a.append(card(x,decisions[i]))});out.textContent=JSON.stringify({policy:"EthicalRenderGate prototype v1",rule:"restoration_value >= attention_cost",decisions},null,2)}
     function controls(){const root=document.querySelector("#controls");items.forEach((x,i)=>{const row=document.createElement("div");row.className="control";row.innerHTML=`<div class="control-top"><strong>${x.name}</strong><span class="value" id="v${i}">${x.value.toFixed(1)}</span></div><div class="range-row"><input aria-label="${x.name} restoration value" type="range" min="0" max="10" step="0.1" value="${x.value}"><span class="cost">cost ${x.cost}</span></div>`;row.querySelector("input").addEventListener("input",e=>{x.value=+e.target.value;row.querySelector(`#v${i}`).textContent=x.value.toFixed(1);render()});root.append(row)})}
+    document.querySelectorAll("[data-boundary]").forEach(button=>button.addEventListener("click",()=>{
+      const action=button.dataset.boundary==="action";
+      document.querySelector("#action-preview").hidden=!action;
+      document.querySelector("#interface-preview").hidden=action;
+      document.querySelectorAll("[data-boundary]").forEach(option=>option.setAttribute("aria-pressed",String(option===button)));
+      document.querySelector("#hero-equation").textContent=action?"proposal → exact rule → host decision → receipt":"render_allowed = restoration_value ≥ attention_cost";
+      document.querySelector("#hero-note").textContent=action?"Local illustration only. No tool runs, no message is sent, and no person is asked to approve.":"These values are declared prototype inputs, not objective measurements of a person.";
+    }));
+    document.querySelectorAll("[data-action-destination]").forEach(button=>button.addEventListener("click",()=>{
+      const needsApproval=button.dataset.actionDestination==="team";
+      document.querySelector("#action-recipient").textContent=needsApproval?"team@example.test":"outsider@example.test";
+      document.querySelector("#action-target").classList.toggle("approved",needsApproval);
+      const verdict=document.querySelector("#action-verdict");
+      verdict.classList.toggle("approval",needsApproval);
+      verdict.querySelector("strong").textContent=needsApproval?"APPROVAL REQUIRED":"BLOCKED";
+      document.querySelector("#action-count").textContent=needsApproval?"0 tool callbacks until the host approves this exact proposal.":"0 tool callbacks; no exact policy rule.";
+      document.querySelector("#action-link").href=needsApproval?"action-lab.html?scenario=send":"action-lab.html?scenario=changed";
+      document.querySelectorAll("[data-action-destination]").forEach(option=>option.setAttribute("aria-pressed",String(option===button)));
+    }));
     document.querySelectorAll("[data-hero-value]").forEach(button=>button.addEventListener("click",()=>{
       const value=Number(button.dataset.heroValue),allowed=value>=5;
       document.querySelector("#hero-value").textContent=String(value);
@@ -125,5 +156,6 @@
   </script>
 </body>
 </html>
+
 
 
