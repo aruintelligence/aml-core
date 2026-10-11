@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createFileOneShotGrants } from "../pilots/action-boundary/file-one-shot-grants.mjs";
@@ -63,3 +63,46 @@ test("a claim-store error blocks dispatch rather than calling the tool", () => w
   assert.equal(outcome.receipt.execution_status, "blocked");
   assert.equal(calls, 0);
 }));
+
+test("a pre-existing writable root or claim directory cannot issue a grant", () =>
+  withDirectory(async directory => {
+    const store = createFileOneShotGrants({ directory });
+    await chmod(directory, 0o777);
+    await assert.rejects(() => store.issue(digest), /private_grant_directory_required/);
+    assert.deepEqual(await readdir(directory), []);
+    await chmod(directory, 0o700);
+    await mkdir(path.join(directory, "claimed"), { mode: 0o777 });
+    await assert.rejects(() => store.issue(digest), /private_grant_directory_required/);
+    assert.deepEqual(await readdir(path.join(directory, "issued")), []);
+  }));
+
+test("a claim directory made writable after issuance blocks before callback", () =>
+  withDirectory(async directory => {
+    const proposal = { protocol: "aml-proposed-action/1", tool: "send_message", effect: "send",
+      resource: "team@example.test", purpose: "Test local store", arguments: { body: "Hello" } };
+    const policy = { protocol: "aml-action-policy/1", rules: [
+      { tool: proposal.tool, effect: proposal.effect, resource: proposal.resource, requires_approval: true }
+    ] };
+    const store = createFileOneShotGrants({ directory });
+    const grant = await store.issue(planAction(proposal, policy).proposal_sha256);
+    await chmod(path.join(directory, "claimed"), 0o777);
+    let calls = 0;
+    const outcome = await dispatchAction(proposal, { policy, requestApproval: async () => grant,
+      consumeApproval: store.consume, executeTool: async () => { calls++; } });
+    assert.equal(outcome.receipt.reason, "approval_consume_error");
+    assert.equal(outcome.receipt.execution_status, "blocked");
+    assert.equal(calls, 0);
+    assert.deepEqual(await readdir(path.join(directory, "claimed")), []);
+  }));
+
+test("a symlinked claim directory is rejected instead of followed", () =>
+  withDirectory(async directory => {
+    const outside = path.join(directory, "outside");
+    const root = path.join(directory, "private");
+    await mkdir(outside, { mode: 0o700 });
+    await mkdir(root, { mode: 0o700 });
+    await symlink(outside, path.join(root, "claimed"));
+    const store = createFileOneShotGrants({ directory: root });
+    await assert.rejects(() => store.issue(digest), /private_grant_directory_required/);
+    assert.deepEqual(await readdir(outside), []);
+  }));
