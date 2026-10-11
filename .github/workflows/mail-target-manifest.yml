@@ -7,36 +7,46 @@ on:
       - "pilots/action-boundary/mail-target-manifest.mjs"
       - "pilots/action-boundary/mail-target-core.mjs"
       - "pilots/action-boundary/mail-guarded-tool.mjs"
+      - "pilots/action-boundary/prepared-mail-tool.mjs"
       - "pilots/action-boundary/target-boundary.mjs"
       - "pilots/action-boundary/boundary.mjs"
       - "protocol/canonicalJson.js"
       - "test/action-boundary-mail-targets.test.js"
       - "test/action-boundary-mail-workbench.test.js"
       - "test/action-boundary-mail-guarded-tool.test.js"
+      - "test/action-boundary-prepared-mail.test.js"
       - "scripts/build-mail-target-report.mjs"
       - "scripts/build-mail-target-workbench.mjs"
       - "scripts/build-mail-tool-report.mjs"
+      - "scripts/build-prepared-mail-report.mjs"
       - "docs/mail-target-*"
       - "docs/mail-tool-*"
+      - "docs/prepared-mail-*"
       - "pilots/action-boundary/MAIL_GUARDED_TOOL.md"
+      - "pilots/action-boundary/PREPARED_MAIL_TOOL.md"
       - ".github/workflows/mail-target-manifest.yml"
   pull_request:
     paths:
       - "pilots/action-boundary/mail-target-manifest.mjs"
       - "pilots/action-boundary/mail-target-core.mjs"
       - "pilots/action-boundary/mail-guarded-tool.mjs"
+      - "pilots/action-boundary/prepared-mail-tool.mjs"
       - "pilots/action-boundary/target-boundary.mjs"
       - "pilots/action-boundary/boundary.mjs"
       - "protocol/canonicalJson.js"
       - "test/action-boundary-mail-targets.test.js"
       - "test/action-boundary-mail-workbench.test.js"
       - "test/action-boundary-mail-guarded-tool.test.js"
+      - "test/action-boundary-prepared-mail.test.js"
       - "scripts/build-mail-target-report.mjs"
       - "scripts/build-mail-target-workbench.mjs"
       - "scripts/build-mail-tool-report.mjs"
+      - "scripts/build-prepared-mail-report.mjs"
       - "docs/mail-target-*"
       - "docs/mail-tool-*"
+      - "docs/prepared-mail-*"
       - "pilots/action-boundary/MAIL_GUARDED_TOOL.md"
+      - "pilots/action-boundary/PREPARED_MAIL_TOOL.md"
       - ".github/workflows/mail-target-manifest.yml"
 
 permissions:
@@ -62,3 +72,7 @@ jobs:
         run: |
           node test/action-boundary-mail-guarded-tool.test.js
           node scripts/build-mail-tool-report.mjs --check
+      - name: Compare post-gate and prepared provider requests
+        run: |
+          node test/action-boundary-prepared-mail.test.js
+          node scripts/build-prepared-mail-report.mjs --check

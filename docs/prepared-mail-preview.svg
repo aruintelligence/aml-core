@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="570" viewBox="0 0 1200 570" role="img" aria-labelledby="title desc">
+  <title id="title">Check the prepared mail request before dispatch</title>
+  <desc id="desc">A host-added BCC reaches one simulated provider callback when added after the gate, and zero callbacks when the complete prepared request is checked before dispatch.</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#071720"/><stop offset="1" stop-color="#19474a"/></linearGradient><linearGradient id="old" x2="1" y2="1"><stop stop-color="#54323a"/><stop offset="1" stop-color="#152f3b"/></linearGradient><linearGradient id="new" x2="1" y2="1"><stop stop-color="#225a4d"/><stop offset="1" stop-color="#142f3b"/></linearGradient></defs>
+  <rect width="1200" height="570" rx="30" fill="url(#bg)"/>
+  <text x="65" y="60" fill="#8fe9cd" font-family="Arial,sans-serif" font-size="18" font-weight="800" letter-spacing="3">ĀML™ / EXECUTABLE INTEGRATION 32</text>
+  <text x="65" y="133" fill="#f3f8f6" font-family="Arial,sans-serif" font-size="58" font-weight="800">Check what will be sent.</text>
+  <text x="65" y="174" fill="#c1d4d3" font-family="Arial,sans-serif" font-size="22">Same tool input. Host routing adds a BCC. The policy boundary moves.</text>
+  <rect x="65" y="216" width="514" height="272" rx="21" fill="url(#old)" stroke="#bb837b" stroke-width="2"/>
+  <rect x="622" y="216" width="513" height="272" rx="21" fill="url(#new)" stroke="#81c8aa" stroke-width="2"/>
+  <text x="93" y="255" fill="#ffb0a1" font-family="Arial,sans-serif" font-size="17" font-weight="800" letter-spacing="2">CHECK INPUT → ADD BCC</text>
+  <text x="650" y="255" fill="#9df1ce" font-family="Arial,sans-serif" font-size="17" font-weight="800" letter-spacing="2">ADD BCC → CHECK REQUEST</text>
+  <text x="93" y="331" fill="#ff9b8d" font-family="Arial,sans-serif" font-size="43" font-weight="800">DISPATCHED</text>
+  <text x="650" y="331" fill="#8fe9cd" font-family="Arial,sans-serif" font-size="43" font-weight="800">BLOCKED</text>
+  <path d="M93 365H550M650 365h457" stroke="#ffffff55"/>
+  <text x="93" y="415" fill="#fff5ec" font-family="Arial,sans-serif" font-size="23" font-weight="700">1 simulated provider callback</text>
+  <text x="650" y="415" fill="#e2fff0" font-family="Arial,sans-serif" font-size="23" font-weight="700">0 simulated provider callbacks</text>
+  <text x="93" y="451" fill="#d7c8c6" font-family="Arial,sans-serif" font-size="18">team@example.test + outside@example.test</text>
+  <text x="650" y="451" fill="#c5ddd4" font-family="Arial,sans-serif" font-size="18">No exact rule for the complete recipient set</text>
+  <text x="65" y="531" fill="#bdcecd" font-family="Arial,sans-serif" font-size="17">8 executed local cases · 0 actual sends · host policy and provider remain separate trust assumptions</text>
+</svg>
