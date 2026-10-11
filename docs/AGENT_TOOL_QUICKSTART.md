@@ -45,7 +45,21 @@ const execute = createGuardedToolExecute({
 
 `requestApproval` must return `{ approved: true, proposal_sha256 }` for the exact frozen proposal, or refuse. The callback may be omitted for a policy rule that allows an action without approval. If an approval-required rule has no callback, dispatch blocks. The adapter passes the framework's second `execute` argument as `context` to the host callbacks, and calls the tool with the frozen canonical arguments. A host mapping error throws before any tool invocation.
 
-For the [OpenAI Agents SDK JavaScript function-tool API](https://openai.github.io/openai-agents-js/guides/tools/), use the returned function as `tool({ name, description, parameters, execute })`. The SDK [also has native approval interruptions](https://openai.github.io/openai-agents-js/guides/human-in-the-loop/). If you use them, verify the approved item and exact proposal in your own host flow; do not treat a model-supplied digest or a hard-coded `{ approved: true }` as a person's approval. This adapter only wraps **local function tools** configured with it; it does not intercept hosted tools, built-in tools, MCP calls, handoffs, or other execution paths.
+For the [OpenAI Agents SDK JavaScript function-tool API](https://openai.github.io/openai-agents-js/guides/tools/), install `@openai/agents` and `zod` in your agent app, then attach the `execute` function above:
+
+```js
+import { tool } from "@openai/agents";
+import { z } from "zod";
+
+const sendMessageTool = tool({
+  name: "send_message",
+  description: "Send one team update through the host service",
+  parameters: z.object({ to: z.string(), body: z.string() }),
+  execute
+});
+```
+
+The SDK [also has native approval interruptions](https://openai.github.io/openai-agents-js/guides/human-in-the-loop/). If you use them, verify the approved item and exact proposal in your own host flow; do not treat a model-supplied digest or a hard-coded `{ approved: true }` as a person's approval. This adapter only wraps **local function tools** configured with it; it does not intercept hosted tools, built-in tools, MCP calls, handoffs, or other execution paths.
 
 ## Interpret the result
 
