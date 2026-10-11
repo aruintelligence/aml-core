@@ -1,0 +1,31 @@
+name: AML Action Boundary Vectors
+
+on:
+  push:
+    paths:
+      - "pilots/action-boundary/**"
+      - "protocol/canonicalJson.js"
+      - ".github/workflows/action-boundary-vectors.yml"
+  pull_request:
+    paths:
+      - "pilots/action-boundary/**"
+      - "protocol/canonicalJson.js"
+      - ".github/workflows/action-boundary-vectors.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: node pilots/action-boundary/boundary.test.mjs
+      - run: node pilots/action-boundary/vectors.test.mjs
+      - run: python3 pilots/action-boundary/verify_vectors.py
