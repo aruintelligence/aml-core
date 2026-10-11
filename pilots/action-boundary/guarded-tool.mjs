@@ -4,13 +4,14 @@
 import { planAction, dispatchAction } from "./boundary.mjs";
 
 export function createGuardedToolExecute({
-  tool, effect, purpose, resourceFor, policy, requestApproval, execute
+  tool, effect, purpose, resourceFor, policy, requestApproval, consumeApproval, execute
 } = {}) {
   if (typeof tool !== "string" || !tool.trim() ||
       typeof effect !== "string" || !effect.trim() ||
       typeof purpose !== "string" || !purpose.trim() ||
       typeof resourceFor !== "function" || typeof execute !== "function" ||
       (requestApproval !== undefined && typeof requestApproval !== "function") ||
+      (consumeApproval !== undefined && typeof consumeApproval !== "function") ||
       !policy || typeof policy !== "object") {
     throw new TypeError("A host-owned tool, effect, purpose, resourceFor, policy, and execute are required");
   }
@@ -28,6 +29,7 @@ export function createGuardedToolExecute({
     const outcome = await dispatchAction(proposal, {
       policy,
       requestApproval: requestApproval && (input => requestApproval(input, context)),
+      consumeApproval: consumeApproval && (input => consumeApproval(input, context)),
       executeTool: frozen => execute(frozen.arguments, context, frozen)
     });
     return {
