@@ -7,7 +7,10 @@ on:
       - "conformance/action-boundary-challenge*"
       - "pilots/action-boundary/**"
       - "scripts/run-action-boundary-challenge.mjs"
+      - "scripts/build-action-cross-runtime-report.mjs"
       - "test/action-boundary-challenge.test.js"
+      - "test/test_python_boundary.py"
+      - "docs/action-cross-runtime-report.json"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
   pull_request:
@@ -15,7 +18,10 @@ on:
       - "conformance/action-boundary-challenge*"
       - "pilots/action-boundary/**"
       - "scripts/run-action-boundary-challenge.mjs"
+      - "scripts/build-action-cross-runtime-report.mjs"
       - "test/action-boundary-challenge.test.js"
+      - "test/test_python_boundary.py"
+      - "docs/action-cross-runtime-report.json"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
 
@@ -30,6 +36,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Check harness and rejection behavior
         run: node --test test/action-boundary-challenge.test.js
       - name: Verify function-tool adapter
@@ -40,6 +49,11 @@ jobs:
         run: node scripts/run-action-boundary-challenge.mjs --self-test
       - name: Exercise black-box process contract
         run: node scripts/run-action-boundary-challenge.mjs -- node pilots/action-boundary/challenge-reference-adapter.mjs
+      - name: Verify the separate Python implementation and visual report
+        run: |
+          python3 -m unittest discover -s test -p test_python_boundary.py
+          node scripts/run-action-boundary-challenge.mjs -- python3 pilots/action-boundary/challenge-python-adapter.py
+          node scripts/build-action-cross-runtime-report.mjs --check
       - name: Prepare caller-owned executable wrapper
         run: |
           printf '%s\n' '#!/bin/sh' 'exec node "$GITHUB_WORKSPACE/pilots/action-boundary/challenge-reference-adapter.mjs" "$@"' > "$RUNNER_TEMP/aml-reference-adapter"
