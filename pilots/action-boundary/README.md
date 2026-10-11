@@ -2,6 +2,8 @@
 
 Agents can propose a tool call; the host must decide whether to dispatch it. This reference pilot freezes a proposed action as canonical JSON, hashes its exact semantics, checks an exact-match host policy, and binds a host approval to that proposal digest before dispatch. The execution callback receives the frozen proposal, even if the original object changes while approval is pending.
 
+[**Open the Action Boundary Lab**](https://aruintelligence.github.io/aml-core/action-lab.html) to rehearse the proposal, rule, digest, simulated approval, and uncertain callback path in a browser. The lab's Web Crypto calculation is compared with all six published JavaScript vectors in CI; it is a project-authored mirror for this subset and does not call a tool or authenticate an approver.
+
 ```bash
 node pilots/action-boundary/demo.mjs
 node pilots/action-boundary/boundary.test.mjs
@@ -33,3 +35,4 @@ The dispatch receipt records `blocked`, `dispatched`, or `unknown`. `dispatched`
 ## Why this wedge
 
 Existing agent frameworks provide guardrails, approvals, and traces. Their paths and coverage differ by tool and handoff type. A portable, inspectable action proposal can make the **exact bytes being approved and dispatched** easier to compare across hosts. This is a project-authored interoperability experiment, not a claim of a new industry standard or independent validation. See the [OpenAI Agents SDK tool guardrail documentation](https://openai.github.io/openai-agents-python/guardrails/) and [tool documentation](https://openai.github.io/openai-agents-js/guides/tools/) for examples of current framework controls.
+

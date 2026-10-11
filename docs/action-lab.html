@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#080c17">
+  <meta name="description" content="Rehearse an AI agent tool call against an exact host policy. Change one argument, inspect its digest, and see a simulated approval become stale.">
+  <title>Action Boundary Lab · ĀML™</title>
+  <style>
+    :root{color-scheme:dark;--bg:#080c17;--panel:#111b2d;--line:#304058;--ink:#f4f7ff;--muted:#b7c5d8;--cyan:#78e8f5;--gold:#f5d27a;--red:#ffa0ac;--green:#9af4bb}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0%,#193e55 0,transparent 37rem),radial-gradient(circle at 2% 20%,#1c2250 0,transparent 32rem),var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+    a{color:var(--cyan)}button,input,textarea,select{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+    .wrap{max-width:1180px;margin:auto;padding:0 20px}.nav{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:22px 0;border-bottom:1px solid var(--line);font-size:.9rem}.brand{font-weight:900;letter-spacing:.13em}.nav a{margin-left:18px;text-decoration:none}
+    header{padding:58px 0 27px;max-width:900px}.eyebrow{color:var(--cyan);font-size:.76rem;font-weight:900;letter-spacing:.2em}h1{font-size:clamp(2.7rem,7vw,5.3rem);letter-spacing:-.07em;line-height:1.02;margin:12px 0 20px}h1 span{color:var(--cyan)}.lede{color:#d3dfed;font-size:1.15rem;max-width:760px}.notice{border-left:3px solid var(--gold);padding:10px 16px;background:#f5d27a12;color:#e6dbbd;max-width:780px;font-size:.91rem}
+    .presets{display:flex;flex-wrap:wrap;gap:9px;margin:25px 0}.presets button,.actions button{border:1px solid #52677f;border-radius:10px;background:#142539;color:var(--ink);padding:11px 15px;font-weight:750}.presets button[aria-pressed=true]{background:#174151;border-color:var(--cyan);color:var(--cyan)}.actions button.primary{background:var(--cyan);color:#05111a;border-color:var(--cyan)}.actions button:disabled{opacity:.46;cursor:not-allowed}
+    .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}.card{border:1px solid var(--line);background:linear-gradient(145deg,#17233aee,#0b1425ee);border-radius:18px;padding:22px;min-width:0;box-shadow:0 20px 55px #0004}.card h2{font-size:1.3rem;margin:0 0 6px}.card p{margin:0 0 18px;color:var(--muted);font-size:.91rem}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:block;font-weight:750;font-size:.8rem;color:#d5e4ee}.field.wide{grid-column:1/-1}input,textarea,select{display:block;margin-top:5px;width:100%;padding:10px 11px;border:1px solid #52677f;border-radius:9px;background:#070e1b;color:var(--ink)}textarea{resize:vertical;min-height:100px;font:13px/1.45 ui-monospace,monospace}.helper{color:var(--muted);font-size:.78rem;margin-top:10px}.policy{margin-top:16px;border-top:1px solid var(--line);padding-top:16px}.policy summary{cursor:pointer;color:var(--cyan);font-weight:750}
+    .badge{display:inline-block;padding:5px 10px;border-radius:99px;background:#435169;color:white;font:800 .78rem ui-monospace,monospace;letter-spacing:.04em}.badge.deny,.badge.blocked{background:#7a303d;color:#ffe4e5}.badge.requires_approval,.badge.unknown{background:#655124;color:#fff0c0}.badge.allow,.badge.would_dispatch{background:#265a43;color:#dbffe8}.digest{overflow-wrap:anywhere;font:13px/1.6 ui-monospace,monospace;color:var(--cyan);padding:13px;border:1px solid var(--line);background:#07121e;border-radius:9px}.label{font-weight:850;font-size:.78rem;color:var(--muted);letter-spacing:.08em;margin:17px 0 5px}.actions{display:flex;gap:9px;flex-wrap:wrap;margin:17px 0 6px}.status{min-height:24px;color:var(--gold);font-size:.86rem}pre{overflow:auto;max-height:430px;white-space:pre-wrap;overflow-wrap:anywhere;padding:14px;background:#07121e;border:1px solid var(--line);border-radius:10px;color:#d7eaf6;font:12px/1.55 ui-monospace,monospace}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0 30px}.step{border:1px solid var(--line);border-radius:13px;padding:17px;background:#10192a}.step b{color:var(--gold)}.step p{color:var(--muted);font-size:.86rem;margin:6px 0 0}.foot{padding:30px 0 55px;color:var(--muted);font-size:.84rem;border-top:1px solid var(--line)}
+    @media(max-width:800px){.grid,.steps{grid-template-columns:1fr}.nav{align-items:flex-start;flex-direction:column}.nav a{margin:0 17px 0 0}}@media(max-width:480px){.fields{grid-template-columns:1fr}.card{padding:17px}header{padding-top:36px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav" aria-label="Primary"><div class="brand">ĀML™ / ACTION LAB</div><div><a href="index.html">Live lab</a><a href="https://github.com/aruintelligence/aml-core/tree/main/pilots/action-boundary">Source and vectors ↗</a></div></nav>
+    <header>
+      <div class="eyebrow">PROPOSE · POLICY · APPROVAL · RECEIPT</div>
+      <h1>What exactly did the <span>agent ask to do?</span></h1>
+      <p class="lede">Edit a proposed tool call. ĀML's reference contract hashes its exact meaning and asks a host-owned policy for an exact match. Change the destination or body after simulated approval to see why the approval no longer matches.</p>
+      <p class="notice"><strong>Browser rehearsal only.</strong> No tool runs, no message is sent, and the button does not obtain a person's consent. The visible policy is a fixed local fixture.</p>
+    </header>
+    <div id="presets" class="presets" role="group" aria-label="Choose a scenario">
+      <button type="button" data-case="send" aria-pressed="true">01 · Send needs approval</button>
+      <button type="button" data-case="changed" aria-pressed="false">02 · Different destination</button>
+      <button type="button" data-case="read" aria-pressed="false">03 · Allowed read</button>
+      <button type="button" data-case="timeout" aria-pressed="false">04 · Uncertain result</button>
+    </div>
+    <main class="grid">
+      <section class="card" aria-labelledby="proposal-title">
+        <h2 id="proposal-title">01 / Proposed action</h2>
+        <p>These fields are the agent's declared intent. The host must independently map the actual tool and destination.</p>
+        <form id="proposal" class="fields">
+          <label class="field">Tool<input name="tool" maxlength="256" required autocomplete="off"></label>
+          <label class="field">Effect<select name="effect"><option>read</option><option>write</option><option>send</option><option>pay</option><option>delete</option></select></label>
+          <label class="field wide">Resource / destination<input name="resource" maxlength="256" required autocomplete="off"></label>
+          <label class="field wide">Declared purpose<input name="purpose" maxlength="256" required autocomplete="off"></label>
+          <label class="field wide">Arguments JSON<textarea name="arguments" spellcheck="false" aria-describedby="args-help"></textarea></label>
+        </form>
+        <div id="args-help" class="helper">A small JSON object. This pilot's cross-runtime vectors cover a limited JSON subset.</div>
+        <details class="policy"><summary>Inspect the host policy fixture</summary><pre id="policy"></pre></details>
+      </section>
+      <section class="card" aria-labelledby="result-title">
+        <h2 id="result-title">02 / Inspect the boundary</h2>
+        <p>Each edit recalculates the SHA-256 digest and the exact rule decision.</p>
+        <div class="label">POLICY DECISION</div><div id="decision" class="badge" role="status" aria-live="polite">Calculating</div>
+        <div id="reason" class="helper"></div>
+        <div class="label">PROPOSED ACTION SHA-256</div><div id="digest" class="digest">Calculating…</div>
+        <div class="actions"><button id="approve" type="button" class="primary">Simulate host approval</button><button id="dispatch" type="button">Rehearse dispatch</button><button id="copy" type="button">Copy local report</button></div>
+        <div id="approval" class="status" role="status" aria-live="polite">No simulated approval recorded.</div>
+        <div class="label">SIMULATED OUTCOME</div><div id="outcome" class="badge">Not attempted</div>
+        <div class="label">CANONICAL PROPOSAL AND REPORT</div><pre id="report" aria-live="polite"></pre>
+      </section>
+    </main>
+    <div class="steps" aria-label="What this proves">
+      <div class="step"><b>01 · Exact match</b><p>An undeclared destination or effect is denied by the local fixture.</p></div>
+      <div class="step"><b>02 · Approval binding</b><p>The simulated approval stores one proposal digest. Editing arguments invalidates that match.</p></div>
+      <div class="step"><b>03 · Honest outcome</b><p>A simulated callback error is unknown. It cannot prove an external action happened or did not happen.</p></div>
+    </div>
+    <footer class="foot">Project-authored reference experiment · <a href="https://github.com/aruintelligence/aml-core/blob/main/pilots/action-boundary/README.md">Read the contract and claim limits</a> · <a href="https://github.com/aruintelligence/aml-core/issues/88">Independent verification call</a><br>Local browser inputs are not uploaded by this lab. SHA-256 is a change detector, not proof of trusted identity, policy authority, human approval, or delivery. ĀML™ · ĀRU Intelligence Inc.™</footer>
+  </div>
+  <script type="module" src="./action-lab.js"></script>
+</body>
+</html>
