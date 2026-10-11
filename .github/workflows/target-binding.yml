@@ -1,0 +1,38 @@
+name: Target binding lab
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pilots/action-boundary/target-boundary.mjs"
+      - "pilots/action-boundary/boundary.mjs"
+      - "protocol/canonicalJson.js"
+      - "test/action-boundary-target-binding.test.js"
+      - "scripts/build-target-binding-report.mjs"
+      - "docs/target-binding-*"
+      - ".github/workflows/target-binding.yml"
+  pull_request:
+    paths:
+      - "pilots/action-boundary/target-boundary.mjs"
+      - "pilots/action-boundary/boundary.mjs"
+      - "protocol/canonicalJson.js"
+      - "test/action-boundary-target-binding.test.js"
+      - "scripts/build-target-binding-report.mjs"
+      - "docs/target-binding-*"
+      - ".github/workflows/target-binding.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Exercise target mismatch and host failures
+        run: node test/action-boundary-target-binding.test.js
+      - name: Regenerate and compare the visual report
+        run: node scripts/build-target-binding-report.mjs --check

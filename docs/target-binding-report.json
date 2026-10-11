@@ -1,0 +1,349 @@
+{
+  "protocol": "aml-target-binding-report/1",
+  "provenance": "Project-authored local Node simulation. Both paths call the same action-boundary reference; the bound path adds a host-owned resolver. Callbacks append to memory only.",
+  "binding": "The host derives the actual recipient from frozen arguments and requires exact equality with the proposal resource before approval or callback.",
+  "caveat": "A trustworthy, tool-specific host mapper is essential. This example does not authenticate a person, validate message content, prove delivery, or guarantee a downstream tool uses the mapped field. The baseline is intentionally permissive and no real message is sent.",
+  "cases": [
+    {
+      "id": "aligned",
+      "title": "Declared and actual target agree",
+      "description": "Control: the rule, resource, and recipient match.",
+      "declared_resource": "team@example.test",
+      "argument_to": "team@example.test",
+      "body": "The release is ready.",
+      "digest_fixture_only": false,
+      "reference": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "simulated_callback_targets": [
+          "team@example.test"
+        ],
+        "mapped_targets": []
+      },
+      "target_bound": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "simulated_callback_targets": [
+          "team@example.test"
+        ],
+        "mapped_targets": [
+          "team@example.test"
+        ]
+      }
+    },
+    {
+      "id": "forged_recipient",
+      "title": "Same rule. Different recipient.",
+      "description": "The declared resource stays approved, while arguments.to points outside.",
+      "declared_resource": "team@example.test",
+      "argument_to": "outside@example.test",
+      "body": "The release is ready.",
+      "digest_fixture_only": false,
+      "reference": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a5d8ceaa36341aae025620b1d0d0e68ca62a5cb1d54adf5cc60b722eb01d2723",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a5d8ceaa36341aae025620b1d0d0e68ca62a5cb1d54adf5cc60b722eb01d2723",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "simulated_callback_targets": [
+          "outside@example.test"
+        ],
+        "mapped_targets": []
+      },
+      "target_bound": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a5d8ceaa36341aae025620b1d0d0e68ca62a5cb1d54adf5cc60b722eb01d2723",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a5d8ceaa36341aae025620b1d0d0e68ca62a5cb1d54adf5cc60b722eb01d2723",
+          "policy_decision": "allow",
+          "execution_status": "blocked",
+          "reason": "target_mismatch"
+        },
+        "simulated_callbacks": 0,
+        "simulated_callback_targets": [],
+        "mapped_targets": [
+          "outside@example.test"
+        ]
+      }
+    },
+    {
+      "id": "fresh_digest",
+      "title": "A fresh digest still needs a target check",
+      "description": "A project-authored approval fixture accepts this exact changed digest. It is not human consent; binding still rejects the recipient mismatch.",
+      "declared_resource": "team@example.test",
+      "argument_to": "outside@example.test",
+      "body": "The release is ready.",
+      "digest_fixture_only": true,
+      "reference": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a5d8ceaa36341aae025620b1d0d0e68ca62a5cb1d54adf5cc60b722eb01d2723",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a5d8ceaa36341aae025620b1d0d0e68ca62a5cb1d54adf5cc60b722eb01d2723",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "simulated_callback_targets": [
+          "outside@example.test"
+        ],
+        "mapped_targets": []
+      },
+      "target_bound": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a5d8ceaa36341aae025620b1d0d0e68ca62a5cb1d54adf5cc60b722eb01d2723",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a5d8ceaa36341aae025620b1d0d0e68ca62a5cb1d54adf5cc60b722eb01d2723",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "target_mismatch"
+        },
+        "simulated_callbacks": 0,
+        "simulated_callback_targets": [],
+        "mapped_targets": [
+          "outside@example.test"
+        ]
+      }
+    },
+    {
+      "id": "missing_recipient",
+      "title": "The recipient is missing",
+      "description": "A permissive rule alone reaches the simulated callback with no to argument; the resolver fails closed.",
+      "declared_resource": "team@example.test",
+      "argument_to": null,
+      "body": "The release is ready.",
+      "digest_fixture_only": false,
+      "reference": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "2795c2438f42d0b429561172f7fc3600738df2a4843f90d5fcf69d29b164c0a2",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "2795c2438f42d0b429561172f7fc3600738df2a4843f90d5fcf69d29b164c0a2",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "simulated_callback_targets": [
+          null
+        ],
+        "mapped_targets": []
+      },
+      "target_bound": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "2795c2438f42d0b429561172f7fc3600738df2a4843f90d5fcf69d29b164c0a2",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "2795c2438f42d0b429561172f7fc3600738df2a4843f90d5fcf69d29b164c0a2",
+          "policy_decision": "allow",
+          "execution_status": "blocked",
+          "reason": "target_unavailable"
+        },
+        "simulated_callbacks": 0,
+        "simulated_callback_targets": [],
+        "mapped_targets": [
+          null
+        ]
+      }
+    },
+    {
+      "id": "resolver_error",
+      "title": "The host mapper fails",
+      "description": "A thrown target resolver stops the bound path before approval or callback.",
+      "declared_resource": "team@example.test",
+      "argument_to": "team@example.test",
+      "body": "The release is ready.",
+      "digest_fixture_only": false,
+      "reference": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "simulated_callback_targets": [
+          "team@example.test"
+        ],
+        "mapped_targets": []
+      },
+      "target_bound": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "policy_decision": "allow",
+          "execution_status": "blocked",
+          "reason": "target_resolution_error"
+        },
+        "simulated_callbacks": 0,
+        "simulated_callback_targets": [],
+        "mapped_targets": []
+      }
+    },
+    {
+      "id": "changed_body",
+      "title": "Target binding is not content approval",
+      "description": "The recipient is aligned, while the body changes. Both unreviewed paths reach the simulated callback.",
+      "declared_resource": "team@example.test",
+      "argument_to": "team@example.test",
+      "body": "Different release text.",
+      "digest_fixture_only": false,
+      "reference": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "e7310ffcbd46ff98b3b967eaaf5d5945ed4ea63f803ed17f5ccd65bde15b26cf",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "e7310ffcbd46ff98b3b967eaaf5d5945ed4ea63f803ed17f5ccd65bde15b26cf",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "simulated_callback_targets": [
+          "team@example.test"
+        ],
+        "mapped_targets": []
+      },
+      "target_bound": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "e7310ffcbd46ff98b3b967eaaf5d5945ed4ea63f803ed17f5ccd65bde15b26cf",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "e7310ffcbd46ff98b3b967eaaf5d5945ed4ea63f803ed17f5ccd65bde15b26cf",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "simulated_callback_targets": [
+          "team@example.test"
+        ],
+        "mapped_targets": [
+          "team@example.test"
+        ]
+      }
+    },
+    {
+      "id": "changed_resource",
+      "title": "The rule rejects a declared route change",
+      "description": "Changing the resource itself misses the exact rule before the target resolver runs.",
+      "declared_resource": "outside@example.test",
+      "argument_to": "outside@example.test",
+      "body": "The release is ready.",
+      "digest_fixture_only": false,
+      "reference": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "2ecec9856ab4d3c5a38c801d83408e50f08d97bcaa7027081471611ae6386f65",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "2ecec9856ab4d3c5a38c801d83408e50f08d97bcaa7027081471611ae6386f65",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "simulated_callbacks": 0,
+        "simulated_callback_targets": [],
+        "mapped_targets": []
+      },
+      "target_bound": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "2ecec9856ab4d3c5a38c801d83408e50f08d97bcaa7027081471611ae6386f65",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "2ecec9856ab4d3c5a38c801d83408e50f08d97bcaa7027081471611ae6386f65",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "simulated_callbacks": 0,
+        "simulated_callback_targets": [],
+        "mapped_targets": []
+      }
+    }
+  ]
+}
