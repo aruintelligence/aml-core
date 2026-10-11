@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">One mail function tool, every recipient</title>
+  <desc id="desc">An added BCC reaches one simulated callback with a To-only host mapper and zero callbacks with the complete mail adapter.</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#123143"/><stop offset="1" stop-color="#09121c"/></linearGradient><linearGradient id="a" x2="1"><stop stop-color="#413328"/><stop offset="1" stop-color="#112c3b"/></linearGradient><linearGradient id="b" x2="1"><stop stop-color="#244b3c"/><stop offset="1" stop-color="#112c3b"/></linearGradient></defs>
+  <rect width="1200" height="360" rx="24" fill="url(#bg)"/>
+  <text x="38" y="45" fill="#79dfe3" font-family="monospace" font-weight="bold" font-size="17" letter-spacing="3">ĀML / FUNCTION TOOL INTEGRATION</text>
+  <text x="38" y="99" fill="#f6f6f2" font-family="Arial, sans-serif" font-weight="bold" font-size="39">One tool. Every recipient.</text>
+  <text x="38" y="133" fill="#b8c5cc" font-family="Arial, sans-serif" font-size="19">to: team@example.test</text>
+  <rect x="40" y="154" width="345" height="47" rx="8" fill="#432a37" stroke="#aa697a"/><text x="58" y="184" fill="#ff8995" font-family="monospace" font-weight="bold" font-size="18">bcc: outside@example.test</text>
+  <path d="M410 179h65" stroke="#b9cbd0" stroke-width="3"/><path d="m465 169 13 10-13 10" fill="none" stroke="#b9cbd0" stroke-width="3"/>
+  <rect x="495" y="55" width="323" height="249" rx="17" fill="url(#a)" stroke="#a88b65"/><text x="518" y="90" fill="#ffc782" font-family="monospace" font-weight="bold" font-size="16">TO-ONLY MAPPER</text><text x="518" y="159" fill="#ffc782" font-family="Arial, sans-serif" font-weight="bold" font-size="40">DISPATCHED</text><path d="M518 187h274" stroke="#758391"/><text x="518" y="232" fill="#f6f6f2" font-family="monospace" font-weight="bold" font-size="30">1 callback</text><text x="518" y="263" fill="#b8c5cc" font-family="Arial, sans-serif" font-size="16">BCC reaches local callback</text>
+  <rect x="838" y="55" width="323" height="249" rx="17" fill="url(#b)" stroke="#7db399"/><text x="861" y="90" fill="#a2e9bd" font-family="monospace" font-weight="bold" font-size="16">COMPLETE MANIFEST</text><text x="861" y="159" fill="#a2e9bd" font-family="Arial, sans-serif" font-weight="bold" font-size="40">BLOCKED</text><path d="M861 187h274" stroke="#758391"/><text x="861" y="232" fill="#f6f6f2" font-family="monospace" font-weight="bold" font-size="30">0 callbacks</text><text x="861" y="263" fill="#b8c5cc" font-family="Arial, sans-serif" font-size="16">No exact recipient rule</text>
+  <text x="39" y="334" fill="#a6bec8" font-family="Arial, sans-serif" font-size="14">Project-authored simulation · no real mail or approval</text>
+</svg>
