@@ -1,0 +1,38 @@
+name: Action boundary challenge
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "conformance/action-boundary-challenge*"
+      - "pilots/action-boundary/**"
+      - "scripts/run-action-boundary-challenge.mjs"
+      - "test/action-boundary-challenge.test.js"
+      - "actions/action-boundary-conformance/**"
+      - ".github/workflows/action-boundary-challenge.yml"
+  pull_request:
+    paths:
+      - "conformance/action-boundary-challenge*"
+      - "pilots/action-boundary/**"
+      - "scripts/run-action-boundary-challenge.mjs"
+      - "test/action-boundary-challenge.test.js"
+      - "actions/action-boundary-conformance/**"
+      - ".github/workflows/action-boundary-challenge.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  challenge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check harness and rejection behavior
+        run: node --test test/action-boundary-challenge.test.js
+      - name: Project-owned self-test
+        run: node scripts/run-action-boundary-challenge.mjs --self-test
+      - name: Exercise black-box process contract
+        run: node scripts/run-action-boundary-challenge.mjs -- node pilots/action-boundary/challenge-reference-adapter.mjs
