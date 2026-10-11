@@ -7,10 +7,11 @@
   <meta name="description" content="Change restoration value and watch AML allow or suppress the same interface element. Share the exact proof state by URL." />
   <link rel="canonical" href="https://aruintelligence.github.io/aml-core/proof.html" />
   <style>
-    body{font-family:system-ui,-apple-system,sans-serif;max-width:860px;margin:0 auto;padding:24px;background:#07111f;color:#eef7ff;line-height:1.5}a{color:#7df9ff}section{background:#0e1b2d;border:1px solid #27415f;border-radius:16px;padding:20px;margin:18px 0}input[type=range]{width:100%}input[type=text],select{width:100%;box-sizing:border-box;background:#06101c;color:#eef7ff;border:1px solid #35597f;border-radius:10px;padding:10px}button{background:#122842;color:#eef7ff;border:1px solid #35597f;border-radius:10px;padding:10px 14px;cursor:pointer}button:hover{background:#173657}code,pre{background:#06101c;border-radius:10px}pre{padding:16px;overflow:auto}.decision{font-size:2rem;font-weight:800}.allow{color:#9cffb0}.suppress{color:#ff9f9f}.muted{color:#abc0d8}.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}.actions{display:flex;gap:10px;flex-wrap:wrap}.copied{color:#9cffb0;font-weight:700}@media(max-width:640px){.row{grid-template-columns:1fr}body{padding:14px}}
+    body{font-family:system-ui,-apple-system,sans-serif;max-width:1000px;margin:0 auto;padding:24px;background:radial-gradient(circle at 95% 0,#153649 0,transparent 36rem),#07111f;color:#eef7ff;line-height:1.5}a{color:#7df9ff}section{background:#0e1b2d;border:1px solid #27415f;border-radius:16px;padding:20px;margin:18px 0}input[type=range]{width:100%;accent-color:#7df9ff}input[type=text],select{width:100%;box-sizing:border-box;background:#06101c;color:#eef7ff;border:1px solid #35597f;border-radius:10px;padding:10px}button{background:#122842;color:#eef7ff;border:1px solid #35597f;border-radius:10px;padding:10px 14px;cursor:pointer}button:hover{background:#173657}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #f5d27a;outline-offset:3px}code,pre{background:#06101c;border-radius:10px}pre{padding:16px;overflow:auto}.decision{font-size:2rem;font-weight:800}.allow{color:#9cffb0}.suppress{color:#ff9f9f}.muted{color:#abc0d8}.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}.actions{display:flex;gap:10px;flex-wrap:wrap}.copied{color:#9cffb0;font-weight:700}.masthead{display:flex;justify-content:space-between;align-items:center;gap:12px;color:#7df9ff;font-weight:850;letter-spacing:.12em;font-size:.76rem}.masthead a{letter-spacing:0;text-decoration:none}.proof-results{display:grid;grid-template-columns:minmax(240px,.75fr) minmax(0,1.75fr);gap:18px}.proof-results section{margin:0}.visual-proof{background:linear-gradient(135deg,#102b3a,#0a1426 65%);border-color:#3a6977}.visual-proof h2{margin:0 0 4px}.visual-proof p{color:#b9cad9;margin:0 0 18px;font-size:.9rem}.preview-flow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:14px;align-items:stretch}.preview-card{min-width:0;padding:18px;border:1px solid #466477;border-radius:14px;background:#0a1728}.preview-card .kicker{color:#80deeb;font-size:.72rem;font-weight:900;letter-spacing:.13em}.preview-card strong{display:block;margin:14px 0 4px;font-size:1.15rem;overflow-wrap:anywhere}.preview-card small{color:#b6c9da}.preview-arrow{align-self:center;color:#7df9ff;font-size:1.6rem;font-weight:900}.screen-allow{border:1px solid #499a6c;background:#123b32;border-radius:12px;padding:18px}.screen-allow .example-button{display:inline-block;background:#9cffb0;color:#092019;padding:10px 17px;border-radius:8px;font-weight:900}.screen-suppress{border:1px dashed #ac6074;background:#321d2e;border-radius:12px;padding:18px;color:#ffc3cd}.screen-suppress b{display:block;font-size:1.1rem}.screen-suppress small{color:#e0b7c1}[hidden]{display:none!important}@media(max-width:800px){.proof-results{grid-template-columns:1fr;gap:18px}.proof-results section{margin:0}}@media(max-width:640px){.row,.preview-flow{grid-template-columns:1fr}.preview-arrow{text-align:center;transform:rotate(90deg)}body{padding:14px}}
   </style>
 </head>
 <body>
+  <div class="masthead"><span>ĀML™ / LIVE PROOF</span><a href="./index.html">← Live lab</a></div>
   <h1 id="title">ĀML Proof</h1>
   <p id="intro">Change one number. Watch the same interface element move between <strong>ALLOW</strong> and <strong>SUPPRESS</strong>.</p>
   <p id="notice" class="muted">SHIPPED prototype behavior. This demonstrates deterministic software policy evaluation; it does not claim that the scores objectively measure human cognition.</p>
@@ -52,11 +53,26 @@
     </div>
   </section>
 
+  <div class="proof-results" style="margin:18px 0">
   <section>
     <div id="decision" class="decision suppress">SUPPRESS</div>
     <p id="reason">restoration_value (1) &lt; attention_cost (5)</p>
     <p id="ruleLine">Prototype rule: <code>render_allowed = restoration_value &gt;= attention_cost</code></p>
   </section>
+
+  <section class="visual-proof" aria-labelledby="previewHeading">
+    <h2 id="previewHeading">See the interface decision</h2>
+    <p id="previewText">This illustration follows the compiler decision above. The dashed panel explains a suppressed element; it is not the suppressed element rendered in an app.</p>
+    <div class="preview-flow">
+      <div class="preview-card"><span class="kicker" id="declaredLabel">01 / DECLARED ELEMENT</span><strong id="previewPurpose">Create urgency</strong><small>content: “Act now”</small></div>
+      <span class="preview-arrow" aria-hidden="true">→</span>
+      <div class="preview-card" role="status" aria-live="polite"><span class="kicker" id="screenLabel">02 / SCREEN OUTCOME</span>
+        <div id="visualAllow" class="screen-allow" hidden><strong>ALLOW</strong><span class="example-button">Act now</span><br><small id="allowText">Illustrative element shown. No action is connected.</small></div>
+        <div id="visualSuppress" class="screen-suppress"><b>SUPPRESS</b><small id="suppressText">The element is withheld. This dashed explanation is outside the governed interface.</small></div>
+      </div>
+    </div>
+  </section>
+  </div>
 
   <section>
     <h2 id="sourceHeading">Exact AML being evaluated</h2>
@@ -90,6 +106,16 @@
       fr:{title:'Preuve ĀML',intro:'Modifiez un nombre. Regardez le même élément passer entre ALLOW et SUPPRESS.',notice:'Comportement de prototype SHIPPED. Il démontre une évaluation logicielle déterministe sans prétendre que les scores mesurent objectivement la cognition humaine.',language:'Langue',purpose:'Objectif déclaré',suppress:'Charger la preuve SUPPRESS',allow:'Charger la preuve ALLOW',copy:'Copier ce lien de preuve exact',copied:'Copié',copyFallback:'Copiez l’URL affichée ci-dessous',rule:'Règle du prototype :',source:'ĀML exact évalué',decision:'Décision inspectable',share:'Reproduction partageable',shareText:'La langue, l’objectif déclaré et les valeurs sont encodés dans l’URL pour qu’une autre personne ouvre exactement le même état.',playground:'Ouvrir le playground complet',meaning:'Ouvrir View Meaning',card:'Ouvrir la carte de preuve',local:'Reproduire localement',witness:'Demande de témoin : modifiez restoration_value, copiez le lien, capturez la décision et consignez le résultat sur GitHub.',defaultPurpose:'Créer un sentiment d’urgence'},
       de:{title:'ĀML-Beweis',intro:'Ändere eine Zahl. Beobachte, wie dasselbe Interface-Element zwischen ALLOW und SUPPRESS wechselt.',notice:'SHIPPED-Prototypverhalten. Es zeigt deterministische Software-Policy-Auswertung und behauptet nicht, dass die Werte menschliche Kognition objektiv messen.',language:'Sprache',purpose:'Deklarierter Zweck',suppress:'SUPPRESS-Beweis laden',allow:'ALLOW-Beweis laden',copy:'Diesen exakten Beweislink kopieren',copied:'Kopiert',copyFallback:'Kopiere die unten angezeigte URL',rule:'Prototypregel:',source:'Exaktes ausgewertetes ĀML',decision:'Prüfbare Entscheidung',share:'Teilbare Reproduktion',shareText:'Sprache, deklarierter Zweck und Werte werden in der URL gespeichert, damit eine andere Person denselben Zustand öffnen kann.',playground:'Vollständiges Playground öffnen',meaning:'View Meaning öffnen',card:'Beweiskarte öffnen',local:'Lokal reproduzieren',witness:'Witness-Aufruf: restoration_value ändern, Beweislink kopieren, Entscheidung aufnehmen und das Ergebnis auf GitHub melden.',defaultPurpose:'Dringlichkeit erzeugen'}
     };
+    const previewStrings = {
+      en:['See the interface decision','This illustration follows the compiler decision above. The dashed panel explains a suppressed element; it is not the suppressed element rendered in an app.','DECLARED ELEMENT','SCREEN OUTCOME','Illustrative element shown. No action is connected.','The element is withheld. This dashed explanation is outside the governed interface.'],
+      es:['Vea la decisión de la interfaz','Esta ilustración sigue la decisión del compilador. El panel punteado explica un elemento suprimido; no es el elemento renderizado en la aplicación.','ELEMENTO DECLARADO','RESULTADO EN PANTALLA','Se muestra un elemento ilustrativo. No hay ninguna acción conectada.','El elemento se oculta. Este panel explicativo queda fuera de la interfaz gobernada.'],
+      'pt-BR':['Veja a decisão da interface','Esta ilustração segue a decisão do compilador. O painel tracejado explica um elemento suprimido; ele não é renderizado no aplicativo.','ELEMENTO DECLARADO','RESULTADO NA TELA','Elemento ilustrativo exibido. Nenhuma ação está conectada.','O elemento é retido. Esta explicação fica fora da interface governada.'],
+      hi:['इंटरफ़ेस निर्णय देखें','यह चित्र ऊपर दिए गए कंपाइलर निर्णय को दिखाता है। बिंदीदार पैनल दबाए गए तत्व की व्याख्या करता है; वह ऐप में रेंडर किया गया तत्व नहीं है।','घोषित तत्व','स्क्रीन परिणाम','उदाहरण तत्व दिखाया गया है। कोई क्रिया जुड़ी नहीं है।','तत्व रोका गया है। यह व्याख्या नियंत्रित इंटरफ़ेस के बाहर है।'],
+      ar:['شاهد قرار الواجهة','يتبع هذا الرسم قرار المترجم أعلاه. تشرح اللوحة المتقطعة العنصر المحجوب؛ وليست عنصراً معروضاً في التطبيق.','العنصر المعلن','نتيجة الشاشة','يظهر عنصر توضيحي. لا يوجد إجراء متصل.','العنصر محجوب. هذا الشرح خارج الواجهة الخاضعة للسياسة.'],
+      zh:['查看界面决策','此图示遵循上方的编译器决策。虚线面板解释被抑制的元素，并非在应用中渲染该元素。','声明的元素','屏幕结果','显示示例元素。未连接任何操作。','该元素被隐藏。此虚线说明位于受策略管理的界面之外。'],
+      fr:["Voir la décision d’interface","Cette illustration suit la décision du compilateur. Le panneau en pointillés explique un élément supprimé ; il n’est pas rendu dans l’application.",'ÉLÉMENT DÉCLARÉ','RÉSULTAT À L’ÉCRAN','Élément illustratif affiché. Aucune action n’est connectée.','L’élément est retenu. Cette explication est hors de l’interface gouvernée.'],
+      de:['Die Interface-Entscheidung ansehen','Diese Darstellung folgt der Compiler-Entscheidung. Das gestrichelte Feld erklärt ein unterdrücktes Element; es wird nicht in der App gerendert.','DEKLARIERTES ELEMENT','BILDSCHIRMERGEBNIS','Beispielelement sichtbar. Keine Aktion ist verbunden.','Das Element wird zurückgehalten. Diese Erklärung liegt außerhalb der gesteuerten Oberfläche.']
+    };
 
     const attention = document.getElementById('attention');
     const restoration = document.getElementById('restoration');
@@ -103,8 +129,12 @@
     const jsonEl = document.getElementById('json');
     const shareUrl = document.getElementById('shareUrl');
     const copyStatus = document.getElementById('copyStatus');
+    const previewPurpose = document.getElementById('previewPurpose');
+    const visualAllow = document.getElementById('visualAllow');
+    const visualSuppress = document.getElementById('visualSuppress');
 
     function boundedNumber(value, fallback){
+      if (value === null || String(value).trim() === '') return fallback;
       const parsed = Number(value);
       return Number.isFinite(parsed) ? Math.min(10, Math.max(0, parsed)) : fallback;
     }
@@ -144,14 +174,20 @@
       document.getElementById('cardLink').textContent = t.card;
       document.getElementById('localLink').textContent = t.local;
       document.getElementById('witness').textContent = t.witness;
+      const preview = previewStrings[lang] || previewStrings.en;
+      for (const [id, value] of [['previewHeading',preview[0]],['previewText',preview[1]],
+        ['declaredLabel',`01 / ${preview[2]}`],['screenLabel',`02 / ${preview[3]}`],
+        ['allowText',preview[4]],['suppressText',preview[5]]]) {
+        document.getElementById(id).textContent = value;
+      }
     }
 
-    function currentUrl(a, r){
+    function currentUrl(a, r, declaredPurpose){
       const url = new URL(location.href);
       url.searchParams.set('attention', String(a));
       url.searchParams.set('restoration', String(r));
       url.searchParams.set('lang', language.value);
-      url.searchParams.set('purpose', purpose.value);
+      url.searchParams.set('purpose', declaredPurpose);
       return url.toString();
     }
 
@@ -160,7 +196,7 @@
       const a = Number(attention.value);
       const r = Number(restoration.value);
       const declaredPurpose = boundedText(purpose.value, strings[language.value].defaultPurpose);
-      purpose.value = declaredPurpose;
+      if (document.activeElement !== purpose) purpose.value = declaredPurpose;
       av.textContent = a;
       rv.textContent = r;
       const source = `transmission "proof" {\n  message "example" {\n    purpose: ${JSON.stringify(declaredPurpose)}\n    content: "Act now"\n    attention_cost: ${a}\n    restoration_value: ${r}\n  }\n}\n`;
@@ -169,6 +205,9 @@
       const allowed = row.render_allowed;
       decision.textContent = allowed ? 'ALLOW' : 'SUPPRESS';
       decision.className = `decision ${allowed ? 'allow' : 'suppress'}`;
+      previewPurpose.textContent = declaredPurpose;
+      visualAllow.hidden = !allowed;
+      visualSuppress.hidden = allowed;
       reason.textContent = `restoration_value (${r}) ${allowed ? '>=' : '<'} attention_cost (${a})`;
       sourceEl.textContent = source;
       jsonEl.textContent = JSON.stringify({
@@ -178,7 +217,7 @@
         render_allowed: row.render_allowed,
         fallback_triggered: row.fallback_triggered
       }, null, 2);
-      const link = currentUrl(a, r);
+      const link = currentUrl(a, r, declaredPurpose);
       shareUrl.textContent = link;
       history.replaceState(null, '', link);
       const card = new URL('./proof-card.html', location.href);
@@ -205,6 +244,7 @@
     attention.addEventListener('input', render);
     restoration.addEventListener('input', render);
     purpose.addEventListener('input', render);
+    purpose.addEventListener('blur', render);
     language.addEventListener('change', () => {
       const previousDefault = Object.values(strings).some(t => t.defaultPurpose === purpose.value);
       if (previousDefault) purpose.value = strings[language.value].defaultPurpose;
