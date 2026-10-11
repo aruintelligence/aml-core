@@ -169,6 +169,12 @@ The proposed-action pilot has an optional `consumeApproval` callback. After exac
 
 Run `node pilots/action-boundary/one-shot-grant-demo.mjs`: the first call invokes one simulated callback; a second call reusing the same grant is blocked with no additional callback. The [visual replay lab](https://aruintelligence.github.io/aml-core/action-lab.html?scenario=replay) shows the same project-authored scenario. The local store works in one Node process only; it is not a durable cross-worker replay defense, authenticated human approval, proof of delivery, or independent validation.
 
+## 19. A local one-use grant can be claimed across two processes
+
+`createFileOneShotGrants({ directory })` lets workers on one machine use a trusted local directory as a shared short-lived grant store. An exclusive claim marker is created before the host tool callback. In the [recorded two-process race](https://aruintelligence.github.io/aml-core/approval-race.html), one process reaches the simulated callback and the other receives `approval_reused_or_expired`. Re-run the result with `node pilots/action-boundary/file-grant-race-demo.mjs`; the test starts two actual Node child processes, not two promises in one runtime.
+
+This is a project-authored local-filesystem prototype. It does not authenticate a person, work across machines or network filesystems, prove delivery, or protect tools that bypass the wrapper. The host must provide private storage, expiry and cleanup policy, trusted clocks, idempotency, and tool-specific authorization.
+
 ## The frontier
 
 The next technical frontiers are:
