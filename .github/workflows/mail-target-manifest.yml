@@ -1,0 +1,40 @@
+name: Mail target manifest lab
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pilots/action-boundary/mail-target-manifest.mjs"
+      - "pilots/action-boundary/target-boundary.mjs"
+      - "pilots/action-boundary/boundary.mjs"
+      - "protocol/canonicalJson.js"
+      - "test/action-boundary-mail-targets.test.js"
+      - "scripts/build-mail-target-report.mjs"
+      - "docs/mail-target-*"
+      - ".github/workflows/mail-target-manifest.yml"
+  pull_request:
+    paths:
+      - "pilots/action-boundary/mail-target-manifest.mjs"
+      - "pilots/action-boundary/target-boundary.mjs"
+      - "pilots/action-boundary/boundary.mjs"
+      - "protocol/canonicalJson.js"
+      - "test/action-boundary-mail-targets.test.js"
+      - "scripts/build-mail-target-report.mjs"
+      - "docs/mail-target-*"
+      - ".github/workflows/mail-target-manifest.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Reproduce the BCC counterexample and strict adapter controls
+        run: node test/action-boundary-mail-targets.test.js
+      - name: Regenerate and compare the visual report
+        run: node scripts/build-mail-target-report.mjs --check
