@@ -2,7 +2,7 @@
   "protocol": "aml-action-cross-runtime-report/1",
   "provenance": "project-maintained JavaScript and Python implementations",
   "challenge_sha256": "6ec0e15ef7a286f9cc3698b38c6ea527fa718bf94474f6de22095835b7e82997",
-  "vectors_sha256": "be11971af1b0a3d516c1b709111d3c9fe863cfebc7a10ab9fa8a4bf9ba1f8211",
+  "vectors_sha256": "9e5b26f1f3ff4a6e90e3e2fb7c3456fdf1c1dc319fedbf6a76891b3263554cd1",
   "cases": [
     {
       "id": "approved-send",
