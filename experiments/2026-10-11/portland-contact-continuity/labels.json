@@ -1,0 +1,15 @@
+{
+  "protocol": "aml-real-screen-design-labels/1",
+  "source": "Project-authored design hypothesis, not visitor measurement or client approval",
+  "rule": "restoration_value >= attention_cost",
+  "required_visible_channels_per_observed_screen": ["call", "email"],
+  "candidates": [
+    { "element_id": "sales_banner", "attention_cost": 3, "restoration_value": 6, "rationale": "Availability and a direct call path at the top have clear task value." },
+    { "element_id": "nav_phone", "attention_cost": 3, "restoration_value": 1, "rationale": "Repeated number beside a persistent call dock; candidate for visual removal in this desktop capture." },
+    { "element_id": "dock_call", "attention_cost": 2, "restoration_value": 6, "rationale": "Persistent call path remains available after the banner scrolls away." },
+    { "element_id": "dock_email", "attention_cost": 1, "restoration_value": 5, "rationale": "Distinct email path stays available in both observed states." }
+  ],
+  "adversarial_change": { "element_id": "dock_call", "restoration_value": 1,
+    "purpose": "Deliberately remove the remaining scrolled call path to test the continuity guard." },
+  "limits": "All scores and rationale are declared design inputs. No attention, accessibility, conversion, or visitor outcome was measured. No production element was changed."
+}

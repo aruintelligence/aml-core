@@ -33,6 +33,10 @@ For each site: preserve identity and before state; identify the exact UI element
 
 Initial source inspection found repeated contact surfaces on Portland Home Security, PDX Fire Alarms, PDX Surveillance, Vancouver Security, and Security First Alarm. These are source-inspection observations, not measured claims about user psychology or conversion performance.
 
+## October 11 real-screen contact-continuity sub-study
+
+The [Portland home security contact-continuity study](../2026-10-11/portland-contact-continuity/README.md) preserves two current public desktop viewports, screenshot hashes, observed anchor destinations, and separately sourced design labels. Its local candidate suppresses one repeated number while preserving a visible call and email path in both observed states. A deliberately over-suppressive candidate passes at the top but loses the last visible call path after scrolling; the added continuity guard rejects it. This is an inspectable counterfactual only. The production site was not edited in this sub-study, and the candidate scores are not visitor measurements or evidence of commercial lift.
+
 These pilots are project-authored field evidence. They are not independent reproduction, third-party certification, scientific validation, or proof of improved commercial conversion.
 
 Next: complete element-level provenance and policy decisions, publish the resulting site changes, and add before/after artifacts and decision receipts here.

@@ -1,0 +1,38 @@
+name: Real-screen contact continuity
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "experiments/2026-10-11/portland-contact-continuity/**"
+      - "pilots/field-contact-continuity.mjs"
+      - "scripts/build-field-contact-continuity-report.mjs"
+      - "test/field-contact-continuity.test.js"
+      - "docs/field-captures/**"
+      - "docs/field-contact-continuity*"
+      - ".github/workflows/field-contact-continuity.yml"
+  pull_request:
+    paths:
+      - "experiments/2026-10-11/portland-contact-continuity/**"
+      - "pilots/field-contact-continuity.mjs"
+      - "scripts/build-field-contact-continuity-report.mjs"
+      - "test/field-contact-continuity.test.js"
+      - "docs/field-captures/**"
+      - "docs/field-contact-continuity*"
+      - ".github/workflows/field-contact-continuity.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify real-screen source hashes, candidate, and counterexample
+        run: |
+          node --test test/field-contact-continuity.test.js
+          node scripts/build-field-contact-continuity-report.mjs --check
