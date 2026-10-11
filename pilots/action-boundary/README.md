@@ -6,6 +6,8 @@ Agents can propose a tool call; the host must decide whether to dispatch it. Thi
 
 [**Try the 13-case action-boundary challenge**](../../publications/ACTION_BOUNDARY_CHALLENGE.md) with your own executable adapter to publish a reproducible PASS, FAIL, or MIXED result. The challenge probes exact matching, approval binding, mutation during awaited approval, policy revocation, and uncertain dispatch. An outside witness requires an independently maintained implementation and public evidence; the included reference adapter is only a project self-test.
 
+[**Wrap a function tool in your host**](../../docs/AGENT_TOOL_QUICKSTART.md) with `createGuardedToolExecute`, then run `node pilots/action-boundary/guarded-tool-demo.mjs` to see a simulated dispatch and a blocked destination change. The wrapper imports this project's reference boundary and is not an independent implementation.
+
 ```bash
 node pilots/action-boundary/demo.mjs
 node pilots/action-boundary/boundary.test.mjs
