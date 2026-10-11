@@ -5,9 +5,13 @@ Agents can propose a tool call; the host must decide whether to dispatch it. Thi
 ```bash
 node pilots/action-boundary/demo.mjs
 node pilots/action-boundary/boundary.test.mjs
+node pilots/action-boundary/vectors.test.mjs
+python3 pilots/action-boundary/verify_vectors.py
 ```
 
 The demo simulates a message; it sends nothing. It shows three outcomes: an approval-required plan, a host-approved dispatch, and a blocked destination change. `boundary.mjs` exposes `planAction(proposal, policy)` and `dispatchAction(proposal, { policy, requestApproval, executeTool })`. The host owns the policy and both callbacks. Never take these from model output or untrusted tool descriptions.
+
+The published [`vectors.json`](vectors.json) contains six exact proposal digests and decisions, including reordered keys, a changed destination, a changed body, and an undeclared effect. The dependency-free Python checker independently recomputes the selected vectors and rejects a tamper. It covers this fixture's JSON subset; it is **not** a general cross-language canonical JSON implementation. In particular, arbitrary JavaScript numbers and UTF-16 key ordering need a separately specified wire format before a broad interoperability claim.
 
 ## Contract
 
