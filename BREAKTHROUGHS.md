@@ -223,6 +223,14 @@ The Action Boundary Challenge now supports `--case <id>` for a focused local run
 
 This improves the reproducibility path for a new implementation. It does not add an outside implementation or turn the project-authored reference run into an independent result. The browser board shows expected fixtures and never executes an adapter; a full PASS still establishes only compatibility with the 13 published cases.
 
+## 27. The same exact destination can carry a different message
+
+The action boundary's exact policy rule matches `tool`, `effect`, and `resource`; it does not constrain `purpose` or `arguments`. With an intentionally unreviewed send rule, a message body changed under the same recipient still matches and reaches one simulated host callback. The proposal SHA-256 digest changes, but hashing alone is not an authorization decision. This is a scope counterexample to the casual interpretation that “exact rule” implies exact message content.
+
+An approval-required rule with a fixed host decision bound to the original proposal digest blocks the changed body before a callback. The [eight-case visual Policy X-ray](https://aruintelligence.github.io/aml-core/action-policy-scope.html?case=changed_body#cases) compares original, body, purpose, extra argument, destination, effect, tool, and key-order changes. `node scripts/build-action-policy-scope-report.mjs --check` reruns the reference dispatch path, asserts callback counts and receipts, and checks its machine report. The [guide](pilots/action-boundary/POLICY_SCOPE.md) shows the host-side integration choice.
+
+These are project-authored local simulations, not messages, real approvals, independent verification, or a content safety guarantee. The host must map the actual destination, enforce content-specific restrictions, and decide whether a new digest deserves authorization. A future host can approve a changed proposal; the fixed digest in this experiment is only a precise stale-approval counterexample.
+
 ## The frontier
 
 The next technical frontiers are:
