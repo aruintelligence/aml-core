@@ -7,12 +7,19 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { prepareCase, checkCase } from "../conformance/action-boundary-challenge-core.js";
+import { prepareCase, checkCase, diagnoseCase, selectChallengeCases, challengeScope } from "../conformance/action-boundary-challenge-core.js";
 
 const split = process.argv.indexOf("--");
-const selfTest = process.argv.includes("--self-test");
+const options = process.argv.slice(2, split < 0 ? undefined : split);
+const selfTest = options.includes("--self-test");
+const caseFlag = options.indexOf("--case");
+const selectedCase = caseFlag < 0 ? null : options[caseFlag + 1];
+if (caseFlag >= 0 && (!selectedCase || selectedCase.startsWith("--"))) {
+  console.error("Usage: node scripts/run-action-boundary-challenge.mjs [--case <id>] -- <executable> [args...]");
+  process.exit(2);
+}
 if (!selfTest && (split < 0 || split === process.argv.length - 1)) {
-  console.error("Usage: node scripts/run-action-boundary-challenge.mjs -- <executable> [args...]");
+  console.error("Usage: node scripts/run-action-boundary-challenge.mjs [--case <id>] -- <executable> [args...]");
   process.exit(2);
 }
 const command = selfTest ? null : process.argv[split + 1];
@@ -26,13 +33,16 @@ const digest = value => crypto.createHash("sha256").update(value).digest("hex");
 if (manifest.protocol !== "aml-action-boundary-challenge/1" ||
     vectors.protocol !== "aml-action-vectors/1" || !Array.isArray(manifest.cases) ||
     manifest.cases.length === 0) throw new Error("Unsupported or empty action challenge");
+let selectedRows;
+try { selectedRows = selectChallengeCases(manifest.cases, selectedCase); }
+catch (error) { console.error(error.message); process.exit(2); }
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), "aml-action-challenge-"));
 const reference = selfTest ? await import("../pilots/action-boundary/challenge-reference-adapter.mjs") : null;
 
 const ids = new Set();
 const results = [];
 try {
-  for (const row of manifest.cases) {
+  for (const row of selectedRows) {
     if (!/^[a-z0-9-]+$/.test(row.id) || ids.has(row.id)) throw new Error("Invalid or duplicate case id");
     ids.add(row.id);
     const input = prepareCase(row, vectors);
@@ -47,7 +57,8 @@ try {
     try { output = JSON.parse((invocation.stdout || "").trim()); } catch {}
     const failures = checkCase(row, output, invocation, vectors);
     if (!output) failures.push("single_json_stdout");
-    results.push({ id: row.id, passed: failures.length === 0, failures });
+    results.push({ id: row.id, passed: failures.length === 0, failures,
+      diagnostics: failures.length ? diagnoseCase(row, output, vectors) : [] });
   }
 } finally {
   fs.rmSync(temp, { recursive: true, force: true });
@@ -56,6 +67,7 @@ const passed = results.every(row => row.passed);
 console.log(JSON.stringify({
   protocol: "aml-action-boundary-challenge-report/1",
   project_reference_self_test: selfTest,
+  ...challengeScope(selectedCase, passed),
   challenge_sha256: digest(manifestBytes),
   vectors_sha256: digest(vectorBytes),
   passed,
