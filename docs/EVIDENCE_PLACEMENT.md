@@ -4,6 +4,8 @@ The three-pair [recovery drill](EVIDENCE_DRILL.md) checks the files. It cannot t
 
 Try the [visual Resilience Lab](resilience-lab.html) to explore shared dependencies. Select a failure row to highlight lost and surviving shares. Download a placement manifest and reopen it locally in the lab to review the same declarations later. The browser page runs a topology-only simulation with no share files or policy; the manifest is read in the browser and is not uploaded. Use the commands below for the full verified assessment.
 
+The lab's dependency review lists each declared label shared by multiple shares. For a two-of-three scheme, each distinct site, infrastructure, and custodian label must affect at most one share to survive every modeled single-domain loss. Its minimum label-change count is the sum of `(number of shares with a conflicting label − 1)` across those groups. It counts label assignments, not physical moves; a real move can affect several labels, and changing text without changing storage does nothing. Confirm real independence before updating a manifest.
+
 Create a local JSON manifest with exactly three indexed entries:
 
 ```json
