@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">ĀML — AI proposes. The host decides.</title>
+  <desc id="desc">Social preview for ĀML, an accountable AI interface research prototype. An illustrative agent message to an outside destination is blocked by an exact host policy before a tool call.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1">
+      <stop stop-color="#152b4b"/>
+      <stop offset=".52" stop-color="#091322"/>
+      <stop offset="1" stop-color="#061a23"/>
+    </linearGradient>
+    <linearGradient id="word" x2="1" y2="0">
+      <stop stop-color="#79eaf2"/>
+      <stop offset=".55" stop-color="#a7c9f4"/>
+      <stop offset="1" stop-color="#f6d17c"/>
+    </linearGradient>
+    <linearGradient id="card" x2="1" y2="1">
+      <stop stop-color="#182b43"/>
+      <stop offset="1" stop-color="#0d1b2b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <circle cx="1190" cy="52" r="280" fill="#38bdd1" opacity=".08"/>
+  <circle cx="116" cy="654" r="300" fill="#5967f4" opacity=".07"/>
+  <path d="M0 540 C220 492 356 572 552 520 S958 518 1280 452" fill="none" stroke="#4cbac7" opacity=".18" stroke-width="2"/>
+  <path d="M0 561 C230 510 360 592 552 540 S962 538 1280 472" fill="none" stroke="#4cbac7" opacity=".1" stroke-width="2"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="72" y="93" fill="#7ce8f1" font-size="18" font-weight="700" letter-spacing="4">ĀRU MEANING LANGUAGE™</text>
+    <text x="72" y="186" fill="#f4f8ff" font-size="74" font-weight="700" letter-spacing="-3">AI proposes.</text>
+    <text x="72" y="270" fill="url(#word)" font-size="74" font-weight="700" letter-spacing="-3">The host decides.</text>
+    <text x="75" y="336" fill="#d4e3ee" font-size="26">Meaning, policy, and evidence</text>
+    <text x="75" y="372" fill="#d4e3ee" font-size="26">at the interface and tool boundary.</text>
+    <rect x="72" y="424" width="224" height="46" rx="23" fill="#153949" stroke="#52b3bd"/>
+    <text x="93" y="453" fill="#9cecf2" font-size="16" font-weight="700" letter-spacing="1">INTERFACE FIREWALL</text>
+    <rect x="308" y="424" width="221" height="46" rx="23" fill="#353522" stroke="#94784b"/>
+    <text x="330" y="453" fill="#f6d58b" font-size="16" font-weight="700" letter-spacing="1">ACTION BOUNDARY</text>
+    <text x="73" y="580" fill="#a4b9c9" font-size="17" letter-spacing="1">ĀML™  /  RESEARCH PROTOTYPE  /  OPEN CODE + TESTABLE CONTRACTS</text>
+  </g>
+  <rect x="685" y="88" width="523" height="458" rx="26" fill="url(#card)" stroke="#497083" stroke-width="2"/>
+  <rect x="713" y="116" width="467" height="8" rx="4" fill="#7ce8f1"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="714" y="166" fill="#92b5c8" font-size="16" font-weight="700" letter-spacing="3">01 / AGENT PROPOSAL</text>
+    <text x="714" y="211" fill="#f2f7ff" font-size="31" font-weight="700">send_message</text>
+    <text x="714" y="252" fill="#a8bcd0" font-size="19">destination</text>
+    <text x="843" y="252" fill="#ff9eb0" font-size="20" font-weight="700">outsider@example.test</text>
+    <path d="M714 281 H1178" stroke="#4a5c70"/>
+    <text x="714" y="320" fill="#92b5c8" font-size="16" font-weight="700" letter-spacing="3">02 / EXACT HOST RULE</text>
+    <text x="714" y="358" fill="#f5d384" font-size="20">send_message → team@example.test only</text>
+    <path d="M714 388 H1178" stroke="#4a5c70"/>
+    <rect x="714" y="414" width="214" height="70" rx="15" fill="#543041" stroke="#cc6d82"/>
+    <text x="735" y="459" fill="#ffafbf" font-size="33" font-weight="700">BLOCKED</text>
+    <text x="952" y="445" fill="#d9e6ef" font-size="20" font-weight="700">0 tool calls</text>
+    <text x="952" y="471" fill="#a6bacb" font-size="16">before dispatch</text>
+    <text x="714" y="523" fill="#91aabd" font-size="14">ILLUSTRATIVE LOCAL FIXTURE · NO LIVE MESSAGE</text>
+  </g>
+</svg>
