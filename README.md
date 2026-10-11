@@ -30,6 +30,10 @@
 
 **Wire one agent tool:** [Follow the function-tool quickstart](docs/AGENT_TOOL_QUICKSTART.md) to wrap a host-owned callback with exact policy matching, approval binding, and a dispatch receipt. Its runnable local demo simulates execution; the host must supply real authorization and tool mapping.
 
+[**Try the A2UI v1.0 function gate**](https://aruintelligence.github.io/aml-core/a2ui-function-lab.html?case=changed_destination#cases): a catalog-authorized agent function still needs an exact host action rule. Nine executable local cases show the catalog stop, destination switch, digest approval, frozen arguments, and uncertain callback. Run `node pilots/action-boundary/a2ui-function-demo.mjs`, then [read the integration guide](pilots/action-boundary/A2UI_FUNCTION_GATE.md). This is a project-authored host-side example, not a full A2UI renderer or external validation.
+
+[![An A2UI catalog-authorized agent function meets an AML exact-action gate; a changed destination reaches zero callbacks.](docs/a2ui-function-proof.svg)](https://aruintelligence.github.io/aml-core/a2ui-function-lab.html?case=changed_destination#cases)
+
 [![One local approval grant permits one simulated callback. Reusing it blocks before a second callback.](docs/one-shot-approval.svg)](https://aruintelligence.github.io/aml-core/action-lab.html?scenario=replay)
 
 **Two processes, one claim:** [Inspect the recorded race](https://aruintelligence.github.io/aml-core/approval-race.html) and run `node pilots/action-boundary/file-grant-race-demo.mjs`. Separate Node workers share a trusted local directory and compete to create an exclusive claim marker. The project-authored run records one simulated callback and one blocked replay. It is a local-filesystem prototype, not authenticated approval or a multi-machine production store.
