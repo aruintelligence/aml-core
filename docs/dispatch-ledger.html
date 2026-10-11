@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#091322">
+  <meta name="description" content="Inspect six project-maintained simulations of an operation-ID-bound local dispatch ledger: two workers, replay, changed payload, crash, callback error, and new intent.">
+  <title>Don't double-send · ĀML™ dispatch ledger</title>
+  <style>
+    :root{color-scheme:dark;--bg:#091322;--card:#13243b;--line:#3b5870;--text:#f3f8ff;--muted:#b9c9d9;--cyan:#8be9f0;--mint:#9df0d5;--amber:#f5d58d;--lilac:#ccbaff}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 0 0,#194354,transparent 34rem),radial-gradient(circle at 100% 15%,#222350,transparent 35rem),var(--bg);color:var(--text);font:16px/1.52 system-ui,-apple-system,"Segoe UI",sans-serif}a{color:var(--cyan)}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--amber);outline-offset:3px}.wrap{max-width:1210px;margin:auto;padding:0 24px}.nav{padding:20px 0;display:flex;justify-content:space-between;align-items:center;gap:15px;border-bottom:1px solid var(--line)}.brand{font-weight:900;letter-spacing:.15em;font-size:.79rem}.links{display:flex;flex-wrap:wrap;gap:17px}.links a{font-size:.84rem;text-decoration:none;font-weight:750;color:#d1e5ed}.hero{padding:65px 0 34px}.eyebrow{font:800 .76rem ui-monospace,monospace;letter-spacing:.16em;color:var(--cyan)}h1{font-size:clamp(3.2rem,6.8vw,6.5rem);letter-spacing:-.07em;line-height:.99;max-width:980px;margin:16px 0 24px}h1 span{background:linear-gradient(90deg,var(--cyan),var(--lilac));color:transparent;background-clip:text}.lead{font-size:clamp(1.09rem,1.9vw,1.28rem);color:#dce9f2;max-width:850px}.caveat{font-size:.86rem;color:var(--muted);max-width:810px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:27px}.button{display:inline-flex;border:1px solid var(--cyan);border-radius:999px;background:var(--cyan);color:#0b1c29;padding:11px 18px;text-decoration:none;font-weight:850}.button.secondary{background:#ffffff0a;color:var(--text);border-color:var(--line)}.banner{width:100%;height:auto;display:block;border:1px solid #4a6477;border-radius:24px;box-shadow:0 24px 70px #0007}.caption{font-size:.79rem;color:var(--muted);margin:11px 0 54px}.section-head{display:flex;justify-content:space-between;align-items:end;gap:22px;margin:0 0 19px}.section-head h2{font-size:clamp(1.9rem,3vw,2.65rem);line-height:1.1;letter-spacing:-.045em;margin:0}.section-head p{max-width:520px;margin:0;font-size:.89rem;color:var(--muted)}.explorer{display:grid;grid-template-columns:295px minmax(0,1fr);gap:16px;margin-bottom:53px}.scenarios,.detail,.panel{background:var(--card);border:1px solid var(--line);border-radius:20px;min-width:0}.scenarios{padding:17px}.scenarios h3{font:800 .75rem ui-monospace,monospace;letter-spacing:.13em;color:var(--cyan);padding-left:10px;margin:7px 0 17px}.scenarios button{border:1px solid transparent;background:none;color:#d7e5ed;display:flex;justify-content:space-between;gap:10px;align-items:center;width:100%;text-align:left;border-radius:11px;padding:11px;margin:3px 0;font-size:.88rem}.scenarios button:hover{background:#ffffff0a}.scenarios button[aria-current=true]{border-color:#6396ad;background:#20415a;color:#fff}.scenarios button em{font-style:normal;color:var(--mint);font:800 .7rem ui-monospace,monospace}.detail{padding:29px}.overline{font:800 .74rem ui-monospace,monospace;color:var(--cyan);letter-spacing:.13em}.detail h3{font-size:clamp(1.9rem,3vw,2.8rem);line-height:1.1;letter-spacing:-.05em;margin:9px 0 13px}.description{color:var(--muted);max-width:690px;margin:0 0 24px}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin:0 0 22px}.metric{min-width:0;border:1px solid #4a7586;background:#0d3042;border-radius:14px;padding:17px}.metric:nth-child(2){background:#252745;border-color:#69658e}.metric:nth-child(3){background:#353040;border-color:#927b62}.metric small{display:block;font:800 .68rem ui-monospace,monospace;letter-spacing:.12em;color:#bfdce4}.metric strong{display:block;margin-top:13px;font-size:clamp(1.3rem,2.3vw,2rem);line-height:1.1;overflow-wrap:anywhere}.metric .amber{color:var(--amber)}.metric .mint{color:var(--mint)}.timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;list-style:none;padding:0;margin:0}.timeline li{padding:13px;border:1px solid #486078;border-radius:12px;background:#ffffff08;font-size:.8rem;color:#d8e5ed;min-height:86px}.timeline li b{display:block;font:800 .72rem ui-monospace,monospace;letter-spacing:.09em;color:var(--cyan);margin-bottom:7px}.note{border-left:3px solid var(--amber);background:#f5d58d12;padding:13px 17px;margin-top:23px;color:#eddec0;font-size:.85rem}details{margin-top:19px}summary{cursor:pointer;font-weight:750;color:var(--cyan)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.55 ui-monospace,monospace;max-height:380px;overflow:auto;color:#d4e5f1}.bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:55px}.panel{padding:24px}.panel h2{margin:0 0 10px;font-size:1.35rem}.panel p{color:var(--muted);font-size:.89rem}.code{display:block;padding:15px;background:#071525;border:1px solid #385a6c;border-radius:10px;color:var(--mint);font:12px/1.6 ui-monospace,monospace;overflow-wrap:anywhere}footer{border-top:1px solid var(--line);color:var(--muted);font-size:.82rem;padding:27px 0 57px}footer a{margin-right:17px}@media(max-width:900px){.explorer{grid-template-columns:1fr}.scenarios{display:grid;grid-template-columns:repeat(2,1fr);gap:0 8px}.scenarios h3{grid-column:1/-1}.section-head{display:block}.section-head p{margin-top:10px}}@media(max-width:650px){.nav{align-items:flex-start}.hero{padding-top:42px}.metrics,.timeline,.bottom,.scenarios{grid-template-columns:1fr}.detail{padding:19px}.timeline li{min-height:0}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav" aria-label="Site"><span class="brand">ĀML™ / ĀRU INTELLIGENCE</span><div class="links"><a href="./index.html">Live lab</a><a href="./action-cross-runtime.html">JS ↔ Python proof</a><a href="https://github.com/aruintelligence/aml-core">Source ↗</a></div></nav>
+    <header class="hero"><div class="eyebrow">ENGINEERING PROOF 021 / HOST-OWNED DISPATCH</div><h1>A timeout is not<br><span>permission to try twice.</span></h1><p class="lead">An approval can be legitimate and a callback can still time out after a side effect. This local ledger claims a host operation ID before the callback, binds it to the exact proposal, and leaves uncertainty visible instead of blindly replaying.</p><p class="caveat">Project-maintained simulation, not live payment, message delivery, human approval, external certification, or a distributed exactly-once guarantee. The host owns the ID, private storage, policy, and reconciliation.</p><div class="actions"><a class="button" href="#explore">Explore six failure paths ↓</a><a class="button secondary" href="#reproduce">Reproduce the process race</a></div></header>
+    <img class="banner" src="./dispatch-ledger-proof.svg" alt="One host operation ID goes through an exclusive claim; of two competing workers, one reaches a simulated callback and the other is suppressed" width="1200" height="470"><p class="caption">The banner illustrates a local two-process test. The recorded outcome below is regenerated in CI.</p>
+    <section id="explore"><div class="section-head"><h2 id="scenario-count">Loading the recorded trace…</h2><p>Change scenarios to see what the ledger knows—and what it cannot know—after concurrent attempts, changed arguments, or a lost process.</p></div><div class="explorer"><div class="scenarios" role="group" aria-label="Dispatch failure scenarios"><h3>06 / RECORDED SCENARIOS</h3><div id="scenario-buttons">Loading…</div></div><article class="detail" aria-live="polite"><div class="overline">SELECTED TRACE / <span id="scenario-number">—</span></div><h3 id="scenario-title">Loading…</h3><p class="description" id="scenario-description">Reading project-maintained report.</p><div class="metrics"><div class="metric"><small>OPERATION RESULT</small><strong id="status">—</strong></div><div class="metric"><small>SIMULATED CALLBACKS</small><strong class="mint" id="callbacks">—</strong></div><div class="metric"><small>AUTOMATIC RETRIES</small><strong class="amber">0</strong></div></div><ol class="timeline" id="timeline"></ol><div class="note" id="note">No result yet.</div><details><summary>Inspect this exact report row</summary><pre id="raw">—</pre></details></article></div></section>
+    <section class="bottom" id="reproduce"><div class="panel"><h2>Run the real local race</h2><p>The demo starts two Node child processes, writes only simulated callbacks to a temporary file, and exits another worker immediately after a durable claim.</p><code class="code">node pilots/action-boundary/file-dispatch-ledger-demo.mjs</code><p>Check that the recorded six-scenario JSON still matches a fresh run:</p><code class="code">node scripts/build-file-dispatch-report.mjs --check</code></div><div class="panel"><h2>The boundary this does not cross</h2><p>A callback returning is not proof that an email arrived or a charge settled. A claim without an outcome may mean no callback ran—or that a process vanished after an effect. The host must inspect the outside system before deciding on a new operation.</p><p>Compare established operation-key behavior in <a href="https://docs.stripe.com/api/idempotent_requests">Stripe’s API</a> and <a href="https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-idempotency.html">AWS EC2</a>. This ĀML pilot makes a narrower local claim.</p></div></section>
+    <footer>Ledger claims are local-file evidence, not a substitute for an external service’s idempotency or transaction log. <a href="https://github.com/aruintelligence/aml-core/blob/main/pilots/action-boundary/README.md">Contract and limits ↗</a><a href="https://github.com/aruintelligence/aml-core/blob/main/BREAKTHROUGHS.md">Technical milestones ↗</a></footer>
+  </div>
+  <script type="module">
+    const $ = id => document.getElementById(id);
+    const steps = {
+      "two-workers": ["Same host operation ID", "Exclusive claim: one winner", "One callback enters", "Other worker suppressed"],
+      replay: ["Recorded prior return", "Same host ID arrives", "Read existing outcome", "No callback replay"],
+      "changed-payload": ["Existing host ID", "Different proposal digest", "Mismatch reported", "No callback"],
+      crash: ["Worker claims operation", "Worker exits before callback", "Next worker sees claim", "UNKNOWN; no retry"],
+      "callback-error": ["Host claim committed", "Callback enters, then throws", "Outcome stays UNKNOWN", "Replay suppressed"],
+      "new-intent": ["Host creates new ID", "Same payload is allowed", "New claim committed", "New callback enters"]
+    };
+    const params = new URLSearchParams(location.search);
+    function render(row, index) {
+      $("scenario-number").textContent = String(index + 1).padStart(2, "0");
+      $("scenario-title").textContent = row.title;
+      $("scenario-description").textContent = row.explanation;
+      $("status").textContent = row.status.replaceAll("_", " ").toUpperCase();
+      $("callbacks").textContent = String(row.callback_count);
+      $("note").textContent = row.status === "unknown" ? "UNKNOWN does not mean failed. It means the host must reconcile before authorizing a new intent." :
+        row.id === "new-intent" ? "A new host intent can execute the same payload. An operation ID is not a global ban on repeated actions." :
+        "Only the claim boundary is demonstrated here. No external side effect or human consent is asserted.";
+      $("timeline").replaceChildren(...steps[row.id].map((step, stepIndex) => {
+        const item = document.createElement("li"); const label = document.createElement("b");
+        label.textContent = `0${stepIndex + 1} / STEP`; item.append(label, document.createTextNode(step)); return item;
+      }));
+      $("raw").textContent = JSON.stringify(row, null, 2);
+      document.querySelectorAll("[data-scenario]").forEach(button => button.setAttribute("aria-current", String(button.dataset.scenario === row.id)));
+      params.set("scenario", row.id);
+      history.replaceState(null, "", `${location.pathname}?${params}${location.hash}`);
+    }
+    try {
+      const response = await fetch("./file-dispatch-report.json?v=1");
+      if (!response.ok) throw Error(`HTTP ${response.status}`);
+      const report = await response.json();
+      if (report.protocol !== "aml-file-dispatch-ledger-demo/1" || !Array.isArray(report.scenarios) || report.scenarios.length !== 6) throw Error("Invalid dispatch report");
+      $("scenario-count").textContent = `${report.scenarios.length} / 6 scenarios reproduced`;
+      $("scenario-buttons").replaceChildren();
+      report.scenarios.forEach((row, index) => {
+        const button = document.createElement("button"); button.type = "button"; button.dataset.scenario = row.id;
+        const label = document.createElement("span"); label.textContent = `${String(index + 1).padStart(2, "0")} · ${row.title}`;
+        const state = document.createElement("em"); state.textContent = row.status === "unknown" ? "UNKNOWN" : "RECORDED";
+        button.append(label, state); button.addEventListener("click", () => render(row, index));
+        $("scenario-buttons").append(button);
+      });
+      const index = Math.max(0, report.scenarios.findIndex(row => row.id === params.get("scenario")));
+      render(report.scenarios[index], index);
+    } catch (error) {
+      $("scenario-count").textContent = "Report unavailable";
+      $("scenario-buttons").textContent = String(error);
+      $("scenario-title").textContent = "Recorded trace could not be loaded";
+    }
+  </script>
+</body>
+</html>

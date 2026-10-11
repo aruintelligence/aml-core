@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="470" viewBox="0 0 1200 470" role="img" aria-labelledby="title desc">
+  <title id="title">Two workers, one simulated callback</title>
+  <desc id="desc">A host-generated operation ID is claimed in a local file ledger before a tool callback; the second worker is suppressed and an uncertain result is never retried automatically.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#112e49"/><stop offset="1" stop-color="#111632"/></linearGradient>
+    <linearGradient id="a" x2="1"><stop stop-color="#74e5ef"/><stop offset="1" stop-color="#b7a0ff"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="36"/></filter>
+  </defs>
+  <rect width="1200" height="470" rx="28" fill="url(#bg)"/>
+  <circle cx="170" cy="50" r="110" fill="#48d4dd" opacity=".12" filter="url(#glow)"/>
+  <circle cx="1065" cy="420" r="150" fill="#9379ff" opacity=".15" filter="url(#glow)"/>
+  <g font-family="system-ui,Segoe UI,sans-serif">
+    <text x="58" y="70" fill="#89e9ee" font-size="16" font-weight="800" letter-spacing="4">ĀML / ENGINEERING PROOF 021</text>
+    <text x="58" y="129" fill="#f4f8ff" font-size="44" font-weight="800" letter-spacing="-2">The uncertain-dispatch boundary</text>
+    <text x="58" y="166" fill="#c0d2e5" font-size="19">One host operation. Two competing workers. No blind callback replay.</text>
+    <path d="M166 270 H1045" stroke="#6c829d" stroke-width="3" opacity=".7"/>
+    <g>
+      <rect x="58" y="221" width="223" height="99" rx="18" fill="#193b57" stroke="#5795aa"/>
+      <text x="80" y="251" fill="#89e9ee" font-size="12" font-weight="800" letter-spacing="2">HOST INTENT</text>
+      <text x="80" y="284" fill="#f0f7ff" font-size="21" font-weight="700">Operation ID</text>
+      <text x="80" y="304" fill="#bfd3e4" font-size="13">bound to exact proposal</text>
+    </g>
+    <g>
+      <rect x="340" y="221" width="223" height="99" rx="18" fill="#183c4b" stroke="#72cfc8"/>
+      <text x="362" y="251" fill="#9df0d5" font-size="12" font-weight="800" letter-spacing="2">BEFORE CALLBACK</text>
+      <text x="362" y="284" fill="#f0f7ff" font-size="21" font-weight="700">Exclusive claim</text>
+      <text x="362" y="304" fill="#bfd3e4" font-size="13">local file, one winner</text>
+    </g>
+    <g>
+      <rect x="622" y="221" width="223" height="99" rx="18" fill="#223550" stroke="#807bb5"/>
+      <text x="644" y="251" fill="#c8b4ff" font-size="12" font-weight="800" letter-spacing="2">WINNING WORKER</text>
+      <text x="644" y="284" fill="#f0f7ff" font-size="21" font-weight="700">1 callback</text>
+      <text x="644" y="304" fill="#bfd3e4" font-size="13">simulated, not delivered</text>
+    </g>
+    <g>
+      <rect x="904" y="221" width="238" height="99" rx="18" fill="#393147" stroke="#beac86"/>
+      <text x="926" y="251" fill="#f3d795" font-size="12" font-weight="800" letter-spacing="2">OTHER WORKER</text>
+      <text x="926" y="284" fill="#f0f7ff" font-size="21" font-weight="700">Replay held</text>
+      <text x="926" y="304" fill="#dfcfb2" font-size="13">0 extra callbacks</text>
+    </g>
+    <path d="M733 321 V358 H905" stroke="#b9a7e9" stroke-width="2" stroke-dasharray="6 7" fill="none"/>
+    <text x="58" y="391" fill="#f5d58d" font-size="22" font-weight="800">UNKNOWN is honest.</text>
+    <text x="58" y="420" fill="#b8cbe1" font-size="16">After a crash or callback error, inspect and reconcile. Never infer delivery from a returned function.</text>
+  </g>
+</svg>

@@ -1,0 +1,51 @@
+{
+  "protocol": "aml-file-dispatch-ledger-demo/1",
+  "provenance": "project-maintained local simulation",
+  "scenarios": [
+    {
+      "id": "two-workers",
+      "title": "Two workers, one operation",
+      "status": "one_returned_one_suppressed",
+      "attempts": 2,
+      "callback_count": 1,
+      "explanation": "An exclusive claim precedes the callback. Only one worker enters it."
+    },
+    {
+      "id": "replay",
+      "title": "Same ID after return",
+      "status": "already_returned",
+      "callback_count": 0,
+      "explanation": "The returned callback is recorded; retry is suppressed, not re-executed."
+    },
+    {
+      "id": "changed-payload",
+      "title": "Same ID, changed payload",
+      "status": "mismatch",
+      "callback_count": 0,
+      "explanation": "An operation ID cannot be reused with a different proposal digest."
+    },
+    {
+      "id": "crash",
+      "title": "Worker exits after claim",
+      "status": "unknown",
+      "callback_count": 0,
+      "explanation": "The old claim survives a process exit. Outcome is unknown and no retry occurs."
+    },
+    {
+      "id": "callback-error",
+      "title": "Callback throws after possible effect",
+      "status": "unknown",
+      "callback_count": 1,
+      "replay_status": "unknown",
+      "explanation": "The ledger records uncertainty and suppresses a replay; a host must reconcile externally."
+    },
+    {
+      "id": "new-intent",
+      "title": "New ID, same payload",
+      "status": "returned",
+      "callback_count": 1,
+      "explanation": "A separate host intent may intentionally repeat the same payload."
+    }
+  ],
+  "limits": "Local trusted filesystem only. Callback counts are simulated; returned is not proof of external delivery. No automatic recovery, cross-machine guarantee, human authentication, or production authorization."
+}

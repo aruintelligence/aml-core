@@ -8,9 +8,12 @@ on:
       - "pilots/action-boundary/**"
       - "scripts/run-action-boundary-challenge.mjs"
       - "scripts/build-action-cross-runtime-report.mjs"
+      - "scripts/build-file-dispatch-report.mjs"
       - "test/action-boundary-challenge.test.js"
+      - "test/action-boundary-dispatch-ledger.test.js"
       - "test/test_python_boundary.py"
       - "docs/action-cross-runtime-report.json"
+      - "docs/file-dispatch-report.json"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
   pull_request:
@@ -19,9 +22,12 @@ on:
       - "pilots/action-boundary/**"
       - "scripts/run-action-boundary-challenge.mjs"
       - "scripts/build-action-cross-runtime-report.mjs"
+      - "scripts/build-file-dispatch-report.mjs"
       - "test/action-boundary-challenge.test.js"
+      - "test/action-boundary-dispatch-ledger.test.js"
       - "test/test_python_boundary.py"
       - "docs/action-cross-runtime-report.json"
+      - "docs/file-dispatch-report.json"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
 
@@ -54,6 +60,10 @@ jobs:
           python3 -m unittest discover -s test -p test_python_boundary.py
           node scripts/run-action-boundary-challenge.mjs -- python3 pilots/action-boundary/challenge-python-adapter.py
           node scripts/build-action-cross-runtime-report.mjs --check
+      - name: Verify host-owned dispatch ledger and recorded process race
+        run: |
+          node --test test/action-boundary-dispatch-ledger.test.js
+          node scripts/build-file-dispatch-report.mjs --check
       - name: Prepare caller-owned executable wrapper
         run: |
           printf '%s\n' '#!/bin/sh' 'exec node "$GITHUB_WORKSPACE/pilots/action-boundary/challenge-reference-adapter.mjs" "$@"' > "$RUNNER_TEMP/aml-reference-adapter"
