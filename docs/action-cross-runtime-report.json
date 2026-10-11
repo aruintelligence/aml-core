@@ -1,0 +1,817 @@
+{
+  "protocol": "aml-action-cross-runtime-report/1",
+  "provenance": "project-maintained JavaScript and Python implementations",
+  "challenge_sha256": "6ec0e15ef7a286f9cc3698b38c6ea527fa718bf94474f6de22095835b7e82997",
+  "vectors_sha256": "be11971af1b0a3d516c1b709111d3c9fe863cfebc7a10ab9fa8a4bf9ba1f8211",
+  "cases": [
+    {
+      "id": "approved-send",
+      "expected": {
+        "decision": "requires_approval",
+        "reason": "exact_rule",
+        "status": "dispatched",
+        "receipt_reason": "host_dispatch_returned",
+        "tool_calls": 1,
+        "executed_vector": "approved_route"
+      },
+      "js": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "body": "The build passed.",
+            "metadata": {
+              "a": [
+                "é",
+                true,
+                null
+              ],
+              "z": 2
+            },
+            "subject": "Update"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Status ✓",
+          "resource": "team@example.test",
+          "tool": "send_message"
+        }
+      },
+      "python": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "body": "The build passed.",
+            "metadata": {
+              "a": [
+                "é",
+                true,
+                null
+              ],
+              "z": 2
+            },
+            "subject": "Update"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Status ✓",
+          "resource": "team@example.test",
+          "tool": "send_message"
+        }
+      },
+      "same_output": true,
+      "js_failures": [],
+      "python_failures": []
+    },
+    {
+      "id": "reordered-keys",
+      "expected": {
+        "decision": "requires_approval",
+        "reason": "exact_rule",
+        "status": "dispatched",
+        "receipt_reason": "host_dispatch_returned",
+        "tool_calls": 1,
+        "executed_vector": "same_action_reordered_keys"
+      },
+      "js": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "body": "The build passed.",
+            "metadata": {
+              "a": [
+                "é",
+                true,
+                null
+              ],
+              "z": 2
+            },
+            "subject": "Update"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Status ✓",
+          "resource": "team@example.test",
+          "tool": "send_message"
+        }
+      },
+      "python": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "body": "The build passed.",
+            "metadata": {
+              "a": [
+                "é",
+                true,
+                null
+              ],
+              "z": 2
+            },
+            "subject": "Update"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Status ✓",
+          "resource": "team@example.test",
+          "tool": "send_message"
+        }
+      },
+      "same_output": true,
+      "js_failures": [],
+      "python_failures": []
+    },
+    {
+      "id": "changed-destination",
+      "expected": {
+        "decision": "deny",
+        "reason": "no_exact_rule",
+        "status": "blocked",
+        "receipt_reason": "no_exact_rule",
+        "tool_calls": 0
+      },
+      "js": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "d02df0aafadc6b9db6744083baac970afac76c0510b05de60b02d80172749d53",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "d02df0aafadc6b9db6744083baac970afac76c0510b05de60b02d80172749d53",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "python": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "d02df0aafadc6b9db6744083baac970afac76c0510b05de60b02d80172749d53",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "d02df0aafadc6b9db6744083baac970afac76c0510b05de60b02d80172749d53",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "same_output": true,
+      "js_failures": [],
+      "python_failures": []
+    },
+    {
+      "id": "stale-body-approval",
+      "expected": {
+        "decision": "requires_approval",
+        "reason": "exact_rule",
+        "status": "blocked",
+        "receipt_reason": "approval_missing_or_mismatched",
+        "tool_calls": 0
+      },
+      "js": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "e40dc4825a36c6078ed46c895ffa2f1a80f32a0eb65361dfb36666a863132e28",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "e40dc4825a36c6078ed46c895ffa2f1a80f32a0eb65361dfb36666a863132e28",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "python": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "e40dc4825a36c6078ed46c895ffa2f1a80f32a0eb65361dfb36666a863132e28",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "e40dc4825a36c6078ed46c895ffa2f1a80f32a0eb65361dfb36666a863132e28",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "same_output": true,
+      "js_failures": [],
+      "python_failures": []
+    },
+    {
+      "id": "allowed-read",
+      "expected": {
+        "decision": "allow",
+        "reason": "exact_rule",
+        "status": "dispatched",
+        "receipt_reason": "host_dispatch_returned",
+        "tool_calls": 1,
+        "executed_vector": "read_route"
+      },
+      "js": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "3c4daeb05d0206b5a2d8e164271db5f5dc706603414750479b350e998016d351",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "3c4daeb05d0206b5a2d8e164271db5f5dc706603414750479b350e998016d351",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "id": 42
+          },
+          "effect": "read",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Inspect record",
+          "resource": "record:42",
+          "tool": "fetch_record"
+        }
+      },
+      "python": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "3c4daeb05d0206b5a2d8e164271db5f5dc706603414750479b350e998016d351",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "3c4daeb05d0206b5a2d8e164271db5f5dc706603414750479b350e998016d351",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "id": 42
+          },
+          "effect": "read",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Inspect record",
+          "resource": "record:42",
+          "tool": "fetch_record"
+        }
+      },
+      "same_output": true,
+      "js_failures": [],
+      "python_failures": []
+    },
+    {
+      "id": "undeclared-effect",
+      "expected": {
+        "decision": "deny",
+        "reason": "no_exact_rule",
+        "status": "blocked",
+        "receipt_reason": "no_exact_rule",
+        "tool_calls": 0
+      },
+      "js": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "616b03ae3cfb444b27b1ea657ac34900ac246046464cfa87eaec193929f3f883",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "616b03ae3cfb444b27b1ea657ac34900ac246046464cfa87eaec193929f3f883",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "python": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "616b03ae3cfb444b27b1ea657ac34900ac246046464cfa87eaec193929f3f883",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "616b03ae3cfb444b27b1ea657ac34900ac246046464cfa87eaec193929f3f883",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "same_output": true,
+      "js_failures": [],
+      "python_failures": []
+    },
+    {
+      "id": "missing-approval",
+      "expected": {
+        "decision": "requires_approval",
+        "reason": "exact_rule",
+        "status": "blocked",
+        "receipt_reason": "approval_unavailable",
+        "tool_calls": 0
+      },
+      "js": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_unavailable"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "python": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_unavailable"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "same_output": true,
+      "js_failures": [],
+      "python_failures": []
+    },
+    {
+      "id": "approval-error",
+      "expected": {
+        "decision": "requires_approval",
+        "reason": "exact_rule",
+        "status": "blocked",
+        "receipt_reason": "approval_error",
+        "tool_calls": 0
+      },
+      "js": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_error"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "python": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_error"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "same_output": true,
+      "js_failures": [],
+      "python_failures": []
+    },
+    {
+      "id": "mutated-while-awaiting",
+      "expected": {
+        "decision": "requires_approval",
+        "reason": "exact_rule",
+        "status": "dispatched",
+        "receipt_reason": "host_dispatch_returned",
+        "tool_calls": 1,
+        "executed_vector": "approved_route"
+      },
+      "js": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "body": "The build passed.",
+            "metadata": {
+              "a": [
+                "é",
+                true,
+                null
+              ],
+              "z": 2
+            },
+            "subject": "Update"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Status ✓",
+          "resource": "team@example.test",
+          "tool": "send_message"
+        }
+      },
+      "python": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "body": "The build passed.",
+            "metadata": {
+              "a": [
+                "é",
+                true,
+                null
+              ],
+              "z": 2
+            },
+            "subject": "Update"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Status ✓",
+          "resource": "team@example.test",
+          "tool": "send_message"
+        }
+      },
+      "same_output": true,
+      "js_failures": [],
+      "python_failures": []
+    },
+    {
+      "id": "policy-revoked-while-awaiting",
+      "expected": {
+        "decision": "requires_approval",
+        "reason": "exact_rule",
+        "status": "blocked",
+        "receipt_reason": "policy_changed",
+        "tool_calls": 0
+      },
+      "js": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "policy_changed"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "python": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "policy_changed"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "same_output": true,
+      "js_failures": [],
+      "python_failures": []
+    },
+    {
+      "id": "dispatch-uncertain",
+      "expected": {
+        "decision": "requires_approval",
+        "reason": "exact_rule",
+        "status": "unknown",
+        "receipt_reason": "host_dispatch_error",
+        "tool_calls": 1,
+        "executed_vector": "approved_route"
+      },
+      "js": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "policy_decision": "requires_approval",
+          "execution_status": "unknown",
+          "reason": "host_dispatch_error"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "body": "The build passed.",
+            "metadata": {
+              "a": [
+                "é",
+                true,
+                null
+              ],
+              "z": 2
+            },
+            "subject": "Update"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Status ✓",
+          "resource": "team@example.test",
+          "tool": "send_message"
+        }
+      },
+      "python": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+          "policy_decision": "requires_approval",
+          "execution_status": "unknown",
+          "reason": "host_dispatch_error"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "body": "The build passed.",
+            "metadata": {
+              "a": [
+                "é",
+                true,
+                null
+              ],
+              "z": 2
+            },
+            "subject": "Update"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Status ✓",
+          "resource": "team@example.test",
+          "tool": "send_message"
+        }
+      },
+      "same_output": true,
+      "js_failures": [],
+      "python_failures": []
+    },
+    {
+      "id": "ambiguous-policy",
+      "expected": {
+        "decision": "deny",
+        "reason": "ambiguous_policy",
+        "status": "blocked",
+        "receipt_reason": "ambiguous_policy",
+        "tool_calls": 0,
+        "null_digest": true
+      },
+      "js": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "ambiguous_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "python": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "ambiguous_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "same_output": true,
+      "js_failures": [],
+      "python_failures": []
+    },
+    {
+      "id": "malformed-proposal",
+      "expected": {
+        "decision": "deny",
+        "reason": "invalid_proposal",
+        "status": "blocked",
+        "receipt_reason": "invalid_proposal",
+        "tool_calls": 0,
+        "null_digest": true
+      },
+      "js": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_proposal"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "python": {
+        "protocol": "aml-action-boundary-result/1",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_proposal"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "same_output": true,
+      "js_failures": [],
+      "python_failures": []
+    }
+  ],
+  "agreements": 13,
+  "contract_passes": 13,
+  "limits": "13 published fixtures only. No outside implementation, authenticated approver, live tool, general JSON canonicalization, or independent validation."
+}
