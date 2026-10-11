@@ -118,4 +118,6 @@ $("copy").addEventListener("click", async () => {
   }
 });
 $("policy").textContent = JSON.stringify(policy, null, 2);
-selectCase("send");
+const requestedScenario = new URLSearchParams(window.location.search).get("scenario");
+selectCase(Object.hasOwn(cases, requestedScenario) ? requestedScenario : "send");
+
