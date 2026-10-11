@@ -1,0 +1,524 @@
+{
+  "protocol": "aml-prepared-mail-report/1",
+  "provenance": "Project-authored Node execution with in-memory provider callbacks. No mail service, authenticated approval, or external effect.",
+  "distinction": "The earlier complete-recipient adapter checks the tool input. If a host callback builds a different provider request after that check, the request is outside that earlier decision. The opt-in prepared adapter builds and validates the narrow provider request before policy and any approval.",
+  "caveat": "The host sender must submit precisely the prepared fields and cannot silently append another delivery route. This adapter does not validate provider aliases, list expansion, forwarding, actual delivery, content safety, policy ownership, or human consent.",
+  "cases": [
+    {
+      "id": "aligned",
+      "title": "No transformation",
+      "description": "Both paths submit the same intended request to one in-memory provider callback.",
+      "tool_input": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "intended_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "transformed_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "post_gate": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_provider_callbacks": 1,
+        "submitted_requests": [
+          {
+            "to": "team@example.test",
+            "cc": [],
+            "bcc": [],
+            "subject": "Release",
+            "body": "Ready."
+          }
+        ]
+      },
+      "prepared_first": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_provider_callbacks": 1,
+        "submitted_requests": [
+          {
+            "to": "team@example.test",
+            "cc": [],
+            "bcc": [],
+            "subject": "Release",
+            "body": "Ready."
+          }
+        ]
+      }
+    },
+    {
+      "id": "route_bcc",
+      "title": "Routing adds a hidden recipient",
+      "description": "The post-gate transformation adds a BCC after the old check. Preparing it first reveals the new destination to policy.",
+      "tool_input": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "intended_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "transformed_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready.",
+        "bcc": [
+          "outside@example.test"
+        ]
+      },
+      "post_gate": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_provider_callbacks": 1,
+        "submitted_requests": [
+          {
+            "to": "team@example.test",
+            "cc": [],
+            "bcc": [
+              "outside@example.test"
+            ],
+            "subject": "Release",
+            "body": "Ready."
+          }
+        ]
+      },
+      "prepared_first": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "6a02b4ef6df1b56bbf60ed7c98bc89ee609f052870e882d23ac18deef4b01065",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6a02b4ef6df1b56bbf60ed7c98bc89ee609f052870e882d23ac18deef4b01065",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "simulated_provider_callbacks": 0,
+        "submitted_requests": []
+      }
+    },
+    {
+      "id": "route_cc",
+      "title": "Routing adds a visible recipient",
+      "description": "The same issue applies when a host routing rule adds CC.",
+      "tool_input": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "intended_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "transformed_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready.",
+        "cc": [
+          "outside@example.test"
+        ]
+      },
+      "post_gate": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_provider_callbacks": 1,
+        "submitted_requests": [
+          {
+            "to": "team@example.test",
+            "cc": [
+              "outside@example.test"
+            ],
+            "bcc": [],
+            "subject": "Release",
+            "body": "Ready."
+          }
+        ]
+      },
+      "prepared_first": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "35de8aab2b04e8fec3fef6d61b96f40ae125bd81b200be0ae65253ff12895db1",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "35de8aab2b04e8fec3fef6d61b96f40ae125bd81b200be0ae65253ff12895db1",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "simulated_provider_callbacks": 0,
+        "submitted_requests": []
+      }
+    },
+    {
+      "id": "approved_group",
+      "title": "A group the host intended",
+      "description": "A rule for the complete prepared request permits the intended group. The old path checks only the unexpanded input and cannot match that rule.",
+      "tool_input": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "intended_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready.",
+        "cc": [
+          "editor@example.test"
+        ]
+      },
+      "transformed_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready.",
+        "cc": [
+          "editor@example.test"
+        ]
+      },
+      "post_gate": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "simulated_provider_callbacks": 0,
+        "submitted_requests": []
+      },
+      "prepared_first": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "11fbe8c81ba1a040a3cd5c0c2b32bfb1b28855564e91a71bd5a3b8677a62030a",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "11fbe8c81ba1a040a3cd5c0c2b32bfb1b28855564e91a71bd5a3b8677a62030a",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_provider_callbacks": 1,
+        "submitted_requests": [
+          {
+            "to": "team@example.test",
+            "cc": [
+              "editor@example.test"
+            ],
+            "bcc": [],
+            "subject": "Release",
+            "body": "Ready."
+          }
+        ]
+      }
+    },
+    {
+      "id": "changed_body",
+      "title": "Changed text after input approval",
+      "description": "A fixed simulated approval for the original body lets the old post-gate change reach its callback. The prepared path presents the changed text and rejects that stale digest.",
+      "tool_input": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "intended_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "transformed_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Changed after input."
+      },
+      "post_gate": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_provider_callbacks": 1,
+        "submitted_requests": [
+          {
+            "to": "team@example.test",
+            "cc": [],
+            "bcc": [],
+            "subject": "Release",
+            "body": "Changed after input."
+          }
+        ]
+      },
+      "prepared_first": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "62bbfdb3a6d14c48fad6f194923b5d0f027d678f786bdb07eefeb3ce4f72d4c3",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "62bbfdb3a6d14c48fad6f194923b5d0f027d678f786bdb07eefeb3ce4f72d4c3",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "simulated_provider_callbacks": 0,
+        "submitted_requests": []
+      }
+    },
+    {
+      "id": "unknown_field",
+      "title": "An unmodeled delivery field",
+      "description": "The prepared request rejects a field outside the five-field schema before the provider callback.",
+      "tool_input": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "intended_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "transformed_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready.",
+        "recipients": [
+          "outside@example.test"
+        ]
+      },
+      "post_gate": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_provider_callbacks": 1,
+        "submitted_requests": [
+          {
+            "to": "team@example.test",
+            "cc": [],
+            "bcc": [],
+            "subject": "Release",
+            "body": "Ready.",
+            "recipients": [
+              "outside@example.test"
+            ]
+          }
+        ]
+      },
+      "prepared_first": {
+        "preparation_error": "unsupported_mail_arguments",
+        "simulated_provider_callbacks": 0,
+        "submitted_requests": []
+      }
+    },
+    {
+      "id": "stale_approval",
+      "title": "Wrong approval digest",
+      "description": "A deliberately wrong digest blocks both paths before a callback.",
+      "tool_input": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "intended_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "transformed_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "post_gate": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "simulated_provider_callbacks": 0,
+        "submitted_requests": []
+      },
+      "prepared_first": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "simulated_provider_callbacks": 0,
+        "submitted_requests": []
+      }
+    },
+    {
+      "id": "provider_error",
+      "title": "Provider callback throws",
+      "description": "A callback error stays unknown on both paths. Neither adapter retries automatically.",
+      "tool_input": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "intended_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "transformed_request": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "post_gate": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "policy_decision": "allow",
+          "execution_status": "unknown",
+          "reason": "host_dispatch_error"
+        },
+        "simulated_provider_callbacks": 1,
+        "submitted_requests": [
+          {
+            "to": "team@example.test",
+            "cc": [],
+            "bcc": [],
+            "subject": "Release",
+            "body": "Ready."
+          }
+        ]
+      },
+      "prepared_first": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "policy_decision": "allow",
+          "execution_status": "unknown",
+          "reason": "host_dispatch_error"
+        },
+        "simulated_provider_callbacks": 1,
+        "submitted_requests": [
+          {
+            "to": "team@example.test",
+            "cc": [],
+            "bcc": [],
+            "subject": "Release",
+            "body": "Ready."
+          }
+        ]
+      }
+    }
+  ]
+}

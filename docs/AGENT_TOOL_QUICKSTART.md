@@ -47,6 +47,8 @@ const execute = createGuardedToolExecute({
 
 **If your mail callback uses CC or BCC**, the To-only `resourceFor` above is incomplete for that expanded callback. Use the [complete-recipient mail adapter](../pilots/action-boundary/MAIL_GUARDED_TOOL.md) for its narrow `to`/`cc`/`bcc` schema. The [seven-case integration lab](https://aruintelligence.github.io/aml-core/mail-tool-integration.html?case=added_bcc#cases) runs both function-tool wrappers with a BCC-capable in-memory callback. It does not send mail or approve anything.
 
+**If the host changes the request before calling its provider**, construct the full request before the policy check with the [prepared mail adapter](../pilots/action-boundary/PREPARED_MAIL_TOOL.md). The [eight-case lab](https://aruintelligence.github.io/aml-core/prepared-mail-lab.html?case=route_bcc#cases) shows a BCC appended after an earlier check reaching one local provider callback; preparing it first blocks that callback under the same recipient rule. A changed body also invalidates a fixed original proposal digest when approval is required. The host sender must submit exactly the prepared fields.
+
 ## Rehearse a one-use grant
 
 Run `node pilots/action-boundary/one-shot-grant-demo.mjs` or open the [replay scenario](https://aruintelligence.github.io/aml-core/action-lab.html?scenario=replay). The first invocation uses a local grant; the second attempt with the same grant blocks before the callback. The example sends no message and authenticates no person.

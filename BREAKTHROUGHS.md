@@ -261,6 +261,14 @@ The new `createMailGuardedToolExecute` snapshots the proposed mail arguments, va
 
 This is a host-side, project-authored Node example. It does not intercept all agent tools, resolve provider aliases or forwarding, authenticate approval, constrain message content, or prove delivery. The SDK's native approval flow remains separate.
 
+## 32. Check the request constructed for the provider
+
+The complete-recipient function-tool wrapper checks its input, but a host callback can build a different request after that check. In a local counterexample, the tool input names only `team@example.test`; host routing adds `outside@example.test` as BCC inside the provider callback. The prior adapter correctly approved its input under the declared rule, then one simulated provider callback received the expanded request. This is a host integration gap, not a failure of its stated input schema.
+
+The opt-in `createPreparedMailToolExecute` snapshots and validates the tool input, calls a host-owned `prepare` step once, then snapshots and validates the complete five-field provider request **before** invoking the existing recipient policy and optional digest-bound approval. Its sender receives only the checked prepared request and frozen proposal. Under the same rule, the BCC addition reaches zero provider callbacks; an explicitly intended expanded group passes. A fixed simulated approval for original content also blocks a changed prepared body. [Eight executable cases](https://aruintelligence.github.io/aml-core/prepared-mail-lab.html?case=route_bcc#cases) expose the input, transformed request, plans, receipts, and callbacks. `node scripts/build-prepared-mail-report.mjs --check` regenerates the [machine report](docs/prepared-mail-report.json); the [guide](pilots/action-boundary/PREPARED_MAIL_TOOL.md) gives the host contract.
+
+These are project-authored in-memory callbacks, not messages or independent validation. A sender can ignore the checked request, and a provider can expand aliases, lists, forwarding, or other delivery routes. The host owns policy, authenticated approval, real provider integration, and reconciliation of uncertain outcomes.
+
 ## The frontier
 
 The next technical frontiers are:
