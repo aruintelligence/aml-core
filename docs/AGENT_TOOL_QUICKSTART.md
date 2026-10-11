@@ -45,6 +45,32 @@ const execute = createGuardedToolExecute({
 
 `requestApproval` must return `{ approved: true, proposal_sha256 }` for the exact frozen proposal, or refuse. The callback may be omitted for a policy rule that allows an action without approval. If an approval-required rule has no callback, dispatch blocks. The adapter passes the framework's second `execute` argument as `context` to the host callbacks, and calls the tool with the frozen canonical arguments. A host mapping error throws before any tool invocation.
 
+## Rehearse a one-use grant
+
+Run `node pilots/action-boundary/one-shot-grant-demo.mjs` or open the [replay scenario](https://aruintelligence.github.io/aml-core/action-lab.html?scenario=replay). The first invocation uses a local grant; the second attempt with the same grant blocks before the callback. The example sends no message and authenticates no person.
+
+To opt in for a host function tool, keep the grant store and approval issuer **inside the host**:
+
+```js
+import { createLocalOneShotGrants } from "./pilots/action-boundary/one-shot-grants.mjs";
+
+const grants = createLocalOneShotGrants(); // One Node process, demonstration only.
+const guarded = createGuardedToolExecute({
+  tool: "send_message", effect: "send", purpose: "Send a team update",
+  resourceFor: args => args.to, policy,
+  requestApproval: async (input, context) => {
+    if (!await hostAuthenticateAndApprove(input.proposal, input.proposal_sha256, context)) {
+      return { approved: false };
+    }
+    return grants.issue(input.proposal_sha256); // New ID, short expiry.
+  },
+  consumeApproval: grants.consume,
+  execute: async (args, context) => sendThroughMyService(args.to, args.body, context)
+});
+```
+
+`hostAuthenticateAndApprove` and `sendThroughMyService` are host functions you must implement; the browser and CLI examples only simulate their outcome. The `consumeApproval` hook runs after the proposal digest and rule match, before the callback. It must make an atomic one-use claim bound to the digest and return `true` only once. A false claim blocks with `approval_reused_or_expired`; an error blocks with `approval_consume_error`. A policy change during an asynchronous claim still blocks. The local Map store does not survive restarts or coordinate multiple workers. Use a durable atomic store and your own authenticated approval, time policy, audit, and idempotency controls in a real deployment. An uncertain callback result still consumes the grant and must not be retried automatically.
+
 For the [OpenAI Agents SDK JavaScript function-tool API](https://openai.github.io/openai-agents-js/guides/tools/), install `@openai/agents` and `zod` in your agent app, then attach the `execute` function above:
 
 ```js
