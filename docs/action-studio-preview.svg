@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">ĀML Action Boundary Studio</title>
+  <desc id="desc">A proposed send to an outside address is compared with a host rule for the team address and denied. The calculation can be exported and rechecked.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07111e"/><stop offset=".62" stop-color="#102c3c"/><stop offset="1" stop-color="#091522"/></linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#7ce8e5"/><stop offset="1" stop-color="#a2d7fa"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="20"/></filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="985" cy="60" r="160" fill="#1f7381" opacity=".18" filter="url(#glow)"/>
+  <circle cx="70" cy="510" r="130" fill="#4864a0" opacity=".12" filter="url(#glow)"/>
+  <g font-family="system-ui,-apple-system,Segoe UI,sans-serif">
+    <text x="54" y="58" fill="#7ce8e5" font-size="18" font-weight="800" letter-spacing="4">ĀML™ / BOUNDARY STUDIO</text>
+    <text x="54" y="132" fill="#f4f8fa" font-size="55" font-weight="850" letter-spacing="-3">Draw the line before the call.</text>
+    <text x="55" y="173" fill="#bed1dc" font-size="20">Edit the action and policy. Export a calculation others can recheck.</text>
+    <rect x="52" y="218" width="348" height="292" rx="18" fill="#0b2030" stroke="#3f6475" stroke-width="2"/>
+    <rect x="426" y="218" width="348" height="292" rx="18" fill="#0b2030" stroke="#3f6475" stroke-width="2"/>
+    <rect x="800" y="218" width="348" height="292" rx="18" fill="#112b3a" stroke="#ad6572" stroke-width="2"/>
+    <text x="77" y="252" fill="#f4ca78" font-size="15" font-weight="800" letter-spacing="2">01 / AGENT PROPOSAL</text>
+    <text x="451" y="252" fill="#f4ca78" font-size="15" font-weight="800" letter-spacing="2">02 / HOST POLICY</text>
+    <text x="825" y="252" fill="#f4ca78" font-size="15" font-weight="800" letter-spacing="2">03 / LOCAL PLAN</text>
+    <g font-family="ui-monospace,SFMono-Regular,Consolas,monospace" font-size="18">
+      <text x="78" y="303" fill="#cce6eb">tool: <tspan fill="#7ce8e5">send_message</tspan></text>
+      <text x="78" y="345" fill="#cce6eb">effect: <tspan fill="#7ce8e5">send</tspan></text>
+      <text x="78" y="387" fill="#cce6eb">resource:</text>
+      <text x="78" y="417" fill="#ff8795">outsider@example.test</text>
+      <text x="452" y="303" fill="#cce6eb">tool: <tspan fill="#7ce8e5">send_message</tspan></text>
+      <text x="452" y="345" fill="#cce6eb">effect: <tspan fill="#7ce8e5">send</tspan></text>
+      <text x="452" y="387" fill="#cce6eb">resource:</text>
+      <text x="452" y="417" fill="#a4ecb8">team@example.test</text>
+      <text x="826" y="387" fill="#c9d9e1" font-size="17">reason: no_exact_rule</text>
+    </g>
+    <text x="826" y="347" fill="#ff8795" font-size="52" font-weight="850" letter-spacing="-2">DENY</text>
+    <text x="79" y="473" fill="#95adbc" font-size="15">Editable JSON</text>
+    <text x="453" y="473" fill="#95adbc" font-size="15">Exact tool + effect + resource</text>
+    <text x="826" y="473" fill="#95adbc" font-size="15">No live tool connected</text>
+    <path d="M403 361h19m-8-9 9 9-9 9M777 361h19m-8-9 9 9-9 9" stroke="#7ce8e5" stroke-width="3" fill="none"/>
+    <rect x="53" y="541" width="1095" height="54" rx="13" fill="#143749" stroke="#427285"/>
+    <text x="78" y="575" fill="#7ce8e5" font-size="18" font-weight="800">EXPORT JSON → RECOMPUTE IN NODE</text>
+    <text x="814" y="575" fill="#c6d8e0" font-size="15">Consistency, not authorization</text>
+  </g>
+</svg>
