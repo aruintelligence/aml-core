@@ -8,6 +8,13 @@ import { canonicalJSONStringify } from "../../protocol/canonicalJson.js";
 const hex = value => crypto.createHash("sha256").update(value).digest("hex");
 const ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/;
 const DIGEST = /^[a-f0-9]{64}$/;
+function freezeDeep(value) {
+  if (value && typeof value === "object") {
+    for (const child of Object.values(value)) freezeDeep(child);
+    Object.freeze(value);
+  }
+  return value;
+}
 
 function privateDirectory(directory) {
   if (typeof directory !== "string" || !path.isAbsolute(directory)) throw new TypeError("absolute_directory_required");
@@ -55,7 +62,7 @@ export function createFileDispatchLedger({ directory } = {}) {
     const bytes = canonicalJSONStringify(proposal);
     if (typeof bytes !== "string" || Buffer.byteLength(bytes) > 65536) throw new TypeError("invalid_proposal_bytes");
     const operation_sha256 = hex(operationId);
-    return { operation_sha256, proposal_sha256: hex(bytes), frozen: JSON.parse(bytes),
+    return { operation_sha256, proposal_sha256: hex(bytes), frozen: freezeDeep(JSON.parse(bytes)),
       claimFile: path.join(root, `${operation_sha256}.claim.json`),
       outcomeFile: path.join(root, `${operation_sha256}.outcome.json`) };
   };
