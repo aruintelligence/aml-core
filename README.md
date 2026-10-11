@@ -24,9 +24,9 @@
 
 **Explore the interface:** [Live lab](https://aruintelligence.github.io/aml-core/) · [View Meaning™ inspector](https://aruintelligence.github.io/aml-core/view-meaning.html) · [API contract](protocol/aml-http.openapi.yaml)
 
-**Explore the next boundary:** [Try the Action Boundary Lab](https://aruintelligence.github.io/aml-core/action-lab.html) — change an agent's intended tool call and see an exact policy decision, digest, stale simulated approval, and uncertain outcome. [Run the 13-case outside implementation challenge](publications/ACTION_BOUNDARY_CHALLENGE.md), or [read the pilot](pilots/action-boundary/README.md) and its [six published vectors](pilots/action-boundary/vectors.json). The browser rehearsal and repository self-test are project-authored, with no live tool access.
+**Explore the next boundary:** [Try the Action Boundary Lab](https://aruintelligence.github.io/aml-core/action-lab.html?view=action-path-1) — change an agent's intended tool call and see an exact policy decision, digest, stale simulated approval, and uncertain outcome. [Run the 13-case outside implementation challenge](publications/ACTION_BOUNDARY_CHALLENGE.md), or [read the pilot](pilots/action-boundary/README.md) and its [six published vectors](pilots/action-boundary/vectors.json). The browser rehearsal and repository self-test are project-authored, with no live tool access.
 
-[![Illustrated local action boundary: an agent proposes sending to an outside destination; the host policy blocks the call before dispatch.](docs/action-boundary-story.svg)](https://aruintelligence.github.io/aml-core/action-lab.html)
+[![Illustrated local action boundary: an agent proposes sending to an outside destination; the host policy blocks the call before dispatch.](docs/action-boundary-story.svg)](https://aruintelligence.github.io/aml-core/action-lab.html?view=action-path-1)
 
 **Wire one agent tool:** [Follow the function-tool quickstart](docs/AGENT_TOOL_QUICKSTART.md) to wrap a host-owned callback with exact policy matching, approval binding, and a dispatch receipt. Its runnable local demo simulates execution; the host must supply real authorization and tool mapping.
 
