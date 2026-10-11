@@ -6,6 +6,7 @@ import path from "node:path";
 import test from "node:test";
 import { createFileDispatchLedger } from "../pilots/action-boundary/file-dispatch-ledger.mjs";
 import { runFileDispatchLedgerDemo } from "../pilots/action-boundary/file-dispatch-ledger-demo.mjs";
+import { dispatchAction } from "../pilots/action-boundary/boundary.mjs";
 
 const proposal = { protocol: "aml-proposed-action/1", tool: "simulated.send", effect: "send",
   resource: "mailbox:example", purpose: "test", arguments: { to: "example.invalid", body: "hello" } };
@@ -77,4 +78,24 @@ test("real child-process race and process exit produce the published six-scenari
   assert.equal(report.scenarios.length, 6);
   assert.deepEqual(report.scenarios.map(row => row.callback_count), [1, 0, 0, 0, 1, 1]);
   assert.equal(report.scenarios[3].status, "unknown");
+});
+
+test("fresh approvals cannot replay the same host operation through the action boundary", async () => {
+  const f = fixture();
+  try {
+    const policy = { protocol: "aml-action-policy/1", rules: [{ tool: proposal.tool,
+      effect: proposal.effect, resource: proposal.resource, requires_approval: true }] };
+    let callbacks = 0;
+    const invoke = () => dispatchAction(proposal, { policy,
+      requestApproval: async ({ proposal_sha256 }) => ({ approved: true, proposal_sha256 }),
+      executeTool: async frozen => {
+        const attempt = await f.ledger.run({ operationId: "host-operation-approved-001", proposal: frozen,
+          executeTool: () => { callbacks++; return { simulated: true }; } });
+        if (attempt.status !== "returned") throw new Error("No new dispatch was authorized");
+        return attempt.result;
+      } });
+    assert.equal((await invoke()).receipt.execution_status, "dispatched");
+    assert.equal((await invoke()).receipt.execution_status, "unknown");
+    assert.equal(callbacks, 1);
+  } finally { f.done(); }
 });
