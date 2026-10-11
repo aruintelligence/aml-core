@@ -1,0 +1,78 @@
+{
+  "protocol": "aml-grant-directory-regression/1",
+  "prior_source_commit": "8129044ae70534040d6e86f5e43d298841aa3cd0",
+  "prior_fixture_sha256": "478aa241162c4c1060cf2d9684191d762a6482124d7ad21a2dfef1ca005b961c",
+  "prior_fixture_git_blob": "b5eaf1c356300c9866aea3909fa766c12e78ee11",
+  "scope": "Project-authored local filesystem simulation on POSIX; no second operating-system user or external tool side effect is involved.",
+  "selected": [
+    {
+      "id": "writable-root",
+      "title": "Replace the claim directory",
+      "explanation": "A writable root lets a local actor rename the child directory containing spent markers. The old store accepts the same approval again after the replacement.",
+      "before": {
+        "issued": true,
+        "first_claim": true,
+        "replay_claim": true,
+        "accepted_claims": 2,
+        "old_marker_count": 1,
+        "replacement_marker_count": 1
+      },
+      "after": {
+        "issued": false,
+        "reason": "private_grant_directory_required",
+        "accepted_claims": 0
+      }
+    },
+    {
+      "id": "writable-claimed",
+      "title": "Delete a spent marker",
+      "explanation": "A traversable root and writable claim directory let a local actor remove a marker. The old store accepts a second claim.",
+      "before": {
+        "issued": true,
+        "first_claim": true,
+        "replay_claim": true,
+        "accepted_claims": 2,
+        "marker_count": 1
+      },
+      "after": {
+        "issued": true,
+        "first_claim": false,
+        "reason": "private_grant_directory_required",
+        "accepted_claims": 0,
+        "marker_count": 0
+      }
+    },
+    {
+      "id": "symlink-claimed",
+      "title": "Redirect claim storage",
+      "explanation": "A symlink to an outside directory was followed by the old store. The fixed store rejects it before issuing a grant.",
+      "before": {
+        "issued": true,
+        "first_claim": true,
+        "outside_marker_count": 1
+      },
+      "after": {
+        "issued": false,
+        "reason": "private_grant_directory_required",
+        "outside_marker_count": 0
+      }
+    },
+    {
+      "id": "private-control",
+      "title": "Private directory control",
+      "explanation": "With private, owner-controlled directories, the first claim succeeds and a replay is rejected by both versions.",
+      "before": {
+        "issued": true,
+        "first_claim": true,
+        "replay_claim": false,
+        "accepted_claims": 1
+      },
+      "after": {
+        "issued": true,
+        "first_claim": true,
+        "replay_claim": false,
+        "accepted_claims": 1
+      }
+    }
+  ]
+}

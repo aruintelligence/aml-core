@@ -195,6 +195,14 @@ Python now follows the existing JavaScript wire order for array-index keys (cano
 
 This is a project-authored counterexample and bounded regression, not a statistical estimate of real-world failure rates, general JSON canonicalization, external implementation, or security certification. The subset still rejects floats and non-BMP object keys in Python, and it requires Unicode-scalar string values. Existing JavaScript digest bytes are unchanged.
 
+## 23. A writable claim directory can turn a one-use approval into two claims
+
+The local file-grant pilot required private host storage in its documentation, but the former implementation used recursive `mkdir` without checking an existing directory's mode, owner, or symlink status. In a project-authored POSIX simulation, a writable root permitted replacement of the `claimed` directory after the first claim. The *same* grant then returned `true` a second time. A traversable root with a writable claim directory also permitted deleting the spent marker and repeating the claim. A symlinked claim directory redirected storage outside the root.
+
+`createFileOneShotGrants` now checks that the root, `issued`, and `claimed` are owner-controlled private directories without group/other permissions or symlinks. It checks before issuing and again before consuming, and consumption does not recreate a missing claim directory. An unsafe state throws `private_grant_directory_required`; the action boundary converts a claim-store error into a blocked dispatch. A private-directory control still accepts its first claim and rejects reuse.
+
+The [visual replay lab](https://aruintelligence.github.io/aml-core/grant-directory-lab.html?scenario=writable-root) shows four exact before/after runs. `node scripts/build-grant-directory-report.mjs --check` executes both the current module and a historical source fixture whose Git blob matches the prior main commit, then checks the published report. The simulation mutates paths within one process; it does not impersonate a second OS user or execute a real tool. Its guarantee assumes a stable trusted local path and no hostile same-user process. It is not a distributed store, filesystem race proof, human-authentication system, or security certification.
+
 ## The frontier
 
 The next technical frontiers are:

@@ -10,12 +10,18 @@ on:
       - "scripts/build-action-cross-runtime-report.mjs"
       - "scripts/build-file-dispatch-report.mjs"
       - "scripts/build-action-key-order-report.mjs"
+      - "scripts/build-grant-directory-report.mjs"
       - "test/action-boundary-challenge.test.js"
+      - "test/action-boundary-file-grant.test.js"
       - "test/action-boundary-dispatch-ledger.test.js"
+      - "test/fixtures/legacy-file-one-shot-grants.mjs"
       - "test/test_python_boundary.py"
       - "docs/action-cross-runtime-report.json"
       - "docs/file-dispatch-report.json"
       - "docs/action-key-order-report.json"
+      - "docs/grant-directory-report.json"
+      - "docs/grant-directory-lab.html"
+      - "docs/grant-directory-proof.svg"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
   pull_request:
@@ -26,12 +32,18 @@ on:
       - "scripts/build-action-cross-runtime-report.mjs"
       - "scripts/build-file-dispatch-report.mjs"
       - "scripts/build-action-key-order-report.mjs"
+      - "scripts/build-grant-directory-report.mjs"
       - "test/action-boundary-challenge.test.js"
+      - "test/action-boundary-file-grant.test.js"
       - "test/action-boundary-dispatch-ledger.test.js"
+      - "test/fixtures/legacy-file-one-shot-grants.mjs"
       - "test/test_python_boundary.py"
       - "docs/action-cross-runtime-report.json"
       - "docs/file-dispatch-report.json"
       - "docs/action-key-order-report.json"
+      - "docs/grant-directory-report.json"
+      - "docs/grant-directory-lab.html"
+      - "docs/grant-directory-proof.svg"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
 
@@ -69,6 +81,10 @@ jobs:
         run: |
           node --test test/action-boundary-dispatch-ledger.test.js
           node scripts/build-file-dispatch-report.mjs --check
+      - name: Verify private grant storage and historical replay regression
+        run: |
+          node --test test/action-boundary-file-grant.test.js
+          node scripts/build-grant-directory-report.mjs --check
       - name: Prepare caller-owned executable wrapper
         run: |
           printf '%s\n' '#!/bin/sh' 'exec node "$GITHUB_WORKSPACE/pilots/action-boundary/challenge-reference-adapter.mjs" "$@"' > "$RUNNER_TEMP/aml-reference-adapter"
