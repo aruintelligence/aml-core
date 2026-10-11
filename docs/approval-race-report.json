@@ -1,0 +1,21 @@
+{
+  "protocol": "aml-file-grant-race-report/1",
+  "provenance": "project-authored local run",
+  "environment": "two Node processes sharing one local directory",
+  "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+  "outcomes": [
+    {
+      "status": "blocked",
+      "reason": "approval_reused_or_expired",
+      "tool_calls": 0
+    },
+    {
+      "status": "dispatched",
+      "reason": "host_dispatch_returned",
+      "tool_calls": 1
+    }
+  ],
+  "total_tool_callbacks": 1,
+  "claim_markers": 1,
+  "limits": "Simulated callback only. No authenticated human approval, network filesystem, multi-machine store, or delivery proof."
+}
