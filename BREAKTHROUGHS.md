@@ -163,6 +163,12 @@ This separates long-lived root trust from short-lived operational signing author
 
 It does not establish legal identity, employment, organizational approval, regulatory authority, certification, independent validation, or official ĀRU authorization. Those remain separate external claims.
 
+## 18. A host-owned approval can be claimed once before an agent tool runs
+
+The proposed-action pilot has an optional `consumeApproval` callback. After exact digest approval and policy recheck, a host can atomically claim a short-lived grant before invoking the tool. A reused or expired grant blocks, and a policy revocation during an asynchronous claim is checked again before dispatch.
+
+Run `node pilots/action-boundary/one-shot-grant-demo.mjs`: the first call invokes one simulated callback; a second call reusing the same grant is blocked with no additional callback. The [visual replay lab](https://aruintelligence.github.io/aml-core/action-lab.html?scenario=replay) shows the same project-authored scenario. The local store works in one Node process only; it is not a durable cross-worker replay defense, authenticated human approval, proof of delivery, or independent validation.
+
 ## The frontier
 
 The next technical frontiers are:
