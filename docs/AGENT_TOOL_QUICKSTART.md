@@ -71,6 +71,8 @@ const guarded = createGuardedToolExecute({
 
 `hostAuthenticateAndApprove` and `sendThroughMyService` are host functions you must implement; the browser and CLI examples only simulate their outcome. The `consumeApproval` hook runs after the proposal digest and rule match, before the callback. It must make an atomic one-use claim bound to the digest and return `true` only once. A false claim blocks with `approval_reused_or_expired`; an error blocks with `approval_consume_error`. A policy change during an asynchronous claim still blocks. The local Map store does not survive restarts or coordinate multiple workers. Use a durable atomic store and your own authenticated approval, time policy, audit, and idempotency controls in a real deployment. An uncertain callback result still consumes the grant and must not be retried automatically.
 
+For a bounded **two-process local-filesystem rehearsal**, run `node pilots/action-boundary/file-grant-race-demo.mjs` and [inspect the recorded race](https://aruintelligence.github.io/aml-core/approval-race.html). `createFileOneShotGrants({ directory: "/absolute/private/host/path" })` exposes async `issue` and `consume` methods with the same hook shape. Its exclusive claim marker coordinates workers sharing one trusted local filesystem; it is not a network or multi-machine store, does not authenticate an approver, and has no long-running cleanup policy. Keep the directory private and supply real host authorization before any external tool.
+
 For the [OpenAI Agents SDK JavaScript function-tool API](https://openai.github.io/openai-agents-js/guides/tools/), install `@openai/agents` and `zod` in your agent app, then attach the `execute` function above:
 
 ```js
