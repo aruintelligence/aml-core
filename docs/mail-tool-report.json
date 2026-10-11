@@ -1,0 +1,493 @@
+{
+  "protocol": "aml-mail-tool-report/1",
+  "provenance": "Project-authored Node comparison. Both tool callbacks append only to memory; no mail service, real approval, or external effect is used.",
+  "distinction": "The To-only adapter can be correct for a To-only callback. This counterexample equips its callback with CC/BCC while leaving resourceFor on To. The new narrow adapter validates and binds all supported recipient roles.",
+  "caveat": "The complete adapter supports exactly to, cc, bcc, subject, and body. It cannot prove host policy ownership, authenticated approval, content acceptability, provider alias expansion, redirects, forwarding, or delivery.",
+  "cases": [
+    {
+      "id": "aligned",
+      "title": "One intended destination",
+      "description": "Both adapters reach one local callback.",
+      "intended_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "actual_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "intended_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [],
+        "bcc": []
+      },
+      "intended_resource": "mail-targets-sha256:446f84ced6195a24890cc08407663f2976202d182e8822362a199614704f89e5",
+      "to_only": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "6ed7c445de490c140ae11f8cb5e5db47968c34bb36fe4802a5217edfd97a031a",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6ed7c445de490c140ae11f8cb5e5db47968c34bb36fe4802a5217edfd97a031a",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": [],
+            "bcc": []
+          }
+        ]
+      },
+      "complete_mail": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": [],
+            "bcc": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "added_bcc",
+      "title": "The hidden second recipient",
+      "description": "A BCC addition reaches a To-only callback but lacks a complete-manifest policy rule.",
+      "intended_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "actual_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready.",
+        "bcc": [
+          "outside@example.test"
+        ]
+      },
+      "intended_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [],
+        "bcc": []
+      },
+      "intended_resource": "mail-targets-sha256:446f84ced6195a24890cc08407663f2976202d182e8822362a199614704f89e5",
+      "to_only": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "caac5a798e06102cdc07ff5f1448cebd9437e6ae3e707c136ad6ba6d9e5adf26",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "caac5a798e06102cdc07ff5f1448cebd9437e6ae3e707c136ad6ba6d9e5adf26",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": [],
+            "bcc": [
+              "outside@example.test"
+            ]
+          }
+        ]
+      },
+      "complete_mail": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "6a02b4ef6df1b56bbf60ed7c98bc89ee609f052870e882d23ac18deef4b01065",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6a02b4ef6df1b56bbf60ed7c98bc89ee609f052870e882d23ac18deef4b01065",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "simulated_callbacks": 0,
+        "callback_destinations": []
+      }
+    },
+    {
+      "id": "added_cc",
+      "title": "The visible second recipient",
+      "description": "A CC addition also changes the complete target.",
+      "intended_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "actual_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready.",
+        "cc": [
+          "outside@example.test"
+        ]
+      },
+      "intended_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [],
+        "bcc": []
+      },
+      "intended_resource": "mail-targets-sha256:446f84ced6195a24890cc08407663f2976202d182e8822362a199614704f89e5",
+      "to_only": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "43c3c138c4513fe8be17c34736ee2375ab6d29006a9d859e698311b0c164dd13",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "43c3c138c4513fe8be17c34736ee2375ab6d29006a9d859e698311b0c164dd13",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": [
+              "outside@example.test"
+            ],
+            "bcc": []
+          }
+        ]
+      },
+      "complete_mail": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "35de8aab2b04e8fec3fef6d61b96f40ae125bd81b200be0ae65253ff12895db1",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "35de8aab2b04e8fec3fef6d61b96f40ae125bd81b200be0ae65253ff12895db1",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "simulated_callbacks": 0,
+        "callback_destinations": []
+      }
+    },
+    {
+      "id": "approved_group",
+      "title": "An intended group",
+      "description": "A host rule for the complete group admits the same group in the callback.",
+      "intended_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready.",
+        "cc": [
+          "editor@example.test"
+        ],
+        "bcc": [
+          "archive@example.test"
+        ]
+      },
+      "actual_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready.",
+        "cc": [
+          "editor@example.test"
+        ],
+        "bcc": [
+          "archive@example.test"
+        ]
+      },
+      "intended_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [
+          "editor@example.test"
+        ],
+        "bcc": [
+          "archive@example.test"
+        ]
+      },
+      "intended_resource": "mail-targets-sha256:9ccd4c15f75f1d154d737e0aa67b1cd42cb36311084e72323a327bf550b28579",
+      "to_only": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "ff1f1ff3a12fcb5b0434dde5d3da273610ac44af75fe8982b8ec0de80bf2e6d9",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "ff1f1ff3a12fcb5b0434dde5d3da273610ac44af75fe8982b8ec0de80bf2e6d9",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": [
+              "editor@example.test"
+            ],
+            "bcc": [
+              "archive@example.test"
+            ]
+          }
+        ]
+      },
+      "complete_mail": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "b4ff26a1a5be30e35c10ca6105f95642b0e65f8e3c69f620b36cbfd8a01b112e",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b4ff26a1a5be30e35c10ca6105f95642b0e65f8e3c69f620b36cbfd8a01b112e",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": [
+              "editor@example.test"
+            ],
+            "bcc": [
+              "archive@example.test"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "unknown_field",
+      "title": "An unmodeled delivery field",
+      "description": "The strict adapter rejects an unknown argument before planning or callback.",
+      "intended_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "actual_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready.",
+        "recipients": [
+          "outside@example.test"
+        ]
+      },
+      "intended_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [],
+        "bcc": []
+      },
+      "intended_resource": "mail-targets-sha256:446f84ced6195a24890cc08407663f2976202d182e8822362a199614704f89e5",
+      "to_only": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "c7c1bc16834078db04c083bab482c11d1f59d226335fba5af06cff0f4535457f",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "c7c1bc16834078db04c083bab482c11d1f59d226335fba5af06cff0f4535457f",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": [],
+            "bcc": []
+          }
+        ]
+      },
+      "complete_mail": {
+        "mapping_error": "unsupported_mail_arguments",
+        "simulated_callbacks": 0,
+        "callback_destinations": []
+      }
+    },
+    {
+      "id": "changed_body",
+      "title": "Same destination. New content.",
+      "description": "A recipient rule does not bind the body; both unreviewed fixtures still reach the callback.",
+      "intended_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "actual_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Changed text."
+      },
+      "intended_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [],
+        "bcc": []
+      },
+      "intended_resource": "mail-targets-sha256:446f84ced6195a24890cc08407663f2976202d182e8822362a199614704f89e5",
+      "to_only": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "65775ded1e57603e42c1025c5048c6d8af9489e82699571bd4a7f66404b400b5",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "65775ded1e57603e42c1025c5048c6d8af9489e82699571bd4a7f66404b400b5",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": [],
+            "bcc": []
+          }
+        ]
+      },
+      "complete_mail": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "f39aadb95d7f9a7de1e6b864915854d48bd4bcc2ff2331ced507b723d279d47e",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "f39aadb95d7f9a7de1e6b864915854d48bd4bcc2ff2331ced507b723d279d47e",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "callback_destinations": [
+          {
+            "to": "team@example.test",
+            "cc": [],
+            "bcc": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "stale_approval",
+      "title": "Wrong approval digest",
+      "description": "Both approval-required paths reject a deliberately stale digest.",
+      "intended_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "actual_arguments": {
+        "to": "team@example.test",
+        "subject": "Release",
+        "body": "Ready."
+      },
+      "intended_manifest": {
+        "protocol": "aml-mail-target-manifest/1",
+        "to": [
+          "team@example.test"
+        ],
+        "cc": [],
+        "bcc": []
+      },
+      "intended_resource": "mail-targets-sha256:446f84ced6195a24890cc08407663f2976202d182e8822362a199614704f89e5",
+      "to_only": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "6ed7c445de490c140ae11f8cb5e5db47968c34bb36fe4802a5217edfd97a031a",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6ed7c445de490c140ae11f8cb5e5db47968c34bb36fe4802a5217edfd97a031a",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "simulated_callbacks": 0,
+        "callback_destinations": []
+      },
+      "complete_mail": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "949325cd00ea65085f20b05fbb0d1d30bdd88e539feb1505db7b7260ca69722b",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "simulated_callbacks": 0,
+        "callback_destinations": []
+      }
+    }
+  ]
+}

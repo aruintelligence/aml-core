@@ -45,6 +45,8 @@ const execute = createGuardedToolExecute({
 
 `requestApproval` must return `{ approved: true, proposal_sha256 }` for the exact frozen proposal, or refuse. The callback may be omitted for a policy rule that allows an action without approval. If an approval-required rule has no callback, dispatch blocks. The adapter passes the framework's second `execute` argument as `context` to the host callbacks, and calls the tool with the frozen canonical arguments. A host mapping error throws before any tool invocation.
 
+**If your mail callback uses CC or BCC**, the To-only `resourceFor` above is incomplete for that expanded callback. Use the [complete-recipient mail adapter](../pilots/action-boundary/MAIL_GUARDED_TOOL.md) for its narrow `to`/`cc`/`bcc` schema. The [seven-case integration lab](https://aruintelligence.github.io/aml-core/mail-tool-integration.html?case=added_bcc#cases) runs both function-tool wrappers with a BCC-capable in-memory callback. It does not send mail or approve anything.
+
 ## Rehearse a one-use grant
 
 Run `node pilots/action-boundary/one-shot-grant-demo.mjs` or open the [replay scenario](https://aruintelligence.github.io/aml-core/action-lab.html?scenario=replay). The first invocation uses a local grant; the second attempt with the same grant blocks before the callback. The example sends no message and authenticates no person.

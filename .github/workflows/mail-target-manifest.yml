@@ -6,27 +6,37 @@ on:
     paths:
       - "pilots/action-boundary/mail-target-manifest.mjs"
       - "pilots/action-boundary/mail-target-core.mjs"
+      - "pilots/action-boundary/mail-guarded-tool.mjs"
       - "pilots/action-boundary/target-boundary.mjs"
       - "pilots/action-boundary/boundary.mjs"
       - "protocol/canonicalJson.js"
       - "test/action-boundary-mail-targets.test.js"
       - "test/action-boundary-mail-workbench.test.js"
+      - "test/action-boundary-mail-guarded-tool.test.js"
       - "scripts/build-mail-target-report.mjs"
       - "scripts/build-mail-target-workbench.mjs"
+      - "scripts/build-mail-tool-report.mjs"
       - "docs/mail-target-*"
+      - "docs/mail-tool-*"
+      - "pilots/action-boundary/MAIL_GUARDED_TOOL.md"
       - ".github/workflows/mail-target-manifest.yml"
   pull_request:
     paths:
       - "pilots/action-boundary/mail-target-manifest.mjs"
       - "pilots/action-boundary/mail-target-core.mjs"
+      - "pilots/action-boundary/mail-guarded-tool.mjs"
       - "pilots/action-boundary/target-boundary.mjs"
       - "pilots/action-boundary/boundary.mjs"
       - "protocol/canonicalJson.js"
       - "test/action-boundary-mail-targets.test.js"
       - "test/action-boundary-mail-workbench.test.js"
+      - "test/action-boundary-mail-guarded-tool.test.js"
       - "scripts/build-mail-target-report.mjs"
       - "scripts/build-mail-target-workbench.mjs"
+      - "scripts/build-mail-tool-report.mjs"
       - "docs/mail-target-*"
+      - "docs/mail-tool-*"
+      - "pilots/action-boundary/MAIL_GUARDED_TOOL.md"
       - ".github/workflows/mail-target-manifest.yml"
 
 permissions:
@@ -48,3 +58,7 @@ jobs:
         run: |
           node test/action-boundary-mail-workbench.test.js
           node scripts/build-mail-target-workbench.mjs --check
+      - name: Compare To-only and complete mail function tools
+        run: |
+          node test/action-boundary-mail-guarded-tool.test.js
+          node scripts/build-mail-tool-report.mjs --check
