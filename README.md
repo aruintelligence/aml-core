@@ -24,7 +24,7 @@
 
 **Explore the interface:** [Live lab](https://aruintelligence.github.io/aml-core/) · [View Meaning™ inspector](https://aruintelligence.github.io/aml-core/view-meaning.html) · [API contract](protocol/aml-http.openapi.yaml)
 
-**Explore the next boundary:** [Try the Action Boundary Lab](https://aruintelligence.github.io/aml-core/action-lab.html) — change an agent's intended tool call and see an exact policy decision, digest, stale simulated approval, and uncertain outcome. [Read the proposed action pilot](pilots/action-boundary/README.md) and its [six published vectors](pilots/action-boundary/vectors.json). This is a project-authored browser rehearsal with no live tool access.
+**Explore the next boundary:** [Try the Action Boundary Lab](https://aruintelligence.github.io/aml-core/action-lab.html) — change an agent's intended tool call and see an exact policy decision, digest, stale simulated approval, and uncertain outcome. [Run the 13-case outside implementation challenge](publications/ACTION_BOUNDARY_CHALLENGE.md), or [read the pilot](pilots/action-boundary/README.md) and its [six published vectors](pilots/action-boundary/vectors.json). The browser rehearsal and repository self-test are project-authored, with no live tool access.
 
 ## Prove the core claim in 60 seconds
 
