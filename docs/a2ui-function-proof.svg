@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+  <title id="title">A2UI function call meets an AML exact-action gate</title>
+  <desc id="desc">An agent-authorized catalog function passes the A2UI catalog check. An exact destination and bound approval reach one simulated callback; a changed destination is blocked with zero callbacks.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#132f43"/><stop offset="1" stop-color="#07131f"/></linearGradient>
+    <linearGradient id="accent" x2="1"><stop stop-color="#79e9e7"/><stop offset="1" stop-color="#b7f48c"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="15" stdDeviation="18" flood-color="#000" flood-opacity=".35"/></filter>
+  </defs>
+  <rect width="1200" height="560" fill="url(#bg)"/>
+  <circle cx="1080" cy="60" r="205" fill="none" stroke="#74e9e8" opacity=".13"/>
+  <circle cx="1080" cy="60" r="150" fill="none" stroke="#74e9e8" opacity=".16"/>
+  <text x="60" y="55" fill="#74e9e8" font-family="monospace" font-size="18" font-weight="700" letter-spacing="3">ĀML / A2UI v1.0 INTEGRATION EXPERIMENT</text>
+  <text x="60" y="117" fill="#f0fbfb" font-family="system-ui,sans-serif" font-size="48" font-weight="800" letter-spacing="-2">A function can be allowed.</text>
+  <text x="60" y="172" fill="url(#accent)" font-family="system-ui,sans-serif" font-size="48" font-weight="800" letter-spacing="-2">The action still needs a decision.</text>
+  <text x="60" y="207" fill="#b5cbd4" font-family="system-ui,sans-serif" font-size="17">Two host-controlled gates · one local, inspectable callback path</text>
+  <g filter="url(#shadow)">
+    <rect x="60" y="246" width="298" height="175" rx="18" fill="#10283a" stroke="#587786"/>
+    <rect x="451" y="246" width="298" height="175" rx="18" fill="#10283a" stroke="#79e9e7"/>
+    <rect x="842" y="246" width="298" height="175" rx="18" fill="#10283a" stroke="#b7f48c"/>
+  </g>
+  <text x="83" y="278" fill="#74e9e8" font-family="monospace" font-size="15" font-weight="700">01 / CATALOG</text>
+  <text x="83" y="320" fill="#f0fbfb" font-family="system-ui,sans-serif" font-size="26" font-weight="750">A2UI caller gate</text>
+  <text x="83" y="351" fill="#b5cbd4" font-family="system-ui,sans-serif" font-size="16">registered function</text>
+  <text x="83" y="378" fill="#b5cbd4" font-family="system-ui,sans-serif" font-size="16">agentOnly / rendererOrAgent</text>
+  <text x="474" y="278" fill="#ffd07c" font-family="monospace" font-size="15" font-weight="700">02 / EXACT ACTION</text>
+  <text x="474" y="320" fill="#f0fbfb" font-family="system-ui,sans-serif" font-size="26" font-weight="750">ĀML policy gate</text>
+  <text x="474" y="351" fill="#b5cbd4" font-family="system-ui,sans-serif" font-size="16">recipient + purpose + arguments</text>
+  <text x="474" y="378" fill="#b5cbd4" font-family="system-ui,sans-serif" font-size="16">SHA-256 bound approval</text>
+  <text x="865" y="278" fill="#b7f48c" font-family="monospace" font-size="15" font-weight="700">03 / HOST CALLBACK</text>
+  <text x="865" y="320" fill="#f0fbfb" font-family="system-ui,sans-serif" font-size="26" font-weight="750">Simulated dispatch</text>
+  <text x="865" y="351" fill="#b5cbd4" font-family="system-ui,sans-serif" font-size="16">frozen approved arguments</text>
+  <text x="865" y="378" fill="#b5cbd4" font-family="system-ui,sans-serif" font-size="16">receipt, not proof of delivery</text>
+  <path d="M365 333h75m-12-10 12 10-12 10M756 333h75m-12-10 12 10-12 10" fill="none" stroke="#74e9e8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="60" y="445" width="525" height="63" rx="13" fill="#1c3837" stroke="#b7f48c" opacity=".96"/>
+  <text x="83" y="484" fill="#b7f48c" font-family="monospace" font-size="17" font-weight="700">EXACT + APPROVED → 1 CALLBACK</text>
+  <rect x="605" y="445" width="535" height="63" rx="13" fill="#382b2d" stroke="#ff958b" opacity=".96"/>
+  <text x="628" y="484" fill="#ffaaa0" font-family="monospace" font-size="17" font-weight="700">CHANGED DESTINATION → 0 CALLBACKS</text>
+  <text x="60" y="541" fill="#92afbc" font-family="system-ui,sans-serif" font-size="13">Project-authored nine-case simulation · no live message · not a full A2UI renderer</text>
+</svg>
