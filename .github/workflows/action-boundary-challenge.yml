@@ -32,6 +32,10 @@ jobs:
           node-version: "22"
       - name: Check harness and rejection behavior
         run: node --test test/action-boundary-challenge.test.js
+      - name: Verify function-tool adapter
+        run: |
+          node --test test/action-boundary-guarded-tool.test.js
+          node pilots/action-boundary/guarded-tool-demo.mjs > "$RUNNER_TEMP/aml-guarded-tool-demo.json"
       - name: Project-owned self-test
         run: node scripts/run-action-boundary-challenge.mjs --self-test
       - name: Exercise black-box process contract
