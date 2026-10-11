@@ -231,6 +231,14 @@ An approval-required rule with a fixed host decision bound to the original propo
 
 These are project-authored local simulations, not messages, real approvals, independent verification, or a content safety guarantee. The host must map the actual destination, enforce content-specific restrictions, and decide whether a new digest deserves authorization. A future host can approve a changed proposal; the fixed digest in this experiment is only a precise stale-approval counterexample.
 
+## 28. A declared destination can differ from the recipient a tool will use
+
+The exact action rule compares the proposal's `tool`, `effect`, and declared `resource`. In a project-authored local counterexample, `resource` stays `team@example.test` while `arguments.to` becomes `outside@example.test`. With an intentionally unreviewed rule, the existing reference boundary allows this proposal and reaches one simulated callback carrying the outside recipient. A digest reflects the changed arguments, but the rule does not derive the destination from them.
+
+The opt-in `dispatchTargetBoundAction` snapshots the proposal and requires a host-owned, tool-specific `resolveTarget` callback to derive the actual destination from frozen arguments. It blocks a missing, failed, or mismatched mapping before approval or dispatch, then delegates to the existing boundary for policy recheck, approval, and callback handling. The [seven-case visual lab](https://aruintelligence.github.io/aml-core/target-binding-lab.html?case=forged_recipient) compares receipts and callback counts. `node scripts/build-target-binding-report.mjs --check` regenerates its machine report, and the [guide](pilots/action-boundary/TARGET_BINDING.md) shows integration responsibilities.
+
+The mapper must genuinely reflect every destination a real tool can use, including aliases and secondary recipients; the wrapper cannot prove that on its own. It does not authenticate approval, validate message content, cover bypassing tool paths, or prove external delivery. A changed body with an aligned target still reaches an unreviewed simulated callback. These are project-authored local cases, not independent validation or an official protocol extension.
+
 ## The frontier
 
 The next technical frontiers are:
