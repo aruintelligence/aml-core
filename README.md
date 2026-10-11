@@ -34,6 +34,10 @@
 
 [![An A2UI catalog-authorized agent function meets an AML exact-action gate; a changed destination reaches zero callbacks.](docs/a2ui-function-proof.svg)](https://aruintelligence.github.io/aml-core/a2ui-function-lab.html?case=changed_destination#cases)
 
+**One ID must mean one invocation:** [Explore the pinned A2UI replay counterexample](https://aruintelligence.github.io/aml-core/a2ui-invocation-replay.html?case=sequential#cases). The prior bridge called the simulated tool twice for the same `functionCallId` in one host session. The corrected bridge requires a host-owned atomic claim before approval or dispatch; a repeated ID reaches zero additional callbacks. Six historical/current cases, including a concurrent replay and separate-session control, are regenerated in CI. A2UI v1.0 remains a candidate specification, and the included claim store works in one Node process only.
+
+[![A repeated A2UI functionCallId reached two local callbacks before a host invocation claim and one after.](docs/a2ui-invocation-replay.svg)](https://aruintelligence.github.io/aml-core/a2ui-invocation-replay.html?case=sequential#cases)
+
 [![One local approval grant permits one simulated callback. Reusing it blocks before a second callback.](docs/one-shot-approval.svg)](https://aruintelligence.github.io/aml-core/action-lab.html?scenario=replay)
 
 **Two processes, one claim:** [Inspect the recorded race](https://aruintelligence.github.io/aml-core/approval-race.html) and run `node pilots/action-boundary/file-grant-race-demo.mjs`. Separate Node workers share a trusted local directory and compete to create an exclusive claim marker. The project-authored run records one simulated callback and one blocked replay. It is a local-filesystem prototype, not authenticated approval or a multi-machine production store.
