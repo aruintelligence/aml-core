@@ -1,0 +1,67 @@
+{
+  "protocol": "aml-real-screen-contact-observation/1",
+  "site_url": "https://portlandsbestsecurity.com/",
+  "page_title": "Portland Home Security & Smart Home Automation | Security",
+  "method": "Project-authored Chrome viewport capture and read-only DOM anchor inspection on the live public page",
+  "browser_viewport": { "width": 1363, "height": 936, "device_pixel_ratio": 1 },
+  "screenshot_pixels": { "width": 1348, "height": 926 },
+  "elements": [
+    {
+      "id": "sales_banner",
+      "channel": "call",
+      "observed_label": "Sales Open Now · Call or Text (971) 458-1814",
+      "href": "tel:+19714581814",
+      "label_source": "Visible banner text and DOM aria-label: Call Security First Alarm sales"
+    },
+    {
+      "id": "nav_phone",
+      "channel": "call",
+      "observed_label": "(971) 458-1814",
+      "href": "tel:+19714581814",
+      "label_source": "Visible navigation text and DOM anchor href"
+    },
+    {
+      "id": "dock_call",
+      "channel": "call",
+      "observed_label": "Call or Text",
+      "href": "tel:+19714581814",
+      "label_source": "Visible fixed dock text and DOM anchor href"
+    },
+    {
+      "id": "dock_email",
+      "channel": "email",
+      "observed_label": "Email",
+      "href": "mailto:daniel@securityfirstalarm.com?subject=Residential%20Security%20Consultation",
+      "label_source": "Visible fixed dock text and DOM anchor href"
+    }
+  ],
+  "screens": [
+    {
+      "id": "top",
+      "captured_at": "2026-10-11T19:48:29.457Z",
+      "scroll_y": 0,
+      "screenshot": "docs/field-captures/portland-home-top-2026-10-11.jpg",
+      "screenshot_sha256": "4bec670f757cbb71721ea05750ff336abcf0a0d08b049469fde2f4b639592aaa",
+      "visible": ["sales_banner", "nav_phone", "dock_call", "dock_email"],
+      "boxes": {
+        "sales_banner": [0, 0, 1348, 49],
+        "nav_phone": [1212, 106, 112, 15],
+        "dock_call": [933, 881, 168, 42],
+        "dock_email": [1109, 880, 110, 44]
+      }
+    },
+    {
+      "id": "scrolled",
+      "captured_at": "2026-10-11T19:49:33.272Z",
+      "scroll_y": 1872,
+      "screenshot": "docs/field-captures/portland-home-scrolled-2026-10-11.jpg",
+      "screenshot_sha256": "d439ca8c9201c9a9a3c31d253709955efdaf5effed000035930fe82b9247cd99",
+      "visible": ["nav_phone", "dock_call", "dock_email"],
+      "boxes": {
+        "nav_phone": [1212, 25, 112, 15],
+        "dock_call": [933, 881, 168, 42],
+        "dock_email": [1109, 880, 110, 44]
+      }
+    }
+  ]
+}
