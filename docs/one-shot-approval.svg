@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 430" role="img" aria-labelledby="title desc">
+  <title id="title">ĀML one-use approval: first call allowed, replay blocked</title>
+  <desc id="desc">A project-authored local fixture issues one short-lived grant for an exact proposed-action digest. The first guarded call claims it and invokes one simulated callback. A second call reusing the same grant is blocked with zero additional callbacks.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1"><stop stop-color="#102a3a"/><stop offset=".55" stop-color="#0b1425"/><stop offset="1" stop-color="#211b2d"/></linearGradient>
+    <linearGradient id="accent" x2="1"><stop stop-color="#78e8f5"/><stop offset="1" stop-color="#f5d27a"/></linearGradient>
+  </defs>
+  <rect width="1200" height="430" rx="25" fill="url(#background)"/>
+  <rect x="1" y="1" width="1198" height="428" rx="24" fill="none" stroke="#466776"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="50" y="53" fill="#78e8f5" font-size="15" font-weight="700" letter-spacing="3">ĀML™ / ACTION BOUNDARY</text>
+    <text x="49" y="109" fill="#f4f7ff" font-size="44" font-weight="700">One approval.</text>
+    <text x="49" y="157" fill="url(#accent)" font-size="44" font-weight="700">One callback.</text>
+    <text x="51" y="205" fill="#cad8e5" font-size="18">Exact proposal digest + short-lived grant ID.</text>
+    <text x="51" y="233" fill="#cad8e5" font-size="18">The host claims it before dispatch.</text>
+    <rect x="49" y="267" width="318" height="50" rx="13" fill="#102f3a" stroke="#458994"/>
+    <text x="67" y="299" fill="#b6eef1" font-size="17" font-weight="700">TRY THE REPLAY LAB  ↗</text>
+    <text x="50" y="409" fill="#9db2c2" font-size="13" letter-spacing=".5">PROJECT-AUTHORED LOCAL FIXTURE · NO HUMAN APPROVAL OR MESSAGE</text>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <rect x="423" y="66" width="345" height="272" rx="20" fill="#102535" stroke="#54aa91" stroke-width="2"/>
+    <rect x="441" y="84" width="309" height="5" rx="2" fill="#9af4bb"/>
+    <text x="448" y="130" fill="#a4e6cb" font-size="15" font-weight="700" letter-spacing="2">01 / FIRST CLAIM</text>
+    <text x="448" y="185" fill="#9af4bb" font-size="36" font-weight="700">DISPATCHED</text>
+    <text x="448" y="224" fill="#d2e9df" font-size="18">Grant claimed once.</text>
+    <text x="448" y="254" fill="#d2e9df" font-size="18">Simulated callback: 1</text>
+    <rect x="448" y="283" width="158" height="35" rx="17" fill="#204c3b"/>
+    <text x="463" y="307" fill="#d3ffe2" font-size="15" font-weight="700">GRANT SPENT</text>
+    <path d="M776 202h22" stroke="#78e8f5" stroke-width="3"/>
+    <path d="m790 194 9 8-9 8" fill="none" stroke="#78e8f5" stroke-width="3"/>
+    <rect x="806" y="66" width="345" height="272" rx="20" fill="#291b2b" stroke="#a45669" stroke-width="2"/>
+    <rect x="824" y="84" width="309" height="5" rx="2" fill="#ffa0ac"/>
+    <text x="831" y="130" fill="#f1b1bc" font-size="15" font-weight="700" letter-spacing="2">02 / SAME GRANT AGAIN</text>
+    <text x="831" y="185" fill="#ffa0ac" font-size="36" font-weight="700">BLOCKED</text>
+    <text x="831" y="224" fill="#f0d7dc" font-size="18">Replay rejected before tool.</text>
+    <text x="831" y="254" fill="#f0d7dc" font-size="18">Additional callbacks: 0</text>
+    <rect x="831" y="283" width="276" height="35" rx="17" fill="#56323d"/>
+    <text x="845" y="307" fill="#ffe2e7" font-size="14" font-weight="700">REUSED OR EXPIRED</text>
+  </g>
+  <text x="424" y="374" fill="#a6b9c7" font-size="14" font-family="Arial, Helvetica, sans-serif">Process-local proof · distributed hosts need a durable atomic claim.</text>
+</svg>
