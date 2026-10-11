@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createA2UIFunctionGate } from "../pilots/action-boundary/a2ui-function-gate.mjs";
+import { createLocalA2UIInvocationClaims } from "../pilots/action-boundary/a2ui-invocation-claims.mjs";
 
 const catalogId = "https://example.test/catalog/action.json";
 const destination = "team@example.test";
@@ -20,6 +21,7 @@ const makeGate = (overrides = {}) => createA2UIFunctionGate({
   tool: "send_message", effect: "send", purpose: "Send a status update",
   resourceFor: args => args.to, policy: policy(),
   requestApproval: async ({ proposal_sha256 }) => ({ approved: true, proposal_sha256 }),
+  claimInvocation: createLocalA2UIInvocationClaims({ sessionFor: () => "test-session" }).claim,
   execute: async args => ({ to: args.to, body: args.body }), ...overrides
 });
 
@@ -131,4 +133,65 @@ test("host mapping failure still returns a correlated error without invoking the
   assert.equal(output.response.rendererFunctionResponse.error.code, "EXECUTION_FAILED");
   assert.equal(output.aml, null);
   assert.equal(count, 0);
+});
+
+test("the same functionCallId is claimed once, including concurrent and changed-payload attempts", async () => {
+  let count = 0;
+  const claims = createLocalA2UIInvocationClaims({ sessionFor: context => context.sessionId });
+  const gate = makeGate({ claimInvocation: claims.claim,
+    execute: async () => { count++; return "simulated"; }
+  });
+  const context = { sessionId: "session-1" };
+  const first = await gate(call(), context);
+  const replay = await gate(call({ to: destination, body: "Changed body" }), context);
+  assert.equal(first.invocation, "claimed");
+  assert.equal(replay.invocation, "reused");
+  assert.equal(replay.response.error.code, "INVALID_FUNCTION_CALL");
+  assert.equal(replay.aml, null);
+  assert.equal(count, 1);
+
+  const parallel = call();
+  parallel.callRendererFunction.functionCallId = "parallel-id";
+  const pair = await Promise.all([gate(parallel, context), gate(parallel, context)]);
+  assert.deepEqual(pair.map(x => x.invocation).sort(), ["claimed", "reused"]);
+  assert.equal(count, 2);
+  assert.equal((await gate(call(), { sessionId: "session-2" })).invocation, "claimed");
+  assert.equal(count, 3);
+});
+
+test("an awaited host claim uses frozen arguments and an unavailable claim fails closed", async () => {
+  let release;
+  const pending = new Promise(resolve => { release = resolve; });
+  const envelope = call();
+  let observed;
+  const gate = makeGate({
+    claimInvocation: async () => { await pending; return true; },
+    execute: async args => { observed = args; return null; }
+  });
+  const resultPromise = gate(envelope);
+  envelope.callRendererFunction.callFunction.args.body = "Changed while claiming";
+  release();
+  const result = await resultPromise;
+  assert.equal(result.aml.receipt.execution_status, "dispatched");
+  assert.deepEqual(observed, { to: destination, body: "Build passed." });
+
+  let count = 0;
+  const unavailable = await makeGate({
+    claimInvocation: async () => { throw new Error("store offline"); },
+    execute: async () => { count++; }
+  })(call());
+  assert.equal(unavailable.invocation, "unavailable");
+  assert.equal(unavailable.response.error.code, "EXECUTION_FAILED");
+  assert.equal(unavailable.aml, null);
+  assert.equal(count, 0);
+});
+
+test("a local claim store reaches a fail-closed capacity instead of evicting spent IDs", async () => {
+  const store = createLocalA2UIInvocationClaims({
+    sessionFor: ctx => ctx.sessionId, maxEntries: 1
+  });
+  assert.equal(store.claim({ functionCallId: "one" }, { sessionId: "host" }), true);
+  assert.equal(store.claim({ functionCallId: "one" }, { sessionId: "host" }), false);
+  assert.throws(() => store.claim({ functionCallId: "two" }, { sessionId: "host" }),
+    /capacity/);
 });

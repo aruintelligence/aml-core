@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
   <title id="title">A2UI function call meets an AML exact-action gate</title>
-  <desc id="desc">An agent-authorized catalog function passes the A2UI catalog check. An exact destination and bound approval reach one simulated callback; a changed destination is blocked with zero callbacks.</desc>
+  <desc id="desc">An agent-authorized catalog function passes the A2UI catalog check. A host-owned invocation ID claim, exact destination and bound approval reach one simulated callback; a changed destination is blocked with zero callbacks.</desc>
   <defs>
     <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#132f43"/><stop offset="1" stop-color="#07131f"/></linearGradient>
     <linearGradient id="accent" x2="1"><stop stop-color="#79e9e7"/><stop offset="1" stop-color="#b7f48c"/></linearGradient>
@@ -22,9 +22,9 @@
   <text x="83" y="320" fill="#f0fbfb" font-family="system-ui,sans-serif" font-size="26" font-weight="750">A2UI caller gate</text>
   <text x="83" y="351" fill="#b5cbd4" font-family="system-ui,sans-serif" font-size="16">registered function</text>
   <text x="83" y="378" fill="#b5cbd4" font-family="system-ui,sans-serif" font-size="16">agentOnly / rendererOrAgent</text>
-  <text x="474" y="278" fill="#ffd07c" font-family="monospace" font-size="15" font-weight="700">02 / EXACT ACTION</text>
-  <text x="474" y="320" fill="#f0fbfb" font-family="system-ui,sans-serif" font-size="26" font-weight="750">ĀML policy gate</text>
-  <text x="474" y="351" fill="#b5cbd4" font-family="system-ui,sans-serif" font-size="16">recipient + purpose + arguments</text>
+  <text x="474" y="278" fill="#ffd07c" font-family="monospace" font-size="15" font-weight="700">02 / HOST GATES</text>
+  <text x="474" y="320" fill="#f0fbfb" font-family="system-ui,sans-serif" font-size="26" font-weight="750">ID claim + ĀML</text>
+  <text x="474" y="351" fill="#b5cbd4" font-family="system-ui,sans-serif" font-size="16">host session · exact destination</text>
   <text x="474" y="378" fill="#b5cbd4" font-family="system-ui,sans-serif" font-size="16">SHA-256 bound approval</text>
   <text x="865" y="278" fill="#b7f48c" font-family="monospace" font-size="15" font-weight="700">03 / HOST CALLBACK</text>
   <text x="865" y="320" fill="#f0fbfb" font-family="system-ui,sans-serif" font-size="26" font-weight="750">Simulated dispatch</text>

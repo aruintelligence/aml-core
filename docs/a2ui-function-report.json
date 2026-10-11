@@ -32,6 +32,7 @@
           }
         }
       },
+      "invocation": "claimed",
       "aml_plan": {
         "protocol": "aml-action-plan/1",
         "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
@@ -81,6 +82,7 @@
           }
         }
       },
+      "invocation": "claimed",
       "aml_plan": {
         "protocol": "aml-action-plan/1",
         "proposal_sha256": "84947893f8065ba8fc426fbcda1bcfe6a31e4518649b645704121f33d66aefd7",
@@ -123,6 +125,7 @@
           "functionCallId": "send_1"
         }
       },
+      "invocation": "not_reached",
       "aml_plan": null,
       "aml_receipt": null,
       "callback_count": 0,
@@ -154,6 +157,7 @@
           "functionCallId": "send_1"
         }
       },
+      "invocation": "not_reached",
       "aml_plan": null,
       "aml_receipt": null,
       "callback_count": 0,
@@ -185,6 +189,7 @@
           "functionCallId": "send_1"
         }
       },
+      "invocation": "not_reached",
       "aml_plan": null,
       "aml_receipt": null,
       "callback_count": 0,
@@ -216,6 +221,7 @@
           "functionCallId": "send_1"
         }
       },
+      "invocation": "not_reached",
       "aml_plan": null,
       "aml_receipt": null,
       "callback_count": 0,
@@ -249,6 +255,7 @@
           }
         }
       },
+      "invocation": "claimed",
       "aml_plan": {
         "protocol": "aml-action-plan/1",
         "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
@@ -307,6 +314,7 @@
           }
         }
       },
+      "invocation": "claimed",
       "aml_plan": {
         "protocol": "aml-action-plan/1",
         "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
@@ -356,6 +364,7 @@
           }
         }
       },
+      "invocation": "claimed",
       "aml_plan": {
         "protocol": "aml-action-plan/1",
         "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",

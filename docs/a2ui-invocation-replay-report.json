@@ -1,0 +1,580 @@
+{
+  "protocol": "aml-a2ui-invocation-replay-report/1",
+  "scope": "Project-authored local simulation. The historical module is the prior main Git blob with only its import path adjusted. No real renderer, second OS process, human approval, or external message.",
+  "prior_main_commit": "b8a777a9c0a4fb27c69bbebb83b18fc4bba62d1d",
+  "prior_module_blob_sha1": "68fdbb0ac5cd7518e6c4974cae04f5417c8d3d6e",
+  "current_module": "pilots/action-boundary/a2ui-function-gate.mjs",
+  "spec": "https://a2ui.org/specification/v1.0-a2ui/",
+  "cases": [
+    {
+      "id": "sequential",
+      "title": "Same ID, sequential replay",
+      "description": "The exact A2UI message arrives twice in one host session.",
+      "mode": "sequential",
+      "before": {
+        "callback_count": 2,
+        "attempts": [
+          {
+            "function_call_id": "call_1",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "not_checked",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_1",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          },
+          {
+            "function_call_id": "call_1",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "not_checked",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_1",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          }
+        ]
+      },
+      "after": {
+        "callback_count": 1,
+        "attempts": [
+          {
+            "function_call_id": "call_1",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "claimed",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_1",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          },
+          {
+            "function_call_id": "call_1",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "reused",
+            "response": {
+              "version": "v1.0",
+              "error": {
+                "code": "INVALID_FUNCTION_CALL",
+                "message": "functionCallId was already used in this host session.",
+                "functionCallId": "call_1"
+              }
+            },
+            "receipt": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "concurrent",
+      "title": "Same ID, simultaneous replay",
+      "description": "Two calls race on one ID while host approval is asynchronous.",
+      "mode": "concurrent",
+      "before": {
+        "callback_count": 2,
+        "attempts": [
+          {
+            "function_call_id": "call_2",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "not_checked",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_2",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          },
+          {
+            "function_call_id": "call_2",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "not_checked",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_2",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          }
+        ]
+      },
+      "after": {
+        "callback_count": 1,
+        "attempts": [
+          {
+            "function_call_id": "call_2",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "claimed",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_2",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          },
+          {
+            "function_call_id": "call_2",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "reused",
+            "response": {
+              "version": "v1.0",
+              "error": {
+                "code": "INVALID_FUNCTION_CALL",
+                "message": "functionCallId was already used in this host session.",
+                "functionCallId": "call_2"
+              }
+            },
+            "receipt": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "changed_payload",
+      "title": "Same ID, changed payload",
+      "description": "The second call retains the ID but changes the body.",
+      "mode": "sequential",
+      "before": {
+        "callback_count": 2,
+        "attempts": [
+          {
+            "function_call_id": "call_3",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "not_checked",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_3",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          },
+          {
+            "function_call_id": "call_3",
+            "host_session": "host-A",
+            "body": "Changed",
+            "invocation": "not_checked",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_3",
+                "value": {
+                  "body": "Changed",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "429e5b2a2420865ab814d22fa04e1861fca946ed33cd6313640bbf43be2c2359",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          }
+        ]
+      },
+      "after": {
+        "callback_count": 1,
+        "attempts": [
+          {
+            "function_call_id": "call_3",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "claimed",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_3",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          },
+          {
+            "function_call_id": "call_3",
+            "host_session": "host-A",
+            "body": "Changed",
+            "invocation": "reused",
+            "response": {
+              "version": "v1.0",
+              "error": {
+                "code": "INVALID_FUNCTION_CALL",
+                "message": "functionCallId was already used in this host session.",
+                "functionCallId": "call_3"
+              }
+            },
+            "receipt": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "separate_sessions",
+      "title": "Same ID, distinct host sessions",
+      "description": "The host supplies two different session identities; each has its own ID namespace.",
+      "mode": "sequential",
+      "before": {
+        "callback_count": 2,
+        "attempts": [
+          {
+            "function_call_id": "call_4",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "not_checked",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_4",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          },
+          {
+            "function_call_id": "call_4",
+            "host_session": "host-B",
+            "body": "Original",
+            "invocation": "not_checked",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_4",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          }
+        ]
+      },
+      "after": {
+        "callback_count": 2,
+        "attempts": [
+          {
+            "function_call_id": "call_4",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "claimed",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_4",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          },
+          {
+            "function_call_id": "call_4",
+            "host_session": "host-B",
+            "body": "Original",
+            "invocation": "claimed",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_4",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "new_id",
+      "title": "New ID, new invocation",
+      "description": "An agent can request a new invocation ID; this guard does not prevent separately authorized new actions.",
+      "mode": "sequential",
+      "before": {
+        "callback_count": 2,
+        "attempts": [
+          {
+            "function_call_id": "call_5",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "not_checked",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_5",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          },
+          {
+            "function_call_id": "call_6",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "not_checked",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_6",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          }
+        ]
+      },
+      "after": {
+        "callback_count": 2,
+        "attempts": [
+          {
+            "function_call_id": "call_5",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "claimed",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_5",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          },
+          {
+            "function_call_id": "call_6",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "claimed",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_6",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "store_unavailable",
+      "title": "Claim store unavailable",
+      "description": "The corrected bridge fails closed if the host claim store cannot confirm an ID.",
+      "mode": "sequential",
+      "before": {
+        "callback_count": 1,
+        "attempts": [
+          {
+            "function_call_id": "call_7",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "not_checked",
+            "response": {
+              "version": "v1.0",
+              "rendererFunctionResponse": {
+                "functionCallId": "call_7",
+                "value": {
+                  "body": "Original",
+                  "simulated": true
+                }
+              }
+            },
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "d0186276ee348cc76908a9a7a771830fca93cc7e93c2127b8d5fcc3988f019be",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            }
+          }
+        ]
+      },
+      "after": {
+        "callback_count": 0,
+        "attempts": [
+          {
+            "function_call_id": "call_7",
+            "host_session": "host-A",
+            "body": "Original",
+            "invocation": "unavailable",
+            "response": {
+              "version": "v1.0",
+              "error": {
+                "code": "EXECUTION_FAILED",
+                "message": "Host invocation claim unavailable; no callback was attempted.",
+                "functionCallId": "call_7"
+              }
+            },
+            "receipt": null
+          }
+        ]
+      }
+    }
+  ]
+}
