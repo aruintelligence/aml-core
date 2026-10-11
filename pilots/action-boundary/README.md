@@ -4,6 +4,8 @@ Agents can propose a tool call; the host must decide whether to dispatch it. Thi
 
 [**Open the Action Boundary Lab**](https://aruintelligence.github.io/aml-core/action-lab.html) to rehearse the proposal, rule, digest, simulated approval, and uncertain callback path in a browser. The lab's Web Crypto calculation is compared with all six published JavaScript vectors in CI; it is a project-authored mirror for this subset and does not call a tool or authenticate an approver.
 
+[**Open the Action Boundary Studio**](https://aruintelligence.github.io/aml-core/action-boundary-studio.html) to edit the proposed action and policy together, export a portable calculation bundle, and recheck it in Node. See the [Studio guide](ACTION_STUDIO.md) for the schema, commands, and authority limits.
+
 [**Try the 13-case action-boundary challenge**](../../publications/ACTION_BOUNDARY_CHALLENGE.md) with your own executable adapter to publish a reproducible PASS, FAIL, or MIXED result. The challenge probes exact matching, approval binding, mutation during awaited approval, policy revocation, and uncertain dispatch. An outside witness requires an independently maintained implementation and public evidence; the included reference adapter is only a project self-test.
 
 [**Wrap a function tool in your host**](../../docs/AGENT_TOOL_QUICKSTART.md) with `createGuardedToolExecute`, then run `node pilots/action-boundary/guarded-tool-demo.mjs` to see a simulated dispatch and a blocked destination change. The wrapper imports this project's reference boundary and is not an independent implementation.

@@ -1,0 +1,48 @@
+{
+  "protocol": "aml-action-studio-bundle/1",
+  "source": "project-authored local browser preview",
+  "proposal": {
+    "protocol": "aml-proposed-action/1",
+    "tool": "send_message",
+    "effect": "send",
+    "resource": "outsider@example.test",
+    "purpose": "Status ✓",
+    "arguments": {
+      "subject": "Update",
+      "body": "The build passed.",
+      "metadata": {
+        "z": 2,
+        "a": [
+          "é",
+          true,
+          null
+        ]
+      }
+    }
+  },
+  "policy": {
+    "protocol": "aml-action-policy/1",
+    "rules": [
+      {
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "requires_approval": true
+      },
+      {
+        "tool": "fetch_record",
+        "effect": "read",
+        "resource": "record:42",
+        "requires_approval": false
+      }
+    ]
+  },
+  "plan": {
+    "protocol": "aml-action-plan/1",
+    "proposal_sha256": "d02df0aafadc6b9db6744083baac970afac76c0510b05de60b02d80172749d53",
+    "decision": "deny",
+    "reason": "no_exact_rule"
+  },
+  "canonical_proposal_json": "{\"arguments\":{\"body\":\"The build passed.\",\"metadata\":{\"a\":[\"é\",true,null],\"z\":2},\"subject\":\"Update\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"Status ✓\",\"resource\":\"outsider@example.test\",\"tool\":\"send_message\"}",
+  "limits": "Calculation consistency only. No trusted policy, identity, approval, live tool, or delivery proof."
+}

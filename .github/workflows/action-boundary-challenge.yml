@@ -14,7 +14,13 @@ on:
       - "scripts/build-a2ui-function-report.mjs"
       - "scripts/build-a2ui-invocation-replay-report.mjs"
       - "scripts/build-action-policy-scope-report.mjs"
+      - "scripts/build-action-studio-example.mjs"
+      - "scripts/verify-action-studio-bundle.mjs"
       - "test/action-boundary-policy-scope.test.js"
+      - "test/action-studio-bundle.test.js"
+      - "examples/action-studio/**"
+      - "docs/action-boundary-studio.html"
+      - "docs/action-boundary-studio.js"
       - "docs/action-policy-scope-report.json"
       - "docs/action-policy-scope.html"
       - "docs/action-policy-scope.svg"
@@ -51,7 +57,13 @@ on:
       - "scripts/build-a2ui-function-report.mjs"
       - "scripts/build-a2ui-invocation-replay-report.mjs"
       - "scripts/build-action-policy-scope-report.mjs"
+      - "scripts/build-action-studio-example.mjs"
+      - "scripts/verify-action-studio-bundle.mjs"
       - "test/action-boundary-policy-scope.test.js"
+      - "test/action-studio-bundle.test.js"
+      - "examples/action-studio/**"
+      - "docs/action-boundary-studio.html"
+      - "docs/action-boundary-studio.js"
       - "docs/action-policy-scope-report.json"
       - "docs/action-policy-scope.html"
       - "docs/action-policy-scope.svg"
@@ -101,6 +113,11 @@ jobs:
         run: |
           node --test test/action-boundary-policy-scope.test.js
           node scripts/build-action-policy-scope-report.mjs --check
+      - name: Verify portable Studio bundle and browser calculation parity
+        run: |
+          node --test test/action-studio-bundle.test.js
+          node scripts/build-action-studio-example.mjs --check
+          node scripts/verify-action-studio-bundle.mjs examples/action-studio/changed-destination.json
       - name: Verify A2UI v1.0 function gate and published visual cases
         run: |
           node --test test/action-boundary-a2ui-gate.test.js
