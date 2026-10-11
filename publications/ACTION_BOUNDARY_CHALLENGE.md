@@ -64,6 +64,8 @@ node scripts/run-action-boundary-challenge.mjs -- ./your-adapter
 
 The adapter command is one executable path. Use an executable wrapper script if your implementation needs an interpreter or build step. The runner appends the case file path, allows five seconds and 256 KiB of output per case, emits `aml-action-boundary-challenge-report/1` on stdout, and returns nonzero if any case fails. Keep diagnostics on stderr so stdout remains one JSON object.
 
+A **project-maintained Python example** can be run directly with `node scripts/run-action-boundary-challenge.mjs -- python3 pilots/action-boundary/challenge-python-adapter.py`. It implements the published subset without importing the JavaScript boundary. The [visual cross-runtime comparison](https://aruintelligence.github.io/aml-core/action-cross-runtime.html) shows both actual outputs per case. This example demonstrates interoperability engineering but does **not** qualify as an outside witness; maintain an external implementation for that claim. Python rejects floats and non-BMP object keys rather than claiming general JavaScript JSON canonicalization.
+
 In an outside repository's GitHub Actions workflow:
 
 ```yaml

@@ -36,6 +36,10 @@
 
 [![Two local workers use one grant: one claim reaches a simulated callback, the replay blocks.](docs/file-grant-race.svg)](https://aruintelligence.github.io/aml-core/approval-race.html)
 
+**Two code paths, one published contract:** [Explore the JavaScript ↔ Python comparison](https://aruintelligence.github.io/aml-core/action-cross-runtime.html?case=mutated-while-awaiting). Both project-maintained implementations produce exact matching plans, receipts, callback counts, and frozen proposals on all 13 action-boundary cases. Run `node scripts/build-action-cross-runtime-report.mjs --check` to compare a fresh run with the visual page's checked-in machine report. This is cross-language engineering evidence for a limited JSON subset, not an independent external witness.
+
+[![JavaScript and Python match on 13 published action-boundary cases; project-maintained evidence only.](docs/cross-runtime-proof.svg)](https://aruintelligence.github.io/aml-core/action-cross-runtime.html)
+
 ## Prove the core claim in 60 seconds
 
 Open this exact state: [**attention 5 / restoration 1 → SUPPRESS**](https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en).

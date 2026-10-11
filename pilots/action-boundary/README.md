@@ -12,6 +12,8 @@ Agents can propose a tool call; the host must decide whether to dispatch it. Thi
 
 [**Inspect the two-process race**](https://aruintelligence.github.io/aml-core/approval-race.html) or run `node pilots/action-boundary/file-grant-race-demo.mjs`. This separate experimental store uses a host-owned directory on one local filesystem. Two Node child processes receive the same grant and compete to create its claim marker with an exclusive `wx` open. The recorded run shows exactly one simulated callback and a blocked reuse; the winning process can vary. The visual page plays back checked-in run data and does not start workers in the browser.
 
+[**Compare JavaScript and Python case by case**](https://aruintelligence.github.io/aml-core/action-cross-runtime.html?case=mutated-while-awaiting). `python_boundary.py` implements the public plan/dispatch subset without importing the JavaScript reference; `challenge-python-adapter.py` exercises it as an external process against all 13 published cases. The checked-in visual report contains actual outputs from both project-maintained code paths, not just expected labels. Run `node scripts/build-action-cross-runtime-report.mjs --check` to regenerate and compare it. A passing internal adapter is not an independently maintained outside witness.
+
 ```bash
 node pilots/action-boundary/demo.mjs
 node pilots/action-boundary/boundary.test.mjs
@@ -22,6 +24,8 @@ python3 pilots/action-boundary/verify_vectors.py
 The demo simulates a message; it sends nothing. It shows three outcomes: an approval-required plan, a host-approved dispatch, and a blocked destination change. `boundary.mjs` exposes `planAction(proposal, policy)` and `dispatchAction(proposal, { policy, requestApproval, executeTool })`. The host owns the policy and both callbacks. Never take these from model output or untrusted tool descriptions.
 
 The published [`vectors.json`](vectors.json) contains six exact proposal digests and decisions, including reordered keys, a changed destination, a changed body, and an undeclared effect. The dependency-free Python checker independently recomputes the selected vectors and rejects a tamper. It covers this fixture's JSON subset; it is **not** a general cross-language canonical JSON implementation. In particular, arbitrary JavaScript numbers and UTF-16 key ordering need a separately specified wire format before a broad interoperability claim.
+
+The executable Python action boundary adds dispatch behavior for the same restricted wire subset: JSON integers within JavaScript's safe range and BMP-only object keys. Unsupported floats or non-BMP keys are rejected as `unsupported_json_subset` rather than silently producing a different digest. This restriction is narrower than the JavaScript reference implementation; agreement is claimed only for the published fixture domain.
 
 ## Contract
 
