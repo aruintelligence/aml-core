@@ -36,3 +36,15 @@ jobs:
         run: node scripts/run-action-boundary-challenge.mjs --self-test
       - name: Exercise black-box process contract
         run: node scripts/run-action-boundary-challenge.mjs -- node pilots/action-boundary/challenge-reference-adapter.mjs
+      - name: Prepare caller-owned executable wrapper
+        run: |
+          printf '%s\n' '#!/bin/sh' 'exec node "$GITHUB_WORKSPACE/pilots/action-boundary/challenge-reference-adapter.mjs" "$@"' > "$RUNNER_TEMP/aml-reference-adapter"
+          chmod +x "$RUNNER_TEMP/aml-reference-adapter"
+      - id: composite
+        uses: ./actions/action-boundary-conformance
+        with:
+          adapter-command: ${{ runner.temp }}/aml-reference-adapter
+      - name: Check composite outputs
+        run: |
+          test "${{ steps.composite.outputs.passed }}" = true
+          node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.argv[1])); if (r.project_reference_self_test || !r.passed || r.cases.length !== 13) process.exit(1)' "${{ steps.composite.outputs.result-file }}"
