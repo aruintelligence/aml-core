@@ -1,0 +1,154 @@
+{
+  "protocol": "aml-action-vectors/1",
+  "policy": {
+    "protocol": "aml-action-policy/1",
+    "rules": [
+      {
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "requires_approval": true
+      },
+      {
+        "tool": "fetch_record",
+        "effect": "read",
+        "resource": "record:42",
+        "requires_approval": false
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "approved_route",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Status ✓",
+        "arguments": {
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        }
+      },
+      "decision": "requires_approval",
+      "reason": "exact_rule",
+      "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332"
+    },
+    {
+      "name": "same_action_reordered_keys",
+      "proposal": {
+        "arguments": {
+          "metadata": {
+            "a": [
+              "é",
+              true,
+              null
+            ],
+            "z": 2
+          },
+          "body": "The build passed.",
+          "subject": "Update"
+        },
+        "purpose": "Status ✓",
+        "resource": "team@example.test",
+        "effect": "send",
+        "tool": "send_message",
+        "protocol": "aml-proposed-action/1"
+      },
+      "decision": "requires_approval",
+      "reason": "exact_rule",
+      "proposal_sha256": "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332"
+    },
+    {
+      "name": "changed_destination",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "outsider@example.test",
+        "purpose": "Status ✓",
+        "arguments": {
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        }
+      },
+      "decision": "deny",
+      "reason": "no_exact_rule",
+      "proposal_sha256": "d02df0aafadc6b9db6744083baac970afac76c0510b05de60b02d80172749d53"
+    },
+    {
+      "name": "changed_body",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Status ✓",
+        "arguments": {
+          "subject": "Update",
+          "body": "Different text",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        }
+      },
+      "decision": "requires_approval",
+      "reason": "exact_rule",
+      "proposal_sha256": "e40dc4825a36c6078ed46c895ffa2f1a80f32a0eb65361dfb36666a863132e28"
+    },
+    {
+      "name": "read_route",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "fetch_record",
+        "effect": "read",
+        "resource": "record:42",
+        "purpose": "Inspect record",
+        "arguments": {
+          "id": 42
+        }
+      },
+      "decision": "allow",
+      "reason": "exact_rule",
+      "proposal_sha256": "3c4daeb05d0206b5a2d8e164271db5f5dc706603414750479b350e998016d351"
+    },
+    {
+      "name": "undeclared_effect",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "fetch_record",
+        "effect": "pay",
+        "resource": "record:42",
+        "purpose": "Inspect record",
+        "arguments": {
+          "id": 42
+        }
+      },
+      "decision": "deny",
+      "reason": "no_exact_rule",
+      "proposal_sha256": "616b03ae3cfb444b27b1ea657ac34900ac246046464cfa87eaec193929f3f883"
+    }
+  ]
+}
