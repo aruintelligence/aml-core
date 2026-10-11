@@ -26,6 +26,8 @@
 
 **Explore the next boundary:** [Try the Action Boundary Lab](https://aruintelligence.github.io/aml-core/action-lab.html) — change an agent's intended tool call and see an exact policy decision, digest, stale simulated approval, and uncertain outcome. [Run the 13-case outside implementation challenge](publications/ACTION_BOUNDARY_CHALLENGE.md), or [read the pilot](pilots/action-boundary/README.md) and its [six published vectors](pilots/action-boundary/vectors.json). The browser rehearsal and repository self-test are project-authored, with no live tool access.
 
+**Wire one agent tool:** [Follow the function-tool quickstart](docs/AGENT_TOOL_QUICKSTART.md) to wrap a host-owned callback with exact policy matching, approval binding, and a dispatch receipt. Its runnable local demo simulates execution; the host must supply real authorization and tool mapping.
+
 ## Prove the core claim in 60 seconds
 
 Open this exact state: [**attention 5 / restoration 1 → SUPPRESS**](https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en).
