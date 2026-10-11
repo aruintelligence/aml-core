@@ -108,7 +108,8 @@ test("claim digest and callback are bound to a single snapshot of a changing hos
       get body() { return ++reads === 1 ? "first value" : "later value"; } } };
     let seen;
     const result = await f.ledger.run({ operationId: "host-operation-getter-001", proposal: unusual,
-      executeTool: frozen => { seen = frozen.arguments.body; return true; } });
+      executeTool: frozen => { seen = frozen.arguments.body;
+        assert.throws(() => { frozen.arguments.body = "mutated"; }, TypeError); return true; } });
     assert.equal(reads, 1);
     assert.equal(seen, "first value");
     assert.equal(result.status, "returned");
