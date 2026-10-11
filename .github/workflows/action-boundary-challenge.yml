@@ -9,11 +9,13 @@ on:
       - "scripts/run-action-boundary-challenge.mjs"
       - "scripts/build-action-cross-runtime-report.mjs"
       - "scripts/build-file-dispatch-report.mjs"
+      - "scripts/build-action-key-order-report.mjs"
       - "test/action-boundary-challenge.test.js"
       - "test/action-boundary-dispatch-ledger.test.js"
       - "test/test_python_boundary.py"
       - "docs/action-cross-runtime-report.json"
       - "docs/file-dispatch-report.json"
+      - "docs/action-key-order-report.json"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
   pull_request:
@@ -23,11 +25,13 @@ on:
       - "scripts/run-action-boundary-challenge.mjs"
       - "scripts/build-action-cross-runtime-report.mjs"
       - "scripts/build-file-dispatch-report.mjs"
+      - "scripts/build-action-key-order-report.mjs"
       - "test/action-boundary-challenge.test.js"
       - "test/action-boundary-dispatch-ledger.test.js"
       - "test/test_python_boundary.py"
       - "docs/action-cross-runtime-report.json"
       - "docs/file-dispatch-report.json"
+      - "docs/action-key-order-report.json"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
 
@@ -60,6 +64,7 @@ jobs:
           python3 -m unittest discover -s test -p test_python_boundary.py
           node scripts/run-action-boundary-challenge.mjs -- python3 pilots/action-boundary/challenge-python-adapter.py
           node scripts/build-action-cross-runtime-report.mjs --check
+          node scripts/build-action-key-order-report.mjs --check
       - name: Verify host-owned dispatch ledger and recorded process race
         run: |
           node --test test/action-boundary-dispatch-ledger.test.js

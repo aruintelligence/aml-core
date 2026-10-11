@@ -16,6 +16,8 @@ Agents can propose a tool call; the host must decide whether to dispatch it. Thi
 
 [**Explore the uncertain-dispatch ledger**](https://aruintelligence.github.io/aml-core/dispatch-ledger.html?scenario=crash) or run `node pilots/action-boundary/file-dispatch-ledger-demo.mjs`. A host supplies a stable operation ID and private absolute local directory. The ledger hashes the ID to select a record, binds that record to canonical proposal bytes, and creates an exclusive claim before invoking a simulated tool callback. Its separate six-scenario report is checked by `node scripts/build-file-dispatch-report.mjs --check` in CI. Two actual child processes race on one operation ID; a third exits after claiming, leaving a record that suppresses a retry. These are project-owned simulations.
 
+[**Inspect the key-order counterexample**](https://aruintelligence.github.io/aml-core/key-order-lab.html?case=two-numeric-keys). The 13 fixtures did not exercise numeric-looking keys inside action arguments. The prior Python sort emitted `"10"` before `"2"`; JavaScript emits array-index `"2"` before `"10"` when stringifying its rebuilt ordinary object. The Python subset now mirrors those JavaScript bytes recursively. Run `node scripts/build-action-key-order-report.mjs --check` to see 519 exact JS/Python cases, old mismatch counts, and named edge cases. The corpus intentionally concentrates on troublesome keys and is not a representative failure-rate sample.
+
 ```bash
 node pilots/action-boundary/demo.mjs
 node pilots/action-boundary/boundary.test.mjs
@@ -27,7 +29,7 @@ The demo simulates a message; it sends nothing. It shows three outcomes: an appr
 
 The published [`vectors.json`](vectors.json) contains six exact proposal digests and decisions, including reordered keys, a changed destination, a changed body, and an undeclared effect. The dependency-free Python checker independently recomputes the selected vectors and rejects a tamper. It covers this fixture's JSON subset; it is **not** a general cross-language canonical JSON implementation. In particular, arbitrary JavaScript numbers and UTF-16 key ordering need a separately specified wire format before a broad interoperability claim.
 
-The executable Python action boundary adds dispatch behavior for the same restricted wire subset: JSON integers within JavaScript's safe range and BMP-only object keys. Unsupported floats or non-BMP keys are rejected as `unsupported_json_subset` rather than silently producing a different digest. This restriction is narrower than the JavaScript reference implementation; agreement is claimed only for the published fixture domain.
+The executable Python action boundary adds dispatch behavior for the same restricted wire subset: JSON integers within JavaScript's safe range, BMP-only object keys, and Unicode-scalar string values. Unsupported floats, non-BMP keys, and lone-surrogate values are rejected as `unsupported_json_subset` rather than silently producing a different digest. Numeric array-index object keys follow JavaScript's actual wire order: canonical decimal `0` through `4294967294` first in ascending numeric order; all remaining BMP keys in lexical order. This restriction is narrower than the JavaScript reference implementation; agreement is claimed only for the stated domain and checked cases, not every possible JSON input.
 
 ## Contract
 

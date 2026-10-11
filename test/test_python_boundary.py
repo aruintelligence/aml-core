@@ -1,12 +1,13 @@
 """Narrow Python-specific failure and callback tests beyond the shared 13 cases."""
 
 import asyncio
+import hashlib
 from pathlib import Path
 import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pilots" / "action-boundary"))
-from python_boundary import dispatch_action, plan_action  # noqa: E402
+from python_boundary import _snapshot, dispatch_action, plan_action  # noqa: E402
 
 
 def fixture():
@@ -91,6 +92,23 @@ class PythonBoundaryTests(unittest.TestCase):
                                              consume_approval="not a callback",
                                              execute_tool=execute))
         self.assertEqual(result["receipt"]["reason"], "invalid_host_consumer")
+
+    def test_js_array_index_order_is_bound_to_exact_digest(self):
+        proposal, policy = fixture()
+        proposal["arguments"] = {"10": "ten", "2": "two", "01": "leading"}
+        wire, digest, _ = _snapshot(proposal)
+        self.assertIn(b'"arguments":{"2":"two","10":"ten","01":"leading"}', wire)
+        self.assertEqual(digest, hashlib.sha256(wire).hexdigest())
+        self.assertEqual(plan_action(proposal, policy)["proposal_sha256"], digest)
+
+        proposal["arguments"] = {"4294967295": "not an index", "4294967294": "index",
+                                 "10": "ten", "2": "two"}
+        wire, _, _ = _snapshot(proposal)
+        self.assertIn(b'"arguments":{"2":"two","10":"ten","4294967294":"index",'
+                      b'"4294967295":"not an index"}', wire)
+
+        proposal["arguments"] = {"body": "\ud800"}
+        self.assertEqual(plan_action(proposal, policy)["reason"], "unsupported_json_subset")
 
 
 if __name__ == "__main__":

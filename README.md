@@ -44,6 +44,10 @@
 
 [![A host operation ID is claimed before a simulated callback; a second worker is suppressed and uncertain results are not blindly retried.](docs/dispatch-ledger-proof.svg)](https://aruintelligence.github.io/aml-core/dispatch-ledger.html)
 
+**A counterexample made the contract stronger:** [Inspect the key-order lab](https://aruintelligence.github.io/aml-core/key-order-lab.html?case=two-numeric-keys). Numeric-looking JSON keys exposed a real proposal-hash disagreement between the project's JavaScript and Python code paths. The Python wire order is fixed without changing existing JavaScript digests. A deterministic, deliberately adversarial 519-case regression records 439 mismatches under the prior Python ordering and zero after the fix; the seven selected examples show exact old and new bytes. This remains project-maintained evidence for a restricted JSON subset.
+
+[![One action produced two hashes when Python sorted numeric-looking keys differently from JavaScript; the fixed Python path now matches.](docs/key-order-counterexample.svg)](https://aruintelligence.github.io/aml-core/key-order-lab.html)
+
 ## Prove the core claim in 60 seconds
 
 Open this exact state: [**attention 5 / restoration 1 → SUPPRESS**](https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en).

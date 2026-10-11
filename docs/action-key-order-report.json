@@ -1,0 +1,180 @@
+{
+  "protocol": "aml-action-key-order-regression/1",
+  "provenance": "project-maintained JavaScript and separate Python process; previous Python lexical sort replayed",
+  "previous_python_source_commit": "96f892913d9d57157dba729eb4db03484a28230b",
+  "seed": "0x0a11ce22",
+  "generated_cases": 512,
+  "fixture_sha256": "d21974ed8e1d5f2f8deab7b1aa1971afdcd3dcbc68e660fcf20da96dbeb79853",
+  "total_cases": 519,
+  "previous_mismatches": 439,
+  "fixed_mismatches": 0,
+  "selected": [
+    {
+      "id": "two-numeric-keys",
+      "title": "Numeric-looking keys",
+      "args": {
+        "2": "two",
+        "10": "ten"
+      },
+      "javascript": {
+        "wire": "{\"arguments\":{\"2\":\"two\",\"10\":\"ten\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "1156a54a81f75ed08847c8a5023205be721649dac069a7e679cc773fd828bbf5"
+      },
+      "previous_python": {
+        "wire": "{\"arguments\":{\"10\":\"ten\",\"2\":\"two\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "f6f96de912a2bdf1aac5c60743b235b3366bda97fbb0d4bf90302130261ae645",
+        "matched": false
+      },
+      "fixed_python": {
+        "wire": "{\"arguments\":{\"2\":\"two\",\"10\":\"ten\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "1156a54a81f75ed08847c8a5023205be721649dac069a7e679cc773fd828bbf5",
+        "matched": true
+      }
+    },
+    {
+      "id": "nested-numeric-keys",
+      "title": "A nested object",
+      "args": {
+        "data": {
+          "3": "three",
+          "11": "eleven",
+          "a": "letter"
+        }
+      },
+      "javascript": {
+        "wire": "{\"arguments\":{\"data\":{\"3\":\"three\",\"11\":\"eleven\",\"a\":\"letter\"}},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "e4c449ab1e0ca48fdea71b8d2e08c8bbc4f6b4bebaa8691ac029e4ba3ce53991"
+      },
+      "previous_python": {
+        "wire": "{\"arguments\":{\"data\":{\"11\":\"eleven\",\"3\":\"three\",\"a\":\"letter\"}},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "4d636fbb2917c43feedec6111f1d15541b15374b5eb38b9315e95ce75a0853ae",
+        "matched": false
+      },
+      "fixed_python": {
+        "wire": "{\"arguments\":{\"data\":{\"3\":\"three\",\"11\":\"eleven\",\"a\":\"letter\"}},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "e4c449ab1e0ca48fdea71b8d2e08c8bbc4f6b4bebaa8691ac029e4ba3ce53991",
+        "matched": true
+      }
+    },
+    {
+      "id": "zero-leading-zero",
+      "title": "Zero and leading zero",
+      "args": {
+        "0": "zero",
+        "10": "ten",
+        "01": "ordinary"
+      },
+      "javascript": {
+        "wire": "{\"arguments\":{\"0\":\"zero\",\"10\":\"ten\",\"01\":\"ordinary\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "f795a65563dd3243a27f3a7c0436a2ff3e6cbc612ca0517737a543f769578ee1"
+      },
+      "previous_python": {
+        "wire": "{\"arguments\":{\"0\":\"zero\",\"01\":\"ordinary\",\"10\":\"ten\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "2b256afa7bc31e0b46464cb323cacd87e68578a93290b1458405ab664c10c055",
+        "matched": false
+      },
+      "fixed_python": {
+        "wire": "{\"arguments\":{\"0\":\"zero\",\"10\":\"ten\",\"01\":\"ordinary\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "f795a65563dd3243a27f3a7c0436a2ff3e6cbc612ca0517737a543f769578ee1",
+        "matched": true
+      }
+    },
+    {
+      "id": "uint32-edge",
+      "title": "The 32-bit edge",
+      "args": {
+        "2": "two",
+        "10": "ten",
+        "4294967294": "last index",
+        "4294967295": "ordinary"
+      },
+      "javascript": {
+        "wire": "{\"arguments\":{\"2\":\"two\",\"10\":\"ten\",\"4294967294\":\"last index\",\"4294967295\":\"ordinary\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "d3218f81d1d9163c43b66a5ac89fd5685c72eb5d3d5c8f5ec7ce5eb6191ee8f7"
+      },
+      "previous_python": {
+        "wire": "{\"arguments\":{\"10\":\"ten\",\"2\":\"two\",\"4294967294\":\"last index\",\"4294967295\":\"ordinary\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "2e182d50f88f5043c5caeca7afb9930f5e231ca80448c27bc213b01af8cee5fb",
+        "matched": false
+      },
+      "fixed_python": {
+        "wire": "{\"arguments\":{\"2\":\"two\",\"10\":\"ten\",\"4294967294\":\"last index\",\"4294967295\":\"ordinary\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "d3218f81d1d9163c43b66a5ac89fd5685c72eb5d3d5c8f5ec7ce5eb6191ee8f7",
+        "matched": true
+      }
+    },
+    {
+      "id": "array-object",
+      "title": "An object inside an array",
+      "args": {
+        "items": [
+          {
+            "2": 2,
+            "10": 10
+          }
+        ]
+      },
+      "javascript": {
+        "wire": "{\"arguments\":{\"items\":[{\"2\":2,\"10\":10}]},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "096e7eb6245ebe22f2c385943d601b1f465277e8a810555328cc17516efe3b22"
+      },
+      "previous_python": {
+        "wire": "{\"arguments\":{\"items\":[{\"10\":10,\"2\":2}]},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "399389ee517e8b14ae69ffe6780ae6bc03f533b53e63339d9674396502004dc1",
+        "matched": false
+      },
+      "fixed_python": {
+        "wire": "{\"arguments\":{\"items\":[{\"2\":2,\"10\":10}]},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "096e7eb6245ebe22f2c385943d601b1f465277e8a810555328cc17516efe3b22",
+        "matched": true
+      }
+    },
+    {
+      "id": "non-index-forms",
+      "title": "Lookalikes that are not indices",
+      "args": {
+        "01": "leading",
+        "1.0": "decimal",
+        "-1": "negative",
+        "4294967295": "too large"
+      },
+      "javascript": {
+        "wire": "{\"arguments\":{\"-1\":\"negative\",\"01\":\"leading\",\"1.0\":\"decimal\",\"4294967295\":\"too large\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "dd55c6a9f1e5aa49ca102cdb06bd8d6f48fc605edaa1fc8e83ea7ae6349deaf5"
+      },
+      "previous_python": {
+        "wire": "{\"arguments\":{\"-1\":\"negative\",\"01\":\"leading\",\"1.0\":\"decimal\",\"4294967295\":\"too large\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "dd55c6a9f1e5aa49ca102cdb06bd8d6f48fc605edaa1fc8e83ea7ae6349deaf5",
+        "matched": true
+      },
+      "fixed_python": {
+        "wire": "{\"arguments\":{\"-1\":\"negative\",\"01\":\"leading\",\"1.0\":\"decimal\",\"4294967295\":\"too large\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "dd55c6a9f1e5aa49ca102cdb06bd8d6f48fc605edaa1fc8e83ea7ae6349deaf5",
+        "matched": true
+      }
+    },
+    {
+      "id": "ordinary-keys",
+      "title": "Ordinary names",
+      "args": {
+        "zebra": "z",
+        "alpha": "a"
+      },
+      "javascript": {
+        "wire": "{\"arguments\":{\"alpha\":\"a\",\"zebra\":\"z\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "aef1f39b859a71f1451ab9823337544a76599accba111f4cf5640fcd7ac7a2d9"
+      },
+      "previous_python": {
+        "wire": "{\"arguments\":{\"alpha\":\"a\",\"zebra\":\"z\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "aef1f39b859a71f1451ab9823337544a76599accba111f4cf5640fcd7ac7a2d9",
+        "matched": true
+      },
+      "fixed_python": {
+        "wire": "{\"arguments\":{\"alpha\":\"a\",\"zebra\":\"z\"},\"effect\":\"send\",\"protocol\":\"aml-proposed-action/1\",\"purpose\":\"compare canonical bytes\",\"resource\":\"mailbox:example\",\"tool\":\"simulated.send\"}",
+        "digest": "aef1f39b859a71f1451ab9823337544a76599accba111f4cf5640fcd7ac7a2d9",
+        "matched": true
+      }
+    }
+  ],
+  "limits": "Numeric-key regression for the published safe-integer, BMP-key, Unicode-scalar wire subset. Project-authored corpus, not outside validation or universal JSON canonicalization."
+}

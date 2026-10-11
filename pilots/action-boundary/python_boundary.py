@@ -1,19 +1,37 @@
 """Dependency-free Python implementation of the public action-boundary subset.
 
 This module does not import or call the JavaScript reference. Its wire subset
-accepts JSON integers in the JS safe range and BMP object keys; floats and
-non-BMP object keys are rejected rather than pretending to be canonical across
-languages. It authenticates nobody and runs no tool unless the host supplies a
-callback. Project-maintained code is not an independent external witness.
+accepts JSON integers in the JS safe range, BMP object keys, and Unicode-scalar
+string values. Floats, non-BMP object keys, and lone surrogate values are
+rejected rather than pretending to be canonical across languages. It
+authenticates nobody and runs no tool unless the host supplies a callback.
+Project-maintained code is not an independent external witness.
 """
 
 import hashlib
 import json
+import re
 
 EFFECTS = {"read", "write", "send", "pay", "delete"}
 PROPOSAL_KEYS = {"protocol", "tool", "effect", "resource", "purpose", "arguments"}
 RULE_KEYS = {"tool", "effect", "resource", "requires_approval"}
 SAFE_INTEGER = 2**53 - 1
+
+
+def _js_array_index(key):
+    """ECMAScript ordinary object array index: 0..2^32-2, canonical digits."""
+    if (len(key) > 10 or re.fullmatch(r"(0|[1-9][0-9]*)", key) is None):
+        return None
+    index = int(key)
+    return index if index < 2**32 - 1 else None
+
+
+def _js_object_key_order(keys):
+    # The JS reference sorts keys, rebuilds an ordinary object with
+    # Object.fromEntries, then JSON.stringify enumerates array indices first.
+    indices = [key for key in keys if _js_array_index(key) is not None]
+    others = [key for key in keys if _js_array_index(key) is None]
+    return sorted(indices, key=int) + sorted(others)
 
 
 def _canonical_subset(value):
@@ -26,7 +44,7 @@ def _canonical_subset(value):
     if type(value) is dict and all(type(key) is str and
                                     all(ord(char) <= 0xFFFF for char in key)
                                     for key in value):
-        return {key: _canonical_subset(value[key]) for key in sorted(value)}
+        return {key: _canonical_subset(value[key]) for key in _js_object_key_order(value)}
     raise ValueError("unsupported_json_subset")
 
 
