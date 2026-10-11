@@ -12,7 +12,9 @@ on:
       - "scripts/build-action-key-order-report.mjs"
       - "scripts/build-grant-directory-report.mjs"
       - "scripts/build-a2ui-function-report.mjs"
+      - "scripts/build-a2ui-invocation-replay-report.mjs"
       - "test/action-boundary-a2ui-gate.test.js"
+      - "test/fixtures/legacy-a2ui-function-gate.mjs"
       - "test/action-boundary-challenge.test.js"
       - "test/action-boundary-file-grant.test.js"
       - "test/action-boundary-dispatch-ledger.test.js"
@@ -27,6 +29,9 @@ on:
       - "docs/a2ui-function-report.json"
       - "docs/a2ui-function-lab.html"
       - "docs/a2ui-function-proof.svg"
+      - "docs/a2ui-invocation-replay-report.json"
+      - "docs/a2ui-invocation-replay.html"
+      - "docs/a2ui-invocation-replay.svg"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
   pull_request:
@@ -39,7 +44,9 @@ on:
       - "scripts/build-action-key-order-report.mjs"
       - "scripts/build-grant-directory-report.mjs"
       - "scripts/build-a2ui-function-report.mjs"
+      - "scripts/build-a2ui-invocation-replay-report.mjs"
       - "test/action-boundary-a2ui-gate.test.js"
+      - "test/fixtures/legacy-a2ui-function-gate.mjs"
       - "test/action-boundary-challenge.test.js"
       - "test/action-boundary-file-grant.test.js"
       - "test/action-boundary-dispatch-ledger.test.js"
@@ -54,6 +61,9 @@ on:
       - "docs/a2ui-function-report.json"
       - "docs/a2ui-function-lab.html"
       - "docs/a2ui-function-proof.svg"
+      - "docs/a2ui-invocation-replay-report.json"
+      - "docs/a2ui-invocation-replay.html"
+      - "docs/a2ui-invocation-replay.svg"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
 
@@ -82,6 +92,7 @@ jobs:
           node --test test/action-boundary-a2ui-gate.test.js
           node pilots/action-boundary/a2ui-function-demo.mjs > "$RUNNER_TEMP/aml-a2ui-function-demo.json"
           node scripts/build-a2ui-function-report.mjs --check
+          node scripts/build-a2ui-invocation-replay-report.mjs --check
       - name: Project-owned self-test
         run: node scripts/run-action-boundary-challenge.mjs --self-test
       - name: Exercise black-box process contract
