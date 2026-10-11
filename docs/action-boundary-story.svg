@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" role="img" aria-labelledby="title desc">
+  <title id="title">ĀML Action Boundary: the agent proposes, the host decides</title>
+  <desc id="desc">Illustrative local scenario: an agent proposes sending a message to an outside destination. The host's exact policy rule permits only the team destination, so the proposed action is blocked before a tool callback runs.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#102b3a"/><stop offset=".52" stop-color="#0a1427"/><stop offset="1" stop-color="#171928"/>
+    </linearGradient>
+    <linearGradient id="headline" x1="0" x2="1">
+      <stop stop-color="#78e8f5"/><stop offset="1" stop-color="#f5d27a"/>
+    </linearGradient>
+    <radialGradient id="glow"><stop stop-color="#34d5dd" stop-opacity=".25"/><stop offset="1" stop-color="#34d5dd" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1200" height="380" rx="24" fill="url(#bg)"/>
+  <rect x="1" y="1" width="1198" height="378" rx="23" fill="none" stroke="#3d6675"/>
+  <circle cx="375" cy="95" r="250" fill="url(#glow)"/>
+  <path d="M0 325 C170 281 333 400 514 344 S920 329 1200 256" fill="none" stroke="#27596d" stroke-width="2" opacity=".45"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="48" y="57" fill="#78e8f5" font-size="16" font-weight="700" letter-spacing="3">ĀML™ / ACTION BOUNDARY</text>
+    <text x="47" y="133" fill="#f4f7ff" font-size="49" font-weight="700">An agent asks.</text>
+    <text x="47" y="192" fill="url(#headline)" font-size="49" font-weight="700">The host decides.</text>
+    <text x="49" y="245" fill="#d0deea" font-size="20">One destination changed.</text>
+    <text x="49" y="274" fill="#d0deea" font-size="20">No matching rule. No dispatch.</text>
+    <rect x="48" y="301" width="412" height="40" rx="20" fill="#172e42" stroke="#47717f"/>
+    <text x="67" y="327" fill="#e9f5f9" font-size="16" font-weight="700">TRY THE INTERACTIVE LOCAL LAB  ↗</text>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <rect x="521" y="50" width="288" height="237" rx="20" fill="#101d30" stroke="#4d7282"/>
+    <rect x="537" y="66" width="256" height="5" rx="2" fill="#78e8f5"/>
+    <text x="543" y="104" fill="#9cd5dc" font-size="15" font-weight="700" letter-spacing="2">01 / PROPOSAL</text>
+    <text x="543" y="151" fill="#f4f7ff" font-size="27" font-weight="700">send_message</text>
+    <text x="543" y="188" fill="#b6c6d7" font-size="16">Destination</text>
+    <text x="543" y="218" fill="#ffa0ac" font-size="18" font-weight="700">outsider@example.test</text>
+    <text x="543" y="258" fill="#a8bbcb" font-size="15">effect: send · purpose: update</text>
+    <path d="M810 165 H830" stroke="#78e8f5" stroke-width="3"/>
+    <path d="m823 157 9 8-9 8" fill="none" stroke="#78e8f5" stroke-width="3"/>
+    <rect x="840" y="50" width="312" height="237" rx="20" fill="#241923" stroke="#9a5262"/>
+    <rect x="856" y="66" width="280" height="5" rx="2" fill="#ffa0ac"/>
+    <text x="862" y="104" fill="#f6b0b9" font-size="15" font-weight="700" letter-spacing="2">02 / HOST DECISION</text>
+    <text x="862" y="157" fill="#ffa0ac" font-size="37" font-weight="700">BLOCKED</text>
+    <text x="862" y="194" fill="#f5d6dd" font-size="18">No exact policy rule</text>
+    <text x="862" y="230" fill="#c5a6af" font-size="16">No tool callback runs.</text>
+    <rect x="521" y="303" width="631" height="40" rx="12" fill="#12313b" stroke="#386a73"/>
+    <text x="541" y="329" fill="#c5eaf0" font-size="16">HOST RULE  ·  send_message → team@example.test only</text>
+  </g>
+  <text x="49" y="368" fill="#9bb0c1" font-size="12" font-family="Arial, Helvetica, sans-serif" letter-spacing="1">PROJECT-AUTHORED BROWSER REHEARSAL  ·  NO LIVE TOOL OR HUMAN APPROVAL</text>
+</svg>
