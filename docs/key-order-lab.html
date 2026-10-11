@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1428">
+  <meta name="description" content="Inspect a real ĀML JavaScript/Python proposal-hash mismatch and its fix: numeric-looking JSON object keys change wire byte order. Seven exact examples and a 519-case deterministic regression.">
+  <title>One action. Two hashes. Fixed. · ĀML™</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1428;--card:#15233b;--line:#3b5271;--ink:#f3f7ff;--muted:#b7c9da;--cyan:#94e7ef;--pink:#ffb9cb;--mint:#9cefd5;--gold:#f1d195}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 0 0,#23405c,transparent 36rem),radial-gradient(circle at 100% 15%,#292245,transparent 32rem),var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}a{color:var(--cyan)}button{font:inherit;cursor:pointer}a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:3px}.wrap{max-width:1230px;margin:auto;padding:0 24px}.nav{display:flex;justify-content:space-between;align-items:center;gap:17px;border-bottom:1px solid var(--line);padding:20px 0}.brand{font-size:.8rem;font-weight:900;letter-spacing:.15em}.nav-links{display:flex;flex-wrap:wrap;gap:17px}.nav-links a{font-size:.86rem;font-weight:750;text-decoration:none;color:#d6e9f4}.hero{padding:68px 0 39px}.eyebrow{font:800 .77rem ui-monospace,monospace;letter-spacing:.15em;color:var(--cyan)}h1{font-size:clamp(3.4rem,7vw,6.7rem);line-height:.98;letter-spacing:-.07em;margin:16px 0 24px;max-width:980px}h1 span{background:linear-gradient(90deg,var(--pink),var(--cyan));background-clip:text;color:transparent}.lead{font-size:clamp(1.08rem,1.9vw,1.28rem);color:#dce8f5;max-width:875px}.caveat{color:var(--muted);font-size:.86rem;max-width:875px}.actions{display:flex;gap:11px;flex-wrap:wrap;margin-top:26px}.primary,.secondary{border-radius:999px;display:inline-flex;padding:11px 18px;font-weight:850;text-decoration:none}.primary{background:var(--cyan);color:#0c1a2c;border:1px solid var(--cyan)}.secondary{color:var(--ink);border:1px solid var(--line);background:#ffffff0b}.banner{width:100%;height:auto;display:block;border:1px solid #4f617c;border-radius:23px;box-shadow:0 25px 70px #0007}.caption{font-size:.8rem;color:var(--muted);margin:11px 0 54px}.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:54px}.stat{border:1px solid var(--line);background:#15253c;border-radius:17px;padding:22px}.stat small{font:800 .72rem ui-monospace,monospace;letter-spacing:.12em;color:var(--muted)}.stat strong{display:block;font-size:clamp(2rem,4vw,3rem);line-height:1.1;margin:10px 0}.stat strong.bad{color:var(--pink)}.stat strong.good{color:var(--mint)}.stat span{font-size:.84rem;color:var(--muted)}.section-head{display:flex;justify-content:space-between;align-items:end;gap:25px;margin-bottom:18px}.section-head h2{font-size:clamp(1.9rem,3.2vw,2.7rem);letter-spacing:-.05em;line-height:1.1;margin:0}.section-head p{margin:0;max-width:460px;color:var(--muted);font-size:.9rem}.lab{display:grid;grid-template-columns:286px minmax(0,1fr);gap:16px;margin-bottom:55px}.list,.detail,.panel{background:var(--card);border:1px solid var(--line);border-radius:20px;min-width:0}.list{padding:17px}.list h3{font:800 .74rem ui-monospace,monospace;letter-spacing:.13em;color:var(--cyan);margin:7px 10px 17px}.list button{width:100%;border:1px solid transparent;background:none;color:#d5e4f1;border-radius:11px;margin:3px 0;padding:11px;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.86rem}.list button:hover{background:#ffffff0a}.list button[aria-current=true]{background:#25405b;border-color:#6b93ab;color:white}.list em{font:800 .68rem ui-monospace,monospace;font-style:normal;color:var(--pink)}.list em.control{color:var(--mint)}.detail{padding:27px}.overline{font:800 .73rem ui-monospace,monospace;letter-spacing:.13em;color:var(--cyan)}.detail h3{font-size:clamp(1.9rem,3vw,2.7rem);letter-spacing:-.05em;line-height:1.1;margin:8px 0 12px}.summary{color:var(--muted);font-size:.9rem;margin:0 0 21px}.comparison{display:grid;grid-template-columns:1fr 1fr;gap:13px}.runtime{border-radius:16px;background:#36243e;border:1px solid #985c77;padding:19px;min-width:0}.runtime.after{background:#173c41;border-color:#61a99f}.runtime small{display:block;font:800 .72rem ui-monospace,monospace;letter-spacing:.12em;color:var(--pink)}.runtime.after small{color:var(--mint)}.runtime h4{font-size:1.2rem;margin:8px 0 10px}.runtime .digest{font:12px/1.55 ui-monospace,monospace;overflow-wrap:anywhere;color:#f9d9e3}.runtime.after .digest{color:#c6f9e9}.runtime b{font-size:.81rem}.wire{margin-top:16px;background:#071429;border:1px solid #3d5470;border-radius:12px;padding:17px}.wire h4{margin:0 0 8px;font-size:.85rem;color:#c9dced}.wire pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.55 ui-monospace,monospace;color:#e3e9f5}.wire pre:last-child{margin-bottom:0}.note{margin-top:19px;padding:15px 17px;border-left:3px solid var(--gold);background:#f1d19514;color:#f2dfb7;font-size:.85rem}.bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:55px}.panel{padding:24px}.panel h2{font-size:1.4rem;margin:0 0 12px}.panel p{color:var(--muted);font-size:.88rem}.code{display:block;padding:15px;border:1px solid #39566f;border-radius:10px;background:#071429;color:var(--mint);font:12px/1.6 ui-monospace,monospace;overflow-wrap:anywhere}footer{border-top:1px solid var(--line);color:var(--muted);font-size:.81rem;padding:26px 0 54px}footer a{margin-right:17px}@media(max-width:900px){.lab{grid-template-columns:1fr}.list{display:grid;grid-template-columns:repeat(2,1fr);gap:0 8px}.list h3{grid-column:1/-1}.section-head{display:block}.section-head p{margin-top:10px}}@media(max-width:650px){.hero{padding-top:42px}.nav{align-items:flex-start}.stats,.comparison,.bottom,.list{grid-template-columns:1fr}.detail{padding:19px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav" aria-label="Site"><span class="brand">ĀML™ / ĀRU INTELLIGENCE</span><div class="nav-links"><a href="./index.html">Live lab</a><a href="./action-cross-runtime.html">13-case comparison</a><a href="https://github.com/aruintelligence/aml-core">Source ↗</a></div></nav>
+    <header class="hero"><div class="eyebrow">ENGINEERING PROOF 022 / A COUNTEREXAMPLE THAT IMPROVED THE CONTRACT</div><h1>One action.<br><span>Two hashes. Fixed.</span></h1><p class="lead">The first JavaScript ↔ Python proof passed 13 published cases. An adversarial object with keys <code>"10"</code> and <code>"2"</code> exposed a real mismatch: each language hashed different JSON bytes for the same proposed action. We reproduced it, aligned the Python wire order, and kept the failing baseline visible.</p><p class="caveat">This is a project-maintained regression test of a bounded JSON subset, not an outside witness, a formal proof of all JSON, or evidence of real tool execution.</p><div class="actions"><a class="primary" href="#cases">Inspect exact bytes ↓</a><a class="secondary" href="#reproduce">Reproduce all 519 cases</a></div></header>
+    <img class="banner" src="./key-order-counterexample.svg" alt="Before: Python emitted keys 10 then 2, JavaScript emitted 2 then 10; after: both emit 2 then 10, fixing their proposal hashes" width="1200" height="480"><p class="caption">The illustration shows the core counterexample; the actual proposal bytes and SHA-256 digests appear below.</p>
+    <section class="stats" aria-label="Deterministic regression summary"><div class="stat"><small>PUBLISHED CHALLENGE</small><strong>13 / 13</strong><span>Existing cases still pass.</span></div><div class="stat"><small>PRIOR PYTHON ORDER</small><strong class="bad" id="prior-count">—</strong><span>mismatches in this deliberately adversarial corpus.</span></div><div class="stat"><small>FIXED PYTHON ORDER</small><strong class="good" id="fixed-count">—</strong><span>mismatches in the same cases.</span></div></section>
+    <section id="cases"><div class="section-head"><h2>See the mismatch in bytes.</h2><p>Select a nested case, a numeric boundary, or a control where the original implementation already agreed.</p></div><div class="lab"><div class="list" role="group" aria-label="Selected JSON key-order cases"><h3>07 / INSPECTABLE CASES</h3><div id="case-buttons">Loading…</div></div><article class="detail" aria-live="polite"><div class="overline">SELECTED CASE / <span id="case-number">—</span></div><h3 id="case-title">Loading…</h3><p class="summary" id="case-summary">Reading report.</p><div class="comparison"><div class="runtime"><small>BEFORE / OLD PYTHON ORDER</small><h4 id="old-verdict">—</h4><b>PROPOSAL SHA-256</b><div class="digest" id="old-digest">—</div></div><div class="runtime after"><small>AFTER / FIXED PYTHON + JS</small><h4 id="new-verdict">—</h4><b>PROPOSAL SHA-256</b><div class="digest" id="new-digest">—</div></div></div><div class="wire"><h4>OLD PYTHON WIRE BYTES</h4><pre id="old-wire">—</pre><h4>JAVASCRIPT WIRE BYTES</h4><pre id="js-wire">—</pre><h4>FIXED PYTHON WIRE BYTES</h4><pre id="new-wire">—</pre></div><div class="note" id="note">The digest difference comes from byte order, not a change in intended recipient or policy.</div></article></div></section>
+    <section class="bottom" id="reproduce"><div class="panel"><h2>Re-run the corpus</h2><p>One deterministic seed generates 512 proposals alongside seven named edge cases. The script runs a separate Python process, compares exact JSON and plan hashes to JavaScript, and checks this published report.</p><code class="code">node scripts/build-action-key-order-report.mjs --check</code><p>Fixture SHA-256: <code id="fixture-hash">Loading…</code></p></div><div class="panel"><h2>Why this happens</h2><p>The JavaScript reference sorts keys, rebuilds an ordinary object, then stringifies it. ECMAScript enumerates array-index keys numerically before other strings. The former Python code preserved a simple lexical sort. Keys such as <code>"01"</code> and <code>"4294967295"</code> are not array indices.</p><p>Read the <a href="https://tc39.es/ecma262/2025/multipage/ordinary-and-exotic-objects-behaviours.html#sec-ordinaryownpropertykeys">ECMAScript property-order rule</a> and <a href="https://docs.python.org/3.12/library/json.html">Python JSON encoder behavior</a>. ĀML follows its existing JavaScript wire bytes for this restricted contract; it does not claim a universal canonical JSON standard.</p></div></section>
+    <footer>Both code paths and the failing baseline are maintained by this project. <a href="https://github.com/aruintelligence/aml-core/blob/96f892913d9d57157dba729eb4db03484a28230b/pilots/action-boundary/python_boundary.py">Original Python code ↗</a><a href="https://github.com/aruintelligence/aml-core/blob/main/pilots/action-boundary/README.md">Subset and limits ↗</a><a href="https://github.com/aruintelligence/aml-core/blob/main/BREAKTHROUGHS.md">Technical milestones ↗</a></footer>
+  </div>
+  <script type="module">
+    const $ = id => document.getElementById(id);
+    const params = new URLSearchParams(location.search);
+    const notes = {
+      "two-numeric-keys": "The two values are identical. Only their serialized key order changed, which changed the old Python digest.",
+      "nested-numeric-keys": "The mismatch occurs inside a nested object too; sorting only the top level cannot fix it.",
+      "zero-leading-zero": "0 and 10 are array indices. 01 has a leading zero and remains an ordinary string key.",
+      "uint32-edge": "4294967294 is the last array index. 4294967295 is an ordinary string key.",
+      "array-object": "An object inside a JSON array has the same key-order issue.",
+      "non-index-forms": "Control: these numeric-looking names are not array indices, so the old Python sort already matched.",
+      "ordinary-keys": "Control: ordinary string keys already matched under lexical ordering."
+    };
+    function render(row, index) {
+      $("case-number").textContent = String(index + 1).padStart(2, "0");
+      $("case-title").textContent = row.title;
+      $("case-summary").textContent = row.previous_python.matched ? "Control case: both implementations already matched." : "Counterexample: the prior Python digest differed from JavaScript for the same proposal.";
+      $("old-verdict").textContent = row.previous_python.matched ? "ALREADY MATCHED" : "DIFFERENT HASH";
+      $("new-verdict").textContent = row.fixed_python.matched ? "EXACT MATCH" : "DIFFERENCE";
+      $("old-digest").textContent = row.previous_python.digest;
+      $("new-digest").textContent = row.fixed_python.digest;
+      $("old-wire").textContent = row.previous_python.wire;
+      $("js-wire").textContent = row.javascript.wire;
+      $("new-wire").textContent = row.fixed_python.wire;
+      $("note").textContent = notes[row.id];
+      document.querySelectorAll("[data-case]").forEach(button => button.setAttribute("aria-current", String(button.dataset.case === row.id)));
+      params.set("case", row.id);
+      history.replaceState(null, "", `${location.pathname}?${params}${location.hash}`);
+    }
+    try {
+      const response = await fetch("./action-key-order-report.json?v=1");
+      if (!response.ok) throw Error(`HTTP ${response.status}`);
+      const report = await response.json();
+      if (report.protocol !== "aml-action-key-order-regression/1" || report.selected?.length !== 7 || report.total_cases !== 519) throw Error("Invalid key-order report");
+      $("prior-count").textContent = `${report.previous_mismatches} / ${report.total_cases}`;
+      $("fixed-count").textContent = `${report.fixed_mismatches} / ${report.total_cases}`;
+      $("fixture-hash").textContent = report.fixture_sha256;
+      $("case-buttons").replaceChildren();
+      report.selected.forEach((row, index) => {
+        const button = document.createElement("button"); button.type = "button"; button.dataset.case = row.id;
+        const label = document.createElement("span"); label.textContent = `${String(index + 1).padStart(2, "0")} · ${row.title}`;
+        const state = document.createElement("em"); state.textContent = row.previous_python.matched ? "CONTROL" : "FIXED";
+        state.classList.toggle("control", row.previous_python.matched);
+        button.append(label, state); button.addEventListener("click", () => render(row, index));
+        $("case-buttons").append(button);
+      });
+      const index = Math.max(0, report.selected.findIndex(row => row.id === params.get("case")));
+      render(report.selected[index], index);
+    } catch (error) {
+      $("case-buttons").textContent = String(error);
+      $("case-title").textContent = "Report unavailable";
+    }
+  </script>
+</body>
+</html>
