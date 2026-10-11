@@ -1,0 +1,381 @@
+{
+  "protocol": "aml-a2ui-function-report/1",
+  "scope": "Project-authored local A2UI v1.0 callRendererFunction adapter simulation. No live message, person, renderer session, or external A2UI conformance claim.",
+  "source": "pilots/action-boundary/a2ui-function-gate.mjs",
+  "spec": "https://a2ui.org/specification/v1.0-a2ui/",
+  "cases": [
+    {
+      "id": "approved_exact",
+      "title": "Exact call + bound approval",
+      "description": "An agent-authorized catalog function matches the host's exact destination rule and digest-bound simulated approval.",
+      "request": {
+        "version": "v1.0",
+        "callRendererFunction": {
+          "functionCallId": "send_1",
+          "callFunction": {
+            "call": "sendMessage",
+            "catalogId": "https://example.test/catalog/action.json",
+            "args": {
+              "to": "team@example.test",
+              "body": "Build passed."
+            }
+          }
+        }
+      },
+      "response": {
+        "version": "v1.0",
+        "rendererFunctionResponse": {
+          "functionCallId": "send_1",
+          "value": {
+            "simulated": true,
+            "to": "team@example.test"
+          }
+        }
+      },
+      "aml_plan": {
+        "protocol": "aml-action-plan/1",
+        "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+        "decision": "requires_approval",
+        "reason": "exact_rule"
+      },
+      "aml_receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+        "policy_decision": "requires_approval",
+        "execution_status": "dispatched",
+        "reason": "host_dispatch_returned"
+      },
+      "callback_count": 1,
+      "observed_arguments": [
+        {
+          "body": "Build passed.",
+          "to": "team@example.test"
+        }
+      ]
+    },
+    {
+      "id": "changed_destination",
+      "title": "Destination changed",
+      "description": "The catalog permits sendMessage, but the new recipient has no matching host policy rule.",
+      "request": {
+        "version": "v1.0",
+        "callRendererFunction": {
+          "functionCallId": "send_1",
+          "callFunction": {
+            "call": "sendMessage",
+            "catalogId": "https://example.test/catalog/action.json",
+            "args": {
+              "to": "outside@example.test",
+              "body": "Build passed."
+            }
+          }
+        }
+      },
+      "response": {
+        "version": "v1.0",
+        "rendererFunctionResponse": {
+          "functionCallId": "send_1",
+          "error": {
+            "code": "ACTION_BLOCKED",
+            "message": "Host action policy or approval blocked this call."
+          }
+        }
+      },
+      "aml_plan": {
+        "protocol": "aml-action-plan/1",
+        "proposal_sha256": "84947893f8065ba8fc426fbcda1bcfe6a31e4518649b645704121f33d66aefd7",
+        "decision": "deny",
+        "reason": "no_exact_rule"
+      },
+      "aml_receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "84947893f8065ba8fc426fbcda1bcfe6a31e4518649b645704121f33d66aefd7",
+        "policy_decision": "deny",
+        "execution_status": "blocked",
+        "reason": "no_exact_rule"
+      },
+      "callback_count": 0,
+      "observed_arguments": []
+    },
+    {
+      "id": "renderer_only",
+      "title": "Renderer-only function",
+      "description": "The active host catalog marks this entry rendererOnly, so A2UI rejects the agent call before AML.",
+      "request": {
+        "version": "v1.0",
+        "callRendererFunction": {
+          "functionCallId": "send_1",
+          "callFunction": {
+            "call": "sendMessage",
+            "catalogId": "https://example.test/catalog/action.json",
+            "args": {
+              "to": "team@example.test",
+              "body": "Build passed."
+            }
+          }
+        }
+      },
+      "response": {
+        "version": "v1.0",
+        "error": {
+          "code": "INVALID_FUNCTION_CALL",
+          "message": "Function is not available for agent invocation.",
+          "functionCallId": "send_1"
+        }
+      },
+      "aml_plan": null,
+      "aml_receipt": null,
+      "callback_count": 0,
+      "observed_arguments": []
+    },
+    {
+      "id": "wrong_catalog",
+      "title": "Unregistered catalog",
+      "description": "The agent names a different catalog ID; the host does not resolve it to this function.",
+      "request": {
+        "version": "v1.0",
+        "callRendererFunction": {
+          "functionCallId": "send_1",
+          "callFunction": {
+            "call": "sendMessage",
+            "catalogId": "https://outside.test/unknown.json",
+            "args": {
+              "to": "team@example.test",
+              "body": "Build passed."
+            }
+          }
+        }
+      },
+      "response": {
+        "version": "v1.0",
+        "error": {
+          "code": "INVALID_FUNCTION_CALL",
+          "message": "Function is not available for agent invocation.",
+          "functionCallId": "send_1"
+        }
+      },
+      "aml_plan": null,
+      "aml_receipt": null,
+      "callback_count": 0,
+      "observed_arguments": []
+    },
+    {
+      "id": "unknown_function",
+      "title": "Unregistered function",
+      "description": "The agent names a function absent from this registered host entry.",
+      "request": {
+        "version": "v1.0",
+        "callRendererFunction": {
+          "functionCallId": "send_1",
+          "callFunction": {
+            "call": "deleteLocalFile",
+            "catalogId": "https://example.test/catalog/action.json",
+            "args": {
+              "to": "team@example.test",
+              "body": "Build passed."
+            }
+          }
+        }
+      },
+      "response": {
+        "version": "v1.0",
+        "error": {
+          "code": "INVALID_FUNCTION_CALL",
+          "message": "Function is not available for agent invocation.",
+          "functionCallId": "send_1"
+        }
+      },
+      "aml_plan": null,
+      "aml_receipt": null,
+      "callback_count": 0,
+      "observed_arguments": []
+    },
+    {
+      "id": "invalid_args",
+      "title": "Schema mismatch",
+      "description": "The trusted host argument validator rejects a non-string body before AML or the callback.",
+      "request": {
+        "version": "v1.0",
+        "callRendererFunction": {
+          "functionCallId": "send_1",
+          "callFunction": {
+            "call": "sendMessage",
+            "catalogId": "https://example.test/catalog/action.json",
+            "args": {
+              "to": "team@example.test",
+              "body": 42
+            }
+          }
+        }
+      },
+      "response": {
+        "version": "v1.0",
+        "error": {
+          "code": "INVALID_FUNCTION_CALL",
+          "message": "Function arguments did not match the host schema.",
+          "functionCallId": "send_1"
+        }
+      },
+      "aml_plan": null,
+      "aml_receipt": null,
+      "callback_count": 0,
+      "observed_arguments": []
+    },
+    {
+      "id": "stale_approval",
+      "title": "Approval for other bytes",
+      "description": "The simulated approval returns the wrong proposal SHA-256 and cannot authorize dispatch.",
+      "request": {
+        "version": "v1.0",
+        "callRendererFunction": {
+          "functionCallId": "send_1",
+          "callFunction": {
+            "call": "sendMessage",
+            "catalogId": "https://example.test/catalog/action.json",
+            "args": {
+              "to": "team@example.test",
+              "body": "Build passed."
+            }
+          }
+        }
+      },
+      "response": {
+        "version": "v1.0",
+        "rendererFunctionResponse": {
+          "functionCallId": "send_1",
+          "error": {
+            "code": "ACTION_BLOCKED",
+            "message": "Host action policy or approval blocked this call."
+          }
+        }
+      },
+      "aml_plan": {
+        "protocol": "aml-action-plan/1",
+        "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+        "decision": "requires_approval",
+        "reason": "exact_rule"
+      },
+      "aml_receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+        "policy_decision": "requires_approval",
+        "execution_status": "blocked",
+        "reason": "approval_missing_or_mismatched"
+      },
+      "callback_count": 0,
+      "observed_arguments": []
+    },
+    {
+      "id": "mutated_during_approval",
+      "title": "Input mutated while waiting",
+      "description": "The caller changes the original argument object during approval; the callback receives the frozen approved proposal.",
+      "request": {
+        "version": "v1.0",
+        "callRendererFunction": {
+          "functionCallId": "send_1",
+          "callFunction": {
+            "call": "sendMessage",
+            "catalogId": "https://example.test/catalog/action.json",
+            "args": {
+              "to": "team@example.test",
+              "body": "Build passed."
+            }
+          }
+        }
+      },
+      "request_after_approval": {
+        "version": "v1.0",
+        "callRendererFunction": {
+          "functionCallId": "send_1",
+          "callFunction": {
+            "call": "sendMessage",
+            "catalogId": "https://example.test/catalog/action.json",
+            "args": {
+              "to": "team@example.test",
+              "body": "Mutated after plan"
+            }
+          }
+        }
+      },
+      "response": {
+        "version": "v1.0",
+        "rendererFunctionResponse": {
+          "functionCallId": "send_1",
+          "value": {
+            "simulated": true,
+            "to": "team@example.test"
+          }
+        }
+      },
+      "aml_plan": {
+        "protocol": "aml-action-plan/1",
+        "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+        "decision": "requires_approval",
+        "reason": "exact_rule"
+      },
+      "aml_receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+        "policy_decision": "requires_approval",
+        "execution_status": "dispatched",
+        "reason": "host_dispatch_returned"
+      },
+      "callback_count": 1,
+      "observed_arguments": [
+        {
+          "body": "Build passed.",
+          "to": "team@example.test"
+        }
+      ]
+    },
+    {
+      "id": "uncertain_callback",
+      "title": "Uncertain callback",
+      "description": "A callback throws after invocation; the receipt stays unknown and the gate never retries.",
+      "request": {
+        "version": "v1.0",
+        "callRendererFunction": {
+          "functionCallId": "send_1",
+          "callFunction": {
+            "call": "sendMessage",
+            "catalogId": "https://example.test/catalog/action.json",
+            "args": {
+              "to": "team@example.test",
+              "body": "Build passed."
+            }
+          }
+        }
+      },
+      "response": {
+        "version": "v1.0",
+        "rendererFunctionResponse": {
+          "functionCallId": "send_1",
+          "error": {
+            "code": "EXECUTION_FAILED",
+            "message": "Tool outcome is uncertain; do not retry automatically."
+          }
+        }
+      },
+      "aml_plan": {
+        "protocol": "aml-action-plan/1",
+        "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+        "decision": "requires_approval",
+        "reason": "exact_rule"
+      },
+      "aml_receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+        "policy_decision": "requires_approval",
+        "execution_status": "unknown",
+        "reason": "host_dispatch_error"
+      },
+      "callback_count": 1,
+      "observed_arguments": [
+        {
+          "body": "Build passed.",
+          "to": "team@example.test"
+        }
+      ]
+    }
+  ]
+}
