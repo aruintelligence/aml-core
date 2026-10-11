@@ -48,6 +48,10 @@
 
 [![One action produced two hashes when Python sorted numeric-looking keys differently from JavaScript; the fixed Python path now matches.](docs/key-order-counterexample.svg)](https://aruintelligence.github.io/aml-core/key-order-lab.html)
 
+**A spent grant must stay spent:** [Watch the local replay counterexample](https://aruintelligence.github.io/aml-core/grant-directory-lab.html?scenario=writable-root). A misconfigured writable directory let the former one-use file store accept the same test grant twice after its claim directory was replaced. The store now rejects weak ownership, permissions, and symlinks before issuance or consumption. Four before/after scenarios run the pinned historical module and corrected module in CI. This project-authored POSIX simulation does not involve a second operating-system user or real tool side effect.
+
+[![A writable local grant directory permitted two claims from one approval; private-path checks now reject it.](docs/grant-directory-proof.svg)](https://aruintelligence.github.io/aml-core/grant-directory-lab.html)
+
 ## Prove the core claim in 60 seconds
 
 Open this exact state: [**attention 5 / restoration 1 → SUPPRESS**](https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en).
