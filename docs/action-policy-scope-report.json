@@ -1,0 +1,494 @@
+{
+  "protocol": "aml-action-policy-scope-report/1",
+  "evidence": "Project-authored local simulation; the reference dispatchAction ran with a simulated callback. No message, person, MCP host, or external service was involved.",
+  "original_proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+  "policy_match_fields": [
+    "tool",
+    "effect",
+    "resource"
+  ],
+  "approval_binding": "The second policy requires approval; the host fixture returns only the original proposal digest. It is not human authorization.",
+  "caveat": "A changed argument can still match a rule without approval. Digest-bound approval blocks a stale digest, but only a trusted host can decide whether to authorize a new digest. Hosts must map the true resource and enforce any content-specific restrictions themselves.",
+  "cases": [
+    {
+      "id": "original",
+      "title": "Approved release text",
+      "description": "The exact original proposal.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Send the release update",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "The release is ready."
+        }
+      },
+      "digest_matches_original": true,
+      "unreviewed": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "executed_proposal": {
+          "arguments": {
+            "body": "The release is ready.",
+            "to": "team@example.test"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Send the release update",
+          "resource": "team@example.test",
+          "tool": "send_message"
+        }
+      },
+      "digest_bound_host_decision": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "executed_proposal": {
+          "arguments": {
+            "body": "The release is ready.",
+            "to": "team@example.test"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Send the release update",
+          "resource": "team@example.test",
+          "tool": "send_message"
+        }
+      }
+    },
+    {
+      "id": "changed_body",
+      "title": "Same address, different message",
+      "description": "The destination stays the same while the message body changes.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Send the release update",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "Send the unreleased draft instead."
+        }
+      },
+      "digest_matches_original": false,
+      "unreviewed": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "f7b5e5432e508a7ca768e48e5ae3d825091369e6265c1813a79114618f84b218",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "f7b5e5432e508a7ca768e48e5ae3d825091369e6265c1813a79114618f84b218",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "executed_proposal": {
+          "arguments": {
+            "body": "Send the unreleased draft instead.",
+            "to": "team@example.test"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Send the release update",
+          "resource": "team@example.test",
+          "tool": "send_message"
+        }
+      },
+      "digest_bound_host_decision": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "f7b5e5432e508a7ca768e48e5ae3d825091369e6265c1813a79114618f84b218",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "f7b5e5432e508a7ca768e48e5ae3d825091369e6265c1813a79114618f84b218",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "simulated_callbacks": 0,
+        "executed_proposal": null
+      }
+    },
+    {
+      "id": "changed_purpose",
+      "title": "Same address, different purpose",
+      "description": "The declared purpose changes, but the rule's matching tuple does not.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Request an unpublished draft",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "The release is ready."
+        }
+      },
+      "digest_matches_original": false,
+      "unreviewed": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "6074e87fb5db0527781e9b245012c352fc336f14d9b3cd4a4774d35cae964f79",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6074e87fb5db0527781e9b245012c352fc336f14d9b3cd4a4774d35cae964f79",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "executed_proposal": {
+          "arguments": {
+            "body": "The release is ready.",
+            "to": "team@example.test"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Request an unpublished draft",
+          "resource": "team@example.test",
+          "tool": "send_message"
+        }
+      },
+      "digest_bound_host_decision": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "6074e87fb5db0527781e9b245012c352fc336f14d9b3cd4a4774d35cae964f79",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6074e87fb5db0527781e9b245012c352fc336f14d9b3cd4a4774d35cae964f79",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "simulated_callbacks": 0,
+        "executed_proposal": null
+      }
+    },
+    {
+      "id": "extra_argument",
+      "title": "Same address, extra argument",
+      "description": "A new argument changes the proposal digest, not the rule match.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Send the release update",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "The release is ready.",
+          "cc": "archive@example.test"
+        }
+      },
+      "digest_matches_original": false,
+      "unreviewed": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "ecc79401bfa8a20aef711d08bbe93e7b48fc3d29ca16e5d5c239b715f4ec30cd",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "ecc79401bfa8a20aef711d08bbe93e7b48fc3d29ca16e5d5c239b715f4ec30cd",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "executed_proposal": {
+          "arguments": {
+            "body": "The release is ready.",
+            "cc": "archive@example.test",
+            "to": "team@example.test"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Send the release update",
+          "resource": "team@example.test",
+          "tool": "send_message"
+        }
+      },
+      "digest_bound_host_decision": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "ecc79401bfa8a20aef711d08bbe93e7b48fc3d29ca16e5d5c239b715f4ec30cd",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "ecc79401bfa8a20aef711d08bbe93e7b48fc3d29ca16e5d5c239b715f4ec30cd",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "simulated_callbacks": 0,
+        "executed_proposal": null
+      }
+    },
+    {
+      "id": "changed_destination",
+      "title": "Different destination",
+      "description": "The host-mapped resource and the recipient both change.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "outside@example.test",
+        "purpose": "Send the release update",
+        "arguments": {
+          "to": "outside@example.test",
+          "body": "The release is ready."
+        }
+      },
+      "digest_matches_original": false,
+      "unreviewed": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "2ecec9856ab4d3c5a38c801d83408e50f08d97bcaa7027081471611ae6386f65",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "2ecec9856ab4d3c5a38c801d83408e50f08d97bcaa7027081471611ae6386f65",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "simulated_callbacks": 0,
+        "executed_proposal": null
+      },
+      "digest_bound_host_decision": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "2ecec9856ab4d3c5a38c801d83408e50f08d97bcaa7027081471611ae6386f65",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "2ecec9856ab4d3c5a38c801d83408e50f08d97bcaa7027081471611ae6386f65",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "simulated_callbacks": 0,
+        "executed_proposal": null
+      }
+    },
+    {
+      "id": "changed_effect",
+      "title": "Different effect",
+      "description": "The declared effect changes from send to pay.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "pay",
+        "resource": "team@example.test",
+        "purpose": "Send the release update",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "The release is ready."
+        }
+      },
+      "digest_matches_original": false,
+      "unreviewed": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "01aed0823c350cb5eb7566ec1b2a958560a0a1133a1f89db79eb5730b67aa04e",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "01aed0823c350cb5eb7566ec1b2a958560a0a1133a1f89db79eb5730b67aa04e",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "simulated_callbacks": 0,
+        "executed_proposal": null
+      },
+      "digest_bound_host_decision": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "01aed0823c350cb5eb7566ec1b2a958560a0a1133a1f89db79eb5730b67aa04e",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "01aed0823c350cb5eb7566ec1b2a958560a0a1133a1f89db79eb5730b67aa04e",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "simulated_callbacks": 0,
+        "executed_proposal": null
+      }
+    },
+    {
+      "id": "changed_tool",
+      "title": "Different tool",
+      "description": "The requested tool changes under the same destination.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "post_update",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Send the release update",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "The release is ready."
+        }
+      },
+      "digest_matches_original": false,
+      "unreviewed": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "6e605268d179b6862c3087653b7a3bd64a7aedaacd9306bb199c6114b0a72864",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6e605268d179b6862c3087653b7a3bd64a7aedaacd9306bb199c6114b0a72864",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "simulated_callbacks": 0,
+        "executed_proposal": null
+      },
+      "digest_bound_host_decision": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "6e605268d179b6862c3087653b7a3bd64a7aedaacd9306bb199c6114b0a72864",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6e605268d179b6862c3087653b7a3bd64a7aedaacd9306bb199c6114b0a72864",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "simulated_callbacks": 0,
+        "executed_proposal": null
+      }
+    },
+    {
+      "id": "reordered_keys",
+      "title": "Keys reordered, meaning unchanged",
+      "description": "Only object member order changes; canonical JSON retains the original digest.",
+      "proposal": {
+        "arguments": {
+          "body": "The release is ready.",
+          "to": "team@example.test"
+        },
+        "purpose": "Send the release update",
+        "resource": "team@example.test",
+        "effect": "send",
+        "tool": "send_message",
+        "protocol": "aml-proposed-action/1"
+      },
+      "digest_matches_original": true,
+      "unreviewed": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "executed_proposal": {
+          "arguments": {
+            "body": "The release is ready.",
+            "to": "team@example.test"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Send the release update",
+          "resource": "team@example.test",
+          "tool": "send_message"
+        }
+      },
+      "digest_bound_host_decision": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "cce9d0e21c4683cefc33d6fc154cd27eaf36db797ca58dc958ce5b05341c744d",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "simulated_callbacks": 1,
+        "executed_proposal": {
+          "arguments": {
+            "body": "The release is ready.",
+            "to": "team@example.test"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Send the release update",
+          "resource": "team@example.test",
+          "tool": "send_message"
+        }
+      }
+    }
+  ]
+}

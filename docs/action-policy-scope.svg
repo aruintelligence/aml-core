@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Same address. Different message. ĀML Policy X-ray.</title>
+  <desc id="desc">An exact tool, effect, and destination rule admits a changed message body when approval is not required. A fixed host digest of the original proposal blocks the changed body in a local simulation.</desc>
+  <defs>
+    <radialGradient id="bg"><stop stop-color="#20515a"/><stop offset="1" stop-color="#071019"/></radialGradient>
+    <linearGradient id="card" x2="1" y2="1"><stop stop-color="#173b48"/><stop offset="1" stop-color="#102031"/></linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#071019"/><rect width="900" height="630" fill="url(#bg)" opacity=".65"/>
+  <path d="M0 538h1200M70 0v630M1130 0v630" stroke="#345364" opacity=".55"/>
+  <text x="75" y="68" fill="#85e7ee" font-family="Arial,sans-serif" font-size="19" font-weight="800" letter-spacing="5">ĀML™ / POLICY X-RAY</text>
+  <text x="75" y="150" fill="#f0f7fa" font-family="Arial,sans-serif" font-size="58" font-weight="900">Same address.</text>
+  <text x="75" y="215" fill="#ffd28b" font-family="Arial,sans-serif" font-size="58" font-weight="900">Different message.</text>
+  <text x="75" y="270" fill="#c9dce2" font-family="Arial,sans-serif" font-size="22">Exact rule: send_message + send + team@example.test</text>
+  <rect x="75" y="316" width="505" height="157" rx="20" fill="url(#card)" stroke="#ad8758" stroke-width="2"/>
+  <text x="104" y="355" fill="#ffd28b" font-family="monospace" font-size="17" font-weight="700">RULE / NO APPROVAL</text>
+  <text x="104" y="406" fill="#f0f7fa" font-family="Arial,sans-serif" font-size="27" font-weight="800">Changed body still matches</text>
+  <text x="104" y="447" fill="#ffd28b" font-family="monospace" font-size="22" font-weight="800">1 simulated callback</text>
+  <rect x="602" y="316" width="523" height="157" rx="20" fill="url(#card)" stroke="#67ab81" stroke-width="2"/>
+  <text x="631" y="355" fill="#b9f3bd" font-family="monospace" font-size="17" font-weight="700">ORIGINAL DIGEST REQUIRED</text>
+  <text x="631" y="406" fill="#f0f7fa" font-family="Arial,sans-serif" font-size="27" font-weight="800">Changed body is blocked</text>
+  <text x="631" y="447" fill="#b9f3bd" font-family="monospace" font-size="22" font-weight="800">0 simulated callbacks</text>
+  <text x="75" y="574" fill="#b4cad4" font-family="Arial,sans-serif" font-size="19">8 executable variants · project-authored local evidence · no message sent</text>
+</svg>
