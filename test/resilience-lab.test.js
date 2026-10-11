@@ -10,6 +10,7 @@ const context = vm.createContext({});
 vm.runInContext(script, context, { timeout: 1000 });
 const simulate = context.simulatePlacementTopology;
 const parseManifest = context.parsePlacementManifest;
+const analyzeChanges = context.analyzePlacementChanges;
 const separated = [0, 1, 2].map(index => ({ index, site: `site-${index}`,
   infrastructure: `system-${index}`, custodian: `keeper-${index}` }));
 
@@ -55,4 +56,28 @@ test("manifest import rejects malformed, oversized, or incomplete declarations",
   assert.throws(() => parseManifest(JSON.stringify({ ...manifest, shares: [separated[0], separated[0], separated[2]] })), /indexed/);
   assert.throws(() => parseManifest(JSON.stringify({ ...manifest, shares: [{ ...separated[0], site: " " }, separated[1], separated[2]] })), /nonempty/);
   assert.throws(() => parseManifest(JSON.stringify({ ...manifest, shares: [{ ...separated[0], site: "x".repeat(129) }, separated[1], separated[2]] })), /128/);
+});
+
+test("dependency review identifies the minimum label changes for separate single-domain survival", () => {
+  assert.equal(analyzeChanges(separated).minimumLabelChanges, 0);
+  const shared = structuredClone(separated);
+  shared[1].site = shared[0].site;
+  shared[2].custodian = shared[0].custodian;
+  const result = analyzeChanges(shared);
+  assert.equal(result.minimumLabelChanges, 2);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.conflicts)), [
+    { dimension: "site", value: "site-0", shares: [0, 1], keep: 0, separate: [1] },
+    { dimension: "custodian", value: "keeper-0", shares: [0, 2], keep: 0, separate: [2] }
+  ]);
+  assert.match(html, /A label edit alone does not repair storage/);
+});
+
+test("three shares in one domain require two independent assignments", () => {
+  const shared = structuredClone(separated);
+  shared[1].infrastructure = shared[0].infrastructure;
+  shared[2].infrastructure = shared[0].infrastructure;
+  const result = analyzeChanges(shared);
+  assert.equal(result.minimumLabelChanges, 2);
+  assert.deepEqual(Array.from(result.conflicts[0].separate), [1, 2]);
+  assert.equal(analyzeChanges([{ ...separated[0], site: "" }, separated[1], separated[2]]).valid, false);
 });
