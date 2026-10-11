@@ -16,12 +16,15 @@ const cases = {
   read: { tool: "fetch_record", effect: "read", resource: "record:42",
     purpose: "Inspect record", arguments: { id: 42 } },
   timeout: { tool: "send_message", effect: "send", resource: "team@example.test",
+    purpose: "Send a status update", arguments: { subject: "Update", body: "The build passed." } },
+  replay: { tool: "send_message", effect: "send", resource: "team@example.test",
     purpose: "Send a status update", arguments: { subject: "Update", body: "The build passed." } }
 };
 const $ = id => document.getElementById(id);
 const form = $("proposal");
 let scenario = "send";
 let approvedDigest = null;
+let grantConsumed = false;
 let outcome = null;
 let latest = null;
 let generation = 0;
@@ -59,12 +62,14 @@ async function render() {
     "Reason: " + plan.reason.replaceAll("_", " ");
   $("digest").textContent = plan.proposal_sha256 || "No valid proposal digest";
   $("approve").disabled = plan.decision !== "requires_approval";
-  $("approval").textContent = approved ? "Simulated approval matches this exact digest." :
+  $("approval").textContent = approved && grantConsumed ?
+    "Simulated one-use grant spent. Re-approve to try again." :
+    approved ? "Simulated approval matches this exact digest." :
     approvedDigest ? "Previous simulated approval is stale for this proposal." :
       "No simulated approval recorded.";
   $("outcome").textContent = outcome ? outcome.outcome.toUpperCase().replaceAll("_", " ") : "NOT ATTEMPTED";
   $("outcome").className = "badge " + (outcome?.outcome || "");
-  const story = actionPathStory(proposal, plan, approvedDigest, outcome);
+  const story = actionPathStory(proposal, plan, approvedDigest, outcome, grantConsumed);
   for (const key of ["proposal", "policy", "approval", "receipt"]) {
     const card = $("path-" + key);
     card.dataset.tone = story[key].tone;
@@ -73,6 +78,7 @@ async function render() {
   }
   const report = { protocol: "aml-action-lab-report/1", provenance: "project-authored browser simulation",
     proposal: proposal || null, plan, simulated_approval_matches: approved,
+    simulated_one_use_grant_spent: scenario === "replay" ? grantConsumed : null,
     simulation: outcome, canonical_proposal_json: plan.canonical_json,
     limits: "No live tool, authenticated approver, external delivery, or execution proof." };
   $("report").textContent = JSON.stringify(report, null, 2);
@@ -81,6 +87,7 @@ async function render() {
 function selectCase(name) {
   scenario = name;
   approvedDigest = null;
+  grantConsumed = false;
   outcome = null;
   const selected = cases[name];
   for (const key of ["tool", "effect", "resource", "purpose"]) input(key).value = selected[key];
@@ -100,13 +107,17 @@ $("approve").addEventListener("click", async () => {
   await render();
   if (latest.plan.decision === "requires_approval") {
     approvedDigest = latest.plan.proposal_sha256;
+    grantConsumed = false;
     outcome = null;
     await render();
   }
 });
 $("dispatch").addEventListener("click", async () => {
   await render();
-  outcome = rehearse(latest.plan, approvedDigest, scenario === "timeout");
+  const oneUse = scenario === "replay";
+  const wasConsumed = oneUse && grantConsumed;
+  outcome = rehearse(latest.plan, approvedDigest, scenario === "timeout", wasConsumed);
+  if (oneUse && !wasConsumed && outcome.outcome === "would_dispatch") grantConsumed = true;
   await render();
 });
 $("copy").addEventListener("click", async () => {
