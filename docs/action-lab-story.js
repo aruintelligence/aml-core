@@ -1,6 +1,6 @@
 // Presentation mapping for the local Action Boundary Lab. It uses the plan
 // and rehearsal result; it does not make a second policy or dispatch decision.
-export function actionPathStory(proposal, plan, approvedDigest, outcome) {
+export function actionPathStory(proposal, plan, approvedDigest, outcome, grantConsumed = false) {
   const digest = plan?.proposal_sha256;
   const match = Boolean(digest && approvedDigest && digest === approvedDigest);
   const stale = Boolean(approvedDigest && !match);
@@ -17,6 +17,8 @@ export function actionPathStory(proposal, plan, approvedDigest, outcome) {
       { value: "DENY", detail: `Host rule: ${readable(plan?.reason)}`, tone: "blocked" };
   const approvalCard = stale ?
     { value: "STALE", detail: "Prior simulated digest no longer matches", tone: "blocked" } :
+    match && grantConsumed ?
+      { value: "SPENT", detail: "The one-use grant was already claimed", tone: "blocked" } :
     match ?
       { value: "DIGEST MATCH", detail: `Simulated approval · ${digest.slice(0, 12)}…`, tone: "allowed" } :
       plan?.decision === "allow" ?
