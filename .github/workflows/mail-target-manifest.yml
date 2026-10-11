@@ -5,21 +5,27 @@ on:
     branches: [main]
     paths:
       - "pilots/action-boundary/mail-target-manifest.mjs"
+      - "pilots/action-boundary/mail-target-core.mjs"
       - "pilots/action-boundary/target-boundary.mjs"
       - "pilots/action-boundary/boundary.mjs"
       - "protocol/canonicalJson.js"
       - "test/action-boundary-mail-targets.test.js"
+      - "test/action-boundary-mail-workbench.test.js"
       - "scripts/build-mail-target-report.mjs"
+      - "scripts/build-mail-target-workbench.mjs"
       - "docs/mail-target-*"
       - ".github/workflows/mail-target-manifest.yml"
   pull_request:
     paths:
       - "pilots/action-boundary/mail-target-manifest.mjs"
+      - "pilots/action-boundary/mail-target-core.mjs"
       - "pilots/action-boundary/target-boundary.mjs"
       - "pilots/action-boundary/boundary.mjs"
       - "protocol/canonicalJson.js"
       - "test/action-boundary-mail-targets.test.js"
+      - "test/action-boundary-mail-workbench.test.js"
       - "scripts/build-mail-target-report.mjs"
+      - "scripts/build-mail-target-workbench.mjs"
       - "docs/mail-target-*"
       - ".github/workflows/mail-target-manifest.yml"
 
@@ -38,3 +44,7 @@ jobs:
         run: node test/action-boundary-mail-targets.test.js
       - name: Regenerate and compare the visual report
         run: node scripts/build-mail-target-report.mjs --check
+      - name: Check browser and host recipient resource parity
+        run: |
+          node test/action-boundary-mail-workbench.test.js
+          node scripts/build-mail-target-workbench.mjs --check

@@ -247,6 +247,12 @@ For one narrow mail schema, `mailTargetResource` validates To, CC, and BCC, buil
 
 This is a project-authored local simulation, not a sent message, independent validation, or a general email security guarantee. The digest is a comparison key and does not authenticate permission. A real mail adapter must use exactly the mapped delivery fields and account for provider aliases, redirects, forwarding, or other ways to change recipients. Content and approval remain separate host decisions.
 
+## 30. A recipient resource can be inspected with custom inputs
+
+The [editable Recipient Workbench](https://aruintelligence.github.io/aml-core/mail-target-workbench.html?preset=hidden_bcc) takes intended and proposed mail argument JSON, validates the same narrow schema as the Node adapter, and displays both complete manifests and their exact resource keys. It previews the target comparison locally, with zero simulated callbacks for a mismatch or invalid shape. Presets show an added BCC, an intended group, changed message content, and an unknown delivery field. Custom input stays in the browser and is not placed in the URL.
+
+The schema parser is a shared source copied byte-for-byte into `docs/` by `node scripts/build-mail-target-workbench.mjs`. The test compares its serialized bytes with the canonical JSON contract, verifies SHA-256 parity with Web Crypto across varied recipient shapes, and checks malformed inputs. The seven-case lab still runs the actual Node target-bound wrapper and receipts; the workbench is an interactive preview, not a dispatch engine. A matching destination resource neither binds the message body nor supplies authenticated consent, provider resolution, or a real send.
+
 ## The frontier
 
 The next technical frontiers are:
