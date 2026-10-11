@@ -32,6 +32,16 @@ test("changing an approved proposal invalidates the simulated approval", async (
     original.proposal_sha256).outcome, "blocked");
 });
 
+test("the one-use browser rehearsal blocks a second attempt on the same grant", async () => {
+  const plan = await planPreview(vectors.cases[0].proposal, vectors.policy, webcrypto.subtle);
+  assert.deepEqual(rehearse(plan, plan.proposal_sha256, false, true),
+    { outcome: "blocked", reason: "approval_reused_or_expired" });
+  const spent = actionPathStory(vectors.cases[0].proposal, plan, plan.proposal_sha256,
+    rehearse(plan, plan.proposal_sha256, false, true), true);
+  assert.equal(spent.approval.value, "SPENT");
+  assert.equal(spent.receipt.value, "BLOCKED");
+});
+
 test("malformed and ambiguous host policies deny in the browser mirror", async () => {
   const proposal = vectors.cases[0].proposal;
   const ambiguous = { ...vectors.policy, rules: [...vectors.policy.rules, vectors.policy.rules[0]] };
@@ -77,6 +87,6 @@ test("the public page exposes its limitations and uses only local browser inputs
   assert.match(html, /id="path-receipt-value"/);
   assert.match(html, /green simulated path is not tool execution/);
   assert.match(ui, /planPreview\(proposal, policy, crypto\.subtle\)/);
-  assert.match(ui, /actionPathStory\(proposal, plan, approvedDigest, outcome\)/);
+  assert.match(ui, /actionPathStory\(proposal, plan, approvedDigest, outcome, grantConsumed\)/);
   assert.doesNotMatch(ui, /\bfetch\(|XMLHttpRequest|sendBeacon/);
 });
