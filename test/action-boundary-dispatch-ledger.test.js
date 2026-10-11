@@ -99,3 +99,21 @@ test("fresh approvals cannot replay the same host operation through the action b
     assert.equal(callbacks, 1);
   } finally { f.done(); }
 });
+
+test("claim digest and callback are bound to a single snapshot of a changing host object", async () => {
+  const f = fixture();
+  try {
+    let reads = 0;
+    const unusual = { ...proposal, arguments: { to: "example.invalid",
+      get body() { return ++reads === 1 ? "first value" : "later value"; } } };
+    let seen;
+    const result = await f.ledger.run({ operationId: "host-operation-getter-001", proposal: unusual,
+      executeTool: frozen => { seen = frozen.arguments.body; return true; } });
+    assert.equal(reads, 1);
+    assert.equal(seen, "first value");
+    assert.equal(result.status, "returned");
+    const staticFirst = { ...proposal, arguments: { to: "example.invalid", body: "first value" } };
+    assert.equal(f.ledger.inspect({ operationId: "host-operation-getter-001", proposal: staticFirst }).status,
+      "already_returned");
+  } finally { f.done(); }
+});
