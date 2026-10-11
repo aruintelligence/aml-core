@@ -1,0 +1,44 @@
+name: "ĀML Action Boundary Conformance"
+description: "Run the project-defined black-box action-boundary challenge against a caller-owned adapter."
+inputs:
+  adapter-command:
+    description: "Path to one executable adapter command in the caller repository. The harness appends a case.json path."
+    required: true
+outputs:
+  result-file:
+    description: "Path to the aml-action-boundary-challenge-report/1 JSON report"
+    value: ${{ steps.challenge.outputs.result_file }}
+  passed:
+    description: "true only when every published project-defined case passes"
+    value: ${{ steps.challenge.outputs.passed }}
+  challenge-sha256:
+    description: "SHA-256 of the exact challenge manifest bytes"
+    value: ${{ steps.challenge.outputs.challenge_sha256 }}
+  vectors-sha256:
+    description: "SHA-256 of the exact action vector bytes"
+    value: ${{ steps.challenge.outputs.vectors_sha256 }}
+runs:
+  using: "composite"
+  steps:
+    - id: challenge
+      shell: bash
+      env:
+        AML_ACTION_ADAPTER: ${{ inputs.adapter-command }}
+      run: |
+        set -euo pipefail
+        RESULT_FILE="$RUNNER_TEMP/aml-action-boundary-challenge-report.json"
+        set +e
+        node "$GITHUB_ACTION_PATH/../../scripts/run-action-boundary-challenge.mjs" -- "$AML_ACTION_ADAPTER" > "$RESULT_FILE"
+        STATUS=$?
+        set -e
+        cat "$RESULT_FILE"
+        node -e '
+          const fs = require("node:fs");
+          const r = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,
+            `result_file=${process.argv[1]}\npassed=${r.passed === true}\nchallenge_sha256=${r.challenge_sha256}\nvectors_sha256=${r.vectors_sha256}\n`);
+        ' "$RESULT_FILE"
+        exit "$STATUS"
+branding:
+  icon: "shield"
+  color: "purple"
