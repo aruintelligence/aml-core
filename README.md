@@ -24,7 +24,7 @@
 
 **Explore the interface:** [Live lab](https://aruintelligence.github.io/aml-core/) · [View Meaning™ inspector](https://aruintelligence.github.io/aml-core/view-meaning.html) · [API contract](protocol/aml-http.openapi.yaml)
 
-**Explore the next boundary:** [Proposed action pilot](pilots/action-boundary/README.md) — freeze an agent's intended tool call, check an exact host policy, bind host approval to its digest, and dispatch the frozen proposal. It is a project-authored reference pilot with no live tool access.
+**Explore the next boundary:** [Try the Action Boundary Lab](https://aruintelligence.github.io/aml-core/action-lab.html) — change an agent's intended tool call and see an exact policy decision, digest, stale simulated approval, and uncertain outcome. [Read the proposed action pilot](pilots/action-boundary/README.md) and its [six published vectors](pilots/action-boundary/vectors.json). This is a project-authored browser rehearsal with no live tool access.
 
 ## Prove the core claim in 60 seconds
 
@@ -267,3 +267,4 @@ Commercial, OEM, enterprise, and strategic inquiries: **Office@aruintelligence.c
 Created by **Daniel Jacob Read IV** and stewarded by **ĀRU Intelligence Inc.™**.
 
 ĀML™, ĀRU Meaning Language™, AI Interface Firewall™, View Meaning™, Meaning Gate™, EthicalRenderGate™, Meaning-Native Computing™, Proof-Carrying Interface™, and named ĀML compatibility marks are claimed marks. Registration status varies; do not use ® unless a specific mark is actually registered for the relevant goods/services.
+
