@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { prepareCase, checkCase } from "../conformance/action-boundary-challenge-core.js";
+import { prepareCase, checkCase, diagnoseCase, selectChallengeCases, challengeScope } from "../conformance/action-boundary-challenge-core.js";
 import { runReferenceCase } from "../pilots/action-boundary/challenge-reference-adapter.mjs";
 
 const manifest = JSON.parse(readFileSync(new URL("../conformance/action-boundary-challenge.json", import.meta.url)));
@@ -37,4 +37,27 @@ test("a broken process or malformed output cannot produce a PASS", () => {
   assert.ok(failures.includes("exit_code:1"));
   assert.ok(failures.includes("plan"));
   assert.ok(failures.includes("receipt"));
+});
+
+test("field diagnostics identify a wrong decision and never erase machine failure codes", async () => {
+  const row = manifest.cases.find(item => item.id === "changed-destination");
+  const output = await runReferenceCase(prepareCase(row, vectors));
+  output.plan.decision = "allow";
+  output.tool_calls = 1;
+  assert.deepEqual(checkCase(row, output, { status: 0 }, vectors), ["plan", "tool_calls"]);
+  assert.deepEqual(diagnoseCase(row, output, vectors).map(item => item.field),
+    ["plan.decision", "tool_calls"]);
+  assert.deepEqual(diagnoseCase(row, output, vectors)[0],
+    { field: "plan.decision", expected: '"deny"', actual: '"allow"' });
+});
+
+test("focused case selection preserves an honest partial scope", () => {
+  assert.deepEqual(selectChallengeCases(manifest.cases, "changed-destination").map(row => row.id),
+    ["changed-destination"]);
+  assert.deepEqual(selectChallengeCases(manifest.cases), manifest.cases);
+  assert.throws(() => selectChallengeCases(manifest.cases, "not-a-case"), /Unknown case/);
+  assert.deepEqual(challengeScope("changed-destination", true),
+    { case_scope: "single", selected_case: "changed-destination", full_challenge_passed: false });
+  assert.deepEqual(challengeScope(null, true),
+    { case_scope: "full", selected_case: null, full_challenge_passed: true });
 });

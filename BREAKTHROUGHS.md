@@ -217,6 +217,12 @@ The corrected bridge now requires a host-owned `claimInvocation` callback. It fr
 
 This is a project-authored process-local simulation with no external message. The helper store cannot coordinate separate workers or survive restart; a production host needs persistent atomic claims, authenticated session identity, separate human approval, and tool-specific idempotency. An agent can supply a different ID for a new attempt, so the claim is not an exactly-once external-effect guarantee.
 
+## 26. An outside implementer can debug one boundary case before claiming all 13
+
+The Action Boundary Challenge now supports `--case <id>` for a focused local run and emits field-level expected/observed diagnostics alongside its existing machine failure codes. The report distinguishes `case_scope: "single"` from `case_scope: "full"`; a passing single case always has `full_challenge_passed: false`. The [visual builder loop](https://aruintelligence.github.io/aml-core/action-challenge.html?case=changed-destination#build) offers a deep link and copyable command for every published case, then a full-run command. The [adapter contract](publications/ACTION_BOUNDARY_CHALLENGE.md) shows the sibling-repository path and the evidence to share.
+
+This improves the reproducibility path for a new implementation. It does not add an outside implementation or turn the project-authored reference run into an independent result. The browser board shows expected fixtures and never executes an adapter; a full PASS still establishes only compatibility with the 13 published cases.
+
 ## The frontier
 
 The next technical frontiers are:

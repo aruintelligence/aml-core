@@ -16,7 +16,8 @@
     .section-title{display:flex;align-items:end;justify-content:space-between;gap:18px;margin:0 0 18px}.section-title h2{font-size:clamp(1.9rem,3.5vw,3.15rem);line-height:1.06;letter-spacing:-.04em;margin:0}.section-title p{max-width:530px;color:var(--muted);margin:0}.filters{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0 16px}.filters button{border:1px solid #52667e;border-radius:999px;background:#152339;color:var(--ink);padding:9px 15px;font-weight:800;font-size:.84rem}.filters button[aria-pressed=true]{background:var(--cyan);border-color:var(--cyan);color:#07141a}.board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.case{min-width:0;text-align:left;border:1px solid var(--line);border-radius:17px;padding:18px;background:linear-gradient(145deg,#17253b,#0e1829);color:var(--ink);min-height:156px}.case:hover,.case[aria-pressed=true]{border-color:var(--cyan);box-shadow:inset 3px 0 var(--cyan),0 12px 40px #0005}.case-id{display:block;font:800 .7rem ui-monospace,monospace;letter-spacing:.09em;color:#9ab3c5}.case strong{display:block;margin:9px 0 12px;font-size:1.09rem;line-height:1.2}.pill{display:inline-block;border-radius:99px;padding:4px 9px;font:800 .7rem ui-monospace,monospace;letter-spacing:.04em}.pill.blocked{color:#ffe0e7;background:#743044}.pill.dispatched{color:#ddffe8;background:#285c45}.pill.unknown{color:#ffedc1;background:#6b5425}.calls{margin-left:9px;color:var(--muted);font-size:.76rem}.error{border:1px solid var(--red);border-radius:13px;padding:16px;color:var(--red)}
     .inspect{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin:18px 0 70px}.panel{border:1px solid #3b5769;border-radius:21px;background:linear-gradient(145deg,#15253a,#0d182a);padding:24px;min-width:0}.panel h3{font-size:1.65rem;margin:8px 0;letter-spacing:-.03em}.panel p{color:#d1dfec}.label{display:block;color:var(--cyan);font:800 .72rem ui-monospace,monospace;letter-spacing:.13em}.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:22px}.fact{padding:12px;border:1px solid #ffffff20;border-radius:10px;background:#ffffff07}.fact span{display:block;color:var(--muted);font-size:.72rem}.fact b{display:block;overflow-wrap:anywhere;margin-top:4px;font-size:.86rem}.source{margin-top:17px;font-size:.83rem}.panel pre{margin:14px 0 0;padding:17px;overflow:auto;max-height:370px;border:1px solid var(--line);border-radius:12px;background:#07111e;color:#d8effa;font:12px/1.55 ui-monospace,monospace}
     .run{margin-bottom:60px;padding:clamp(22px,4vw,38px);border:1px solid #5e7358;border-radius:24px;background:radial-gradient(circle at 100% 0,#3c54354d,transparent 42%),#111e2b}.run h2{margin:9px 0;font-size:clamp(1.8rem,3.2vw,2.7rem);letter-spacing:-.04em}.run p{color:#cbd8e4;max-width:800px}.command{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0}.command code{display:block;flex:1;min-width:240px;overflow-wrap:anywhere;padding:15px;border:1px solid #617169;border-radius:11px;background:#07111e;color:var(--green);font:13px/1.5 ui-monospace,monospace}.command button{border:1px solid #8ab9a0;border-radius:10px;background:#234932;color:#e5ffec;padding:13px;font-weight:800}.copy-status{color:var(--muted);font-size:.8rem;min-height:1.3em}.run-links{display:flex;gap:18px;flex-wrap:wrap;margin-top:20px;font-size:.9rem;font-weight:750}.footer{border-top:1px solid var(--line);color:var(--muted);padding:28px 0 50px;font-size:.83rem}
-    @media(max-width:950px){.hero{grid-template-columns:1fr}.signal{max-width:680px}.board{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.nav{align-items:flex-start;flex-direction:column}.hero{padding-top:42px}.hero h1{font-size:clamp(3rem,13vw,4.5rem)}.stats,.board,.inspect{grid-template-columns:1fr}.section-title{align-items:start;flex-direction:column}.signal-line{grid-template-columns:32px 1fr}.signal-line small{display:none}.facts{grid-template-columns:1fr}.case{min-height:0}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+    .builder{margin:0 0 70px;padding:clamp(23px,4vw,38px);border:1px solid #447687;border-radius:25px;background:linear-gradient(125deg,#153b45,#101d33 48%,#101827)}.builder h2{font-size:clamp(2rem,4vw,3.5rem);line-height:1.04;letter-spacing:-.05em;margin:12px 0}.builder>p{max-width:760px;color:#cfdeea}.builder-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:24px 0}.builder-step{min-width:0;padding:17px;border:1px solid #ffffff30;border-radius:15px;background:#ffffff08}.builder-step span{display:block;color:var(--cyan);font:800 .72rem ui-monospace,monospace;letter-spacing:.12em}.builder-step b{display:block;font-size:1.05rem;margin:8px 0}.builder-step small{color:#bfceda}.builder .command{margin-bottom:9px}.builder .command code{color:var(--cyan)}.builder-note{font-size:.82rem;color:#c0d2dc}.builder-note code{color:var(--gold)}
+    @media(max-width:950px){.hero{grid-template-columns:1fr}.signal{max-width:680px}.board{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.nav{align-items:flex-start;flex-direction:column}.hero{padding-top:42px}.hero h1{font-size:clamp(3rem,13vw,4.5rem)}.stats,.board,.inspect,.builder-steps{grid-template-columns:1fr}.section-title{align-items:start;flex-direction:column}.signal-line{grid-template-columns:32px 1fr}.signal-line small{display:none}.facts{grid-template-columns:1fr}.case{min-height:0}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
   </style>
 </head>
 <body>
@@ -30,7 +31,7 @@
         <div class="kicker">PUBLISHED CONTRACT · 13 CASES · NO LIVE TOOLS</div>
         <h1>Can your boundary <em>hold?</em></h1>
         <p class="lede">An AI agent proposes a tool call. Your host freezes the proposal, checks its exact policy, binds approval to the digest, and reports what happened at dispatch.</p>
-        <div class="hero-actions"><a class="primary" href="#cases">Explore the 13 cases ↓</a><a class="secondary" href="#run">Run your own adapter ↗</a><a class="secondary" href="action-cross-runtime.html">Compare JS ↔ Python ↗</a></div>
+        <div class="hero-actions"><a class="primary" href="#build">Start with one case ↓</a><a class="secondary" href="#cases">Explore all 13 ↗</a><a class="secondary" href="action-cross-runtime.html">Compare JS ↔ Python ↗</a></div>
         <p class="caveat">These are project-authored expected results. This board does not run an adapter or claim an independent pass.</p>
       </div>
       <div class="signal" aria-label="Illustrative decision path">
@@ -47,6 +48,20 @@
       <div class="stat"><strong>0</strong><span>live services or real approvals</span></div>
       <div class="stat"><strong>PASS / FAIL / MIXED</strong><span>outside reports invited</span></div>
     </div>
+    <section id="build" class="builder" aria-labelledby="build-heading">
+      <div class="kicker">THE FIVE-MINUTE IMPLEMENTER LOOP</div>
+      <h2 id="build-heading">One case. A precise difference. Then all 13.</h2>
+      <p>Keep your adapter in your own repository. From a separate <code>aml-core</code> checkout, point the harness to its executable. Begin with the changed-destination denial; click another case below to change the command.</p>
+      <div class="builder-steps">
+        <div class="builder-step"><span>01 / BUILD</span><b>Read one case</b><small>Input and expected receipt are published. Your process reads the case file and prints one JSON result.</small></div>
+        <div class="builder-step"><span>02 / FIX</span><b>Run that case</b><small>The report names mismatched fields, with expected and observed values. A focused PASS covers one case only.</small></div>
+        <div class="builder-step"><span>03 / VERIFY</span><b>Run the full set</b><small>Thirteen cases plus manifest and vector hashes. Share PASS, FAIL, or MIXED from your own code.</small></div>
+      </div>
+      <span class="label">FOCUSED COMMAND · <span id="selected-command-label">CHANGED DESTINATION</span></span>
+      <div class="command"><code id="selected-command">node scripts/run-action-boundary-challenge.mjs --case changed-destination -- ../my-adapter/adapter</code><button id="copy-selected" type="button">Copy focused command</button></div>
+      <div id="selected-copy-status" class="copy-status" role="status" aria-live="polite"></div>
+      <p class="builder-note">Run from the <code>aml-core</code> checkout. Replace <code>../my-adapter/adapter</code> with your executable. A focused report sets <code>case_scope: "single"</code> and <code>full_challenge_passed: false</code>, even when that case passes.</p>
+    </section>
     <section id="cases" aria-labelledby="cases-heading">
       <div class="section-title"><h2 id="cases-heading">Every edge has an expected result.</h2><p>Select a case to inspect its host fixture, expected receipt, and tool-call count. Filters show the expected outcome, not observed performance.</p></div>
       <div class="filters" role="group" aria-label="Filter cases by expected status">
@@ -69,10 +84,10 @@
     <section id="run" class="run" aria-labelledby="run-heading">
       <div class="kicker">YOUR CODE · YOUR REPOSITORY · REPRODUCIBLE REPORT</div>
       <h2 id="run-heading">Make the claim falsifiable.</h2>
-      <p>Implement the adapter outside this repository, then run the harness against your executable. It prints case-by-case failures and hashes of the exact challenge and vector files. Keep your implementation and evidence outside the project reference code.</p>
-      <div class="command"><code id="command-text">node scripts/run-action-boundary-challenge.mjs -- ./your-adapter</code><button id="copy-command" type="button">Copy command</button></div>
+      <p>After the focused loop, run all 13 cases. The JSON report includes stable failure codes, field diagnostics for mismatches, and hashes of the exact challenge and vector bytes. Keep your implementation and evidence outside the project reference code.</p>
+      <div class="command"><code id="command-text">node scripts/run-action-boundary-challenge.mjs -- ../my-adapter/adapter</code><button id="copy-command" type="button">Copy full command</button></div>
       <div id="copy-status" class="copy-status" role="status" aria-live="polite"></div>
-      <p>Run from a checkout of <code>aml-core</code>; replace <code>./your-adapter</code> with your executable. The harness uses simulated callbacks only.</p>
+      <p>Run from a checkout of <code>aml-core</code>; replace the sibling path with your executable. The harness uses simulated callbacks only. A full PASS is compatibility evidence for these fixtures, subject to outside review of the implementation.</p>
       <div class="run-links"><a href="https://github.com/aruintelligence/aml-core/blob/main/publications/ACTION_BOUNDARY_CHALLENGE.md">Read the adapter contract ↗</a><a href="https://github.com/aruintelligence/aml-core/tree/main/actions/action-boundary-conformance">Use the GitHub Action ↗</a><a href="https://github.com/aruintelligence/aml-core/issues/88">Share PASS, FAIL, or MIXED ↗</a></div>
     </section>
     <footer class="footer">ĀML™ · ĀRU Meaning Language™ · Project-authored challenge. Compatibility with these fixtures does not establish human consent, external delivery, production authorization, certification, or a standard.</footer>
@@ -99,6 +114,8 @@
     const readable=value=>String(value).replaceAll("_"," ");
     function details(row){
       selected=row.id;
+      $("selected-command-label").textContent=label(row.id).toUpperCase();
+      $("selected-command").textContent=`node scripts/run-action-boundary-challenge.mjs --case ${row.id} -- ../my-adapter/adapter`;
       $("detail-title").textContent=label(row.id);
       $("detail-summary").textContent=notes[row.id] || "Inspect the published case record.";
       $("detail-decision").textContent=readable(row.expected.decision);
@@ -106,6 +123,7 @@
       $("detail-calls").textContent=String(row.expected.tool_calls);
       $("detail-reason").textContent=readable(row.expected.receipt_reason);
       $("detail-json").textContent=JSON.stringify(row,null,2);
+      history.replaceState(null,"",`?case=${encodeURIComponent(row.id)}${location.hash || "#cases"}`);
       board.querySelectorAll(".case").forEach(card=>card.setAttribute("aria-pressed",String(card.dataset.id===row.id)));
     }
     function render(){
@@ -120,7 +138,7 @@
         const calls=document.createElement("span"); calls.className="calls"; calls.textContent=row.expected.tool_calls+" tool call"+(row.expected.tool_calls===1?"":"s");
         card.append(id,title,status,calls);card.addEventListener("click",()=>details(row));board.append(card);
       }
-      if(!visible.some(row=>row.id===selected)) details(visible[0]);
+      details(visible.find(row=>row.id===selected) || visible[0]);
     }
     document.querySelectorAll("[data-filter]").forEach(button=>button.addEventListener("click",()=>{
       filter=button.dataset.filter;
@@ -128,14 +146,22 @@
       render();
     }));
     $("copy-command").addEventListener("click",async()=>{
-      try{await navigator.clipboard.writeText($("command-text").textContent);$("copy-status").textContent="Command copied. Replace the adapter path with your own executable."}
+      try{await navigator.clipboard.writeText($("command-text").textContent);$("copy-status").textContent="Full command copied. Replace the adapter path with your own executable."}
       catch{$("copy-status").textContent="Clipboard unavailable. Select and copy the command above."}
+    });
+    $("copy-selected").addEventListener("click",async()=>{
+      try{await navigator.clipboard.writeText($("selected-command").textContent);$("selected-copy-status").textContent="Focused command copied. Replace the adapter path with your own executable."}
+      catch{$("selected-copy-status").textContent="Clipboard unavailable. Select and copy the command above."}
     });
     fetch("./action-challenge-board.json?v=1").then(response=>{
       if(!response.ok)throw Error("Could not load the published cases");return response.json();
     }).then(data=>{
       if(data.protocol!=="aml-action-boundary-challenge/1" || data.cases.length!==13 || data.cases.some(row=>!notes[row.id]))throw Error("Unexpected challenge version");
-      rows=data.cases;render();
+      rows=data.cases;
+      const requested=new URLSearchParams(location.search).get("case");
+      if(rows.some(row=>row.id===requested))selected=requested;
+      else selected="changed-destination";
+      render();
     }).catch(error=>{board.replaceChildren();const notice=document.createElement("p");notice.className="error";notice.textContent=error.message+". Open the machine contract linked below.";board.append(notice)});
   </script>
 </body>

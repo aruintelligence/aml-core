@@ -59,10 +59,13 @@ The host fixture is test data, not model-provided authority. In a real host, the
 From a checkout of this repository:
 
 ```bash
-node scripts/run-action-boundary-challenge.mjs -- ./your-adapter
+node scripts/run-action-boundary-challenge.mjs --case changed-destination -- ../my-adapter/adapter
+node scripts/run-action-boundary-challenge.mjs -- ../my-adapter/adapter
 ```
 
-The adapter command is one executable path. Use an executable wrapper script if your implementation needs an interpreter or build step. The runner appends the case file path, allows five seconds and 256 KiB of output per case, emits `aml-action-boundary-challenge-report/1` on stdout, and returns nonzero if any case fails. Keep diagnostics on stderr so stdout remains one JSON object.
+Keep your adapter in its own repository, adjacent to this checkout, and replace the example sibling path. The adapter command is one executable path. Use an executable wrapper script if your implementation needs an interpreter or build step. The runner appends the case file path, allows five seconds and 256 KiB of output per case, emits `aml-action-boundary-challenge-report/1` on stdout, and returns nonzero if any selected case fails. Keep adapter diagnostics on stderr so its stdout remains one JSON object.
+
+Start with `--case <id>` to shorten the edit/run loop. A failed case keeps the stable `failures` codes and adds `diagnostics` with each mismatched field's expected and observed JSON previews. An invalid case ID exits with code 2. The JSON report identifies `case_scope` (`single` or `full`), `selected_case`, and `full_challenge_passed`. A focused PASS sets `passed: true` for that one case but **always** sets `full_challenge_passed: false`. Run without `--case` before reporting full compatibility. The [visual challenge board](https://aruintelligence.github.io/aml-core/action-challenge.html?case=changed-destination#cases) offers a shareable link and copyable command for every case; it shows expected fixtures, not your observed results.
 
 A **project-maintained Python example** can be run directly with `node scripts/run-action-boundary-challenge.mjs -- python3 pilots/action-boundary/challenge-python-adapter.py`. It implements the published subset without importing the JavaScript boundary. The [visual cross-runtime comparison](https://aruintelligence.github.io/aml-core/action-cross-runtime.html) shows both actual outputs per case. This example demonstrates interoperability engineering but does **not** qualify as an outside witness; maintain an external implementation for that claim. Python rejects floats, non-BMP object keys, and lone-surrogate values rather than claiming general JavaScript JSON canonicalization. A [numeric-key counterexample and repair](https://aruintelligence.github.io/aml-core/key-order-lab.html) expands the regression beyond these 13 cases.
 
@@ -81,6 +84,7 @@ In an outside repository's GitHub Actions workflow:
 ```
 
 Pin the Action to an immutable release tag or commit when recording a reproducible result. The caller owns the adapter and its executable permission. The Action outputs `passed`, `result-file`, `challenge-sha256`, and `vectors-sha256`. A failing challenge fails the step but still writes the report before exiting; upload the file as a workflow artifact if you want it available after a failed run.
+The Action runs the full challenge; `--case` is an interactive local development option.
 
 ## What the 13 cases exercise
 
