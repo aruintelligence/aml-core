@@ -187,6 +187,14 @@ The optional, host-owned `createFileDispatchLedger({ directory })` uses an exclu
 
 Run `node pilots/action-boundary/file-dispatch-ledger-demo.mjs`, then check the published report with `node scripts/build-file-dispatch-report.mjs --check`. Unlike the one-use **approval grant** in milestone 19, this ID represents a host operation and must not be derived from the proposal digest or model text. The ledger stores hashes and outcome labels, not evidence of delivery. It is a project-authored local-filesystem prototype, not an external idempotency service, cross-machine transaction, durable outbox, automatic recovery, authenticated approval, or proof that an external effect happened. The host must own private storage, stable intent IDs, retention, reconciliation, and tool-specific authorization.
 
+## 22. A counterexample can improve cross-runtime agreement
+
+The 13 published action-boundary cases agreed, but an adversarial proposed action containing object keys `"10"` and `"2"` did not. The JavaScript reference's ordinary-object serialization emits the array-index key `"2"` first; the former Python implementation emitted lexical `"10"` first. That produced different SHA-256 proposal digests for the same action, a genuine portability defect in the project-maintained subset.
+
+Python now follows the existing JavaScript wire order for array-index keys (canonical decimal `0` through `4294967294`) at every object depth; ordinary BMP string keys retain lexical order. The [visual counterexample lab](https://aruintelligence.github.io/aml-core/key-order-lab.html) shows exact old Python, JavaScript, and fixed Python bytes and hashes for seven named cases, including nested objects, leading zeroes, the 32-bit edge, and controls. `node scripts/build-action-key-order-report.mjs --check` runs a separate Python process on those seven plus 512 seeded adversarial proposals. The prior Python ordering diverges on 439 of **this deliberately biased corpus**; fixed Python and JavaScript agree on all 519, and the existing 13-case challenge remains green.
+
+This is a project-authored counterexample and bounded regression, not a statistical estimate of real-world failure rates, general JSON canonicalization, external implementation, or security certification. The subset still rejects floats and non-BMP object keys in Python, and it requires Unicode-scalar string values. Existing JavaScript digest bytes are unchanged.
+
 ## The frontier
 
 The next technical frontiers are:
