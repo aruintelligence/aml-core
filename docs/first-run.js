@@ -138,6 +138,8 @@ if (typeof document !== "undefined") {
       `action-lab.html?scenario=${recipient === "team" ? "send" : "changed"}` :
       `proof.html?attention=${attention}&restoration=${restoration}&lang=en`;
     $("reproduce-link").textContent = action ? "Open the interactive action lab ↗" : "Open this exact interface proof ↗";
+    $("build-link").href = action ? "quickstart.html" :
+      `quickstart.html?attention=${attention}&restoration=${restoration}`;
     const source = document.querySelector(".links a:nth-child(2)");
     source.href = action ? "https://github.com/aruintelligence/aml-core/blob/main/pilots/action-boundary/README.md" :
       "https://github.com/aruintelligence/aml-core/blob/main/ETHICAL_RENDERING.md";
