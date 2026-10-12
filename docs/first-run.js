@@ -86,6 +86,7 @@ if (typeof document !== "undefined" && document.getElementById("experience")) {
   const params = new URLSearchParams(location.search);
   let mode = params.get("mode") === "render" ? "render" : "action";
   let recipient = params.get("recipient") === "team" ? "team" : "outside";
+  let bridgeState = "loading";
   const initial = (name, fallback) => {
     const raw = params.get(name);
     if (raw === null || !/^(10|[0-9])$/.test(raw)) return fallback;
@@ -94,36 +95,88 @@ if (typeof document !== "undefined" && document.getElementById("experience")) {
   $("attention").value = initial("attention", 5);
   $("restoration").value = initial("restoration", 1);
 
+  function browserGateResult(attention, restoration) {
+    renderDecision(attention, restoration); // Validate the slider range before creating the element.
+    const proposed = "render a conversion prompt";
+    const policy = "restoration_value >= attention_cost";
+    if (bridgeState !== "ready") {
+      $("gate-slot").replaceChildren();
+      $("gate-placeholder").hidden = false;
+      $("gate-placeholder").textContent = bridgeState === "loading" ?
+        "Connecting to the project browser gate…" : "The browser gate could not load here.";
+      $("gate-event").textContent = "No successful aml-decision";
+      return { proposed, policy, attention_cost: attention, restoration_value: restoration,
+        decision: bridgeState, reason: "browser_gate_not_available" };
+    }
+
+    // The listener is present before connection: the custom element evaluates as
+    // it enters the document and may hide itself in enforce/closed mode.
+    const gate = document.createElement("aml-gate");
+    gate.setAttribute("purpose", "Review an offer without urgency");
+    gate.setAttribute("attention-cost", String(attention));
+    gate.setAttribute("restoration-value", String(restoration));
+    gate.setAttribute("mode", "enforce");
+    gate.setAttribute("failure-mode", "closed");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "Review the offer";
+    gate.append(button);
+    let detail = null;
+    gate.addEventListener("aml-decision", event => { detail = event.detail; });
+    $("gate-slot").replaceChildren(gate);
+    const ok = detail?.ok === true && detail.deployment_mode === "enforce" &&
+      detail.failure_mode === "closed" && typeof detail.render_allowed === "boolean" &&
+      typeof detail.effective_rendered === "boolean" &&
+      detail.effective_rendered === detail.render_allowed &&
+      detail.attention_cost === attention && detail.restoration_value === restoration &&
+      gate.hidden === !detail.effective_rendered;
+    if (!ok) gate.hidden = true;
+    $("gate-placeholder").hidden = ok && detail.effective_rendered;
+    $("gate-placeholder").textContent = ok ? "Element withheld by the browser gate" :
+      "The browser gate did not return a usable enforce/closed decision.";
+    $("gate-event").textContent = ok ?
+      `aml-decision · ${detail.render_allowed ? "allow" : "suppress"} · ${detail.effective_rendered ? "visible" : "hidden"}` :
+      "No usable aml-decision";
+    return { proposed, policy, attention_cost: attention, restoration_value: restoration,
+      decision: ok ? (detail.render_allowed ? "allow" : "suppress") : "unavailable",
+      reason: ok ? (detail.render_allowed ? "declared_value_meets_cost" : "declared_value_below_cost") :
+        "browser_gate_decision_unavailable",
+      gate_event: ok ? { render_allowed: detail.render_allowed, effective_rendered: detail.effective_rendered,
+        deployment_mode: detail.deployment_mode, failure_mode: detail.failure_mode,
+        attention_cost: detail.attention_cost, restoration_value: detail.restoration_value } : null };
+  }
+
   let generation = 0;
   async function update() {
     const turn = ++generation;
     const action = mode === "action";
     const attention = Number($("attention").value);
     const restoration = Number($("restoration").value);
+    $("screen-preview").hidden = action;
+    if (action) $("gate-slot").replaceChildren();
     let result;
     try {
       result = action ? await firstRunAction(recipient, globalThis.crypto?.subtle) :
-        renderDecision(attention, restoration);
+        browserGateResult(attention, restoration);
     } catch {
       result = action ? { proposed: `send_message → ${recipient === "team" ? "team" : "outsider"}@example.test`,
         decision: "deny", reason: "browser_crypto_unavailable", proposal_sha256: null,
         project_vector_matches: false, tool_callbacks: 0 } :
-        { proposed: "render a conversion prompt", decision: "suppress", reason: "invalid_declared_value" };
+        { proposed: "render a conversion prompt", decision: "unavailable", reason: "browser_gate_error" };
     }
     if (turn !== generation) return; // An older asynchronous digest must not overwrite a new input.
     const mismatch = action && !result.project_vector_matches;
     const tone = action ? (result.decision === "deny" || mismatch ? "stop" : "hold") :
-      (result.decision === "allow" ? "go" : "stop");
+      (result.decision === "allow" ? "go" : result.decision === "suppress" ? "stop" : "hold");
 
     document.querySelectorAll("[data-mode]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.mode === mode)));
     document.querySelectorAll("[data-recipient]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.recipient === recipient)));
     $("action-controls").hidden = !action;
     $("render-controls").hidden = action;
-    $("screen-preview").hidden = action;
     $("experience-title").textContent = action ? "Move the destination." : "Change what reaches the screen.";
     $("instruction").textContent = action ?
       "An agent proposes send_message. The host has one exact rule for the team destination and still requires approval for a matching action." :
-      "An app proposes a conversion prompt. The prototype compares two declared values before deciding whether this element may render.";
+      "An app proposes a conversion prompt. The project browser gate evaluates its declared values before the element reaches the screen.";
     $("attention-value").textContent = String(attention);
     $("restoration-value").textContent = String(restoration);
     $("path-proposal").textContent = result.proposed;
@@ -132,20 +185,19 @@ if (typeof document !== "undefined" && document.getElementById("experience")) {
     $("path-result-card").dataset.tone = tone;
     $("orb").dataset.tone = tone;
     $("orb-word").textContent = action ? (mismatch ? "RECHECK" : tone === "stop" ? "BLOCKED" : "HELD") :
-      (tone === "go" ? "VISIBLE" : "WITHHELD");
-    $("verdict-label").textContent = action ? "ACTION HELD BEFORE DISPATCH" : "INTERFACE RENDER DECISION";
+      (tone === "go" ? "VISIBLE" : tone === "stop" ? "WITHHELD" : "CHECKING");
+    $("verdict-label").textContent = action ? "ACTION HELD BEFORE DISPATCH" : "BROWSER GATE DECISION";
     $("verdict-title").textContent = action ? (mismatch ? "The published vector did not match." : tone === "stop" ? "The route does not match." : "The route matches. Approval is next.") :
-      (tone === "go" ? "This element passes the gate." : "This element is suppressed.");
+      (tone === "go" ? "The gate made this element visible." : tone === "stop" ? "The gate withheld this element." :
+        result.decision === "loading" ? "Connecting to the browser gate." : "The browser gate is unavailable.");
     $("verdict-explanation").textContent = mismatch ?
       "Do not rely on this preview. Open the source vectors and executable lab to investigate the disagreement." : action ? (tone === "stop" ?
       "The exact host rule cannot authorize this destination. The local preview invokes no tool." :
       "An exact rule match still does not dispatch the tool. A real host must approve the exact proposal first.") :
-      (tone === "go" ? "Declared restoration meets or exceeds declared attention cost under this prototype rule." :
-      "Declared restoration is below declared attention cost under this prototype rule.");
+      (tone === "go" ? "The emitted decision allows this element under the declared prototype values." :
+      tone === "stop" ? "The emitted decision suppresses this element under the declared prototype values." :
+      "No successful gate decision is available. Open the project proof to inspect the source.");
     $("screen-preview").dataset.tone = tone;
-    $("screen-title").textContent = tone === "go" ? "Continue with the offer" : "Suppressed by policy";
-    $("screen-detail").textContent = tone === "go" ? "A local illustration of an allowed prompt." :
-      "The proposed prompt is withheld in this local illustration.";
     $("fingerprint").hidden = !action;
     $("vector-link").hidden = !action;
     $("digest").textContent = result.proposal_sha256 || "Unavailable";
@@ -156,7 +208,8 @@ if (typeof document !== "undefined" && document.getElementById("experience")) {
       provenance: "project-authored explanatory browser preview",
       boundary: action ? "agent_action" : "interface_render",
       ...result,
-      limits: action ? "no tool execution or authenticated approval" : "declared values, not objective measurements"
+      limits: action ? "no tool execution or authenticated approval" :
+        "browser gate event from declared values; not objective measurements"
     }, null, 2);
     $("reproduce-link").href = action ?
       `action-lab.html?scenario=${recipient === "team" ? "send" : "changed"}` :
@@ -195,4 +248,11 @@ if (typeof document !== "undefined" && document.getElementById("experience")) {
     }
   });
   update();
+  import("./aml-gate.js").then(() => {
+    bridgeState = "ready";
+    if (mode === "render") update();
+  }).catch(() => {
+    bridgeState = "unavailable";
+    if (mode === "render") update();
+  });
 }
