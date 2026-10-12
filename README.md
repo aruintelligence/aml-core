@@ -24,7 +24,7 @@
 
 | Your goal | First useful result |
 |---|---|
-| **Build** | [Put a narrow gate around one HTML element](https://aruintelligence.github.io/aml-core/quickstart.html), then use the [host function-tool quickstart](docs/AGENT_TOOL_QUICKSTART.md) for agent actions. |
+| **Build** | [Shape a live browser gate and download runnable HTML](https://aruintelligence.github.io/aml-core/quickstart.html), then use the [host function-tool quickstart](docs/AGENT_TOOL_QUICKSTART.md) for agent actions. |
 | **Verify** | [Reproduce a decision in 10 minutes](docs/TRY_AML_10_MINUTES.md); preserve the commit, commands, output, and any failure. |
 | **Challenge** | [Run one action-boundary case](https://aruintelligence.github.io/aml-core/action-challenge.html?case=changed-destination#build), then all public and seeded cases against your own adapter. |
 
