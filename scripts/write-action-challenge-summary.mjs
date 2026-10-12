@@ -13,7 +13,7 @@ export function actionChallengeSummary(report, artifactUrl = "") {
   const lines = [
     "## ĀML Action Boundary Challenge",
     "",
-    `**${status} · ${count}/13 cases** — caller-owned adapter run; compatibility with project-defined fixtures only.`,
+    `**${status} · ${count}/13 cases** — adapter run; compatibility with project-defined fixtures only.`,
     "",
     "| Case | Result | Failure codes |",
     "| --- | --- | --- |",
