@@ -26,6 +26,7 @@ test("offline report includes the matched card, exact source, rule and full reco
   assert.doesNotMatch(html, /<script>/);
   assert.match(html, /source_sha256/);
   assert.match(html, /#v=1&amp;source=/);
+  assert.match(html, /href="https:\/\/example.org\/check-run.html"/);
 });
 
 test("oversized source stays inspectable offline without a truncated replay URL", () => {
