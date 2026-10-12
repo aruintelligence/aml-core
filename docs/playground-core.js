@@ -20,7 +20,7 @@ export function playgroundShareUrl(source, pageUrl) {
 
 export function parsePlaygroundShare(pageUrl) {
   const hash = new URL(pageUrl).hash.slice(1);
-  if (!hash || hash === "editor") return null;
+  if (!hash || hash === "editor" || hash === "live-stage") return null;
   if (hash.length > MAX_FRAGMENT_LENGTH) throw new RangeError("Shared source is too long");
   const state = new URLSearchParams(hash);
   if (state.size !== 2 || state.getAll("v").length !== 1 ||

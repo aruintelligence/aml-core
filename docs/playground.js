@@ -1,5 +1,5 @@
 import { compileSourceBrowser } from "./aml-browser.js";
-import { parsePlaygroundShare, playgroundShareUrl } from "./playground-core.js";
+import { parsePlaygroundShare, playgroundShareUrl } from "./playground-core.js?v=compare-link-1";
 import { studioHandoffUrls } from "./playground-handoff.js?v=compare-4";
 import { parseSharedIntegration } from "./quickstart-core.js?v=unicode-share-2";
 import { verifiedGateEvent } from "./playground-live.js?v=live-1";
@@ -241,8 +241,10 @@ $("share").addEventListener("click", async () => {
 
 try {
   const shared = parsePlaygroundShare(location.href);
-  source.value = shared ?? sample(1);
+  const comparison = new URL(location.href).searchParams.get("example") === "compare";
+  source.value = shared ?? (comparison ? comparisonSample() : sample(1));
   if (shared) $("share-status").textContent = "Shared program restored. Edit and compile to test another idea.";
+  else if (comparison) $("share-status").textContent = "Two-gate comparison loaded. Edit and compile to try your own.";
 } catch {
   source.value = sample(1);
   $("share-status").textContent = "That source link is invalid. The default example is ready.";

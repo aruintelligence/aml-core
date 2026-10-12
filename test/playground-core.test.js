@@ -11,6 +11,7 @@ test("a Unicode program survives a source-link round trip without server query d
   assert.equal(parsePlaygroundShare(url), source);
   assert.equal(parsePlaygroundShare(page), null);
   assert.equal(parsePlaygroundShare(page + "#editor"), null);
+  assert.equal(parsePlaygroundShare(page + "?example=compare#live-stage"), null);
 });
 
 test("malformed or oversized fragments never become program source", () => {
