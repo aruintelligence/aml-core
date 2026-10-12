@@ -81,6 +81,22 @@ export function buildNextStep(mode, attention, restoration, recipient = "outside
   throw new RangeError("Unknown first-run mode");
 }
 
+export function firstRunScenarioUrl(currentUrl, mode, attention, restoration, recipient = "outside", jump = false) {
+  const url = new URL(currentUrl);
+  if (mode === "action") {
+    if (recipient !== "team" && recipient !== "outside") throw new RangeError("Unknown first-run recipient");
+    url.search = new URLSearchParams({ mode, recipient }).toString();
+  } else if (mode === "render") {
+    renderDecision(attention, restoration);
+    url.search = new URLSearchParams({ mode, attention: String(attention), restoration: String(restoration) }).toString();
+  } else {
+    throw new RangeError("Unknown first-run mode");
+  }
+  // Keep the visitor's position. A copied deep link deliberately jumps to the experiment.
+  if (jump) url.hash = "experience";
+  return url.href;
+}
+
 if (typeof document !== "undefined" && document.getElementById("experience")) {
   const $ = id => document.getElementById(id);
   const params = new URLSearchParams(location.search);
@@ -179,7 +195,16 @@ if (typeof document !== "undefined" && document.getElementById("experience")) {
       "An app proposes a conversion prompt. The project browser gate evaluates its declared values before the element reaches the screen.";
     $("attention-value").textContent = String(attention);
     $("restoration-value").textContent = String(restoration);
-    $("path-proposal").textContent = result.proposed;
+    if (action) {
+      const tool = document.createElement("span");
+      tool.textContent = "send_message →";
+      const destination = document.createElement("span");
+      destination.className = "route-destination";
+      destination.textContent = recipient === "team" ? "team@example.test" : "outsider@example.test";
+      $("path-proposal").replaceChildren(tool, destination);
+    } else {
+      $("path-proposal").textContent = result.proposed;
+    }
     $("path-rule").textContent = action ? "team@example.test only" : "restoration ≥ attention";
     $("path-result").textContent = mismatch ? "VECTOR MISMATCH" : result.decision.replaceAll("_", " ").toUpperCase();
     $("path-result-card").dataset.tone = tone;
@@ -224,8 +249,7 @@ if (typeof document !== "undefined" && document.getElementById("experience")) {
     const source = document.querySelector(".links a:nth-child(2)");
     source.href = action ? "https://github.com/aruintelligence/aml-core/blob/main/pilots/action-boundary/README.md" :
       "https://github.com/aruintelligence/aml-core/blob/main/ETHICAL_RENDERING.md";
-    const query = new URLSearchParams(action ? {mode, recipient} : {mode, attention: String(attention), restoration: String(restoration)});
-    history.replaceState(null, "", `${location.pathname}?${query.toString()}#experience`);
+    history.replaceState(null, "", firstRunScenarioUrl(location.href, mode, attention, restoration, recipient));
   }
 
   document.querySelectorAll("[data-mode]").forEach(button => button.addEventListener("click", () => { mode = button.dataset.mode; update(); }));
@@ -233,7 +257,8 @@ if (typeof document !== "undefined" && document.getElementById("experience")) {
   for (const id of ["attention", "restoration"]) $(id).addEventListener("input", update);
   $("copy-link").addEventListener("click", async () => {
     try {
-      await navigator.clipboard.writeText(location.href);
+      await navigator.clipboard.writeText(firstRunScenarioUrl(location.href, mode,
+        Number($("attention").value), Number($("restoration").value), recipient, true));
       $("copy-link").textContent = "Scenario link copied";
     } catch {
       $("copy-link").textContent = "Copy unavailable — use the address bar";
