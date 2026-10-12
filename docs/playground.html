@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#07111f">
-  <meta name="description" content="Write a small ĀML program in your browser. Change one declared value, compile it, inspect the decision and meaning tree, and share the source.">
+  <meta name="description" content="Write ĀML in your browser. Compare two engrams, inspect each compiler decision, then open either one as a live interface gate.">
   <link rel="canonical" href="https://aruintelligence.github.io/aml-core/playground.html">
   <meta property="og:type" content="website">
   <meta property="og:title" content="ĀML Playground — one line changes the decision">
@@ -35,9 +35,9 @@
   <div class="wrap">
     <nav class="nav" aria-label="Main"><a class="brand" href="index.html">ĀML™ / PLAYGROUND</a><div class="navlinks"><a href="first-run.html">First contact</a><a href="quickstart.html">Build a gate</a><a href="https://github.com/aruintelligence/aml-core">Source ↗</a></div></nav>
     <main>
-      <section class="hero"><div><span class="eyebrow">WRITE THE LANGUAGE / SEE THE RESULT</span><h1>One line.<br><em>Different decision.</em></h1><p>Change one declared value in an ĀML program. Compile it in your browser and inspect the resulting meaning tree and render decision.</p><a class="jump" href="#editor">Write your first program ↓</a></div><aside class="mission"><span>YOUR FIRST EXPERIMENT</span><strong>Keep the element. Change the value.</strong><p>The two presets differ only at <code>restoration_value</code>: 1 is below the declared attention cost of 5; 5 meets it. See the project compiler's result, then edit the source yourself.</p></aside></section>
+      <section class="hero"><div><span class="eyebrow">WRITE THE LANGUAGE / SEE THE RESULT</span><h1>One line.<br><em>Different decision.</em></h1><p>Change one declared value in an ĀML program. Compile it in your browser and inspect the resulting meaning tree and render decision.</p><a class="jump" href="#editor">Write your first program ↓</a></div><aside class="mission"><span>YOUR FIRST EXPERIMENT</span><strong>Keep the element. Change the value.</strong><p>The first two presets differ only at <code>restoration_value</code>: 1 is below attention cost 5; 5 meets it. Then compare two engrams in one program and open either decision as a live browser gate.</p></aside></section>
       <section id="editor" class="workspace" aria-label="ĀML browser compiler"><div class="bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span>ĀML / SOURCE → MEANING → DECISION</span><span>RUNS IN YOUR BROWSER</span></div>
-        <div class="toolbar"><button type="button" class="primary" id="compile">Compile ĀML ↗</button><button type="button" class="ghost" data-preset="1">Value 1 · suppress</button><button type="button" class="ghost" data-preset="5">Value 5 · allow</button><small>Ctrl or ⌘ + Enter to compile</small></div>
+        <div class="toolbar"><button type="button" class="primary" id="compile">Compile ĀML ↗</button><button type="button" class="ghost" data-preset="1">Value 1 · suppress</button><button type="button" class="ghost" data-preset="5">Value 5 · allow</button><button type="button" class="ghost" data-preset="compare">Compare two ↗</button><small>Ctrl or ⌘ + Enter to compile</small></div>
         <div class="columns"><div class="editor"><div class="panel-head"><strong><label for="source">Your ĀML source</label></strong><span>INPUT</span></div><textarea id="source" spellcheck="false" aria-describedby="source-status"></textarea><p id="source-status" class="status" role="status" aria-live="polite">Ready to compile.</p></div>
           <div class="report"><div class="panel-head"><strong>What the compiler decided</strong><span>PROJECT ENGINE</span></div><strong id="summary" class="summary" role="status" aria-live="polite">Awaiting compile</strong><div id="decision-cards" class="decision-list"></div><div class="raw"><div class="raw-head"><b>INSPECT THE OUTPUT</b><div class="tabs" role="group" aria-label="Choose compiler output"><button type="button" data-view="decisions" aria-pressed="true">Decisions</button><button type="button" data-view="amt" aria-pressed="false">Meaning tree</button><button type="button" data-view="ast" aria-pressed="false">Syntax tree</button><button type="button" data-view="tokens" aria-pressed="false">Tokens</button></div></div><pre id="output" aria-label="Raw compiler output"></pre><p id="decision-status" class="raw-note">No compile yet.</p></div></div></div>
         <div class="share"><button type="button" id="share">Copy source link ↗</button><p id="share-status" role="status" aria-live="polite">The full program goes in the URL fragment. Do not share secrets in source.</p><input id="share-url" aria-label="Source link to copy" readonly hidden></div>
@@ -46,6 +46,6 @@
     </main>
     <footer class="foot">This page uses the project browser compiler. It reports a compiler decision; it does not itself render a real user interface, prove independent validation, or measure a person's attention, restoration, wellbeing, or ethics. ĀML™ / ĀRU Meaning Language™ is stewarded by ĀRU Intelligence Inc. · <a href="https://github.com/aruintelligence/aml-core/blob/main/CLAIMS.md">Claims and evidence</a>.</footer>
   </div>
-  <script type="module" src="./playground.js?v=guided-3"></script>
+  <script type="module" src="./playground.js?v=compare-4"></script>
 </body>
 </html>
