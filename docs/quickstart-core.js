@@ -22,6 +22,29 @@ export function normalizeIntegration(input) {
   return { purpose, label, attention, restoration, mode };
 }
 
+const sharedFields = ["v", "purpose", "label", "attention", "restoration", "mode"];
+
+export function shareableStudioUrl(input, pageUrl) {
+  const declaration = normalizeIntegration(input);
+  const url = new URL(pageUrl);
+  const state = new URLSearchParams({ v: "1", ...declaration });
+  url.search = "";
+  url.hash = state.toString();
+  return url.href;
+}
+
+export function parseSharedIntegration(pageUrl) {
+  const hash = new URL(pageUrl).hash.slice(1);
+  if (!hash || hash === "studio") return null;
+  if (hash.length > 1000) throw new RangeError("Shared configuration is too long");
+  const state = new URLSearchParams(hash);
+  if (state.size !== sharedFields.length || sharedFields.some(field => state.getAll(field).length !== 1) ||
+      [...state.keys()].some(field => !sharedFields.includes(field)) || state.get("v") !== "1") {
+    throw new RangeError("Invalid shared configuration");
+  }
+  return normalizeIntegration(Object.fromEntries(sharedFields.slice(1).map(field => [field, state.get(field)])));
+}
+
 function gateMarkup({ purpose, label, attention, restoration, mode }) {
   return `<aml-gate
   purpose="${escapeHtml(purpose)}"

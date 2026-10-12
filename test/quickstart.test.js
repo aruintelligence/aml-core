@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { downloadablePage, integrationSnippet, normalizeIntegration } from "../docs/quickstart-core.js";
+import { downloadablePage, integrationSnippet, normalizeIntegration, parseSharedIntegration, shareableStudioUrl } from "../docs/quickstart-core.js";
 
 const example = {
   purpose: "Create urgency for a purchase", label: "Review details",
@@ -39,4 +39,26 @@ test("studio explicitly honors a suppressed custom element's hidden state", () =
   const page = readFileSync(new URL("../docs/quickstart.html", import.meta.url), "utf8");
   assert.match(page, /\.preview aml-gate\[hidden\]\{display:none\}/);
   assert.match(page, /<script type="module" src="\.\/quickstart\.js"><\/script>/);
+});
+
+test("scenario link restores the exact bounded declaration without a request query", () => {
+  const custom = { ...example, purpose: "Explain A&B <carefully>", label: "See how ✓ works", restoration: 8, mode: "shadow" };
+  const link = shareableStudioUrl(custom, "https://example.test/aml-core/quickstart.html?attention=3#studio");
+  const url = new URL(link);
+  assert.equal(url.search, "");
+  assert.equal(url.pathname, "/aml-core/quickstart.html");
+  assert.ok(url.hash.includes("purpose="));
+  assert.deepEqual(parseSharedIntegration(link), normalizeIntegration(custom));
+  assert.equal(parseSharedIntegration("https://example.test/aml-core/quickstart.html#studio"), null);
+});
+
+test("malformed, duplicate, and oversized share state cannot be applied", () => {
+  const valid = shareableStudioUrl(example, "https://example.test/quickstart.html");
+  assert.throws(() => parseSharedIntegration(valid + "&attention=0"), RangeError);
+  assert.throws(() => parseSharedIntegration(valid.replace("v=1", "v=2")), RangeError);
+  assert.throws(() => parseSharedIntegration(valid.replace("mode=enforce", "mode=approve")), RangeError);
+  assert.throws(() => parseSharedIntegration(valid + "&extra=" + "x".repeat(1100)), RangeError);
+  const page = readFileSync(new URL("../docs/quickstart.html", import.meta.url), "utf8");
+  assert.match(page, /id="share"/);
+  assert.match(page, /id="share-url"/);
 });

@@ -1,10 +1,22 @@
-import { downloadablePage, integrationSnippet, normalizeIntegration } from "./quickstart-core.js";
+import { downloadablePage, integrationSnippet, normalizeIntegration, parseSharedIntegration, shareableStudioUrl } from "./quickstart-core.js";
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 for (const name of ["attention", "restoration"]) {
   const value = params.get(name);
   if (value !== null && /^(10|[0-9])$/.test(value)) $(name).value = value;
+}
+let sharedState = "";
+try {
+  const shared = parseSharedIntegration(location.href);
+  if (shared) {
+    for (const name of ["purpose", "label", "attention", "restoration"]) $(name).value = shared[name];
+    document.querySelector(`input[name="mode"][value="${shared.mode}"]`).checked = true;
+    sharedState = "Shared configuration restored. Change any field to explore a different result.";
+    $("studio").scrollIntoView();
+  }
+} catch {
+  sharedState = "That shared configuration is invalid. The default example is ready to explore.";
 }
 
 let bridgeReady = false;
@@ -46,6 +58,10 @@ function showDecision(detail) {
 function update() {
   $("attention-output").textContent = $("attention").value;
   $("restoration-output").textContent = $("restoration").value;
+  $("share-url").hidden = true;
+  if ($("takeaway-status").textContent.startsWith("Scenario link copied.")) {
+    $("takeaway-status").textContent = "Declaration changed. Copy a new link to share these values.";
+  }
   try {
     current = normalizeIntegration({
       purpose: $("purpose").value,
@@ -57,12 +73,12 @@ function update() {
   } catch (error) {
     current = null;
     $("snippet").textContent = "Add a purpose and button label to continue.";
-    $("copy").disabled = $("download").disabled = true;
+    $("copy").disabled = $("download").disabled = $("share").disabled = true;
     showError(error.message);
     return;
   }
 
-  $("copy").disabled = $("download").disabled = false;
+  $("copy").disabled = $("download").disabled = $("share").disabled = false;
   $("snippet").textContent = integrationSnippet(current);
   if (!bridgeReady) return;
 
@@ -96,6 +112,22 @@ $("copy").addEventListener("click", async () => {
   }
 });
 
+$("share").addEventListener("click", async () => {
+  if (!current) return;
+  const url = shareableStudioUrl(current, location.href);
+  try {
+    await navigator.clipboard.writeText(url);
+    $("share-url").hidden = true;
+    $("takeaway-status").textContent = "Scenario link copied. It restores this exact declaration in the Studio.";
+  } catch {
+    $("share-url").hidden = false;
+    $("share-url").value = url;
+    $("share-url").focus();
+    $("share-url").select();
+    $("takeaway-status").textContent = "Clipboard unavailable. Copy the selected scenario link below.";
+  }
+});
+
 $("download").addEventListener("click", () => {
   if (!current) return;
   const file = new Blob([downloadablePage(current)], { type: "text/html;charset=utf-8" });
@@ -109,6 +141,7 @@ $("download").addEventListener("click", () => {
 });
 
 update();
+if (sharedState) $("takeaway-status").textContent = sharedState;
 try {
   await import("./aml-gate.js");
   bridgeReady = true;
