@@ -1,4 +1,4 @@
-import { downloadablePage, integrationSnippet, normalizeIntegration, parseSharedIntegration, shareableStudioUrl } from "./quickstart-core.js";
+import { downloadablePage, integrationSnippet, normalizeIntegration, parseSharedIntegration, shareableStudioUrl } from "./quickstart-core.js?v=unicode-share-2";
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);

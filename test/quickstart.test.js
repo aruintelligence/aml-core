@@ -38,7 +38,7 @@ test("only bounded declarations produce copyable HTML", () => {
 test("studio explicitly honors a suppressed custom element's hidden state", () => {
   const page = readFileSync(new URL("../docs/quickstart.html", import.meta.url), "utf8");
   assert.match(page, /\.preview aml-gate\[hidden\]\{display:none\}/);
-  assert.match(page, /<script type="module" src="\.\/quickstart\.js"><\/script>/);
+  assert.match(page, /<script type="module" src="\.\/quickstart\.js\?v=unicode-share-2"><\/script>/);
 });
 
 test("scenario link restores the exact bounded declaration without a request query", () => {
