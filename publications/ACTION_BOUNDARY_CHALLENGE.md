@@ -62,11 +62,14 @@ From a checkout of this repository:
 node scripts/run-action-boundary-challenge.mjs --case changed-destination -- ../my-adapter/adapter
 node scripts/run-action-boundary-challenge.mjs -- ../my-adapter/adapter
 node scripts/run-action-boundary-challenge.mjs --html-out ./my-boundary-run.html -- ../my-adapter/adapter
+node scripts/run-action-boundary-challenge.mjs --probes --html-out ./my-probed-run.html -- ../my-adapter/adapter
 ```
 
 Keep your adapter in its own repository, adjacent to this checkout, and replace the example sibling path. The adapter command is one executable path. Use an executable wrapper script if your implementation needs an interpreter or build step. The runner appends the case file path, allows five seconds and 256 KiB of output per case, emits `aml-action-boundary-challenge-report/1` on stdout, and returns nonzero if any selected case fails. Keep adapter diagnostics on stderr so its stdout remains one JSON object.
 
 Start with `--case <id>` to shorten the edit/run loop. A failed case keeps the stable `failures` codes and adds `diagnostics` with each mismatched field's expected and observed JSON previews. An invalid case ID exits with code 2. The JSON report identifies `case_scope` (`single` or `full`), `selected_case`, and `full_challenge_passed`. A focused PASS sets `passed: true` for that one case but **always** sets `full_challenge_passed: false`. Run without `--case` before reporting full compatibility. The [visual challenge board](https://aruintelligence.github.io/aml-core/action-challenge.html?case=changed-destination#cases) offers a shareable link and copyable command for every case; it shows expected fixtures, not your observed results.
+
+**Test beyond memorized answers:** `--probes` adds six project-defined follow-up cases to the 13 published fixtures. A fresh random 128-bit seed changes body bytes, purpose, resources, and one exact policy rule for every run. The report records `probe_seed`, `published_case_count`, and `probe_case_count`; reproduce a run with `--probes --probe-seed <the 32 lowercase hex characters>`. `--case` and `--probes` are mutually exclusive. The Action enables these probes by default, so its full run has 19 cases. The fixed 13-case mode remains available for development and older adapters. The transformations are public in [`action-boundary-probes.js`](../conformance/action-boundary-probes.js); they are not secret tests and cannot prove that an adapter has no hardcoded shortcuts. [Inspect the 13/13 false signal and 13/19 counterexample](https://aruintelligence.github.io/aml-core/action-probe-lab.html), including the [machine report](../docs/action-probe-report.json).
 
 `--html-out <new-file.html>` also writes a self-contained offline visual report of **your actual run**. The JSON report still goes to stdout and the process still exits nonzero on a failed case. The HTML shows PASS, FAIL, or MIXED, scope, stable failure codes, expected/observed diagnostics, and the manifest/vector hashes. It loads no third-party assets or network data. An existing output path is never overwritten; use a new path for each run. Keep the generated HTML with your adapter's commit and JSON report. This is a readable view, not a signed attestation or automatic proof of independent provenance. [Open the published project reference example](https://aruintelligence.github.io/aml-core/action-challenge-run.html) to see the format; its 13/13 result is explicitly a self-test, not an outside implementation.
 
@@ -87,7 +90,7 @@ In an outside repository's GitHub Actions workflow:
 ```
 
 Pin the Action to an immutable release tag or commit when recording a reproducible result. The caller owns the adapter and its executable permission. The Action outputs `passed`, `result-file`, `html-file`, `artifact-url`, `challenge-sha256`, and `vectors-sha256`. The Action posts a per-case job summary and uploads the JSON and standalone HTML as one workflow artifact **before** failing a mismatched run. Open the workflow run's summary to see the cases and download both reports, including when the adapter fails. GitHub's artifact retention and access settings apply. The output paths exist only on that job's runner. This Action uses `actions/upload-artifact@v4`, so the automatic artifact path is intended for GitHub.com Actions; GitHub Enterprise Server support must be evaluated separately.
-The Action runs the full challenge; `--case` is an interactive local development option.
+The Action runs the full 19-case suite with a fresh seed; `--case` is an interactive local development option. Each workflow artifact records its own seed, so compare like-for-like inputs when comparing results.
 
 ## What the 13 cases exercise
 

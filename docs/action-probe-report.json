@@ -1,0 +1,207 @@
+{
+  "protocol": "aml-action-probe-comparison/1",
+  "seed": "0123456789abcdef0123456789abcdef",
+  "challenge_sha256": "6ec0e15ef7a286f9cc3698b38c6ea527fa718bf94474f6de22095835b7e82997",
+  "vectors_sha256": "9e5b26f1f3ff4a6e90e3e2fb7c3456fdf1c1dc319fedbf6a76891b3263554cd1",
+  "published_case_count": 13,
+  "probe_count": 6,
+  "fixed_canned_passes": 13,
+  "expanded_canned_passes": 13,
+  "expanded_reference_passes": 19,
+  "cases": [
+    {
+      "id": "approved-send",
+      "kind": "published_case",
+      "expected_decision": "requires_approval",
+      "expected_status": "dispatched",
+      "canned_passed": true,
+      "canned_failures": [],
+      "reference_passed": true
+    },
+    {
+      "id": "reordered-keys",
+      "kind": "published_case",
+      "expected_decision": "requires_approval",
+      "expected_status": "dispatched",
+      "canned_passed": true,
+      "canned_failures": [],
+      "reference_passed": true
+    },
+    {
+      "id": "changed-destination",
+      "kind": "published_case",
+      "expected_decision": "deny",
+      "expected_status": "blocked",
+      "canned_passed": true,
+      "canned_failures": [],
+      "reference_passed": true
+    },
+    {
+      "id": "stale-body-approval",
+      "kind": "published_case",
+      "expected_decision": "requires_approval",
+      "expected_status": "blocked",
+      "canned_passed": true,
+      "canned_failures": [],
+      "reference_passed": true
+    },
+    {
+      "id": "allowed-read",
+      "kind": "published_case",
+      "expected_decision": "allow",
+      "expected_status": "dispatched",
+      "canned_passed": true,
+      "canned_failures": [],
+      "reference_passed": true
+    },
+    {
+      "id": "undeclared-effect",
+      "kind": "published_case",
+      "expected_decision": "deny",
+      "expected_status": "blocked",
+      "canned_passed": true,
+      "canned_failures": [],
+      "reference_passed": true
+    },
+    {
+      "id": "missing-approval",
+      "kind": "published_case",
+      "expected_decision": "requires_approval",
+      "expected_status": "blocked",
+      "canned_passed": true,
+      "canned_failures": [],
+      "reference_passed": true
+    },
+    {
+      "id": "approval-error",
+      "kind": "published_case",
+      "expected_decision": "requires_approval",
+      "expected_status": "blocked",
+      "canned_passed": true,
+      "canned_failures": [],
+      "reference_passed": true
+    },
+    {
+      "id": "mutated-while-awaiting",
+      "kind": "published_case",
+      "expected_decision": "requires_approval",
+      "expected_status": "dispatched",
+      "canned_passed": true,
+      "canned_failures": [],
+      "reference_passed": true
+    },
+    {
+      "id": "policy-revoked-while-awaiting",
+      "kind": "published_case",
+      "expected_decision": "requires_approval",
+      "expected_status": "blocked",
+      "canned_passed": true,
+      "canned_failures": [],
+      "reference_passed": true
+    },
+    {
+      "id": "dispatch-uncertain",
+      "kind": "published_case",
+      "expected_decision": "requires_approval",
+      "expected_status": "unknown",
+      "canned_passed": true,
+      "canned_failures": [],
+      "reference_passed": true
+    },
+    {
+      "id": "ambiguous-policy",
+      "kind": "published_case",
+      "expected_decision": "deny",
+      "expected_status": "blocked",
+      "canned_passed": true,
+      "canned_failures": [],
+      "reference_passed": true
+    },
+    {
+      "id": "malformed-proposal",
+      "kind": "published_case",
+      "expected_decision": "deny",
+      "expected_status": "blocked",
+      "canned_passed": true,
+      "canned_failures": [],
+      "reference_passed": true
+    },
+    {
+      "id": "probe-approved-body",
+      "kind": "seeded_probe",
+      "expected_decision": "requires_approval",
+      "expected_status": "dispatched",
+      "canned_passed": false,
+      "canned_failures": [
+        "plan",
+        "receipt",
+        "executed_proposal"
+      ],
+      "reference_passed": true
+    },
+    {
+      "id": "probe-new-authorized-resource",
+      "kind": "seeded_probe",
+      "expected_decision": "requires_approval",
+      "expected_status": "dispatched",
+      "canned_passed": false,
+      "canned_failures": [
+        "plan",
+        "receipt",
+        "executed_proposal"
+      ],
+      "reference_passed": true
+    },
+    {
+      "id": "probe-unapproved-resource",
+      "kind": "seeded_probe",
+      "expected_decision": "deny",
+      "expected_status": "blocked",
+      "canned_passed": false,
+      "canned_failures": [
+        "plan",
+        "receipt"
+      ],
+      "reference_passed": true
+    },
+    {
+      "id": "probe-stale-approval",
+      "kind": "seeded_probe",
+      "expected_decision": "requires_approval",
+      "expected_status": "blocked",
+      "canned_passed": false,
+      "canned_failures": [
+        "plan",
+        "receipt"
+      ],
+      "reference_passed": true
+    },
+    {
+      "id": "probe-allowed-read-purpose",
+      "kind": "seeded_probe",
+      "expected_decision": "allow",
+      "expected_status": "dispatched",
+      "canned_passed": false,
+      "canned_failures": [
+        "plan",
+        "receipt",
+        "executed_proposal"
+      ],
+      "reference_passed": true
+    },
+    {
+      "id": "probe-frozen-proposal",
+      "kind": "seeded_probe",
+      "expected_decision": "requires_approval",
+      "expected_status": "dispatched",
+      "canned_passed": false,
+      "canned_failures": [
+        "plan",
+        "receipt",
+        "executed_proposal"
+      ],
+      "reference_passed": true
+    }
+  ],
+  "claim_boundary": "Project-authored seeded probes expose this deliberately canned case-ID adapter. Passing them cannot prove an implementation is independent, complete, or production safe."
+}

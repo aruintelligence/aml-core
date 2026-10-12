@@ -5,15 +5,17 @@ import { pathToFileURL } from "node:url";
 export function actionChallengeSummary(report, artifactUrl = "") {
   if (report?.protocol !== "aml-action-boundary-challenge-report/1" ||
       report.case_scope !== "full" || !Array.isArray(report.cases) ||
-      report.cases.length !== 13) throw new TypeError("unsupported_challenge_report");
+      ![13, 19].includes(report.cases.length)) throw new TypeError("unsupported_challenge_report");
   const plain = value => typeof value === "string" && /^[a-z0-9:_-]+$/.test(value) ? value : "invalid";
   const count = report.cases.filter(row => row.passed).length;
-  const status = report.full_challenge_passed === true && count === 13 ? "PASS" :
+  const total = report.cases.length;
+  const status = report.full_challenge_passed === true && count === total ? "PASS" :
     count === 0 ? "FAIL" : "MIXED";
   const lines = [
     "## ĀML Action Boundary Challenge",
     "",
-    `**${status} · ${count}/13 cases** — adapter run; compatibility with project-defined fixtures only.`,
+    `**${status} · ${count}/${total} cases** — adapter run; compatibility with project-defined fixtures only.`,
+    ...(report.probe_seed ? ["", `13 published cases + ${plain(String(report.probe_case_count))} seeded probes. Reproduce with \`--probes --probe-seed ${plain(report.probe_seed)}\`.`] : []),
     "",
     "| Case | Result | Failure codes |",
     "| --- | --- | --- |",

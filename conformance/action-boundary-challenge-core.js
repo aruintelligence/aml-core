@@ -18,6 +18,11 @@ export function prepareCase(row, vectors) {
   if (!source) throw new Error(`Unknown vector: ${row.vector}`);
   const proposal = structuredClone(source.proposal);
   const policy = structuredClone(vectors.policy);
+  if (row.policy_override_resource) {
+    if (typeof row.policy_override_resource !== "string" || !policy.rules?.[0])
+      throw new Error("Invalid probe policy resource");
+    policy.rules[0].resource = row.policy_override_resource;
+  }
   if (row.proposal_variant === "extra_top_level_field") proposal.extra = true;
   else if (row.proposal_variant) throw new Error("Unsupported proposal variant");
   if (row.policy_variant === "duplicate_matching_rule") policy.rules.push(structuredClone(policy.rules[0]));
@@ -29,7 +34,7 @@ export function prepareCase(row, vectors) {
     host.approval_digest_sha256 = approved.proposal_sha256;
     delete host.approval_digest_vector;
   }
-  return { protocol: "aml-action-challenge-case/1", case_id: row.id, proposal, policy, host };
+  return { protocol: "aml-action-challenge-case/1", case_id: row.input_case_id || row.id, proposal, policy, host };
 }
 
 export function checkCase(row, output, invocation, vectors) {

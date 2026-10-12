@@ -49,7 +49,7 @@
       <div class="stat"><strong>0</strong><span>live services or real approvals</span></div>
       <div class="stat"><strong>PASS / FAIL / MIXED</strong><span>outside reports invited</span></div>
     </div>
-    <aside class="github-result"><div><span class="kicker">NEW / GITHUB RUN EVIDENCE</span><b>A failed case should still leave a visible result.</b><p>Use the GitHub Action with your own adapter. Its job summary shows all 13 verdicts, and its downloadable artifact holds the JSON and offline visual report. A mismatch still fails the run.</p></div><a href="https://github.com/aruintelligence/aml-core/blob/main/publications/ACTION_BOUNDARY_CHALLENGE.md#run-it">Wire the Action ↗</a></aside>
+    <aside class="github-result"><div><span class="kicker">NEW / SEE THE FALSE PERFECT SCORE</span><b>13/13 can be copied. The next six answers cannot be copied from this fixed set.</b><p>Our deliberately canned adapter passes all published fixtures, then fails six seeded follow-up cases. The GitHub Action now runs 19 cases, records the fresh seed, and preserves both visual and JSON evidence even on failure.</p></div><a href="action-probe-lab.html">See the counterexample ↗</a></aside>
     <section id="build" class="builder" aria-labelledby="build-heading">
       <div class="kicker">THE FIVE-MINUTE IMPLEMENTER LOOP</div>
       <h2 id="build-heading">One case. A precise difference. Then all 13.</h2>
@@ -86,11 +86,12 @@
     <section id="run" class="run" aria-labelledby="run-heading">
       <div class="kicker">YOUR CODE · YOUR REPOSITORY · REPRODUCIBLE REPORT</div>
       <h2 id="run-heading">Make the claim falsifiable.</h2>
-      <p>After the focused loop, run all 13 cases. The JSON report includes stable failure codes, field diagnostics for mismatches, and hashes of the exact challenge and vector bytes. Keep your implementation and evidence outside the project reference code.</p>
+      <p>After the focused loop, run all 13 published cases, then add six seeded probes. The JSON report includes stable failure codes, field diagnostics, the seed, and hashes of the exact challenge and vector bytes. Keep your implementation and evidence outside the project reference code.</p>
       <div class="command"><code id="command-text">node scripts/run-action-boundary-challenge.mjs -- ../my-adapter/adapter</code><button id="copy-command" type="button">Copy full command</button></div>
       <div id="copy-status" class="copy-status" role="status" aria-live="polite"></div>
       <p>Want a readable artifact from <em>your actual run</em>? Add <code>--html-out</code>. It creates a new offline HTML file with observed verdicts and diagnostics while keeping the machine JSON on stdout.</p>
       <div class="command"><code id="visual-command">node scripts/run-action-boundary-challenge.mjs --html-out ./my-boundary-run.html -- ../my-adapter/adapter</code><button id="copy-visual" type="button">Copy visual report command</button></div>
+      <p>For the stronger run, add <code>--probes</code> before <code>--html-out</code>. The Action does this by default and records the seed needed to repeat a run.</p>
       <div id="visual-copy-status" class="copy-status" role="status" aria-live="polite"></div>
       <p>Run from a checkout of <code>aml-core</code>; replace the sibling path with your executable. The harness uses simulated callbacks only. A full PASS is compatibility evidence for these fixtures, subject to outside review of the implementation.</p>
       <div class="run-links"><a href="action-challenge-run.html">See the project self-test format ↗</a><a href="https://github.com/aruintelligence/aml-core/blob/main/publications/ACTION_BOUNDARY_CHALLENGE.md">Read the adapter contract ↗</a><a href="https://github.com/aruintelligence/aml-core/tree/main/actions/action-boundary-conformance">Use the GitHub Action ↗</a><a href="https://github.com/aruintelligence/aml-core/issues/88">Share PASS, FAIL, or MIXED ↗</a></div>
