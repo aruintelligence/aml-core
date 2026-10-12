@@ -7,9 +7,11 @@ export const firstRunPolicy = {
   rules: [{ tool: "send_message", effect: "send", resource: "team@example.test", requires_approval: true }]
 };
 
-const vectorDigests = {
-  team: "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
-  outside: "d02df0aafadc6b9db6744083baac970afac76c0510b05de60b02d80172749d53"
+const publishedVectors = {
+  team: { sha256: "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+    decision: "requires_approval", reason: "exact_rule" },
+  outside: { sha256: "d02df0aafadc6b9db6744083baac970afac76c0510b05de60b02d80172749d53",
+    decision: "deny", reason: "no_exact_rule" }
 };
 
 export function firstRunProposal(recipient) {
@@ -27,14 +29,16 @@ export async function firstRunAction(recipient, subtle) {
   if (!subtle || typeof subtle.digest !== "function") throw new Error("browser_crypto_unavailable");
   const proposal = firstRunProposal(recipient);
   const plan = await planPreview(proposal, firstRunPolicy, subtle);
+  const expected = publishedVectors[recipient];
   return {
     proposed: `send_message → ${proposal.resource}`,
     policy: "send_message → team@example.test; approval required",
     decision: plan.decision, reason: plan.reason,
     proposal_sha256: plan.proposal_sha256,
     canonical_json: plan.canonical_json,
-    published_vector_sha256: vectorDigests[recipient],
-    project_vector_matches: plan.proposal_sha256 === vectorDigests[recipient],
+    published_vector_sha256: expected.sha256,
+    project_vector_matches: plan.proposal_sha256 === expected.sha256 &&
+      plan.decision === expected.decision && plan.reason === expected.reason,
     tool_callbacks: 0
   };
 }
