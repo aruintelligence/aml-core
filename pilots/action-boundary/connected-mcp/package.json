@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "Local stdio MCP boundary pilot with no external effect",
+  "dependencies": {
+    "@modelcontextprotocol/client": "2.3.1",
+    "@modelcontextprotocol/server": "2.3.1",
+    "zod": "4.6.6"
+  }
+}
