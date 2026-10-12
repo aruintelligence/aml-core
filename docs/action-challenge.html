@@ -87,8 +87,11 @@
       <p>After the focused loop, run all 13 cases. The JSON report includes stable failure codes, field diagnostics for mismatches, and hashes of the exact challenge and vector bytes. Keep your implementation and evidence outside the project reference code.</p>
       <div class="command"><code id="command-text">node scripts/run-action-boundary-challenge.mjs -- ../my-adapter/adapter</code><button id="copy-command" type="button">Copy full command</button></div>
       <div id="copy-status" class="copy-status" role="status" aria-live="polite"></div>
+      <p>Want a readable artifact from <em>your actual run</em>? Add <code>--html-out</code>. It creates a new offline HTML file with observed verdicts and diagnostics while keeping the machine JSON on stdout.</p>
+      <div class="command"><code id="visual-command">node scripts/run-action-boundary-challenge.mjs --html-out ./my-boundary-run.html -- ../my-adapter/adapter</code><button id="copy-visual" type="button">Copy visual report command</button></div>
+      <div id="visual-copy-status" class="copy-status" role="status" aria-live="polite"></div>
       <p>Run from a checkout of <code>aml-core</code>; replace the sibling path with your executable. The harness uses simulated callbacks only. A full PASS is compatibility evidence for these fixtures, subject to outside review of the implementation.</p>
-      <div class="run-links"><a href="https://github.com/aruintelligence/aml-core/blob/main/publications/ACTION_BOUNDARY_CHALLENGE.md">Read the adapter contract ↗</a><a href="https://github.com/aruintelligence/aml-core/tree/main/actions/action-boundary-conformance">Use the GitHub Action ↗</a><a href="https://github.com/aruintelligence/aml-core/issues/88">Share PASS, FAIL, or MIXED ↗</a></div>
+      <div class="run-links"><a href="action-challenge-run.html">See the project self-test format ↗</a><a href="https://github.com/aruintelligence/aml-core/blob/main/publications/ACTION_BOUNDARY_CHALLENGE.md">Read the adapter contract ↗</a><a href="https://github.com/aruintelligence/aml-core/tree/main/actions/action-boundary-conformance">Use the GitHub Action ↗</a><a href="https://github.com/aruintelligence/aml-core/issues/88">Share PASS, FAIL, or MIXED ↗</a></div>
     </section>
     <footer class="footer">ĀML™ · ĀRU Meaning Language™ · Project-authored challenge. Compatibility with these fixtures does not establish human consent, external delivery, production authorization, certification, or a standard.</footer>
   </main>
@@ -152,6 +155,10 @@
     $("copy-selected").addEventListener("click",async()=>{
       try{await navigator.clipboard.writeText($("selected-command").textContent);$("selected-copy-status").textContent="Focused command copied. Replace the adapter path with your own executable."}
       catch{$("selected-copy-status").textContent="Clipboard unavailable. Select and copy the command above."}
+    });
+    $("copy-visual").addEventListener("click",async()=>{
+      try{await navigator.clipboard.writeText($("visual-command").textContent);$("visual-copy-status").textContent="Visual command copied. Use a fresh HTML path and your own adapter executable."}
+      catch{$("visual-copy-status").textContent="Clipboard unavailable. Select and copy the command above."}
     });
     fetch("./action-challenge-board.json?v=1").then(response=>{
       if(!response.ok)throw Error("Could not load the published cases");return response.json();
