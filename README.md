@@ -18,11 +18,20 @@
 
 ĀML is a working research prototype for meaning-native, policy-aware, accountable AI interfaces. It can sit between machine intent and human-facing output as an **AI Interface Firewall™** without requiring teams to replace HTML, React, or existing frontend stacks.
 
-| Try the decision | Verify the evidence | Integrate a path |
-|---|---|---|
-| [**60-second live proof**](https://aruintelligence.github.io/aml-core/proof.html?attention=5&restoration=1&lang=en) — change one declared value and watch SUPPRESS become ALLOW. | [**30-minute enterprise pilot**](pilots/enterprise-30min/README.md) — replay receipts, inspect fixture hashes, and reject a mutation. | [**Consumer quickstart**](docs/CONSUMER_QUICKSTART.md) — run an installed-package rehearsal in a clean directory. |
+## Start with one decision
 
-**Explore the interface:** [Live lab](https://aruintelligence.github.io/aml-core/) · [View Meaning™ inspector](https://aruintelligence.github.io/aml-core/view-meaning.html) · [API contract](protocol/aml-http.openapi.yaml)
+[**Enter the interactive first run →**](https://aruintelligence.github.io/aml-core/first-run.html) Change an agent's destination or a proposed interface value. Follow the policy path, inspect the local preview, and then open the linked executable lab. It runs in your browser with no tool access.
+
+| Your goal | First useful result |
+|---|---|
+| **Build** | [Put a narrow gate around one HTML element](https://aruintelligence.github.io/aml-core/quickstart.html), then use the [host function-tool quickstart](docs/AGENT_TOOL_QUICKSTART.md) for agent actions. |
+| **Verify** | [Reproduce a decision in 10 minutes](docs/TRY_AML_10_MINUTES.md); preserve the commit, commands, output, and any failure. |
+| **Challenge** | [Run one action-boundary case](https://aruintelligence.github.io/aml-core/action-challenge.html?case=changed-destination#build), then all public and seeded cases against your own adapter. |
+
+ĀML's project-authored demonstrations are engineering evidence, not outside validation. The interface scores are declared prototype inputs, not objective measures of a person.
+
+<details>
+<summary><strong>Open the research atlas:</strong> labs, counterexamples, and field observations</summary>
 
 **Explore the next boundary:** [Try the Action Boundary Lab](https://aruintelligence.github.io/aml-core/action-lab.html?view=action-path-1) — change an agent's intended tool call and see an exact policy decision, digest, stale simulated approval, and uncertain outcome. [Try a one-use grant replay](https://aruintelligence.github.io/aml-core/action-lab.html?scenario=replay): a second attempt with the same local grant blocks before a callback. [Explore the visual 13-case challenge](https://aruintelligence.github.io/aml-core/action-challenge.html), [read its adapter contract](publications/ACTION_BOUNDARY_CHALLENGE.md), or [read the pilot](pilots/action-boundary/README.md) and its [six published vectors](pilots/action-boundary/vectors.json). The browser rehearsal and repository self-test are project-authored, with no live tool access.
 
@@ -105,6 +114,9 @@
 **A spent grant must stay spent:** [Watch the local replay counterexample](https://aruintelligence.github.io/aml-core/grant-directory-lab.html?scenario=writable-root). A misconfigured writable directory let the former one-use file store accept the same test grant twice after its claim directory was replaced. The store now rejects weak ownership, permissions, and symlinks before issuance or consumption. Four before/after scenarios run the pinned historical module and corrected module in CI. This project-authored POSIX simulation does not involve a second operating-system user or real tool side effect.
 
 [![A writable local grant directory permitted two claims from one approval; private-path checks now reject it.](docs/grant-directory-proof.svg)](https://aruintelligence.github.io/aml-core/grant-directory-lab.html)
+
+
+</details>
 
 ## Prove the core claim in 60 seconds
 
