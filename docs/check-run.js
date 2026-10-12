@@ -3,6 +3,14 @@ import { checkLocalRun, MAX_RECORD_CHARS } from "./check-run-core.js?v=local-che
 const $ = id => document.getElementById(id);
 const input = $("record-input");
 const status = $("input-status");
+let originalExample = null;
+let exampleChanged = false;
+
+function leaveExample() {
+  originalExample = null;
+  exampleChanged = false;
+  $("sample-challenge").hidden = true;
+}
 
 function clearResult() {
   $("results").hidden = true;
@@ -44,10 +52,16 @@ function render(result) {
     row.append(textNode("b", `${item.pass ? "MATCH" : "MISMATCH"} · ${item.identifier} · ${item.recorded}`), textNode("p", item.detail));
     gates.append(row);
   }
+  $("sample-challenge").hidden = !originalExample || (!result.consistent && !exampleChanged);
+  $("challenge-button").textContent = exampleChanged ? "Restore the captured example ↺" : "Change one saved claim ↗";
+  $("challenge-copy").textContent = exampleChanged ?
+    "The source still matches. Restoring the captured gate claim should bring this self-check back to PASS." :
+    "Flip the saved browser outcome for the withheld gate. The source fingerprint will still match, but the gate claim should fail.";
 }
 
 async function loadFile(file) {
   if (!file) return;
+  leaveExample();
   clearResult();
   if (file.size > MAX_RECORD_CHARS) {
     status.textContent = "This file exceeds the 1 MB local check limit.";
@@ -71,23 +85,68 @@ picker.addEventListener("drop", event => {
   loadFile(event.dataTransfer?.files?.[0]);
 });
 input.addEventListener("input", () => {
+  leaveExample();
   clearResult();
   status.textContent = "Source record changed. Recheck to update the result.";
 });
-$("check").addEventListener("click", async () => {
+async function recheck() {
   const raw = input.value;
   $("check").disabled = true;
+  $("challenge-button").disabled = true;
   status.textContent = "Rechecking this local record…";
   try {
     const result = await checkLocalRun(raw);
     if (input.value !== raw) return;
     render(result);
-    status.textContent = "Local recheck complete. The file was not uploaded.";
+    status.textContent = originalExample ?
+      exampleChanged ? "The example's saved outcome changed. The source fingerprint still matches." :
+        "Captured project example rechecked in this browser. No record was uploaded." :
+      "Local recheck complete. The file was not uploaded.";
   } catch (error) {
     if (input.value !== raw) return;
     clearResult();
     status.textContent = error.message;
   } finally {
     $("check").disabled = false;
+    $("challenge-button").disabled = false;
   }
+}
+
+$("check").addEventListener("click", recheck);
+async function loadExample(jumpToChecker = false) {
+  const before = input.value;
+  $("load-example").disabled = true;
+  $("load-example-hero").disabled = true;
+  status.textContent = "Loading the captured project example…";
+  try {
+    const response = await fetch("./example-local-run.json");
+    if (!response.ok) throw new Error("The example record could not be loaded here.");
+    const raw = await response.text();
+    if (input.value !== before) return;
+    if (raw.length > MAX_RECORD_CHARS) throw new RangeError("The example exceeds the local check limit.");
+    const formatted = JSON.stringify(JSON.parse(raw), null, 2);
+    leaveExample();
+    $("record-file").value = "";
+    input.value = formatted;
+    originalExample = formatted;
+    clearResult();
+    await recheck();
+    if (jumpToChecker) $("checker").scrollIntoView();
+  } catch {
+    if (input.value === before) status.textContent = "The example record could not be loaded here. Create a run in the playground instead.";
+  } finally {
+    $("load-example").disabled = false;
+    $("load-example-hero").disabled = false;
+  }
+}
+$("load-example").addEventListener("click", () => loadExample());
+$("load-example-hero").addEventListener("click", () => loadExample(true));
+
+$("challenge-button").addEventListener("click", async () => {
+  if (!originalExample) return;
+  exampleChanged = !exampleChanged;
+  const record = JSON.parse(originalExample);
+  if (exampleChanged) record.gates[0].browser.effective_rendered = !record.gates[0].browser.effective_rendered;
+  input.value = JSON.stringify(record, null, 2);
+  await recheck();
 });
