@@ -1,6 +1,6 @@
 import { compileSourceBrowser } from "./aml-browser.js";
 import { parsePlaygroundShare, playgroundShareUrl } from "./playground-core.js";
-import { studioHandoffUrl } from "./playground-handoff.js";
+import { studioHandoffUrls } from "./playground-handoff.js?v=compare-4";
 
 const $ = id => document.getElementById(id);
 const source = $("source");
@@ -19,6 +19,23 @@ function sample(restoration) {
 }`;
 }
 
+function comparisonSample() {
+  return `transmission "compare_two_prompts" {
+  engram urgentOffer {
+    value: "Buy before the timer expires"
+    purpose: "Prompt an immediate purchase"
+    attention_cost: 5
+    restoration_value: 1
+  }
+  engram clearDetails {
+    value: "Review the full terms"
+    purpose: "Help compare the offer"
+    attention_cost: 5
+    restoration_value: 5
+  }
+}`;
+}
+
 function element(tag, className, value) {
   const node = document.createElement(tag);
   node.className = className;
@@ -26,7 +43,7 @@ function element(tag, className, value) {
   return node;
 }
 
-function renderCards(decisions, handoffUrl) {
+function renderCards(decisions, handoffUrls) {
   const list = $("decision-cards");
   list.replaceChildren();
   if (!decisions.length) {
@@ -49,10 +66,10 @@ function renderCards(decisions, handoffUrl) {
     values.append(element("span", "", `Declared attention ${decision.attention_cost ?? "—"}`));
     values.append(element("span", "", `Declared restoration ${decision.restoration_value ?? "—"}`));
     card.append(values);
-    if (index === 0 && handoffUrl) {
-      card.append(element("p", "handoff-note", "Carry this engram's value, purpose, and declared numbers into a browser gate. The value becomes button text."));
+    if (handoffUrls[index]) {
+      card.append(element("p", "handoff-note", "Explore this engram as a live browser gate. Its value becomes button text; the declared inputs carry over."));
       const link = element("a", "handoff-link", "See it as a live gate ↗");
-      link.href = handoffUrl;
+      link.href = handoffUrls[index];
       card.append(link);
     }
     list.append(card);
@@ -78,7 +95,7 @@ function compile() {
       `${allowed} allowed · ${suppressed} suppressed` : "Compiled · no gate-bound nodes";
     $("summary").dataset.tone = suppressed ? "suppress" : decisions.length ? "allow" : "neutral";
     $("decision-status").textContent = "Compiled in this browser with the project engine. The raw decision includes a generated timestamp.";
-    renderCards(decisions, studioHandoffUrl(result, location.href));
+    renderCards(decisions, studioHandoffUrls(result, location.href));
     showRaw();
   } catch (error) {
     result = null;
@@ -94,7 +111,7 @@ function compile() {
 
 $("compile").addEventListener("click", compile);
 document.querySelectorAll("[data-preset]").forEach(button => button.addEventListener("click", () => {
-  source.value = sample(Number(button.dataset.preset));
+  source.value = button.dataset.preset === "compare" ? comparisonSample() : sample(Number(button.dataset.preset));
   compile();
 }));
 source.addEventListener("input", () => {
