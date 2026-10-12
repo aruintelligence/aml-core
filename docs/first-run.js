@@ -1,11 +1,44 @@
-// Explanatory preview only. Source implementations and receipt verification live in the repo.
-export function actionDecision(recipient) {
-  const matched = recipient === "team";
+// The action calculation uses the same project-authored planner as the Action Lab.
+// This page does not grant approval, dispatch a tool, or issue an execution receipt.
+import { planPreview } from "./action-lab-core.js";
+
+export const firstRunPolicy = {
+  protocol: "aml-action-policy/1",
+  rules: [{ tool: "send_message", effect: "send", resource: "team@example.test", requires_approval: true }]
+};
+
+const publishedVectors = {
+  team: { sha256: "a8a184bda13626554b6bf9494f8cd2dd526f4ea16baf58d9845b16e3e3be3332",
+    decision: "requires_approval", reason: "exact_rule" },
+  outside: { sha256: "d02df0aafadc6b9db6744083baac970afac76c0510b05de60b02d80172749d53",
+    decision: "deny", reason: "no_exact_rule" }
+};
+
+export function firstRunProposal(recipient) {
+  if (recipient !== "team" && recipient !== "outside") throw new RangeError("Unknown first-run scenario");
   return {
-    proposed: `send_message → ${matched ? "team" : "outsider"}@example.test`,
+    protocol: "aml-proposed-action/1", tool: "send_message", effect: "send",
+    resource: recipient === "team" ? "team@example.test" : "outsider@example.test",
+    purpose: "Status ✓", arguments: {
+      subject: "Update", body: "The build passed.", metadata: { z: 2, a: ["é", true, null] }
+    }
+  };
+}
+
+export async function firstRunAction(recipient, subtle) {
+  if (!subtle || typeof subtle.digest !== "function") throw new Error("browser_crypto_unavailable");
+  const proposal = firstRunProposal(recipient);
+  const plan = await planPreview(proposal, firstRunPolicy, subtle);
+  const expected = publishedVectors[recipient];
+  return {
+    proposed: `send_message → ${proposal.resource}`,
     policy: "send_message → team@example.test; approval required",
-    decision: matched ? "requires_approval" : "deny",
-    reason: matched ? "exact_rule" : "no_exact_rule",
+    decision: plan.decision, reason: plan.reason,
+    proposal_sha256: plan.proposal_sha256,
+    canonical_json: plan.canonical_json,
+    published_vector_sha256: expected.sha256,
+    project_vector_matches: plan.proposal_sha256 === expected.sha256 &&
+      plan.decision === expected.decision && plan.reason === expected.reason,
     tool_callbacks: 0
   };
 }
@@ -37,12 +70,25 @@ if (typeof document !== "undefined") {
   $("attention").value = initial("attention", 5);
   $("restoration").value = initial("restoration", 1);
 
-  function update() {
+  let generation = 0;
+  async function update() {
+    const turn = ++generation;
     const action = mode === "action";
     const attention = Number($("attention").value);
     const restoration = Number($("restoration").value);
-    const result = action ? actionDecision(recipient) : renderDecision(attention, restoration);
-    const tone = action ? (result.decision === "deny" ? "stop" : "hold") :
+    let result;
+    try {
+      result = action ? await firstRunAction(recipient, globalThis.crypto?.subtle) :
+        renderDecision(attention, restoration);
+    } catch {
+      result = action ? { proposed: `send_message → ${recipient === "team" ? "team" : "outsider"}@example.test`,
+        decision: "deny", reason: "browser_crypto_unavailable", proposal_sha256: null,
+        project_vector_matches: false, tool_callbacks: 0 } :
+        { proposed: "render a conversion prompt", decision: "suppress", reason: "invalid_declared_value" };
+    }
+    if (turn !== generation) return; // An older asynchronous digest must not overwrite a new input.
+    const mismatch = action && !result.project_vector_matches;
+    const tone = action ? (result.decision === "deny" || mismatch ? "stop" : "hold") :
       (result.decision === "allow" ? "go" : "stop");
 
     document.querySelectorAll("[data-mode]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.mode === mode)));
@@ -58,15 +104,16 @@ if (typeof document !== "undefined") {
     $("restoration-value").textContent = String(restoration);
     $("path-proposal").textContent = result.proposed;
     $("path-rule").textContent = action ? "team@example.test only" : "restoration ≥ attention";
-    $("path-result").textContent = result.decision.replaceAll("_", " ").toUpperCase();
+    $("path-result").textContent = mismatch ? "VECTOR MISMATCH" : result.decision.replaceAll("_", " ").toUpperCase();
     $("path-result-card").dataset.tone = tone;
     $("orb").dataset.tone = tone;
-    $("orb-word").textContent = action ? (tone === "stop" ? "BLOCKED" : "HELD") :
+    $("orb-word").textContent = action ? (mismatch ? "RECHECK" : tone === "stop" ? "BLOCKED" : "HELD") :
       (tone === "go" ? "VISIBLE" : "WITHHELD");
     $("verdict-label").textContent = action ? "ACTION HELD BEFORE DISPATCH" : "INTERFACE RENDER DECISION";
-    $("verdict-title").textContent = action ? (tone === "stop" ? "The route does not match." : "The route matches. Approval is next.") :
+    $("verdict-title").textContent = action ? (mismatch ? "The published vector did not match." : tone === "stop" ? "The route does not match." : "The route matches. Approval is next.") :
       (tone === "go" ? "This element passes the gate." : "This element is suppressed.");
-    $("verdict-explanation").textContent = action ? (tone === "stop" ?
+    $("verdict-explanation").textContent = mismatch ?
+      "Do not rely on this preview. Open the source vectors and executable lab to investigate the disagreement." : action ? (tone === "stop" ?
       "The exact host rule cannot authorize this destination. The local preview invokes no tool." :
       "An exact rule match still does not dispatch the tool. A real host must approve the exact proposal first.") :
       (tone === "go" ? "Declared restoration meets or exceeds declared attention cost under this prototype rule." :
@@ -75,6 +122,12 @@ if (typeof document !== "undefined") {
     $("screen-title").textContent = tone === "go" ? "Continue with the offer" : "Suppressed by policy";
     $("screen-detail").textContent = tone === "go" ? "A local illustration of an allowed prompt." :
       "The proposed prompt is withheld in this local illustration.";
+    $("fingerprint").hidden = !action;
+    $("vector-link").hidden = !action;
+    $("digest").textContent = result.proposal_sha256 || "Unavailable";
+    $("vector-status").textContent = mismatch ? "PROJECT VECTOR MISMATCH · INVESTIGATE" :
+      "MATCHES THE PUBLISHED PROJECT VECTOR · SELF-CHECK ONLY";
+    $("vector-status").dataset.tone = mismatch ? "stop" : "go";
     $("record").textContent = JSON.stringify({
       provenance: "project-authored explanatory browser preview",
       boundary: action ? "agent_action" : "interface_render",
@@ -101,6 +154,14 @@ if (typeof document !== "undefined") {
       $("copy-link").textContent = "Scenario link copied";
     } catch {
       $("copy-link").textContent = "Copy unavailable — use the address bar";
+    }
+  });
+  $("copy-record").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText($("record").textContent);
+      $("copy-record").textContent = "Calculation copied";
+    } catch {
+      $("copy-record").textContent = "Copy unavailable — select the JSON below";
     }
   });
   update();
