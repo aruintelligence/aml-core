@@ -5,7 +5,7 @@ import { downloadablePage, integrationSnippet, parseSharedIntegration } from "./
 import { verifiedGateEvent } from "./playground-live.js?v=live-1";
 import { createLocalRunRecord } from "./playground-record.js?v=local-run-1";
 import { buildComparisonCard } from "./playground-card.js?v=comparison-card-1";
-import { buildComparisonReport } from "./playground-report.js?v=offline-report-1";
+import { buildComparisonReport } from "./playground-report.js?v=offline-report-2";
 
 const $ = id => document.getElementById(id);
 const source = $("source");
