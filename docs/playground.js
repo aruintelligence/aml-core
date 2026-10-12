@@ -1,12 +1,16 @@
 import { compileSourceBrowser } from "./aml-browser.js";
 import { parsePlaygroundShare, playgroundShareUrl } from "./playground-core.js";
 import { studioHandoffUrls } from "./playground-handoff.js?v=compare-4";
+import { parseSharedIntegration } from "./quickstart-core.js?v=unicode-share-2";
+import { verifiedGateEvent } from "./playground-live.js?v=live-1";
 
 const $ = id => document.getElementById(id);
 const source = $("source");
 const output = $("output");
 let result = null;
 let view = "decisions";
+let bridgeState = "loading";
+const MAX_LIVE_PREVIEWS = 6;
 
 function sample(restoration) {
   return `transmission "first_program" {
@@ -76,6 +80,84 @@ function renderCards(decisions, handoffUrls) {
   }
 }
 
+function renderLivePreviews(decisions, handoffUrls) {
+  const grid = $("live-grid");
+  grid.replaceChildren();
+  const eligible = handoffUrls.map((url, index) => ({ url, index })).filter(item => item.url);
+  $("live-count").textContent = eligible.length ?
+    `${Math.min(eligible.length, MAX_LIVE_PREVIEWS)} of ${eligible.length} eligible engram${eligible.length === 1 ? "" : "s"}` :
+    "No eligible engrams";
+  if (!eligible.length) {
+    grid.append(element("p", "live-empty", "Compile an engram with a representable purpose, value, and declared numbers to see a browser gate here."));
+    return;
+  }
+  for (const { url, index } of eligible.slice(0, MAX_LIVE_PREVIEWS)) {
+    const decision = decisions[index];
+    const panel = document.createElement("article");
+    panel.className = "live-panel";
+    panel.dataset.state = "loading";
+    const title = element("h3", "", decision.identifier || "Unnamed engram");
+    const frame = document.createElement("div");
+    frame.className = "live-frame";
+    frame.append(element("span", "live-frame-label", "SAMPLE INTERFACE · ENFORCE / CLOSED"));
+    const surface = document.createElement("div");
+    surface.className = "live-surface";
+    const absence = element("p", "live-absence", "Connecting to the project browser gate…");
+    surface.append(absence);
+    frame.append(surface);
+    const status = element("p", "live-event", "Waiting for aml-decision…");
+    status.setAttribute("role", "status");
+    panel.append(title, frame, status);
+    grid.append(panel);
+    if (bridgeState !== "ready") {
+      if (bridgeState === "unavailable") {
+        panel.dataset.state = "unavailable";
+        absence.textContent = "Browser gate unavailable here.";
+        status.textContent = "No browser decision was emitted.";
+      }
+      continue;
+    }
+    let declaration;
+    try { declaration = parseSharedIntegration(url); }
+    catch { panel.dataset.state = "unavailable"; absence.textContent = "This declaration cannot be previewed."; continue; }
+    const gate = document.createElement("aml-gate");
+    gate.setAttribute("purpose", declaration.purpose);
+    gate.setAttribute("content", "Playground example");
+    gate.setAttribute("attention-cost", String(declaration.attention));
+    gate.setAttribute("restoration-value", String(declaration.restoration));
+    gate.setAttribute("mode", "enforce");
+    gate.setAttribute("failure-mode", "closed");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = declaration.label;
+    gate.append(button);
+    let observed = false;
+    gate.addEventListener("aml-decision", event => {
+      observed = true;
+      const valid = verifiedGateEvent(event.detail, decision, declaration, gate.hidden);
+      panel.dataset.state = valid ? event.detail.render_allowed ? "allow" : "suppress" : "mismatch";
+      if (!valid) gate.hidden = true;
+      absence.hidden = valid && event.detail.effective_rendered;
+      absence.textContent = valid ? "Element withheld by the browser gate" :
+        "The browser event did not match this compiler decision.";
+      status.textContent = valid ?
+        `aml-decision · ${event.detail.render_allowed ? "allow · visible" : "suppress · withheld"}` :
+        "MISMATCH · do not rely on this preview";
+    });
+    try { surface.prepend(gate); }
+    catch { /* The preview stays unavailable if a custom-element reaction fails. */ }
+    if (!observed) {
+      gate.hidden = true;
+      panel.dataset.state = "unavailable";
+      absence.textContent = "The browser gate did not emit a usable decision.";
+      status.textContent = "No browser decision was emitted.";
+    }
+  }
+  if (eligible.length > MAX_LIVE_PREVIEWS) {
+    grid.append(element("p", "live-empty", "Showing the first six eligible engrams. Each remaining decision is still listed above with its individual Studio link."));
+  }
+}
+
 function showRaw() {
   if (!result) { output.textContent = "Compile a program to inspect the engine output."; return; }
   const value = view === "amt" ? result.amt : view === "ast" ? result.ast :
@@ -95,7 +177,9 @@ function compile() {
       `${allowed} allowed · ${suppressed} suppressed` : "Compiled · no gate-bound nodes";
     $("summary").dataset.tone = suppressed ? "suppress" : decisions.length ? "allow" : "neutral";
     $("decision-status").textContent = "Compiled in this browser with the project engine. The raw decision includes a generated timestamp.";
-    renderCards(decisions, studioHandoffUrls(result, location.href));
+    const handoffUrls = studioHandoffUrls(result, location.href);
+    renderCards(decisions, handoffUrls);
+    renderLivePreviews(decisions, handoffUrls);
     showRaw();
   } catch (error) {
     result = null;
@@ -105,6 +189,8 @@ function compile() {
     $("summary").dataset.tone = "error";
     $("decision-cards").replaceChildren(element("p", "empty", error.message));
     $("decision-status").textContent = "No decision was produced from this source.";
+    $("live-grid").replaceChildren(element("p", "live-empty", "Fix the source and compile to see a browser gate."));
+    $("live-count").textContent = "Awaiting valid source";
     showRaw();
   }
 }
@@ -122,6 +208,8 @@ source.addEventListener("input", () => {
   $("summary").dataset.tone = "neutral";
   $("decision-cards").replaceChildren();
   $("decision-status").textContent = "The previous result was cleared.";
+  $("live-grid").replaceChildren(element("p", "live-empty", "Compile the edited source to update the browser preview."));
+  $("live-count").textContent = "Awaiting compile";
   $("share-url").hidden = true;
   showRaw();
 });
@@ -160,3 +248,10 @@ try {
   $("share-status").textContent = "That source link is invalid. The default example is ready.";
 }
 compile();
+try {
+  await import("./aml-gate.js");
+  bridgeState = "ready";
+} catch {
+  bridgeState = "unavailable";
+}
+if (result) renderLivePreviews(result.renderDecisions, studioHandoffUrls(result, location.href));
