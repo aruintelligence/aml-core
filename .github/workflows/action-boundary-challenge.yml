@@ -19,6 +19,7 @@ on:
       - "scripts/build-a2ui-function-report.mjs"
       - "scripts/build-a2ui-invocation-replay-report.mjs"
       - "scripts/build-a2ui-worker-report.mjs"
+      - "scripts/build-mcp-call-report.mjs"
       - "scripts/build-action-policy-scope-report.mjs"
       - "scripts/build-action-studio-example.mjs"
       - "scripts/verify-action-studio-bundle.mjs"
@@ -32,6 +33,7 @@ on:
       - "docs/action-policy-scope.svg"
       - "test/action-boundary-a2ui-gate.test.js"
       - "test/a2ui-file-invocation.test.js"
+      - "test/mcp-call-tool-gate.test.js"
       - "test/fixtures/legacy-a2ui-function-gate.mjs"
       - "test/action-boundary-challenge.test.js"
       - "test/action-challenge-visual-report.test.js"
@@ -61,6 +63,8 @@ on:
       - "docs/a2ui-invocation-replay.svg"
       - "docs/a2ui-worker-replay-report.json"
       - "docs/a2ui-worker-replay.html"
+      - "docs/mcp-call-report.json"
+      - "docs/mcp-call-lab.html"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
   pull_request:
@@ -80,6 +84,7 @@ on:
       - "scripts/build-a2ui-function-report.mjs"
       - "scripts/build-a2ui-invocation-replay-report.mjs"
       - "scripts/build-a2ui-worker-report.mjs"
+      - "scripts/build-mcp-call-report.mjs"
       - "scripts/build-action-policy-scope-report.mjs"
       - "scripts/build-action-studio-example.mjs"
       - "scripts/verify-action-studio-bundle.mjs"
@@ -93,6 +98,7 @@ on:
       - "docs/action-policy-scope.svg"
       - "test/action-boundary-a2ui-gate.test.js"
       - "test/a2ui-file-invocation.test.js"
+      - "test/mcp-call-tool-gate.test.js"
       - "test/fixtures/legacy-a2ui-function-gate.mjs"
       - "test/action-boundary-challenge.test.js"
       - "test/action-challenge-visual-report.test.js"
@@ -122,6 +128,8 @@ on:
       - "docs/a2ui-invocation-replay.svg"
       - "docs/a2ui-worker-replay-report.json"
       - "docs/a2ui-worker-replay.html"
+      - "docs/mcp-call-report.json"
+      - "docs/mcp-call-lab.html"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
 
@@ -171,6 +179,10 @@ jobs:
         run: |
           node --test test/a2ui-file-invocation.test.js
           node scripts/build-a2ui-worker-report.mjs --check
+      - name: Verify host-owned MCP tool call boundary and visual cases
+        run: |
+          node --test test/mcp-call-tool-gate.test.js
+          node scripts/build-mcp-call-report.mjs --check
       - name: Project-owned self-test
         run: node scripts/run-action-boundary-challenge.mjs --self-test
       - name: Seeded counterfactual self-test
