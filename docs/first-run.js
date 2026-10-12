@@ -81,7 +81,7 @@ export function buildNextStep(mode, attention, restoration, recipient = "outside
   throw new RangeError("Unknown first-run mode");
 }
 
-if (typeof document !== "undefined") {
+if (typeof document !== "undefined" && document.getElementById("experience")) {
   const $ = id => document.getElementById(id);
   const params = new URLSearchParams(location.search);
   let mode = params.get("mode") === "render" ? "render" : "action";
