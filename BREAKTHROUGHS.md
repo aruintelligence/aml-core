@@ -269,6 +269,14 @@ The opt-in `createPreparedMailToolExecute` snapshots and validates the tool inpu
 
 These are project-authored in-memory callbacks, not messages or independent validation. A sender can ignore the checked request, and a provider can expand aliases, lists, forwarding, or other delivery routes. The host owns policy, authenticated approval, real provider integration, and reconciliation of uncertain outcomes.
 
+## 33. Make an outside challenge run visibly inspectable
+
+The thirteen-case Action Boundary Challenge already accepted an external process and emitted machine JSON, but its public board displayed only project-authored **expected** fixtures. A developer's actual observed results were difficult to inspect and share without building a separate viewer. The runner now accepts `--html-out <new-file.html>` and emits a standalone offline visual report in addition to its unchanged JSON stdout and exit status. It displays PASS, FAIL, or MIXED, full versus focused scope, case-level failure codes and expected/observed field diagnostics, and the exact manifest/vector hashes. An existing output file is not silently overwritten.
+
+The [published visual example](https://aruintelligence.github.io/aml-core/action-challenge-run.html) is regenerated from the project reference self-test by `node scripts/build-action-challenge-visual-example.mjs --check` in CI and plainly labels itself as such. An outside implementation can generate its **own** report with `node scripts/run-action-boundary-challenge.mjs --html-out ./my-run.html -- ../my-adapter/adapter`. The [contract](publications/ACTION_BOUNDARY_CHALLENGE.md) explains the workflow. Tests cover full and focused runs, failure diagnostics, no-overwrite behavior, and hostile adapter text escaping. The generated HTML has no external scripts or data fetches.
+
+This is a lower-friction evidence surface, not a new independent result. The report is not signed, an HTML file can be edited, and provenance still requires review of the outside code, run environment, and published JSON. The project's own 13/13 result remains E1/E2 evidence, not E3 adoption.
+
 ## The frontier
 
 The next technical frontiers are:

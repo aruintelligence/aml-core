@@ -7,6 +7,8 @@ on:
       - "conformance/action-boundary-challenge*"
       - "pilots/action-boundary/**"
       - "scripts/run-action-boundary-challenge.mjs"
+      - "scripts/render-action-challenge-report.mjs"
+      - "scripts/build-action-challenge-visual-example.mjs"
       - "scripts/build-action-cross-runtime-report.mjs"
       - "scripts/build-file-dispatch-report.mjs"
       - "scripts/build-action-key-order-report.mjs"
@@ -27,6 +29,10 @@ on:
       - "test/action-boundary-a2ui-gate.test.js"
       - "test/fixtures/legacy-a2ui-function-gate.mjs"
       - "test/action-boundary-challenge.test.js"
+      - "test/action-challenge-visual-report.test.js"
+      - "docs/action-challenge-run.html"
+      - "docs/action-challenge-run-preview.svg"
+      - "docs/action-challenge.html"
       - "test/action-boundary-file-grant.test.js"
       - "test/action-boundary-dispatch-ledger.test.js"
       - "test/fixtures/legacy-file-one-shot-grants.mjs"
@@ -50,6 +56,8 @@ on:
       - "conformance/action-boundary-challenge*"
       - "pilots/action-boundary/**"
       - "scripts/run-action-boundary-challenge.mjs"
+      - "scripts/render-action-challenge-report.mjs"
+      - "scripts/build-action-challenge-visual-example.mjs"
       - "scripts/build-action-cross-runtime-report.mjs"
       - "scripts/build-file-dispatch-report.mjs"
       - "scripts/build-action-key-order-report.mjs"
@@ -70,6 +78,10 @@ on:
       - "test/action-boundary-a2ui-gate.test.js"
       - "test/fixtures/legacy-a2ui-function-gate.mjs"
       - "test/action-boundary-challenge.test.js"
+      - "test/action-challenge-visual-report.test.js"
+      - "docs/action-challenge-run.html"
+      - "docs/action-challenge-run-preview.svg"
+      - "docs/action-challenge.html"
       - "test/action-boundary-file-grant.test.js"
       - "test/action-boundary-dispatch-ledger.test.js"
       - "test/fixtures/legacy-file-one-shot-grants.mjs"
@@ -105,6 +117,10 @@ jobs:
           python-version: "3.12"
       - name: Check harness and rejection behavior
         run: node --test test/action-boundary-challenge.test.js
+      - name: Verify portable visual report, scope labels, and hostile text escaping
+        run: |
+          node --test test/action-challenge-visual-report.test.js
+          node scripts/build-action-challenge-visual-example.mjs --check
       - name: Verify function-tool adapter
         run: |
           node --test test/action-boundary-guarded-tool.test.js

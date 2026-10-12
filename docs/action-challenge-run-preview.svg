@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="570" viewBox="0 0 1200 570" role="img" aria-labelledby="title desc">
+  <title id="title">Visual report for an ĀML Action Boundary Challenge run</title>
+  <desc id="desc">A clearly labeled project reference self-test shows 13 of 13 cases passing. An outside adapter can generate its own offline report with case-by-case diagnostics; this example is not independent validation.</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#08141f"/><stop offset="1" stop-color="#1b4b55"/></linearGradient><linearGradient id="card" x2="1" y2="1"><stop stop-color="#1b4350"/><stop offset="1" stop-color="#122638"/></linearGradient></defs>
+  <rect width="1200" height="570" rx="30" fill="url(#bg)"/>
+  <text x="64" y="63" fill="#82e5ed" font-family="Arial,sans-serif" font-size="18" font-weight="800" letter-spacing="3">ĀML™ / CHALLENGE REPORT 33</text>
+  <text x="64" y="140" fill="#f4f7fb" font-family="Arial,sans-serif" font-size="61" font-weight="800">Show your boundary.</text>
+  <text x="64" y="183" fill="#bfd2dc" font-family="Arial,sans-serif" font-size="22">One command turns an actual challenge run into an offline visual artifact.</text>
+  <rect x="64" y="221" width="656" height="265" rx="22" fill="url(#card)" stroke="#568192" stroke-width="2"/>
+  <rect x="752" y="221" width="382" height="265" rx="22" fill="url(#card)" stroke="#568192" stroke-width="2"/>
+  <text x="92" y="266" fill="#82e5ed" font-family="Arial,sans-serif" font-size="18" font-weight="800" letter-spacing="2">CASE-BY-CASE EVIDENCE</text>
+  <text x="92" y="318" fill="#e8f4f6" font-family="Arial,sans-serif" font-size="23">✓ changed-destination</text>
+  <text x="92" y="362" fill="#e8f4f6" font-family="Arial,sans-serif" font-size="23">✓ stale-body-approval</text>
+  <text x="92" y="406" fill="#e8f4f6" font-family="Arial,sans-serif" font-size="23">✓ policy-revoked-while-awaiting</text>
+  <text x="92" y="453" fill="#aac5ce" font-family="Arial,sans-serif" font-size="18">Plus ten more · click to inspect each observed verdict</text>
+  <text x="780" y="266" fill="#82e5ed" font-family="Arial,sans-serif" font-size="18" font-weight="800" letter-spacing="2">PROJECT REFERENCE SELF-TEST</text>
+  <text x="780" y="364" fill="#82e5ed" font-family="Arial,sans-serif" font-size="87" font-weight="800">13 / 13</text>
+  <text x="780" y="423" fill="#9eeab5" font-family="Arial,sans-serif" font-size="25" font-weight="800">PASS · FULL SCOPE</text>
+  <text x="64" y="531" fill="#c1d0d8" font-family="Arial,sans-serif" font-size="18">Published example is project-authored. Outside results require their own code, run, and review.</text>
+</svg>

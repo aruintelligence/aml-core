@@ -8,18 +8,26 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { prepareCase, checkCase, diagnoseCase, selectChallengeCases, challengeScope } from "../conformance/action-boundary-challenge-core.js";
+import { renderActionChallengeReport } from "./render-action-challenge-report.mjs";
 
 const split = process.argv.indexOf("--");
 const options = process.argv.slice(2, split < 0 ? undefined : split);
 const selfTest = options.includes("--self-test");
 const caseFlag = options.indexOf("--case");
 const selectedCase = caseFlag < 0 ? null : options[caseFlag + 1];
-if (caseFlag >= 0 && (!selectedCase || selectedCase.startsWith("--"))) {
-  console.error("Usage: node scripts/run-action-boundary-challenge.mjs [--case <id>] -- <executable> [args...]");
-  process.exit(2);
-}
-if (!selfTest && (split < 0 || split === process.argv.length - 1)) {
-  console.error("Usage: node scripts/run-action-boundary-challenge.mjs [--case <id>] -- <executable> [args...]");
+const htmlFlag = options.indexOf("--html-out");
+const htmlOutput = htmlFlag < 0 ? null : options[htmlFlag + 1];
+const consumed = new Set();
+if (caseFlag >= 0) { consumed.add(caseFlag); consumed.add(caseFlag + 1); }
+if (htmlFlag >= 0) { consumed.add(htmlFlag); consumed.add(htmlFlag + 1); }
+const validOptions = options.every((option, index) => option === "--self-test" || consumed.has(index));
+if (!validOptions || options.filter(option => option === "--self-test").length > 1 ||
+    options.filter(option => option === "--case").length > 1 ||
+    options.filter(option => option === "--html-out").length > 1 ||
+    (caseFlag >= 0 && (!selectedCase || selectedCase.startsWith("--"))) ||
+    (htmlFlag >= 0 && (!htmlOutput || htmlOutput.startsWith("--"))) ||
+    (!selfTest && (split < 0 || split === process.argv.length - 1))) {
+  console.error("Usage: node scripts/run-action-boundary-challenge.mjs [--case <id>] [--html-out <new-file.html>] [--self-test | -- <executable> [args...]]");
   process.exit(2);
 }
 const command = selfTest ? null : process.argv[split + 1];
@@ -64,7 +72,7 @@ try {
   fs.rmSync(temp, { recursive: true, force: true });
 }
 const passed = results.every(row => row.passed);
-console.log(JSON.stringify({
+const report = {
   protocol: "aml-action-boundary-challenge-report/1",
   project_reference_self_test: selfTest,
   ...challengeScope(selectedCase, passed),
@@ -73,5 +81,10 @@ console.log(JSON.stringify({
   passed,
   cases: results,
   claim_boundary: manifest.claim_boundary
-}, null, 2));
+};
+if (htmlOutput) {
+  try { fs.writeFileSync(htmlOutput, renderActionChallengeReport(report), { flag: "wx" }); }
+  catch (error) { console.error(`Cannot create visual report: ${error.message}`); process.exit(2); }
+}
+console.log(JSON.stringify(report, null, 2));
 process.exitCode = passed ? 0 : 1;
