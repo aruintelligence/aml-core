@@ -115,16 +115,15 @@ $("share").addEventListener("click", async () => {
   let url;
   try { url = playgroundShareUrl(source.value, location.href); }
   catch (error) { $("share-status").textContent = error.message; return; }
+  $("share-url").value = url;
+  $("share-url").hidden = false;
   try {
     await navigator.clipboard.writeText(url);
-    $("share-url").hidden = true;
-    $("share-status").textContent = "Source link copied. The full program is in its URL fragment.";
+    $("share-status").textContent = "Source link copied. You can also select it below. Do not share secrets in source.";
   } catch {
-    $("share-url").hidden = false;
-    $("share-url").value = url;
     $("share-url").focus();
     $("share-url").select();
-    $("share-status").textContent = "Clipboard unavailable. Copy the selected link below.";
+    $("share-status").textContent = "Clipboard unavailable. Copy the selected link below. Do not share secrets in source.";
   }
 });
 
