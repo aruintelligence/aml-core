@@ -291,6 +291,13 @@ The challenge now offers six seeded follow-up cases through `--probes`. They cha
 
 These are public, project-authored metamorphic transformations. They raise the cost of memorizing one exact set of answers but cannot prove that any implementation has correct general behavior. The reference pass remains internal evidence; only a separately maintained implementation and reviewed provenance could support an outside-witness claim.
 
+## 36. A replay check must survive a second worker
+
+The A2UI function gate already claims an agent-supplied `functionCallId` before approval and dispatch. Its included `createLocalA2UIInvocationClaims` works in one Node process. Two different workers each have their own empty Set: replaying the same ID in the same trusted host session reaches **two simulated callbacks**. The [four-case two-process lab](https://aruintelligence.github.io/aml-core/a2ui-worker-replay.html) executes that counterexample through the actual function gate, then compares a host-owned private filesystem claim shared by the workers. The shared claim allows **one callback** and a correlated replay error, including after a worker restart. The separate-session control still allows two. `node scripts/build-a2ui-worker-report.mjs --check` regenerates the [machine report](docs/a2ui-worker-replay-report.json); CI also checks directory loss, replacement, permissions, and symlinks.
+
+`createFileA2UIInvocationClaims({ directory, sessionFor })` is an opt-in local adapter. It refuses to create a lost directory silently and uses exclusive claim creation under a trusted session namespace. [Integration guidance](pilots/action-boundary/A2UI_FUNCTION_GATE.md) covers the host responsibilities. This is project-authored local execution with simulated approval and callback, not a message, external witness, consent proof, network or multi-machine store, or exactly-once delivery guarantee. A fresh ID remains a new attempt requiring action authorization.
+
+
 ## The frontier
 
 The next technical frontiers are:
