@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { webcrypto } from "node:crypto";
 import test from "node:test";
-import { firstRunAction, firstRunPolicy, firstRunProposal, renderDecision } from "../docs/first-run.js";
+import { buildNextStep, firstRunAction, firstRunPolicy, firstRunProposal, renderDecision } from "../docs/first-run.js";
 
 const vectors = JSON.parse(readFileSync(new URL("../pilots/action-boundary/vectors.json", import.meta.url), "utf8"));
 
@@ -25,4 +25,14 @@ test("declared render values change at the exact threshold", () => {
   assert.equal(renderDecision(5, 5).decision, "allow");
   assert.throws(() => renderDecision(11, 1), RangeError);
   assert.throws(() => firstRunProposal("another recipient"), RangeError);
+});
+
+test("the build handoff follows the boundary the visitor selected", () => {
+  const agent = buildNextStep("action", 5, 1, "team");
+  assert.equal(agent.href, "agent-start.html?recipient=team");
+  assert.match(agent.hint, /guarded-tool-demo\.mjs$/);
+  const interfaceStep = buildNextStep("render", 5, 6);
+  assert.equal(interfaceStep.href, "quickstart.html?attention=5&restoration=6");
+  assert.throws(() => buildNextStep("render", 11, 1), RangeError);
+  assert.throws(() => buildNextStep("action", 5, 1, "unknown"), RangeError);
 });

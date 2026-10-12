@@ -1,5 +1,7 @@
 # Put an ĀML boundary around one agent function tool
 
+[Start with the visual agent-tool build path](https://aruintelligence.github.io/aml-core/agent-start.html) for the local rehearsal command, expected outcomes, and a host wiring sketch.
+
 This experimental adapter wraps a host-owned `execute` callback. It produces a proposed-action plan and dispatch receipt for one function-tool call. The host supplies the actual policy, destination mapping, approval callback, and tool implementation.
 
 ## Run a 30-second local rehearsal
@@ -104,3 +106,4 @@ The SDK [also has native approval interruptions](https://openai.github.io/openai
 The plan and receipt share the frozen proposal digest. A change to the destination, body, or declared effect changes the proposal or policy decision. The host still must map the real tool and destination honestly and use its own authentication, replay controls, durable audit storage, and idempotency strategy. Do not infer consent, delivery, or production authorization from SHA-256 or from this example.
 
 For independent reproduction, run the [13-case action boundary challenge](../publications/ACTION_BOUNDARY_CHALLENGE.md) against an implementation maintained outside this repository. This wrapper imports the project reference boundary, so its tests are project-authored evidence only.
+
