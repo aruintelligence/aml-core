@@ -1,5 +1,6 @@
 import { compileSourceBrowser } from "./aml-browser.js";
 import { parsePlaygroundShare, playgroundShareUrl } from "./playground-core.js";
+import { studioHandoffUrl } from "./playground-handoff.js";
 
 const $ = id => document.getElementById(id);
 const source = $("source");
@@ -25,7 +26,7 @@ function element(tag, className, value) {
   return node;
 }
 
-function renderCards(decisions) {
+function renderCards(decisions, handoffUrl) {
   const list = $("decision-cards");
   list.replaceChildren();
   if (!decisions.length) {
@@ -48,6 +49,12 @@ function renderCards(decisions) {
     values.append(element("span", "", `Declared attention ${decision.attention_cost ?? "—"}`));
     values.append(element("span", "", `Declared restoration ${decision.restoration_value ?? "—"}`));
     card.append(values);
+    if (index === 0 && handoffUrl) {
+      card.append(element("p", "handoff-note", "Carry this engram's value, purpose, and declared numbers into a browser gate. The value becomes button text."));
+      const link = element("a", "handoff-link", "See it as a live gate ↗");
+      link.href = handoffUrl;
+      card.append(link);
+    }
     list.append(card);
   }
 }
@@ -71,7 +78,7 @@ function compile() {
       `${allowed} allowed · ${suppressed} suppressed` : "Compiled · no gate-bound nodes";
     $("summary").dataset.tone = suppressed ? "suppress" : decisions.length ? "allow" : "neutral";
     $("decision-status").textContent = "Compiled in this browser with the project engine. The raw decision includes a generated timestamp.";
-    renderCards(decisions);
+    renderCards(decisions, studioHandoffUrl(result, location.href));
     showRaw();
   } catch (error) {
     result = null;
