@@ -13,6 +13,7 @@ let result = null;
 let view = "decisions";
 let bridgeState = "loading";
 let liveRun = null;
+let cardPreviewUrl = null;
 const MAX_LIVE_PREVIEWS = 6;
 
 function runReady(run) {
@@ -29,8 +30,57 @@ function downloadContent(content, type, name) {
   setTimeout(() => URL.revokeObjectURL(fileUrl), 60_000);
 }
 
+function clearCardPreview() {
+  const image = $("card-preview-image");
+  image.onload = null;
+  image.onerror = null;
+  image.removeAttribute("src");
+  $("card-preview").hidden = true;
+  if (cardPreviewUrl) URL.revokeObjectURL(cardPreviewUrl);
+  cardPreviewUrl = null;
+}
+
+async function cardForRun(run) {
+  if (run.cardSvg) return run.cardSvg;
+  const record = await createLocalRunRecord({
+    source: run.source, decisions: run.decisions,
+    entries: [...run.entries.values()].sort((a, b) => a.index - b.index), pageUrl: location.href
+  });
+  const svg = buildComparisonCard(record);
+  if (liveRun === run && runReady(run)) run.cardSvg = svg;
+  return svg;
+}
+
+function prepareCardPreview(run) {
+  if (run.previewRequested || run.cardFailed) return;
+  run.previewRequested = true;
+  cardForRun(run).then(svg => {
+    if (liveRun !== run || !runReady(run)) return;
+    clearCardPreview();
+    const image = $("card-preview-image");
+    cardPreviewUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+    image.alt = `Comparison card: ${[...run.entries.values()].sort((a, b) => a.index - b.index)
+      .map(item => `${run.decisions[item.index].identifier} ${item.detail.effective_rendered ? "visible" : "withheld"}`).join("; ")}. Declared prototype values.`;
+    image.onload = () => { if (liveRun === run) $("card-preview").hidden = false; };
+    image.onerror = () => {
+      if (liveRun !== run) return;
+      clearCardPreview();
+      run.cardFailed = true;
+      $("download-card").disabled = true;
+      $("record-status").textContent = "Card preview unavailable here. The local JSON remains available.";
+    };
+    image.src = cardPreviewUrl;
+  }).catch(() => {
+    if (liveRun !== run) return;
+    run.cardFailed = true;
+    $("download-card").disabled = true;
+    $("record-status").textContent = "Card preview unavailable here. The local JSON remains available.";
+  });
+}
+
 function clearRunRecord(message) {
   liveRun = null;
+  clearCardPreview();
   $("record-count").textContent = "0 / 0 matched";
   $("run-record").dataset.state = "waiting";
   $("download-record").disabled = true;
@@ -43,15 +93,17 @@ function updateRunRecord() {
   if (!run) return;
   const matched = run.entries.size;
   const ready = runReady(run);
+  if (!ready || run.expected !== 2) clearCardPreview();
   $("record-count").textContent = `${matched} / ${run.expected} matched`;
   $("run-record").dataset.state = ready ? "ready" : run.failed ? "blocked" : "waiting";
   $("download-record").disabled = !ready;
-  $("download-card").disabled = !ready || run.expected !== 2;
+  $("download-card").disabled = !ready || run.expected !== 2 || run.cardFailed;
   $("record-status").textContent = ready ?
     "All shown gates match. Download the local, unsigned record of this exact source." :
     run.failed ? "A gate was unavailable or mismatched. No run record can be exported." :
     run.expected ? "Waiting for the shown browser gates to emit matching events." :
     "Compile an eligible engram to create a run record.";
+  if (ready && run.expected === 2) prepareCardPreview(run);
 }
 
 function sample(restoration) {
@@ -389,20 +441,17 @@ $("download-record").addEventListener("click", async () => {
 
 $("download-card").addEventListener("click", async () => {
   const run = liveRun;
-  if (!runReady(run) || run.expected !== 2) return;
+  if (!runReady(run) || run.expected !== 2 || run.cardFailed) return;
   $("download-card").disabled = true;
   try {
-    const record = await createLocalRunRecord({
-      source: run.source, decisions: run.decisions,
-      entries: [...run.entries.values()].sort((a, b) => a.index - b.index), pageUrl: location.href
-    });
+    const svg = await cardForRun(run);
     if (liveRun !== run || !runReady(run)) return;
-    downloadContent(buildComparisonCard(record), "image/svg+xml", "aml-comparison.svg");
+    downloadContent(svg, "image/svg+xml", "aml-comparison.svg");
     $("record-status").textContent = "Comparison card saved. Pair the image with a source link so others can rerun the experiment.";
   } catch {
     if (liveRun === run) $("record-status").textContent = "This browser could not build the comparison card.";
   } finally {
-    if (liveRun === run) $("download-card").disabled = !runReady(run) || run.expected !== 2;
+    if (liveRun === run) $("download-card").disabled = !runReady(run) || run.expected !== 2 || run.cardFailed;
   }
 });
 
