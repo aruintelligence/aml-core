@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">ĀML — Write meaning. See the decision.</title>
+  <desc id="desc">A program with declared attention cost 5 changes from a suppressed browser gate at restoration value 1 to an allowed gate at value 5.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1">
+      <stop stop-color="#142b48"/>
+      <stop offset=".56" stop-color="#081625"/>
+      <stop offset="1" stop-color="#091d29"/>
+    </linearGradient>
+    <linearGradient id="headline" x2="1" y2="0">
+      <stop stop-color="#83edec"/>
+      <stop offset=".56" stop-color="#bdacff"/>
+      <stop offset="1" stop-color="#f5cc7e"/>
+    </linearGradient>
+    <linearGradient id="panel" x2="1" y2="1">
+      <stop stop-color="#142c40"/>
+      <stop offset="1" stop-color="#0a1727"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="640" fill="url(#background)"/>
+  <circle cx="1255" cy="5" r="290" fill="#4bd9de" opacity=".075"/>
+  <circle cx="45" cy="660" r="325" fill="#7775e8" opacity=".085"/>
+  <path d="M0 551 C223 512 373 597 597 530 S1005 535 1280 486" fill="none" stroke="#77d8e4" stroke-opacity=".12" stroke-width="2"/>
+  <path d="M0 572 C223 533 373 617 597 551 S1005 555 1280 507" fill="none" stroke="#77d8e4" stroke-opacity=".07" stroke-width="2"/>
+  <g font-family="Arial, DejaVu Sans, sans-serif">
+    <text x="71" y="90" fill="#83edec" font-size="18" font-weight="700" letter-spacing="3">ĀML™  /  THE FIRST BUILD</text>
+    <text x="68" y="198" fill="#f4f8fb" font-size="70" font-weight="700" letter-spacing="-3">Write meaning.</text>
+    <text x="68" y="282" fill="url(#headline)" font-size="64" font-weight="700" letter-spacing="-3">See the decision.</text>
+    <text x="72" y="347" fill="#d5e5ed" font-size="25">Edit an ĀML program in your browser.</text>
+    <text x="72" y="383" fill="#d5e5ed" font-size="25">Carry its declaration into a live gate.</text>
+    <rect x="72" y="439" width="177" height="47" rx="23" fill="#173d47" stroke="#559da8"/>
+    <text x="94" y="469" fill="#a6f3f0" font-size="16" font-weight="700" letter-spacing="1">WRITE SOURCE</text>
+    <rect x="260" y="439" width="191" height="47" rx="23" fill="#242b4d" stroke="#7774ab"/>
+    <text x="280" y="469" fill="#d1c7fc" font-size="16" font-weight="700" letter-spacing="1">READ DECISION</text>
+    <rect x="462" y="439" width="176" height="47" rx="23" fill="#3a3424" stroke="#a18c5d"/>
+    <text x="483" y="469" fill="#f5dba2" font-size="16" font-weight="700" letter-spacing="1">BUILD A GATE</text>
+    <text x="72" y="574" fill="#a7becc" font-size="17" letter-spacing="1">RESEARCH PROTOTYPE  ·  OPEN CODE</text>
+  </g>
+  <rect x="696" y="82" width="512" height="476" rx="25" fill="url(#panel)" stroke="#548292" stroke-width="2"/>
+  <rect x="724" y="111" width="455" height="7" rx="3" fill="#83edec"/>
+  <g font-family="Arial, DejaVu Sans, sans-serif">
+    <text x="724" y="162" fill="#a7c8d4" font-size="16" font-weight="700" letter-spacing="3">SOURCE / ONE ENGRAM</text>
+    <text x="724" y="209" fill="#f0f7fc" font-size="26" font-weight="700">attention_cost: 5</text>
+    <text x="724" y="250" fill="#a5f2ea" font-size="26" font-weight="700">restoration_value: 1 → 5</text>
+    <path d="M724 285 H1180" stroke="#527184"/>
+    <text x="724" y="318" fill="#a7c8d4" font-size="16" font-weight="700" letter-spacing="3">PROJECT DECISION</text>
+    <rect x="724" y="344" width="212" height="111" rx="15" fill="#3c2639" stroke="#a7677c"/>
+    <rect x="948" y="344" width="232" height="111" rx="15" fill="#173b39" stroke="#5da58c"/>
+    <text x="744" y="377" fill="#e8b3c2" font-size="16" font-weight="700" letter-spacing="2">VALUE 1</text>
+    <text x="744" y="421" fill="#ff9eb2" font-size="30" font-weight="700">SUPPRESS</text>
+    <text x="969" y="377" fill="#b3dfcd" font-size="16" font-weight="700" letter-spacing="2">VALUE 5</text>
+    <text x="969" y="421" fill="#a9f1c0" font-size="34" font-weight="700">ALLOW</text>
+    <text x="724" y="512" fill="#aac2d0" font-size="16">Declared inputs. Inspectable result. Your host decides.</text>
+  </g>
+</svg>
