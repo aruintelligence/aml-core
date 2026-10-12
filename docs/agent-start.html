@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <meta name="description" content="Take an ĀML agent-action decision into a host-owned function tool. Run a safe local rehearsal and see where real policy, approval, and execution belong.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Build an ĀML agent tool boundary">
+  <meta property="og:description" content="Run a local function-tool rehearsal, then wire exact policy and approval into your own host.">
+  <meta property="og:image" content="https://aruintelligence.github.io/aml-core/first-contact-share.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>Build an agent tool boundary — ĀML</title>
+  <style>
+    :root{color-scheme:dark;--bg:#07111f;--ink:#f2f8fb;--muted:#b9cad4;--cyan:#83edec;--gold:#f5cc7e;--rose:#ff9eb2;--line:#355269;font:16px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(circle at 83% 4%,#18424c,transparent 37rem),radial-gradient(circle at 0 47%,#172b45,transparent 35rem),var(--bg)}a{color:var(--cyan)}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:3px}.wrap{width:min(1130px,calc(100% - 36px));margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 0;border-bottom:1px solid #ffffff24}.brand{font-weight:950;letter-spacing:.13em;color:var(--ink);text-decoration:none}.top nav{display:flex;gap:18px;flex-wrap:wrap}.top nav a{font-weight:800;font-size:.85rem;text-decoration:none;color:var(--muted)}.top nav a:hover{color:var(--cyan)}
+    h1,h2,h3{letter-spacing:-.04em;line-height:1.08}.hero{padding:clamp(52px,8vw,97px) 0 55px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(270px,.7fr);gap:30px;align-items:end}.eyebrow{font:800 .73rem ui-monospace,monospace;letter-spacing:.15em;color:var(--cyan)}h1{font-size:clamp(3.1rem,7.4vw,6.7rem);margin:15px 0 20px}h1 em{font-style:normal;color:var(--cyan)}.lead{color:#d2e1e9;font-size:1.16rem;max-width:720px;margin:0}.jump{display:inline-flex;margin-top:28px;padding:12px 19px;border-radius:999px;background:var(--cyan);color:#081723;text-decoration:none;font-weight:900}.case{border:1px solid #527682;border-radius:20px;padding:23px;background:radial-gradient(circle at 70% 0,#1c64726b,transparent 70%),#0b1d2c;box-shadow:0 20px 65px #0005}.case small{font:800 .7rem ui-monospace,monospace;letter-spacing:.13em;color:var(--gold)}.case strong{display:block;font:850 1.27rem/1.3 ui-monospace,monospace;overflow-wrap:anywhere;margin:18px 0;color:var(--ink)}.case p{color:var(--muted);margin:0 0 16px}.case a{font-weight:800;font-size:.85rem}
+    .flow{border:1px solid #517582;border-radius:25px;overflow:hidden;background:linear-gradient(130deg,#102536,#0a1525);box-shadow:0 26px 90px #0007}.bar{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:17px 23px;border-bottom:1px solid var(--line);font:.74rem ui-monospace,monospace;letter-spacing:.13em;color:#c8dce5}.dots{display:flex;gap:7px}.dots i{width:8px;height:8px;background:#587586;border-radius:50%}.dots i:first-child{background:var(--cyan)}.stage{display:grid;grid-template-columns:94px minmax(0,1fr);border-bottom:1px solid var(--line)}.stage:last-child{border-bottom:0}.number{font:900 1.65rem ui-monospace,monospace;color:var(--cyan);padding:30px;border-right:1px solid var(--line);background:#061320}.content{padding:29px clamp(20px,4vw,46px)}.content h2{font-size:clamp(1.5rem,3vw,2.15rem);margin:0 0 11px}.content>p{color:var(--muted);max-width:780px;margin:0 0 18px}.code-row{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}.copy{border:1px solid var(--cyan);background:#123745;color:var(--cyan);font-weight:850;padding:9px 14px;border-radius:9px}.copy:hover{background:#1d5464}.code{display:block;white-space:pre;overflow:auto;padding:19px;border:1px solid var(--line);border-radius:12px;background:#020b16;color:#dcf4f4;font:12px/1.7 ui-monospace,SFMono-Regular,monospace;margin:16px 0 11px}.small{color:var(--muted);font-size:.83rem}.small strong{color:var(--ink)}.outcomes{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0 0}.outcome{border:1px solid var(--line);border-radius:12px;padding:16px;background:#ffffff08}.outcome b{display:block;font:.73rem ui-monospace,monospace;letter-spacing:.09em;color:var(--gold)}.outcome strong{display:block;margin:8px 0;color:var(--ink);font-size:1.13rem}.outcome p{margin:0;color:var(--muted);font-size:.82rem}.sketch{max-height:500px}.status{min-height:1.3em;color:var(--gold);font-size:.81rem;margin:8px 0 0}.links{display:flex;flex-wrap:wrap;gap:12px 20px;margin-top:20px}.links a{font-weight:800}.notice{border-left:3px solid var(--gold);padding:14px 18px;background:#f5cc7e10;color:#e1d7bf;border-radius:0 11px 11px 0;max-width:780px}.next{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin:50px 0 75px}.next a{padding:22px;border:1px solid var(--line);border-radius:16px;background:#ffffff08;text-decoration:none}.next a:hover{border-color:var(--cyan)}.next span{display:block;color:var(--gold);font:.72rem ui-monospace,monospace;letter-spacing:.1em}.next b{display:block;color:var(--ink);font-size:1.15rem;margin:11px 0 7px}.next small{color:var(--muted);font-size:.84rem}.foot{border-top:1px solid var(--line);color:var(--muted);padding:25px 0 50px;font-size:.84rem}.foot strong{color:var(--ink)}
+    @media(max-width:790px){.hero{grid-template-columns:1fr}.case{max-width:520px}.next{grid-template-columns:1fr}}@media(max-width:530px){.top nav{gap:9px}.top nav a{font-size:.75rem}.stage{grid-template-columns:1fr}.number{padding:10px 19px;border-right:0;border-bottom:1px solid var(--line)}.outcomes{grid-template-columns:1fr}.bar{font-size:.63rem}.content{padding:20px}.hero h1{font-size:clamp(3rem,12vw,4.5rem)}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top"><a class="brand" href="index.html" aria-label="ĀML home">ĀML™ / AGENT BUILD</a><nav aria-label="Main"><a href="first-run.html?mode=action">First contact</a><a href="quickstart.html">Interface builder</a><a href="https://github.com/aruintelligence/aml-core">GitHub ↗</a></nav></header>
+    <main>
+      <section class="hero"><div><span class="eyebrow">FROM A PROPOSAL TO A HOST-OWNED TOOL</span><h1>The agent can ask.<br><em>Your host decides.</em></h1><p class="lead">Give one function tool an exact policy boundary. Start with a local callback that sends nothing; then replace only the host-owned pieces with your actual policy, approval, and service.</p><a class="jump" href="#steps">Build the boundary ↓</a></div><aside class="case"><small>YOUR FIRST-CONTACT ROUTE</small><strong id="selected-route">send_message → outsider@example.test</strong><p id="selected-result">The outside destination has no exact rule and cannot reach the callback.</p><a id="case-link" href="action-lab.html?scenario=changed">Inspect this decision in the Action Lab ↗</a></aside></section>
+      <section id="steps" class="flow" aria-label="Agent tool first integration"><div class="bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span>ĀML / FUNCTION TOOL PATH</span><span>NO LIVE DELIVERY</span></div>
+        <div class="stage"><div class="number">01</div><div class="content"><div class="code-row"><h2>Run the local rehearsal.</h2><button type="button" class="copy" data-copy="command">Copy commands</button></div><p>This runs the checked-in experimental adapter. It simulates an approval and a host callback for a matching destination, then tries a changed destination. Record your checkout commit when sharing a result.</p><code id="command" class="code">git clone --depth 1 https://github.com/aruintelligence/aml-core.git
+cd aml-core
+git rev-parse HEAD
+node pilots/action-boundary/guarded-tool-demo.mjs</code><p id="command-status" class="status" role="status" aria-live="polite"></p><div class="outcomes"><div class="outcome"><b>EXACT ROUTE + SIMULATED APPROVAL</b><strong>Callback returned</strong><p>The result is marked <code>dispatched</code>; it reports <code>would_send_to</code>. No message is sent or person authenticated.</p></div><div class="outcome"><b>CHANGED DESTINATION</b><strong>Blocked before callback</strong><p>The exact policy rule does not match the outside resource. Inspect the plan and receipt in the printed JSON.</p></div></div></div></div>
+        <div class="stage"><div class="number">02</div><div class="content"><div class="code-row"><h2>Move the boundary into your host.</h2><button type="button" class="copy" data-copy="sketch">Copy host sketch</button></div><p>The real host owns the tool identity, effect, resource mapping, policy, authenticated approval, and the service call. This sketch deliberately throws until you implement the two callbacks. It imports the project preview from your checkout.</p><code id="sketch" class="code sketch">import { createGuardedToolExecute } from "./pilots/action-boundary/guarded-tool.mjs";
+
+const policy = {
+  protocol: "aml-action-policy/1",
+  rules: [{ tool: "send_message", effect: "send",
+    resource: "team@example.test", requires_approval: true }]
+};
+
+async function hostApproveExact(proposal, proposal_sha256, context) {
+  throw new Error("Implement authenticated approval for this exact proposal");
+}
+async function sendFromHost(args, context) {
+  throw new Error("Implement the provider call using these exact arguments");
+}
+
+export const execute = createGuardedToolExecute({
+  tool: "send_message", effect: "send", purpose: "Send a team update",
+  resourceFor: args => args.to, policy,
+  requestApproval: ({ proposal, proposal_sha256 }, context) =>
+    hostApproveExact(proposal, proposal_sha256, context),
+  execute: (args, context) => sendFromHost(args, context)
+});</code><p id="sketch-status" class="status" role="status" aria-live="polite"></p><p class="small">The approval hook must return <code>{ approved: true, proposal_sha256 }</code> for the exact frozen proposal. For callbacks with CC/BCC or transformed provider requests, use the dedicated adapters in the full guide. Do not copy the rehearsal’s automatic approval into a real host.</p></div></div>
+        <div class="stage"><div class="number">03</div><div class="content"><h2>Recheck before any real dispatch.</h2><p>The host must supply its own authentication, durable one-use claims, operation idempotency, audit storage, and honest mapping to the provider request. An <code>unknown</code> callback result might already have caused a side effect; this wrapper does not retry it.</p><div class="notice">A digest binds the proposal bytes. It does not prove who approved them, whether the policy is trustworthy, or whether the outside service completed the action.</div><div class="links"><a href="https://github.com/aruintelligence/aml-core/blob/main/docs/AGENT_TOOL_QUICKSTART.md">Full function-tool guide ↗</a><a href="https://github.com/aruintelligence/aml-core/blob/main/pilots/action-boundary/guarded-tool.mjs">Inspect the adapter ↗</a><a href="https://github.com/aruintelligence/aml-core/blob/main/pilots/action-boundary/MAIL_GUARDED_TOOL.md">Multi-recipient mail path ↗</a></div></div></div>
+      </section>
+      <div class="next"><a href="action-boundary-studio.html"><span>DESIGN</span><b>Edit proposal and policy ↗</b><small>Export a calculation bundle and recheck it in Node.</small></a><a href="connected-mcp-lab.html"><span>TRACE</span><b>See a connected MCP call ↗</b><small>Compare a misleading tool hint with a host-owned rule.</small></a><a href="action-challenge.html?case=changed-destination#build"><span>CHALLENGE</span><b>Build your own adapter ↗</b><small>Run the public cases outside the reference implementation.</small></a></div>
+    </main><footer class="foot"><strong>Scope:</strong> This is a project-authored, simulated function-tool path from a preview checkout. It does not intercept every agent tool, authenticate a human, send mail, prove delivery, or certify a production integration. ĀML™ / ĀRU Meaning Language™ is stewarded by ĀRU Intelligence Inc. · <a href="https://github.com/aruintelligence/aml-core/blob/main/CLAIMS.md">Claims and evidence</a>.</footer>
+  </div>
+  <script>
+    const recipient = new URLSearchParams(location.search).get('recipient') === 'team' ? 'team' : 'outside';
+    document.getElementById('selected-route').textContent = `send_message → ${recipient === 'team' ? 'team' : 'outsider'}@example.test`;
+    document.getElementById('selected-result').textContent = recipient === 'team' ?
+      'The exact rule matches, but a real host still needs approval bound to this proposal before dispatch.' :
+      'The outside destination has no exact rule and cannot reach the callback.';
+    document.getElementById('case-link').href = `action-lab.html?scenario=${recipient === 'team' ? 'send' : 'changed'}`;
+    document.querySelectorAll('[data-copy]').forEach(button => button.addEventListener('click', async () => {
+      const id = button.dataset.copy;
+      try {
+        await navigator.clipboard.writeText(document.getElementById(id).textContent.trim() + '\n');
+        document.getElementById(id + '-status').textContent = 'Copied.';
+      } catch {
+        document.getElementById(id + '-status').textContent = 'Clipboard unavailable. Select the text above to copy it.';
+      }
+    }));
+  </script>
+</body>
+</html>

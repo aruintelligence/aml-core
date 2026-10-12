@@ -57,6 +57,30 @@ export function renderDecision(attention, restoration) {
   };
 }
 
+export function buildNextStep(mode, attention, restoration, recipient = "outside") {
+  if (mode === "action") {
+    if (recipient !== "team" && recipient !== "outside") throw new RangeError("Unknown first-run recipient");
+    return {
+    title: "Wrap one host-owned tool.",
+    description: "Run a simulated local callback, compare the exact route with a changed destination, then wire your own policy and approval in the host.",
+    href: `agent-start.html?recipient=${recipient}`,
+    label: "Build a guarded function tool ↗",
+    hint: "node pilots/action-boundary/guarded-tool-demo.mjs"
+  };
+  }
+  if (mode === "render") {
+    renderDecision(attention, restoration); // Bound values before putting them in a URL.
+    return {
+      title: "Put a gate around one element.",
+      description: "Shape a live browser gate with these declared values, inspect its event, then download a runnable HTML page.",
+      href: `quickstart.html?attention=${attention}&restoration=${restoration}`,
+      label: "Build your first gate ↗",
+      hint: "One element · no framework migration"
+    };
+  }
+  throw new RangeError("Unknown first-run mode");
+}
+
 if (typeof document !== "undefined") {
   const $ = id => document.getElementById(id);
   const params = new URLSearchParams(location.search);
@@ -138,8 +162,12 @@ if (typeof document !== "undefined") {
       `action-lab.html?scenario=${recipient === "team" ? "send" : "changed"}` :
       `proof.html?attention=${attention}&restoration=${restoration}&lang=en`;
     $("reproduce-link").textContent = action ? "Open the interactive action lab ↗" : "Open this exact interface proof ↗";
-    $("build-link").href = action ? "quickstart.html" :
-      `quickstart.html?attention=${attention}&restoration=${restoration}`;
+    const next = buildNextStep(mode, attention, restoration, recipient);
+    $("build-title").textContent = next.title;
+    $("build-description").textContent = next.description;
+    $("build-link").href = next.href;
+    $("build-link").textContent = next.label;
+    $("build-hint").textContent = next.hint;
     const source = document.querySelector(".links a:nth-child(2)");
     source.href = action ? "https://github.com/aruintelligence/aml-core/blob/main/pilots/action-boundary/README.md" :
       "https://github.com/aruintelligence/aml-core/blob/main/ETHICAL_RENDERING.md";
