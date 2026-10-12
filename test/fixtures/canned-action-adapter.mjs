@@ -25,6 +25,6 @@ export function cannedAnswer(input) {
     executed_proposal: expected.executed_vector ? byName.get(expected.executed_vector).proposal : null };
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+if (process.argv[2] && process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   console.log(JSON.stringify(cannedAnswer(JSON.parse(fs.readFileSync(process.argv[2], "utf8")))));
 }
