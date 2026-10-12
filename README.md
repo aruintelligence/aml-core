@@ -25,6 +25,7 @@
 | Your goal | First useful result |
 |---|---|
 | **Build** | [Shape a browser gate, share the exact scenario, and download runnable HTML](https://aruintelligence.github.io/aml-core/quickstart.html), or [start a guarded agent tool](https://aruintelligence.github.io/aml-core/agent-start.html) with a simulated local callback and host wiring guide. |
+| **Write ĀML** | [Edit a program and inspect the browser compiler](https://aruintelligence.github.io/aml-core/playground.html). Change one declared value, compare the decision, and share the source link. |
 | **Verify** | [Reproduce a decision in 10 minutes](docs/TRY_AML_10_MINUTES.md); preserve the commit, commands, output, and any failure. |
 | **Challenge** | [Run one action-boundary case](https://aruintelligence.github.io/aml-core/action-challenge.html?case=changed-destination#build), then all public and seeded cases against your own adapter. |
 
