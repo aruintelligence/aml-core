@@ -5,6 +5,7 @@ import { downloadablePage, integrationSnippet, parseSharedIntegration } from "./
 import { verifiedGateEvent } from "./playground-live.js?v=live-1";
 import { createLocalRunRecord } from "./playground-record.js?v=local-run-1";
 import { buildComparisonCard } from "./playground-card.js?v=comparison-card-1";
+import { buildComparisonReport } from "./playground-report.js?v=offline-report-1";
 
 const $ = id => document.getElementById(id);
 const source = $("source");
@@ -40,12 +41,17 @@ function clearCardPreview() {
   cardPreviewUrl = null;
 }
 
-async function cardForRun(run) {
-  if (run.cardSvg) return run.cardSvg;
-  const record = await createLocalRunRecord({
+function recordForRun(run) {
+  if (!run.recordPromise) run.recordPromise = createLocalRunRecord({
     source: run.source, decisions: run.decisions,
     entries: [...run.entries.values()].sort((a, b) => a.index - b.index), pageUrl: location.href
   });
+  return run.recordPromise;
+}
+
+async function cardForRun(run) {
+  if (run.cardSvg) return run.cardSvg;
+  const record = await recordForRun(run);
   const svg = buildComparisonCard(record);
   if (liveRun === run && runReady(run)) run.cardSvg = svg;
   return svg;
@@ -67,6 +73,7 @@ function prepareCardPreview(run) {
       clearCardPreview();
       run.cardFailed = true;
       $("download-card").disabled = true;
+      $("download-report").disabled = true;
       $("record-status").textContent = "Card preview unavailable here. The local JSON remains available.";
     };
     image.src = cardPreviewUrl;
@@ -74,6 +81,7 @@ function prepareCardPreview(run) {
     if (liveRun !== run) return;
     run.cardFailed = true;
     $("download-card").disabled = true;
+    $("download-report").disabled = true;
     $("record-status").textContent = "Card preview unavailable here. The local JSON remains available.";
   });
 }
@@ -85,6 +93,7 @@ function clearRunRecord(message) {
   $("run-record").dataset.state = "waiting";
   $("download-record").disabled = true;
   $("download-card").disabled = true;
+  $("download-report").disabled = true;
   $("record-status").textContent = message;
 }
 
@@ -98,6 +107,7 @@ function updateRunRecord() {
   $("run-record").dataset.state = ready ? "ready" : run.failed ? "blocked" : "waiting";
   $("download-record").disabled = !ready;
   $("download-card").disabled = !ready || run.expected !== 2 || run.cardFailed;
+  $("download-report").disabled = !ready || run.expected !== 2 || run.cardFailed;
   $("record-status").textContent = ready ?
     "All shown gates match. Download the local, unsigned record of this exact source." :
     run.failed ? "A gate was unavailable or mismatched. No run record can be exported." :
@@ -425,10 +435,7 @@ $("download-record").addEventListener("click", async () => {
   if (!runReady(run)) return;
   $("download-record").disabled = true;
   try {
-    const record = await createLocalRunRecord({
-      source: run.source, decisions: run.decisions,
-      entries: [...run.entries.values()].sort((a, b) => a.index - b.index), pageUrl: location.href
-    });
+    const record = await recordForRun(run);
     if (liveRun !== run || source.value !== run.source) return;
     downloadContent(JSON.stringify(record, null, 2) + "\n", "application/json", "aml-local-run.json");
     $("record-status").textContent = `Local run downloaded. Source SHA-256 starts ${record.source_sha256.slice(0, 12)}. Review the source before sharing.`;
@@ -452,6 +459,23 @@ $("download-card").addEventListener("click", async () => {
     if (liveRun === run) $("record-status").textContent = "This browser could not build the comparison card.";
   } finally {
     if (liveRun === run) $("download-card").disabled = !runReady(run) || run.expected !== 2 || run.cardFailed;
+  }
+});
+
+$("download-report").addEventListener("click", async () => {
+  const run = liveRun;
+  if (!runReady(run) || run.expected !== 2 || run.cardFailed) return;
+  $("download-report").disabled = true;
+  try {
+    const record = await recordForRun(run);
+    if (liveRun !== run || !runReady(run)) return;
+    const report = buildComparisonReport(record);
+    downloadContent(report, "text/html;charset=utf-8", "aml-comparison-report.html");
+    $("record-status").textContent = "Offline report saved with the card, exact source, full local record, and declared rule for each gate. Review the source before sharing.";
+  } catch {
+    if (liveRun === run) $("record-status").textContent = "This browser could not build the offline report.";
+  } finally {
+    if (liveRun === run) $("download-report").disabled = !runReady(run) || run.expected !== 2 || run.cardFailed;
   }
 });
 
