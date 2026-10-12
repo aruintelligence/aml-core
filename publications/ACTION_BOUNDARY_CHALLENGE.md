@@ -86,7 +86,7 @@ In an outside repository's GitHub Actions workflow:
 - run: cat "${{ steps.boundary.outputs.result-file }}"
 ```
 
-Pin the Action to an immutable release tag or commit when recording a reproducible result. The caller owns the adapter and its executable permission. The Action outputs `passed`, `result-file`, `challenge-sha256`, and `vectors-sha256`. A failing challenge fails the step but still writes the report before exiting; upload the file as a workflow artifact if you want it available after a failed run.
+Pin the Action to an immutable release tag or commit when recording a reproducible result. The caller owns the adapter and its executable permission. The Action outputs `passed`, `result-file`, `html-file`, `artifact-url`, `challenge-sha256`, and `vectors-sha256`. The Action posts a per-case job summary and uploads the JSON and standalone HTML as one workflow artifact **before** failing a mismatched run. Open the workflow run's summary to see the cases and download both reports, including when the adapter fails. GitHub's artifact retention and access settings apply. The output paths exist only on that job's runner. This Action uses `actions/upload-artifact@v4`, so the automatic artifact path is intended for GitHub.com Actions; GitHub Enterprise Server support must be evaluated separately.
 The Action runs the full challenge; `--case` is an interactive local development option.
 
 ## What the 13 cases exercise

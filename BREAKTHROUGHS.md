@@ -277,6 +277,12 @@ The [published visual example](https://aruintelligence.github.io/aml-core/action
 
 This is a lower-friction evidence surface, not a new independent result. The report is not signed, an HTML file can be edited, and provenance still requires review of the outside code, run environment, and published JSON. The project's own 13/13 result remains E1/E2 evidence, not E3 adoption.
 
+## 34. Keep the failure visible in the implementer's GitHub run
+
+The composite GitHub Action previously ended as soon as the challenge runner returned a failing status. Although a machine JSON file existed on the runner, an outside builder needed extra workflow steps to preserve and explain a failed run. The Action now generates a standalone HTML view during the same execution, uploads both HTML and JSON as a workflow artifact, posts each case verdict and stable failure codes in the GitHub job summary, then enforces the original nonzero outcome. A deliberately failing adapter in CI must leave both reports and still fail its Action step. Successful runs do the same and retain contract hashes.
+
+The [adapter instructions](publications/ACTION_BOUNDARY_CHALLENGE.md#run-it) show the caller workflow. This improves the cost of testing and sharing an outside implementation; the project CI's own adapters remain project-maintained evidence. Artifact access and retention depend on the caller repository and GitHub Actions settings. A summary or HTML file is not signed provenance, independent maintenance, authenticated consent, or proof that a live tool performed an effect.
+
 ## The frontier
 
 The next technical frontiers are:

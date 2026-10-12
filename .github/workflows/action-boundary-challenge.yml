@@ -9,6 +9,7 @@ on:
       - "scripts/run-action-boundary-challenge.mjs"
       - "scripts/render-action-challenge-report.mjs"
       - "scripts/build-action-challenge-visual-example.mjs"
+      - "scripts/write-action-challenge-summary.mjs"
       - "scripts/build-action-cross-runtime-report.mjs"
       - "scripts/build-file-dispatch-report.mjs"
       - "scripts/build-action-key-order-report.mjs"
@@ -30,6 +31,7 @@ on:
       - "test/fixtures/legacy-a2ui-function-gate.mjs"
       - "test/action-boundary-challenge.test.js"
       - "test/action-challenge-visual-report.test.js"
+      - "test/action-challenge-summary.test.js"
       - "docs/action-challenge-run.html"
       - "docs/action-challenge-run-preview.svg"
       - "docs/action-challenge.html"
@@ -58,6 +60,7 @@ on:
       - "scripts/run-action-boundary-challenge.mjs"
       - "scripts/render-action-challenge-report.mjs"
       - "scripts/build-action-challenge-visual-example.mjs"
+      - "scripts/write-action-challenge-summary.mjs"
       - "scripts/build-action-cross-runtime-report.mjs"
       - "scripts/build-file-dispatch-report.mjs"
       - "scripts/build-action-key-order-report.mjs"
@@ -79,6 +82,7 @@ on:
       - "test/fixtures/legacy-a2ui-function-gate.mjs"
       - "test/action-boundary-challenge.test.js"
       - "test/action-challenge-visual-report.test.js"
+      - "test/action-challenge-summary.test.js"
       - "docs/action-challenge-run.html"
       - "docs/action-challenge-run-preview.svg"
       - "docs/action-challenge.html"
@@ -120,6 +124,7 @@ jobs:
       - name: Verify portable visual report, scope labels, and hostile text escaping
         run: |
           node --test test/action-challenge-visual-report.test.js
+          node --test test/action-challenge-summary.test.js
           node scripts/build-action-challenge-visual-example.mjs --check
       - name: Verify function-tool adapter
         run: |
@@ -169,4 +174,22 @@ jobs:
       - name: Check composite outputs
         run: |
           test "${{ steps.composite.outputs.passed }}" = true
+          test -s "${{ steps.composite.outputs.html-file }}"
+          test -n "${{ steps.composite.outputs.artifact-url }}"
           node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.argv[1])); if (r.project_reference_self_test || !r.passed || r.cases.length !== 13) process.exit(1)' "${{ steps.composite.outputs.result-file }}"
+      - name: Prepare deliberately failing adapter
+        run: |
+          printf '%s\n' '#!/bin/sh' 'printf "{}"' > "$RUNNER_TEMP/aml-failing-adapter"
+          chmod +x "$RUNNER_TEMP/aml-failing-adapter"
+      - id: composite_failure
+        continue-on-error: true
+        uses: ./actions/action-boundary-conformance
+        with:
+          adapter-command: ${{ runner.temp }}/aml-failing-adapter
+      - name: Check failed run retained both reports and a truthful verdict
+        run: |
+          test "${{ steps.composite_failure.outcome }}" = failure
+          test "${{ steps.composite_failure.outputs.passed }}" = false
+          test -s "${{ steps.composite_failure.outputs.html-file }}"
+          test -n "${{ steps.composite_failure.outputs.artifact-url }}"
+          node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.argv[1])); if (r.passed || r.cases.length !== 13 || !r.cases[0].failures.length) process.exit(1)' "${{ steps.composite_failure.outputs.result-file }}"
