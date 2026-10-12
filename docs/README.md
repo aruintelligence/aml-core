@@ -2,7 +2,16 @@
 
 ĀML™ — ĀRU Meaning Language™ — is a working research prototype for meaning-native, accountable interfaces. This directory collects the public research notes, explainers, tooling, and supporting material around the compiler and EthicalRenderGate™.
 
-## Run AML now
+## Start with one decision
+
+- [First Contact](https://aruintelligence.github.io/aml-core/first-run.html) — change an agent destination or a declared render value, inspect the browser calculation, then follow the source. The action path checks a published project vector and dispatches no tool.
+- [Integration Studio](https://aruintelligence.github.io/aml-core/quickstart.html) — shape a real `<aml-gate>` browser decision, share the configuration, and take away runnable HTML. The hosted bridge is a changing project preview.
+- [Agent tool start](https://aruintelligence.github.io/aml-core/agent-start.html) — run a safe callback rehearsal, then wire exact policy and authenticated approval in your own host.
+- [Ten-minute reproduction](TRY_AML_10_MINUTES.md) — preserve the commit, inputs, and observed PASS, FAIL, or MIXED result. Project-authored tests are not independent validation.
+
+The homepage now runs the project action planner and browser gate in its first-screen console. Its digest match is a project self-check; declared interface values are not objective measurements of a person. The [consumer package guide](CONSUMER_QUICKSTART.md) uses the stable tag until registry publication is independently verified.
+
+## Explore the language and tooling
 
 - [AI Interface Firewall](AI_INTERFACE_FIREWALL.md) — mainstream adoption layer for AI/apps, React-compatible components, View Meaning, and CI gating
 - [Browser Playground](https://aruintelligence.github.io/aml-core/playground.html) — type AML source and inspect tokens, AST, Abstract Meaning Tree, and render decisions directly in the browser
