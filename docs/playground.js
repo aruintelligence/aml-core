@@ -1,5 +1,5 @@
 import { compileSourceBrowser } from "./aml-browser.js";
-import { parsePlaygroundShare, playgroundShareUrl } from "./playground-core.js?v=compare-link-1";
+import { comparisonRestoration, comparisonSample, parsePlaygroundShare, playgroundShareUrl } from "./playground-core.js?v=declaration-dial-1";
 import { studioHandoffUrls } from "./playground-handoff.js?v=compare-4";
 import { parseSharedIntegration } from "./quickstart-core.js?v=unicode-share-2";
 import { verifiedGateEvent } from "./playground-live.js?v=live-1";
@@ -19,23 +19,6 @@ function sample(restoration) {
     purpose: "Invite a considered review"
     attention_cost: 5
     restoration_value: ${restoration}
-  }
-}`;
-}
-
-function comparisonSample() {
-  return `transmission "compare_two_prompts" {
-  engram urgentOffer {
-    value: "Buy before the timer expires"
-    purpose: "Prompt an immediate purchase"
-    attention_cost: 5
-    restoration_value: 1
-  }
-  engram clearDetails {
-    value: "Review the full terms"
-    purpose: "Help compare the offer"
-    attention_cost: 5
-    restoration_value: 5
   }
 }`;
 }
@@ -97,6 +80,10 @@ function renderLivePreviews(decisions, handoffUrls) {
     panel.className = "live-panel";
     panel.dataset.state = "loading";
     const title = element("h3", "", decision.identifier || "Unnamed engram");
+    const top = document.createElement("div");
+    top.className = "live-panel-top";
+    const verdict = element("strong", "gate-verdict", "CONNECTING");
+    top.append(title, verdict);
     const frame = document.createElement("div");
     frame.className = "live-frame";
     frame.append(element("span", "live-frame-label", "SAMPLE INTERFACE · ENFORCE / CLOSED"));
@@ -107,11 +94,12 @@ function renderLivePreviews(decisions, handoffUrls) {
     frame.append(surface);
     const status = element("p", "live-event", "Waiting for aml-decision…");
     status.setAttribute("role", "status");
-    panel.append(title, frame, status);
+    panel.append(top, frame, status);
     grid.append(panel);
     if (bridgeState !== "ready") {
       if (bridgeState === "unavailable") {
         panel.dataset.state = "unavailable";
+        verdict.textContent = "UNAVAILABLE";
         absence.textContent = "Browser gate unavailable here.";
         status.textContent = "No browser decision was emitted.";
       }
@@ -119,7 +107,7 @@ function renderLivePreviews(decisions, handoffUrls) {
     }
     let declaration;
     try { declaration = parseSharedIntegration(url); }
-    catch { panel.dataset.state = "unavailable"; absence.textContent = "This declaration cannot be previewed."; continue; }
+    catch { panel.dataset.state = "unavailable"; verdict.textContent = "UNAVAILABLE"; absence.textContent = "This declaration cannot be previewed."; continue; }
     const gate = document.createElement("aml-gate");
     gate.setAttribute("purpose", declaration.purpose);
     gate.setAttribute("content", "Playground example");
@@ -136,6 +124,7 @@ function renderLivePreviews(decisions, handoffUrls) {
       observed = true;
       const valid = verifiedGateEvent(event.detail, decision, declaration, gate.hidden);
       panel.dataset.state = valid ? event.detail.render_allowed ? "allow" : "suppress" : "mismatch";
+      verdict.textContent = valid ? event.detail.render_allowed ? "ALLOW" : "SUPPRESS" : "MISMATCH";
       if (!valid) gate.hidden = true;
       absence.hidden = valid && event.detail.effective_rendered;
       absence.textContent = valid ? "Element withheld by the browser gate" :
@@ -149,6 +138,7 @@ function renderLivePreviews(decisions, handoffUrls) {
     if (!observed) {
       gate.hidden = true;
       panel.dataset.state = "unavailable";
+      verdict.textContent = "UNAVAILABLE";
       absence.textContent = "The browser gate did not emit a usable decision.";
       status.textContent = "No browser decision was emitted.";
     }
@@ -165,7 +155,20 @@ function showRaw() {
   output.textContent = JSON.stringify(value, null, 2);
 }
 
+function syncExperiment() {
+  const restoration = comparisonRestoration(source.value);
+  const experiment = $("experiment");
+  experiment.hidden = restoration === null;
+  if (restoration === null) return;
+  $("claim-dial").value = String(restoration);
+  $("claim-dial").style.setProperty("--fill", `${restoration * 10}%`);
+  $("claim-value").textContent = String(restoration);
+  $("claim-rule").textContent = restoration >= 5 ? "Meets declared attention 5" : "Below declared attention 5";
+  $("claim-rule").dataset.state = restoration >= 5 ? "allow" : "suppress";
+}
+
 function compile() {
+  syncExperiment();
   try {
     result = compileSourceBrowser(source.value);
     const decisions = result.renderDecisions;
@@ -196,12 +199,22 @@ function compile() {
 }
 
 $("compile").addEventListener("click", compile);
+$("claim-dial").addEventListener("input", event => {
+  if (comparisonRestoration(source.value) === null) return;
+  source.value = comparisonSample(Number(event.target.value));
+  compile();
+});
+$("claim-reset").addEventListener("click", () => {
+  source.value = comparisonSample();
+  compile();
+});
 document.querySelectorAll("[data-preset]").forEach(button => button.addEventListener("click", () => {
   source.value = button.dataset.preset === "compare" ? comparisonSample() : sample(Number(button.dataset.preset));
   compile();
 }));
 source.addEventListener("input", () => {
   result = null;
+  syncExperiment();
   $("source-status").textContent = "Source changed · compile to update the report.";
   $("source-status").dataset.tone = "neutral";
   $("summary").textContent = "Awaiting compile";
