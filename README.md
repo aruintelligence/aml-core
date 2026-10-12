@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://aruintelligence.github.io/aml-core/"><img src="docs/aml-social-preview.svg" alt="ĀML: AI proposes. The host decides. An illustrative outside message is blocked by an exact host policy before dispatch." width="100%"></a>
+  <a href="https://aruintelligence.github.io/aml-core/first-run.html"><img src="docs/first-contact-share.png" alt="ĀML: AI proposes. The host decides. An illustrative agent message to an outside destination is blocked by an exact host policy before dispatch." width="100%"></a>
 </div>
 
 # ĀML™ — ĀRU Meaning Language™
@@ -20,7 +20,7 @@
 
 ## Start with one decision
 
-[**Enter the interactive first run →**](https://aruintelligence.github.io/aml-core/first-run.html) Change an agent's destination or a proposed interface value. Follow the policy path, inspect the local preview, and then open the linked executable lab. It runs in your browser with no tool access.
+[**Enter the interactive first run →**](https://aruintelligence.github.io/aml-core/first-run.html) Change an agent's destination or a proposed interface value. The action path runs the project's browser planner, computes the canonical proposal SHA-256, and checks it against a published project vector. Then open the linked lab or reproduce locally. It never dispatches a tool.
 
 | Your goal | First useful result |
 |---|---|
@@ -359,4 +359,5 @@ Commercial, OEM, enterprise, and strategic inquiries: **Office@aruintelligence.c
 Created by **Daniel Jacob Read IV** and stewarded by **ĀRU Intelligence Inc.™**.
 
 ĀML™, ĀRU Meaning Language™, AI Interface Firewall™, View Meaning™, Meaning Gate™, EthicalRenderGate™, Meaning-Native Computing™, Proof-Carrying Interface™, and named ĀML compatibility marks are claimed marks. Registration status varies; do not use ® unless a specific mark is actually registered for the relevant goods/services.
+
 
