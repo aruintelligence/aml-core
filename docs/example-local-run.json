@@ -1,0 +1,58 @@
+{
+  "format": "aml-playground-local-run/v1",
+  "generated_at": "2026-10-12T23:46:04.510Z",
+  "scope": "Unsigned project-authored browser self-check. Declared inputs are not measurements or independent validation.",
+  "page": "https://aruintelligence.github.io/aml-core/playground.html",
+  "source_sha256": "b3da4571ad550a5cdff91071bc9b2b2f62325aec8dd97806c18bcecb190c166d",
+  "source": "transmission \"compare_two_prompts\" {\n  engram urgentOffer {\n    value: \"Buy before the timer expires\"\n    purpose: \"Prompt an immediate purchase\"\n    attention_cost: 5\n    restoration_value: 1\n  }\n  engram clearDetails {\n    value: \"Review the full terms\"\n    purpose: \"Help compare the offer\"\n    attention_cost: 5\n    restoration_value: 5\n  }\n}",
+  "compiler_decision_count": 2,
+  "previewed_gate_count": 2,
+  "gates": [
+    {
+      "decision_index": 0,
+      "identifier": "urgentOffer",
+      "declaration": {
+        "purpose": "Prompt an immediate purchase",
+        "label": "Buy before the timer expires",
+        "attention_cost": 5,
+        "restoration_value": 1
+      },
+      "compiler": {
+        "render_allowed": false,
+        "timestamp": "2026-10-12T23:46:04.446Z"
+      },
+      "browser": {
+        "observed_at": "2026-10-12T23:46:04.507Z",
+        "ok": true,
+        "render_allowed": false,
+        "effective_rendered": false,
+        "deployment_mode": "enforce",
+        "failure_mode": "closed"
+      },
+      "matched": true
+    },
+    {
+      "decision_index": 1,
+      "identifier": "clearDetails",
+      "declaration": {
+        "purpose": "Help compare the offer",
+        "label": "Review the full terms",
+        "attention_cost": 5,
+        "restoration_value": 5
+      },
+      "compiler": {
+        "render_allowed": true,
+        "timestamp": "2026-10-12T23:46:04.446Z"
+      },
+      "browser": {
+        "observed_at": "2026-10-12T23:46:04.509Z",
+        "ok": true,
+        "render_allowed": true,
+        "effective_rendered": true,
+        "deployment_mode": "enforce",
+        "failure_mode": "closed"
+      },
+      "matched": true
+    }
+  ]
+}

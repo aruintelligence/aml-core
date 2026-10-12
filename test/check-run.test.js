@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { checkLocalRun } from "../docs/check-run-core.js";
 import { compileSourceBrowser } from "../docs/aml-browser.js";
@@ -28,6 +29,17 @@ const entries = decisions.map((decision, index) => {
 const record = await createLocalRunRecord({
   source, decisions, entries, pageUrl: "https://aruintelligence.github.io/aml-core/playground.html",
   generatedAt: "2026-10-12T20:01:00.000Z"
+});
+
+test("the published browser example passes, and one altered saved outcome fails", async () => {
+  const example = JSON.parse(readFileSync(new URL("../docs/example-local-run.json", import.meta.url), "utf8"));
+  const original = await checkLocalRun(JSON.stringify(example));
+  assert.equal(original.consistent, true);
+  assert.deepEqual(original.gates.map(gate => gate.recorded), ["withheld", "visible"]);
+  example.gates[0].browser.effective_rendered = true;
+  const changed = await checkLocalRun(JSON.stringify(example));
+  assert.deepEqual(changed.checks.map(item => item.pass), [true, true, false]);
+  assert.equal(changed.gates[0].pass, false);
 });
 
 test("checker replays a matched local run and labels its limited conclusion", async () => {
