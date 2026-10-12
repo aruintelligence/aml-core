@@ -4,6 +4,7 @@ import { studioHandoffUrls } from "./playground-handoff.js?v=compare-4";
 import { downloadablePage, integrationSnippet, parseSharedIntegration } from "./quickstart-core.js?v=take-gate-1";
 import { verifiedGateEvent } from "./playground-live.js?v=live-1";
 import { createLocalRunRecord } from "./playground-record.js?v=local-run-1";
+import { buildComparisonCard } from "./playground-card.js?v=comparison-card-1";
 
 const $ = id => document.getElementById(id);
 const source = $("source");
@@ -14,11 +15,26 @@ let bridgeState = "loading";
 let liveRun = null;
 const MAX_LIVE_PREVIEWS = 6;
 
+function runReady(run) {
+  return !!run && run.expected > 0 && run.entries.size === run.expected &&
+    !run.failed && source.value === run.source;
+}
+
+function downloadContent(content, type, name) {
+  const fileUrl = URL.createObjectURL(new Blob([content], { type }));
+  const link = document.createElement("a");
+  link.href = fileUrl;
+  link.download = name;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(fileUrl), 60_000);
+}
+
 function clearRunRecord(message) {
   liveRun = null;
   $("record-count").textContent = "0 / 0 matched";
   $("run-record").dataset.state = "waiting";
   $("download-record").disabled = true;
+  $("download-card").disabled = true;
   $("record-status").textContent = message;
 }
 
@@ -26,10 +42,11 @@ function updateRunRecord() {
   const run = liveRun;
   if (!run) return;
   const matched = run.entries.size;
-  const ready = run.expected > 0 && matched === run.expected && !run.failed && source.value === run.source;
+  const ready = runReady(run);
   $("record-count").textContent = `${matched} / ${run.expected} matched`;
   $("run-record").dataset.state = ready ? "ready" : run.failed ? "blocked" : "waiting";
   $("download-record").disabled = !ready;
+  $("download-card").disabled = !ready || run.expected !== 2;
   $("record-status").textContent = ready ?
     "All shown gates match. Download the local, unsigned record of this exact source." :
     run.failed ? "A gate was unavailable or mismatched. No run record can be exported." :
@@ -353,7 +370,7 @@ document.querySelectorAll("[data-view]").forEach(button => button.addEventListen
 
 $("download-record").addEventListener("click", async () => {
   const run = liveRun;
-  if (!run || run.failed || !run.expected || run.entries.size !== run.expected || source.value !== run.source) return;
+  if (!runReady(run)) return;
   $("download-record").disabled = true;
   try {
     const record = await createLocalRunRecord({
@@ -361,18 +378,31 @@ $("download-record").addEventListener("click", async () => {
       entries: [...run.entries.values()].sort((a, b) => a.index - b.index), pageUrl: location.href
     });
     if (liveRun !== run || source.value !== run.source) return;
-    const fileUrl = URL.createObjectURL(new Blob([JSON.stringify(record, null, 2) + "\n"], { type: "application/json" }));
-    const link = document.createElement("a");
-    link.href = fileUrl;
-    link.download = "aml-local-run.json";
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(fileUrl), 60_000);
+    downloadContent(JSON.stringify(record, null, 2) + "\n", "application/json", "aml-local-run.json");
     $("record-status").textContent = `Local run downloaded. Source SHA-256 starts ${record.source_sha256.slice(0, 12)}. Review the source before sharing.`;
   } catch {
     if (liveRun === run) $("record-status").textContent = "This browser could not build the local run record.";
   } finally {
-    if (liveRun === run) $("download-record").disabled =
-      run.failed || run.entries.size !== run.expected || source.value !== run.source;
+    if (liveRun === run) $("download-record").disabled = !runReady(run);
+  }
+});
+
+$("download-card").addEventListener("click", async () => {
+  const run = liveRun;
+  if (!runReady(run) || run.expected !== 2) return;
+  $("download-card").disabled = true;
+  try {
+    const record = await createLocalRunRecord({
+      source: run.source, decisions: run.decisions,
+      entries: [...run.entries.values()].sort((a, b) => a.index - b.index), pageUrl: location.href
+    });
+    if (liveRun !== run || !runReady(run)) return;
+    downloadContent(buildComparisonCard(record), "image/svg+xml", "aml-comparison.svg");
+    $("record-status").textContent = "Comparison card saved. Pair the image with a source link so others can rerun the experiment.";
+  } catch {
+    if (liveRun === run) $("record-status").textContent = "This browser could not build the comparison card.";
+  } finally {
+    if (liveRun === run) $("download-card").disabled = !runReady(run) || run.expected !== 2;
   }
 });
 

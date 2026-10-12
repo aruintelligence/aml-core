@@ -7,7 +7,7 @@
 - [First Contact](https://aruintelligence.github.io/aml-core/first-run.html) — change an agent destination or a declared render value, inspect the browser calculation, then follow the source. The action path checks a published project vector and dispatches no tool; the interface path observes the project `<aml-gate>` event and actual visibility.
 - [Integration Studio](https://aruintelligence.github.io/aml-core/quickstart.html) — shape a real `<aml-gate>` browser decision, share the configuration, and take away runnable HTML. The hosted bridge is a changing project preview.
 - [Agent tool start](https://aruintelligence.github.io/aml-core/agent-start.html) — run a safe callback rehearsal, then wire exact policy and authenticated approval in your own host.
-- [Browser Playground](https://aruintelligence.github.io/aml-core/playground.html) — write a small ĀML program, change one declared value, read the compiler decision, and share the source in a URL fragment.
+- [Browser Playground](https://aruintelligence.github.io/aml-core/playground.html) — write a small ĀML program, compare browser gate outcomes, share the source, and save a local JSON run or two-gate SVG card.
 - [Ten-minute reproduction](TRY_AML_10_MINUTES.md) — preserve the commit, inputs, and observed PASS, FAIL, or MIXED result. Project-authored tests are not independent validation.
 
 The homepage now runs the project action planner and browser gate in its first-screen console. Its digest match is a project self-check; declared interface values are not objective measurements of a person. The [consumer package guide](CONSUMER_QUICKSTART.md) uses the stable tag until registry publication is independently verified.
