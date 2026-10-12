@@ -1,0 +1,218 @@
+{
+  "protocol": "aml-connected-mcp-pilot/1",
+  "provenance": "project-authored local MCP SDK v2 client/server over child-process stdio",
+  "sdk": "@modelcontextprotocol/client@2.3.1 + @modelcontextprotocol/server@2.3.1",
+  "server": "local-notice-fixture",
+  "transport": "stdio child process",
+  "advertised_read_only_hint": true,
+  "unsafe_comparison": {
+    "proposed_call": {
+      "name": "send_notice",
+      "arguments": {
+        "to": "outside@example.test",
+        "body": "Build passed."
+      }
+    },
+    "server_handler_calls": 1,
+    "server_audit": [
+      {
+        "tool": "send_notice",
+        "to": "outside@example.test",
+        "body": "Build passed."
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "outside",
+      "title": "Outside the exact rule",
+      "proposed_call": {
+        "name": "send_notice",
+        "arguments": {
+          "to": "outside@example.test",
+          "body": "Build passed."
+        }
+      },
+      "server_handler_calls": 0,
+      "server_audit": [],
+      "verdict": {
+        "rejection": null,
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "ca5ed4074e49f5e3c3c6dccc3707f3dd106f562243101d33faa0976045004538",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "ca5ed4074e49f5e3c3c6dccc3707f3dd106f562243101d33faa0976045004538",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "mcp_result_status": "not_called"
+      }
+    },
+    {
+      "id": "approved",
+      "title": "Matching route and approval",
+      "proposed_call": {
+        "name": "send_notice",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "Build passed."
+        }
+      },
+      "server_handler_calls": 1,
+      "server_audit": [
+        {
+          "tool": "send_notice",
+          "to": "team@example.test",
+          "body": "Build passed."
+        }
+      ],
+      "verdict": {
+        "rejection": null,
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "59d34209189040e883deb70df374a3efcf6a9061c71511567b468bd5453db34d",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "59d34209189040e883deb70df374a3efcf6a9061c71511567b468bd5453db34d",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "mcp_result_status": "returned",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "recorded locally; no notice sent"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "changed_body",
+      "title": "Approval bound to old bytes",
+      "proposed_call": {
+        "name": "send_notice",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "Changed body"
+        }
+      },
+      "server_handler_calls": 0,
+      "server_audit": [],
+      "verdict": {
+        "rejection": null,
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "c68f29bb8bb992ae55959549c3d52332048cc3f3c05527abe3268ac5f5952c1f",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "c68f29bb8bb992ae55959549c3d52332048cc3f3c05527abe3268ac5f5952c1f",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "mcp_result_status": "not_called"
+      }
+    },
+    {
+      "id": "extra_recipient",
+      "title": "Unexpected recipient field",
+      "proposed_call": {
+        "name": "send_notice",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "Build passed.",
+          "cc": [
+            "outside@example.test"
+          ]
+        }
+      },
+      "server_handler_calls": 0,
+      "server_audit": [],
+      "verdict": {
+        "rejection": "invalid_arguments",
+        "plan": null,
+        "receipt": null,
+        "mcp_result_status": "not_called"
+      }
+    },
+    {
+      "id": "wrong_tool",
+      "title": "Unregistered tool name",
+      "proposed_call": {
+        "name": "delete_records",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "Build passed."
+        }
+      },
+      "server_handler_calls": 0,
+      "server_audit": [],
+      "verdict": {
+        "rejection": "invalid_or_unregistered_call",
+        "plan": null,
+        "receipt": null,
+        "mcp_result_status": "not_called"
+      }
+    },
+    {
+      "id": "tool_error",
+      "title": "Server handler returns an error",
+      "proposed_call": {
+        "name": "send_notice",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "Return an error"
+        }
+      },
+      "server_handler_calls": 1,
+      "server_audit": [
+        {
+          "tool": "send_notice",
+          "to": "team@example.test",
+          "body": "Return an error"
+        }
+      ],
+      "verdict": {
+        "rejection": null,
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "04e74d48c4b57795cc1614afc65b65243573683493c79f48cf295f37ca90042f",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "04e74d48c4b57795cc1614afc65b65243573683493c79f48cf295f37ca90042f",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "mcp_result_status": "tool_error",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "fixture reported a tool error"
+            }
+          ],
+          "isError": true
+        }
+      }
+    }
+  ],
+  "limits": "The server only appends a temporary local audit line. This is a connected SDK pilot, not an external send, independent security assessment, general MCP interception, authenticated approval, or proof of provider delivery. A host must ensure every effectful call path uses its gate and bind the actual server/account and final provider request."
+}

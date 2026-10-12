@@ -2,6 +2,8 @@
 
 [Open the eight-case visual lab](https://aruintelligence.github.io/aml-core/mcp-call-lab.html) · [Read the MCP 2026-07-28 tools specification](https://modelcontextprotocol.io/specification/2026-07-28/server/tools) · [See the SDK `callTool` shape](https://ts.sdk.modelcontextprotocol.io/v2/clients/calling)
 
+[Run the connected SDK client/server pilot](connected-mcp/README.md): a child MCP server over stdio records handler calls, including the 1 → 0 outside-destination comparison. The eight-case lab below remains an in-memory API-shaped harness with additional outcomes.
+
 MCP tools are selected by name and invoked with an `arguments` object. A server can advertise `readOnlyHint`, `destructiveHint`, and other annotations, but the MCP specification says clients must treat annotations as untrusted unless the server is trusted. Even a trusted annotation describes a tool; it does not authorize a particular recipient, body, or effect.
 
 `createMCPCallToolGate` is a narrow **client-side** wrapper for one connected MCP client and one configured tool. The host assigns a stable `serverKey` to its actual client connection and configures the exact tool name, effect, purpose, argument validation, destination mapper, policy, and approval callback. The agent supplies only `{ name, arguments }`. The wrapper snapshots the JSON arguments, checks the host schema, builds a `mcp:<serverKey>:<name>` AML proposal, derives its resource from those arguments, then calls the connected client's `callTool({ name, arguments })` only after the AML action gate permits dispatch. It never uses tool-list annotations as policy.
