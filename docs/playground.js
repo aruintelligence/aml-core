@@ -94,12 +94,25 @@ function renderLivePreviews(decisions, handoffUrls) {
     frame.append(surface);
     const status = element("p", "live-event", "Waiting for aml-decision…");
     status.setAttribute("role", "status");
-    panel.append(top, frame, status);
+    const trace = document.createElement("ol");
+    trace.className = "gate-trace";
+    trace.setAttribute("aria-label", "Decision trace");
+    const traceStep = (label, value) => {
+      const item = document.createElement("li");
+      item.append(element("span", "trace-label", label), element("strong", "trace-value", value));
+      trace.append(item);
+      return item.lastElementChild;
+    };
+    traceStep("01 / DECLARED", `cost ${decision.attention_cost} · value ${decision.restoration_value}`);
+    traceStep("02 / COMPILER", decision.render_allowed === true ? "ALLOW" : "SUPPRESS");
+    const browserStep = traceStep("03 / BROWSER", "WAITING");
+    panel.append(top, frame, status, trace);
     grid.append(panel);
     if (bridgeState !== "ready") {
       if (bridgeState === "unavailable") {
         panel.dataset.state = "unavailable";
         verdict.textContent = "UNAVAILABLE";
+        browserStep.textContent = "NO EVENT";
         absence.textContent = "Browser gate unavailable here.";
         status.textContent = "No browser decision was emitted.";
       }
@@ -107,7 +120,7 @@ function renderLivePreviews(decisions, handoffUrls) {
     }
     let declaration;
     try { declaration = parseSharedIntegration(url); }
-    catch { panel.dataset.state = "unavailable"; verdict.textContent = "UNAVAILABLE"; absence.textContent = "This declaration cannot be previewed."; continue; }
+    catch { panel.dataset.state = "unavailable"; verdict.textContent = "UNAVAILABLE"; browserStep.textContent = "NO EVENT"; absence.textContent = "This declaration cannot be previewed."; continue; }
     const gate = document.createElement("aml-gate");
     gate.setAttribute("purpose", declaration.purpose);
     gate.setAttribute("content", "Playground example");
@@ -125,6 +138,8 @@ function renderLivePreviews(decisions, handoffUrls) {
       const valid = verifiedGateEvent(event.detail, decision, declaration, gate.hidden);
       panel.dataset.state = valid ? event.detail.render_allowed ? "allow" : "suppress" : "mismatch";
       verdict.textContent = valid ? event.detail.render_allowed ? "ALLOW" : "SUPPRESS" : "MISMATCH";
+      trace.dataset.state = valid ? "matched" : "mismatch";
+      browserStep.textContent = valid ? event.detail.effective_rendered ? "VISIBLE · MATCHED" : "WITHHELD · MATCHED" : "MISMATCH · CLOSED";
       if (!valid) gate.hidden = true;
       absence.hidden = valid && event.detail.effective_rendered;
       absence.textContent = valid ? "Element withheld by the browser gate" :
@@ -139,6 +154,7 @@ function renderLivePreviews(decisions, handoffUrls) {
       gate.hidden = true;
       panel.dataset.state = "unavailable";
       verdict.textContent = "UNAVAILABLE";
+      browserStep.textContent = "NO EVENT";
       absence.textContent = "The browser gate did not emit a usable decision.";
       status.textContent = "No browser decision was emitted.";
     }
