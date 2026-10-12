@@ -1,7 +1,7 @@
 import { compileSourceBrowser } from "./aml-browser.js";
 import { comparisonRestoration, comparisonSample, parsePlaygroundShare, playgroundShareUrl } from "./playground-core.js?v=declaration-dial-1";
 import { studioHandoffUrls } from "./playground-handoff.js?v=compare-4";
-import { parseSharedIntegration } from "./quickstart-core.js?v=unicode-share-2";
+import { downloadablePage, integrationSnippet, parseSharedIntegration } from "./quickstart-core.js?v=take-gate-1";
 import { verifiedGateEvent } from "./playground-live.js?v=live-1";
 
 const $ = id => document.getElementById(id);
@@ -63,6 +63,51 @@ function renderCards(decisions, handoffUrls) {
   }
 }
 
+function takeGate(declaration, studioUrl) {
+  const details = document.createElement("details");
+  details.className = "gate-take";
+  details.hidden = true;
+  details.append(element("summary", "", "Take this gate into your page ↗"));
+  details.append(element("p", "take-note", "This is one engram as a browser gate, not the entire program. It loads the changing project preview bridge; review and pin audited assets before production."));
+  const code = element("pre", "gate-code", integrationSnippet(declaration));
+  code.tabIndex = 0;
+  code.setAttribute("aria-label", "Gate HTML to copy");
+  details.append(code);
+  const actions = document.createElement("div");
+  actions.className = "take-actions";
+  const copy = element("button", "", "Copy gate HTML");
+  copy.type = "button";
+  const download = element("button", "", "Download runnable page");
+  download.type = "button";
+  const studio = element("a", "", "Adjust in Studio ↗");
+  studio.href = studioUrl;
+  actions.append(copy, download, studio);
+  details.append(actions);
+  const status = element("p", "take-status", "Values are declared prototype inputs, not measurements.");
+  status.setAttribute("role", "status");
+  details.append(status);
+  copy.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(code.textContent);
+      status.textContent = "Gate HTML copied. Paste it into your page and review the project preview dependency.";
+    } catch {
+      code.focus();
+      status.textContent = "Clipboard unavailable. Select the gate HTML above to copy it.";
+    }
+  });
+  download.addEventListener("click", () => {
+    const file = new Blob([downloadablePage(declaration)], { type: "text/html;charset=utf-8" });
+    const fileUrl = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.download = "my-aml-gate.html";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(fileUrl), 60_000);
+    status.textContent = "Page downloaded. Open it with internet access; it loads the project preview bridge.";
+  });
+  return details;
+}
+
 function renderLivePreviews(decisions, handoffUrls) {
   const grid = $("live-grid");
   grid.replaceChildren();
@@ -121,6 +166,8 @@ function renderLivePreviews(decisions, handoffUrls) {
     let declaration;
     try { declaration = parseSharedIntegration(url); }
     catch { panel.dataset.state = "unavailable"; verdict.textContent = "UNAVAILABLE"; browserStep.textContent = "NO EVENT"; absence.textContent = "This declaration cannot be previewed."; continue; }
+    const handoff = takeGate(declaration, url);
+    panel.append(handoff);
     const gate = document.createElement("aml-gate");
     gate.setAttribute("purpose", declaration.purpose);
     gate.setAttribute("content", "Playground example");
@@ -138,6 +185,7 @@ function renderLivePreviews(decisions, handoffUrls) {
       const valid = verifiedGateEvent(event.detail, decision, declaration, gate.hidden);
       panel.dataset.state = valid ? event.detail.render_allowed ? "allow" : "suppress" : "mismatch";
       verdict.textContent = valid ? event.detail.render_allowed ? "ALLOW" : "SUPPRESS" : "MISMATCH";
+      handoff.hidden = !valid;
       trace.dataset.state = valid ? "matched" : "mismatch";
       browserStep.textContent = valid ? event.detail.effective_rendered ? "VISIBLE · MATCHED" : "WITHHELD · MATCHED" : "MISMATCH · CLOSED";
       if (!valid) gate.hidden = true;
