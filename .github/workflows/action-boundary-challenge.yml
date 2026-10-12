@@ -5,10 +5,12 @@ on:
     branches: [main]
     paths:
       - "conformance/action-boundary-challenge*"
+      - "conformance/action-boundary-probes.js"
       - "pilots/action-boundary/**"
       - "scripts/run-action-boundary-challenge.mjs"
       - "scripts/render-action-challenge-report.mjs"
       - "scripts/build-action-challenge-visual-example.mjs"
+      - "scripts/build-action-probe-report.mjs"
       - "scripts/write-action-challenge-summary.mjs"
       - "scripts/build-action-cross-runtime-report.mjs"
       - "scripts/build-file-dispatch-report.mjs"
@@ -31,6 +33,10 @@ on:
       - "test/fixtures/legacy-a2ui-function-gate.mjs"
       - "test/action-boundary-challenge.test.js"
       - "test/action-challenge-visual-report.test.js"
+      - "test/action-boundary-probes.test.js"
+      - "test/fixtures/canned-action-adapter.mjs"
+      - "docs/action-probe-lab.html"
+      - "docs/action-probe-report.json"
       - "test/action-challenge-summary.test.js"
       - "docs/action-challenge-run.html"
       - "docs/action-challenge-run-preview.svg"
@@ -56,10 +62,12 @@ on:
   pull_request:
     paths:
       - "conformance/action-boundary-challenge*"
+      - "conformance/action-boundary-probes.js"
       - "pilots/action-boundary/**"
       - "scripts/run-action-boundary-challenge.mjs"
       - "scripts/render-action-challenge-report.mjs"
       - "scripts/build-action-challenge-visual-example.mjs"
+      - "scripts/build-action-probe-report.mjs"
       - "scripts/write-action-challenge-summary.mjs"
       - "scripts/build-action-cross-runtime-report.mjs"
       - "scripts/build-file-dispatch-report.mjs"
@@ -82,6 +90,10 @@ on:
       - "test/fixtures/legacy-a2ui-function-gate.mjs"
       - "test/action-boundary-challenge.test.js"
       - "test/action-challenge-visual-report.test.js"
+      - "test/action-boundary-probes.test.js"
+      - "test/fixtures/canned-action-adapter.mjs"
+      - "docs/action-probe-lab.html"
+      - "docs/action-probe-report.json"
       - "test/action-challenge-summary.test.js"
       - "docs/action-challenge-run.html"
       - "docs/action-challenge-run-preview.svg"
@@ -125,7 +137,9 @@ jobs:
         run: |
           node --test test/action-challenge-visual-report.test.js
           node --test test/action-challenge-summary.test.js
+          node --test test/action-boundary-probes.test.js
           node scripts/build-action-challenge-visual-example.mjs --check
+          node scripts/build-action-probe-report.mjs --check
       - name: Verify function-tool adapter
         run: |
           node --test test/action-boundary-guarded-tool.test.js
@@ -147,12 +161,25 @@ jobs:
           node scripts/build-a2ui-invocation-replay-report.mjs --check
       - name: Project-owned self-test
         run: node scripts/run-action-boundary-challenge.mjs --self-test
+      - name: Seeded counterfactual self-test
+        run: node scripts/run-action-boundary-challenge.mjs --probes --probe-seed 0123456789abcdef0123456789abcdef --self-test
+      - name: A canned adapter passes fixed answers but fails generated probes
+        run: |
+          node scripts/run-action-boundary-challenge.mjs -- node test/fixtures/canned-action-adapter.mjs > "$RUNNER_TEMP/aml-canned-fixed.json"
+          node -e 'const r=require(process.argv[1]); if (!r.passed || r.cases.length !== 13) process.exit(1)' "$RUNNER_TEMP/aml-canned-fixed.json"
+          set +e
+          node scripts/run-action-boundary-challenge.mjs --probes --probe-seed 0123456789abcdef0123456789abcdef -- node test/fixtures/canned-action-adapter.mjs > "$RUNNER_TEMP/aml-canned-probes.json"
+          status=$?
+          set -e
+          test "$status" -eq 1
+          node -e 'const r=require(process.argv[1]); if (r.passed || r.cases.length !== 19 || r.cases.filter(x=>x.passed).length !== 13 || r.cases.slice(13).some(x=>x.passed)) process.exit(1)' "$RUNNER_TEMP/aml-canned-probes.json"
       - name: Exercise black-box process contract
         run: node scripts/run-action-boundary-challenge.mjs -- node pilots/action-boundary/challenge-reference-adapter.mjs
       - name: Verify the separate Python implementation and visual report
         run: |
           python3 -m unittest discover -s test -p test_python_boundary.py
           node scripts/run-action-boundary-challenge.mjs -- python3 pilots/action-boundary/challenge-python-adapter.py
+          node scripts/run-action-boundary-challenge.mjs --probes --probe-seed 0123456789abcdef0123456789abcdef -- python3 pilots/action-boundary/challenge-python-adapter.py
           node scripts/build-action-cross-runtime-report.mjs --check
           node scripts/build-action-key-order-report.mjs --check
       - name: Verify host-owned dispatch ledger and recorded process race
@@ -176,7 +203,7 @@ jobs:
           test "${{ steps.composite.outputs.passed }}" = true
           test -s "${{ steps.composite.outputs.html-file }}"
           test -n "${{ steps.composite.outputs.artifact-url }}"
-          node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.argv[1])); if (r.project_reference_self_test || !r.passed || r.cases.length !== 13) process.exit(1)' "${{ steps.composite.outputs.result-file }}"
+          node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.argv[1])); if (r.project_reference_self_test || !r.passed || r.cases.length !== 19 || r.probe_case_count !== 6) process.exit(1)' "${{ steps.composite.outputs.result-file }}"
       - name: Prepare deliberately failing adapter
         run: |
           printf '%s\n' '#!/bin/sh' 'printf "{}"' > "$RUNNER_TEMP/aml-failing-adapter"
@@ -192,4 +219,4 @@ jobs:
           test "${{ steps.composite_failure.outputs.passed }}" = false
           test -s "${{ steps.composite_failure.outputs.html-file }}"
           test -n "${{ steps.composite_failure.outputs.artifact-url }}"
-          node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.argv[1])); if (r.passed || r.cases.length !== 13 || !r.cases[0].failures.length) process.exit(1)' "${{ steps.composite_failure.outputs.result-file }}"
+          node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.argv[1])); if (r.passed || r.cases.length !== 19 || !r.cases[0].failures.length) process.exit(1)' "${{ steps.composite_failure.outputs.result-file }}"

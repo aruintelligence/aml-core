@@ -283,6 +283,14 @@ The composite GitHub Action previously ended as soon as the challenge runner ret
 
 The [adapter instructions](publications/ACTION_BOUNDARY_CHALLENGE.md#run-it) show the caller workflow. This improves the cost of testing and sharing an outside implementation; the project CI's own adapters remain project-maintained evidence. Artifact access and retention depend on the caller repository and GitHub Actions settings. A summary or HTML file is not signed provenance, independent maintenance, authenticated consent, or proof that a live tool performed an effect.
 
+## 35. A perfect static conformance score can be a false signal
+
+The public Action Boundary Challenge published 13 fixed inputs and expected outputs. A deliberately canned adapter can look up each `case_id`, copy the expected plan and receipt from the manifest, and report 13/13 without evaluating policy, requesting approval, freezing a proposal, or dispatching a callback. This is an actual limitation of a fixed public test set, not an external attack observed in the wild.
+
+The challenge now offers six seeded follow-up cases through `--probes`. They change proposal body and purpose, move an intended resource together with its exact host rule, try an unapproved new resource, keep an old approval digest against changed text, and mutate the caller copy during approval. The harness calculates new proposal digests, runs the adapter as a black-box process, and records the seed for exact replay. The GitHub Action enables the probes by default and preserves all 19 results in its visual and JSON artifacts. In the [deterministic counterexample](https://aruintelligence.github.io/aml-core/action-probe-lab.html), the canned adapter goes from 13/13 on fixed fixtures to 13/19 with probes; the project reference passes 19/19. `node scripts/build-action-probe-report.mjs --check` verifies the [machine report](docs/action-probe-report.json).
+
+These are public, project-authored metamorphic transformations. They raise the cost of memorizing one exact set of answers but cannot prove that any implementation has correct general behavior. The reference pass remains internal evidence; only a separately maintained implementation and reviewed provenance could support an outside-witness claim.
+
 ## The frontier
 
 The next technical frontiers are:

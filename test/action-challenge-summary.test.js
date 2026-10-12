@@ -28,3 +28,18 @@ test("failed result remains visible while untrusted text cannot inject summary m
   assert.ok(!summary.includes("<img"));
   assert.throws(() => actionChallengeSummary({ ...report, case_scope: "single" }), /unsupported_challenge_report/);
 });
+
+test("19-case summary names the seed and does not treat a partial pass as full", () => {
+  const report = structuredClone(referenceReport);
+  report.cases.push(...Array.from({ length: 6 }, (_, i) => ({
+    id: `probe-${i}`, passed: false, failures: ["plan"]
+  })));
+  report.passed = false;
+  report.full_challenge_passed = false;
+  report.probe_seed = "0123456789abcdef0123456789abcdef";
+  report.probe_case_count = 6;
+  const summary = actionChallengeSummary(report);
+  assert.match(summary, /MIXED · 13\/19 cases/);
+  assert.match(summary, /13 published cases \+ 6 seeded probes/);
+  assert.match(summary, /--probe-seed 0123456789abcdef0123456789abcdef/);
+});

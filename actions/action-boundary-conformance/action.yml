@@ -36,7 +36,7 @@ runs:
         RESULT_FILE="$REPORT_DIR/report.json"
         HTML_FILE="$REPORT_DIR/report.html"
         set +e
-        node "$GITHUB_ACTION_PATH/../../scripts/run-action-boundary-challenge.mjs" --html-out "$HTML_FILE" -- "$AML_ACTION_ADAPTER" > "$RESULT_FILE"
+        node "$GITHUB_ACTION_PATH/../../scripts/run-action-boundary-challenge.mjs" --probes --html-out "$HTML_FILE" -- "$AML_ACTION_ADAPTER" > "$RESULT_FILE"
         STATUS=$?
         set -e
         cat "$RESULT_FILE"
