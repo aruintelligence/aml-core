@@ -1,0 +1,344 @@
+{
+  "protocol": "aml-mcp-call-tool-demo/1",
+  "provenance": "project-authored in-memory MCP Client.callTool-shaped callback",
+  "contract": "MCP 2026-07-28 tools/call name and arguments; no connected server or SDK",
+  "cases": [
+    {
+      "id": "forged_read_only",
+      "title": "A forged read-only hint",
+      "model_proposed_call": {
+        "name": "send_notice",
+        "arguments": {
+          "to": "outside@example.test",
+          "body": "Build passed."
+        }
+      },
+      "advertised_read_only_hint": true,
+      "before": {
+        "tool_callbacks": 1,
+        "forwarded": {
+          "name": "send_notice",
+          "arguments": {
+            "to": "outside@example.test",
+            "body": "Build passed."
+          }
+        }
+      },
+      "after": {
+        "tool_callbacks": 0,
+        "rejection": null,
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "21dba9c56247195229c732374a3ee54fcf476a00280ed78cf81063e941bcc452",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "21dba9c56247195229c732374a3ee54fcf476a00280ed78cf81063e941bcc452",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "mcp_result_status": "not_called",
+        "forwarded": null
+      }
+    },
+    {
+      "id": "approved_destination",
+      "title": "An exact, approved destination",
+      "model_proposed_call": {
+        "name": "send_notice",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "Build passed."
+        }
+      },
+      "advertised_read_only_hint": true,
+      "before": {
+        "tool_callbacks": 1,
+        "forwarded": {
+          "name": "send_notice",
+          "arguments": {
+            "to": "team@example.test",
+            "body": "Build passed."
+          }
+        }
+      },
+      "after": {
+        "tool_callbacks": 1,
+        "rejection": null,
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "c6bc186f28c1b2af65d5bbec3f5c40c6259b294668931b6e9fe41a4d1319924c",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "c6bc186f28c1b2af65d5bbec3f5c40c6259b294668931b6e9fe41a4d1319924c",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "mcp_result_status": "returned",
+        "forwarded": {
+          "name": "send_notice",
+          "arguments": {
+            "body": "Build passed.",
+            "to": "team@example.test"
+          }
+        }
+      }
+    },
+    {
+      "id": "stale_approval",
+      "title": "Approval for old content",
+      "model_proposed_call": {
+        "name": "send_notice",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "Changed body"
+        }
+      },
+      "advertised_read_only_hint": true,
+      "before": {
+        "tool_callbacks": 1,
+        "forwarded": {
+          "name": "send_notice",
+          "arguments": {
+            "to": "team@example.test",
+            "body": "Changed body"
+          }
+        }
+      },
+      "after": {
+        "tool_callbacks": 0,
+        "rejection": null,
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "3031908ead2736de7f384fc8c56b0bfca5fef4ad1de6d204e9eba2d53a98d689",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "3031908ead2736de7f384fc8c56b0bfca5fef4ad1de6d204e9eba2d53a98d689",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "mcp_result_status": "not_called",
+        "forwarded": null
+      }
+    },
+    {
+      "id": "extra_recipient",
+      "title": "An unvalidated extra recipient",
+      "model_proposed_call": {
+        "name": "send_notice",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "Build passed.",
+          "cc": [
+            "outside@example.test"
+          ]
+        }
+      },
+      "advertised_read_only_hint": true,
+      "before": {
+        "tool_callbacks": 1,
+        "forwarded": {
+          "name": "send_notice",
+          "arguments": {
+            "to": "team@example.test",
+            "body": "Build passed.",
+            "cc": [
+              "outside@example.test"
+            ]
+          }
+        }
+      },
+      "after": {
+        "tool_callbacks": 0,
+        "rejection": "invalid_arguments",
+        "plan": null,
+        "receipt": null,
+        "mcp_result_status": "not_called",
+        "forwarded": null
+      }
+    },
+    {
+      "id": "other_tool",
+      "title": "A different tool name",
+      "model_proposed_call": {
+        "name": "remove_records",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "Build passed."
+        }
+      },
+      "advertised_read_only_hint": true,
+      "before": {
+        "tool_callbacks": 1,
+        "forwarded": {
+          "name": "remove_records",
+          "arguments": {
+            "to": "team@example.test",
+            "body": "Build passed."
+          }
+        }
+      },
+      "after": {
+        "tool_callbacks": 0,
+        "rejection": "invalid_or_unregistered_call",
+        "plan": null,
+        "receipt": null,
+        "mcp_result_status": "not_called",
+        "forwarded": null
+      }
+    },
+    {
+      "id": "tool_error",
+      "title": "The tool reports an error",
+      "model_proposed_call": {
+        "name": "send_notice",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "Build passed."
+        }
+      },
+      "advertised_read_only_hint": true,
+      "before": {
+        "tool_callbacks": 1,
+        "forwarded": {
+          "name": "send_notice",
+          "arguments": {
+            "to": "team@example.test",
+            "body": "Build passed."
+          }
+        }
+      },
+      "after": {
+        "tool_callbacks": 1,
+        "rejection": null,
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "c6bc186f28c1b2af65d5bbec3f5c40c6259b294668931b6e9fe41a4d1319924c",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "c6bc186f28c1b2af65d5bbec3f5c40c6259b294668931b6e9fe41a4d1319924c",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "mcp_result_status": "tool_error",
+        "forwarded": {
+          "name": "send_notice",
+          "arguments": {
+            "body": "Build passed.",
+            "to": "team@example.test"
+          }
+        }
+      }
+    },
+    {
+      "id": "transport_unknown",
+      "title": "Transport fails after the call starts",
+      "model_proposed_call": {
+        "name": "send_notice",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "Build passed."
+        }
+      },
+      "advertised_read_only_hint": true,
+      "before": {
+        "tool_callbacks": 1,
+        "forwarded": {
+          "name": "send_notice",
+          "arguments": {
+            "to": "team@example.test",
+            "body": "Build passed."
+          }
+        }
+      },
+      "after": {
+        "tool_callbacks": 1,
+        "rejection": null,
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "c6bc186f28c1b2af65d5bbec3f5c40c6259b294668931b6e9fe41a4d1319924c",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "c6bc186f28c1b2af65d5bbec3f5c40c6259b294668931b6e9fe41a4d1319924c",
+          "policy_decision": "requires_approval",
+          "execution_status": "unknown",
+          "reason": "host_dispatch_error"
+        },
+        "mcp_result_status": "unknown",
+        "forwarded": {
+          "name": "send_notice",
+          "arguments": {
+            "body": "Build passed.",
+            "to": "team@example.test"
+          }
+        }
+      }
+    },
+    {
+      "id": "input_required",
+      "title": "The tool requests another input round",
+      "model_proposed_call": {
+        "name": "send_notice",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "Build passed."
+        }
+      },
+      "advertised_read_only_hint": true,
+      "before": {
+        "tool_callbacks": 1,
+        "forwarded": {
+          "name": "send_notice",
+          "arguments": {
+            "to": "team@example.test",
+            "body": "Build passed."
+          }
+        }
+      },
+      "after": {
+        "tool_callbacks": 1,
+        "rejection": null,
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "c6bc186f28c1b2af65d5bbec3f5c40c6259b294668931b6e9fe41a4d1319924c",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "c6bc186f28c1b2af65d5bbec3f5c40c6259b294668931b6e9fe41a4d1319924c",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "mcp_result_status": "input_required",
+        "forwarded": {
+          "name": "send_notice",
+          "arguments": {
+            "body": "Build passed.",
+            "to": "team@example.test"
+          }
+        }
+      }
+    }
+  ],
+  "limits": "No connected MCP server, transport, real approval, output validation, automatic SDK input-round interception, or proof of external effect. A host must bind the configured client to its actual server and validate the tool's final provider request."
+}
