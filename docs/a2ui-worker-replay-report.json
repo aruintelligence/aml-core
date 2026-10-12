@@ -1,0 +1,139 @@
+{
+  "protocol": "aml-a2ui-file-claim-race/1",
+  "provenance": "project-authored two-process local execution",
+  "cases": [
+    {
+      "id": "two_workers",
+      "title": "Two workers, one ID",
+      "scheduling": "parallel OS processes",
+      "before": {
+        "tool_callbacks": 2,
+        "claimed": 2,
+        "reused": 0,
+        "claim_markers": 0,
+        "response_codes": [
+          "value",
+          "value"
+        ],
+        "receipt_statuses": [
+          "dispatched",
+          "dispatched"
+        ]
+      },
+      "after": {
+        "tool_callbacks": 1,
+        "claimed": 1,
+        "reused": 1,
+        "claim_markers": 1,
+        "response_codes": [
+          "INVALID_FUNCTION_CALL",
+          "value"
+        ],
+        "receipt_statuses": [
+          "dispatched",
+          "none"
+        ]
+      }
+    },
+    {
+      "id": "changed_body",
+      "title": "Same ID, changed body",
+      "scheduling": "parallel OS processes",
+      "before": {
+        "tool_callbacks": 2,
+        "claimed": 2,
+        "reused": 0,
+        "claim_markers": 0,
+        "response_codes": [
+          "value",
+          "value"
+        ],
+        "receipt_statuses": [
+          "dispatched",
+          "dispatched"
+        ]
+      },
+      "after": {
+        "tool_callbacks": 1,
+        "claimed": 1,
+        "reused": 1,
+        "claim_markers": 1,
+        "response_codes": [
+          "INVALID_FUNCTION_CALL",
+          "value"
+        ],
+        "receipt_statuses": [
+          "dispatched",
+          "none"
+        ]
+      }
+    },
+    {
+      "id": "after_restart",
+      "title": "New worker, old ID",
+      "scheduling": "sequential new OS process",
+      "before": {
+        "tool_callbacks": 2,
+        "claimed": 2,
+        "reused": 0,
+        "claim_markers": 0,
+        "response_codes": [
+          "value",
+          "value"
+        ],
+        "receipt_statuses": [
+          "dispatched",
+          "dispatched"
+        ]
+      },
+      "after": {
+        "tool_callbacks": 1,
+        "claimed": 1,
+        "reused": 1,
+        "claim_markers": 1,
+        "response_codes": [
+          "INVALID_FUNCTION_CALL",
+          "value"
+        ],
+        "receipt_statuses": [
+          "dispatched",
+          "none"
+        ]
+      }
+    },
+    {
+      "id": "separate_sessions",
+      "title": "Two trusted sessions",
+      "scheduling": "parallel OS processes",
+      "before": {
+        "tool_callbacks": 2,
+        "claimed": 2,
+        "reused": 0,
+        "claim_markers": 0,
+        "response_codes": [
+          "value",
+          "value"
+        ],
+        "receipt_statuses": [
+          "dispatched",
+          "dispatched"
+        ]
+      },
+      "after": {
+        "tool_callbacks": 2,
+        "claimed": 2,
+        "reused": 0,
+        "claim_markers": 2,
+        "response_codes": [
+          "value",
+          "value"
+        ],
+        "receipt_statuses": [
+          "dispatched",
+          "dispatched"
+        ]
+      }
+    }
+  ],
+  "limits": "Simulated callback and approval. Local private filesystem only; not multi-machine coordination, authenticated user consent, or proof of delivery."
+}

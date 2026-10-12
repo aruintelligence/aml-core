@@ -18,6 +18,7 @@ on:
       - "scripts/build-grant-directory-report.mjs"
       - "scripts/build-a2ui-function-report.mjs"
       - "scripts/build-a2ui-invocation-replay-report.mjs"
+      - "scripts/build-a2ui-worker-report.mjs"
       - "scripts/build-action-policy-scope-report.mjs"
       - "scripts/build-action-studio-example.mjs"
       - "scripts/verify-action-studio-bundle.mjs"
@@ -30,6 +31,7 @@ on:
       - "docs/action-policy-scope.html"
       - "docs/action-policy-scope.svg"
       - "test/action-boundary-a2ui-gate.test.js"
+      - "test/a2ui-file-invocation.test.js"
       - "test/fixtures/legacy-a2ui-function-gate.mjs"
       - "test/action-boundary-challenge.test.js"
       - "test/action-challenge-visual-report.test.js"
@@ -57,6 +59,8 @@ on:
       - "docs/a2ui-invocation-replay-report.json"
       - "docs/a2ui-invocation-replay.html"
       - "docs/a2ui-invocation-replay.svg"
+      - "docs/a2ui-worker-replay-report.json"
+      - "docs/a2ui-worker-replay.html"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
   pull_request:
@@ -75,6 +79,7 @@ on:
       - "scripts/build-grant-directory-report.mjs"
       - "scripts/build-a2ui-function-report.mjs"
       - "scripts/build-a2ui-invocation-replay-report.mjs"
+      - "scripts/build-a2ui-worker-report.mjs"
       - "scripts/build-action-policy-scope-report.mjs"
       - "scripts/build-action-studio-example.mjs"
       - "scripts/verify-action-studio-bundle.mjs"
@@ -87,6 +92,7 @@ on:
       - "docs/action-policy-scope.html"
       - "docs/action-policy-scope.svg"
       - "test/action-boundary-a2ui-gate.test.js"
+      - "test/a2ui-file-invocation.test.js"
       - "test/fixtures/legacy-a2ui-function-gate.mjs"
       - "test/action-boundary-challenge.test.js"
       - "test/action-challenge-visual-report.test.js"
@@ -114,6 +120,8 @@ on:
       - "docs/a2ui-invocation-replay-report.json"
       - "docs/a2ui-invocation-replay.html"
       - "docs/a2ui-invocation-replay.svg"
+      - "docs/a2ui-worker-replay-report.json"
+      - "docs/a2ui-worker-replay.html"
       - "actions/action-boundary-conformance/**"
       - ".github/workflows/action-boundary-challenge.yml"
 
@@ -159,6 +167,10 @@ jobs:
           node pilots/action-boundary/a2ui-function-demo.mjs > "$RUNNER_TEMP/aml-a2ui-function-demo.json"
           node scripts/build-a2ui-function-report.mjs --check
           node scripts/build-a2ui-invocation-replay-report.mjs --check
+      - name: Verify shared A2UI invocation claims across two OS processes
+        run: |
+          node --test test/a2ui-file-invocation.test.js
+          node scripts/build-a2ui-worker-report.mjs --check
       - name: Project-owned self-test
         run: node scripts/run-action-boundary-challenge.mjs --self-test
       - name: Seeded counterfactual self-test

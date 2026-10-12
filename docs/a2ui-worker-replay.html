@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Two actual Node workers replay one A2UI functionCallId. Compare process-local and shared host claims with observed callback counts.">
+<title>Two workers. One invocation. · ĀML</title>
+<style>
+:root{color-scheme:dark;--bg:#07111d;--ink:#f1f8f7;--muted:#adbfcc;--line:#315063;--rose:#fb849e;--mint:#9af2c2;--cyan:#83e9ee}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0%,#123c43,transparent 38%),radial-gradient(circle at 0% 55%,#23263d,transparent 40%),var(--bg);color:var(--ink);font:16px/1.55 system-ui,sans-serif}.wrap{width:min(1140px,calc(100% - 40px));margin:auto}nav{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line);padding:23px 0;font:.76rem ui-monospace,monospace;letter-spacing:.12em;font-weight:700}a{color:var(--cyan)}nav a{text-decoration:none}.eyebrow,.tag{font:700 .72rem ui-monospace,monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--cyan)}.hero{padding:70px 0 45px}.hero h1{font-size:clamp(3rem,9vw,6.7rem);line-height:.97;letter-spacing:-.075em;margin:18px 0 26px;max-width:950px}.hero h1 em{color:var(--rose);font-style:normal}.hero p{color:#d3e3e6;font-size:clamp(1rem,2vw,1.22rem);max-width:720px}.proof{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin:44px 0 65px}.proof div{background:#102637;border:1px solid var(--line);border-radius:17px;padding:22px}.proof strong{display:block;font:800 clamp(2.3rem,6vw,4rem) ui-monospace,monospace;line-height:1.2;letter-spacing:-.06em}.proof div:nth-child(1) strong{color:var(--rose)}.proof div:nth-child(2) strong{color:var(--mint)}.proof span{color:var(--muted);font-size:.83rem}h2{font-size:clamp(1.75rem,4vw,2.8rem);letter-spacing:-.05em;margin:0 0 12px}.intro{color:var(--muted);max-width:790px;margin:0 0 23px}.case{display:grid;grid-template-columns:1fr 1fr;gap:20px;background:#0e2231;border:1px solid var(--line);border-radius:18px;padding:25px;margin:12px 0}.case h3{font-size:1.32rem;margin:9px 0}.case p{color:var(--muted);font-size:.87rem;margin:0}.meter{position:relative;border:1px solid var(--line);border-radius:10px;padding:10px 12px 18px;margin:5px 0 10px;display:flex;justify-content:space-between;gap:8px;font-size:.82rem;overflow:hidden}.meter span,.meter strong{position:relative;z-index:1}.meter i{position:absolute;bottom:0;left:0;height:5px;width:var(--width)}.meter.local strong{color:var(--rose)}.meter.local i{background:var(--rose)}.meter.shared strong{color:var(--mint)}.meter.shared i{background:var(--mint)}details{grid-column:1/-1;border-top:1px solid var(--line);padding-top:10px}summary{cursor:pointer;color:var(--cyan);font-size:.83rem}pre{white-space:pre-wrap;overflow-wrap:anywhere;color:#c9e0e5;font-size:.75rem}.model{margin:58px 0;background:#102737;border:1px solid var(--line);border-radius:18px;padding:25px}.flow{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:19px 0;font:700 .8rem ui-monospace,monospace}.flow span{background:#1c3c4b;padding:12px 14px;border-radius:9px}.flow b{color:var(--cyan)}.model p,.limits{color:var(--muted)}.limits{border-left:3px solid #e8c87f;padding:9px 0 9px 18px;margin:38px 0 70px}footer{border-top:1px solid var(--line);padding:24px 0 50px;color:var(--muted);font-size:.78rem}@media(max-width:720px){.proof{grid-template-columns:1fr}.case{grid-template-columns:1fr}.hero{padding-top:48px}nav{letter-spacing:0}}
+</style></head><body><main class="wrap"><nav><a href="index.html">ĀML / WORKER REPLAY</a><a href="https://github.com/aruintelligence/aml-core/blob/main/pilots/action-boundary/A2UI_FUNCTION_GATE.md">Host integration ↗</a></nav>
+<section class="hero"><div class="eyebrow">Project-authored local execution / 36</div><h1>Two workers.<br>One ID.<br><em>Two callbacks.</em></h1><p>A host can check an A2UI call ID perfectly inside one process and still lose the replay check when another worker handles the same call. Here two actual Node processes exercise the same function gate.</p></section>
+<section class="proof" aria-label="Observed callback comparison"><div><strong>2</strong><span>callbacks with separate process memory</span></div><div><strong>1</strong><span>callback with one shared, private claim directory</span></div><div><strong>0</strong><span>live messages or external effects</span></div></section>
+<section><h2>Replay across the process line.</h2><p class="intro">Each case reruns the gate in separate OS processes. A shared exclusive claim is created before approval and dispatch. These numbers are generated from the executable two-worker run, including a worker restart and a distinct-session control.</p><article class="case" id="two_workers">
+  <div><span class="tag">parallel OS processes</span><h3>Two workers, one ID</h3><p>Same functionCallId and host session. The callback is simulated.</p></div>
+  <div class="meters"><div class="meter local"><span>Process memory</span><strong>2 callbacks</strong><i style="--width:100%"></i></div>
+  <div class="meter shared"><span>Shared claim</span><strong>1 callback</strong><i style="--width:50%"></i></div></div>
+  <details><summary>Inspect measured verdicts</summary><pre>{
+  &quot;before&quot;: {
+    &quot;tool_callbacks&quot;: 2,
+    &quot;claimed&quot;: 2,
+    &quot;reused&quot;: 0,
+    &quot;claim_markers&quot;: 0,
+    &quot;response_codes&quot;: [
+      &quot;value&quot;,
+      &quot;value&quot;
+    ],
+    &quot;receipt_statuses&quot;: [
+      &quot;dispatched&quot;,
+      &quot;dispatched&quot;
+    ]
+  },
+  &quot;after&quot;: {
+    &quot;tool_callbacks&quot;: 1,
+    &quot;claimed&quot;: 1,
+    &quot;reused&quot;: 1,
+    &quot;claim_markers&quot;: 1,
+    &quot;response_codes&quot;: [
+      &quot;INVALID_FUNCTION_CALL&quot;,
+      &quot;value&quot;
+    ],
+    &quot;receipt_statuses&quot;: [
+      &quot;dispatched&quot;,
+      &quot;none&quot;
+    ]
+  }
+}</pre></details>
+</article>
+<article class="case" id="changed_body">
+  <div><span class="tag">parallel OS processes</span><h3>Same ID, changed body</h3><p>Same functionCallId and host session. The callback is simulated.</p></div>
+  <div class="meters"><div class="meter local"><span>Process memory</span><strong>2 callbacks</strong><i style="--width:100%"></i></div>
+  <div class="meter shared"><span>Shared claim</span><strong>1 callback</strong><i style="--width:50%"></i></div></div>
+  <details><summary>Inspect measured verdicts</summary><pre>{
+  &quot;before&quot;: {
+    &quot;tool_callbacks&quot;: 2,
+    &quot;claimed&quot;: 2,
+    &quot;reused&quot;: 0,
+    &quot;claim_markers&quot;: 0,
+    &quot;response_codes&quot;: [
+      &quot;value&quot;,
+      &quot;value&quot;
+    ],
+    &quot;receipt_statuses&quot;: [
+      &quot;dispatched&quot;,
+      &quot;dispatched&quot;
+    ]
+  },
+  &quot;after&quot;: {
+    &quot;tool_callbacks&quot;: 1,
+    &quot;claimed&quot;: 1,
+    &quot;reused&quot;: 1,
+    &quot;claim_markers&quot;: 1,
+    &quot;response_codes&quot;: [
+      &quot;INVALID_FUNCTION_CALL&quot;,
+      &quot;value&quot;
+    ],
+    &quot;receipt_statuses&quot;: [
+      &quot;dispatched&quot;,
+      &quot;none&quot;
+    ]
+  }
+}</pre></details>
+</article>
+<article class="case" id="after_restart">
+  <div><span class="tag">sequential new OS process</span><h3>New worker, old ID</h3><p>Same functionCallId and host session. The callback is simulated.</p></div>
+  <div class="meters"><div class="meter local"><span>Process memory</span><strong>2 callbacks</strong><i style="--width:100%"></i></div>
+  <div class="meter shared"><span>Shared claim</span><strong>1 callback</strong><i style="--width:50%"></i></div></div>
+  <details><summary>Inspect measured verdicts</summary><pre>{
+  &quot;before&quot;: {
+    &quot;tool_callbacks&quot;: 2,
+    &quot;claimed&quot;: 2,
+    &quot;reused&quot;: 0,
+    &quot;claim_markers&quot;: 0,
+    &quot;response_codes&quot;: [
+      &quot;value&quot;,
+      &quot;value&quot;
+    ],
+    &quot;receipt_statuses&quot;: [
+      &quot;dispatched&quot;,
+      &quot;dispatched&quot;
+    ]
+  },
+  &quot;after&quot;: {
+    &quot;tool_callbacks&quot;: 1,
+    &quot;claimed&quot;: 1,
+    &quot;reused&quot;: 1,
+    &quot;claim_markers&quot;: 1,
+    &quot;response_codes&quot;: [
+      &quot;INVALID_FUNCTION_CALL&quot;,
+      &quot;value&quot;
+    ],
+    &quot;receipt_statuses&quot;: [
+      &quot;dispatched&quot;,
+      &quot;none&quot;
+    ]
+  }
+}</pre></details>
+</article>
+<article class="case" id="separate_sessions">
+  <div><span class="tag">parallel OS processes</span><h3>Two trusted sessions</h3><p>Same functionCallId and host session except for the two separate host sessions. The callback is simulated.</p></div>
+  <div class="meters"><div class="meter local"><span>Process memory</span><strong>2 callbacks</strong><i style="--width:100%"></i></div>
+  <div class="meter shared"><span>Shared claim</span><strong>2 callbacks</strong><i style="--width:100%"></i></div></div>
+  <details><summary>Inspect measured verdicts</summary><pre>{
+  &quot;before&quot;: {
+    &quot;tool_callbacks&quot;: 2,
+    &quot;claimed&quot;: 2,
+    &quot;reused&quot;: 0,
+    &quot;claim_markers&quot;: 0,
+    &quot;response_codes&quot;: [
+      &quot;value&quot;,
+      &quot;value&quot;
+    ],
+    &quot;receipt_statuses&quot;: [
+      &quot;dispatched&quot;,
+      &quot;dispatched&quot;
+    ]
+  },
+  &quot;after&quot;: {
+    &quot;tool_callbacks&quot;: 2,
+    &quot;claimed&quot;: 2,
+    &quot;reused&quot;: 0,
+    &quot;claim_markers&quot;: 2,
+    &quot;response_codes&quot;: [
+      &quot;value&quot;,
+      &quot;value&quot;
+    ],
+    &quot;receipt_statuses&quot;: [
+      &quot;dispatched&quot;,
+      &quot;dispatched&quot;
+    ]
+  }
+}</pre></details>
+</article></section>
+<section class="model"><div class="eyebrow">The host boundary</div><h2>Claim before the callback.</h2><div class="flow"><span>agent call ID</span><b>→</b><span>trusted session</span><b>→</b><span>exclusive claim</span><b>→</b><span>policy + approval</span><b>→</b><span>simulated callback</span></div><p>A duplicate in the same host session receives a correlated <code>INVALID_FUNCTION_CALL</code> before an AML dispatch receipt. A different trusted session may use that ID independently. The directory is provisioned by the host, retained for the full session lifetime, checked for ownership and permissions, and never silently recreated after loss.</p></section>
+<p class="limits"><strong>Claim boundary.</strong> Simulated callback and approval. Local private filesystem only; not multi-machine coordination, authenticated user consent, or proof of delivery. The host must protect the directory from same-user tampering, authenticate its session identity and approval, and coordinate through a suitable durable store across machines. A new ID is a new attempt and still needs action authorization.</p>
+<footer><a href="a2ui-worker-replay-report.json">Machine report ↗</a> · <a href="a2ui-invocation-replay.html">Earlier one-process lab ↗</a> · <a href="https://github.com/aruintelligence/aml-core/blob/main/pilots/action-boundary/file-a2ui-invocation-claims.mjs">Implementation ↗</a><p>ĀML™ · ĀRU Intelligence Inc. · Project-authored evidence, no outside witness.</p></footer></main></body></html>
