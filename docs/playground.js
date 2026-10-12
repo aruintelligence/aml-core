@@ -3,6 +3,7 @@ import { comparisonRestoration, comparisonSample, parsePlaygroundShare, playgrou
 import { studioHandoffUrls } from "./playground-handoff.js?v=compare-4";
 import { downloadablePage, integrationSnippet, parseSharedIntegration } from "./quickstart-core.js?v=take-gate-1";
 import { verifiedGateEvent } from "./playground-live.js?v=live-1";
+import { createLocalRunRecord } from "./playground-record.js?v=local-run-1";
 
 const $ = id => document.getElementById(id);
 const source = $("source");
@@ -10,7 +11,31 @@ const output = $("output");
 let result = null;
 let view = "decisions";
 let bridgeState = "loading";
+let liveRun = null;
 const MAX_LIVE_PREVIEWS = 6;
+
+function clearRunRecord(message) {
+  liveRun = null;
+  $("record-count").textContent = "0 / 0 matched";
+  $("run-record").dataset.state = "waiting";
+  $("download-record").disabled = true;
+  $("record-status").textContent = message;
+}
+
+function updateRunRecord() {
+  const run = liveRun;
+  if (!run) return;
+  const matched = run.entries.size;
+  const ready = run.expected > 0 && matched === run.expected && !run.failed && source.value === run.source;
+  $("record-count").textContent = `${matched} / ${run.expected} matched`;
+  $("run-record").dataset.state = ready ? "ready" : run.failed ? "blocked" : "waiting";
+  $("download-record").disabled = !ready;
+  $("record-status").textContent = ready ?
+    "All shown gates match. Download the local, unsigned record of this exact source." :
+    run.failed ? "A gate was unavailable or mismatched. No run record can be exported." :
+    run.expected ? "Waiting for the shown browser gates to emit matching events." :
+    "Compile an eligible engram to create a run record.";
+}
 
 function sample(restoration) {
   return `transmission "first_program" {
@@ -112,6 +137,10 @@ function renderLivePreviews(decisions, handoffUrls) {
   const grid = $("live-grid");
   grid.replaceChildren();
   const eligible = handoffUrls.map((url, index) => ({ url, index })).filter(item => item.url);
+  const previewed = eligible.slice(0, MAX_LIVE_PREVIEWS);
+  const run = { source: source.value, decisions, expected: previewed.length, entries: new Map(), failed: false };
+  liveRun = run;
+  updateRunRecord();
   $("live-count").textContent = eligible.length ?
     `${Math.min(eligible.length, MAX_LIVE_PREVIEWS)} of ${eligible.length} eligible engram${eligible.length === 1 ? "" : "s"}` :
     "No eligible engrams";
@@ -119,7 +148,7 @@ function renderLivePreviews(decisions, handoffUrls) {
     grid.append(element("p", "live-empty", "Compile an engram with a representable purpose, value, and declared numbers to see a browser gate here."));
     return;
   }
-  for (const { url, index } of eligible.slice(0, MAX_LIVE_PREVIEWS)) {
+  for (const { url, index } of previewed) {
     const decision = decisions[index];
     const panel = document.createElement("article");
     panel.className = "live-panel";
@@ -160,12 +189,14 @@ function renderLivePreviews(decisions, handoffUrls) {
         browserStep.textContent = "NO EVENT";
         absence.textContent = "Browser gate unavailable here.";
         status.textContent = "No browser decision was emitted.";
+        run.failed = true;
+        updateRunRecord();
       }
       continue;
     }
     let declaration;
     try { declaration = parseSharedIntegration(url); }
-    catch { panel.dataset.state = "unavailable"; verdict.textContent = "UNAVAILABLE"; browserStep.textContent = "NO EVENT"; absence.textContent = "This declaration cannot be previewed."; continue; }
+    catch { panel.dataset.state = "unavailable"; verdict.textContent = "UNAVAILABLE"; browserStep.textContent = "NO EVENT"; absence.textContent = "This declaration cannot be previewed."; run.failed = true; updateRunRecord(); continue; }
     const handoff = takeGate(declaration, url);
     panel.append(handoff);
     const gate = document.createElement("aml-gate");
@@ -181,8 +212,24 @@ function renderLivePreviews(decisions, handoffUrls) {
     gate.append(button);
     let observed = false;
     gate.addEventListener("aml-decision", event => {
+      if (liveRun !== run) return;
       observed = true;
       const valid = verifiedGateEvent(event.detail, decision, declaration, gate.hidden);
+      if (valid) {
+        run.entries.set(index, {
+          index, declaration, hidden: gate.hidden, observedAt: new Date().toISOString(),
+          detail: {
+            ok: event.detail.ok, purpose: event.detail.purpose,
+            attention_cost: event.detail.attention_cost, restoration_value: event.detail.restoration_value,
+            deployment_mode: event.detail.deployment_mode, failure_mode: event.detail.failure_mode,
+            render_allowed: event.detail.render_allowed, effective_rendered: event.detail.effective_rendered
+          }
+        });
+      } else {
+        run.entries.delete(index);
+        run.failed = true;
+      }
+      updateRunRecord();
       panel.dataset.state = valid ? event.detail.render_allowed ? "allow" : "suppress" : "mismatch";
       verdict.textContent = valid ? event.detail.render_allowed ? "ALLOW" : "SUPPRESS" : "MISMATCH";
       handoff.hidden = !valid;
@@ -205,6 +252,8 @@ function renderLivePreviews(decisions, handoffUrls) {
       browserStep.textContent = "NO EVENT";
       absence.textContent = "The browser gate did not emit a usable decision.";
       status.textContent = "No browser decision was emitted.";
+      run.failed = true;
+      updateRunRecord();
     }
   }
   if (eligible.length > MAX_LIVE_PREVIEWS) {
@@ -250,6 +299,7 @@ function compile() {
     showRaw();
   } catch (error) {
     result = null;
+    clearRunRecord("Fix the source and compile before recording a run.");
     $("source-status").textContent = "INVALID AML · " + error.message;
     $("source-status").dataset.tone = "error";
     $("summary").textContent = "Fix the source and compile again";
@@ -278,6 +328,7 @@ document.querySelectorAll("[data-preset]").forEach(button => button.addEventList
 }));
 source.addEventListener("input", () => {
   result = null;
+  clearRunRecord("Source changed. Compile again to record the new run.");
   syncExperiment();
   $("source-status").textContent = "Source changed · compile to update the report.";
   $("source-status").dataset.tone = "neutral";
@@ -299,6 +350,31 @@ document.querySelectorAll("[data-view]").forEach(button => button.addEventListen
     tab.setAttribute("aria-pressed", String(tab === button)));
   showRaw();
 }));
+
+$("download-record").addEventListener("click", async () => {
+  const run = liveRun;
+  if (!run || run.failed || !run.expected || run.entries.size !== run.expected || source.value !== run.source) return;
+  $("download-record").disabled = true;
+  try {
+    const record = await createLocalRunRecord({
+      source: run.source, decisions: run.decisions,
+      entries: [...run.entries.values()].sort((a, b) => a.index - b.index), pageUrl: location.href
+    });
+    if (liveRun !== run || source.value !== run.source) return;
+    const fileUrl = URL.createObjectURL(new Blob([JSON.stringify(record, null, 2) + "\n"], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.download = "aml-local-run.json";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(fileUrl), 60_000);
+    $("record-status").textContent = `Local run downloaded. Source SHA-256 starts ${record.source_sha256.slice(0, 12)}. Review the source before sharing.`;
+  } catch {
+    if (liveRun === run) $("record-status").textContent = "This browser could not build the local run record.";
+  } finally {
+    if (liveRun === run) $("download-record").disabled =
+      run.failed || run.entries.size !== run.expected || source.value !== run.source;
+  }
+});
 
 $("share").addEventListener("click", async () => {
   let url;
