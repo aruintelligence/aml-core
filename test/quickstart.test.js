@@ -57,8 +57,16 @@ test("malformed, duplicate, and oversized share state cannot be applied", () => 
   assert.throws(() => parseSharedIntegration(valid + "&attention=0"), RangeError);
   assert.throws(() => parseSharedIntegration(valid.replace("v=1", "v=2")), RangeError);
   assert.throws(() => parseSharedIntegration(valid.replace("mode=enforce", "mode=approve")), RangeError);
-  assert.throws(() => parseSharedIntegration(valid + "&extra=" + "x".repeat(1100)), RangeError);
+  assert.throws(() => parseSharedIntegration(valid.replace("purpose=Create+urgency+for+a+purchase", "purpose=" + "x".repeat(121))), RangeError);
+  assert.throws(() => parseSharedIntegration(valid + "&extra=" + "x".repeat(4100)), RangeError);
   const page = readFileSync(new URL("../docs/quickstart.html", import.meta.url), "utf8");
   assert.match(page, /id="share"/);
   assert.match(page, /id="share-url"/);
+});
+
+test("the longest accepted Unicode labels round-trip through a shared link", () => {
+  const input = { ...example, purpose: "界".repeat(120), label: "界".repeat(120) };
+  const link = shareableStudioUrl(input, "https://example.test/quickstart.html");
+  assert.ok(new URL(link).hash.length > 1000);
+  assert.deepEqual(parseSharedIntegration(link), input);
 });

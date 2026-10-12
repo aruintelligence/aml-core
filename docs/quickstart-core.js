@@ -36,11 +36,15 @@ export function shareableStudioUrl(input, pageUrl) {
 export function parseSharedIntegration(pageUrl) {
   const hash = new URL(pageUrl).hash.slice(1);
   if (!hash || hash === "studio") return null;
-  if (hash.length > 1000) throw new RangeError("Shared configuration is too long");
+  // Two 120-character Unicode fields can exceed 1 KB once percent-encoded.
+  if (hash.length > 4096) throw new RangeError("Shared configuration is too long");
   const state = new URLSearchParams(hash);
   if (state.size !== sharedFields.length || sharedFields.some(field => state.getAll(field).length !== 1) ||
       [...state.keys()].some(field => !sharedFields.includes(field)) || state.get("v") !== "1") {
     throw new RangeError("Invalid shared configuration");
+  }
+  if (["purpose", "label"].some(field => state.get(field).length > 120)) {
+    throw new RangeError("Shared text exceeds the Studio field limit");
   }
   return normalizeIntegration(Object.fromEntries(sharedFields.slice(1).map(field => [field, state.get(field)])));
 }
