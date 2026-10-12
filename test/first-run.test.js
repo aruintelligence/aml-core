@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { webcrypto } from "node:crypto";
 import test from "node:test";
-import { buildNextStep, firstRunAction, firstRunPolicy, firstRunProposal, renderDecision } from "../docs/first-run.js";
+import { buildNextStep, firstRunAction, firstRunPolicy, firstRunProposal, firstRunScenarioUrl, renderDecision } from "../docs/first-run.js";
 
 const vectors = JSON.parse(readFileSync(new URL("../pilots/action-boundary/vectors.json", import.meta.url), "utf8"));
 
@@ -35,4 +35,15 @@ test("the build handoff follows the boundary the visitor selected", () => {
   assert.equal(interfaceStep.href, "quickstart.html?attention=5&restoration=6");
   assert.throws(() => buildNextStep("render", 11, 1), RangeError);
   assert.throws(() => buildNextStep("action", 5, 1, "unknown"), RangeError);
+});
+
+test("scenario state preserves the visitor's scroll target and copied links open the experiment", () => {
+  const landing = "https://example.test/first-run.html";
+  assert.equal(firstRunScenarioUrl(landing, "action", 5, 1, "outside"),
+    "https://example.test/first-run.html?mode=action&recipient=outside");
+  assert.equal(firstRunScenarioUrl(landing, "action", 5, 1, "team", true),
+    "https://example.test/first-run.html?mode=action&recipient=team#experience");
+  assert.equal(firstRunScenarioUrl(`${landing}#next`, "render", 5, 6),
+    "https://example.test/first-run.html?mode=render&attention=5&restoration=6#next");
+  assert.throws(() => firstRunScenarioUrl(landing, "render", 12, 1), RangeError);
 });
