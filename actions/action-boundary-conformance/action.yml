@@ -1,5 +1,5 @@
 name: "ĀML Action Boundary Conformance"
-description: "Run the project-defined black-box action-boundary challenge against a caller-owned adapter."
+description: "Run the black-box challenge and preserve a visual result, including failed cases."
 inputs:
   adapter-command:
     description: "Path to one executable adapter command in the caller repository. The harness appends a case.json path."
@@ -8,6 +8,12 @@ outputs:
   result-file:
     description: "Path to the aml-action-boundary-challenge-report/1 JSON report"
     value: ${{ steps.challenge.outputs.result_file }}
+  html-file:
+    description: "Path to the standalone visual HTML report"
+    value: ${{ steps.challenge.outputs.html_file }}
+  artifact-url:
+    description: "GitHub Actions artifact containing the JSON and visual HTML reports"
+    value: ${{ steps.artifact.outputs.artifact-url }}
   passed:
     description: "true only when every published project-defined case passes"
     value: ${{ steps.challenge.outputs.passed }}
@@ -26,9 +32,11 @@ runs:
         AML_ACTION_ADAPTER: ${{ inputs.adapter-command }}
       run: |
         set -euo pipefail
-        RESULT_FILE="$RUNNER_TEMP/aml-action-boundary-challenge-report.json"
+        REPORT_DIR="$(mktemp -d "$RUNNER_TEMP/aml-action-challenge.XXXXXXXX")"
+        RESULT_FILE="$REPORT_DIR/report.json"
+        HTML_FILE="$REPORT_DIR/report.html"
         set +e
-        node "$GITHUB_ACTION_PATH/../../scripts/run-action-boundary-challenge.mjs" -- "$AML_ACTION_ADAPTER" > "$RESULT_FILE"
+        node "$GITHUB_ACTION_PATH/../../scripts/run-action-boundary-challenge.mjs" --html-out "$HTML_FILE" -- "$AML_ACTION_ADAPTER" > "$RESULT_FILE"
         STATUS=$?
         set -e
         cat "$RESULT_FILE"
@@ -36,9 +44,25 @@ runs:
           const fs = require("node:fs");
           const r = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
           fs.appendFileSync(process.env.GITHUB_OUTPUT,
-            `result_file=${process.argv[1]}\npassed=${r.passed === true}\nchallenge_sha256=${r.challenge_sha256}\nvectors_sha256=${r.vectors_sha256}\n`);
-        ' "$RESULT_FILE"
-        exit "$STATUS"
+            `report_dir=${process.argv[2]}\nresult_file=${process.argv[1]}\nhtml_file=${process.argv[3]}\nrun_status=${process.argv[4]}\npassed=${r.full_challenge_passed === true}\nchallenge_sha256=${r.challenge_sha256}\nvectors_sha256=${r.vectors_sha256}\n`);
+        ' "$RESULT_FILE" "$REPORT_DIR" "$HTML_FILE" "$STATUS"
+    - id: artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: aml-action-boundary-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.action }}
+        path: ${{ steps.challenge.outputs.report_dir }}/
+        if-no-files-found: error
+    - name: Summarize observed result
+      shell: bash
+      env:
+        AML_REPORT_FILE: ${{ steps.challenge.outputs.result_file }}
+        AML_ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+      run: node "$GITHUB_ACTION_PATH/../../scripts/write-action-challenge-summary.mjs" "$AML_REPORT_FILE"
+    - name: Enforce challenge result
+      shell: bash
+      env:
+        AML_RUN_STATUS: ${{ steps.challenge.outputs.run_status }}
+      run: exit "$AML_RUN_STATUS"
 branding:
   icon: "shield"
   color: "purple"
