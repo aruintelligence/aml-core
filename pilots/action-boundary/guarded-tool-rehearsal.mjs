@@ -28,6 +28,12 @@ const fixtures = [
     options: { approval: "missing" }
   },
   {
+    id: "approval_declined", title: "Approval request declined",
+    change: "The approval fixture refuses the exact proposal. No one-use claim or tool callback runs.",
+    host_move: "Treat a refusal as final for this attempt. A later attempt needs a new authenticated approval decision; never turn a refusal into an implicit grant.",
+    options: { approval: "decline" }
+  },
+  {
     id: "approval_mismatch", title: "Approval for another proposal",
     change: "The approval fixture returns a different proposal digest.",
     host_move: "Compare the approved digest with the frozen proposal before any claim or callback.",
@@ -92,6 +98,10 @@ async function runFixture({ id, title, change, host_move, options }) {
       if (options.approval === "mutate") {
         args.to = "other@example.test";
         hookEvents.push("Caller arguments changed after snapshot");
+      }
+      if (options.approval === "decline") {
+        hookEvents.push("Fixture approval declined");
+        return { approved: false };
       }
       hookEvents.push(options.approval === "mismatch" ? "Different digest returned" : "Matching digest returned");
       return { approved: true, proposal_sha256: options.approval === "mismatch" ? "0".repeat(64) : proposal_sha256 };
@@ -164,6 +174,7 @@ export function assertGuardedToolRehearsal(report) {
     approved_route: [["requires_approval", "dispatched", "host_dispatch_returned"], 1],
     changed_destination: [["deny", "blocked", "no_exact_rule"], 0],
     approval_unavailable: [["requires_approval", "blocked", "approval_unavailable"], 0],
+    approval_declined: [["requires_approval", "blocked", "approval_missing_or_mismatched"], 0],
     approval_mismatch: [["requires_approval", "blocked", "approval_missing_or_mismatched"], 0],
     approval_reused: [
       ["requires_approval", "dispatched", "host_dispatch_returned"],
@@ -191,6 +202,10 @@ export function assertGuardedToolRehearsal(report) {
       `${id}: proposal digest`);
   }
   assert.equal(byId.changed_destination.approval_requests, 0);
+  assert.equal(byId.approval_declined.approval_requests, 1);
+  assert.equal(byId.approval_declined.claim_attempts, 0);
+  assert.deepEqual(byId.approval_declined.attempts[0].host_hook_events,
+    ["Approval requested", "Fixture approval declined"]);
   assert.equal(byId.approval_mismatch.claim_attempts, 0);
   assert.equal(byId.policy_revoked.claim_attempts, 0);
   assert.equal(byId.approval_reused.claim_attempts, 2);
