@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { chooseRehearsalCase, rehearsalCaseUrl } from "../docs/agent-start.js";
+import { chooseRehearsalCase, nextRehearsalCaseIndex, rehearsalCaseUrl } from "../docs/agent-start.js";
 
 const report = JSON.parse(readFileSync(new URL("../docs/guarded-tool-rehearsal.json", import.meta.url), "utf8"));
 
@@ -38,4 +38,15 @@ test("the page versions its script and the script versions its report by content
     "Report URL must change when the generated report changes");
   assert.ok(page.includes(`agent-start.js?v=${fingerprint(script)}`),
     "Script URL must change when the builder script changes");
+});
+
+test("keyboard case navigation wraps and keeps other keys available", () => {
+  const count = report.cases.length;
+  assert.equal(nextRehearsalCaseIndex("ArrowRight", count - 1, count), 0);
+  assert.equal(nextRehearsalCaseIndex("ArrowDown", 2, count), 3);
+  assert.equal(nextRehearsalCaseIndex("ArrowLeft", 0, count), count - 1);
+  assert.equal(nextRehearsalCaseIndex("ArrowUp", 2, count), 1);
+  assert.equal(nextRehearsalCaseIndex("Home", 5, count), 0);
+  assert.equal(nextRehearsalCaseIndex("End", 5, count), count - 1);
+  assert.equal(nextRehearsalCaseIndex("Enter", 5, count), null);
 });
