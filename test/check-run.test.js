@@ -38,8 +38,8 @@ test("the published example distinguishes one source byte from one altered saved
   assert.deepEqual(original.gates.map(gate => gate.recorded), ["withheld", "visible"]);
   const sourceChanged = await checkLocalRun(JSON.stringify({ ...example, source: example.source + "\n" }));
   assert.deepEqual(sourceChanged.checks.map(item => item.pass), [false, true, true]);
-  assert.deepEqual(compileSourceBrowser(example.source + "\n").renderDecisions,
-    compileSourceBrowser(example.source).renderDecisions);
+  const decisionsWithoutTime = text => compileSourceBrowser(text).renderDecisions.map(({ timestamp, ...decision }) => decision);
+  assert.deepEqual(decisionsWithoutTime(example.source + "\n"), decisionsWithoutTime(example.source));
   assert.equal(new TextEncoder().encode(example.source + "\n").length - new TextEncoder().encode(example.source).length, 1);
   example.gates[0].browser.effective_rendered = true;
   const changed = await checkLocalRun(JSON.stringify(example));
