@@ -7,6 +7,7 @@
       "id": "approved_route",
       "title": "Exact route, simulated approval",
       "change": "The host fixture approves the exact proposal and consumes its one-use claim.",
+      "host_move": "Replace the fixture hooks with an authenticated approval, a durable one-use claim, and the actual host service call.",
       "destination": "team@example.test",
       "attempts": [
         {
@@ -36,6 +37,7 @@
       "id": "changed_destination",
       "title": "Changed destination",
       "change": "The requested destination is outside the one exact host rule.",
+      "host_move": "Derive the policy resource from the exact provider destination and keep the rule narrow.",
       "destination": "other@example.test",
       "attempts": [
         {
@@ -55,6 +57,7 @@
       "id": "approval_unavailable",
       "title": "No approval hook",
       "change": "The host supplies no way to request approval.",
+      "host_move": "Supply an authenticated approval callback for approval-required rules, bound to this exact proposal.",
       "destination": "team@example.test",
       "attempts": [
         {
@@ -74,6 +77,7 @@
       "id": "approval_mismatch",
       "title": "Approval for another proposal",
       "change": "The approval fixture returns a different proposal digest.",
+      "host_move": "Compare the approved digest with the frozen proposal before any claim or callback.",
       "destination": "team@example.test",
       "attempts": [
         {
@@ -96,6 +100,7 @@
       "id": "approval_reused",
       "title": "One-use approval claimed twice",
       "change": "The same proposal is attempted twice; the host consumes the claim once.",
+      "host_move": "Use an atomic, durable one-use grant store so a replay cannot invoke the callback again.",
       "destination": "team@example.test",
       "attempts": [
         {
@@ -136,6 +141,7 @@
       "id": "policy_revoked",
       "title": "Rule revoked during approval",
       "change": "The host removes the rule while the approval callback is pending.",
+      "host_move": "Recheck current host policy after asynchronous approval and before consuming a claim.",
       "destination": "team@example.test",
       "attempts": [
         {
@@ -159,6 +165,7 @@
       "id": "arguments_mutated",
       "title": "Caller changes the destination during approval",
       "change": "The caller changes its original arguments after the proposal snapshot. The fixture callback still receives the approved destination.",
+      "host_move": "Capture canonical arguments once, then map and dispatch from that frozen proposal.",
       "destination": "team@example.test",
       "caller_destination_after_approval": "other@example.test",
       "attempts": [
@@ -190,6 +197,7 @@
       "id": "claim_revoked",
       "title": "Rule revoked during the one-use claim",
       "change": "The host consumes the claim, then revokes the rule before dispatch. The callback stays untouched and the claim remains spent.",
+      "host_move": "Recheck policy after the claim; keep the consumed grant spent and require a fresh decision for another attempt.",
       "destination": "team@example.test",
       "attempts": [
         {
@@ -214,6 +222,7 @@
       "id": "callback_unknown",
       "title": "Callback throws after entry",
       "change": "The simulated callback throws, so the wrapper cannot assert the side effect did not occur.",
+      "host_move": "Record the uncertain result and use provider idempotency and reconciliation; never retry automatically from this receipt.",
       "destination": "team@example.test",
       "attempts": [
         {

@@ -12,51 +12,60 @@ const fixtures = [
   {
     id: "approved_route", title: "Exact route, simulated approval",
     change: "The host fixture approves the exact proposal and consumes its one-use claim.",
+    host_move: "Replace the fixture hooks with an authenticated approval, a durable one-use claim, and the actual host service call.",
     options: {}
   },
   {
     id: "changed_destination", title: "Changed destination",
     change: "The requested destination is outside the one exact host rule.",
+    host_move: "Derive the policy resource from the exact provider destination and keep the rule narrow.",
     options: { to: "other@example.test" }
   },
   {
     id: "approval_unavailable", title: "No approval hook",
     change: "The host supplies no way to request approval.",
+    host_move: "Supply an authenticated approval callback for approval-required rules, bound to this exact proposal.",
     options: { approval: "missing" }
   },
   {
     id: "approval_mismatch", title: "Approval for another proposal",
     change: "The approval fixture returns a different proposal digest.",
+    host_move: "Compare the approved digest with the frozen proposal before any claim or callback.",
     options: { approval: "mismatch" }
   },
   {
     id: "approval_reused", title: "One-use approval claimed twice",
     change: "The same proposal is attempted twice; the host consumes the claim once.",
+    host_move: "Use an atomic, durable one-use grant store so a replay cannot invoke the callback again.",
     options: { repeat: true }
   },
   {
     id: "policy_revoked", title: "Rule revoked during approval",
     change: "The host removes the rule while the approval callback is pending.",
+    host_move: "Recheck current host policy after asynchronous approval and before consuming a claim.",
     options: { approval: "revoke" }
   },
   {
     id: "arguments_mutated", title: "Caller changes the destination during approval",
     change: "The caller changes its original arguments after the proposal snapshot. The fixture callback still receives the approved destination.",
+    host_move: "Capture canonical arguments once, then map and dispatch from that frozen proposal.",
     options: { approval: "mutate" }
   },
   {
     id: "claim_revoked", title: "Rule revoked during the one-use claim",
     change: "The host consumes the claim, then revokes the rule before dispatch. The callback stays untouched and the claim remains spent.",
+    host_move: "Recheck policy after the claim; keep the consumed grant spent and require a fresh decision for another attempt.",
     options: { claim: "revoke" }
   },
   {
     id: "callback_unknown", title: "Callback throws after entry",
     change: "The simulated callback throws, so the wrapper cannot assert the side effect did not occur.",
+    host_move: "Record the uncertain result and use provider idempotency and reconciliation; never retry automatically from this receipt.",
     options: { callback: "throws" }
   }
 ];
 
-async function runFixture({ id, title, change, options }) {
+async function runFixture({ id, title, change, host_move, options }) {
   const policy = {
     protocol: "aml-action-policy/1",
     rules: [{ tool: "send_message", effect: "send", resource: "team@example.test", requires_approval: true }]
@@ -122,7 +131,7 @@ async function runFixture({ id, title, change, options }) {
   }
   const attempts = [await attempt()];
   if (options.repeat) attempts.push(await attempt());
-  return { id, title, change, destination: originalDestination,
+  return { id, title, change, host_move, destination: originalDestination,
     ...(options.approval === "mutate" ? { caller_destination_after_approval: args.to } : {}), attempts,
     approval_requests: approvalRequests, claim_attempts: claimAttempts, claims_consumed: claimsConsumed,
     callback_count: callbackCount };
@@ -160,6 +169,8 @@ export function assertGuardedToolRehearsal(report) {
   for (const [id, values] of Object.entries(expected)) {
     const item = byId[id];
     assert.ok(item, `Missing case: ${id}`);
+    assert.ok(typeof item.host_move === "string" && item.host_move.length > 20,
+      `${id}: host design move`);
     const count = values.at(-1);
     const attempts = values.slice(0, -1);
     assert.equal(item.callback_count, count, `${id}: callback count`);

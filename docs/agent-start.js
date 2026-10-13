@@ -85,7 +85,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     }
   });
 
-  fetch("guarded-tool-rehearsal.json?v=host-rehearsal-6").then(response => {
+  fetch("guarded-tool-rehearsal.json?v=host-rehearsal-7").then(response => {
     if (!response.ok) throw new Error("Report request failed");
     return response.json();
   }).then(report => {
@@ -109,6 +109,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
       buttons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.case === id)));
       $("case-title").textContent = item.title;
       $("case-change").textContent = item.change;
+      $("case-host-move").textContent = item.host_move;
       $("case-attempts").replaceChildren(...item.attempts.map(attemptCard));
       $("case-metrics").replaceChildren(
         metric(`Approval requests: ${item.approval_requests}`),
