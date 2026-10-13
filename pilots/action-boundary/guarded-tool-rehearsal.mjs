@@ -58,6 +58,12 @@ const fixtures = [
     options: { claim: "revoke" }
   },
   {
+    id: "claim_hook_unknown", title: "Claim hook throws after consumption",
+    change: "The fixture spends the one-use claim, then its claim hook throws before returning. Dispatch blocks without entering the tool callback.",
+    host_move: "Reconcile the host grant store after a claim error. A blocked receipt does not prove that the one-use grant is still available.",
+    options: { claim: "throw_after_consume" }
+  },
+  {
     id: "callback_unknown", title: "Callback throws after entry",
     change: "The simulated callback throws, so the wrapper cannot assert the side effect did not occur.",
     host_move: "Record the uncertain result and use provider idempotency and reconciliation; never retry automatically from this receipt.",
@@ -101,6 +107,10 @@ async function runFixture({ id, title, change, host_move, options }) {
       if (options.claim === "revoke") {
         policy.rules = [];
         hookEvents.push("Host rule revoked after claim");
+      }
+      if (options.claim === "throw_after_consume") {
+        hookEvents.push("Claim hook threw after consumption");
+        throw new Error("simulated_claim_response_error");
       }
       return accepted;
     },
@@ -163,6 +173,7 @@ export function assertGuardedToolRehearsal(report) {
     policy_revoked: [["requires_approval", "blocked", "policy_changed"], 0],
     arguments_mutated: [["requires_approval", "dispatched", "host_dispatch_returned"], 1],
     claim_revoked: [["requires_approval", "blocked", "policy_changed"], 0],
+    claim_hook_unknown: [["requires_approval", "blocked", "approval_consume_error"], 0],
     callback_unknown: [["requires_approval", "unknown", "host_dispatch_error"], 1]
   };
   assert.equal(report.cases.length, Object.keys(expected).length);
@@ -197,6 +208,11 @@ export function assertGuardedToolRehearsal(report) {
   assert.deepEqual(byId.claim_revoked.attempts[0].host_hook_events.slice(-2),
     ["One-use claim consumed", "Host rule revoked after claim"]);
   assert.ok(!byId.claim_revoked.attempts[0].host_hook_events.includes("Fixture callback entered"));
+  assert.equal(byId.claim_hook_unknown.claim_attempts, 1);
+  assert.equal(byId.claim_hook_unknown.claims_consumed, 1);
+  assert.deepEqual(byId.claim_hook_unknown.attempts[0].host_hook_events.slice(-2),
+    ["One-use claim consumed", "Claim hook threw after consumption"]);
+  assert.ok(!byId.claim_hook_unknown.attempts[0].host_hook_events.includes("Fixture callback entered"));
   assert.ok(byId.approval_reused.attempts[1].host_hook_events.includes("One-use claim refused"));
   assert.ok(!byId.approval_reused.attempts[1].host_hook_events.includes("Fixture callback entered"));
   assert.deepEqual(byId.callback_unknown.attempts[0].host_hook_events.slice(-2),
