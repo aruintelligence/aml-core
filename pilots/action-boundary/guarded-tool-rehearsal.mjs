@@ -34,6 +34,12 @@ const fixtures = [
     options: { mapper: "mutate" }
   },
   {
+    id: "mapper_write_error", title: "Host mapper writes, then throws",
+    change: "The host destination mapper writes an in-memory fixture marker, then throws before an action plan or dispatch receipt exists.",
+    host_move: "Keep resourceFor read-only. If a mapper fails after changing host state, reconcile that state in the host error path; no receipt does not mean no local effect.",
+    options: { mapper: "write_then_throw" }
+  },
+  {
     id: "invalid_arguments", title: "Non-finite tool arguments",
     change: "The caller supplies a non-finite number. Canonical capture rejects it, returning a blocked receipt with no proposal digest before the host mapper runs.",
     host_move: "Validate tool arguments at the host boundary. Preserve the blocked input receipt and do not claim it has a proposal digest or that a provider call was attempted.",
@@ -146,6 +152,12 @@ async function runFixture({ id, title, change, host_move, options }) {
   const guarded = createGuardedToolExecute({
     tool: "send_message", effect: "send", purpose: "Send a status update",
     resourceFor: mapped => {
+      if (options.mapper === "write_then_throw") {
+        fixtureStateChanges++;
+        hookEvents.push("In-memory mapper fixture marker written");
+        hookEvents.push("Host mapper threw");
+        throw new Error("simulated_mapper_error");
+      }
       if (options.mapper === "mutate") {
         mapped.to = "other@example.test";
         hookEvents.push("Host mapper changed its argument snapshot");
@@ -191,6 +203,10 @@ async function runFixture({ id, title, change, host_move, options }) {
       return { adapter_error: "resourceFor must not mutate arguments",
         host_hook_events: [...hookEvents] };
     }
+    if (options.mapper === "write_then_throw") {
+      await assert.rejects(guarded(args), { message: "simulated_mapper_error" });
+      return { adapter_error: "simulated_mapper_error", host_hook_events: [...hookEvents] };
+    }
     const { plan, receipt, result } = await guarded(args);
     return {
       policy_decision: plan.decision,
@@ -227,6 +243,7 @@ export function assertGuardedToolRehearsal(report) {
     approved_route: [["requires_approval", "dispatched", "host_dispatch_returned"], 1],
     changed_destination: [["deny", "blocked", "no_exact_rule"], 0],
     mapper_mutated: [0],
+    mapper_write_error: [0],
     invalid_arguments: [["deny", "blocked", "AML_CANONICAL_JSON_NON_FINITE_NUMBER"], 0],
     approval_unavailable: [["requires_approval", "blocked", "approval_unavailable"], 0],
     approval_declined: [["requires_approval", "blocked", "approval_missing_or_mismatched"], 0],
@@ -262,6 +279,9 @@ export function assertGuardedToolRehearsal(report) {
         adapter_error: "resourceFor must not mutate arguments",
         host_hook_events: ["Host mapper changed its argument snapshot"]
       }]);
+    } else if (id === "mapper_write_error") {
+      assert.deepEqual(item.attempts, [{ adapter_error: "simulated_mapper_error",
+        host_hook_events: ["In-memory mapper fixture marker written", "Host mapper threw"] }]);
     } else {
       assert.deepEqual(item.attempts.map(({ policy_decision, execution_status, reason }) =>
         [policy_decision, execution_status, reason]), attempts, `${id}: receipts`);
@@ -273,6 +293,9 @@ export function assertGuardedToolRehearsal(report) {
   assert.equal(byId.changed_destination.approval_requests, 0);
   assert.equal(byId.mapper_mutated.approval_requests, 0);
   assert.equal(byId.mapper_mutated.claim_attempts, 0);
+  assert.equal(byId.mapper_write_error.approval_requests, 0);
+  assert.equal(byId.mapper_write_error.claim_attempts, 0);
+  assert.equal(byId.mapper_write_error.fixture_state_changes, 1);
   assert.equal(byId.invalid_arguments.approval_requests, 0);
   assert.equal(byId.invalid_arguments.claim_attempts, 0);
   assert.deepEqual(byId.invalid_arguments.attempts[0].host_hook_events, []);
