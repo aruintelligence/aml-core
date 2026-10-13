@@ -104,6 +104,27 @@
       "fixture_state_changes": 0
     },
     {
+      "id": "mapper_write_error",
+      "title": "Host mapper writes, then throws",
+      "change": "The host destination mapper writes an in-memory fixture marker, then throws before an action plan or dispatch receipt exists.",
+      "host_move": "Keep resourceFor read-only. If a mapper fails after changing host state, reconcile that state in the host error path; no receipt does not mean no local effect.",
+      "destination": "team@example.test",
+      "attempts": [
+        {
+          "adapter_error": "simulated_mapper_error",
+          "host_hook_events": [
+            "In-memory mapper fixture marker written",
+            "Host mapper threw"
+          ]
+        }
+      ],
+      "approval_requests": 0,
+      "claim_attempts": 0,
+      "claims_consumed": 0,
+      "callback_count": 0,
+      "fixture_state_changes": 1
+    },
+    {
       "id": "invalid_arguments",
       "title": "Non-finite tool arguments",
       "change": "The caller supplies a non-finite number. Canonical capture rejects it, returning a blocked receipt with no proposal digest before the host mapper runs.",

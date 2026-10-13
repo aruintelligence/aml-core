@@ -22,6 +22,13 @@ test("checked-in browser examples come from the live host adapter rehearsal", as
   assert.equal(mapper.approval_requests, 0);
   assert.equal(mapper.claim_attempts, 0);
   assert.equal(mapper.callback_count, 0);
+  const mapperWrite = report.cases.find(item => item.id === "mapper_write_error");
+  assert.deepEqual(mapperWrite.attempts, [{ adapter_error: "simulated_mapper_error",
+    host_hook_events: ["In-memory mapper fixture marker written", "Host mapper threw"] }]);
+  assert.equal(mapperWrite.fixture_state_changes, 1);
+  assert.equal(mapperWrite.approval_requests, 0);
+  assert.equal(mapperWrite.claim_attempts, 0);
+  assert.equal(mapperWrite.callback_count, 0);
   const invalid = report.cases.find(item => item.id === "invalid_arguments");
   assert.deepEqual(invalid.attempts[0], {
     policy_decision: "deny",
@@ -88,9 +95,10 @@ test("one selected case keeps the same observed receipt and callback count", asy
 test("case list prints each fixture ID and its ordered receipt statuses", async () => {
   const report = await buildGuardedToolRehearsal();
   const listed = listGuardedToolCases(report);
-  assert.equal(listed.split("\n").filter(Boolean).length, 16);
+  assert.equal(listed.split("\n").filter(Boolean).length, 17);
   assert.match(listed, /^host_allow\tdispatched$/m);
   assert.match(listed, /^mapper_mutated\tpre-plan error$/m);
+  assert.match(listed, /^mapper_write_error\tpre-plan error$/m);
   assert.match(listed, /^invalid_arguments\tblocked$/m);
   assert.match(listed, /^approval_hook_error\tblocked$/m);
   assert.match(listed, /^approval_declined\tblocked$/m);
