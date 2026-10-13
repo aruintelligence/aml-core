@@ -60,23 +60,29 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
   const attemptCard = (attempt, index) => {
     const card = document.createElement("div");
     card.className = "attempt";
-    card.dataset.tone = attempt.execution_status === "dispatched" ? "go" :
+    card.dataset.tone = attempt.adapter_error ? "preflight" :
+      attempt.execution_status === "dispatched" ? "go" :
       attempt.execution_status === "unknown" ? "hold" : "stop";
     const label = document.createElement("small");
-    label.textContent = `ATTEMPT ${String(index + 1).padStart(2, "0")} · PLAN ${attempt.policy_decision.toUpperCase().replaceAll("_", " ")}`;
+    label.textContent = attempt.adapter_error ?
+      `ATTEMPT ${String(index + 1).padStart(2, "0")} · BEFORE PLAN` :
+      `ATTEMPT ${String(index + 1).padStart(2, "0")} · PLAN ${attempt.policy_decision.toUpperCase().replaceAll("_", " ")}`;
     const status = document.createElement("strong");
-    status.textContent = attempt.execution_status.toUpperCase();
+    status.textContent = attempt.adapter_error ? "HOST ERROR" : attempt.execution_status.toUpperCase();
     const meaning = document.createElement("p");
     meaning.className = "receipt-meaning";
-    meaning.textContent = attempt.execution_status === "dispatched" ?
+    meaning.textContent = attempt.adapter_error ?
+      "The adapter rejected the host mapper. No plan or dispatch receipt exists." :
+      attempt.execution_status === "dispatched" ?
       "Local fixture callback returned; external delivery is unverified." :
       attempt.execution_status === "unknown" ?
         "Local fixture callback threw; a side effect may have occurred." :
         "Local fixture callback was not entered for this attempt.";
     const reason = document.createElement("code");
-    reason.textContent = `receipt.reason = ${attempt.reason}`;
+    reason.textContent = attempt.adapter_error ?
+      `adapter error: ${attempt.adapter_error}` : `receipt.reason = ${attempt.reason}`;
     const digest = document.createElement("code");
-    digest.textContent = `proposal SHA-256: ${attempt.proposal_sha256}`;
+    if (!attempt.adapter_error) digest.textContent = `proposal SHA-256: ${attempt.proposal_sha256}`;
     const result = document.createElement("code");
     if (attempt.result) result.textContent = `Fixture target: ${attempt.result.would_send_to}`;
     const traceLabel = document.createElement("small");
@@ -91,7 +97,8 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
       step.textContent = event;
       trace.append(step);
     }
-    card.append(label, status, meaning, reason, digest);
+    card.append(label, status, meaning, reason);
+    if (!attempt.adapter_error) card.append(digest);
     if (attempt.result) card.append(result);
     card.append(traceLabel, trace);
     return card;
@@ -106,7 +113,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     }
   });
 
-  fetch("guarded-tool-rehearsal.json?v=a2c836a065eb").then(response => {
+  fetch("guarded-tool-rehearsal.json?v=bf33ac500b17").then(response => {
     if (!response.ok) throw new Error("Report request failed");
     return response.json();
   }).then(report => {
@@ -119,10 +126,12 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
       button.setAttribute("role", "radio");
       button.dataset.case = item.id;
       const statuses = item.attempts.map(attempt => attempt.execution_status);
-      button.dataset.tone = statuses.includes("unknown") ? "hold" :
+      button.dataset.tone = item.attempts.some(attempt => attempt.adapter_error) ? "preflight" :
+        statuses.includes("unknown") ? "hold" :
         statuses.every(status => status === "blocked") ? "stop" : "go";
       const state = document.createElement("span");
-      state.textContent = `${String(index + 1).padStart(2, "0")} / ${statuses.join(" → ").toUpperCase()}`;
+      state.textContent = `${String(index + 1).padStart(2, "0")} / ${item.attempts.map(attempt =>
+        attempt.adapter_error ? "HOST ERROR" : attempt.execution_status.toUpperCase()).join(" → ")}`;
       button.append(state, document.createTextNode(item.title));
       button.addEventListener("click", () => show(item.id, true));
       button.addEventListener("keydown", event => {
