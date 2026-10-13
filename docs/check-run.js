@@ -146,7 +146,7 @@ async function loadExample(focusChallenge = false) {
     $("load-example-hero").disabled = false;
   }
 }
-$("load-example").addEventListener("click", () => loadExample());
+$("load-example").addEventListener("click", () => loadExample(true));
 $("load-example-hero").addEventListener("click", () => loadExample(true));
 if (new URLSearchParams(window.location.search).get("example") === "challenge") loadExample(true);
 
