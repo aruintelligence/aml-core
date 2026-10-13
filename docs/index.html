@@ -28,6 +28,7 @@
     .truth{margin:40px 0;padding:30px;border:1px solid rgba(242,206,114,.3);border-radius:26px;background:linear-gradient(135deg,rgba(242,206,114,.08),rgba(125,249,255,.05))}.truth h2{margin-top:0}.truth p{color:#cad2df}.footer{padding:30px 0 50px;border-top:1px solid var(--line);color:var(--muted);font-size:.82rem;text-align:center}
     .atlas{margin:0 0 45px;border:1px solid var(--line);border-radius:22px;background:rgba(255,255,255,.035)}.atlas summary{display:grid;gap:4px;cursor:pointer;padding:22px 26px;list-style:none}.atlas summary::-webkit-details-marker{display:none}.atlas summary span{color:var(--cyan);font:800 .7rem ui-monospace,monospace;letter-spacing:.14em}.atlas summary strong{font-size:1.25rem}.atlas summary small{color:var(--muted);font-size:.82rem}.atlas summary:focus-visible{outline:3px solid var(--gold);outline-offset:3px}.atlas-list{padding:0 20px 20px}.atlas-list .scope-teaser{margin:12px 0}
     .challenge-feature{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);gap:clamp(22px,5vw,65px);align-items:center;position:relative;overflow:hidden;margin:0 0 38px;padding:clamp(25px,4vw,43px);border:1px solid rgba(242,206,114,.43);border-radius:27px;background:radial-gradient(circle at 100% 0,rgba(255,102,136,.14),transparent 44%),linear-gradient(135deg,#172238,#0a1020 66%);box-shadow:0 24px 70px rgba(0,0,0,.2)}.challenge-feature::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent 49.8%,rgba(242,206,114,.04) 50%,transparent 50.2%);background-size:29px 29px}.challenge-feature>*{position:relative}.challenge-kicker{color:var(--gold);font:850 .72rem ui-monospace,monospace;letter-spacing:.15em}.challenge-feature h2{max-width:560px;margin:11px 0 14px;font-size:clamp(2rem,4.5vw,3.65rem);line-height:1.04;letter-spacing:-.05em}.challenge-feature h2 em{font-style:normal;color:var(--gold)}.challenge-feature p{max-width:560px;margin:0;color:#ccd7e5}.challenge-feature .challenge-link{display:inline-flex;margin-top:21px;padding:11px 17px;border-radius:999px;background:var(--gold);color:#10151f;font-weight:900;text-decoration:none}.challenge-feature .challenge-link:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}.challenge-limit{display:block;max-width:520px;margin-top:13px;color:#aab9c9;font-size:.76rem}.challenge-ledger{padding:18px;border:1px solid rgba(255,255,255,.16);border-radius:19px;background:#050c19b8;box-shadow:0 18px 50px #0005}.ledger-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:13px;color:#9db9c5;font:800 .67rem ui-monospace,monospace;letter-spacing:.12em}.ledger-head b{color:var(--cyan)}.ledger-step{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:17px;border:1px solid rgba(156,255,176,.34);border-radius:13px;background:rgba(156,255,176,.065)}.ledger-step span{color:#c0cfdb;font:800 .69rem ui-monospace,monospace;letter-spacing:.11em}.ledger-step strong{color:var(--green);font:900 .95rem ui-monospace,monospace}.ledger-step small{grid-column:1/-1;color:#d0dce5;font:.73rem/1.5 ui-monospace,monospace}.ledger-step.changed{border-color:rgba(255,102,136,.42);background:rgba(255,102,136,.08)}.ledger-step.changed strong{color:#ff9bb0}.ledger-pivot{display:flex;align-items:center;gap:11px;margin:10px 0;color:var(--gold);font:800 .69rem ui-monospace,monospace;letter-spacing:.09em}.ledger-pivot::before,.ledger-pivot::after{content:"";height:1px;flex:1;background:rgba(242,206,114,.3)}
+    .probe-switch{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 10px}.probe-switch button{flex:1;min-width:150px;padding:9px 10px;border:1px solid rgba(125,249,255,.25);border-radius:9px;background:rgba(125,249,255,.045);color:#b8d7df;font:800 .75rem ui-sans-serif,system-ui;cursor:pointer}.probe-switch button[aria-pressed=true]{border-color:var(--gold);background:rgba(242,206,114,.13);color:var(--gold)}.probe-switch button:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}.ledger-note{display:block;margin-top:12px;color:#9db1c3;font-size:.72rem}
     @media(max-width:900px){.hero{grid-template-columns:1fr;padding-top:42px}.hero h1{max-width:690px}.proof-console{max-width:690px}.paths{grid-template-columns:1fr 1fr}}
     @media(max-width:800px){.navlinks .ghost{display:none}.compare,.lab,.principles,.paths,.continuity-steps,.challenge-feature{grid-template-columns:1fr}.section-head{align-items:start;flex-direction:column}.hero h1{font-size:clamp(3.2rem,12vw,5rem)}.console-foot,.scope-teaser{align-items:flex-start;flex-direction:column}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.element{transition:none}}
@@ -86,12 +87,14 @@
     </section>
 
     <section class="challenge-feature" aria-labelledby="challenge-title">
-      <div><span class="challenge-kicker">THE RECORD CAN DISAGREE</span><h2 id="challenge-title">Make a record <em>contradict itself.</em></h2><p>Open a checked two-gate run. Flip one saved browser outcome and watch the claim fail while the source fingerprint still passes. Restore the record to see the difference.</p><a class="challenge-link" href="check-run.html?example=challenge">Try the captured run ↗</a><small class="challenge-limit">A project-authored, unsigned consistency check. It cannot prove that a historical event occurred.</small></div>
-      <div class="challenge-ledger" aria-label="Example: one changed saved outcome leaves the source hash intact but makes a gate claim fail">
-        <div class="ledger-head"><span>CAPTURED TWO-GATE EXAMPLE</span><b>LOCAL RECHECK / 01</b></div>
+      <div><span class="challenge-kicker">THE RECORD CAN DISAGREE</span><h2 id="challenge-title">Make a record <em>contradict itself.</em></h2><p>Two controlled changes expose different faults. Flip a saved browser outcome or add one source byte, then watch which check catches it.</p><a class="challenge-link" id="challenge-link" href="check-run.html?example=challenge&amp;probe=gate">Reproduce this mismatch ↗</a><small class="challenge-limit">A project-authored, unsigned consistency check. It cannot prove that a historical event occurred.</small></div>
+      <div class="challenge-ledger" aria-label="Preview of two controlled tamper probes">
+        <div class="ledger-head"><span>CAPTURED TWO-GATE EXAMPLE</span><b id="ledger-mode">PREVIEW / GATE CLAIM</b></div>
         <div class="ledger-step"><span>ORIGINAL RECORD</span><strong>CONSISTENT</strong><small>SHA-256 ✓ &nbsp; compiler ✓ &nbsp; gate claims ✓</small></div>
-        <div class="ledger-pivot">FLIP ONE SAVED OUTCOME</div>
-        <div class="ledger-step changed"><span>CHANGED CLAIM</span><strong>MISMATCH</strong><small>SHA-256 ✓ &nbsp; compiler ✓ &nbsp; gate claim ✕</small></div>
+        <div class="probe-switch" role="group" aria-label="Choose a tamper probe preview"><button type="button" data-probe="gate" aria-pressed="true">Flip gate claim</button><button type="button" data-probe="source" aria-pressed="false">Add source byte</button></div>
+        <div class="ledger-pivot" id="ledger-pivot">FLIP ONE SAVED OUTCOME</div>
+        <div class="ledger-step changed" role="status" aria-live="polite"><span id="ledger-change">CHANGED CLAIM</span><strong>MISMATCH</strong><small id="ledger-checks">SHA-256 ✓ &nbsp; compiler ✓ &nbsp; gate claim ✕</small></div>
+        <small class="ledger-note">Preview only · open the checker to reproduce the local result.</small>
       </div>
     </section>
 
@@ -167,6 +170,22 @@
     function render(){const t=document.querySelector("#traditional"),a=document.querySelector("#accountable"),out=document.querySelector("#decision");t.replaceChildren();a.replaceChildren();const decisions=items.map(gate);items.forEach((x,i)=>{t.append(card(x,decisions[i],true));a.append(card(x,decisions[i]))});out.textContent=JSON.stringify({policy:"EthicalRenderGate prototype v1",rule:"restoration_value >= attention_cost",decisions},null,2)}
     function controls(){const root=document.querySelector("#controls");items.forEach((x,i)=>{const row=document.createElement("div");row.className="control";row.innerHTML=`<div class="control-top"><strong>${x.name}</strong><span class="value" id="v${i}">${x.value.toFixed(1)}</span></div><div class="range-row"><input aria-label="${x.name} restoration value" type="range" min="0" max="10" step="0.1" value="${x.value}"><span class="cost">cost ${x.cost}</span></div>`;row.querySelector("input").addEventListener("input",e=>{x.value=+e.target.value;row.querySelector(`#v${i}`).textContent=x.value.toFixed(1);render()});root.append(row)})}
     controls();render();
+  </script>
+  <script>
+    const probePreview={
+      gate:{mode:"PREVIEW / GATE CLAIM",pivot:"FLIP ONE SAVED OUTCOME",change:"CHANGED CLAIM",checks:"SHA-256 ✓   compiler ✓   gate claim ✕"},
+      source:{mode:"PREVIEW / SOURCE BYTE",pivot:"ADD ONE TRAILING LF BYTE",change:"CHANGED SOURCE",checks:"SHA-256 ✕   compiler ✓   gate claims ✓"}
+    };
+    document.querySelectorAll(".probe-switch button").forEach(button=>button.addEventListener("click",()=>{
+      const probe=button.dataset.probe;
+      const preview=probePreview[probe];
+      document.querySelectorAll(".probe-switch button").forEach(option=>option.setAttribute("aria-pressed",String(option===button)));
+      document.querySelector("#ledger-mode").textContent=preview.mode;
+      document.querySelector("#ledger-pivot").textContent=preview.pivot;
+      document.querySelector("#ledger-change").textContent=preview.change;
+      document.querySelector("#ledger-checks").textContent=preview.checks;
+      document.querySelector("#challenge-link").href=`check-run.html?example=challenge&probe=${probe}`;
+    }));
   </script>
   <script type="module" src="./home-hero.js?v=home-real-1"></script>
 </body>
