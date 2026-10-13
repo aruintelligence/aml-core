@@ -66,6 +66,13 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     label.textContent = `ATTEMPT ${String(index + 1).padStart(2, "0")} · PLAN ${attempt.policy_decision.toUpperCase().replaceAll("_", " ")}`;
     const status = document.createElement("strong");
     status.textContent = attempt.execution_status.toUpperCase();
+    const meaning = document.createElement("p");
+    meaning.className = "receipt-meaning";
+    meaning.textContent = attempt.execution_status === "dispatched" ?
+      "Local fixture callback returned; external delivery is unverified." :
+      attempt.execution_status === "unknown" ?
+        "Local fixture callback threw; a side effect may have occurred." :
+        "Local fixture callback was not entered for this attempt.";
     const reason = document.createElement("code");
     reason.textContent = `receipt.reason = ${attempt.reason}`;
     const digest = document.createElement("code");
@@ -84,7 +91,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
       step.textContent = event;
       trace.append(step);
     }
-    card.append(label, status, reason, digest);
+    card.append(label, status, meaning, reason, digest);
     if (attempt.result) card.append(result);
     card.append(traceLabel, trace);
     return card;
@@ -109,6 +116,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     const buttons = report.cases.map((item, index) => {
       const button = document.createElement("button");
       button.type = "button";
+      button.setAttribute("role", "radio");
       button.dataset.case = item.id;
       const statuses = item.attempts.map(attempt => attempt.execution_status);
       button.dataset.tone = statuses.includes("unknown") ? "hold" :
@@ -133,7 +141,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
       selectedCase = id;
       buttons.forEach(button => {
         const selected = button.dataset.case === id;
-        button.setAttribute("aria-pressed", String(selected));
+        button.setAttribute("aria-checked", String(selected));
         button.tabIndex = selected ? 0 : -1;
       });
       $("case-title").textContent = item.title;
