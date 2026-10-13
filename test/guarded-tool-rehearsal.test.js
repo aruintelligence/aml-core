@@ -34,6 +34,11 @@ test("checked-in browser examples come from the live host adapter rehearsal", as
   const uncertain = report.cases.find(item => item.id === "callback_unknown");
   assert.equal(uncertain.attempts[0].execution_status, "unknown");
   assert.equal(uncertain.callback_count, 1);
+  const retried = report.cases.find(item => item.id === "unknown_then_replay");
+  assert.deepEqual(retried.attempts.map(attempt => attempt.execution_status), ["unknown", "blocked"]);
+  assert.equal(retried.claims_consumed, 1);
+  assert.equal(retried.callback_count, 1);
+  assert.ok(!retried.attempts[1].host_hook_events.includes("Fixture callback entered"));
 });
 
 test("one selected case keeps the same observed receipt and callback count", async () => {
@@ -48,11 +53,12 @@ test("one selected case keeps the same observed receipt and callback count", asy
 test("case list prints each fixture ID and its ordered receipt statuses", async () => {
   const report = await buildGuardedToolRehearsal();
   const listed = listGuardedToolCases(report);
-  assert.equal(listed.split("\n").filter(Boolean).length, 11);
+  assert.equal(listed.split("\n").filter(Boolean).length, 12);
   assert.match(listed, /^approval_declined\tblocked$/m);
   assert.match(listed, /^approval_reused\tdispatched -> blocked$/m);
   assert.match(listed, /^claim_hook_unknown\tblocked$/m);
   assert.match(listed, /^callback_unknown\tunknown$/m);
+  assert.match(listed, /^unknown_then_replay\tunknown -> blocked$/m);
 });
 
 test("CLI rejects extra, missing, unknown, and conflicting arguments", () => {

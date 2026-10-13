@@ -291,6 +291,43 @@
       "claim_attempts": 1,
       "claims_consumed": 1,
       "callback_count": 1
+    },
+    {
+      "id": "unknown_then_replay",
+      "title": "Unknown result, replay claim refused",
+      "change": "The fixture callback throws on the first attempt. A second attempt using the same one-use fixture claim state blocks before callback entry.",
+      "host_move": "Reconcile the uncertain provider outcome before any new authorization. A spent grant cannot justify a retry; use host idempotency for the actual operation.",
+      "destination": "team@example.test",
+      "attempts": [
+        {
+          "policy_decision": "requires_approval",
+          "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+          "execution_status": "unknown",
+          "reason": "host_dispatch_error",
+          "host_hook_events": [
+            "Approval requested",
+            "Matching digest returned",
+            "One-use claim consumed",
+            "Fixture callback entered",
+            "Fixture callback threw"
+          ]
+        },
+        {
+          "policy_decision": "requires_approval",
+          "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+          "execution_status": "blocked",
+          "reason": "approval_reused_or_expired",
+          "host_hook_events": [
+            "Approval requested",
+            "Matching digest returned",
+            "One-use claim refused"
+          ]
+        }
+      ],
+      "approval_requests": 2,
+      "claim_attempts": 2,
+      "claims_consumed": 1,
+      "callback_count": 1
     }
   ]
 }

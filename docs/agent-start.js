@@ -85,7 +85,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     }
   });
 
-  fetch("guarded-tool-rehearsal.json?v=290b7542b654").then(response => {
+  fetch("guarded-tool-rehearsal.json?v=a25ef3c15a4b").then(response => {
     if (!response.ok) throw new Error("Report request failed");
     return response.json();
   }).then(report => {
@@ -96,8 +96,11 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
       const button = document.createElement("button");
       button.type = "button";
       button.dataset.case = item.id;
+      const statuses = item.attempts.map(attempt => attempt.execution_status);
+      button.dataset.tone = statuses.includes("unknown") ? "hold" :
+        statuses.every(status => status === "blocked") ? "stop" : "go";
       const state = document.createElement("span");
-      state.textContent = `${String(index + 1).padStart(2, "0")} / ${item.attempts.map(attempt => attempt.execution_status).join(" → ").toUpperCase()}`;
+      state.textContent = `${String(index + 1).padStart(2, "0")} / ${statuses.join(" → ").toUpperCase()}`;
       button.append(state, document.createTextNode(item.title));
       button.addEventListener("click", () => show(item.id, true));
       return button;

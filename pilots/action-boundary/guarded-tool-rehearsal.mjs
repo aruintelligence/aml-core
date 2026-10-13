@@ -74,6 +74,12 @@ const fixtures = [
     change: "The simulated callback throws, so the wrapper cannot assert the side effect did not occur.",
     host_move: "Record the uncertain result and use provider idempotency and reconciliation; never retry automatically from this receipt.",
     options: { callback: "throws" }
+  },
+  {
+    id: "unknown_then_replay", title: "Unknown result, replay claim refused",
+    change: "The fixture callback throws on the first attempt. A second attempt using the same one-use fixture claim state blocks before callback entry.",
+    host_move: "Reconcile the uncertain provider outcome before any new authorization. A spent grant cannot justify a retry; use host idempotency for the actual operation.",
+    options: { callback: "throws", repeat: true }
   }
 ];
 
@@ -185,7 +191,12 @@ export function assertGuardedToolRehearsal(report) {
     arguments_mutated: [["requires_approval", "dispatched", "host_dispatch_returned"], 1],
     claim_revoked: [["requires_approval", "blocked", "policy_changed"], 0],
     claim_hook_unknown: [["requires_approval", "blocked", "approval_consume_error"], 0],
-    callback_unknown: [["requires_approval", "unknown", "host_dispatch_error"], 1]
+    callback_unknown: [["requires_approval", "unknown", "host_dispatch_error"], 1],
+    unknown_then_replay: [
+      ["requires_approval", "unknown", "host_dispatch_error"],
+      ["requires_approval", "blocked", "approval_reused_or_expired"],
+      1
+    ]
   };
   assert.equal(report.cases.length, Object.keys(expected).length);
   for (const [id, values] of Object.entries(expected)) {
@@ -232,6 +243,12 @@ export function assertGuardedToolRehearsal(report) {
   assert.ok(!byId.approval_reused.attempts[1].host_hook_events.includes("Fixture callback entered"));
   assert.deepEqual(byId.callback_unknown.attempts[0].host_hook_events.slice(-2),
     ["Fixture callback entered", "Fixture callback threw"]);
+  assert.equal(byId.unknown_then_replay.approval_requests, 2);
+  assert.equal(byId.unknown_then_replay.claim_attempts, 2);
+  assert.equal(byId.unknown_then_replay.claims_consumed, 1);
+  assert.equal(byId.unknown_then_replay.callback_count, 1);
+  assert.deepEqual(byId.unknown_then_replay.attempts[1].host_hook_events.slice(-1),
+    ["One-use claim refused"]);
 }
 
 export function selectGuardedToolCase(report, id) {
