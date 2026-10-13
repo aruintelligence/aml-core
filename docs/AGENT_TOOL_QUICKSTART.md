@@ -14,7 +14,7 @@ node pilots/action-boundary/guarded-tool-demo.mjs
 
 The first fixture has an exact policy rule and a **simulated** approval; its callback returns a `would_send_to` object. The second changes the destination and is blocked before the callback. There is no network request, message delivery, or human authentication.
 
-For the thirteen-case host rehearsal, list the case IDs and ordered receipt statuses, then inspect one case:
+For the fourteen-case host rehearsal, list the case IDs and ordered receipt statuses, then inspect one case:
 
 ```bash
 node pilots/action-boundary/guarded-tool-rehearsal.mjs --list
@@ -25,6 +25,8 @@ node pilots/action-boundary/guarded-tool-rehearsal.mjs --check
 The list prints one tab-separated ID and status sequence per fixture; a two-attempt case prints both statuses in order. These local fixture callbacks are not human approvals, provider calls, delivery evidence, or proof of production safety. An `unknown` receipt may follow a side effect; do not silently retry it.
 
 The [host allow case](https://aruintelligence.github.io/aml-core/agent-start.html?case=host_allow#rehearsal) shows an exact rule with `requires_approval: false`: one local callback returns with zero approval requests and zero claim attempts. Only the host can choose that policy; the fixture is not a recommendation to waive approval for a real send.
+
+The [approval hook error case](https://aruintelligence.github.io/aml-core/agent-start.html?case=approval_hook_error#rehearsal) writes one in-memory approval fixture marker just before the hook throws. The tool receipt is `blocked`, with no claim or tool callback. This is not a human approval or a durable grant; a real host must reconcile its authorization store rather than infer that no approval-state change occurred.
 
 On the visual builder, **Copy fixture JSON** copies the selected case in the same shape as `--case`, including its project-authored provenance and scope. Include your checkout commit when sharing a reproduction; the copied fixture is not evidence of a real approval or delivery.
 

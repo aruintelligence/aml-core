@@ -30,6 +30,13 @@ test("checked-in browser examples come from the live host adapter rehearsal", as
   assert.equal(declined.callback_count, 0);
   assert.deepEqual(declined.attempts[0].host_hook_events,
     ["Approval requested", "Fixture approval declined"]);
+  const approvalError = report.cases.find(item => item.id === "approval_hook_error");
+  assert.equal(approvalError.attempts[0].reason, "approval_error");
+  assert.equal(approvalError.approval_requests, 1);
+  assert.equal(approvalError.claim_attempts, 0);
+  assert.equal(approvalError.callback_count, 0);
+  assert.equal(approvalError.fixture_state_changes, 1);
+  assert.ok(approvalError.attempts[0].host_hook_events.includes("In-memory approval fixture marker written"));
   const revoked = report.cases.find(item => item.id === "claim_revoked");
   assert.equal(revoked.claims_consumed, 1);
   assert.equal(revoked.callback_count, 0);
@@ -62,8 +69,9 @@ test("one selected case keeps the same observed receipt and callback count", asy
 test("case list prints each fixture ID and its ordered receipt statuses", async () => {
   const report = await buildGuardedToolRehearsal();
   const listed = listGuardedToolCases(report);
-  assert.equal(listed.split("\n").filter(Boolean).length, 13);
+  assert.equal(listed.split("\n").filter(Boolean).length, 14);
   assert.match(listed, /^host_allow\tdispatched$/m);
+  assert.match(listed, /^approval_hook_error\tblocked$/m);
   assert.match(listed, /^approval_declined\tblocked$/m);
   assert.match(listed, /^approval_reused\tdispatched -> blocked$/m);
   assert.match(listed, /^claim_hook_unknown\tblocked$/m);

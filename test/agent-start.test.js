@@ -30,6 +30,7 @@ test("the page labels the report as a fixture and offers the exact recheck comma
   assert.match(page, /consumeApproval: \(input, context\) => hostConsumeGrantOnce/);
   assert.match(page, /An <code>unknown<\/code> receipt does not mean no side effect occurred/);
   assert.match(page, /A claim-hook error can leave a grant spent/);
+  assert.match(page, /An approval-hook error can leave host authorization state changed/);
 });
 
 test("case radios expose one checked choice and explicit receipt meanings", () => {

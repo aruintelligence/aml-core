@@ -40,6 +40,12 @@ const fixtures = [
     options: { approval: "decline" }
   },
   {
+    id: "approval_hook_error", title: "Approval hook throws after a local write",
+    change: "The approval fixture writes an in-memory marker, then throws before returning a decision. No one-use claim or tool callback runs.",
+    host_move: "Reconcile host authorization records after an approval hook error. A blocked tool receipt does not prove that the approval system recorded nothing; require a fresh verified decision for another attempt.",
+    options: { approval: "throw_after_write" }
+  },
+  {
     id: "approval_mismatch", title: "Approval for another proposal",
     change: "The approval fixture returns a different proposal digest.",
     host_move: "Compare the approved digest with the frozen proposal before any claim or callback.",
@@ -116,6 +122,12 @@ async function runFixture({ id, title, change, host_move, options }) {
         hookEvents.push("Fixture approval declined");
         return { approved: false };
       }
+      if (options.approval === "throw_after_write") {
+        fixtureStateChanges++;
+        hookEvents.push("In-memory approval fixture marker written");
+        hookEvents.push("Approval hook threw");
+        throw new Error("simulated_approval_response_error");
+      }
       hookEvents.push(options.approval === "mismatch" ? "Different digest returned" : "Matching digest returned");
       return { approved: true, proposal_sha256: options.approval === "mismatch" ? "0".repeat(64) : proposal_sha256 };
     };
@@ -191,6 +203,7 @@ export function assertGuardedToolRehearsal(report) {
     changed_destination: [["deny", "blocked", "no_exact_rule"], 0],
     approval_unavailable: [["requires_approval", "blocked", "approval_unavailable"], 0],
     approval_declined: [["requires_approval", "blocked", "approval_missing_or_mismatched"], 0],
+    approval_hook_error: [["requires_approval", "blocked", "approval_error"], 0],
     approval_mismatch: [["requires_approval", "blocked", "approval_missing_or_mismatched"], 0],
     approval_reused: [
       ["requires_approval", "dispatched", "host_dispatch_returned"],
@@ -232,6 +245,11 @@ export function assertGuardedToolRehearsal(report) {
   assert.equal(byId.approval_declined.claim_attempts, 0);
   assert.deepEqual(byId.approval_declined.attempts[0].host_hook_events,
     ["Approval requested", "Fixture approval declined"]);
+  assert.equal(byId.approval_hook_error.approval_requests, 1);
+  assert.equal(byId.approval_hook_error.claim_attempts, 0);
+  assert.equal(byId.approval_hook_error.fixture_state_changes, 1);
+  assert.deepEqual(byId.approval_hook_error.attempts[0].host_hook_events,
+    ["Approval requested", "In-memory approval fixture marker written", "Approval hook threw"]);
   assert.equal(byId.approval_mismatch.claim_attempts, 0);
   assert.equal(byId.policy_revoked.claim_attempts, 0);
   assert.equal(byId.approval_reused.claim_attempts, 2);
