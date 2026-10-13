@@ -32,6 +32,16 @@ export function nextRehearsalCaseIndex(key, index, count) {
   return null;
 }
 
+export function visibleRehearsalCaseIds(report, query, selectedId) {
+  const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+  return report.cases.filter(item => {
+    const outcomes = item.attempts.map(attempt => attempt.adapter_error ? "host error" : attempt.execution_status);
+    const searchable = [item.id.replaceAll("_", " "), item.title, item.change, ...outcomes]
+      .join(" ").toLocaleLowerCase();
+    return item.id === selectedId || words.every(word => searchable.includes(word));
+  }).map(item => item.id);
+}
+
 if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
   const $ = id => document.getElementById(id);
   const params = new URLSearchParams(location.search);
@@ -137,16 +147,27 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
       button.append(state, document.createTextNode(item.title));
       button.addEventListener("click", () => show(item.id, true));
       button.addEventListener("keydown", event => {
-        const next = nextRehearsalCaseIndex(event.key, index, report.cases.length);
+        const visible = visibleRehearsalCaseIds(report, $("case-search").value, selectedCase);
+        const next = nextRehearsalCaseIndex(event.key, visible.indexOf(item.id), visible.length);
         if (next === null) return;
         event.preventDefault();
-        buttons[next].focus();
-        show(report.cases[next].id, true);
+        buttons[report.cases.findIndex(entry => entry.id === visible[next])].focus();
+        show(visible[next], true);
       });
       return button;
     });
     $("case-picker").replaceChildren(...buttons);
     let selectedCase = initial;
+    function filterCases() {
+      const visible = visibleRehearsalCaseIds(report, $("case-search").value, selectedCase);
+      buttons.forEach(button => { button.hidden = !visible.includes(button.dataset.case); });
+      const matched = visible.length - (visible.includes(selectedCase) &&
+        !visibleRehearsalCaseIds(report, $("case-search").value, "").includes(selectedCase) ? 1 : 0);
+      $("case-search-status").textContent = $("case-search").value.trim() ?
+        `${matched} matching ${matched === 1 ? "case" : "cases"}. Selected case stays visible.` :
+        `${report.cases.length} cases. Search by name, condition, or outcome.`;
+    }
+    $("case-search").addEventListener("input", filterCases);
     function show(id, updateUrl) {
       const item = report.cases.find(entry => entry.id === id);
       selectedCase = id;
@@ -155,6 +176,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
         button.setAttribute("aria-checked", String(selected));
         button.tabIndex = selected ? 0 : -1;
       });
+      filterCases();
       $("case-title").textContent = item.title;
       $("case-change").textContent = item.change;
       if (sharedCase || updateUrl) {

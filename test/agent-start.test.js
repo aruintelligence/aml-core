@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { chooseRehearsalCase, nextRehearsalCaseIndex, rehearsalCasePayload, rehearsalCaseUrl } from "../docs/agent-start.js";
+import { chooseRehearsalCase, nextRehearsalCaseIndex, rehearsalCasePayload, rehearsalCaseUrl, visibleRehearsalCaseIds } from "../docs/agent-start.js";
 import { selectGuardedToolCase } from "../pilots/action-boundary/guarded-tool-rehearsal.mjs";
 
 const report = JSON.parse(readFileSync(new URL("../docs/guarded-tool-rehearsal.json", import.meta.url), "utf8"));
@@ -23,6 +23,8 @@ test("the page labels the report as a fixture and offers the exact recheck comma
   assert.match(page, /guarded-tool-rehearsal\.mjs --check/);
   assert.match(page, /id="case-picker"/);
   assert.match(page, /id="case-picker"[^>]*role="radiogroup"/);
+  assert.match(page, /<label for="case-search">Find a case<\/label>/);
+  assert.match(page, /id="case-search-status" role="status" aria-live="polite"/);
   assert.match(page, /id="case-panel" role="region" aria-labelledby="case-title" tabindex="0"/);
   assert.match(page, /id="route-label"/);
   assert.match(page, /href="#case-title">Jump to selected result/);
@@ -61,6 +63,20 @@ test("keyboard case navigation wraps and keeps other keys available", () => {
   assert.equal(nextRehearsalCaseIndex("Home", 5, count), 0);
   assert.equal(nextRehearsalCaseIndex("End", 5, count), count - 1);
   assert.equal(nextRehearsalCaseIndex("Enter", 5, count), null);
+});
+
+test("case search keeps the selected choice visible and narrows keyboard order", () => {
+  const claim = visibleRehearsalCaseIds(report, "claim revoked", "mapper_write_error");
+  assert.ok(claim.includes("mapper_write_error"));
+  assert.ok(claim.includes("claim_revoked"));
+  assert.ok(!claim.includes("host_allow"));
+  assert.deepEqual(visibleRehearsalCaseIds(report, "mapper error", "claim_revoked"),
+    ["mapper_mutated", "mapper_write_error", "claim_revoked"]);
+  assert.deepEqual(visibleRehearsalCaseIds(report, "no such fixture", "mapper_write_error"),
+    ["mapper_write_error"]);
+  assert.equal(visibleRehearsalCaseIds(report, " ", "claim_revoked").length, report.cases.length);
+  const position = claim.indexOf("mapper_write_error");
+  assert.equal(claim[nextRehearsalCaseIndex("ArrowRight", position, claim.length)], "claim_revoked");
 });
 
 test("copied fixture payload matches the CLI case with its provenance and scope", () => {
