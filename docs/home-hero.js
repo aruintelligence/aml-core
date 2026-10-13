@@ -11,8 +11,27 @@ let actionGeneration = 0;
 let bridgeReady = false;
 
 function selectButton(selector, key, value) {
-  document.querySelectorAll(selector).forEach(button =>
-    button.setAttribute("aria-pressed", String(button.dataset[key] === value)));
+  document.querySelectorAll(selector).forEach(button => {
+    const selected = button.dataset[key] === value;
+    button.setAttribute("aria-checked", String(selected));
+    button.tabIndex = selected ? 0 : -1;
+  });
+}
+
+function wireChoiceGroup(selector, key, choose) {
+  const buttons = [...document.querySelectorAll(selector)];
+  buttons.forEach((button, index) => {
+    button.addEventListener("click", () => choose(button.dataset[key]));
+    button.addEventListener("keydown", event => {
+      const next = event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1 :
+        ["ArrowRight", "ArrowDown"].includes(event.key) ? (index + 1) % buttons.length :
+          ["ArrowLeft", "ArrowUp"].includes(event.key) ? (index + buttons.length - 1) % buttons.length : null;
+      if (next === null) return;
+      event.preventDefault();
+      buttons[next].focus();
+      choose(buttons[next].dataset[key]);
+    });
+  });
 }
 
 function showTrace(result) {
@@ -119,12 +138,9 @@ function showBoundary() {
   if (action) showAction(); else showInterface();
 }
 
-document.querySelectorAll("[data-boundary]").forEach(button =>
-  button.addEventListener("click", () => { boundary = button.dataset.boundary; showBoundary(); }));
-document.querySelectorAll("[data-action-destination]").forEach(button =>
-  button.addEventListener("click", () => { recipient = button.dataset.actionDestination; showAction(); }));
-document.querySelectorAll("[data-hero-value]").forEach(button =>
-  button.addEventListener("click", () => { restoration = Number(button.dataset.heroValue); showInterface(); }));
+wireChoiceGroup("[data-boundary]", "boundary", value => { boundary = value; showBoundary(); });
+wireChoiceGroup("[data-action-destination]", "actionDestination", value => { recipient = value; showAction(); });
+wireChoiceGroup("[data-hero-value]", "heroValue", value => { restoration = Number(value); showInterface(); });
 
 showBoundary();
 try {
