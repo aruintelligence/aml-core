@@ -34,6 +34,12 @@ const fixtures = [
     options: { mapper: "mutate" }
   },
   {
+    id: "invalid_arguments", title: "Non-finite tool arguments",
+    change: "The caller supplies a non-finite number. Canonical capture rejects it, returning a blocked receipt with no proposal digest before the host mapper runs.",
+    host_move: "Validate tool arguments at the host boundary. Preserve the blocked input receipt and do not claim it has a proposal digest or that a provider call was attempted.",
+    options: { arguments: "non_finite" }
+  },
+  {
     id: "approval_unavailable", title: "No approval hook",
     change: "The host supplies no way to request approval.",
     host_move: "Supply an authenticated approval callback for approval-required rules, bound to this exact proposal.",
@@ -174,7 +180,8 @@ async function runFixture({ id, title, change, host_move, options }) {
       return { simulated: true, would_send_to: args.to };
     }
   });
-  const args = { to: options.to || "team@example.test", body: "Build passed." };
+  const args = { to: options.to || "team@example.test",
+    body: options.arguments === "non_finite" ? NaN : "Build passed." };
   const originalDestination = args.to;
   async function attempt() {
     hookEvents = [];
@@ -220,6 +227,7 @@ export function assertGuardedToolRehearsal(report) {
     approved_route: [["requires_approval", "dispatched", "host_dispatch_returned"], 1],
     changed_destination: [["deny", "blocked", "no_exact_rule"], 0],
     mapper_mutated: [0],
+    invalid_arguments: [["deny", "blocked", "AML_CANONICAL_JSON_NON_FINITE_NUMBER"], 0],
     approval_unavailable: [["requires_approval", "blocked", "approval_unavailable"], 0],
     approval_declined: [["requires_approval", "blocked", "approval_missing_or_mismatched"], 0],
     approval_hook_error: [["requires_approval", "blocked", "approval_error"], 0],
@@ -257,13 +265,17 @@ export function assertGuardedToolRehearsal(report) {
     } else {
       assert.deepEqual(item.attempts.map(({ policy_decision, execution_status, reason }) =>
         [policy_decision, execution_status, reason]), attempts, `${id}: receipts`);
-      assert.ok(item.attempts.every(attempt => /^[0-9a-f]{64}$/.test(attempt.proposal_sha256)),
+      assert.ok(item.attempts.every(attempt => id === "invalid_arguments" ?
+        attempt.proposal_sha256 === null : /^[0-9a-f]{64}$/.test(attempt.proposal_sha256)),
         `${id}: proposal digest`);
     }
   }
   assert.equal(byId.changed_destination.approval_requests, 0);
   assert.equal(byId.mapper_mutated.approval_requests, 0);
   assert.equal(byId.mapper_mutated.claim_attempts, 0);
+  assert.equal(byId.invalid_arguments.approval_requests, 0);
+  assert.equal(byId.invalid_arguments.claim_attempts, 0);
+  assert.deepEqual(byId.invalid_arguments.attempts[0].host_hook_events, []);
   assert.equal(byId.host_allow.approval_requests, 0);
   assert.equal(byId.host_allow.claim_attempts, 0);
   assert.equal(byId.host_allow.claims_consumed, 0);
