@@ -22,6 +22,17 @@ test("checked-in browser examples come from the live host adapter rehearsal", as
   assert.equal(mapper.approval_requests, 0);
   assert.equal(mapper.claim_attempts, 0);
   assert.equal(mapper.callback_count, 0);
+  const invalid = report.cases.find(item => item.id === "invalid_arguments");
+  assert.deepEqual(invalid.attempts[0], {
+    policy_decision: "deny",
+    proposal_sha256: null,
+    execution_status: "blocked",
+    reason: "AML_CANONICAL_JSON_NON_FINITE_NUMBER",
+    host_hook_events: []
+  });
+  assert.equal(invalid.approval_requests, 0);
+  assert.equal(invalid.claim_attempts, 0);
+  assert.equal(invalid.callback_count, 0);
   assert.equal(hostAllow.attempts[0].policy_decision, "allow");
   assert.equal(hostAllow.attempts[0].execution_status, "dispatched");
   assert.equal(hostAllow.approval_requests, 0);
@@ -77,9 +88,10 @@ test("one selected case keeps the same observed receipt and callback count", asy
 test("case list prints each fixture ID and its ordered receipt statuses", async () => {
   const report = await buildGuardedToolRehearsal();
   const listed = listGuardedToolCases(report);
-  assert.equal(listed.split("\n").filter(Boolean).length, 15);
+  assert.equal(listed.split("\n").filter(Boolean).length, 16);
   assert.match(listed, /^host_allow\tdispatched$/m);
   assert.match(listed, /^mapper_mutated\tpre-plan error$/m);
+  assert.match(listed, /^invalid_arguments\tblocked$/m);
   assert.match(listed, /^approval_hook_error\tblocked$/m);
   assert.match(listed, /^approval_declined\tblocked$/m);
   assert.match(listed, /^approval_reused\tdispatched -> blocked$/m);
