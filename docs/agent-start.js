@@ -18,6 +18,12 @@ export function rehearsalCaseUrl(currentUrl, id, report) {
   return url.href;
 }
 
+export function rehearsalCasePayload(report, id) {
+  const item = report?.cases?.find(entry => entry.id === id);
+  if (!item) throw new RangeError("Unknown rehearsal case");
+  return { protocol: report.protocol, provenance: report.provenance, scope: report.scope, case: item };
+}
+
 export function nextRehearsalCaseIndex(key, index, count) {
   if (key === "Home") return 0;
   if (key === "End") return count - 1;
@@ -159,6 +165,14 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
         $("case-copy-status").textContent = "Case link copied.";
       } catch {
         $("case-copy-status").textContent = "Clipboard unavailable. Copy the address in your browser to share this case.";
+      }
+    });
+    $("copy-case-json").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(JSON.stringify(rehearsalCasePayload(report, selectedCase), null, 2) + "\n");
+        $("case-copy-status").textContent = "Project fixture JSON copied. Record your checkout commit when sharing.";
+      } catch {
+        $("case-copy-status").textContent = "Clipboard unavailable. Run the case command above to print its JSON.";
       }
     });
     show(initial, false);

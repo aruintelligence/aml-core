@@ -24,6 +24,8 @@ node pilots/action-boundary/guarded-tool-rehearsal.mjs --check
 
 The list prints one tab-separated ID and status sequence per fixture; a two-attempt case prints both statuses in order. These local fixture callbacks are not human approvals, provider calls, delivery evidence, or proof of production safety. An `unknown` receipt may follow a side effect; do not silently retry it.
 
+On the visual builder, **Copy fixture JSON** copies the selected case in the same shape as `--case`, including its project-authored provenance and scope. Include your checkout commit when sharing a reproduction; the copied fixture is not evidence of a real approval or delivery.
+
 The [declined approval case](https://aruintelligence.github.io/aml-core/agent-start.html?case=approval_declined#rehearsal) requests a fixture decision and receives a refusal. The receipt blocks before any claim or tool callback. A refusal is not a grant; a later attempt needs its own authenticated decision.
 
 ## Wrap your own function tool

@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { chooseRehearsalCase, nextRehearsalCaseIndex, rehearsalCaseUrl } from "../docs/agent-start.js";
+import { chooseRehearsalCase, nextRehearsalCaseIndex, rehearsalCasePayload, rehearsalCaseUrl } from "../docs/agent-start.js";
+import { selectGuardedToolCase } from "../pilots/action-boundary/guarded-tool-rehearsal.mjs";
 
 const report = JSON.parse(readFileSync(new URL("../docs/guarded-tool-rehearsal.json", import.meta.url), "utf8"));
 
@@ -49,4 +50,12 @@ test("keyboard case navigation wraps and keeps other keys available", () => {
   assert.equal(nextRehearsalCaseIndex("Home", 5, count), 0);
   assert.equal(nextRehearsalCaseIndex("End", 5, count), count - 1);
   assert.equal(nextRehearsalCaseIndex("Enter", 5, count), null);
+});
+
+test("copied fixture payload matches the CLI case with its provenance and scope", () => {
+  assert.deepEqual(rehearsalCasePayload(report, "unknown_then_replay"),
+    selectGuardedToolCase(report, "unknown_then_replay"));
+  assert.match(rehearsalCasePayload(report, "unknown_then_replay").scope,
+    /No message, human approval, provider call, or delivery evidence/);
+  assert.throws(() => rehearsalCasePayload(report, "unlisted"), RangeError);
 });
