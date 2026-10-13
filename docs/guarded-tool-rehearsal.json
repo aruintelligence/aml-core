@@ -84,6 +84,26 @@
       "fixture_state_changes": 0
     },
     {
+      "id": "mapper_mutated",
+      "title": "Host mapper mutates the proposal",
+      "change": "The host destination mapper changes its canonical argument snapshot. The adapter throws before producing a plan or dispatch receipt.",
+      "host_move": "Keep resourceFor synchronous and read-only. Treat mapper failures as host errors before planning; never present them as blocked dispatch receipts.",
+      "destination": "team@example.test",
+      "attempts": [
+        {
+          "adapter_error": "resourceFor must not mutate arguments",
+          "host_hook_events": [
+            "Host mapper changed its argument snapshot"
+          ]
+        }
+      ],
+      "approval_requests": 0,
+      "claim_attempts": 0,
+      "claims_consumed": 0,
+      "callback_count": 0,
+      "fixture_state_changes": 0
+    },
+    {
       "id": "approval_unavailable",
       "title": "No approval hook",
       "change": "The host supplies no way to request approval.",
