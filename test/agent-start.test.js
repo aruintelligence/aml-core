@@ -23,6 +23,7 @@ test("the page labels the report as a fixture and offers the exact recheck comma
   assert.match(page, /id="route-label"/);
   assert.match(page, /href="#case-title">Jump to selected result/);
   assert.match(page, /Every callback is a fixture/);
+  assert.match(page, /consumeApproval: \(input, context\) => hostConsumeGrantOnce/);
   assert.match(page, /An <code>unknown<\/code> receipt does not mean no side effect occurred/);
   assert.match(page, /A claim-hook error can leave a grant spent/);
 });
