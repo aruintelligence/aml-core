@@ -18,6 +18,14 @@ export function rehearsalCaseUrl(currentUrl, id, report) {
   return url.href;
 }
 
+export function nextRehearsalCaseIndex(key, index, count) {
+  if (key === "Home") return 0;
+  if (key === "End") return count - 1;
+  if (key === "ArrowRight" || key === "ArrowDown") return (index + 1) % count;
+  if (key === "ArrowLeft" || key === "ArrowUp") return (index + count - 1) % count;
+  return null;
+}
+
 if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
   const $ = id => document.getElementById(id);
   const params = new URLSearchParams(location.search);
@@ -103,6 +111,13 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
       state.textContent = `${String(index + 1).padStart(2, "0")} / ${statuses.join(" → ").toUpperCase()}`;
       button.append(state, document.createTextNode(item.title));
       button.addEventListener("click", () => show(item.id, true));
+      button.addEventListener("keydown", event => {
+        const next = nextRehearsalCaseIndex(event.key, index, report.cases.length);
+        if (next === null) return;
+        event.preventDefault();
+        buttons[next].focus();
+        show(report.cases[next].id, true);
+      });
       return button;
     });
     $("case-picker").replaceChildren(...buttons);
@@ -110,7 +125,11 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     function show(id, updateUrl) {
       const item = report.cases.find(entry => entry.id === id);
       selectedCase = id;
-      buttons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.case === id)));
+      buttons.forEach(button => {
+        const selected = button.dataset.case === id;
+        button.setAttribute("aria-pressed", String(selected));
+        button.tabIndex = selected ? 0 : -1;
+      });
       $("case-title").textContent = item.title;
       $("case-change").textContent = item.change;
       if (sharedCase || updateUrl) {
