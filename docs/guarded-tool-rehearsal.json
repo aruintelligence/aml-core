@@ -74,6 +74,29 @@
       "callback_count": 0
     },
     {
+      "id": "approval_declined",
+      "title": "Approval request declined",
+      "change": "The approval fixture refuses the exact proposal. No one-use claim or tool callback runs.",
+      "host_move": "Treat a refusal as final for this attempt. A later attempt needs a new authenticated approval decision; never turn a refusal into an implicit grant.",
+      "destination": "team@example.test",
+      "attempts": [
+        {
+          "policy_decision": "requires_approval",
+          "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched",
+          "host_hook_events": [
+            "Approval requested",
+            "Fixture approval declined"
+          ]
+        }
+      ],
+      "approval_requests": 1,
+      "claim_attempts": 0,
+      "claims_consumed": 0,
+      "callback_count": 0
+    },
+    {
       "id": "approval_mismatch",
       "title": "Approval for another proposal",
       "change": "The approval fixture returns a different proposal digest.",
