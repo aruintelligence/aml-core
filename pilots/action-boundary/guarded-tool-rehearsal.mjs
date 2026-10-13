@@ -28,6 +28,12 @@ const fixtures = [
     options: { to: "other@example.test" }
   },
   {
+    id: "mapper_mutated", title: "Host mapper mutates the proposal",
+    change: "The host destination mapper changes its canonical argument snapshot. The adapter throws before producing a plan or dispatch receipt.",
+    host_move: "Keep resourceFor synchronous and read-only. Treat mapper failures as host errors before planning; never present them as blocked dispatch receipts.",
+    options: { mapper: "mutate" }
+  },
+  {
     id: "approval_unavailable", title: "No approval hook",
     change: "The host supplies no way to request approval.",
     host_move: "Supply an authenticated approval callback for approval-required rules, bound to this exact proposal.",
@@ -133,7 +139,13 @@ async function runFixture({ id, title, change, host_move, options }) {
     };
   const guarded = createGuardedToolExecute({
     tool: "send_message", effect: "send", purpose: "Send a status update",
-    resourceFor: args => args.to, policy, requestApproval,
+    resourceFor: mapped => {
+      if (options.mapper === "mutate") {
+        mapped.to = "other@example.test";
+        hookEvents.push("Host mapper changed its argument snapshot");
+      }
+      return mapped.to;
+    }, policy, requestApproval,
     consumeApproval: async () => {
       claimAttempts++;
       const accepted = claimAttempts === 1;
@@ -166,6 +178,12 @@ async function runFixture({ id, title, change, host_move, options }) {
   const originalDestination = args.to;
   async function attempt() {
     hookEvents = [];
+    if (options.mapper === "mutate") {
+      await assert.rejects(guarded(args), { name: "TypeError",
+        message: "resourceFor must not mutate arguments" });
+      return { adapter_error: "resourceFor must not mutate arguments",
+        host_hook_events: [...hookEvents] };
+    }
     const { plan, receipt, result } = await guarded(args);
     return {
       policy_decision: plan.decision,
@@ -201,6 +219,7 @@ export function assertGuardedToolRehearsal(report) {
     host_allow: [["allow", "dispatched", "host_dispatch_returned"], 1],
     approved_route: [["requires_approval", "dispatched", "host_dispatch_returned"], 1],
     changed_destination: [["deny", "blocked", "no_exact_rule"], 0],
+    mapper_mutated: [0],
     approval_unavailable: [["requires_approval", "blocked", "approval_unavailable"], 0],
     approval_declined: [["requires_approval", "blocked", "approval_missing_or_mismatched"], 0],
     approval_hook_error: [["requires_approval", "blocked", "approval_error"], 0],
@@ -230,12 +249,21 @@ export function assertGuardedToolRehearsal(report) {
     const count = values.at(-1);
     const attempts = values.slice(0, -1);
     assert.equal(item.callback_count, count, `${id}: callback count`);
-    assert.deepEqual(item.attempts.map(({ policy_decision, execution_status, reason }) =>
-      [policy_decision, execution_status, reason]), attempts, `${id}: receipts`);
-    assert.ok(item.attempts.every(attempt => /^[0-9a-f]{64}$/.test(attempt.proposal_sha256)),
-      `${id}: proposal digest`);
+    if (id === "mapper_mutated") {
+      assert.deepEqual(item.attempts, [{
+        adapter_error: "resourceFor must not mutate arguments",
+        host_hook_events: ["Host mapper changed its argument snapshot"]
+      }]);
+    } else {
+      assert.deepEqual(item.attempts.map(({ policy_decision, execution_status, reason }) =>
+        [policy_decision, execution_status, reason]), attempts, `${id}: receipts`);
+      assert.ok(item.attempts.every(attempt => /^[0-9a-f]{64}$/.test(attempt.proposal_sha256)),
+        `${id}: proposal digest`);
+    }
   }
   assert.equal(byId.changed_destination.approval_requests, 0);
+  assert.equal(byId.mapper_mutated.approval_requests, 0);
+  assert.equal(byId.mapper_mutated.claim_attempts, 0);
   assert.equal(byId.host_allow.approval_requests, 0);
   assert.equal(byId.host_allow.claim_attempts, 0);
   assert.equal(byId.host_allow.claims_consumed, 0);
@@ -295,7 +323,7 @@ export function selectGuardedToolCase(report, id) {
 
 export function listGuardedToolCases(report) {
   return report.cases.map(item =>
-    `${item.id}\t${item.attempts.map(attempt => attempt.execution_status).join(" -> ")}`
+    `${item.id}\t${item.attempts.map(attempt => attempt.adapter_error ? "pre-plan error" : attempt.execution_status).join(" -> ")}`
   ).join("\n") + "\n";
 }
 
