@@ -10,6 +10,12 @@ import { createGuardedToolExecute } from "./guarded-tool.mjs";
 const reportUrl = new URL("../../docs/guarded-tool-rehearsal.json", import.meta.url);
 const fixtures = [
   {
+    id: "host_allow", title: "Exact route, host allow rule",
+    change: "The host's exact rule allows this local callback without an approval request or one-use claim.",
+    host_move: "Reserve approval-free rules for deliberate host policy. Bind the actual destination to the rule and apply host authentication, audit, and operation idempotency where needed.",
+    options: { rule: "allow" }
+  },
+  {
     id: "approved_route", title: "Exact route, simulated approval",
     change: "The host fixture approves the exact proposal and consumes its one-use claim.",
     host_move: "Replace the fixture hooks with an authenticated approval, a durable one-use claim, and the actual host service call.",
@@ -86,7 +92,7 @@ const fixtures = [
 async function runFixture({ id, title, change, host_move, options }) {
   const policy = {
     protocol: "aml-action-policy/1",
-    rules: [{ tool: "send_message", effect: "send", resource: "team@example.test", requires_approval: true }]
+    rules: [{ tool: "send_message", effect: "send", resource: "team@example.test", requires_approval: options.rule !== "allow" }]
   };
   let approvalRequests = 0;
   let claimAttempts = 0;
@@ -180,6 +186,7 @@ export async function buildGuardedToolRehearsal() {
 export function assertGuardedToolRehearsal(report) {
   const byId = Object.fromEntries(report.cases.map(item => [item.id, item]));
   const expected = {
+    host_allow: [["allow", "dispatched", "host_dispatch_returned"], 1],
     approved_route: [["requires_approval", "dispatched", "host_dispatch_returned"], 1],
     changed_destination: [["deny", "blocked", "no_exact_rule"], 0],
     approval_unavailable: [["requires_approval", "blocked", "approval_unavailable"], 0],
@@ -216,6 +223,11 @@ export function assertGuardedToolRehearsal(report) {
       `${id}: proposal digest`);
   }
   assert.equal(byId.changed_destination.approval_requests, 0);
+  assert.equal(byId.host_allow.approval_requests, 0);
+  assert.equal(byId.host_allow.claim_attempts, 0);
+  assert.equal(byId.host_allow.claims_consumed, 0);
+  assert.deepEqual(byId.host_allow.attempts[0].host_hook_events,
+    ["Fixture callback entered", "Fixture callback returned"]);
   assert.equal(byId.approval_declined.approval_requests, 1);
   assert.equal(byId.approval_declined.claim_attempts, 0);
   assert.deepEqual(byId.approval_declined.attempts[0].host_hook_events,

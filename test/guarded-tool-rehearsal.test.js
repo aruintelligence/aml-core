@@ -13,6 +13,12 @@ test("checked-in browser examples come from the live host adapter rehearsal", as
       assert.equal(item.callback_count, 0, item.id);
     }
   }
+  const hostAllow = report.cases.find(item => item.id === "host_allow");
+  assert.equal(hostAllow.attempts[0].policy_decision, "allow");
+  assert.equal(hostAllow.attempts[0].execution_status, "dispatched");
+  assert.equal(hostAllow.approval_requests, 0);
+  assert.equal(hostAllow.claim_attempts, 0);
+  assert.equal(hostAllow.callback_count, 1);
   const reused = report.cases.find(item => item.id === "approval_reused");
   assert.equal(reused.attempts.length, 2);
   assert.equal(reused.claim_attempts, 2);
@@ -56,7 +62,8 @@ test("one selected case keeps the same observed receipt and callback count", asy
 test("case list prints each fixture ID and its ordered receipt statuses", async () => {
   const report = await buildGuardedToolRehearsal();
   const listed = listGuardedToolCases(report);
-  assert.equal(listed.split("\n").filter(Boolean).length, 12);
+  assert.equal(listed.split("\n").filter(Boolean).length, 13);
+  assert.match(listed, /^host_allow\tdispatched$/m);
   assert.match(listed, /^approval_declined\tblocked$/m);
   assert.match(listed, /^approval_reused\tdispatched -> blocked$/m);
   assert.match(listed, /^claim_hook_unknown\tblocked$/m);
