@@ -15,6 +15,14 @@ function selectButton(selector, key, value) {
     button.setAttribute("aria-pressed", String(button.dataset[key] === value)));
 }
 
+function showTrace(result) {
+  $("action-trace").dataset.result = result;
+  $("trace-decision").textContent = result === "blocked" ? "Blocked" :
+    result === "approval" ? "Needs approval" : result === "pending" ? "Calculating" : "Unavailable";
+  $("trace-dispatch").textContent = result === "blocked" ? "Stopped before tool" :
+    result === "approval" ? "Awaits real host" : "Not connected";
+}
+
 async function showAction() {
   const turn = ++actionGeneration;
   $("action-recipient").textContent = recipient === "team" ? "team@example.test" : "outsider@example.test";
@@ -22,6 +30,7 @@ async function showAction() {
   selectButton("[data-action-destination]", "actionDestination", recipient);
   $("action-verdict").classList.remove("allow", "approval");
   $("action-verdict").querySelector("strong").textContent = "CALCULATING";
+  showTrace("pending");
   $("hero-digest").textContent = "Calculating canonical proposal…";
   $("hero-vector").textContent = "Project vector self-check pending.";
   $("action-count").textContent = "No tool callback is connected to this page.";
@@ -37,6 +46,7 @@ async function showAction() {
     $("action-verdict").classList.toggle("approval", matches && approval);
     $("action-verdict").querySelector("strong").textContent = !matches ? "RECHECK" :
       approval ? "APPROVAL REQUIRED" : result.decision === "deny" ? "BLOCKED" : "RECHECK";
+    showTrace(!matches ? "unavailable" : approval ? "approval" : result.decision === "deny" ? "blocked" : "unavailable");
     $("action-count").textContent = !matches ? "Project vector mismatch. Inspect the source before relying on this preview." :
       approval ? "The route matches. A real host must approve the exact proposal before dispatch." :
       "No exact rule matches this destination; zero tool callbacks.";
@@ -49,6 +59,7 @@ async function showAction() {
   } catch {
     if (turn !== actionGeneration) return;
     $("action-verdict").querySelector("strong").textContent = "UNAVAILABLE";
+    showTrace("unavailable");
     $("action-count").textContent = "The browser could not calculate the action plan here.";
     $("hero-digest").textContent = "Unavailable";
     $("hero-vector").textContent = "No project vector self-check completed.";
