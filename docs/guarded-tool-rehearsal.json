@@ -219,6 +219,31 @@
       "callback_count": 0
     },
     {
+      "id": "claim_hook_unknown",
+      "title": "Claim hook throws after consumption",
+      "change": "The fixture spends the one-use claim, then its claim hook throws before returning. Dispatch blocks without entering the tool callback.",
+      "host_move": "Reconcile the host grant store after a claim error. A blocked receipt does not prove that the one-use grant is still available.",
+      "destination": "team@example.test",
+      "attempts": [
+        {
+          "policy_decision": "requires_approval",
+          "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+          "execution_status": "blocked",
+          "reason": "approval_consume_error",
+          "host_hook_events": [
+            "Approval requested",
+            "Matching digest returned",
+            "One-use claim consumed",
+            "Claim hook threw after consumption"
+          ]
+        }
+      ],
+      "approval_requests": 1,
+      "claim_attempts": 1,
+      "claims_consumed": 1,
+      "callback_count": 0
+    },
+    {
       "id": "callback_unknown",
       "title": "Callback throws after entry",
       "change": "The simulated callback throws, so the wrapper cannot assert the side effect did not occur.",
