@@ -4,11 +4,11 @@ const $ = id => document.getElementById(id);
 const input = $("record-input");
 const status = $("input-status");
 let originalExample = null;
-let exampleChanged = false;
+let exampleMutation = null;
 
 function leaveExample() {
   originalExample = null;
-  exampleChanged = false;
+  exampleMutation = null;
   $("sample-challenge").hidden = true;
 }
 
@@ -53,14 +53,43 @@ function render(result) {
     gates.append(row);
   }
   const challenge = $("sample-challenge");
-  challenge.hidden = !originalExample || (!result.consistent && !exampleChanged);
-  challenge.dataset.stage = exampleChanged ? "changed" : "captured";
-  $("challenge-stage").textContent = exampleChanged ? "02 / CHANGED SAVED CLAIM" : "01 / CAPTURED RECORD";
-  $("challenge-title").textContent = exampleChanged ? "The source stayed. The claim broke." : "Now challenge the claim.";
-  $("challenge-button").textContent = exampleChanged ? "Restore the captured example ↺" : "Change one saved claim ↗";
-  $("challenge-copy").textContent = exampleChanged ?
-    "SHA-256 and compiler replay still pass. One saved gate outcome now disagrees. Restore the captured claim to check it again." :
-    "Flip the withheld gate’s saved browser outcome. The source fingerprint will still match while the gate claim fails.";
+  challenge.hidden = !originalExample || (!result.consistent && !exampleMutation);
+  challenge.dataset.stage = exampleMutation ? "changed" : "captured";
+  const content = exampleMutation === "gate" ? {
+    stage: "02A / SAVED CLAIM CHANGED",
+    title: "The claim changed. The source did not.",
+    copy: "One saved browser outcome is inverted. Compare which checks catch it.",
+    field: "gates[0].browser.effective_rendered",
+    change: `${JSON.parse(originalExample).gates[0].browser.effective_rendered} → ${JSON.parse(input.value).gates[0].browser.effective_rendered}`,
+    note: "Only this saved outcome changed; source bytes and declared inputs stayed intact."
+  } : exampleMutation === "source" ? {
+    stage: "02B / SOURCE BYTE ADDED",
+    title: "The bytes changed. The rule did not.",
+    copy: "One trailing line feed was added to the source. Compare the new fingerprint with the unchanged saved claim.",
+    field: "source · trailing line feed (LF)",
+    change: "original source → original source + 1 LF byte",
+    note: "The saved SHA-256 was left as captured; the current compiler still sees the same decisions."
+  } : {
+    stage: "01 / CAPTURED RECORD", title: "Choose one change.",
+    copy: "Flip a saved browser outcome or add one source byte. Each starts from the same captured record."
+  };
+  $("challenge-stage").textContent = content.stage;
+  $("challenge-title").textContent = content.title;
+  $("challenge-copy").textContent = content.copy;
+  $("challenge-gate").setAttribute("aria-pressed", String(exampleMutation === "gate"));
+  $("challenge-source").setAttribute("aria-pressed", String(exampleMutation === "source"));
+  $("challenge-restore").hidden = !exampleMutation;
+  $("challenge-delta").hidden = !exampleMutation;
+  if (exampleMutation) {
+    $("challenge-field").textContent = content.field;
+    $("challenge-change").textContent = content.change;
+    $("challenge-note").textContent = content.note;
+  }
+  for (const item of result.checks) {
+    const signal = $(`signal-${item.id}`);
+    signal.dataset.state = item.pass ? "pass" : "fail";
+    signal.textContent = `${item.pass ? "PASS" : "FAIL"} / ${item.id === "hash" ? "SOURCE SHA" : item.id === "compiler" ? "COMPILER" : "GATE CLAIMS"}`;
+  }
 }
 
 async function loadFile(file) {
@@ -96,15 +125,16 @@ input.addEventListener("input", () => {
 async function recheck() {
   const raw = input.value;
   $("check").disabled = true;
-  $("challenge-button").disabled = true;
+  for (const id of ["challenge-gate", "challenge-source", "challenge-restore"]) $(id).disabled = true;
   status.textContent = "Rechecking this local record…";
   try {
     const result = await checkLocalRun(raw);
     if (input.value !== raw) return;
     render(result);
     status.textContent = originalExample ?
-      exampleChanged ? "The example's saved outcome changed. The source fingerprint still matches." :
-        "Captured project example rechecked in this browser. No record was uploaded." :
+      exampleMutation === "gate" ? "One saved browser outcome changed; the source bytes stayed intact." :
+        exampleMutation === "source" ? "One LF byte added to the source; the saved fingerprint was left intact." :
+          "Captured project example rechecked in this browser. No record was uploaded." :
       "Local recheck complete. The file was not uploaded.";
   } catch (error) {
     if (input.value !== raw) return;
@@ -112,7 +142,7 @@ async function recheck() {
     status.textContent = error.message;
   } finally {
     $("check").disabled = false;
-    $("challenge-button").disabled = false;
+    for (const id of ["challenge-gate", "challenge-source", "challenge-restore"]) $(id).disabled = false;
   }
 }
 
@@ -135,7 +165,7 @@ async function loadExample(focusChallenge = false) {
     originalExample = formatted;
     clearResult();
     await recheck();
-    if (focusChallenge) {
+    if (focusChallenge && !$("sample-challenge").hidden) {
       $("sample-challenge").scrollIntoView({ block: "center" });
       $("sample-challenge").focus({ preventScroll: true });
     }
@@ -150,12 +180,16 @@ $("load-example").addEventListener("click", () => loadExample(true));
 $("load-example-hero").addEventListener("click", () => loadExample(true));
 if (new URLSearchParams(window.location.search).get("example") === "challenge") loadExample(true);
 
-$("challenge-button").addEventListener("click", async () => {
+async function changeExample(kind) {
   if (!originalExample) return;
-  exampleChanged = !exampleChanged;
+  exampleMutation = kind;
   const record = JSON.parse(originalExample);
-  if (exampleChanged) record.gates[0].browser.effective_rendered = !record.gates[0].browser.effective_rendered;
+  if (kind === "gate") record.gates[0].browser.effective_rendered = !record.gates[0].browser.effective_rendered;
+  if (kind === "source") record.source += "\n";
   input.value = JSON.stringify(record, null, 2);
   await recheck();
   $("sample-challenge").scrollIntoView({ block: "center" });
-});
+}
+$("challenge-gate").addEventListener("click", () => changeExample("gate"));
+$("challenge-source").addEventListener("click", () => changeExample("source"));
+$("challenge-restore").addEventListener("click", () => changeExample(null));

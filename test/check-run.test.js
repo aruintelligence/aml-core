@@ -31,11 +31,16 @@ const record = await createLocalRunRecord({
   generatedAt: "2026-10-12T20:01:00.000Z"
 });
 
-test("the published browser example passes, and one altered saved outcome fails", async () => {
+test("the published example distinguishes one source byte from one altered saved outcome", async () => {
   const example = JSON.parse(readFileSync(new URL("../docs/example-local-run.json", import.meta.url), "utf8"));
   const original = await checkLocalRun(JSON.stringify(example));
   assert.equal(original.consistent, true);
   assert.deepEqual(original.gates.map(gate => gate.recorded), ["withheld", "visible"]);
+  const sourceChanged = await checkLocalRun(JSON.stringify({ ...example, source: example.source + "\n" }));
+  assert.deepEqual(sourceChanged.checks.map(item => item.pass), [false, true, true]);
+  assert.deepEqual(compileSourceBrowser(example.source + "\n").renderDecisions,
+    compileSourceBrowser(example.source).renderDecisions);
+  assert.equal(new TextEncoder().encode(example.source + "\n").length - new TextEncoder().encode(example.source).length, 1);
   example.gates[0].browser.effective_rendered = true;
   const changed = await checkLocalRun(JSON.stringify(example));
   assert.deepEqual(changed.checks.map(item => item.pass), [true, true, false]);
