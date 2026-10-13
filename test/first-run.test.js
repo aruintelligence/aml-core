@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { webcrypto } from "node:crypto";
 import test from "node:test";
-import { buildNextStep, firstRunAction, firstRunPolicy, firstRunProposal, firstRunScenarioUrl, renderDecision } from "../docs/first-run.js";
+import { buildNextStep, firstRunAction, firstRunContinuation, firstRunPolicy, firstRunProposal, firstRunScenarioUrl, renderDecision } from "../docs/first-run.js";
 
 const vectors = JSON.parse(readFileSync(new URL("../pilots/action-boundary/vectors.json", import.meta.url), "utf8"));
 
@@ -46,4 +46,26 @@ test("scenario state preserves the visitor's scroll target and copied links open
   assert.equal(firstRunScenarioUrl(`${landing}#next`, "render", 5, 6),
     "https://example.test/first-run.html?mode=render&attention=5&restoration=6#next");
   assert.throws(() => firstRunScenarioUrl(landing, "render", 12, 1), RangeError);
+});
+
+test("first contact distinguishes an exact action match from approval and dispatch", async () => {
+  const denied = firstRunContinuation("action", await firstRunAction("outside", webcrypto.subtle), 5, 1, "outside");
+  const held = firstRunContinuation("action", await firstRunAction("team", webcrypto.subtle), 5, 1, "team");
+  assert.match(denied.steps[0].value, /No matching destination/);
+  assert.equal(denied.steps[1].value, "Not reached");
+  assert.equal(denied.steps[2].value, "0 invocations");
+  assert.equal(denied.probe.recipient, "team");
+  assert.equal(held.steps[1].value, "Required; not issued");
+  assert.equal(held.steps[2].value, "0 invocations");
+  assert.equal(held.probe.recipient, "outside");
+  assert.equal(firstRunContinuation("action", { decision: "requires_approval", project_vector_matches: false }, 5, 1, "team").probe, null);
+});
+
+test("first contact only describes an observed browser gate and offers the opposing input", () => {
+  const suppressed = firstRunContinuation("render", { ...renderDecision(5, 1), gate_event: { render_allowed: false } }, 5, 1);
+  assert.equal(suppressed.steps[1].value, "Hidden in this page");
+  assert.deepEqual([suppressed.probe.attention, suppressed.probe.restoration], [5, 5]);
+  const allowed = firstRunContinuation("render", { ...renderDecision(0, 0), gate_event: { render_allowed: true } }, 0, 0);
+  assert.deepEqual([allowed.probe.attention, allowed.probe.restoration], [1, 0]);
+  assert.equal(firstRunContinuation("render", renderDecision(5, 5), 5, 5).probe, null);
 });

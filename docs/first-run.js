@@ -97,12 +97,64 @@ export function firstRunScenarioUrl(currentUrl, mode, attention, restoration, re
   return url.href;
 }
 
+// This describes the observed local path after the policy calculation. A
+// matching action is still only a plan; this page never grants approval.
+export function firstRunContinuation(mode, result, attention = 5, restoration = 1, recipient = "outside") {
+  if (mode === "action") {
+    if (recipient !== "team" && recipient !== "outside") throw new RangeError("Unknown first-run recipient");
+    const shared = [
+      { name: "Host approval", value: "Not issued here", tone: "idle" },
+      { name: "Tool callback", value: "0 invocations", tone: "idle" }
+    ];
+    if (!result.project_vector_matches) return {
+      title: "Pause on the mismatch.",
+      steps: [{ name: "Project vector", value: "Disagreement to investigate", tone: "stop" }, ...shared],
+      probe: null
+    };
+    const matched = result.decision === "requires_approval";
+    return {
+      title: matched ? "The host still has to approve." : "This action stops at policy.",
+      steps: [
+        { name: "Exact host rule", value: matched ? "Matched this destination" : "No matching destination", tone: matched ? "go" : "stop" },
+        { name: "Host approval", value: matched ? "Required; not issued" : "Not reached", tone: matched ? "hold" : "idle" },
+        shared[1]
+      ],
+      probe: { label: matched ? "Try the outside route →" : "Try the policy route →",
+        recipient: matched ? "outside" : "team" }
+    };
+  }
+  if (mode !== "render") throw new RangeError("Unknown first-run mode");
+  renderDecision(attention, restoration);
+  const decided = result.decision === "allow" || result.decision === "suppress";
+  if (!decided || !result.gate_event) return {
+    title: "The browser gate has no usable result.",
+    steps: [
+      { name: "Gate event", value: "No usable decision", tone: "hold" },
+      { name: "Element", value: "Withheld while unavailable", tone: "hold" },
+      { name: "Evidence", value: "No successful event", tone: "idle" }
+    ], probe: null
+  };
+  const allowed = result.decision === "allow";
+  return {
+    title: allowed ? "The element reaches this screen." : "The element stays off this screen.",
+    steps: [
+      { name: "Gate event", value: `${result.decision} · enforce / closed`, tone: allowed ? "go" : "stop" },
+      { name: "Element", value: allowed ? "Visible in this page" : "Hidden in this page", tone: allowed ? "go" : "stop" },
+      { name: "Evidence", value: "Local browser event only", tone: "idle" }
+    ],
+    probe: allowed ? { label: "Make the gate withhold it →",
+      attention: attention === 0 ? 1 : attention, restoration: attention === 0 ? 0 : attention - 1 } :
+      { label: "Meet the threshold →", attention, restoration: attention }
+  };
+}
+
 if (typeof document !== "undefined" && document.getElementById("experience")) {
   const $ = id => document.getElementById(id);
   const params = new URLSearchParams(location.search);
   let mode = params.get("mode") === "render" ? "render" : "action";
   let recipient = params.get("recipient") === "team" ? "team" : "outside";
   let bridgeState = "loading";
+  let probe = null;
   const initial = (name, fallback) => {
     const raw = params.get(name);
     if (raw === null || !/^(10|[0-9])$/.test(raw)) return fallback;
@@ -246,6 +298,23 @@ if (typeof document !== "undefined" && document.getElementById("experience")) {
     $("build-link").href = next.href;
     $("build-link").textContent = next.label;
     $("build-hint").textContent = next.hint;
+    const continuation = firstRunContinuation(mode, result, attention, restoration, recipient);
+    $("continuation-title").textContent = continuation.title;
+    $("continuation-steps").replaceChildren(...continuation.steps.map(step => {
+      const item = document.createElement("li");
+      item.dataset.tone = step.tone;
+      const name = document.createElement("span");
+      name.textContent = step.name;
+      const value = document.createElement("strong");
+      value.textContent = step.value;
+      item.append(name, value);
+      return item;
+    }));
+    probe = continuation.probe;
+    $("next-probe").hidden = !probe;
+    if (probe) $("next-probe").textContent = probe.label;
+    $("continue-link").href = mismatch ? $("reproduce-link").href : next.href;
+    $("continue-link").textContent = mismatch ? "Investigate the vector ↗" : next.label;
     const source = document.querySelector(".links a:nth-child(2)");
     source.href = action ? "https://github.com/aruintelligence/aml-core/blob/main/pilots/action-boundary/README.md" :
       "https://github.com/aruintelligence/aml-core/blob/main/ETHICAL_RENDERING.md";
@@ -255,6 +324,15 @@ if (typeof document !== "undefined" && document.getElementById("experience")) {
   document.querySelectorAll("[data-mode]").forEach(button => button.addEventListener("click", () => { mode = button.dataset.mode; update(); }));
   document.querySelectorAll("[data-recipient]").forEach(button => button.addEventListener("click", () => { recipient = button.dataset.recipient; update(); }));
   for (const id of ["attention", "restoration"]) $(id).addEventListener("input", update);
+  $("next-probe").addEventListener("click", () => {
+    if (!probe) return;
+    if (mode === "action") recipient = probe.recipient;
+    else {
+      $("attention").value = probe.attention;
+      $("restoration").value = probe.restoration;
+    }
+    update();
+  });
   $("copy-link").addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(firstRunScenarioUrl(location.href, mode,
