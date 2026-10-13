@@ -20,7 +20,17 @@ export function createGuardedToolExecute({
   return async function guardedToolExecute(argumentsValue, context) {
     // Capture input once before asking a host mapper for the destination. A
     // getter or mapper must not shift the arguments between policy and dispatch.
-    const argumentBytes = canonicalJSONStringify(argumentsValue);
+    let argumentBytes;
+    try {
+      argumentBytes = canonicalJSONStringify(argumentsValue);
+    } catch (error) {
+      if (!String(error?.message).startsWith("AML_CANONICAL_JSON_")) throw error;
+      const plan = { protocol: "aml-action-plan/1", proposal_sha256: null,
+        decision: "deny", reason: error.message };
+      return { protocol: "aml-guarded-tool-result/1", plan,
+        receipt: { protocol: "aml-action-dispatch/1", proposal_sha256: null,
+          policy_decision: "deny", execution_status: "blocked", reason: error.message } };
+    }
     const mappedArguments = JSON.parse(argumentBytes);
     const resource = resourceFor(mappedArguments, context);
     if (typeof resource !== "string") throw new TypeError("resourceFor must return a string");

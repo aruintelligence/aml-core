@@ -37,3 +37,18 @@ test("a mutating destination mapper is rejected before any callback", async () =
     /resourceFor must not mutate arguments/);
   assert.equal(callbackCount, 0);
 });
+
+test("malformed canonical arguments retain a blocked receipt", async () => {
+  let callbackCount = 0;
+  const guarded = createGuardedToolExecute({
+    tool: "send_message", effect: "send", purpose: "Send a team update",
+    resourceFor: args => args.to, policy,
+    execute: async () => { callbackCount++; }
+  });
+  const { plan, receipt } = await guarded({ to: "team@example.test", body: "Build passed.", bad: Infinity });
+  assert.equal(plan.decision, "deny");
+  assert.equal(plan.proposal_sha256, null);
+  assert.equal(receipt.execution_status, "blocked");
+  assert.equal(receipt.reason, "AML_CANONICAL_JSON_NON_FINITE_NUMBER");
+  assert.equal(callbackCount, 0);
+});
