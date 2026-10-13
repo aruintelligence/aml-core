@@ -9,6 +9,7 @@ test("first-contact route opens the matching host case and an explicit case stay
   assert.equal(chooseRehearsalCase(report, null, "outside"), "changed_destination");
   assert.equal(chooseRehearsalCase(report, null, "team"), "approved_route");
   assert.equal(chooseRehearsalCase(report, "approval_reused", "team"), "approval_reused");
+  assert.equal(chooseRehearsalCase(report, "claim_hook_unknown", "team"), "claim_hook_unknown");
   assert.equal(chooseRehearsalCase(report, "unlisted", "outside"), "changed_destination");
   const url = rehearsalCaseUrl("https://example.test/agent-start.html?recipient=team#steps", "policy_revoked", report);
   assert.equal(url, "https://example.test/agent-start.html?recipient=team&case=policy_revoked#rehearsal");
@@ -21,4 +22,5 @@ test("the page labels the report as a fixture and offers the exact recheck comma
   assert.match(page, /id="case-picker"/);
   assert.match(page, /Every callback is a fixture/);
   assert.match(page, /An <code>unknown<\/code> receipt does not mean no side effect occurred/);
+  assert.match(page, /A claim-hook error can leave a grant spent/);
 });
