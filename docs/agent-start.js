@@ -85,7 +85,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     }
   });
 
-  fetch("guarded-tool-rehearsal.json?v=host-rehearsal-3").then(response => {
+  fetch("guarded-tool-rehearsal.json?v=host-rehearsal-4").then(response => {
     if (!response.ok) throw new Error("Report request failed");
     return response.json();
   }).then(report => {
@@ -101,8 +101,10 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
       return button;
     });
     $("case-picker").replaceChildren(...buttons);
+    let selectedCase = initial;
     function show(id, updateUrl) {
       const item = report.cases.find(entry => entry.id === id);
+      selectedCase = id;
       buttons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.case === id)));
       $("case-title").textContent = item.title;
       $("case-change").textContent = item.change;
@@ -118,6 +120,14 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
       $("case-copy-status").textContent = "";
       if (updateUrl) history.replaceState(null, "", rehearsalCaseUrl(location.href, id, report));
     }
+    $("copy-case-link").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(rehearsalCaseUrl(location.href, selectedCase, report));
+        $("case-copy-status").textContent = "Case link copied.";
+      } catch {
+        $("case-copy-status").textContent = "Clipboard unavailable. Copy the address in your browser to share this case.";
+      }
+    });
     show(initial, false);
   }).catch(() => {
     $("case-title").textContent = "Report unavailable here.";
