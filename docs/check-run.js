@@ -6,7 +6,24 @@ const status = $("input-status");
 let originalExample = null;
 let exampleMutation = null;
 
+function exampleUrl(kind) {
+  const url = new URL("./check-run.html", window.location.href);
+  url.searchParams.set("example", "challenge");
+  if (kind === "gate" || kind === "source") url.searchParams.set("probe", kind);
+  return url;
+}
+
+function showExampleUrl(kind) {
+  window.history.replaceState(null, "", exampleUrl(kind));
+}
+
 function leaveExample() {
+  if (originalExample) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("example");
+    url.searchParams.delete("probe");
+    window.history.replaceState(null, "", url);
+  }
   originalExample = null;
   exampleMutation = null;
   $("sample-challenge").hidden = true;
@@ -78,6 +95,7 @@ function render(result) {
   $("challenge-copy").textContent = content.copy;
   $("challenge-gate").setAttribute("aria-pressed", String(exampleMutation === "gate"));
   $("challenge-source").setAttribute("aria-pressed", String(exampleMutation === "source"));
+  $("challenge-copy-link").textContent = "Copy this example link ↗";
   $("challenge-restore").hidden = !exampleMutation;
   $("challenge-delta").hidden = !exampleMutation;
   if (exampleMutation) {
@@ -147,7 +165,7 @@ async function recheck() {
 }
 
 $("check").addEventListener("click", recheck);
-async function loadExample(focusChallenge = false) {
+async function loadExample(focusChallenge = false, initialProbe = null) {
   const before = input.value;
   $("load-example").disabled = true;
   $("load-example-hero").disabled = true;
@@ -164,7 +182,11 @@ async function loadExample(focusChallenge = false) {
     input.value = formatted;
     originalExample = formatted;
     clearResult();
-    await recheck();
+    if (initialProbe) await changeExample(initialProbe, false);
+    else {
+      await recheck();
+      showExampleUrl(null);
+    }
     if (focusChallenge && !$("sample-challenge").hidden) {
       $("sample-challenge").scrollIntoView({ block: "center" });
       $("sample-challenge").focus({ preventScroll: true });
@@ -178,9 +200,13 @@ async function loadExample(focusChallenge = false) {
 }
 $("load-example").addEventListener("click", () => loadExample(true));
 $("load-example-hero").addEventListener("click", () => loadExample(true));
-if (new URLSearchParams(window.location.search).get("example") === "challenge") loadExample(true);
+const incoming = new URLSearchParams(window.location.search);
+if (incoming.get("example") === "challenge") {
+  const probe = incoming.get("probe");
+  loadExample(true, probe === "gate" || probe === "source" ? probe : null);
+}
 
-async function changeExample(kind) {
+async function changeExample(kind, focusChallenge = true) {
   if (!originalExample) return;
   exampleMutation = kind;
   const record = JSON.parse(originalExample);
@@ -188,8 +214,19 @@ async function changeExample(kind) {
   if (kind === "source") record.source += "\n";
   input.value = JSON.stringify(record, null, 2);
   await recheck();
-  $("sample-challenge").scrollIntoView({ block: "center" });
+  showExampleUrl(kind);
+  if (focusChallenge) $("sample-challenge").scrollIntoView({ block: "center" });
 }
 $("challenge-gate").addEventListener("click", () => changeExample("gate"));
 $("challenge-source").addEventListener("click", () => changeExample("source"));
 $("challenge-restore").addEventListener("click", () => changeExample(null));
+$("challenge-copy-link").addEventListener("click", async () => {
+  if (!originalExample) return;
+  const button = $("challenge-copy-link");
+  try {
+    await navigator.clipboard.writeText(exampleUrl(exampleMutation).href);
+    button.textContent = "Example link copied ✓";
+  } catch {
+    button.textContent = "Copy unavailable · use page address";
+  }
+});
