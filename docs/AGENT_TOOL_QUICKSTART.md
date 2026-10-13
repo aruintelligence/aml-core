@@ -14,6 +14,16 @@ node pilots/action-boundary/guarded-tool-demo.mjs
 
 The first fixture has an exact policy rule and a **simulated** approval; its callback returns a `would_send_to` object. The second changes the destination and is blocked before the callback. There is no network request, message delivery, or human authentication.
 
+For the nine-case host rehearsal, list the case IDs and ordered receipt statuses, then inspect one case:
+
+```bash
+node pilots/action-boundary/guarded-tool-rehearsal.mjs --list
+node pilots/action-boundary/guarded-tool-rehearsal.mjs --case claim_revoked
+node pilots/action-boundary/guarded-tool-rehearsal.mjs --check
+```
+
+The list prints one tab-separated ID and status sequence per fixture; a two-attempt case prints both statuses in order. These local fixture callbacks are not human approvals, provider calls, delivery evidence, or proof of production safety. An `unknown` receipt may follow a side effect; do not silently retry it.
+
 ## Wrap your own function tool
 
 This is the host-side shape. The host must implement `showAndAuthorizeExactProposal` and `sendThroughMyService` with its own authentication and authorization. Do not use the demo's automatic approval in a real integration.

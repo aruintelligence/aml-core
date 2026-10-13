@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { assertGuardedToolRehearsal, buildGuardedToolRehearsal, selectGuardedToolCase } from "../pilots/action-boundary/guarded-tool-rehearsal.mjs";
+import { assertGuardedToolRehearsal, buildGuardedToolRehearsal, listGuardedToolCases, parseGuardedToolArgs, selectGuardedToolCase } from "../pilots/action-boundary/guarded-tool-rehearsal.mjs";
 
 test("checked-in browser examples come from the live host adapter rehearsal", async () => {
   const report = await buildGuardedToolRehearsal();
@@ -33,4 +33,27 @@ test("one selected case keeps the same observed receipt and callback count", asy
   assert.deepEqual(selected.case.attempts.map(attempt => attempt.execution_status), ["dispatched", "blocked"]);
   assert.equal(selected.case.callback_count, 1);
   assert.throws(() => selectGuardedToolCase(report, "unlisted"), RangeError);
+});
+
+test("case list prints each fixture ID and its ordered receipt statuses", async () => {
+  const report = await buildGuardedToolRehearsal();
+  const listed = listGuardedToolCases(report);
+  assert.equal(listed.split("\n").filter(Boolean).length, 9);
+  assert.match(listed, /^approval_reused\tdispatched -> blocked$/m);
+  assert.match(listed, /^callback_unknown\tunknown$/m);
+});
+
+test("CLI rejects extra, missing, unknown, and conflicting arguments", () => {
+  assert.deepEqual(parseGuardedToolArgs([]), { option: undefined, caseId: undefined });
+  assert.deepEqual(parseGuardedToolArgs(["--list"]), { option: "--list", caseId: undefined });
+  assert.deepEqual(parseGuardedToolArgs(["--case", "claim_revoked"]),
+    { option: "--case", caseId: "claim_revoked" });
+  for (const args of [
+    ["--check", "extra"], ["--write", "extra"], ["--list", "extra"],
+    ["--case"], ["--case", "unlisted"], ["--case", "approved_route", "extra"],
+    ["--list", "--write"], ["--unknown"]
+  ]) {
+    assert.throws(() => parseGuardedToolArgs(args),
+      /Use no argument.*--list.*--case/, args.join(" "));
+  }
 });
