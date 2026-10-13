@@ -90,6 +90,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     return response.json();
   }).then(report => {
     const initial = chooseRehearsalCase(report, params.get("case"), recipient);
+    const sharedCase = report.cases.some(item => item.id === params.get("case"));
     $("case-count-label").textContent = `HOST REHEARSAL / ${report.cases.length} CONTROLLED CASES`;
     const buttons = report.cases.map((item, index) => {
       const button = document.createElement("button");
@@ -109,6 +110,13 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
       buttons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.case === id)));
       $("case-title").textContent = item.title;
       $("case-change").textContent = item.change;
+      if (sharedCase || updateUrl) {
+        $("route-label").textContent = "SELECTED HOST REHEARSAL";
+        $("selected-route").textContent = item.title;
+        $("selected-result").textContent = item.change;
+        $("case-link").textContent = "Jump to selected result ↓";
+        $("case-link").href = "#case-title";
+      }
       $("case-host-move").textContent = item.host_move;
       $("case-attempts").replaceChildren(...item.attempts.map(attemptCard));
       $("case-metrics").replaceChildren(
