@@ -34,10 +34,13 @@ test("checked-in browser examples come from the live host adapter rehearsal", as
   const uncertain = report.cases.find(item => item.id === "callback_unknown");
   assert.equal(uncertain.attempts[0].execution_status, "unknown");
   assert.equal(uncertain.callback_count, 1);
+  assert.equal(uncertain.fixture_state_changes, 1);
+  assert.ok(uncertain.attempts[0].host_hook_events.includes("In-memory fixture marker written"));
   const retried = report.cases.find(item => item.id === "unknown_then_replay");
   assert.deepEqual(retried.attempts.map(attempt => attempt.execution_status), ["unknown", "blocked"]);
   assert.equal(retried.claims_consumed, 1);
   assert.equal(retried.callback_count, 1);
+  assert.equal(retried.fixture_state_changes, 1);
   assert.ok(!retried.attempts[1].host_hook_events.includes("Fixture callback entered"));
 });
 

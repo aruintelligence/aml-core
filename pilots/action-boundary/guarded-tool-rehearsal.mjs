@@ -71,13 +71,13 @@ const fixtures = [
   },
   {
     id: "callback_unknown", title: "Callback throws after entry",
-    change: "The simulated callback throws, so the wrapper cannot assert the side effect did not occur.",
+    change: "The local callback writes an in-memory fixture marker, then throws. The wrapper cannot claim that no side effect occurred.",
     host_move: "Record the uncertain result and use provider idempotency and reconciliation; never retry automatically from this receipt.",
     options: { callback: "throws" }
   },
   {
     id: "unknown_then_replay", title: "Unknown result, replay claim refused",
-    change: "The fixture callback throws on the first attempt. A second attempt using the same one-use fixture claim state blocks before callback entry.",
+    change: "The callback writes one in-memory fixture marker, then throws. A second attempt using the same one-use fixture claim state blocks before callback entry.",
     host_move: "Reconcile the uncertain provider outcome before any new authorization. A spent grant cannot justify a retry; use host idempotency for the actual operation.",
     options: { callback: "throws", repeat: true }
   }
@@ -92,6 +92,7 @@ async function runFixture({ id, title, change, host_move, options }) {
   let claimAttempts = 0;
   let claimsConsumed = 0;
   let callbackCount = 0;
+  let fixtureStateChanges = 0;
   let hookEvents = [];
   const requestApproval = options.approval === "missing" ? undefined :
     async ({ proposal_sha256 }) => {
@@ -134,6 +135,8 @@ async function runFixture({ id, title, change, host_move, options }) {
       callbackCount++;
       hookEvents.push("Fixture callback entered");
       if (options.callback === "throws") {
+        fixtureStateChanges++;
+        hookEvents.push("In-memory fixture marker written");
         hookEvents.push("Fixture callback threw");
         throw new Error("simulated_callback_error");
       }
@@ -160,7 +163,7 @@ async function runFixture({ id, title, change, host_move, options }) {
   return { id, title, change, host_move, destination: originalDestination,
     ...(options.approval === "mutate" ? { caller_destination_after_approval: args.to } : {}), attempts,
     approval_requests: approvalRequests, claim_attempts: claimAttempts, claims_consumed: claimsConsumed,
-    callback_count: callbackCount };
+    callback_count: callbackCount, fixture_state_changes: fixtureStateChanges };
 }
 
 export async function buildGuardedToolRehearsal() {
@@ -222,6 +225,7 @@ export function assertGuardedToolRehearsal(report) {
   assert.equal(byId.approval_reused.claim_attempts, 2);
   assert.equal(byId.approval_reused.claims_consumed, 1);
   assert.equal(byId.callback_unknown.attempts[0].result, undefined);
+  assert.equal(byId.approved_route.fixture_state_changes, 0);
   assert.deepEqual(byId.changed_destination.attempts[0].host_hook_events, []);
   assert.deepEqual(byId.approval_unavailable.attempts[0].host_hook_events, []);
   assert.ok(byId.policy_revoked.attempts[0].host_hook_events.includes("Host rule revoked"));
@@ -241,12 +245,14 @@ export function assertGuardedToolRehearsal(report) {
   assert.ok(!byId.claim_hook_unknown.attempts[0].host_hook_events.includes("Fixture callback entered"));
   assert.ok(byId.approval_reused.attempts[1].host_hook_events.includes("One-use claim refused"));
   assert.ok(!byId.approval_reused.attempts[1].host_hook_events.includes("Fixture callback entered"));
-  assert.deepEqual(byId.callback_unknown.attempts[0].host_hook_events.slice(-2),
-    ["Fixture callback entered", "Fixture callback threw"]);
+  assert.equal(byId.callback_unknown.fixture_state_changes, 1);
+  assert.deepEqual(byId.callback_unknown.attempts[0].host_hook_events.slice(-3),
+    ["Fixture callback entered", "In-memory fixture marker written", "Fixture callback threw"]);
   assert.equal(byId.unknown_then_replay.approval_requests, 2);
   assert.equal(byId.unknown_then_replay.claim_attempts, 2);
   assert.equal(byId.unknown_then_replay.claims_consumed, 1);
   assert.equal(byId.unknown_then_replay.callback_count, 1);
+  assert.equal(byId.unknown_then_replay.fixture_state_changes, 1);
   assert.deepEqual(byId.unknown_then_replay.attempts[1].host_hook_events.slice(-1),
     ["One-use claim refused"]);
 }

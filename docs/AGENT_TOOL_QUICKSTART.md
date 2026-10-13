@@ -104,6 +104,8 @@ The [claim-hook error case](https://aruintelligence.github.io/aml-core/agent-sta
 
 The [unknown then replay case](https://aruintelligence.github.io/aml-core/agent-start.html?case=unknown_then_replay#rehearsal) starts with a fixture callback error and an `unknown` receipt. A second attempt using the same one-use fixture claim state blocks before callback entry. The fixture makes no provider call; a real host must reconcile the uncertain outcome and use operation idempotency before considering any new authorization.
 
+The uncertain callback cases write an in-memory fixture marker immediately before throwing. Their `fixture_state_changes: 1` and hook trace make the local sequence visible: a receipt can be `unknown` after a local state change. That marker is not an external send, delivery, or evidence about a provider.
+
 For a bounded **two-process local-filesystem rehearsal**, run `node pilots/action-boundary/file-grant-race-demo.mjs` and [inspect the recorded race](https://aruintelligence.github.io/aml-core/approval-race.html). `createFileOneShotGrants({ directory: "/absolute/private/host/path" })` exposes async `issue` and `consume` methods with the same hook shape. Its exclusive claim marker coordinates workers sharing one trusted local filesystem; it is not a network or multi-machine store, does not authenticate an approver, and has no long-running cleanup policy. Keep the directory private and supply real host authorization before any external tool.
 
 For the [OpenAI Agents SDK JavaScript function-tool API](https://openai.github.io/openai-agents-js/guides/tools/), install `@openai/agents` and `zod` in your agent app, then attach the `execute` function above:
