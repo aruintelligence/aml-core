@@ -85,11 +85,12 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     }
   });
 
-  fetch("guarded-tool-rehearsal.json?v=host-rehearsal-4").then(response => {
+  fetch("guarded-tool-rehearsal.json?v=host-rehearsal-5").then(response => {
     if (!response.ok) throw new Error("Report request failed");
     return response.json();
   }).then(report => {
     const initial = chooseRehearsalCase(report, params.get("case"), recipient);
+    $("case-count-label").textContent = `HOST REHEARSAL / ${report.cases.length} CONTROLLED CASES`;
     const buttons = report.cases.map((item, index) => {
       const button = document.createElement("button");
       button.type = "button";
