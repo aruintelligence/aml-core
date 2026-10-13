@@ -99,7 +99,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     }
   });
 
-  fetch("guarded-tool-rehearsal.json?v=a25ef3c15a4b").then(response => {
+  fetch("guarded-tool-rehearsal.json?v=d6e451d28588").then(response => {
     if (!response.ok) throw new Error("Report request failed");
     return response.json();
   }).then(report => {
@@ -152,6 +152,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
         metric(`Claim attempts: ${item.claim_attempts}`),
         metric(`Claims consumed: ${item.claims_consumed}`),
         metric(`Fixture callbacks: ${item.callback_count}`),
+        ...(item.fixture_state_changes ? [metric(`In-memory fixture writes: ${item.fixture_state_changes}`)] : []),
         ...(item.caller_destination_after_approval ?
           [metric(`Caller changed to: ${item.caller_destination_after_approval}`)] : [])
       );
