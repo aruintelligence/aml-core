@@ -129,6 +129,31 @@
       "fixture_state_changes": 0
     },
     {
+      "id": "approval_hook_error",
+      "title": "Approval hook throws after a local write",
+      "change": "The approval fixture writes an in-memory marker, then throws before returning a decision. No one-use claim or tool callback runs.",
+      "host_move": "Reconcile host authorization records after an approval hook error. A blocked tool receipt does not prove that the approval system recorded nothing; require a fresh verified decision for another attempt.",
+      "destination": "team@example.test",
+      "attempts": [
+        {
+          "policy_decision": "requires_approval",
+          "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+          "execution_status": "blocked",
+          "reason": "approval_error",
+          "host_hook_events": [
+            "Approval requested",
+            "In-memory approval fixture marker written",
+            "Approval hook threw"
+          ]
+        }
+      ],
+      "approval_requests": 1,
+      "claim_attempts": 0,
+      "claims_consumed": 0,
+      "callback_count": 0,
+      "fixture_state_changes": 1
+    },
+    {
       "id": "approval_mismatch",
       "title": "Approval for another proposal",
       "change": "The approval fixture returns a different proposal digest.",
