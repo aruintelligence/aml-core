@@ -132,7 +132,7 @@ export async function buildGuardedToolRehearsal() {
   const cases = [];
   for (const fixture of fixtures) cases.push(await runFixture(fixture));
   return {
-    protocol: "aml-guarded-tool-rehearsal/1",
+    protocol: "aml-guarded-tool-rehearsal/2",
     provenance: "project-authored local Node simulation",
     scope: "Fixture callbacks only. No message, human approval, provider call, or delivery evidence.",
     cases
