@@ -18,6 +18,31 @@ export function rehearsalCaseUrl(currentUrl, id, report) {
   return url.href;
 }
 
+export function rehearsalComparisonUrl(currentUrl, selectedId, comparedId, report) {
+  const url = new URL(rehearsalCaseUrl(currentUrl, selectedId, report));
+  if (comparedId && comparedId !== selectedId && report.cases.some(item => item.id === comparedId)) {
+    url.searchParams.set("compare", comparedId);
+  } else {
+    url.searchParams.delete("compare");
+  }
+  return url.href;
+}
+
+export function rehearsalComparisonRows(selected, compared) {
+  const outcomes = item => item.attempts.map(attempt =>
+    attempt.adapter_error ? "HOST ERROR (no receipt)" : attempt.execution_status.toUpperCase()).join(" → ");
+  const digest = item => item.attempts.every(attempt => attempt.adapter_error || attempt.proposal_sha256 === null) ?
+    "Unavailable" : "Present for valid proposals";
+  return [
+    ["Observed outcome", outcomes(selected), outcomes(compared)],
+    ["Proposal digest", digest(selected), digest(compared)],
+    ["Approval requests", selected.approval_requests, compared.approval_requests],
+    ["Claims consumed", selected.claims_consumed, compared.claims_consumed],
+    ["Fixture callbacks", selected.callback_count, compared.callback_count],
+    ["In-memory fixture writes", selected.fixture_state_changes, compared.fixture_state_changes]
+  ];
+}
+
 export function rehearsalCasePayload(report, id) {
   const item = report?.cases?.find(entry => entry.id === id);
   if (!item) throw new RangeError("Unknown rehearsal case");
@@ -158,6 +183,36 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     });
     $("case-picker").replaceChildren(...buttons);
     let selectedCase = initial;
+    let comparedCase = report.cases.some(item => item.id === params.get("compare") && item.id !== initial) ?
+      params.get("compare") : "";
+    $("case-compare").replaceChildren(new Option("Choose another case…", ""),
+      ...report.cases.map(item => new Option(item.title, item.id)));
+    $("case-compare").value = comparedCase;
+    function renderComparison() {
+      const selected = report.cases.find(item => item.id === selectedCase);
+      const compared = report.cases.find(item => item.id === comparedCase);
+      $("case-comparison").hidden = !compared;
+      if (!compared) return;
+      $("compare-selected").textContent = selected.title;
+      $("compare-other").textContent = compared.title;
+      $("compare-rows").replaceChildren(...rehearsalComparisonRows(selected, compared).map(([label, left, right]) => {
+        const row = document.createElement("tr");
+        const heading = document.createElement("th");
+        heading.scope = "row";
+        heading.textContent = label;
+        const first = document.createElement("td");
+        first.textContent = left;
+        const second = document.createElement("td");
+        second.textContent = right;
+        row.append(heading, first, second);
+        return row;
+      }));
+    }
+    $("case-compare").addEventListener("change", () => {
+      comparedCase = $("case-compare").value;
+      renderComparison();
+      history.replaceState(null, "", rehearsalComparisonUrl(location.href, selectedCase, comparedCase, report));
+    });
     function filterCases() {
       const visible = visibleRehearsalCaseIds(report, $("case-search").value, selectedCase);
       buttons.forEach(button => { button.hidden = !visible.includes(button.dataset.case); });
@@ -171,6 +226,11 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     function show(id, updateUrl) {
       const item = report.cases.find(entry => entry.id === id);
       selectedCase = id;
+      if (comparedCase === id) {
+        comparedCase = "";
+        $("case-compare").value = "";
+      }
+      for (const option of $("case-compare").options) option.disabled = option.value === id;
       buttons.forEach(button => {
         const selected = button.dataset.case === id;
         button.setAttribute("aria-checked", String(selected));
@@ -199,11 +259,12 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
       );
       $("case-command").textContent = `node pilots/action-boundary/guarded-tool-rehearsal.mjs --case ${item.id}`;
       $("case-copy-status").textContent = "";
-      if (updateUrl) history.replaceState(null, "", rehearsalCaseUrl(location.href, id, report));
+      renderComparison();
+      if (updateUrl) history.replaceState(null, "", rehearsalComparisonUrl(location.href, id, comparedCase, report));
     }
     $("copy-case-link").addEventListener("click", async () => {
       try {
-        await navigator.clipboard.writeText(rehearsalCaseUrl(location.href, selectedCase, report));
+        await navigator.clipboard.writeText(rehearsalComparisonUrl(location.href, selectedCase, comparedCase, report));
         $("case-copy-status").textContent = "Case link copied.";
       } catch {
         $("case-copy-status").textContent = "Clipboard unavailable. Copy the address in your browser to share this case.";

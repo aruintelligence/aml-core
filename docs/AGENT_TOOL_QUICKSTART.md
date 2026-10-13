@@ -30,6 +30,8 @@ The [approval hook error case](https://aruintelligence.github.io/aml-core/agent-
 
 On the visual builder, **Copy fixture JSON** copies the selected case in the same shape as `--case`, including its project-authored provenance and scope. Include your checkout commit when sharing a reproduction; the copied fixture is not evidence of a real approval or delivery.
 
+Use **Compare with** on the visual builder to put two local outcomes, digest availability, claim counts, callback counts, and in-memory writes side by side. The address and **Copy case link** preserve the selected pair. The comparison only reads the checked-in fixture report; it does not run a tool or establish provider outcomes.
+
 The [declined approval case](https://aruintelligence.github.io/aml-core/agent-start.html?case=approval_declined#rehearsal) requests a fixture decision and receives a refusal. The receipt blocks before any claim or tool callback. A refusal is not a grant; a later attempt needs its own authenticated decision.
 
 ## Wrap your own function tool

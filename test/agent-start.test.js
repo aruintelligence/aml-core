@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { chooseRehearsalCase, nextRehearsalCaseIndex, rehearsalCasePayload, rehearsalCaseUrl, visibleRehearsalCaseIds } from "../docs/agent-start.js";
+import { chooseRehearsalCase, nextRehearsalCaseIndex, rehearsalCasePayload, rehearsalCaseUrl, rehearsalComparisonRows, rehearsalComparisonUrl, visibleRehearsalCaseIds } from "../docs/agent-start.js";
 import { selectGuardedToolCase } from "../pilots/action-boundary/guarded-tool-rehearsal.mjs";
 
 const report = JSON.parse(readFileSync(new URL("../docs/guarded-tool-rehearsal.json", import.meta.url), "utf8"));
@@ -25,6 +25,8 @@ test("the page labels the report as a fixture and offers the exact recheck comma
   assert.match(page, /id="case-picker"[^>]*role="radiogroup"/);
   assert.match(page, /<label for="case-search">Find a case<\/label>/);
   assert.match(page, /id="case-search-status" role="status" aria-live="polite"/);
+  assert.match(page, /<label for="case-compare">Compare with<\/label>/);
+  assert.match(page, /id="case-comparison"[^>]*hidden/);
   assert.match(page, /id="case-panel" role="region" aria-labelledby="case-title" tabindex="0"/);
   assert.match(page, /id="route-label"/);
   assert.match(page, /href="#case-title">Jump to selected result/);
@@ -77,6 +79,21 @@ test("case search keeps the selected choice visible and narrows keyboard order",
   assert.equal(visibleRehearsalCaseIds(report, " ", "claim_revoked").length, report.cases.length);
   const position = claim.indexOf("mapper_write_error");
   assert.equal(claim[nextRehearsalCaseIndex("ArrowRight", position, claim.length)], "claim_revoked");
+});
+
+test("comparison distinguishes pre-plan errors, blocked receipts, and local writes", () => {
+  const byId = Object.fromEntries(report.cases.map(item => [item.id, item]));
+  const rows = rehearsalComparisonRows(byId.mapper_write_error, byId.invalid_arguments);
+  assert.deepEqual(rows[0], ["Observed outcome", "HOST ERROR (no receipt)", "BLOCKED"]);
+  assert.deepEqual(rows[1], ["Proposal digest", "Unavailable", "Unavailable"]);
+  assert.deepEqual(rows.at(-1), ["In-memory fixture writes", 1, 0]);
+  assert.deepEqual(rehearsalComparisonRows(byId.unknown_then_replay, byId.claim_revoked)[0],
+    ["Observed outcome", "UNKNOWN → BLOCKED", "BLOCKED"]);
+  const base = "https://example.test/agent-start.html?case=mapper_write_error#rehearsal";
+  assert.equal(rehearsalComparisonUrl(base, "mapper_write_error", "invalid_arguments", report),
+    "https://example.test/agent-start.html?case=mapper_write_error&compare=invalid_arguments#rehearsal");
+  assert.equal(rehearsalComparisonUrl(base + "", "mapper_write_error", "mapper_write_error", report), base);
+  assert.equal(rehearsalComparisonUrl(base, "mapper_write_error", "missing", report), base);
 });
 
 test("copied fixture payload matches the CLI case with its provenance and scope", () => {
