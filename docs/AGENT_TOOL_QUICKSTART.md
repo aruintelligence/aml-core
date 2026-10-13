@@ -14,7 +14,7 @@ node pilots/action-boundary/guarded-tool-demo.mjs
 
 The first fixture has an exact policy rule and a **simulated** approval; its callback returns a `would_send_to` object. The second changes the destination and is blocked before the callback. There is no network request, message delivery, or human authentication.
 
-For the eleven-case host rehearsal, list the case IDs and ordered receipt statuses, then inspect one case:
+For the twelve-case host rehearsal, list the case IDs and ordered receipt statuses, then inspect one case:
 
 ```bash
 node pilots/action-boundary/guarded-tool-rehearsal.mjs --list
@@ -99,6 +99,8 @@ const guarded = createGuardedToolExecute({
 The [host rehearsal](https://aruintelligence.github.io/aml-core/agent-start.html?case=claim_revoked#rehearsal) includes a claim that succeeds while the rule is revoked. Its receipt is `blocked` with zero callback invocations, and the grant remains spent. A retry needs a fresh policy decision and a new authenticated grant; the old claim is not restored.
 
 The [claim-hook error case](https://aruintelligence.github.io/aml-core/agent-start.html?case=claim_hook_unknown#rehearsal) spends a fixture claim just before the hook throws. The receipt is `blocked` with zero tool callback invocations, but the grant is spent in this local fixture. A real host must reconcile its durable grant store after a claim error; the blocked receipt alone cannot establish whether the grant remains available.
+
+The [unknown then replay case](https://aruintelligence.github.io/aml-core/agent-start.html?case=unknown_then_replay#rehearsal) starts with a fixture callback error and an `unknown` receipt. A second attempt using the same one-use fixture claim state blocks before callback entry. The fixture makes no provider call; a real host must reconcile the uncertain outcome and use operation idempotency before considering any new authorization.
 
 For a bounded **two-process local-filesystem rehearsal**, run `node pilots/action-boundary/file-grant-race-demo.mjs` and [inspect the recorded race](https://aruintelligence.github.io/aml-core/approval-race.html). `createFileOneShotGrants({ directory: "/absolute/private/host/path" })` exposes async `issue` and `consume` methods with the same hook shape. Its exclusive claim marker coordinates workers sharing one trusted local filesystem; it is not a network or multi-machine store, does not authenticate an approver, and has no long-running cleanup policy. Keep the directory private and supply real host authorization before any external tool.
 
