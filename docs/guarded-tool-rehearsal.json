@@ -1,5 +1,5 @@
 {
-  "protocol": "aml-guarded-tool-rehearsal/1",
+  "protocol": "aml-guarded-tool-rehearsal/2",
   "provenance": "project-authored local Node simulation",
   "scope": "Fixture callbacks only. No message, human approval, provider call, or delivery evidence.",
   "cases": [
@@ -28,7 +28,8 @@
         }
       ],
       "approval_requests": 1,
-      "approval_consumptions": 1,
+      "claim_attempts": 1,
+      "claims_consumed": 1,
       "callback_count": 1
     },
     {
@@ -46,7 +47,8 @@
         }
       ],
       "approval_requests": 0,
-      "approval_consumptions": 0,
+      "claim_attempts": 0,
+      "claims_consumed": 0,
       "callback_count": 0
     },
     {
@@ -64,7 +66,8 @@
         }
       ],
       "approval_requests": 0,
-      "approval_consumptions": 0,
+      "claim_attempts": 0,
+      "claims_consumed": 0,
       "callback_count": 0
     },
     {
@@ -85,7 +88,8 @@
         }
       ],
       "approval_requests": 1,
-      "approval_consumptions": 0,
+      "claim_attempts": 0,
+      "claims_consumed": 0,
       "callback_count": 0
     },
     {
@@ -124,7 +128,8 @@
         }
       ],
       "approval_requests": 2,
-      "approval_consumptions": 2,
+      "claim_attempts": 2,
+      "claims_consumed": 1,
       "callback_count": 1
     },
     {
@@ -146,7 +151,8 @@
         }
       ],
       "approval_requests": 1,
-      "approval_consumptions": 0,
+      "claim_attempts": 0,
+      "claims_consumed": 0,
       "callback_count": 0
     },
     {
@@ -176,7 +182,8 @@
         }
       ],
       "approval_requests": 1,
-      "approval_consumptions": 1,
+      "claim_attempts": 1,
+      "claims_consumed": 1,
       "callback_count": 1
     },
     {
@@ -199,7 +206,8 @@
         }
       ],
       "approval_requests": 1,
-      "approval_consumptions": 1,
+      "claim_attempts": 1,
+      "claims_consumed": 1,
       "callback_count": 0
     },
     {
@@ -223,7 +231,8 @@
         }
       ],
       "approval_requests": 1,
-      "approval_consumptions": 1,
+      "claim_attempts": 1,
+      "claims_consumed": 1,
       "callback_count": 1
     }
   ]
