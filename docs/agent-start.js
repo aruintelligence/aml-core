@@ -106,7 +106,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     }
   });
 
-  fetch("guarded-tool-rehearsal.json?v=5cad3661cb4c").then(response => {
+  fetch("guarded-tool-rehearsal.json?v=a2c836a065eb").then(response => {
     if (!response.ok) throw new Error("Report request failed");
     return response.json();
   }).then(report => {
