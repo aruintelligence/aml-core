@@ -1,0 +1,140 @@
+{
+  "protocol": "aml-guarded-tool-rehearsal/1",
+  "provenance": "project-authored local Node simulation",
+  "scope": "Fixture callbacks only. No message, human approval, provider call, or delivery evidence.",
+  "cases": [
+    {
+      "id": "approved_route",
+      "title": "Exact route, simulated approval",
+      "change": "The host fixture approves the exact proposal and consumes its one-use claim.",
+      "destination": "team@example.test",
+      "attempts": [
+        {
+          "policy_decision": "requires_approval",
+          "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned",
+          "result": {
+            "simulated": true,
+            "would_send_to": "team@example.test"
+          }
+        }
+      ],
+      "approval_requests": 1,
+      "approval_consumptions": 1,
+      "callback_count": 1
+    },
+    {
+      "id": "changed_destination",
+      "title": "Changed destination",
+      "change": "The requested destination is outside the one exact host rule.",
+      "destination": "other@example.test",
+      "attempts": [
+        {
+          "policy_decision": "deny",
+          "proposal_sha256": "31b00be0f1d6df1499933e54d3cebee5570468ee2549a27a9c90a2ca8385b01e",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        }
+      ],
+      "approval_requests": 0,
+      "approval_consumptions": 0,
+      "callback_count": 0
+    },
+    {
+      "id": "approval_unavailable",
+      "title": "No approval hook",
+      "change": "The host supplies no way to request approval.",
+      "destination": "team@example.test",
+      "attempts": [
+        {
+          "policy_decision": "requires_approval",
+          "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+          "execution_status": "blocked",
+          "reason": "approval_unavailable"
+        }
+      ],
+      "approval_requests": 0,
+      "approval_consumptions": 0,
+      "callback_count": 0
+    },
+    {
+      "id": "approval_mismatch",
+      "title": "Approval for another proposal",
+      "change": "The approval fixture returns a different proposal digest.",
+      "destination": "team@example.test",
+      "attempts": [
+        {
+          "policy_decision": "requires_approval",
+          "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        }
+      ],
+      "approval_requests": 1,
+      "approval_consumptions": 0,
+      "callback_count": 0
+    },
+    {
+      "id": "approval_reused",
+      "title": "One-use approval claimed twice",
+      "change": "The same proposal is attempted twice; the host consumes the claim once.",
+      "destination": "team@example.test",
+      "attempts": [
+        {
+          "policy_decision": "requires_approval",
+          "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned",
+          "result": {
+            "simulated": true,
+            "would_send_to": "team@example.test"
+          }
+        },
+        {
+          "policy_decision": "requires_approval",
+          "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+          "execution_status": "blocked",
+          "reason": "approval_reused_or_expired"
+        }
+      ],
+      "approval_requests": 2,
+      "approval_consumptions": 2,
+      "callback_count": 1
+    },
+    {
+      "id": "policy_revoked",
+      "title": "Rule revoked during approval",
+      "change": "The host removes the rule while the approval callback is pending.",
+      "destination": "team@example.test",
+      "attempts": [
+        {
+          "policy_decision": "requires_approval",
+          "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+          "execution_status": "blocked",
+          "reason": "policy_changed"
+        }
+      ],
+      "approval_requests": 1,
+      "approval_consumptions": 0,
+      "callback_count": 0
+    },
+    {
+      "id": "callback_unknown",
+      "title": "Callback throws after entry",
+      "change": "The simulated callback throws, so the wrapper cannot assert the side effect did not occur.",
+      "destination": "team@example.test",
+      "attempts": [
+        {
+          "policy_decision": "requires_approval",
+          "proposal_sha256": "f416748534da5982a029d03d6db48adf00b4138e0785d38857f0b1734923776c",
+          "execution_status": "unknown",
+          "reason": "host_dispatch_error"
+        }
+      ],
+      "approval_requests": 1,
+      "approval_consumptions": 1,
+      "callback_count": 1
+    }
+  ]
+}
