@@ -52,11 +52,15 @@ function render(result) {
     row.append(textNode("b", `${item.pass ? "MATCH" : "MISMATCH"} · ${item.identifier} · ${item.recorded}`), textNode("p", item.detail));
     gates.append(row);
   }
-  $("sample-challenge").hidden = !originalExample || (!result.consistent && !exampleChanged);
+  const challenge = $("sample-challenge");
+  challenge.hidden = !originalExample || (!result.consistent && !exampleChanged);
+  challenge.dataset.stage = exampleChanged ? "changed" : "captured";
+  $("challenge-stage").textContent = exampleChanged ? "02 / CHANGED SAVED CLAIM" : "01 / CAPTURED RECORD";
+  $("challenge-title").textContent = exampleChanged ? "The source stayed. The claim broke." : "Now challenge the claim.";
   $("challenge-button").textContent = exampleChanged ? "Restore the captured example ↺" : "Change one saved claim ↗";
   $("challenge-copy").textContent = exampleChanged ?
-    "The source still matches. Restoring the captured gate claim should bring this self-check back to PASS." :
-    "Flip the saved browser outcome for the withheld gate. The source fingerprint will still match, but the gate claim should fail.";
+    "SHA-256 and compiler replay still pass. One saved gate outcome now disagrees. Restore the captured claim to check it again." :
+    "Flip the withheld gate’s saved browser outcome. The source fingerprint will still match while the gate claim fails.";
 }
 
 async function loadFile(file) {
@@ -113,7 +117,7 @@ async function recheck() {
 }
 
 $("check").addEventListener("click", recheck);
-async function loadExample(jumpToChecker = false) {
+async function loadExample(focusChallenge = false) {
   const before = input.value;
   $("load-example").disabled = true;
   $("load-example-hero").disabled = true;
@@ -131,7 +135,10 @@ async function loadExample(jumpToChecker = false) {
     originalExample = formatted;
     clearResult();
     await recheck();
-    if (jumpToChecker) $("checker").scrollIntoView();
+    if (focusChallenge) {
+      $("sample-challenge").scrollIntoView({ block: "center" });
+      $("sample-challenge").focus({ preventScroll: true });
+    }
   } catch {
     if (input.value === before) status.textContent = "The example record could not be loaded here. Create a run in the playground instead.";
   } finally {
@@ -139,8 +146,9 @@ async function loadExample(jumpToChecker = false) {
     $("load-example-hero").disabled = false;
   }
 }
-$("load-example").addEventListener("click", () => loadExample());
+$("load-example").addEventListener("click", () => loadExample(true));
 $("load-example-hero").addEventListener("click", () => loadExample(true));
+if (new URLSearchParams(window.location.search).get("example") === "challenge") loadExample(true);
 
 $("challenge-button").addEventListener("click", async () => {
   if (!originalExample) return;
@@ -149,4 +157,5 @@ $("challenge-button").addEventListener("click", async () => {
   if (exampleChanged) record.gates[0].browser.effective_rendered = !record.gates[0].browser.effective_rendered;
   input.value = JSON.stringify(record, null, 2);
   await recheck();
+  $("sample-challenge").scrollIntoView({ block: "center" });
 });
