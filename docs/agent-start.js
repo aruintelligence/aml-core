@@ -116,9 +116,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     const buttons = report.cases.map((item, index) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.id = `case-tab-${item.id}`;
-      button.setAttribute("role", "tab");
-      button.setAttribute("aria-controls", "case-panel");
+      button.setAttribute("role", "radio");
       button.dataset.case = item.id;
       const statuses = item.attempts.map(attempt => attempt.execution_status);
       button.dataset.tone = statuses.includes("unknown") ? "hold" :
@@ -143,10 +141,9 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
       selectedCase = id;
       buttons.forEach(button => {
         const selected = button.dataset.case === id;
-        button.setAttribute("aria-selected", String(selected));
+        button.setAttribute("aria-checked", String(selected));
         button.tabIndex = selected ? 0 : -1;
       });
-      $("case-panel").setAttribute("aria-labelledby", `case-tab-${id}`);
       $("case-title").textContent = item.title;
       $("case-change").textContent = item.change;
       if (sharedCase || updateUrl) {
