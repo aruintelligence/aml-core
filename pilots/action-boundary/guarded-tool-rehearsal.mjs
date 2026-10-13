@@ -40,6 +40,11 @@ const fixtures = [
     options: { approval: "revoke" }
   },
   {
+    id: "arguments_mutated", title: "Caller changes the destination during approval",
+    change: "The caller changes its original arguments after the proposal snapshot. The fixture callback still receives the approved destination.",
+    options: { approval: "mutate" }
+  },
+  {
     id: "callback_unknown", title: "Callback throws after entry",
     change: "The simulated callback throws, so the wrapper cannot assert the side effect did not occur.",
     options: { callback: "throws" }
@@ -54,33 +59,60 @@ async function runFixture({ id, title, change, options }) {
   let approvalRequests = 0;
   let approvalConsumptions = 0;
   let callbackCount = 0;
+  let hookEvents = [];
   const requestApproval = options.approval === "missing" ? undefined :
     async ({ proposal_sha256 }) => {
       approvalRequests++;
-      if (options.approval === "revoke") policy.rules = [];
+      hookEvents.push("Approval requested");
+      if (options.approval === "revoke") {
+        policy.rules = [];
+        hookEvents.push("Host rule revoked");
+      }
+      if (options.approval === "mutate") {
+        args.to = "other@example.test";
+        hookEvents.push("Caller arguments changed after snapshot");
+      }
+      hookEvents.push(options.approval === "mismatch" ? "Different digest returned" : "Matching digest returned");
       return { approved: true, proposal_sha256: options.approval === "mismatch" ? "0".repeat(64) : proposal_sha256 };
     };
   const guarded = createGuardedToolExecute({
     tool: "send_message", effect: "send", purpose: "Send a status update",
     resourceFor: args => args.to, policy, requestApproval,
-    consumeApproval: async () => { approvalConsumptions++; return approvalConsumptions === 1; },
+    consumeApproval: async () => {
+      approvalConsumptions++;
+      const accepted = approvalConsumptions === 1;
+      hookEvents.push(accepted ? "One-use claim consumed" : "One-use claim refused");
+      return accepted;
+    },
     execute: async args => {
       callbackCount++;
-      if (options.callback === "throws") throw new Error("simulated_callback_error");
+      hookEvents.push("Fixture callback entered");
+      if (options.callback === "throws") {
+        hookEvents.push("Fixture callback threw");
+        throw new Error("simulated_callback_error");
+      }
+      hookEvents.push("Fixture callback returned");
       return { simulated: true, would_send_to: args.to };
     }
   });
   const args = { to: options.to || "team@example.test", body: "Build passed." };
-  const first = await guarded(args);
-  const second = options.repeat ? await guarded(args) : null;
-  const attempts = [first, second].filter(Boolean).map(({ plan, receipt, result }) => ({
-    policy_decision: plan.decision,
-    proposal_sha256: plan.proposal_sha256,
-    execution_status: receipt.execution_status,
-    reason: receipt.reason,
-    ...(result ? { result } : {})
-  }));
-  return { id, title, change, destination: args.to, attempts,
+  const originalDestination = args.to;
+  async function attempt() {
+    hookEvents = [];
+    const { plan, receipt, result } = await guarded(args);
+    return {
+      policy_decision: plan.decision,
+      proposal_sha256: plan.proposal_sha256,
+      execution_status: receipt.execution_status,
+      reason: receipt.reason,
+      host_hook_events: [...hookEvents],
+      ...(result ? { result } : {})
+    };
+  }
+  const attempts = [await attempt()];
+  if (options.repeat) attempts.push(await attempt());
+  return { id, title, change, destination: originalDestination,
+    ...(options.approval === "mutate" ? { caller_destination_after_approval: args.to } : {}), attempts,
     approval_requests: approvalRequests, approval_consumptions: approvalConsumptions,
     callback_count: callbackCount };
 }
@@ -109,6 +141,7 @@ export function assertGuardedToolRehearsal(report) {
       1
     ],
     policy_revoked: [["requires_approval", "blocked", "policy_changed"], 0],
+    arguments_mutated: [["requires_approval", "dispatched", "host_dispatch_returned"], 1],
     callback_unknown: [["requires_approval", "unknown", "host_dispatch_error"], 1]
   };
   assert.equal(report.cases.length, Object.keys(expected).length);
@@ -128,6 +161,23 @@ export function assertGuardedToolRehearsal(report) {
   assert.equal(byId.policy_revoked.approval_consumptions, 0);
   assert.equal(byId.approval_reused.approval_consumptions, 2);
   assert.equal(byId.callback_unknown.attempts[0].result, undefined);
+  assert.deepEqual(byId.changed_destination.attempts[0].host_hook_events, []);
+  assert.deepEqual(byId.approval_unavailable.attempts[0].host_hook_events, []);
+  assert.ok(byId.policy_revoked.attempts[0].host_hook_events.includes("Host rule revoked"));
+  assert.ok(!byId.policy_revoked.attempts[0].host_hook_events.includes("Fixture callback entered"));
+  assert.equal(byId.arguments_mutated.caller_destination_after_approval, "other@example.test");
+  assert.equal(byId.arguments_mutated.attempts[0].result.would_send_to, "team@example.test");
+  assert.ok(byId.arguments_mutated.attempts[0].host_hook_events.includes("Caller arguments changed after snapshot"));
+  assert.ok(byId.approval_reused.attempts[1].host_hook_events.includes("One-use claim refused"));
+  assert.ok(!byId.approval_reused.attempts[1].host_hook_events.includes("Fixture callback entered"));
+  assert.deepEqual(byId.callback_unknown.attempts[0].host_hook_events.slice(-2),
+    ["Fixture callback entered", "Fixture callback threw"]);
+}
+
+export function selectGuardedToolCase(report, id) {
+  const selected = report.cases.find(item => item.id === id);
+  if (!selected) throw new RangeError("Unknown guarded tool rehearsal case");
+  return { protocol: report.protocol, provenance: report.provenance, scope: report.scope, case: selected };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -139,10 +189,12 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     console.log("Wrote docs/guarded-tool-rehearsal.json");
   } else if (process.argv[2] === "--check") {
     assert.equal(await readFile(reportUrl, "utf8"), json, "Rehearsal report is stale; run --write");
-    console.log("Guarded tool rehearsal: 7 cases match the checked-in report.");
+    console.log(`Guarded tool rehearsal: ${report.cases.length} cases match the checked-in report.`);
+  } else if (process.argv[2] === "--case" && process.argv.length === 4) {
+    process.stdout.write(JSON.stringify(selectGuardedToolCase(report, process.argv[3]), null, 2) + "\n");
   } else if (process.argv.length === 2) {
     process.stdout.write(json);
   } else {
-    throw new Error("Use no argument, --write, or --check");
+    throw new Error("Use no argument, --write, --check, or --case <id>");
   }
 }

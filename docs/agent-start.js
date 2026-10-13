@@ -56,11 +56,36 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     reason.textContent = `receipt.reason = ${attempt.reason}`;
     const digest = document.createElement("code");
     digest.textContent = `proposal SHA-256: ${attempt.proposal_sha256}`;
+    const result = document.createElement("code");
+    if (attempt.result) result.textContent = `Fixture target: ${attempt.result.would_send_to}`;
+    const traceLabel = document.createElement("small");
+    traceLabel.className = "trace-label";
+    traceLabel.textContent = "HOST HOOK TRACE";
+    const trace = document.createElement("ol");
+    trace.className = "hook-trace";
+    const events = attempt.host_hook_events.length ? attempt.host_hook_events : ["No host-owned hook invoked"];
+    for (const event of events) {
+      const step = document.createElement("li");
+      if (!attempt.host_hook_events.length) step.className = "none";
+      step.textContent = event;
+      trace.append(step);
+    }
     card.append(label, status, reason, digest);
+    if (attempt.result) card.append(result);
+    card.append(traceLabel, trace);
     return card;
   };
 
-  fetch("guarded-tool-rehearsal.json?v=host-rehearsal-1").then(response => {
+  $("copy-case-command").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText($("case-command").textContent + "\n");
+      $("case-copy-status").textContent = "Case command copied.";
+    } catch {
+      $("case-copy-status").textContent = "Clipboard unavailable. Select the command above to copy it.";
+    }
+  });
+
+  fetch("guarded-tool-rehearsal.json?v=host-rehearsal-3").then(response => {
     if (!response.ok) throw new Error("Report request failed");
     return response.json();
   }).then(report => {
@@ -85,8 +110,12 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
       $("case-metrics").replaceChildren(
         metric(`Approval requests: ${item.approval_requests}`),
         metric(`One-use claims: ${item.approval_consumptions}`),
-        metric(`Fixture callbacks: ${item.callback_count}`)
+        metric(`Fixture callbacks: ${item.callback_count}`),
+        ...(item.caller_destination_after_approval ?
+          [metric(`Caller changed to: ${item.caller_destination_after_approval}`)] : [])
       );
+      $("case-command").textContent = `node pilots/action-boundary/guarded-tool-rehearsal.mjs --case ${item.id}`;
+      $("case-copy-status").textContent = "";
       if (updateUrl) history.replaceState(null, "", rehearsalCaseUrl(location.href, id, report));
     }
     show(initial, false);
