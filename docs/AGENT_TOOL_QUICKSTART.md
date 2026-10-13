@@ -26,10 +26,14 @@ The list prints one tab-separated ID and status sequence per fixture; a two-atte
 
 ## Wrap your own function tool
 
-This is the host-side shape. The host must implement `showAndAuthorizeExactProposal` and `sendThroughMyService` with its own authentication and authorization. Do not use the demo's automatic approval in a real integration.
+This is the host-side shape. The host must implement `showAndAuthorizeExactProposal`, `consumeHostGrantOnce`, and `sendThroughMyService` with its own authentication, durable claim storage, and authorization. Do not use the demo's automatic approval in a real integration.
 
 ```js
 import { createGuardedToolExecute } from "./pilots/action-boundary/guarded-tool.mjs";
+
+async function consumeHostGrantOnce(input, context) {
+  throw new Error("Atomically consume the host-issued grant in durable storage");
+}
 
 const policy = {
   protocol: "aml-action-policy/1",
@@ -47,6 +51,7 @@ const execute = createGuardedToolExecute({
   policy,
   requestApproval: async ({ proposal, proposal_sha256 }, context) =>
     showAndAuthorizeExactProposal(proposal, proposal_sha256, context),
+  consumeApproval: (input, context) => consumeHostGrantOnce(input, context),
   execute: async (args, context) =>
     sendThroughMyService(args.to, args.body, context)
 });
@@ -55,7 +60,7 @@ const execute = createGuardedToolExecute({
 // It returns { protocol, plan, receipt, result? }.
 ```
 
-`requestApproval` must return `{ approved: true, proposal_sha256 }` for the exact frozen proposal, or refuse. The callback may be omitted for a policy rule that allows an action without approval. If an approval-required rule has no callback, dispatch blocks. The adapter passes the framework's second `execute` argument as `context` to the host callbacks, and calls the tool with the frozen canonical arguments. A host mapping error throws before any tool invocation.
+`requestApproval` must return `{ approved: true, proposal_sha256 }` for the exact frozen proposal, or refuse, and identify a host-issued one-use grant. The `consumeApproval` hook must atomically claim that grant, bound to the digest, and return exactly `true` once. The placeholder above throws, so a copied sketch cannot dispatch until the host implements the claim. The approval callback may be omitted for a policy rule that allows an action without approval. If an approval-required rule has no callback, dispatch blocks. The adapter passes the framework's second `execute` argument as `context` to the host callbacks, and calls the tool with the frozen canonical arguments. A host mapping error throws before any tool invocation.
 
 The adapter captures the tool arguments once before calling `resourceFor`. Keep that host mapper synchronous and read-only: it receives a snapshot, and a mutation throws before approval or dispatch. The policy resource and provider callback must describe the same destination. If your provider callback adds recipients or rewrites a request, use the prepared request adapters below so the complete provider request is checked before dispatch.
 
