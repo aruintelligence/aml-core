@@ -18,6 +18,12 @@ test("checked-in browser examples come from the live host adapter rehearsal", as
   assert.equal(reused.claim_attempts, 2);
   assert.equal(reused.claims_consumed, 1);
   assert.equal(reused.callback_count, 1);
+  const declined = report.cases.find(item => item.id === "approval_declined");
+  assert.equal(declined.approval_requests, 1);
+  assert.equal(declined.claim_attempts, 0);
+  assert.equal(declined.callback_count, 0);
+  assert.deepEqual(declined.attempts[0].host_hook_events,
+    ["Approval requested", "Fixture approval declined"]);
   const revoked = report.cases.find(item => item.id === "claim_revoked");
   assert.equal(revoked.claims_consumed, 1);
   assert.equal(revoked.callback_count, 0);
@@ -42,7 +48,8 @@ test("one selected case keeps the same observed receipt and callback count", asy
 test("case list prints each fixture ID and its ordered receipt statuses", async () => {
   const report = await buildGuardedToolRehearsal();
   const listed = listGuardedToolCases(report);
-  assert.equal(listed.split("\n").filter(Boolean).length, 10);
+  assert.equal(listed.split("\n").filter(Boolean).length, 11);
+  assert.match(listed, /^approval_declined\tblocked$/m);
   assert.match(listed, /^approval_reused\tdispatched -> blocked$/m);
   assert.match(listed, /^claim_hook_unknown\tblocked$/m);
   assert.match(listed, /^callback_unknown\tunknown$/m);
