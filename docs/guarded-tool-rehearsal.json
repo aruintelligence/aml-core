@@ -104,6 +104,27 @@
       "fixture_state_changes": 0
     },
     {
+      "id": "invalid_arguments",
+      "title": "Non-finite tool arguments",
+      "change": "The caller supplies a non-finite number. Canonical capture rejects it, returning a blocked receipt with no proposal digest before the host mapper runs.",
+      "host_move": "Validate tool arguments at the host boundary. Preserve the blocked input receipt and do not claim it has a proposal digest or that a provider call was attempted.",
+      "destination": "team@example.test",
+      "attempts": [
+        {
+          "policy_decision": "deny",
+          "proposal_sha256": null,
+          "execution_status": "blocked",
+          "reason": "AML_CANONICAL_JSON_NON_FINITE_NUMBER",
+          "host_hook_events": []
+        }
+      ],
+      "approval_requests": 0,
+      "claim_attempts": 0,
+      "claims_consumed": 0,
+      "callback_count": 0,
+      "fixture_state_changes": 0
+    },
+    {
       "id": "approval_unavailable",
       "title": "No approval hook",
       "change": "The host supplies no way to request approval.",

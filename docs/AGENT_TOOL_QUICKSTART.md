@@ -14,7 +14,7 @@ node pilots/action-boundary/guarded-tool-demo.mjs
 
 The first fixture has an exact policy rule and a **simulated** approval; its callback returns a `would_send_to` object. The second changes the destination and is blocked before the callback. There is no network request, message delivery, or human authentication.
 
-For the fifteen-case host rehearsal, list the case IDs and ordered outcomes, then inspect one case:
+For the sixteen-case host rehearsal, list the case IDs and ordered outcomes, then inspect one case:
 
 ```bash
 node pilots/action-boundary/guarded-tool-rehearsal.mjs --list
@@ -22,7 +22,7 @@ node pilots/action-boundary/guarded-tool-rehearsal.mjs --case claim_revoked
 node pilots/action-boundary/guarded-tool-rehearsal.mjs --check
 ```
 
-The list prints one tab-separated ID and outcome sequence per fixture; a two-attempt case prints both statuses in order. The `mapper_mutated` case prints `pre-plan error`: its host mapper changes its argument snapshot, so the adapter throws before a plan or receipt exists. These local fixture callbacks are not human approvals, provider calls, delivery evidence, or proof of production safety. An `unknown` receipt may follow a side effect; do not silently retry it.
+The list prints one tab-separated ID and outcome sequence per fixture; a two-attempt case prints both statuses in order. The `mapper_mutated` case prints `pre-plan error`: its host mapper changes its argument snapshot, so the adapter throws before a plan or receipt exists. In `invalid_arguments`, canonical capture returns a blocked receipt with a null digest before the host mapper runs. These local fixture callbacks are not human approvals, provider calls, delivery evidence, or proof of production safety. An `unknown` receipt may follow a side effect; do not silently retry it.
 
 The [host allow case](https://aruintelligence.github.io/aml-core/agent-start.html?case=host_allow#rehearsal) shows an exact rule with `requires_approval: false`: one local callback returns with zero approval requests and zero claim attempts. Only the host can choose that policy; the fixture is not a recommendation to waive approval for a real send.
 
@@ -70,7 +70,7 @@ const execute = createGuardedToolExecute({
 
 `requestApproval` must return `{ approved: true, proposal_sha256 }` for the exact frozen proposal, or refuse, and identify a host-issued one-use grant. The `consumeApproval` hook must atomically claim that grant, bound to the digest, and return exactly `true` once. The placeholder above throws, so a copied sketch cannot dispatch until the host implements the claim. The approval callback may be omitted for a policy rule that allows an action without approval. If an approval-required rule has no callback, dispatch blocks. The adapter passes the framework's second `execute` argument as `context` to the host callbacks, and calls the tool with the frozen canonical arguments. A host mapping error throws before an action plan or dispatch receipt exists and before any tool invocation. Handle it in the host error path rather than fabricating a blocked receipt.
 
-The [mapper mutation case](https://aruintelligence.github.io/aml-core/agent-start.html?case=mapper_mutated#rehearsal) records a pre-plan exception and zero approval requests, claim attempts, and tool callbacks. Its `adapter_error` is an observed local exception, not a receipt reason.
+The [mapper mutation case](https://aruintelligence.github.io/aml-core/agent-start.html?case=mapper_mutated#rehearsal) records a pre-plan exception and zero approval requests, claim attempts, and tool callbacks. Its `adapter_error` is an observed local exception, not a receipt reason. The [invalid arguments case](https://aruintelligence.github.io/aml-core/agent-start.html?case=invalid_arguments#rehearsal) shows the contrasting blocked receipt for a non-finite number, with no proposal digest or host hook invocation.
 
 The adapter captures the tool arguments once before calling `resourceFor`. Keep that host mapper synchronous and read-only: it receives a snapshot, and a mutation throws before approval or dispatch. The policy resource and provider callback must describe the same destination. If your provider callback adds recipients or rewrites a request, use the prepared request adapters below so the complete provider request is checked before dispatch.
 

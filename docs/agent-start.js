@@ -82,7 +82,9 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     reason.textContent = attempt.adapter_error ?
       `adapter error: ${attempt.adapter_error}` : `receipt.reason = ${attempt.reason}`;
     const digest = document.createElement("code");
-    if (!attempt.adapter_error) digest.textContent = `proposal SHA-256: ${attempt.proposal_sha256}`;
+    if (!attempt.adapter_error) digest.textContent = attempt.proposal_sha256 === null ?
+      "proposal SHA-256: unavailable (canonical input rejected)" :
+      `proposal SHA-256: ${attempt.proposal_sha256}`;
     const result = document.createElement("code");
     if (attempt.result) result.textContent = `Fixture target: ${attempt.result.would_send_to}`;
     const traceLabel = document.createElement("small");
@@ -113,7 +115,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     }
   });
 
-  fetch("guarded-tool-rehearsal.json?v=bf33ac500b17").then(response => {
+  fetch("guarded-tool-rehearsal.json?v=7a2938c6d201").then(response => {
     if (!response.ok) throw new Error("Report request failed");
     return response.json();
   }).then(report => {
