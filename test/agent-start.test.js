@@ -22,8 +22,8 @@ test("the page labels the report as a fixture and offers the exact recheck comma
   const page = readFileSync(new URL("../docs/agent-start.html", import.meta.url), "utf8");
   assert.match(page, /guarded-tool-rehearsal\.mjs --check/);
   assert.match(page, /id="case-picker"/);
-  assert.match(page, /id="case-picker"[^>]*role="tablist"/);
-  assert.match(page, /id="case-panel" role="tabpanel" tabindex="0"/);
+  assert.match(page, /id="case-picker"[^>]*role="radiogroup"/);
+  assert.match(page, /id="case-panel" role="region" aria-labelledby="case-title" tabindex="0"/);
   assert.match(page, /id="route-label"/);
   assert.match(page, /href="#case-title">Jump to selected result/);
   assert.match(page, /Every callback is a fixture/);
@@ -32,12 +32,10 @@ test("the page labels the report as a fixture and offers the exact recheck comma
   assert.match(page, /A claim-hook error can leave a grant spent/);
 });
 
-test("case tabs expose one selected panel and explicit receipt meanings", () => {
+test("case radios expose one checked choice and explicit receipt meanings", () => {
   const script = readFileSync(new URL("../docs/agent-start.js", import.meta.url), "utf8");
-  assert.match(script, /setAttribute\("role", "tab"\)/);
-  assert.match(script, /setAttribute\("aria-controls", "case-panel"\)/);
-  assert.match(script, /setAttribute\("aria-selected", String\(selected\)\)/);
-  assert.match(script, /setAttribute\("aria-labelledby", `case-tab-\$\{id\}`\)/);
+  assert.match(script, /setAttribute\("role", "radio"\)/);
+  assert.match(script, /setAttribute\("aria-checked", String\(selected\)\)/);
   assert.match(script, /Local fixture callback returned; external delivery is unverified/);
   assert.match(script, /Local fixture callback threw; a side effect may have occurred/);
 });
