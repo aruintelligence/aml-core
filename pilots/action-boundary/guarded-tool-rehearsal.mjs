@@ -209,21 +209,38 @@ export function selectGuardedToolCase(report, id) {
   return { protocol: report.protocol, provenance: report.provenance, scope: report.scope, case: selected };
 }
 
+export function listGuardedToolCases(report) {
+  return report.cases.map(item =>
+    `${item.id}\t${item.attempts.map(attempt => attempt.execution_status).join(" -> ")}`
+  ).join("\n") + "\n";
+}
+
+export function parseGuardedToolArgs(args) {
+  const [option, caseId] = args;
+  if (!(args.length === 0 ||
+      (args.length === 1 && ["--write", "--check", "--list"].includes(option)) ||
+      (args.length === 2 && option === "--case" && fixtures.some(item => item.id === caseId)))) {
+    throw new Error("Use no argument, --write, --check, --list, or --case <id> (see --list)");
+  }
+  return { option, caseId };
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { option, caseId } = parseGuardedToolArgs(process.argv.slice(2));
   const report = await buildGuardedToolRehearsal();
   assertGuardedToolRehearsal(report);
   const json = JSON.stringify(report, null, 2) + "\n";
-  if (process.argv[2] === "--write") {
+  if (option === "--write") {
     await writeFile(reportUrl, json, "utf8");
     console.log("Wrote docs/guarded-tool-rehearsal.json");
-  } else if (process.argv[2] === "--check") {
+  } else if (option === "--check") {
     assert.equal(await readFile(reportUrl, "utf8"), json, "Rehearsal report is stale; run --write");
     console.log(`Guarded tool rehearsal: ${report.cases.length} cases match the checked-in report.`);
-  } else if (process.argv[2] === "--case" && process.argv.length === 4) {
-    process.stdout.write(JSON.stringify(selectGuardedToolCase(report, process.argv[3]), null, 2) + "\n");
-  } else if (process.argv.length === 2) {
-    process.stdout.write(json);
+  } else if (option === "--list") {
+    process.stdout.write(listGuardedToolCases(report));
+  } else if (option === "--case") {
+    process.stdout.write(JSON.stringify(selectGuardedToolCase(report, caseId), null, 2) + "\n");
   } else {
-    throw new Error("Use no argument, --write, --check, or --case <id>");
+    process.stdout.write(json);
   }
 }
