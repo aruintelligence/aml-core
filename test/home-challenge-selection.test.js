@@ -59,6 +59,9 @@ test("challenge choices support one selected answer, keyboard navigation, and re
   predictions[2].click();
   assert.equal(fields["#predict-feedback"].dataset.correct, "true");
   assert.deepEqual(predictions.map(x => x.tabIndex), [-1, -1, 0]);
+  probes[0].click();
+  assert.equal(fields["#predict-feedback"].hidden, false, "reselecting the same change keeps its answer");
+  assert.equal(fields["#ledger-result"].hidden, false);
   assert.equal(predictions[2].key("ArrowRight"), true);
   assert.equal(focused, predictions[0]);
   assert.deepEqual(predictions.map(x => x.attributes["aria-checked"]), ["true", "false", "false"]);
