@@ -45,6 +45,11 @@ const fixtures = [
     options: { approval: "mutate" }
   },
   {
+    id: "claim_revoked", title: "Rule revoked during the one-use claim",
+    change: "The host consumes the claim, then revokes the rule before dispatch. The callback stays untouched and the claim remains spent.",
+    options: { claim: "revoke" }
+  },
+  {
     id: "callback_unknown", title: "Callback throws after entry",
     change: "The simulated callback throws, so the wrapper cannot assert the side effect did not occur.",
     options: { callback: "throws" }
@@ -82,6 +87,10 @@ async function runFixture({ id, title, change, options }) {
       approvalConsumptions++;
       const accepted = approvalConsumptions === 1;
       hookEvents.push(accepted ? "One-use claim consumed" : "One-use claim refused");
+      if (options.claim === "revoke") {
+        policy.rules = [];
+        hookEvents.push("Host rule revoked after claim");
+      }
       return accepted;
     },
     execute: async args => {
@@ -142,6 +151,7 @@ export function assertGuardedToolRehearsal(report) {
     ],
     policy_revoked: [["requires_approval", "blocked", "policy_changed"], 0],
     arguments_mutated: [["requires_approval", "dispatched", "host_dispatch_returned"], 1],
+    claim_revoked: [["requires_approval", "blocked", "policy_changed"], 0],
     callback_unknown: [["requires_approval", "unknown", "host_dispatch_error"], 1]
   };
   assert.equal(report.cases.length, Object.keys(expected).length);
@@ -168,6 +178,10 @@ export function assertGuardedToolRehearsal(report) {
   assert.equal(byId.arguments_mutated.caller_destination_after_approval, "other@example.test");
   assert.equal(byId.arguments_mutated.attempts[0].result.would_send_to, "team@example.test");
   assert.ok(byId.arguments_mutated.attempts[0].host_hook_events.includes("Caller arguments changed after snapshot"));
+  assert.equal(byId.claim_revoked.approval_consumptions, 1);
+  assert.deepEqual(byId.claim_revoked.attempts[0].host_hook_events.slice(-2),
+    ["One-use claim consumed", "Host rule revoked after claim"]);
+  assert.ok(!byId.claim_revoked.attempts[0].host_hook_events.includes("Fixture callback entered"));
   assert.ok(byId.approval_reused.attempts[1].host_hook_events.includes("One-use claim refused"));
   assert.ok(!byId.approval_reused.attempts[1].host_hook_events.includes("Fixture callback entered"));
   assert.deepEqual(byId.callback_unknown.attempts[0].host_hook_events.slice(-2),
