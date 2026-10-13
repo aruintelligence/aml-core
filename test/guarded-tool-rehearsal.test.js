@@ -14,6 +14,14 @@ test("checked-in browser examples come from the live host adapter rehearsal", as
     }
   }
   const hostAllow = report.cases.find(item => item.id === "host_allow");
+  const mapper = report.cases.find(item => item.id === "mapper_mutated");
+  assert.deepEqual(mapper.attempts, [{
+    adapter_error: "resourceFor must not mutate arguments",
+    host_hook_events: ["Host mapper changed its argument snapshot"]
+  }]);
+  assert.equal(mapper.approval_requests, 0);
+  assert.equal(mapper.claim_attempts, 0);
+  assert.equal(mapper.callback_count, 0);
   assert.equal(hostAllow.attempts[0].policy_decision, "allow");
   assert.equal(hostAllow.attempts[0].execution_status, "dispatched");
   assert.equal(hostAllow.approval_requests, 0);
@@ -69,8 +77,9 @@ test("one selected case keeps the same observed receipt and callback count", asy
 test("case list prints each fixture ID and its ordered receipt statuses", async () => {
   const report = await buildGuardedToolRehearsal();
   const listed = listGuardedToolCases(report);
-  assert.equal(listed.split("\n").filter(Boolean).length, 14);
+  assert.equal(listed.split("\n").filter(Boolean).length, 15);
   assert.match(listed, /^host_allow\tdispatched$/m);
+  assert.match(listed, /^mapper_mutated\tpre-plan error$/m);
   assert.match(listed, /^approval_hook_error\tblocked$/m);
   assert.match(listed, /^approval_declined\tblocked$/m);
   assert.match(listed, /^approval_reused\tdispatched -> blocked$/m);
