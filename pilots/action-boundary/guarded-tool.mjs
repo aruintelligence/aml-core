@@ -2,6 +2,7 @@
 // The host owns every option. Never construct policy, approval, or execute from
 // model output. This returns receipts, not evidence of external delivery.
 import { planAction, dispatchAction } from "./boundary.mjs";
+import { canonicalJSONStringify } from "../../protocol/canonicalJson.js";
 
 export function createGuardedToolExecute({
   tool, effect, purpose, resourceFor, policy, requestApproval, consumeApproval, execute
@@ -17,13 +18,18 @@ export function createGuardedToolExecute({
   }
 
   return async function guardedToolExecute(argumentsValue, context) {
-    // resourceFor must synchronously derive the real destination from the same
-    // arguments that execute receives. A mapping error throws before dispatch.
-    const resource = resourceFor(argumentsValue, context);
+    // Capture input once before asking a host mapper for the destination. A
+    // getter or mapper must not shift the arguments between policy and dispatch.
+    const argumentBytes = canonicalJSONStringify(argumentsValue);
+    const mappedArguments = JSON.parse(argumentBytes);
+    const resource = resourceFor(mappedArguments, context);
     if (typeof resource !== "string") throw new TypeError("resourceFor must return a string");
+    if (canonicalJSONStringify(mappedArguments) !== argumentBytes) {
+      throw new TypeError("resourceFor must not mutate arguments");
+    }
     const proposal = {
       protocol: "aml-proposed-action/1", tool, effect, resource, purpose,
-      arguments: argumentsValue
+      arguments: JSON.parse(argumentBytes)
     };
     const plan = planAction(proposal, policy);
     const outcome = await dispatchAction(proposal, {
@@ -40,3 +46,4 @@ export function createGuardedToolExecute({
     };
   };
 }
+
