@@ -14,7 +14,7 @@ node pilots/action-boundary/guarded-tool-demo.mjs
 
 The first fixture has an exact policy rule and a **simulated** approval; its callback returns a `would_send_to` object. The second changes the destination and is blocked before the callback. There is no network request, message delivery, or human authentication.
 
-For the ten-case host rehearsal, list the case IDs and ordered receipt statuses, then inspect one case:
+For the eleven-case host rehearsal, list the case IDs and ordered receipt statuses, then inspect one case:
 
 ```bash
 node pilots/action-boundary/guarded-tool-rehearsal.mjs --list
@@ -23,6 +23,8 @@ node pilots/action-boundary/guarded-tool-rehearsal.mjs --check
 ```
 
 The list prints one tab-separated ID and status sequence per fixture; a two-attempt case prints both statuses in order. These local fixture callbacks are not human approvals, provider calls, delivery evidence, or proof of production safety. An `unknown` receipt may follow a side effect; do not silently retry it.
+
+The [declined approval case](https://aruintelligence.github.io/aml-core/agent-start.html?case=approval_declined#rehearsal) requests a fixture decision and receives a refusal. The receipt blocks before any claim or tool callback. A refusal is not a grant; a later attempt needs its own authenticated decision.
 
 ## Wrap your own function tool
 
