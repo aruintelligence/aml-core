@@ -62,7 +62,8 @@ async function runFixture({ id, title, change, options }) {
     rules: [{ tool: "send_message", effect: "send", resource: "team@example.test", requires_approval: true }]
   };
   let approvalRequests = 0;
-  let approvalConsumptions = 0;
+  let claimAttempts = 0;
+  let claimsConsumed = 0;
   let callbackCount = 0;
   let hookEvents = [];
   const requestApproval = options.approval === "missing" ? undefined :
@@ -84,8 +85,9 @@ async function runFixture({ id, title, change, options }) {
     tool: "send_message", effect: "send", purpose: "Send a status update",
     resourceFor: args => args.to, policy, requestApproval,
     consumeApproval: async () => {
-      approvalConsumptions++;
-      const accepted = approvalConsumptions === 1;
+      claimAttempts++;
+      const accepted = claimAttempts === 1;
+      if (accepted) claimsConsumed++;
       hookEvents.push(accepted ? "One-use claim consumed" : "One-use claim refused");
       if (options.claim === "revoke") {
         policy.rules = [];
@@ -122,7 +124,7 @@ async function runFixture({ id, title, change, options }) {
   if (options.repeat) attempts.push(await attempt());
   return { id, title, change, destination: originalDestination,
     ...(options.approval === "mutate" ? { caller_destination_after_approval: args.to } : {}), attempts,
-    approval_requests: approvalRequests, approval_consumptions: approvalConsumptions,
+    approval_requests: approvalRequests, claim_attempts: claimAttempts, claims_consumed: claimsConsumed,
     callback_count: callbackCount };
 }
 
@@ -167,9 +169,10 @@ export function assertGuardedToolRehearsal(report) {
       `${id}: proposal digest`);
   }
   assert.equal(byId.changed_destination.approval_requests, 0);
-  assert.equal(byId.approval_mismatch.approval_consumptions, 0);
-  assert.equal(byId.policy_revoked.approval_consumptions, 0);
-  assert.equal(byId.approval_reused.approval_consumptions, 2);
+  assert.equal(byId.approval_mismatch.claim_attempts, 0);
+  assert.equal(byId.policy_revoked.claim_attempts, 0);
+  assert.equal(byId.approval_reused.claim_attempts, 2);
+  assert.equal(byId.approval_reused.claims_consumed, 1);
   assert.equal(byId.callback_unknown.attempts[0].result, undefined);
   assert.deepEqual(byId.changed_destination.attempts[0].host_hook_events, []);
   assert.deepEqual(byId.approval_unavailable.attempts[0].host_hook_events, []);
@@ -178,7 +181,8 @@ export function assertGuardedToolRehearsal(report) {
   assert.equal(byId.arguments_mutated.caller_destination_after_approval, "other@example.test");
   assert.equal(byId.arguments_mutated.attempts[0].result.would_send_to, "team@example.test");
   assert.ok(byId.arguments_mutated.attempts[0].host_hook_events.includes("Caller arguments changed after snapshot"));
-  assert.equal(byId.claim_revoked.approval_consumptions, 1);
+  assert.equal(byId.claim_revoked.claim_attempts, 1);
+  assert.equal(byId.claim_revoked.claims_consumed, 1);
   assert.deepEqual(byId.claim_revoked.attempts[0].host_hook_events.slice(-2),
     ["One-use claim consumed", "Host rule revoked after claim"]);
   assert.ok(!byId.claim_revoked.attempts[0].host_hook_events.includes("Fixture callback entered"));

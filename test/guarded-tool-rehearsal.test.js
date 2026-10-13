@@ -15,7 +15,12 @@ test("checked-in browser examples come from the live host adapter rehearsal", as
   }
   const reused = report.cases.find(item => item.id === "approval_reused");
   assert.equal(reused.attempts.length, 2);
+  assert.equal(reused.claim_attempts, 2);
+  assert.equal(reused.claims_consumed, 1);
   assert.equal(reused.callback_count, 1);
+  const revoked = report.cases.find(item => item.id === "claim_revoked");
+  assert.equal(revoked.claims_consumed, 1);
+  assert.equal(revoked.callback_count, 0);
   const uncertain = report.cases.find(item => item.id === "callback_unknown");
   assert.equal(uncertain.attempts[0].execution_status, "unknown");
   assert.equal(uncertain.callback_count, 1);

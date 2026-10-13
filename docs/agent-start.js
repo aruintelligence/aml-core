@@ -85,7 +85,7 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
     }
   });
 
-  fetch("guarded-tool-rehearsal.json?v=host-rehearsal-5").then(response => {
+  fetch("guarded-tool-rehearsal.json?v=host-rehearsal-6").then(response => {
     if (!response.ok) throw new Error("Report request failed");
     return response.json();
   }).then(report => {
@@ -112,7 +112,8 @@ if (typeof document !== "undefined" && document.getElementById("rehearsal")) {
       $("case-attempts").replaceChildren(...item.attempts.map(attemptCard));
       $("case-metrics").replaceChildren(
         metric(`Approval requests: ${item.approval_requests}`),
-        metric(`One-use claims: ${item.approval_consumptions}`),
+        metric(`Claim attempts: ${item.claim_attempts}`),
+        metric(`Claims consumed: ${item.claims_consumed}`),
         metric(`Fixture callbacks: ${item.callback_count}`),
         ...(item.caller_destination_after_approval ?
           [metric(`Caller changed to: ${item.caller_destination_after_approval}`)] : [])
