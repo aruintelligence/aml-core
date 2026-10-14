@@ -5,11 +5,15 @@ on:
     paths:
       - "pilots/action-boundary/**"
       - "protocol/canonicalJson.js"
+      - "docs/action-dispatch-matrix.json"
+      - "test/action-boundary-dispatch-matrix.test.js"
       - ".github/workflows/action-boundary-vectors.yml"
   pull_request:
     paths:
       - "pilots/action-boundary/**"
       - "protocol/canonicalJson.js"
+      - "docs/action-dispatch-matrix.json"
+      - "test/action-boundary-dispatch-matrix.test.js"
       - ".github/workflows/action-boundary-vectors.yml"
 
 permissions:
@@ -29,3 +33,6 @@ jobs:
       - run: node pilots/action-boundary/boundary.test.mjs
       - run: node pilots/action-boundary/vectors.test.mjs
       - run: python3 pilots/action-boundary/verify_vectors.py
+      - run: node pilots/action-boundary/dispatch-matrix.mjs --check
+      - run: python3 pilots/action-boundary/verify_dispatch_matrix.py docs/action-dispatch-matrix.json
+      - run: node --test test/action-boundary-dispatch-matrix.test.js
