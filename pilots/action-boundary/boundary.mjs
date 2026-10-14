@@ -10,15 +10,19 @@ const plain = value => value && typeof value === "object" && !Array.isArray(valu
 const keysAre = (value, keys) => Object.keys(value).sort().join("|") === [...keys].sort().join("|");
 
 function snapshot(proposal) {
-  if (!plain(proposal) || !keysAre(proposal, ["protocol", "tool", "effect", "resource", "purpose", "arguments"]) ||
-      proposal.protocol !== PROTOCOL || !["tool", "resource", "purpose"].every(k =>
-        typeof proposal[k] === "string" && proposal[k].trim() && proposal[k].length <= 256) ||
-      !EFFECTS.has(proposal.effect) || !plain(proposal.arguments)) {
-    throw new Error("invalid_proposal");
-  }
+  if (!plain(proposal)) throw new Error("invalid_proposal");
+  // Canonicalization reads each caller property once. Validate the actual
+  // serialized value rather than an earlier read from an accessor or proxy.
   const bytes = canonicalJSONStringify(proposal);
   if (Buffer.byteLength(bytes, "utf8") > 65536) throw new Error("proposal_too_large");
-  return { bytes, digest: hex(bytes), value: JSON.parse(bytes) };
+  const value = JSON.parse(bytes);
+  if (!plain(value) || !keysAre(value, ["protocol", "tool", "effect", "resource", "purpose", "arguments"]) ||
+      value.protocol !== PROTOCOL || !["tool", "resource", "purpose"].every(k =>
+        typeof value[k] === "string" && value[k].trim() && value[k].length <= 256) ||
+      !EFFECTS.has(value.effect) || !plain(value.arguments)) {
+    throw new Error("invalid_proposal");
+  }
+  return { bytes, digest: hex(bytes), value };
 }
 
 function ruleFor(proposal, policy) {
@@ -38,29 +42,35 @@ function ruleFor(proposal, policy) {
   return matching[0];
 }
 
+function planFrozen(frozen, policy) {
+  const rule = ruleFor(frozen.value, policy);
+  return { protocol: "aml-action-plan/1", proposal_sha256: frozen.digest,
+    decision: !rule ? "deny" : rule.requires_approval ? "requires_approval" : "allow",
+    reason: rule ? "exact_rule" : "no_exact_rule" };
+}
+
+const deniedPlan = error => ({ protocol: "aml-action-plan/1", proposal_sha256: null,
+  decision: "deny", reason: error.message });
+
 export function planAction(proposal, policy) {
-  try {
-    const frozen = snapshot(proposal);
-    const rule = ruleFor(frozen.value, policy);
-    return { protocol: "aml-action-plan/1", proposal_sha256: frozen.digest,
-      decision: !rule ? "deny" : rule.requires_approval ? "requires_approval" : "allow",
-      reason: rule ? "exact_rule" : "no_exact_rule" };
-  } catch (error) {
-    return { protocol: "aml-action-plan/1", proposal_sha256: null,
-      decision: "deny", reason: error.message };
-  }
+  try { return planFrozen(snapshot(proposal), policy); }
+  catch (error) { return deniedPlan(error); }
 }
 
 // All callbacks and policy must be supplied by the trusted host. A model must
 // never supply them. consumeApproval is an optional atomic, one-use host claim.
 export async function dispatchAction(proposal, { policy, requestApproval, consumeApproval, executeTool } = {}) {
-  const plan = planAction(proposal, policy);
+  let frozen;
+  let plan;
+  try {
+    frozen = snapshot(proposal);
+    plan = planFrozen(frozen, policy);
+  } catch (error) { plan = deniedPlan(error); }
   const receipt = (status, reason) => ({ protocol: "aml-action-dispatch/1",
     proposal_sha256: plan.proposal_sha256, policy_decision: plan.decision,
     execution_status: status, reason });
   if (plan.decision === "deny") return { receipt: receipt("blocked", plan.reason) };
   if (typeof executeTool !== "function") return { receipt: receipt("blocked", "missing_host_dispatch") };
-  const frozen = snapshot(proposal);
   let approval;
   if (plan.decision === "requires_approval") {
     if (typeof requestApproval !== "function") return { receipt: receipt("blocked", "approval_unavailable") };

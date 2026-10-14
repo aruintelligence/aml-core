@@ -1,0 +1,44 @@
+{
+  "protocol": "aml-action-snapshot-proof/1",
+  "provenance": "project-authored stateful accessor and local callback fixtures",
+  "limits": "Two local fixtures with a changing JavaScript getter. No human approval, provider effect, arbitrary object behavior, or production safety proof.",
+  "boundary_source_sha256": "e0a16067f023a5281b22115f142f84c83fad29aeeec6327370cf0989aaecc11e",
+  "rows": [
+    {
+      "mode": "allow",
+      "accessor_reads": 1,
+      "approval_requests": 0,
+      "approval_digest": null,
+      "claim_attempts": 0,
+      "callback_count": 1,
+      "callback_body": "First observed body",
+      "callback_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+      "receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+        "policy_decision": "allow",
+        "execution_status": "dispatched",
+        "reason": "host_dispatch_returned"
+      },
+      "receipt_matches_callback": true
+    },
+    {
+      "mode": "requires_approval",
+      "accessor_reads": 1,
+      "approval_requests": 1,
+      "approval_digest": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+      "claim_attempts": 1,
+      "callback_count": 1,
+      "callback_body": "First observed body",
+      "callback_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+      "receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+        "policy_decision": "requires_approval",
+        "execution_status": "dispatched",
+        "reason": "host_dispatch_returned"
+      },
+      "receipt_matches_callback": true
+    }
+  ]
+}

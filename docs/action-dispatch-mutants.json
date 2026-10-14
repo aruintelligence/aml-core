@@ -2,11 +2,13 @@
   "protocol": "aml-action-dispatch-mutants/1",
   "provenance": "project-authored exact source substitutions and local callbacks",
   "limits": "Selected mutations and finite fixtures only. No external side effect, arbitrary bug coverage, outside witness, or formal proof of production safety.",
-  "boundary_source_sha256": "4a7d72c4df073c669312f614cad109ea487772c852e4cb00880e566fc9ad329f",
+  "boundary_source_sha256": "e0a16067f023a5281b22115f142f84c83fad29aeeec6327370cf0989aaecc11e",
   "matrix_report_sha256": "2ccdb17341e4406960ec8e6f519d3d1a5dca7f8a4efa8a57d5c9b1b5c0b7c075",
   "tuple_report_sha256": "988d17e701fff4d0b18cf68449d415786cf757a7fea93bc3bfd4f83d511635dd",
+  "snapshot_report_sha256": "12b891289014973e5d86327dc912d179b1537140557d4d120784116193f9477b",
   "matrix_vectors": 384,
   "tuple_cases": 8,
+  "snapshot_cases": 2,
   "resource_probe_reference": {
     "execution_status": "blocked",
     "reason": "no_exact_rule",
@@ -14,11 +16,13 @@
     "callback_count": 0
   },
   "summary": {
-    "selected_mutants": 9,
+    "selected_mutants": 10,
     "matrix_detected": 7,
     "tuple_detected": 3,
     "tuple_only_detected": 2,
-    "combined_detected": 9,
+    "snapshot_detected": 3,
+    "snapshot_only_detected": 1,
+    "combined_detected": 10,
     "undetected": 0
   },
   "mutations": [
@@ -76,6 +80,8 @@
       },
       "tuple_changed_cases": 0,
       "first_changed_tuple": null,
+      "snapshot_changed_cases": 0,
+      "snapshot_changes": [],
       "resource_probe_changed": false,
       "resource_probe_result": {
         "execution_status": "blocked",
@@ -138,6 +144,49 @@
       },
       "tuple_changed_cases": 0,
       "first_changed_tuple": null,
+      "snapshot_changed_cases": 1,
+      "snapshot_changes": [
+        {
+          "index": 1,
+          "mode": "requires_approval",
+          "reference": {
+            "mode": "requires_approval",
+            "accessor_reads": 1,
+            "approval_requests": 1,
+            "approval_digest": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+            "claim_attempts": 1,
+            "callback_count": 1,
+            "callback_body": "First observed body",
+            "callback_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            },
+            "receipt_matches_callback": true
+          },
+          "mutant": {
+            "mode": "requires_approval",
+            "accessor_reads": 1,
+            "approval_requests": 1,
+            "approval_digest": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+            "claim_attempts": 0,
+            "callback_count": 1,
+            "callback_body": "First observed body",
+            "callback_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            },
+            "receipt_matches_callback": true
+          }
+        }
+      ],
       "resource_probe_changed": false,
       "resource_probe_result": {
         "execution_status": "blocked",
@@ -200,6 +249,8 @@
       },
       "tuple_changed_cases": 0,
       "first_changed_tuple": null,
+      "snapshot_changed_cases": 0,
+      "snapshot_changes": [],
       "resource_probe_changed": false,
       "resource_probe_result": {
         "execution_status": "blocked",
@@ -262,6 +313,8 @@
       },
       "tuple_changed_cases": 0,
       "first_changed_tuple": null,
+      "snapshot_changed_cases": 0,
+      "snapshot_changes": [],
       "resource_probe_changed": false,
       "resource_probe_result": {
         "execution_status": "blocked",
@@ -324,6 +377,89 @@
       },
       "tuple_changed_cases": 0,
       "first_changed_tuple": null,
+      "snapshot_changed_cases": 2,
+      "snapshot_changes": [
+        {
+          "index": 0,
+          "mode": "allow",
+          "reference": {
+            "mode": "allow",
+            "accessor_reads": 1,
+            "approval_requests": 0,
+            "approval_digest": null,
+            "claim_attempts": 0,
+            "callback_count": 1,
+            "callback_body": "First observed body",
+            "callback_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+              "policy_decision": "allow",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            },
+            "receipt_matches_callback": true
+          },
+          "mutant": {
+            "mode": "allow",
+            "accessor_reads": 2,
+            "approval_requests": 0,
+            "approval_digest": null,
+            "claim_attempts": 0,
+            "callback_count": 1,
+            "callback_body": "Changed on second read",
+            "callback_sha256": "3ccbe74259301cf7521a83652ae2e8f2fdf0f56c9542e97574bff66e296633cc",
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+              "policy_decision": "allow",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            },
+            "receipt_matches_callback": false
+          }
+        },
+        {
+          "index": 1,
+          "mode": "requires_approval",
+          "reference": {
+            "mode": "requires_approval",
+            "accessor_reads": 1,
+            "approval_requests": 1,
+            "approval_digest": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+            "claim_attempts": 1,
+            "callback_count": 1,
+            "callback_body": "First observed body",
+            "callback_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            },
+            "receipt_matches_callback": true
+          },
+          "mutant": {
+            "mode": "requires_approval",
+            "accessor_reads": 2,
+            "approval_requests": 1,
+            "approval_digest": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+            "claim_attempts": 1,
+            "callback_count": 1,
+            "callback_body": "Changed on second read",
+            "callback_sha256": "3ccbe74259301cf7521a83652ae2e8f2fdf0f56c9542e97574bff66e296633cc",
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            },
+            "receipt_matches_callback": false
+          }
+        }
+      ],
       "resource_probe_changed": false,
       "resource_probe_result": {
         "execution_status": "blocked",
@@ -386,6 +522,8 @@
       },
       "tuple_changed_cases": 0,
       "first_changed_tuple": null,
+      "snapshot_changed_cases": 0,
+      "snapshot_changes": [],
       "resource_probe_changed": false,
       "resource_probe_result": {
         "execution_status": "blocked",
@@ -475,6 +613,8 @@
           "callback_count": 1
         }
       },
+      "snapshot_changed_cases": 0,
+      "snapshot_changes": [],
       "resource_probe_changed": true,
       "resource_probe_result": {
         "execution_status": "dispatched",
@@ -517,6 +657,8 @@
           "callback_count": 1
         }
       },
+      "snapshot_changed_cases": 0,
+      "snapshot_changes": [],
       "resource_probe_changed": false,
       "resource_probe_result": {
         "execution_status": "blocked",
@@ -559,6 +701,106 @@
           "callback_count": 1
         }
       },
+      "snapshot_changed_cases": 0,
+      "snapshot_changes": [],
+      "resource_probe_changed": false,
+      "resource_probe_result": {
+        "execution_status": "blocked",
+        "reason": "no_exact_rule",
+        "policy_decision": "deny",
+        "callback_count": 0
+      }
+    },
+    {
+      "id": "double_snapshot_receipt_split",
+      "change": "Read a changing caller proposal again after planning",
+      "matrix_changed_rows": 0,
+      "first_changed_vector": null,
+      "tuple_changed_cases": 0,
+      "first_changed_tuple": null,
+      "snapshot_changed_cases": 2,
+      "snapshot_changes": [
+        {
+          "index": 0,
+          "mode": "allow",
+          "reference": {
+            "mode": "allow",
+            "accessor_reads": 1,
+            "approval_requests": 0,
+            "approval_digest": null,
+            "claim_attempts": 0,
+            "callback_count": 1,
+            "callback_body": "First observed body",
+            "callback_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+              "policy_decision": "allow",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            },
+            "receipt_matches_callback": true
+          },
+          "mutant": {
+            "mode": "allow",
+            "accessor_reads": 2,
+            "approval_requests": 0,
+            "approval_digest": null,
+            "claim_attempts": 0,
+            "callback_count": 1,
+            "callback_body": "Changed on second read",
+            "callback_sha256": "3ccbe74259301cf7521a83652ae2e8f2fdf0f56c9542e97574bff66e296633cc",
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+              "policy_decision": "allow",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            },
+            "receipt_matches_callback": false
+          }
+        },
+        {
+          "index": 1,
+          "mode": "requires_approval",
+          "reference": {
+            "mode": "requires_approval",
+            "accessor_reads": 1,
+            "approval_requests": 1,
+            "approval_digest": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+            "claim_attempts": 1,
+            "callback_count": 1,
+            "callback_body": "First observed body",
+            "callback_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            },
+            "receipt_matches_callback": true
+          },
+          "mutant": {
+            "mode": "requires_approval",
+            "accessor_reads": 2,
+            "approval_requests": 1,
+            "approval_digest": "3ccbe74259301cf7521a83652ae2e8f2fdf0f56c9542e97574bff66e296633cc",
+            "claim_attempts": 1,
+            "callback_count": 1,
+            "callback_body": "Changed on second read",
+            "callback_sha256": "3ccbe74259301cf7521a83652ae2e8f2fdf0f56c9542e97574bff66e296633cc",
+            "receipt": {
+              "protocol": "aml-action-dispatch/1",
+              "proposal_sha256": "92450646537d3defc7e639d7450a8cdbdd15fb12288668fa9f31eb8a2482b6f5",
+              "policy_decision": "requires_approval",
+              "execution_status": "dispatched",
+              "reason": "host_dispatch_returned"
+            },
+            "receipt_matches_callback": false
+          }
+        }
+      ],
       "resource_probe_changed": false,
       "resource_probe_result": {
         "execution_status": "blocked",
