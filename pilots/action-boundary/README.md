@@ -14,6 +14,8 @@ Agents can propose a tool call; the host must decide whether to dispatch it. Thi
 
 [**Check the 192-vector dispatch matrix**](DISPATCH_MATRIX.md) across policy, approval, claim, and callback behaviors. Node records the reference boundary's local results, and a separate project-authored Python oracle checks every row and rejects four deliberate alterations, including an inflated scope claim. It is a bounded executable check, not an independent audit or proof of real delivery.
 
+[**Explore the proof atlas**](../../docs/dispatch-matrix.html) to filter all 192 results, inspect the local effects behind one receipt, and share an exact vector. The page presents the checked-in report; it does not itself provide an outside verification.
+
 [**Bind all recipients in a mail function tool**](MAIL_GUARDED_TOOL.md) with `createMailGuardedToolExecute` when the host callback accepts To, CC, or BCC. The [seven-case visual comparison](https://aruintelligence.github.io/aml-core/mail-tool-integration.html?case=added_bcc#cases) executes both adapters with in-memory callbacks. It is a narrow host-side integration example, not a live provider or authenticated approval.
 
 [**Check the provider request before the send callback**](PREPARED_MAIL_TOOL.md) with `createPreparedMailToolExecute` when the host builds or expands a request from the tool arguments. The [eight-case visual lab](https://aruintelligence.github.io/aml-core/prepared-mail-lab.html?case=route_bcc#cases) executes both timing paths; a BCC added after the earlier gate reaches one simulated provider callback, while the prepared-request gate blocks it under the same intended rule. The sender must use only the prepared fields. No actual message or authenticated approval is involved.
