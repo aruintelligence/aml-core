@@ -1,4 +1,5 @@
 import http from "node:http";
+import { randomUUID } from "node:crypto";
 import { readJson } from "./readJson.js";
 import { createLockedHttpPolicy } from "./lockedPolicy.js";
 import { createRequestAuthenticator } from "./requestAuth.js";
@@ -144,7 +145,9 @@ export function createAmlHttpServer(options = {}) {
         const firewall = createDeploymentFirewall(controls);
         const result = firewall.evaluate(body.intent, {
           ...controls,
-          stream_id: body.stream_id,
+          // The audit stream identifies this server evaluation. A locked
+          // caller must not choose or reuse another evaluation's stream ID.
+          stream_id: lockedPolicy ? randomUUID() : body.stream_id,
         });
         return send(res, result.evaluation_error ? 422 : 200, {
           protocol: "aml-http-deployment-evaluation/1",

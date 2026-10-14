@@ -88,7 +88,8 @@ paths:
         effective_allowed is true even when AML would suppress content. An evaluation error returns
         422 with a decision governed by failure_mode; a client must inspect effective_allowed and
         evaluation_error. With locked_policy, the server owns profile, mode, failure_mode, context,
-        and timestamp, and rejects caller overrides, including explicit null values.
+        timestamp, and audit stream ID, and rejects caller overrides, including explicit null values.
+        Each locked single evaluation receives a fresh server-generated audit stream UUID.
       security:
         - {}
         - bearerAuth: []

@@ -181,6 +181,7 @@ test("AML HTTP deployment endpoint supports shadow rollout", async () => {
         profile: "calm_default",
         mode: "shadow",
         failure_mode: "closed",
+        stream_id: "unlocked-operator-stream",
         timestamp: "2030-01-01T00:00:00.000Z"
       })
     });
@@ -191,6 +192,7 @@ test("AML HTTP deployment endpoint supports shadow rollout", async () => {
     assert.equal(body.aml_allowed, false);
     assert.equal(body.effective_allowed, true);
     assert.equal(body.would_suppress, true);
+    assert.equal(body.receipt.runtime_audit_stream.stream_id, "unlocked-operator-stream");
     assert.ok(body.receipt.receipt_sha256);
   });
 });
@@ -425,7 +427,7 @@ test("AML HTTP returns 413 for advertised and streaming oversized bodies", async
   }, { max_body_bytes: 32 });
 });
 
-test("locked HTTP policy rejects request-selected profile, mode, failure, context, and time", async () => {
+test("locked HTTP policy rejects request-selected policy, time, and audit stream", async () => {
   await withServer(async (base) => {
     const post = (route, body) => fetch(`${base}${route}`, {
       method: "POST",
@@ -439,6 +441,8 @@ test("locked HTTP policy rejects request-selected profile, mode, failure, contex
       { failure_mode: "open" },
       { context: { consent_granted: true } },
       { timestamp: "2030-01-01T00:00:00.000Z" },
+      { stream_id: "caller-controlled-audit-id" },
+      { stream_id: null },
       { max_items: 1000 }
     ]) {
       const response = await post("/v1/deployment/evaluate", { intent: suppressedIntent(), ...control });
@@ -450,11 +454,37 @@ test("locked HTTP policy rejects request-selected profile, mode, failure, contex
       intents: [intent()], mode: "shadow"
     });
     assert.equal(batchOverride.status, 403);
+    const batchAuditOverride = await post("/v1/deployment/batch", {
+      intents: [intent()], stream_id: "caller-controlled-audit-id"
+    });
+    assert.equal(batchAuditOverride.status, 403);
     const direct = await post("/v1/evaluate", { intent: intent() });
     assert.equal(direct.status, 403);
     const canary = await post("/v1/deployment/canary", { intent: intent() });
     assert.equal(canary.status, 403);
   }, { locked_policy: { profile: "human_first", context: { consent_granted: false } } });
+});
+
+test("locked HTTP evaluations receive distinct server-owned audit streams", async () => {
+  await withServer(async (base) => {
+    const evaluate = async () => {
+      const response = await fetch(`${base}/v1/deployment/evaluate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ intent: intent() })
+      });
+      assert.equal(response.status, 200);
+      return response.json();
+    };
+    const first = await evaluate();
+    const second = await evaluate();
+    const firstId = first.receipt.runtime_audit_stream.stream_id;
+    const secondId = second.receipt.runtime_audit_stream.stream_id;
+    assert.match(firstId, /^[0-9a-f-]{36}$/);
+    assert.notEqual(firstId, secondId);
+    assert.equal(first.policy_source, "server");
+    assert.notEqual(first.receipt.receipt_sha256, second.receipt.receipt_sha256);
+  }, { locked_policy: { profile: "human_first" } });
 });
 
 test("locked HTTP policy enforces server controls and bounds batches", async () => {
