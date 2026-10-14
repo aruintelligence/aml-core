@@ -544,9 +544,32 @@ test("locked HTTP policy enforces server controls and bounds batches", async () 
     assert.equal(batch.status, 200);
     assert.equal((await batch.json()).effective_allowed, 0);
     const oversized = await post("/v1/deployment/batch", { intents: [intent(), suppressedIntent()] });
-    assert.equal(oversized.status, 400);
-    assert.match((await oversized.json()).error, /AML_BATCH_LIMIT_EXCEEDED/);
+    assert.equal(oversized.status, 413);
+    assert.equal((await oversized.json()).error, "batch_limit_exceeded");
   }, { locked_policy: { max_batch_items: 1 } });
+});
+
+test("locked HTTP batch rejects oversized input before trusted context resolution", async () => {
+  let resolverCalls = 0;
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/v1/deployment/batch`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ intents: [intent(), intent()] })
+    });
+    assert.equal(response.status, 413);
+    assert.equal((await response.json()).error, "batch_limit_exceeded");
+    assert.equal(resolverCalls, 0);
+    const withinLimit = await fetch(`${base}/v1/deployment/batch`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ intents: [intent()] })
+    });
+    assert.equal(withinLimit.status, 503);
+    assert.equal((await withinLimit.json()).error, "trusted_context_unavailable");
+    assert.equal(resolverCalls, 1);
+  }, { locked_policy: { max_batch_items: 1, resolve_context: async () => {
+    resolverCalls += 1;
+    throw new Error("resolver should not run for oversized input");
+  } } });
 });
 
 test("locked HTTP policy fails closed if trusted context is unavailable", async () => {
