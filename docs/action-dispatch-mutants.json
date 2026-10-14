@@ -3,8 +3,8 @@
   "provenance": "project-authored exact source substitutions and local callbacks",
   "limits": "Selected mutations and finite fixtures only. No external side effect, arbitrary bug coverage, outside witness, or formal proof of production safety.",
   "boundary_source_sha256": "4a7d72c4df073c669312f614cad109ea487772c852e4cb00880e566fc9ad329f",
-  "matrix_report_sha256": "3622583d7f5184e43824c3976a589425f9264b8d3e25ae2c9a784841b8d70fa9",
-  "matrix_vectors": 192,
+  "matrix_report_sha256": "2ccdb17341e4406960ec8e6f519d3d1a5dca7f8a4efa8a57d5c9b1b5c0b7c075",
+  "matrix_vectors": 384,
   "resource_probe_reference": {
     "execution_status": "blocked",
     "reason": "no_exact_rule",
@@ -13,8 +13,8 @@
   },
   "summary": {
     "selected_mutants": 7,
-    "matrix_detected": 6,
-    "additional_probe_detected": 1,
+    "matrix_detected": 7,
+    "additional_probe_detected": 0,
     "undetected": 0
   },
   "mutations": [
@@ -25,12 +25,15 @@
       "first_changed_vector": {
         "index": 112,
         "axes": {
+          "resource_scope": "exact",
           "policy": "requires_approval",
           "approval": "mismatch",
           "claim": "accept",
           "callback": "return"
         },
         "reference": {
+          "proposal_resource": "team@example.test",
+          "policy_rule_resource": "team@example.test",
           "receipt": {
             "protocol": "aml-action-dispatch/1",
             "proposal_sha256": "2b22778cd386ab9c452f9ddf4f9f4eee57ea41a89721ac24efdf761946178813",
@@ -48,6 +51,8 @@
           "result_target": null
         },
         "mutant": {
+          "proposal_resource": "team@example.test",
+          "policy_rule_resource": "team@example.test",
           "receipt": {
             "protocol": "aml-action-dispatch/1",
             "proposal_sha256": "2b22778cd386ab9c452f9ddf4f9f4eee57ea41a89721ac24efdf761946178813",
@@ -80,12 +85,15 @@
       "first_changed_vector": {
         "index": 96,
         "axes": {
+          "resource_scope": "exact",
           "policy": "requires_approval",
           "approval": "match",
           "claim": "accept",
           "callback": "return"
         },
         "reference": {
+          "proposal_resource": "team@example.test",
+          "policy_rule_resource": "team@example.test",
           "receipt": {
             "protocol": "aml-action-dispatch/1",
             "proposal_sha256": "2b22778cd386ab9c452f9ddf4f9f4eee57ea41a89721ac24efdf761946178813",
@@ -103,6 +111,8 @@
           "result_target": "team@example.test"
         },
         "mutant": {
+          "proposal_resource": "team@example.test",
+          "policy_rule_resource": "team@example.test",
           "receipt": {
             "protocol": "aml-action-dispatch/1",
             "proposal_sha256": "2b22778cd386ab9c452f9ddf4f9f4eee57ea41a89721ac24efdf761946178813",
@@ -135,12 +145,15 @@
       "first_changed_vector": {
         "index": 128,
         "axes": {
+          "resource_scope": "exact",
           "policy": "requires_approval",
           "approval": "revoke",
           "claim": "accept",
           "callback": "return"
         },
         "reference": {
+          "proposal_resource": "team@example.test",
+          "policy_rule_resource": "team@example.test",
           "receipt": {
             "protocol": "aml-action-dispatch/1",
             "proposal_sha256": "2b22778cd386ab9c452f9ddf4f9f4eee57ea41a89721ac24efdf761946178813",
@@ -158,6 +171,8 @@
           "result_target": null
         },
         "mutant": {
+          "proposal_resource": "team@example.test",
+          "policy_rule_resource": "team@example.test",
           "receipt": {
             "protocol": "aml-action-dispatch/1",
             "proposal_sha256": "2b22778cd386ab9c452f9ddf4f9f4eee57ea41a89721ac24efdf761946178813",
@@ -190,12 +205,15 @@
       "first_changed_vector": {
         "index": 102,
         "axes": {
+          "resource_scope": "exact",
           "policy": "requires_approval",
           "approval": "match",
           "claim": "revoke_after_consume",
           "callback": "return"
         },
         "reference": {
+          "proposal_resource": "team@example.test",
+          "policy_rule_resource": "team@example.test",
           "receipt": {
             "protocol": "aml-action-dispatch/1",
             "proposal_sha256": "2b22778cd386ab9c452f9ddf4f9f4eee57ea41a89721ac24efdf761946178813",
@@ -213,6 +231,8 @@
           "result_target": null
         },
         "mutant": {
+          "proposal_resource": "team@example.test",
+          "policy_rule_resource": "team@example.test",
           "receipt": {
             "protocol": "aml-action-dispatch/1",
             "proposal_sha256": "2b22778cd386ab9c452f9ddf4f9f4eee57ea41a89721ac24efdf761946178813",
@@ -245,12 +265,15 @@
       "first_changed_vector": {
         "index": 136,
         "axes": {
+          "resource_scope": "exact",
           "policy": "requires_approval",
           "approval": "mutate_caller",
           "claim": "accept",
           "callback": "return"
         },
         "reference": {
+          "proposal_resource": "team@example.test",
+          "policy_rule_resource": "team@example.test",
           "receipt": {
             "protocol": "aml-action-dispatch/1",
             "proposal_sha256": "2b22778cd386ab9c452f9ddf4f9f4eee57ea41a89721ac24efdf761946178813",
@@ -268,6 +291,8 @@
           "result_target": "team@example.test"
         },
         "mutant": {
+          "proposal_resource": "team@example.test",
+          "policy_rule_resource": "team@example.test",
           "receipt": {
             "protocol": "aml-action-dispatch/1",
             "proposal_sha256": "2b22778cd386ab9c452f9ddf4f9f4eee57ea41a89721ac24efdf761946178813",
@@ -300,12 +325,15 @@
       "first_changed_vector": {
         "index": 49,
         "axes": {
+          "resource_scope": "exact",
           "policy": "allow",
           "approval": "match",
           "claim": "accept",
           "callback": "throw_after_write"
         },
         "reference": {
+          "proposal_resource": "team@example.test",
+          "policy_rule_resource": "team@example.test",
           "receipt": {
             "protocol": "aml-action-dispatch/1",
             "proposal_sha256": "2b22778cd386ab9c452f9ddf4f9f4eee57ea41a89721ac24efdf761946178813",
@@ -323,6 +351,8 @@
           "result_target": null
         },
         "mutant": {
+          "proposal_resource": "team@example.test",
+          "policy_rule_resource": "team@example.test",
           "receipt": {
             "protocol": "aml-action-dispatch/1",
             "proposal_sha256": "2b22778cd386ab9c452f9ddf4f9f4eee57ea41a89721ac24efdf761946178813",
@@ -351,8 +381,55 @@
     {
       "id": "resource_wildcard",
       "change": "Accept a policy rule for another resource",
-      "matrix_changed_rows": 0,
-      "first_changed_vector": null,
+      "matrix_changed_rows": 192,
+      "first_changed_vector": {
+        "index": 192,
+        "axes": {
+          "resource_scope": "other",
+          "policy": "deny",
+          "approval": "match",
+          "claim": "accept",
+          "callback": "return"
+        },
+        "reference": {
+          "proposal_resource": "team@example.test",
+          "policy_rule_resource": "outside@example.test",
+          "receipt": {
+            "protocol": "aml-action-dispatch/1",
+            "proposal_sha256": "2b22778cd386ab9c452f9ddf4f9f4eee57ea41a89721ac24efdf761946178813",
+            "policy_decision": "deny",
+            "execution_status": "blocked",
+            "reason": "no_exact_rule"
+          },
+          "approval_requests": 0,
+          "claim_attempts": 0,
+          "claims_consumed": 0,
+          "callback_count": 0,
+          "fixture_writes": 0,
+          "callback_target": null,
+          "caller_target_after": "team@example.test",
+          "result_target": null
+        },
+        "mutant": {
+          "proposal_resource": "team@example.test",
+          "policy_rule_resource": "outside@example.test",
+          "receipt": {
+            "protocol": "aml-action-dispatch/1",
+            "proposal_sha256": "2b22778cd386ab9c452f9ddf4f9f4eee57ea41a89721ac24efdf761946178813",
+            "policy_decision": "allow",
+            "execution_status": "dispatched",
+            "reason": "host_dispatch_returned"
+          },
+          "approval_requests": 0,
+          "claim_attempts": 0,
+          "claims_consumed": 0,
+          "callback_count": 1,
+          "fixture_writes": 0,
+          "callback_target": "team@example.test",
+          "caller_target_after": "team@example.test",
+          "result_target": "team@example.test"
+        }
+      },
       "resource_probe_changed": true,
       "resource_probe_result": {
         "execution_status": "dispatched",

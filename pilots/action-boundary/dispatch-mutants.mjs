@@ -76,6 +76,7 @@ async function loadMutant(source, mutation) {
 
 function outcome(row) {
   return {
+    proposal_resource: row.proposal_resource, policy_rule_resource: row.policy_rule_resource,
     receipt: row.receipt, approval_requests: row.approval_requests,
     claim_attempts: row.claim_attempts, claims_consumed: row.claims_consumed,
     callback_count: row.callback_count, fixture_writes: row.fixture_writes,
@@ -122,7 +123,7 @@ export async function buildDispatchMutants() {
       matrix_changed_rows: differences.length,
       first_changed_vector: first === undefined ? null : {
         index: first, axes: Object.fromEntries(
-          ["policy", "approval", "claim", "callback"].map(axis => [axis, rows[first][axis]])),
+          ["resource_scope", "policy", "approval", "claim", "callback"].map(axis => [axis, rows[first][axis]])),
         reference: outcome(reference.rows[first]), mutant: outcome(rows[first])
       },
       resource_probe_changed: JSON.stringify(probe) !== JSON.stringify(baselineProbe),

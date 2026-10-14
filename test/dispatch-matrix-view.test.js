@@ -10,23 +10,30 @@ const page = readFileSync(new URL("../docs/dispatch-matrix.html", import.meta.ur
 const script = readFileSync(new URL("../docs/dispatch-matrix.js", import.meta.url));
 
 test("the atlas indexes every vector and filters the actual checked-in outcomes", () => {
-  assert.deepEqual(inspectMatrix(report), { blocked: 140, dispatched: 26, unknown: 26 });
+  assert.deepEqual(inspectMatrix(report), { blocked: 332, dispatched: 26, unknown: 26 });
   for (const [index, row] of report.rows.entries()) {
-    assert.equal(matrixIndex(row.policy, row.approval, row.claim, row.callback), index);
+    assert.equal(matrixIndex(row.policy, row.approval, row.claim, row.callback, row.resource_scope), index);
   }
-  assert.equal(visibleMatrixIndices(report).length, 192);
-  assert.equal(visibleMatrixIndices(report, "deny", "blocked").length, 48);
+  assert.equal(visibleMatrixIndices(report).length, 384);
+  assert.equal(visibleMatrixIndices(report, "deny", "blocked").length, 96);
   assert.equal(visibleMatrixIndices(report, "deny", "unknown").length, 0);
   assert.equal(visibleMatrixIndices(report, "requires_approval", "unknown").length, 2);
+  assert.equal(visibleMatrixIndices(report, "all", "blocked", "other").length, 192);
+  assert.equal(visibleMatrixIndices(report, "allow", "blocked", "other").length, 48);
   assert.deepEqual(matrixGroupSlots("requires_approval", "match",
     visibleMatrixIndices(report, "requires_approval", "unknown")),
     [null, 97, null, null, null, null, null, null], "filtering keeps callback and claim positions");
+  assert.deepEqual(matrixGroupSlots("allow", "match",
+    visibleMatrixIndices(report, "allow", "blocked", "other"), "other"),
+    [240, 241, 242, 243, 244, 245, 246, 247]);
   assert.throws(() => visibleMatrixIndices(report, "unknown_policy"), RangeError);
+  assert.throws(() => visibleMatrixIndices(report, "all", "all", "unlisted_scope"), RangeError);
 });
 
 test("the highlighted cases retain the side effects hidden by a one-word status", () => {
   assert.deepEqual(matrixInsights(report), {
-    spent_and_blocked: 8, unknown_after_write: 26, frozen_after_mutation: 2
+    spent_and_blocked: 8, unknown_after_write: 26, frozen_after_mutation: 2,
+    other_rule_blocked: 192
   });
   const spent = report.rows[100];
   assert.deepEqual([spent.receipt.execution_status, spent.claims_consumed, spent.callback_count],
@@ -40,8 +47,9 @@ test("the highlighted cases retain the side effects hidden by a one-word status"
   const url = matrixUrl("https://example.test/dispatch-matrix.html?policy=allow", 49, report);
   assert.equal(new URL(url).hash, "#case");
   assert.equal(matrixSelection(new URL(url).search, visibleMatrixIndices(report)), 49);
-  assert.equal(matrixSelection("?vector=192", visibleMatrixIndices(report, "allow")), 48);
-  assert.throws(() => matrixUrl(url, 192, report), RangeError);
+  assert.equal(matrixSelection("?vector=384", visibleMatrixIndices(report, "allow")), 48);
+  assert.equal(matrixSelection("?vector=240", visibleMatrixIndices(report, "all", "all", "other")), 240);
+  assert.throws(() => matrixUrl(url, 384, report), RangeError);
 });
 
 test("the viewer rejects malformed axes or totals and marks its evidence boundary", () => {
@@ -51,8 +59,9 @@ test("the viewer rejects malformed axes or totals and marks its evidence boundar
   const falseOutcome = structuredClone(report);
   falseOutcome.rows[0].receipt.execution_status = "dispatched";
   assert.throws(() => inspectMatrix(falseOutcome), /totals/);
-  assert.deepEqual(Object.keys(MATRIX_AXES), ["policy", "approval", "claim", "callback"]);
+  assert.deepEqual(Object.keys(MATRIX_AXES), ["resource_scope", "policy", "approval", "claim", "callback"]);
   for (const required of ["data-preset=\"100\"", "data-preset=\"49\"", "data-preset=\"136\"",
+    "data-preset=\"240\"", "resource-filter", "case-resource", "case-rule", "action-dispatch-mutants.json",
     "No human approval", "no human approval", "formal proof of production safety",
     "does not independently verify its provenance", "dispatch-matrix.js"]) {
     assert.match(page.toLowerCase(), new RegExp(required.toLowerCase()));
