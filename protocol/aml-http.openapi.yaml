@@ -147,7 +147,8 @@ paths:
     post:
       summary: Evaluate multiple intents under one deployment policy
       description: >-
-        The server limits batch size before evaluation. Unlocked max_batch_items defaults to 100;
+        The server limits batch size before trusted context resolution or evaluation.
+        Unlocked max_batch_items defaults to 100;
         caller max_items cannot raise that ceiling. With locked_policy, the server owns controls
         and max_batch_items (default 100), and rejects caller controls including max_items,
         stream_id, and stream_ids. Each locked batch item receives a fresh server-generated

@@ -170,7 +170,10 @@ export function createAmlHttpServer(options = {}) {
       try {
         const body = await readJson(req, maxBodyBytes);
         if (!Array.isArray(body.intents)) return send(res, 400, { error: "intents_array_required" }, headers);
-        if (!lockedPolicy && body.intents.length > maxBatchItems) {
+        // Reject excess work before resolving trusted context or allocating
+        // audit IDs. The configured locked ceiling is independent of the
+        // unlocked server ceiling.
+        if (body.intents.length > (lockedPolicy ? lockedPolicy.max_batch_items : maxBatchItems)) {
           return send(res, 413, { error: "batch_limit_exceeded" }, headers);
         }
         const controls = lockedPolicy ? await lockedPolicy.select(body, req) : {
