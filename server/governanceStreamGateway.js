@@ -1,4 +1,5 @@
 import http from "node:http";
+import { randomUUID } from "node:crypto";
 import { createRequestAuthenticator } from "./requestAuth.js";
 import { createInflightLimit } from "./inflightLimit.js";
 import { createLockedHttpPolicy } from "./lockedPolicy.js";
@@ -11,7 +12,7 @@ import {
   AML_GOVERNANCE_STREAM_ERROR
 } from "../protocol/governanceStream.js";
 
-const STREAM_CONTROLS = ["profile", "mode", "failure_mode", "context", "timestamp"];
+const STREAM_CONTROLS = ["profile", "mode", "failure_mode", "context", "timestamp", "stream_id", "stream_ids"];
 const hasOwn = (value, key) => value !== null && typeof value === "object" && Object.hasOwn(value, key);
 
 function json(res, status, body, headers = {}) {
@@ -112,7 +113,7 @@ export function createGovernanceStreamGateway(options = {}) {
             failure_mode: controls.failure_mode,
             context: controls.context,
             timestamp: controls.timestamp
-          } : message);
+          } : message, lockedPolicy ? { stream_id_factory: randomUUID } : {});
           res.writeHead(200, {
             "content-type": "application/x-ndjson; charset=utf-8",
             "cache-control": "no-store",

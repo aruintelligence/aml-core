@@ -54,3 +54,22 @@ test("agent UI adapter fails closed on missing governance metadata", () => {
     components: [{ id: "unsafe", type: "button", props: { label: "Continue" } }]
   }), /governance must be an object/);
 });
+
+test("agent UI adapter validates trusted per-component audit IDs without changing local replay", () => {
+  const envelope = { protocol: AML_AGENT_UI_ENVELOPE, components: [{
+    id: "continue", type: "text", governance: {
+      purpose: "Explain the choice", attention_cost: 1, restoration_value: 2
+    }
+  }] };
+  const options = { timestamp: "2030-01-01T00:00:00.000Z" };
+  const local = evaluateAgentUI(envelope, options);
+  assert.deepEqual(evaluateAgentUI(envelope, options), local);
+  const identified = evaluateAgentUI(envelope, { ...options, stream_ids: ["host-item-1"] });
+  assert.equal(identified.streaming_result.entries[0].evaluation.result.receipt.runtime_audit_stream.stream_id,
+    "host-item-1");
+  assert.notEqual(identified.decisions[0].receipt_sha256, local.decisions[0].receipt_sha256);
+  for (const stream_ids of [null, [], [""], [1], ["first", "extra"]]) {
+    assert.throws(() => evaluateAgentUI(envelope, { ...options, stream_ids }),
+      /one unique nonempty string per component/);
+  }
+});

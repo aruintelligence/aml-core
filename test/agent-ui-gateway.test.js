@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import { createAgentUiGateway } from "../server/agentUiGateway.js";
+import { verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 
 const vector = JSON.parse(fs.readFileSync("conformance/agent-ui/mixed.json", "utf8"));
 const token = "0123456789abcdef0123456789abcdef0123456789abcdef";
@@ -80,7 +81,8 @@ test("Agent UI locked policy rejects caller controls and selects enforce/closed 
     headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
     body: JSON.stringify(body)
   });
-  for (const override of [{ mode: "shadow" }, { failure_mode: "open" }, { context: null }, { timestamp: null }]) {
+  for (const override of [{ mode: "shadow" }, { failure_mode: "open" }, { context: null },
+    { timestamp: null }, { stream_id: "caller-id" }, { stream_ids: ["caller-id"] }, { stream_ids: null }]) {
     const denied = await evaluate({ envelope: vector, ...override });
     assert.equal(denied.status, 403);
     assert.equal((await denied.json()).error, "policy_override_forbidden");
@@ -92,6 +94,31 @@ test("Agent UI locked policy rejects caller controls and selects enforce/closed 
   assert.equal(result.mode, "enforce");
   assert.equal(result.allowed, 1);
   assert.equal(result.suppressed, 1);
+});
+
+test("locked Agent UI gateway gives repeated evaluations distinct verifiable audit streams", async (t) => {
+  const server = createAgentUiGateway({ locked_policy: { profile: "calm_default" } });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const url = `http://127.0.0.1:${server.address().port}/v1/agent-ui/evaluate`;
+  const evaluate = async () => {
+    const response = await fetch(url, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ envelope: vector })
+    });
+    assert.equal(response.status, 200);
+    return response.json();
+  };
+  const first = await evaluate();
+  const second = await evaluate();
+  const receipts = [first, second].flatMap(result => result.streaming_result.entries.map(entry => entry.evaluation.result.receipt));
+  const ids = receipts.map(receipt => receipt.runtime_audit_stream.stream_id);
+  assert.equal(new Set(ids).size, receipts.length);
+  assert.equal(new Set(receipts.map(receipt => receipt.receipt_sha256)).size, receipts.length);
+  for (const receipt of receipts) {
+    assert.match(receipt.runtime_audit_stream.stream_id, /^[0-9a-f-]{36}$/);
+    assert.equal(verifyExecutionReceipt(receipt).verified, true);
+  }
 });
 
 test("Agent UI HTTP gateway returns a readable 413 for oversized JSON", async (t) => {

@@ -62,6 +62,13 @@ export function evaluateAgentUI(envelope, options = {}) {
   if (!Array.isArray(envelope.components)) {
     throw new Error("envelope.components must be an array.");
   }
+  const streamIds = options.stream_ids;
+  if (streamIds !== undefined && (!Array.isArray(streamIds) ||
+      streamIds.length !== envelope.components.length ||
+      streamIds.some(id => typeof id !== "string" || id.length === 0) ||
+      new Set(streamIds).size !== streamIds.length)) {
+    throw new TypeError("stream_ids must contain one unique nonempty string per component.");
+  }
 
   const surfaceId = envelope.surface_id || "agent_ui_surface";
   const normalized = envelope.components.map(normalizeComponent);
@@ -73,10 +80,11 @@ export function evaluateAgentUI(envelope, options = {}) {
     context: options.context || {}
   });
 
-  const decisions = normalized.map(({ original, node }) => {
+  const decisions = normalized.map(({ original, node }, index) => {
     const evaluated = firewall.push(node, {
       timestamp: options.timestamp,
-      context: options.context || {}
+      context: options.context || {},
+      ...(streamIds !== undefined ? { stream_id: streamIds[index] } : {})
     });
     return {
       id: node.identifier,
