@@ -84,6 +84,87 @@ test("decision cache refuses implicit dynamic-time caching", () => {
   assert.equal(cache.stats().size, 0);
 });
 
+test("a cached shadow decision cannot turn a later enforced suppression into an allow", () => {
+  const cache = createDecisionCache();
+  const firewall = createDeploymentFirewall({ cache, profile: "calm_default" });
+  const shadow = firewall.shadow(suppressedIntent, { timestamp: fixed });
+  const enforced = firewall.enforce(suppressedIntent, { timestamp: fixed });
+  assert.deepEqual([shadow.mode, shadow.aml_allowed, shadow.effective_allowed], ["shadow", false, true]);
+  assert.deepEqual([enforced.mode, enforced.aml_allowed, enforced.effective_allowed], ["enforce", false, false]);
+  assert.equal(enforced.cache.hit, false);
+  assert.equal(firewall.enforce(suppressedIntent, { timestamp: fixed }).cache.hit, true);
+  assert.equal(firewall.shadow(suppressedIntent, { timestamp: fixed }).cache.hit, true);
+
+  const otherFirewall = createDeploymentFirewall({ cache, profile: "calm_default" });
+  const changedFailureMode = otherFirewall.enforce(suppressedIntent, {
+    timestamp: fixed, failure_mode: "open"
+  });
+  assert.equal(changedFailureMode.cache.hit, false);
+  assert.equal(changedFailureMode.failure_mode, "open");
+  assert.equal(changedFailureMode.effective_allowed, false);
+});
+
+test("a manual cache key cannot alias another intent, context, or audit stream", () => {
+  const cache = createDecisionCache();
+  const firewall = createDeploymentFirewall({ cache, profile: "calm_default" });
+  const options = { timestamp: fixed, cache_key: "operator-batch" };
+  const allowed = firewall.enforce(allowedIntent, options);
+  const suppressed = firewall.enforce(suppressedIntent, options);
+  assert.equal(suppressed.cache.hit, false);
+  assert.equal(suppressed.effective_allowed, false);
+  assert.notEqual(allowed.cache.key, suppressed.cache.key);
+
+  const first = firewall.enforce(allowedIntent, { ...options, stream_id: "stream-a" });
+  const second = firewall.enforce(allowedIntent, { ...options, stream_id: "stream-b" });
+  assert.equal(first.cache.hit, false);
+  assert.equal(second.cache.hit, false);
+  assert.notEqual(first.result.receipt.receipt_sha256, second.result.receipt.receipt_sha256);
+  assert.equal(firewall.enforce(allowedIntent, { ...options, stream_id: "stream-a" }).cache.hit, true);
+
+  const changedContext = firewall.enforce(allowedIntent, {
+    ...options, context: { privacy_consent: false }
+  });
+  assert.equal(changedContext.cache.hit, false);
+  assert.notEqual(changedContext.cache.key, allowed.cache.key);
+});
+
+test("manual keys without fixed time never reuse time-dependent receipts", () => {
+  const cache = createDecisionCache();
+  const firewall = createDeploymentFirewall({ cache });
+  firewall.enforce(allowedIntent, { cache_key: "same" });
+  firewall.enforce(allowedIntent, { cache_key: "same" });
+  assert.equal(cache.stats().size, 0);
+});
+
+test("cached evaluation uses the exact input snapshot represented by its key", () => {
+  const cache = createDecisionCache();
+  const firewall = createDeploymentFirewall({ cache, profile: "calm_default" });
+  let reads = 0;
+  const changing = structuredClone(allowedIntent);
+  Object.defineProperty(changing.nodes[0].properties, "attention_cost", {
+    enumerable: true,
+    get() { reads++; return reads === 1 ? 1 : 5; }
+  });
+  const first = firewall.enforce(changing, { timestamp: fixed });
+  assert.equal(reads, 1);
+  assert.equal(first.aml_allowed, true);
+  assert.equal(first.result.receipt.intent.nodes[0].properties.attention_cost, 1);
+  const same = firewall.enforce(allowedIntent, { timestamp: fixed });
+  assert.equal(same.cache.hit, true);
+  assert.equal(same.effective_allowed, first.effective_allowed);
+});
+
+test("an optional cache outage cannot replace a computed denial with failure-open", () => {
+  const unavailable = { get() { throw new Error("cache unavailable"); },
+    set() { throw new Error("cache unavailable"); } };
+  const firewall = createDeploymentFirewall({ cache: unavailable, failure_mode: "open",
+    profile: "calm_default" });
+  const result = firewall.enforce(suppressedIntent, { timestamp: fixed });
+  assert.equal(result.aml_allowed, false);
+  assert.equal(result.effective_allowed, false);
+  assert.equal(result.evaluation_error, null);
+});
+
 test("streaming firewall evaluates nodes in order and preserves receipts", () => {
   const stream = createStreamingInterfaceFirewall({
     transmission: "assistant_stream",
