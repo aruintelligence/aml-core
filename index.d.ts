@@ -570,6 +570,8 @@ export interface AgentUiOptions {
   failure_mode?: AmlFailureMode;
   context?: AmlContext;
   timestamp?: string;
+  /** One distinct host-owned audit stream ID per component; omit for deterministic local evaluation. */
+  stream_ids?: string[];
 }
 
 export interface AgentUiDecision {
@@ -607,6 +609,11 @@ export interface GovernanceStreamOpen {
   context?: AmlContext;
   timestamp?: string;
   policy_authorization?: Record<string, unknown>;
+}
+
+export interface GovernanceStreamSessionOptions {
+  /** Trusted host callback for a fresh audit stream ID per node; omit for deterministic local evaluation. */
+  stream_id_factory?: () => string;
 }
 
 export interface GovernanceStreamNode {
@@ -745,7 +752,7 @@ export function enforceInterfaceIntent(intent: AmlIntent, options?: InterfaceFir
 export function viewMeaning(receipt: ExecutionReceipt): ViewMeaningReport;
 export function formatMeaningReport(report: ViewMeaningReport): string;
 export function evaluateAgentUI(input: AgentUiEnvelope, options?: AgentUiOptions): AgentUiGovernanceResult;
-export function createGovernanceStreamSession(open?: GovernanceStreamOpen): GovernanceStreamSession;
+export function createGovernanceStreamSession(open?: GovernanceStreamOpen, options?: GovernanceStreamSessionOptions): GovernanceStreamSession;
 export function createGovernanceStreamTranscript(messages: unknown[], options?: Record<string, unknown>): unknown;
 export function verifyGovernanceStreamTranscript(transcript: unknown, options?: Record<string, unknown>): unknown;
 export function signGovernanceStreamTranscript(transcript: unknown, privateKey: string | Uint8Array, options?: Record<string, unknown>): unknown;

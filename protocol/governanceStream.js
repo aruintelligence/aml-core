@@ -43,8 +43,12 @@ function transitionUpdateFromMessage(message) {
   return update;
 }
 
-export function createGovernanceStreamSession(open = {}) {
+export function createGovernanceStreamSession(open = {}, options = {}) {
   assertObject(open, "open");
+  const streamIdFactory = options.stream_id_factory;
+  if (streamIdFactory !== undefined && typeof streamIdFactory !== "function") {
+    throw new TypeError("stream_id_factory must be a function.");
+  }
   if (open.protocol && open.protocol !== AML_GOVERNANCE_STREAM_OPEN) {
     throw new Error(`Unsupported governance stream protocol: ${open.protocol}`);
   }
@@ -61,6 +65,7 @@ export function createGovernanceStreamSession(open = {}) {
   validatePolicyState({ profile, mode, failure_mode: failureMode, context });
 
   const firewall = createStreamingInterfaceFirewall({ transmission, profile, mode, failure_mode: failureMode, context });
+  const usedStreamIds = new Set();
   let finalized = false;
 
   function policyState() {
@@ -132,12 +137,21 @@ export function createGovernanceStreamSession(open = {}) {
 
     if (message.protocol === AML_GOVERNANCE_STREAM_NODE) {
       assertObject(message.node, "message.node");
+      const streamId = streamIdFactory?.();
+      if (streamIdFactory && (typeof streamId !== "string" || streamId.length === 0)) {
+        throw new TypeError("stream_id_factory must return a nonempty string.");
+      }
+      if (streamIdFactory && usedStreamIds.has(streamId)) {
+        throw new Error("stream_id_factory returned a duplicate audit stream ID.");
+      }
+      if (streamIdFactory) usedStreamIds.add(streamId);
       const evaluated = firewall.push(message.node, {
         timestamp: message.timestamp || timestamp,
         context: { ...context, ...(message.context || {}) },
         mode: message.mode || mode,
         failure_mode: message.failure_mode || failureMode,
-        profile: message.profile || profile
+        profile: message.profile || profile,
+        ...(streamIdFactory ? { stream_id: streamId } : {})
       });
       return {
         protocol: AML_GOVERNANCE_STREAM_DECISION,

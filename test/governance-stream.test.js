@@ -3,9 +3,25 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import { createGovernanceStreamGateway } from "../server/governanceStreamGateway.js";
+import { createGovernanceStreamSession } from "../protocol/governanceStream.js";
+import { verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 
 const fixture = fs.readFileSync("conformance/governance-stream/mixed.ndjson", "utf8");
 const token = "0123456789abcdef0123456789abcdef0123456789abcdef";
+
+test("local governance sessions replay deterministically and reject duplicate host audit IDs", () => {
+  const [open, firstNode, secondNode] = fixture.trim().split(/\r?\n/).map(line => JSON.parse(line));
+  const local = () => {
+    const session = createGovernanceStreamSession(open);
+    return [session.accept(firstNode), session.accept(secondNode)];
+  };
+  assert.deepEqual(local(), local());
+  assert.throws(() => createGovernanceStreamSession(open, { stream_id_factory: "id" }), /must be a function/);
+  const session = createGovernanceStreamSession(open, { stream_id_factory: () => "host-item-1" });
+  assert.equal(session.accept(firstNode).protocol, "aml-governance-stream-decision/1");
+  assert.throws(() => session.accept(secondNode), /duplicate audit stream ID/);
+  assert.equal(session.snapshot().total, 1);
+});
 
 test("governance stream HTTP authenticates before opening the NDJSON response", async (t) => {
   const server = createGovernanceStreamGateway({ request_auth: { bearer_token: token } });
@@ -101,12 +117,24 @@ test("governance stream locked policy rejects open, node, and transition overrid
   assert.equal(openedWithOverride.status, 403);
   assert.equal(openedWithOverride.messages[0].protocol, "aml-governance-stream-error/1");
   assert.equal(openedWithOverride.messages[0].error, "policy_override_forbidden");
+  for (const stream_id of ["caller-id", null]) {
+    const denied = await request([{ ...open, stream_id }, firstNode, finalize]);
+    assert.equal(denied.status, 403);
+    assert.equal(denied.messages[0].error, "policy_override_forbidden");
+  }
 
   const nodeOverride = await request([open, { ...firstNode, failure_mode: "open" }, finalize]);
   assert.equal(nodeOverride.status, 200);
   assert.equal(nodeOverride.messages[0].policy_source, "server");
   assert.equal(nodeOverride.messages.at(-1).error, "policy_override_forbidden");
   assert.equal(nodeOverride.messages.some(message => message.protocol === "aml-governance-stream-decision/1"), false);
+  const nodeAuditOverride = await request([open, { ...firstNode, stream_id: "caller-id" }, finalize]);
+  assert.equal(nodeAuditOverride.status, 200);
+  assert.equal(nodeAuditOverride.messages.at(-1).error, "policy_override_forbidden");
+  assert.equal(nodeAuditOverride.messages.some(message => message.protocol === "aml-governance-stream-decision/1"), false);
+  const nodeIdsOverride = await request([open, { ...firstNode, stream_ids: null }, finalize]);
+  assert.equal(nodeIdsOverride.status, 200);
+  assert.equal(nodeIdsOverride.messages.at(-1).error, "policy_override_forbidden");
 
   const transition = await request([open, { protocol: "aml-governance-stream-policy-update/1", mode: "shadow" }, finalize]);
   assert.equal(transition.status, 200);
@@ -118,6 +146,16 @@ test("governance stream locked policy rejects open, node, and transition overrid
   assert.equal(valid.messages[0].failure_mode, "closed");
   assert.equal(valid.messages.at(-1).protocol, "aml-governance-stream-result/1");
   assert.equal(valid.messages.at(-1).suppressed, 1);
+  const another = await request([open, firstNode, secondNode, finalize]);
+  assert.equal(another.status, 200);
+  const receipts = [valid, another].flatMap(run => run.messages.at(-1).entries.map(entry => entry.evaluation.result.receipt));
+  const ids = receipts.map(receipt => receipt.runtime_audit_stream.stream_id);
+  assert.equal(new Set(ids).size, receipts.length);
+  assert.equal(new Set(receipts.map(receipt => receipt.receipt_sha256)).size, receipts.length);
+  for (const receipt of receipts) {
+    assert.match(receipt.runtime_audit_stream.stream_id, /^[0-9a-f-]{36}$/);
+    assert.equal(verifyExecutionReceipt(receipt).verified, true);
+  }
 });
 
 test("governance stream gateway rejects advertised oversized uploads with a readable 413", async (t) => {

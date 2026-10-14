@@ -1,4 +1,5 @@
 import http from "node:http";
+import { randomUUID } from "node:crypto";
 import { evaluateAgentUI, AML_AGENT_UI_ENVELOPE, AML_AGENT_UI_RESULT } from "../adapters/agent-ui.js";
 import { readJson } from "./readJson.js";
 import { createRequestAuthenticator } from "./requestAuth.js";
@@ -84,7 +85,9 @@ export function createAgentUiGateway(options = {}) {
           timestamp: body.timestamp
         };
         const result = evaluateAgentUI(envelope, {
-          ...controls
+          ...controls,
+          ...(lockedPolicy && Array.isArray(envelope?.components)
+            ? { stream_ids: envelope.components.map(() => randomUUID()) } : {})
         });
         return send(res, result.errors > 0 ? 422 : 200,
           lockedPolicy ? { ...result, policy_source: "server" } : result);
