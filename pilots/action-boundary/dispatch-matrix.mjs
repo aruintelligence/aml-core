@@ -9,20 +9,23 @@ import { dispatchAction } from "./boundary.mjs";
 
 const reportUrl = new URL("../../docs/action-dispatch-matrix.json", import.meta.url);
 export const axes = Object.freeze({
+  resource_scope: ["exact", "other"],
   policy: ["deny", "allow", "requires_approval", "ambiguous"],
   approval: ["match", "decline", "mismatch", "throw", "revoke", "mutate_caller"],
   claim: ["accept", "refuse", "throw_after_consume", "revoke_after_consume"],
   callback: ["return", "throw_after_write"]
 });
 
-async function runVector(dispatch, policyMode, approvalMode, claimMode, callbackMode) {
+async function runVector(dispatch, resourceScope, policyMode, approvalMode, claimMode, callbackMode) {
   const proposal = { protocol: "aml-proposed-action/1", tool: "send_message", effect: "send",
     resource: "team@example.test", purpose: "Matrix local callback",
     arguments: { to: "team@example.test", body: "Build passed." } };
-  const rule = { tool: proposal.tool, effect: proposal.effect, resource: proposal.resource,
+  const rule = { tool: proposal.tool, effect: proposal.effect,
+    resource: resourceScope === "exact" ? proposal.resource : "outside@example.test",
     requires_approval: policyMode === "requires_approval" };
   const policy = { protocol: "aml-action-policy/1",
-    rules: policyMode === "deny" ? [] : policyMode === "ambiguous" ? [rule, { ...rule }] : [rule] };
+    rules: policyMode === "deny" && resourceScope === "exact" ? [] :
+      policyMode === "ambiguous" ? [rule, { ...rule }] : [rule] };
   let approvalRequests = 0;
   let claimAttempts = 0;
   let claimsConsumed = 0;
@@ -60,7 +63,10 @@ async function runVector(dispatch, policyMode, approvalMode, claimMode, callback
       return { would_send_to: frozen.arguments.to };
     }
   });
-  return { policy: policyMode, approval: approvalMode, claim: claimMode, callback: callbackMode,
+  return { resource_scope: resourceScope, proposal_resource: proposal.resource,
+    policy_rule_resource: policyMode === "deny" && resourceScope === "exact" ? null : rule.resource,
+    policy: policyMode, approval: approvalMode,
+    claim: claimMode, callback: callbackMode,
     receipt: outcome.receipt, approval_requests: approvalRequests, claim_attempts: claimAttempts,
     claims_consumed: claimsConsumed, callback_count: callbackCount, fixture_writes: fixtureWrites,
     callback_target: callbackTarget, caller_target_after: proposal.arguments.to,
@@ -69,12 +75,12 @@ async function runVector(dispatch, policyMode, approvalMode, claimMode, callback
 
 export async function buildDispatchMatrix(dispatch = dispatchAction) {
   const rows = [];
-  for (const policy of axes.policy) for (const approval of axes.approval)
+  for (const resourceScope of axes.resource_scope) for (const policy of axes.policy) for (const approval of axes.approval)
     for (const claim of axes.claim) for (const callback of axes.callback)
-      rows.push(await runVector(dispatch, policy, approval, claim, callback));
+      rows.push(await runVector(dispatch, resourceScope, policy, approval, claim, callback));
   return { protocol: "aml-action-dispatch-matrix/1",
     provenance: "project-authored bounded cross-product of local callbacks",
-    limits: "192 finite combinations. No human approval, provider call, delivery, arbitrary interleaving, or production safety proof.",
+    limits: "384 finite combinations. No human approval, provider call, delivery, arbitrary interleaving, or production safety proof.",
     axes, rows };
 }
 

@@ -11,12 +11,12 @@ const verify = value => spawnSync("python3", [oracle, "-"], {
   input: JSON.stringify(value), encoding: "utf8"
 });
 
-test("the 192 checked-in vectors are current and match the separate Python state oracle", async () => {
+test("the 384 checked-in vectors are current and match the separate Python state oracle", async () => {
   assert.deepEqual(report, await buildDispatchMatrix());
   assert.equal(report.rows.length, Object.values(axes).reduce((total, items) => total * items.length, 1));
   const result = verify(report);
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(JSON.parse(result.stdout).vectors_verified, 192);
+  assert.equal(JSON.parse(result.stdout).vectors_verified, 384);
 });
 
 test("the oracle detects a false dispatch, missing callback, changed binding, and inflated claim", () => {
@@ -35,4 +35,7 @@ test("the oracle detects a false dispatch, missing callback, changed binding, an
   const inflatedClaim = altered();
   inflatedClaim.limits = "Formal proof of production safety";
   assert.notEqual(verify(inflatedClaim).status, 0);
+  const wrongResource = altered();
+  wrongResource.rows[240].receipt.policy_decision = "allow";
+  assert.notEqual(verify(wrongResource).status, 0);
 });
