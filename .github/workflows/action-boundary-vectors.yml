@@ -6,9 +6,11 @@ on:
       - "pilots/action-boundary/**"
       - "protocol/canonicalJson.js"
       - "docs/action-dispatch-matrix.json"
+      - "docs/action-dispatch-mutants.json"
       - "docs/dispatch-matrix.html"
       - "docs/dispatch-matrix.js"
       - "test/action-boundary-dispatch-matrix.test.js"
+      - "test/action-boundary-mutation-proof.test.js"
       - "test/dispatch-matrix-view.test.js"
       - ".github/workflows/action-boundary-vectors.yml"
   pull_request:
@@ -16,9 +18,11 @@ on:
       - "pilots/action-boundary/**"
       - "protocol/canonicalJson.js"
       - "docs/action-dispatch-matrix.json"
+      - "docs/action-dispatch-mutants.json"
       - "docs/dispatch-matrix.html"
       - "docs/dispatch-matrix.js"
       - "test/action-boundary-dispatch-matrix.test.js"
+      - "test/action-boundary-mutation-proof.test.js"
       - "test/dispatch-matrix-view.test.js"
       - ".github/workflows/action-boundary-vectors.yml"
 
@@ -41,5 +45,7 @@ jobs:
       - run: python3 pilots/action-boundary/verify_vectors.py
       - run: node pilots/action-boundary/dispatch-matrix.mjs --check
       - run: python3 pilots/action-boundary/verify_dispatch_matrix.py docs/action-dispatch-matrix.json
+      - run: node pilots/action-boundary/dispatch-mutants.mjs --check
       - run: node --test test/action-boundary-dispatch-matrix.test.js
+      - run: node --test test/action-boundary-mutation-proof.test.js
       - run: node --test test/dispatch-matrix-view.test.js

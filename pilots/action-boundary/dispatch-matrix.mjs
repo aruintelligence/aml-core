@@ -15,7 +15,7 @@ export const axes = Object.freeze({
   callback: ["return", "throw_after_write"]
 });
 
-async function runVector(policyMode, approvalMode, claimMode, callbackMode) {
+async function runVector(dispatch, policyMode, approvalMode, claimMode, callbackMode) {
   const proposal = { protocol: "aml-proposed-action/1", tool: "send_message", effect: "send",
     resource: "team@example.test", purpose: "Matrix local callback",
     arguments: { to: "team@example.test", body: "Build passed." } };
@@ -29,7 +29,7 @@ async function runVector(policyMode, approvalMode, claimMode, callbackMode) {
   let callbackCount = 0;
   let fixtureWrites = 0;
   let callbackTarget = null;
-  const outcome = await dispatchAction(proposal, { policy,
+  const outcome = await dispatch(proposal, { policy,
     requestApproval: async ({ proposal: offered, proposal_sha256 }) => {
       approvalRequests++;
       if (approvalMode === "throw") throw new Error("local_approval_error");
@@ -67,11 +67,11 @@ async function runVector(policyMode, approvalMode, claimMode, callbackMode) {
     result_target: outcome.result?.would_send_to ?? null };
 }
 
-export async function buildDispatchMatrix() {
+export async function buildDispatchMatrix(dispatch = dispatchAction) {
   const rows = [];
   for (const policy of axes.policy) for (const approval of axes.approval)
     for (const claim of axes.claim) for (const callback of axes.callback)
-      rows.push(await runVector(policy, approval, claim, callback));
+      rows.push(await runVector(dispatch, policy, approval, claim, callback));
   return { protocol: "aml-action-dispatch-matrix/1",
     provenance: "project-authored bounded cross-product of local callbacks",
     limits: "192 finite combinations. No human approval, provider call, delivery, arbitrary interleaving, or production safety proof.",
