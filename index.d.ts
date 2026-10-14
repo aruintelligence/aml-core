@@ -512,6 +512,34 @@ export interface DeploymentFirewall {
   cache_stats(): unknown;
 }
 
+export interface BatchDeploymentOptions extends DeploymentOptions {
+  max_items?: number;
+  /** One distinct host-owned audit stream ID per intent; omit for deterministic local evaluation. */
+  stream_ids?: string[];
+}
+
+export interface BatchDeploymentResult {
+  protocol: "ĀML Batch Interface Result";
+  version: "1.0";
+  mode: AmlMode;
+  failure_mode: AmlFailureMode;
+  total: number;
+  aml_allowed: number;
+  aml_suppressed: number;
+  evaluation_errors: number;
+  effective_allowed: number;
+  results: {
+    index: number;
+    transmission: string | null;
+    aml_allowed: boolean | null;
+    effective_allowed: boolean;
+    would_suppress: boolean;
+    evaluation_error: DeploymentResult["evaluation_error"];
+    receipt_sha256: string | null;
+    evaluation: DeploymentResult;
+  }[];
+}
+
 export interface AgentUiComponent {
   id?: string;
   identifier?: string;
@@ -707,6 +735,7 @@ export function executeAccountableIntent(intent: AmlIntent, options?: Deployment
 export function verifyExecutionReceipt(receipt: ExecutionReceipt): ReceiptVerification;
 export function createDeploymentFirewall(options?: DeploymentOptions): DeploymentFirewall;
 export function evaluateDeploymentIntent(intent: AmlIntent, options?: DeploymentOptions): DeploymentResult;
+export function evaluateInterfaceBatch(intents: AmlIntent[], options?: BatchDeploymentOptions): BatchDeploymentResult;
 export function simulatePolicies(source: string, policies: (string | AmlPolicyObject | AmlPolicyFunction)[], options?: { timestamp?: string; context?: AmlContext }): PolicySimulationResult;
 export function semanticDiff(beforeSource: string, afterSource: string, options?: CompileOptions): SemanticDiffResult;
 export function policyDiff(source: string, left: AmlPolicyTarget, right: AmlPolicyTarget, options?: { timestamp?: string; context?: AmlContext }): PolicyDiffResult;

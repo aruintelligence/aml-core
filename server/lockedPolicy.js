@@ -2,7 +2,7 @@ import { resolvePolicyProfile } from "../runtime/policyProfiles.js";
 import { DEFAULT_TRUSTED_CALLBACK_TIMEOUT_MS, runTrustedCallback, validateTrustedCallbackTimeout } from "./trustedCallback.js";
 
 const CONFIG_KEYS = new Set(["profile", "mode", "failure_mode", "context", "resolve_context", "resolve_context_timeout_ms", "max_batch_items"]);
-const CLIENT_CONTROLS = ["profile", "mode", "failure_mode", "context", "timestamp", "stream_id", "max_items"];
+const CLIENT_CONTROLS = ["profile", "mode", "failure_mode", "context", "timestamp", "stream_id", "stream_ids", "max_items"];
 const own = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 const plainObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value) &&
   (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);

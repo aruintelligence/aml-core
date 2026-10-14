@@ -5,6 +5,7 @@ import http from "node:http";
 import fs from "node:fs";
 import { once } from "node:events";
 import { createAmlHttpServer } from "../server/httpServer.js";
+import { verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { signBrandAuthorization } from "../runtime/brandAuthorization.js";
 
 function intent() {
@@ -458,6 +459,13 @@ test("locked HTTP policy rejects request-selected policy, time, and audit stream
       intents: [intent()], stream_id: "caller-controlled-audit-id"
     });
     assert.equal(batchAuditOverride.status, 403);
+    for (const streamIds of [["caller-controlled-audit-id"], null]) {
+      const batchIdsOverride = await post("/v1/deployment/batch", {
+        intents: [intent()], stream_ids: streamIds
+      });
+      assert.equal(batchIdsOverride.status, 403);
+      assert.equal((await batchIdsOverride.json()).error, "policy_override_forbidden");
+    }
     const direct = await post("/v1/evaluate", { intent: intent() });
     assert.equal(direct.status, 403);
     const canary = await post("/v1/deployment/canary", { intent: intent() });
@@ -484,6 +492,30 @@ test("locked HTTP evaluations receive distinct server-owned audit streams", asyn
     assert.notEqual(firstId, secondId);
     assert.equal(first.policy_source, "server");
     assert.notEqual(first.receipt.receipt_sha256, second.receipt.receipt_sha256);
+  }, { locked_policy: { profile: "human_first" } });
+});
+
+test("locked HTTP batch gives repeated intents distinct server-owned audit streams", async () => {
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/v1/deployment/batch`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ intents: [intent(), intent()] })
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.policy_source, "server");
+    assert.equal(body.total, 2);
+    const receipts = body.results.map((item) => item.evaluation.result.receipt);
+    const ids = receipts.map((receipt) => receipt.runtime_audit_stream.stream_id);
+    assert.match(ids[0], /^[0-9a-f-]{36}$/);
+    assert.match(ids[1], /^[0-9a-f-]{36}$/);
+    assert.notEqual(ids[0], ids[1]);
+    assert.notEqual(receipts[0].receipt_sha256, receipts[1].receipt_sha256);
+    for (const [index, receipt] of receipts.entries()) {
+      assert.equal(body.results[index].receipt_sha256, receipt.receipt_sha256);
+      assert.equal(verifyExecutionReceipt(receipt).verified, true);
+    }
   }, { locked_policy: { profile: "human_first" } });
 });
 
