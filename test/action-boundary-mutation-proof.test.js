@@ -8,17 +8,26 @@ const checkedIn = JSON.parse(readFileSync(
 
 test("selected source mutations match the checked-in, source-bound report", async () => {
   assert.deepEqual(await buildDispatchMutants(), checkedIn);
-  assert.deepEqual(checkedIn.summary, { selected_mutants: 9,
+  assert.deepEqual(checkedIn.summary, { selected_mutants: 10,
     matrix_detected: 7, tuple_detected: 3, tuple_only_detected: 2,
-    combined_detected: 9, undetected: 0 });
+    snapshot_detected: 3, snapshot_only_detected: 1,
+    combined_detected: 10, undetected: 0 });
   assert.equal(checkedIn.matrix_vectors, 384);
   assert.equal(checkedIn.tuple_cases, 8);
+  assert.equal(checkedIn.snapshot_cases, 2);
   assert.deepEqual(checkedIn.mutations.filter(row => row.matrix_changed_rows === 0).map(row => row.id),
-    ["tool_wildcard", "effect_wildcard"]);
-  assert.deepEqual(checkedIn.mutations.slice(-3).map(row =>
+    ["tool_wildcard", "effect_wildcard", "double_snapshot_receipt_split"]);
+  assert.deepEqual(checkedIn.mutations.slice(-4, -1).map(row =>
     [row.id, row.matrix_changed_rows, row.tuple_changed_cases, row.first_changed_tuple.index]),
-  [["resource_wildcard", 192, 1, 1], ["tool_wildcard", 0, 1, 4],
-    ["effect_wildcard", 0, 1, 2]]);
+    [["resource_wildcard", 192, 1, 1], ["tool_wildcard", 0, 1, 4],
+      ["effect_wildcard", 0, 1, 2]]);
+  assert.deepEqual(checkedIn.mutations.at(-1).snapshot_changes.map(change => change.mode),
+    ["allow", "requires_approval"]);
+  assert.deepEqual(checkedIn.mutations.at(-1).snapshot_changes[0].reference.callback_body,
+    "First observed body");
+  assert.equal(checkedIn.mutations.at(-1).snapshot_changes[0].mutant.callback_body,
+    "Changed on second read");
+  assert.equal(checkedIn.mutations.at(-1).snapshot_changes[0].mutant.receipt_matches_callback, false);
   assert.equal(checkedIn.mutations.find(row => row.id === "resource_wildcard").resource_probe_result.callback_count, 1);
 });
 
