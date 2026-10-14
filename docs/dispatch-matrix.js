@@ -50,6 +50,14 @@ export function visibleMatrixIndices(report, policy = "all", status = "all") {
     (status === "all" || row.receipt.execution_status === status) ? [index] : []);
 }
 
+export function matrixGroupSlots(policy, approval, visibleIndices) {
+  const visible = new Set(visibleIndices);
+  return MATRIX_AXES.claim.flatMap(claim => MATRIX_AXES.callback.map(callback => {
+    const index = matrixIndex(policy, approval, claim, callback);
+    return visible.has(index) ? index : null;
+  }));
+}
+
 export function matrixInsights(report) {
   return {
     spent_and_blocked: report.rows.filter(row => row.receipt.execution_status === "blocked" &&
@@ -115,7 +123,9 @@ if (typeof document !== "undefined" && document.getElementById("matrix-grid")) {
           "The tool callback was not entered in this local vector.";
     const values = [
       ["01 / HOST POLICY", `${label(receipt.policy_decision)} · exact-match decision`],
-      ["02 / APPROVAL HOOK", `${row.approval_requests} request · ${label(row.approval)} fixture`],
+      ["02 / APPROVAL HOOK", row.approval_requests ?
+        `${row.approval_requests} request · ${label(row.approval)} fixture` :
+        `0 requests · configured ${label(row.approval)} hook not called`],
       ["03 / ONE-USE CLAIM", `${row.claim_attempts} attempt · ${row.claims_consumed} consumed`],
       ["04 / TOOL CALLBACK", `${row.callback_count} entry · ${row.fixture_writes} local marker write`]
     ];
@@ -144,21 +154,27 @@ if (typeof document !== "undefined" && document.getElementById("matrix-grid")) {
         const group = element("div", "approval-group", "");
         group.append(element("h4", "", label(approvalName)));
         const cells = element("div", "cells", "");
-        for (const claimName of MATRIX_AXES.claim) for (const callbackName of MATRIX_AXES.callback) {
-          const index = matrixIndex(policyName, approvalName, claimName, callbackName);
-          if (!visibleSet.has(index)) continue;
+        let matches = 0;
+        for (const index of matrixGroupSlots(policyName, approvalName, visible)) {
+          if (index === null) {
+            const placeholder = element("span", "cell-placeholder", "");
+            placeholder.setAttribute("aria-hidden", "true");
+            cells.append(placeholder);
+            continue;
+          }
+          matches++;
           const row = report.rows[index];
-          const button = element("button", "vector", callbackName === "return" ? "↗" : "!");
+          const button = element("button", "vector", row.callback === "return" ? "↗" : "!");
           button.type = "button";
           button.dataset.index = String(index);
           button.dataset.status = row.receipt.execution_status;
-          button.setAttribute("aria-label", `Vector ${index + 1}: ${[policyName, approvalName, claimName, callbackName].map(label).join(", ")}; ${row.receipt.execution_status}`);
+          button.setAttribute("aria-label", `Vector ${index + 1}: ${[policyName, approvalName, row.claim, row.callback].map(label).join(", ")}; ${row.receipt.execution_status}`);
           button.setAttribute("aria-pressed", "false");
-          button.title = `${label(claimName)} / ${label(callbackName)} → ${row.receipt.execution_status}`;
+          button.title = `${label(row.claim)} / ${label(row.callback)} → ${row.receipt.execution_status}`;
           button.addEventListener("click", () => showCase(index));
           cells.append(button);
         }
-        if (!cells.children.length) cells.append(element("span", "empty", "No matches"));
+        if (!matches) cells.replaceChildren(element("span", "empty", "No matches"));
         group.append(cells);
         col.append(group);
       }

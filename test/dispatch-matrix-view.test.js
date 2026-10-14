@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { inspectMatrix, MATRIX_AXES, matrixIndex, matrixInsights, matrixSelection, matrixUrl,
+import { inspectMatrix, MATRIX_AXES, matrixGroupSlots, matrixIndex, matrixInsights, matrixSelection, matrixUrl,
   visibleMatrixIndices } from "../docs/dispatch-matrix.js";
 
 const report = JSON.parse(readFileSync(new URL("../docs/action-dispatch-matrix.json", import.meta.url), "utf8"));
@@ -16,6 +16,9 @@ test("the atlas indexes every vector and filters the actual checked-in outcomes"
   assert.equal(visibleMatrixIndices(report, "deny", "blocked").length, 48);
   assert.equal(visibleMatrixIndices(report, "deny", "unknown").length, 0);
   assert.equal(visibleMatrixIndices(report, "requires_approval", "unknown").length, 2);
+  assert.deepEqual(matrixGroupSlots("requires_approval", "match",
+    visibleMatrixIndices(report, "requires_approval", "unknown")),
+    [null, 97, null, null, null, null, null, null], "filtering keeps callback and claim positions");
   assert.throws(() => visibleMatrixIndices(report, "unknown_policy"), RangeError);
 });
 
