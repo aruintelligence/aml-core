@@ -44,8 +44,8 @@ export function createMCPCallToolGate({ client, serverKey, name, effect, purpose
     const mcp_result_status = status === "blocked" ? "not_called" :
       status === "unknown" ? "unknown" :
       !plain(result) ? "invalid_result" :
-      result.resultType === "input_required" ? "input_required" :
-      result.isError === true ? "tool_error" : "returned";
+      result.isError === true ? "tool_error" :
+      result.resultType === "input_required" ? "input_required" : "returned";
     return { protocol: "aml-mcp-call-tool-result/1", server_key: serverKey,
       tool_name: name, rejection: null, plan: outcome.plan, receipt: outcome.receipt,
       mcp_result_status, ...(Object.hasOwn(outcome, "result") ? { result } : {}) };

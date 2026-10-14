@@ -72,3 +72,11 @@ test("host mapping errors and approval failure reach zero callbacks", async () =
   assert.equal(approval.receipt.reason, "approval_missing_or_mismatched");
   assert.equal(calls, 0);
 });
+
+test("an MCP error cannot be disguised as an input-required round", async () => {
+  const gate = make({ callTool: async () => ({ isError: true,
+    resultType: "input_required", content: [{ type: "text", text: "failed" }] }) });
+  const outcome = await gate(input());
+  assert.equal(outcome.receipt.execution_status, "dispatched");
+  assert.equal(outcome.mcp_result_status, "tool_error");
+});

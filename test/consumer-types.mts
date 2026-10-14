@@ -80,24 +80,28 @@ createAgentUiGateway({ locked_policy: { profile: "calm_default" }, auth_timeout_
 createGovernanceStreamGateway({ auth_timeout_ms: 2000, max_line_bytes: 1024, max_stream_bytes: 4096, max_messages: 10, max_inflight_requests: 10 });
 createAmlHttpServer({ request_auth: async (_req, { signal }) => !signal.aborted });
 
-// @ts-expect-error the runtime session exposes accept(), never handle().
-session.handle({ protocol: AML_GOVERNANCE_STREAM_FINALIZE });
-// @ts-expect-error a caller cannot select an unknown deployment mode.
-createAmlHttpServer({ locked_policy: { mode: "permissive" } });
-// @ts-expect-error bearer tokens are strings.
-createAmlHttpServer({ request_auth: { bearer_token: 123 } });
-// @ts-expect-error callback deadlines are numeric milliseconds.
-createAmlHttpServer({ auth_timeout_ms: "slow" });
-// @ts-expect-error concurrency ceilings are numeric.
-createAmlHttpServer({ max_inflight_requests: "unlimited" });
-// @ts-expect-error context deadlines are numeric milliseconds.
-createAmlHttpServer({ locked_policy: { resolve_context_timeout_ms: "slow" } });
-// @ts-expect-error a firewall run cannot request a made-up timestamp type.
-firewall.enforce(intent, { timestamp: 123 });
-// @ts-expect-error policy comparison requires both the left and right targets.
-policyDiff(source, "calm_default");
-// @ts-expect-error a simulation needs a list of policies, not one string.
-simulatePolicies(source, "restorative_v1");
+// Keep expected type errors in the compiler's view without executing invalid
+// calls when newer Node versions discover this .mts fixture under --test.
+if (false) {
+  // @ts-expect-error the runtime session exposes accept(), never handle().
+  session.handle({ protocol: AML_GOVERNANCE_STREAM_FINALIZE });
+  // @ts-expect-error a caller cannot select an unknown deployment mode.
+  createAmlHttpServer({ locked_policy: { mode: "permissive" } });
+  // @ts-expect-error bearer tokens are strings.
+  createAmlHttpServer({ request_auth: { bearer_token: 123 } });
+  // @ts-expect-error callback deadlines are numeric milliseconds.
+  createAmlHttpServer({ auth_timeout_ms: "slow" });
+  // @ts-expect-error concurrency ceilings are numeric.
+  createAmlHttpServer({ max_inflight_requests: "unlimited" });
+  // @ts-expect-error context deadlines are numeric milliseconds.
+  createAmlHttpServer({ locked_policy: { resolve_context_timeout_ms: "slow" } });
+  // @ts-expect-error a firewall run cannot request a made-up timestamp type.
+  firewall.enforce(intent, { timestamp: 123 });
+  // @ts-expect-error policy comparison requires both the left and right targets.
+  policyDiff(source, "calm_default");
+  // @ts-expect-error a simulation needs a list of policies, not one string.
+  simulatePolicies(source, "restorative_v1");
+}
 
 void [html, receiptHash, verified, decision, renderable, finalized, allowedCount, provenanceValid,
   meaningLine, suppressed, additions, ambiguous, addedIdentifier, changedDecisions, simulatedRuns];
