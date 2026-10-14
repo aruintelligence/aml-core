@@ -8,9 +8,11 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { dispatchAction } from "./boundary.mjs";
 import { buildDispatchMatrix } from "./dispatch-matrix.mjs";
+import { buildPolicyTuple } from "./policy-tuple.mjs";
 
 const sourceUrl = new URL("./boundary.mjs", import.meta.url);
 const matrixUrl = new URL("../../docs/action-dispatch-matrix.json", import.meta.url);
+const tupleUrl = new URL("../../docs/action-policy-tuple.json", import.meta.url);
 const reportUrl = new URL("../../docs/action-dispatch-mutants.json", import.meta.url);
 const digest = bytes => crypto.createHash("sha256").update(bytes).digest("hex");
 
@@ -55,6 +57,18 @@ export const mutations = Object.freeze([
     id: "resource_wildcard",
     change: "Accept a policy rule for another resource",
     before: "rule.resource === proposal.resource",
+    after: "true"
+  },
+  {
+    id: "tool_wildcard",
+    change: "Accept a policy rule for another tool",
+    before: "rule.tool === proposal.tool",
+    after: "true"
+  },
+  {
+    id: "effect_wildcard",
+    change: "Accept a policy rule for another effect",
+    before: "rule.effect === proposal.effect",
     after: "true"
   }
 ]);
@@ -102,12 +116,15 @@ export async function resourceSubstitutionProbe(dispatch = dispatchAction) {
 }
 
 export async function buildDispatchMutants() {
-  const [source, matrixBytes] = await Promise.all([
-    readFile(sourceUrl, "utf8"), readFile(matrixUrl, "utf8")
+  const [source, matrixBytes, tupleBytes] = await Promise.all([
+    readFile(sourceUrl, "utf8"), readFile(matrixUrl, "utf8"), readFile(tupleUrl, "utf8")
   ]);
   const reference = JSON.parse(matrixBytes);
+  const tupleReference = JSON.parse(tupleBytes);
   assert.deepEqual(await buildDispatchMatrix(), reference,
     "Matrix report is stale; regenerate and verify it before mutation testing");
+  assert.deepEqual(await buildPolicyTuple(), tupleReference,
+    "Policy tuple report is stale; regenerate and verify it before mutation testing");
   const baselineProbe = await resourceSubstitutionProbe();
   assert.deepEqual(baselineProbe, { execution_status: "blocked", reason: "no_exact_rule",
     policy_decision: "deny", callback_count: 0 });
@@ -118,6 +135,10 @@ export async function buildDispatchMutants() {
     const differences = rows.flatMap((row, index) =>
       JSON.stringify(row) === JSON.stringify(reference.rows[index]) ? [] : [index]);
     const first = differences[0];
+    const tupleRows = (await buildPolicyTuple(dispatch)).rows;
+    const tupleDifferences = tupleRows.flatMap((row, index) =>
+      JSON.stringify(row) === JSON.stringify(tupleReference.rows[index]) ? [] : [index]);
+    const firstTuple = tupleDifferences[0];
     const probe = await resourceSubstitutionProbe(dispatch);
     results.push({ id: mutation.id, change: mutation.change,
       matrix_changed_rows: differences.length,
@@ -126,18 +147,29 @@ export async function buildDispatchMutants() {
           ["resource_scope", "policy", "approval", "claim", "callback"].map(axis => [axis, rows[first][axis]])),
         reference: outcome(reference.rows[first]), mutant: outcome(rows[first])
       },
+      tuple_changed_cases: tupleDifferences.length,
+      first_changed_tuple: firstTuple === undefined ? null : {
+        index: firstTuple, match: tupleRows[firstTuple].match,
+        reference: { receipt: tupleReference.rows[firstTuple].receipt,
+          callback_count: tupleReference.rows[firstTuple].callback_count },
+        mutant: { receipt: tupleRows[firstTuple].receipt,
+          callback_count: tupleRows[firstTuple].callback_count }
+      },
       resource_probe_changed: JSON.stringify(probe) !== JSON.stringify(baselineProbe),
       resource_probe_result: probe });
   }
   const summary = { selected_mutants: results.length,
     matrix_detected: results.filter(row => row.matrix_changed_rows > 0).length,
-    additional_probe_detected: results.filter(row => row.matrix_changed_rows === 0 && row.resource_probe_changed).length,
-    undetected: results.filter(row => row.matrix_changed_rows === 0 && !row.resource_probe_changed).length };
+    tuple_detected: results.filter(row => row.tuple_changed_cases > 0).length,
+    tuple_only_detected: results.filter(row => row.matrix_changed_rows === 0 && row.tuple_changed_cases > 0).length,
+    combined_detected: results.filter(row => row.matrix_changed_rows > 0 || row.tuple_changed_cases > 0).length,
+    undetected: results.filter(row => row.matrix_changed_rows === 0 && row.tuple_changed_cases === 0).length };
   return { protocol: "aml-action-dispatch-mutants/1",
     provenance: "project-authored exact source substitutions and local callbacks",
     limits: "Selected mutations and finite fixtures only. No external side effect, arbitrary bug coverage, outside witness, or formal proof of production safety.",
     boundary_source_sha256: digest(source), matrix_report_sha256: digest(matrixBytes),
-    matrix_vectors: reference.rows.length, resource_probe_reference: baselineProbe,
+    tuple_report_sha256: digest(tupleBytes), matrix_vectors: reference.rows.length,
+    tuple_cases: tupleReference.rows.length, resource_probe_reference: baselineProbe,
     summary, mutations: results };
 }
 

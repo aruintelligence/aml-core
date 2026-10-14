@@ -8,14 +8,18 @@ const checkedIn = JSON.parse(readFileSync(
 
 test("selected source mutations match the checked-in, source-bound report", async () => {
   assert.deepEqual(await buildDispatchMutants(), checkedIn);
-  assert.deepEqual(checkedIn.summary, { selected_mutants: 7,
-    matrix_detected: 7, additional_probe_detected: 0, undetected: 0 });
+  assert.deepEqual(checkedIn.summary, { selected_mutants: 9,
+    matrix_detected: 7, tuple_detected: 3, tuple_only_detected: 2,
+    combined_detected: 9, undetected: 0 });
   assert.equal(checkedIn.matrix_vectors, 384);
-  assert.deepEqual(checkedIn.mutations.filter(row => row.matrix_changed_rows === 0), []);
-  assert.equal(checkedIn.mutations.at(-1).matrix_changed_rows, 192);
-  assert.equal(checkedIn.mutations.at(-1).first_changed_vector.index, 192);
-  assert.equal(checkedIn.mutations.at(-1).resource_probe_changed, true);
-  assert.equal(checkedIn.mutations.at(-1).resource_probe_result.callback_count, 1);
+  assert.equal(checkedIn.tuple_cases, 8);
+  assert.deepEqual(checkedIn.mutations.filter(row => row.matrix_changed_rows === 0).map(row => row.id),
+    ["tool_wildcard", "effect_wildcard"]);
+  assert.deepEqual(checkedIn.mutations.slice(-3).map(row =>
+    [row.id, row.matrix_changed_rows, row.tuple_changed_cases, row.first_changed_tuple.index]),
+  [["resource_wildcard", 192, 1, 1], ["tool_wildcard", 0, 1, 4],
+    ["effect_wildcard", 0, 1, 2]]);
+  assert.equal(checkedIn.mutations.find(row => row.id === "resource_wildcard").resource_probe_result.callback_count, 1);
 });
 
 test("a rule for another resource never reaches the host callback", async () => {

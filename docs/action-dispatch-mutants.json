@@ -4,7 +4,9 @@
   "limits": "Selected mutations and finite fixtures only. No external side effect, arbitrary bug coverage, outside witness, or formal proof of production safety.",
   "boundary_source_sha256": "4a7d72c4df073c669312f614cad109ea487772c852e4cb00880e566fc9ad329f",
   "matrix_report_sha256": "2ccdb17341e4406960ec8e6f519d3d1a5dca7f8a4efa8a57d5c9b1b5c0b7c075",
+  "tuple_report_sha256": "988d17e701fff4d0b18cf68449d415786cf757a7fea93bc3bfd4f83d511635dd",
   "matrix_vectors": 384,
+  "tuple_cases": 8,
   "resource_probe_reference": {
     "execution_status": "blocked",
     "reason": "no_exact_rule",
@@ -12,9 +14,11 @@
     "callback_count": 0
   },
   "summary": {
-    "selected_mutants": 7,
+    "selected_mutants": 9,
     "matrix_detected": 7,
-    "additional_probe_detected": 0,
+    "tuple_detected": 3,
+    "tuple_only_detected": 2,
+    "combined_detected": 9,
     "undetected": 0
   },
   "mutations": [
@@ -70,6 +74,8 @@
           "result_target": "team@example.test"
         }
       },
+      "tuple_changed_cases": 0,
+      "first_changed_tuple": null,
       "resource_probe_changed": false,
       "resource_probe_result": {
         "execution_status": "blocked",
@@ -130,6 +136,8 @@
           "result_target": "team@example.test"
         }
       },
+      "tuple_changed_cases": 0,
+      "first_changed_tuple": null,
       "resource_probe_changed": false,
       "resource_probe_result": {
         "execution_status": "blocked",
@@ -190,6 +198,8 @@
           "result_target": null
         }
       },
+      "tuple_changed_cases": 0,
+      "first_changed_tuple": null,
       "resource_probe_changed": false,
       "resource_probe_result": {
         "execution_status": "blocked",
@@ -250,6 +260,8 @@
           "result_target": "team@example.test"
         }
       },
+      "tuple_changed_cases": 0,
+      "first_changed_tuple": null,
       "resource_probe_changed": false,
       "resource_probe_result": {
         "execution_status": "blocked",
@@ -310,6 +322,8 @@
           "result_target": "other@example.test"
         }
       },
+      "tuple_changed_cases": 0,
+      "first_changed_tuple": null,
       "resource_probe_changed": false,
       "resource_probe_result": {
         "execution_status": "blocked",
@@ -370,6 +384,8 @@
           "result_target": null
         }
       },
+      "tuple_changed_cases": 0,
+      "first_changed_tuple": null,
       "resource_probe_changed": false,
       "resource_probe_result": {
         "execution_status": "blocked",
@@ -430,12 +446,125 @@
           "result_target": "team@example.test"
         }
       },
+      "tuple_changed_cases": 1,
+      "first_changed_tuple": {
+        "index": 1,
+        "match": {
+          "tool": "exact",
+          "effect": "exact",
+          "resource": "other"
+        },
+        "reference": {
+          "receipt": {
+            "protocol": "aml-action-dispatch/1",
+            "proposal_sha256": "2df512b5d366865a52577753c87661c91330b4f5757ac087d73d89f3f5bd0e94",
+            "policy_decision": "deny",
+            "execution_status": "blocked",
+            "reason": "no_exact_rule"
+          },
+          "callback_count": 0
+        },
+        "mutant": {
+          "receipt": {
+            "protocol": "aml-action-dispatch/1",
+            "proposal_sha256": "2df512b5d366865a52577753c87661c91330b4f5757ac087d73d89f3f5bd0e94",
+            "policy_decision": "allow",
+            "execution_status": "dispatched",
+            "reason": "host_dispatch_returned"
+          },
+          "callback_count": 1
+        }
+      },
       "resource_probe_changed": true,
       "resource_probe_result": {
         "execution_status": "dispatched",
         "reason": "host_dispatch_returned",
         "policy_decision": "allow",
         "callback_count": 1
+      }
+    },
+    {
+      "id": "tool_wildcard",
+      "change": "Accept a policy rule for another tool",
+      "matrix_changed_rows": 0,
+      "first_changed_vector": null,
+      "tuple_changed_cases": 1,
+      "first_changed_tuple": {
+        "index": 4,
+        "match": {
+          "tool": "other",
+          "effect": "exact",
+          "resource": "exact"
+        },
+        "reference": {
+          "receipt": {
+            "protocol": "aml-action-dispatch/1",
+            "proposal_sha256": "2df512b5d366865a52577753c87661c91330b4f5757ac087d73d89f3f5bd0e94",
+            "policy_decision": "deny",
+            "execution_status": "blocked",
+            "reason": "no_exact_rule"
+          },
+          "callback_count": 0
+        },
+        "mutant": {
+          "receipt": {
+            "protocol": "aml-action-dispatch/1",
+            "proposal_sha256": "2df512b5d366865a52577753c87661c91330b4f5757ac087d73d89f3f5bd0e94",
+            "policy_decision": "allow",
+            "execution_status": "dispatched",
+            "reason": "host_dispatch_returned"
+          },
+          "callback_count": 1
+        }
+      },
+      "resource_probe_changed": false,
+      "resource_probe_result": {
+        "execution_status": "blocked",
+        "reason": "no_exact_rule",
+        "policy_decision": "deny",
+        "callback_count": 0
+      }
+    },
+    {
+      "id": "effect_wildcard",
+      "change": "Accept a policy rule for another effect",
+      "matrix_changed_rows": 0,
+      "first_changed_vector": null,
+      "tuple_changed_cases": 1,
+      "first_changed_tuple": {
+        "index": 2,
+        "match": {
+          "tool": "exact",
+          "effect": "other",
+          "resource": "exact"
+        },
+        "reference": {
+          "receipt": {
+            "protocol": "aml-action-dispatch/1",
+            "proposal_sha256": "2df512b5d366865a52577753c87661c91330b4f5757ac087d73d89f3f5bd0e94",
+            "policy_decision": "deny",
+            "execution_status": "blocked",
+            "reason": "no_exact_rule"
+          },
+          "callback_count": 0
+        },
+        "mutant": {
+          "receipt": {
+            "protocol": "aml-action-dispatch/1",
+            "proposal_sha256": "2df512b5d366865a52577753c87661c91330b4f5757ac087d73d89f3f5bd0e94",
+            "policy_decision": "allow",
+            "execution_status": "dispatched",
+            "reason": "host_dispatch_returned"
+          },
+          "callback_count": 1
+        }
+      },
+      "resource_probe_changed": false,
+      "resource_probe_result": {
+        "execution_status": "blocked",
+        "reason": "no_exact_rule",
+        "policy_decision": "deny",
+        "callback_count": 0
       }
     }
   ]
