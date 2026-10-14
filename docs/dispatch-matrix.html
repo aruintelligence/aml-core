@@ -34,6 +34,6 @@
       <section class="method" aria-labelledby="method-title"><h2 id="method-title">What was actually checked?</h2><div><p>The Node runner calls the reference <code>dispatchAction</code> for all 192 local fixtures. A separate project-authored Python oracle checks each row, including receipt, digest, claim consumption, callback target, and marker write. CI rejects four deliberately falsified reports.</p><p>Reproduce with <code>node pilots/action-boundary/dispatch-matrix.mjs --check</code> and <code>python3 pilots/action-boundary/verify_dispatch_matrix.py docs/action-dispatch-matrix.json</code>. <a href="https://github.com/aruintelligence/aml-core/blob/main/pilots/action-boundary/DISPATCH_MATRIX.md">Read the method and limits ↗</a></p><p><strong>Scope:</strong> Finite project-authored callbacks, no human approval, provider call, arbitrary interleavings, real delivery, outside witness, or formal proof of production safety. A browser view of the report does not independently verify its provenance. Never silently retry an unknown result.</p></div></section>
     </main><footer class="foot">ĀML™ / ĀRU Intelligence Inc. · Local evidence, inspectable limits. <a href="https://github.com/aruintelligence/aml-core/blob/main/CLAIMS.md">Claims and evidence ↗</a></footer>
   </div>
-  <script type="module" src="dispatch-matrix.js"></script>
+  <script type="module" src="dispatch-matrix.js?v=fb499a0e3d36"></script>
 </body>
 </html>
