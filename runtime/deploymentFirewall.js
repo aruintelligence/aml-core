@@ -20,13 +20,26 @@ function normalizeMode(value, allowed, name) {
   return value;
 }
 
-function makeCacheKey(intent, profile, context, runOptions) {
-  if (typeof runOptions.cache_key === "string" && runOptions.cache_key.length > 0) {
-    return `manual:${runOptions.cache_key}`;
-  }
-  // Time can affect policy semantics. Refuse implicit caching without a fixed timestamp.
-  if (!runOptions.timestamp) return null;
-  return `auto:${sha256({ intent, profile, context, timestamp: runOptions.timestamp })}`;
+function cacheInput(intent, profile, context, timestamp, streamId, mode, failureMode, manualKey) {
+  // An explicit key is a namespace, never a substitute for the evaluated inputs.
+  // A dynamic timestamp can affect policy and receipts even with a manual key.
+  if (!timestamp) return null;
+  // Use the same snapshot for evaluation and the key. Otherwise a getter or a
+  // mutated custom profile can make the cached decision describe other inputs.
+  const input = JSON.parse(canonicalJSONStringify({
+    intent, profile, context, timestamp, stream_id: streamId || null
+  }));
+  const namespace = typeof manualKey === "string" && manualKey.length > 0 ? manualKey : null;
+  return {
+    input,
+    key: `${namespace === null ? "auto" : "manual"}:${sha256({
+      ...input, mode, failure_mode: failureMode, namespace
+    })}`
+  };
+}
+
+function sameProfile(left, right) {
+  return canonicalJSONStringify(left) === canonicalJSONStringify(right);
 }
 
 function normalizeError(error) {
@@ -54,23 +67,34 @@ export function createDeploymentFirewall(options = {}) {
     );
     const selectedProfile = runOptions.profile || profile;
     const context = { ...defaultContext, ...(runOptions.context || {}) };
-    const cacheKey = cache ? makeCacheKey(intent, selectedProfile, context, runOptions) : null;
+    const timestamp = runOptions.timestamp;
+    const streamId = runOptions.stream_id;
+    let snapshot = null;
+    try {
+      if (cache) snapshot = cacheInput(intent, selectedProfile, context, timestamp, streamId,
+        selectedMode, selectedFailureMode, runOptions.cache_key);
+    } catch {
+      // Unsupported/cyclic inputs cannot be safely cached. Let the evaluator
+      // determine their ordinary success or failure under the selected mode.
+    }
+    const cacheKey = snapshot?.key ?? null;
 
     if (cache && cacheKey) {
-      const cached = cache.get(cacheKey);
-      if (cached) {
-        return {
-          ...cached,
-          cache: { enabled: true, hit: true, key: cacheKey }
-        };
-      }
+      try {
+        const cached = cache.get(cacheKey);
+        if (cached && cached.mode === selectedMode && cached.failure_mode === selectedFailureMode &&
+            sameProfile(cached.profile, snapshot.input.profile)) {
+          return { ...cached, cache: { enabled: true, hit: true, key: cacheKey } };
+        }
+      } catch { /* An optional cache failure must not replace the live decision. */ }
     }
 
     try {
-      const result = core.enforce(intent, {
-        ...runOptions,
-        profile: selectedProfile,
-        context
+      const result = core.enforce(snapshot?.input.intent ?? intent, {
+        profile: snapshot?.input.profile ?? selectedProfile,
+        context: snapshot?.input.context ?? context,
+        timestamp: snapshot?.input.timestamp ?? timestamp,
+        stream_id: snapshot?.input.stream_id ?? streamId
       });
       const amlAllowed = result.allowed;
       const effectiveAllowed = selectedMode === "shadow" ? true : amlAllowed;
@@ -79,7 +103,7 @@ export function createDeploymentFirewall(options = {}) {
         version: "1.0",
         mode: selectedMode,
         failure_mode: selectedFailureMode,
-        profile: selectedProfile,
+        profile: snapshot?.input.profile ?? selectedProfile,
         aml_allowed: amlAllowed,
         effective_allowed: effectiveAllowed,
         would_suppress: !amlAllowed,
@@ -87,7 +111,10 @@ export function createDeploymentFirewall(options = {}) {
         cache: { enabled: Boolean(cache), hit: false, key: cacheKey },
         result
       };
-      if (cache && cacheKey) cache.set(cacheKey, deployment);
+      if (cache && cacheKey) {
+        try { cache.set(cacheKey, deployment); }
+        catch { /* The computed decision still stands when caching fails. */ }
+      }
       return deployment;
     } catch (error) {
       const effectiveAllowed = selectedFailureMode === "open";
