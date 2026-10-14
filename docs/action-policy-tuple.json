@@ -1,0 +1,229 @@
+{
+  "protocol": "aml-action-policy-tuple/1",
+  "provenance": "project-authored local eight-case rule-binding cross-product",
+  "limits": "Eight binary combinations of one valid allow rule and one local returning callback. No approval, provider call, delivery, arbitrary policy set, or production safety proof.",
+  "axes": {
+    "tool": [
+      "exact",
+      "other"
+    ],
+    "effect": [
+      "exact",
+      "other"
+    ],
+    "resource": [
+      "exact",
+      "other"
+    ]
+  },
+  "rows": [
+    {
+      "match": {
+        "tool": "exact",
+        "effect": "exact",
+        "resource": "exact"
+      },
+      "proposal": {
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test"
+      },
+      "rule": {
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test"
+      },
+      "receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "2df512b5d366865a52577753c87661c91330b4f5757ac087d73d89f3f5bd0e94",
+        "policy_decision": "allow",
+        "execution_status": "dispatched",
+        "reason": "host_dispatch_returned"
+      },
+      "callback_count": 1,
+      "callback_target": "team@example.test"
+    },
+    {
+      "match": {
+        "tool": "exact",
+        "effect": "exact",
+        "resource": "other"
+      },
+      "proposal": {
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test"
+      },
+      "rule": {
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "outside@example.test"
+      },
+      "receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "2df512b5d366865a52577753c87661c91330b4f5757ac087d73d89f3f5bd0e94",
+        "policy_decision": "deny",
+        "execution_status": "blocked",
+        "reason": "no_exact_rule"
+      },
+      "callback_count": 0,
+      "callback_target": null
+    },
+    {
+      "match": {
+        "tool": "exact",
+        "effect": "other",
+        "resource": "exact"
+      },
+      "proposal": {
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test"
+      },
+      "rule": {
+        "tool": "send_message",
+        "effect": "write",
+        "resource": "team@example.test"
+      },
+      "receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "2df512b5d366865a52577753c87661c91330b4f5757ac087d73d89f3f5bd0e94",
+        "policy_decision": "deny",
+        "execution_status": "blocked",
+        "reason": "no_exact_rule"
+      },
+      "callback_count": 0,
+      "callback_target": null
+    },
+    {
+      "match": {
+        "tool": "exact",
+        "effect": "other",
+        "resource": "other"
+      },
+      "proposal": {
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test"
+      },
+      "rule": {
+        "tool": "send_message",
+        "effect": "write",
+        "resource": "outside@example.test"
+      },
+      "receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "2df512b5d366865a52577753c87661c91330b4f5757ac087d73d89f3f5bd0e94",
+        "policy_decision": "deny",
+        "execution_status": "blocked",
+        "reason": "no_exact_rule"
+      },
+      "callback_count": 0,
+      "callback_target": null
+    },
+    {
+      "match": {
+        "tool": "other",
+        "effect": "exact",
+        "resource": "exact"
+      },
+      "proposal": {
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test"
+      },
+      "rule": {
+        "tool": "archive_message",
+        "effect": "send",
+        "resource": "team@example.test"
+      },
+      "receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "2df512b5d366865a52577753c87661c91330b4f5757ac087d73d89f3f5bd0e94",
+        "policy_decision": "deny",
+        "execution_status": "blocked",
+        "reason": "no_exact_rule"
+      },
+      "callback_count": 0,
+      "callback_target": null
+    },
+    {
+      "match": {
+        "tool": "other",
+        "effect": "exact",
+        "resource": "other"
+      },
+      "proposal": {
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test"
+      },
+      "rule": {
+        "tool": "archive_message",
+        "effect": "send",
+        "resource": "outside@example.test"
+      },
+      "receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "2df512b5d366865a52577753c87661c91330b4f5757ac087d73d89f3f5bd0e94",
+        "policy_decision": "deny",
+        "execution_status": "blocked",
+        "reason": "no_exact_rule"
+      },
+      "callback_count": 0,
+      "callback_target": null
+    },
+    {
+      "match": {
+        "tool": "other",
+        "effect": "other",
+        "resource": "exact"
+      },
+      "proposal": {
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test"
+      },
+      "rule": {
+        "tool": "archive_message",
+        "effect": "write",
+        "resource": "team@example.test"
+      },
+      "receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "2df512b5d366865a52577753c87661c91330b4f5757ac087d73d89f3f5bd0e94",
+        "policy_decision": "deny",
+        "execution_status": "blocked",
+        "reason": "no_exact_rule"
+      },
+      "callback_count": 0,
+      "callback_target": null
+    },
+    {
+      "match": {
+        "tool": "other",
+        "effect": "other",
+        "resource": "other"
+      },
+      "proposal": {
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test"
+      },
+      "rule": {
+        "tool": "archive_message",
+        "effect": "write",
+        "resource": "outside@example.test"
+      },
+      "receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "2df512b5d366865a52577753c87661c91330b4f5757ac087d73d89f3f5bd0e94",
+        "policy_decision": "deny",
+        "execution_status": "blocked",
+        "reason": "no_exact_rule"
+      },
+      "callback_count": 0,
+      "callback_target": null
+    }
+  ]
+}

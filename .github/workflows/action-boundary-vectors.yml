@@ -6,24 +6,34 @@ on:
       - "pilots/action-boundary/**"
       - "protocol/canonicalJson.js"
       - "docs/action-dispatch-matrix.json"
+      - "docs/action-policy-tuple.json"
       - "docs/action-dispatch-mutants.json"
       - "docs/dispatch-matrix.html"
       - "docs/dispatch-matrix.js"
+      - "docs/policy-tuple.html"
+      - "docs/policy-tuple.js"
       - "test/action-boundary-dispatch-matrix.test.js"
+      - "test/action-boundary-policy-tuple.test.js"
       - "test/action-boundary-mutation-proof.test.js"
       - "test/dispatch-matrix-view.test.js"
+      - "test/policy-tuple-view.test.js"
       - ".github/workflows/action-boundary-vectors.yml"
   pull_request:
     paths:
       - "pilots/action-boundary/**"
       - "protocol/canonicalJson.js"
       - "docs/action-dispatch-matrix.json"
+      - "docs/action-policy-tuple.json"
       - "docs/action-dispatch-mutants.json"
       - "docs/dispatch-matrix.html"
       - "docs/dispatch-matrix.js"
+      - "docs/policy-tuple.html"
+      - "docs/policy-tuple.js"
       - "test/action-boundary-dispatch-matrix.test.js"
+      - "test/action-boundary-policy-tuple.test.js"
       - "test/action-boundary-mutation-proof.test.js"
       - "test/dispatch-matrix-view.test.js"
+      - "test/policy-tuple-view.test.js"
       - ".github/workflows/action-boundary-vectors.yml"
 
 permissions:
@@ -45,7 +55,11 @@ jobs:
       - run: python3 pilots/action-boundary/verify_vectors.py
       - run: node pilots/action-boundary/dispatch-matrix.mjs --check
       - run: python3 pilots/action-boundary/verify_dispatch_matrix.py docs/action-dispatch-matrix.json
+      - run: node pilots/action-boundary/policy-tuple.mjs --check
+      - run: python3 pilots/action-boundary/verify_policy_tuple.py docs/action-policy-tuple.json
       - run: node pilots/action-boundary/dispatch-mutants.mjs --check
       - run: node --test test/action-boundary-dispatch-matrix.test.js
+      - run: node --test test/action-boundary-policy-tuple.test.js
       - run: node --test test/action-boundary-mutation-proof.test.js
       - run: node --test test/dispatch-matrix-view.test.js
+      - run: node --test test/policy-tuple-view.test.js
