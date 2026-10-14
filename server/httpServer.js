@@ -182,7 +182,10 @@ export function createAmlHttpServer(options = {}) {
           max_items: body.max_items ?? maxBatchItems
         };
         const result = evaluateInterfaceBatch(body.intents, {
-          ...controls
+          ...controls,
+          // Each locked item is a separate server evaluation, even when the
+          // intent and request-wide timestamp are identical.
+          ...(lockedPolicy ? { stream_ids: body.intents.map(() => randomUUID()) } : {})
         });
         return send(res, 200, {
           ...result,

@@ -211,6 +211,30 @@ test("batch firewall preserves per-intent evidence and aggregate outcome", () =>
   assert.equal(typeof batch.results[1].receipt_sha256, "string");
 });
 
+test("batch firewall accepts distinct explicit stream IDs while local defaults stay deterministic", () => {
+  const options = { profile: "calm_default", timestamp: fixed };
+  const repeated = [allowedIntent, allowedIntent];
+  const local = evaluateInterfaceBatch(repeated, options);
+  assert.equal(local.results[0].receipt_sha256, local.results[1].receipt_sha256);
+
+  const distinct = evaluateInterfaceBatch(repeated, { ...options, stream_ids: ["item-a", "item-b"] });
+  const receipts = distinct.results.map(item => item.evaluation.result.receipt);
+  assert.deepEqual(receipts.map(receipt => receipt.runtime_audit_stream.stream_id), ["item-a", "item-b"]);
+  assert.notEqual(distinct.results[0].receipt_sha256, distinct.results[1].receipt_sha256);
+  assert.deepEqual(evaluateInterfaceBatch(repeated, { ...options, stream_ids: ["item-a", "item-b"] }), distinct);
+});
+
+test("batch firewall validates all explicit stream IDs before evaluating", () => {
+  const repeated = [allowedIntent, allowedIntent];
+  for (const stream_ids of [null, ["only-one"], ["same", "same"], ["", "valid"], ["valid", 1]]) {
+    assert.throws(() => evaluateInterfaceBatch(repeated, { timestamp: fixed, stream_ids }),
+      /one unique nonempty string per intent/);
+  }
+  assert.throws(() => evaluateInterfaceBatch(repeated, {
+    timestamp: fixed, stream_id: "shared", stream_ids: ["item-a", "item-b"]
+  }), /mutually exclusive/);
+});
+
 test("batch firewall enforces explicit size bound", () => {
   assert.throws(
     () => evaluateInterfaceBatch([allowedIntent, suppressedIntent], { max_items: 1, timestamp: fixed }),

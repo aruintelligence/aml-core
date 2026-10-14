@@ -12,10 +12,22 @@ export function evaluateInterfaceBatch(intents, options = {}) {
   if (intents.length > maxItems) {
     throw new Error(`AML_BATCH_LIMIT_EXCEEDED:${intents.length}>${maxItems}`);
   }
+  const { stream_ids: streamIds, ...evaluationOptions } = options;
+  if (streamIds !== undefined) {
+    if (!Array.isArray(streamIds) || streamIds.length !== intents.length ||
+        streamIds.some(id => typeof id !== "string" || id.length === 0) ||
+        new Set(streamIds).size !== streamIds.length) {
+      throw new TypeError("stream_ids must contain one unique nonempty string per intent.");
+    }
+    if (options.stream_id !== undefined) {
+      throw new TypeError("stream_id and stream_ids are mutually exclusive.");
+    }
+  }
 
-  const firewall = createDeploymentFirewall(options);
+  const firewall = createDeploymentFirewall(evaluationOptions);
   const results = intents.map((intent, index) => {
-    const evaluation = firewall.evaluate(intent, options);
+    const evaluation = firewall.evaluate(intent, streamIds === undefined
+      ? evaluationOptions : { ...evaluationOptions, stream_id: streamIds[index] });
     return {
       index,
       transmission: intent?.transmission ?? null,
