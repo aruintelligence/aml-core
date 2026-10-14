@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { inspectMatrix, MATRIX_AXES, matrixGroupSlots, matrixIndex, matrixInsights, matrixSelection, matrixUrl,
@@ -6,6 +7,7 @@ import { inspectMatrix, MATRIX_AXES, matrixGroupSlots, matrixIndex, matrixInsigh
 
 const report = JSON.parse(readFileSync(new URL("../docs/action-dispatch-matrix.json", import.meta.url), "utf8"));
 const page = readFileSync(new URL("../docs/dispatch-matrix.html", import.meta.url), "utf8");
+const script = readFileSync(new URL("../docs/dispatch-matrix.js", import.meta.url));
 
 test("the atlas indexes every vector and filters the actual checked-in outcomes", () => {
   assert.deepEqual(inspectMatrix(report), { blocked: 140, dispatched: 26, unknown: 26 });
@@ -55,4 +57,7 @@ test("the viewer rejects malformed axes or totals and marks its evidence boundar
     "does not independently verify its provenance", "dispatch-matrix.js"]) {
     assert.match(page.toLowerCase(), new RegExp(required.toLowerCase()));
   }
+  const version = createHash("sha256").update(script).digest("hex").slice(0, 12);
+  assert.ok(page.includes(`src="dispatch-matrix.js?v=${version}"`),
+    "the browser must fetch the JavaScript paired with this page");
 });
