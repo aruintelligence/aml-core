@@ -14,7 +14,7 @@ test("locked HTTP policy owns controls and rejects request overrides", async () 
   controls.context.consent_granted = true;
   assert.equal((await policy.select({}, {})).context.consent_granted, false);
 
-  for (const key of ["profile", "mode", "failure_mode", "context", "timestamp", "max_items"]) {
+  for (const key of ["profile", "mode", "failure_mode", "context", "timestamp", "stream_id", "max_items"]) {
     await assert.rejects(policy.select({ [key]: undefined }, {}), {
       message: "policy_override_forbidden", statusCode: 403
     });
