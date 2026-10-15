@@ -3,7 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { executeAccountableIntent, signExecutionReceipt } from "../compiler/accountablePipeline.js";
+import { executeAccountableIntent, signExecutionReceipt, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
+import { createAttentionLedger, consumeAttention } from "../runtime/attentionLedger.js";
 import { createEvidenceCapsule } from "../runtime/evidenceCapsule.js";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 
@@ -18,7 +19,42 @@ function rehash(capsule) {
   capsule.digests = Object.fromEntries(["sha256", "sha512"].map(algorithm => [algorithm, crypto.createHash(algorithm).update(bytes).digest("hex")]));
 }
 
-function check(name, content, expected, policy = null, reasonIncludes = null) {
+function stableStringify(value) {
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().filter(key => value[key] !== undefined)
+      .map(key => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function hashValue(value) {
+  return crypto.createHash("sha256").update(stableStringify(value)).digest("hex");
+}
+
+function receiptWithLedger(base, ledger) {
+  const updated = structuredClone(base);
+  updated.attention_ledger = ledger;
+  updated.attention_ledger_sha256 = hashValue(ledger);
+  const payload = { ...updated };
+  delete payload.receipt_sha256;
+  updated.receipt_sha256 = hashValue(payload);
+  return updated;
+}
+
+function resign(receipt, privateKey) {
+  receipt.attention_ledger_sha256 = hashValue(receipt.attention_ledger);
+  const payload = { ...receipt };
+  delete payload.receipt_sha256;
+  delete payload.signature;
+  receipt.receipt_sha256 = hashValue(payload);
+  const { signature } = receipt;
+  const material = { protocol: "ĀML Execution Receipt Attestation", version: "1.1", algorithm: "Ed25519",
+    receipt_sha256: receipt.receipt_sha256, signer: signature.signer, signed_at: signature.signed_at };
+  signature.signature_base64 = crypto.sign(null, Buffer.from(stableStringify(material)), privateKey).toString("base64");
+}
+
+function check(name, content, expected, policy = null, reasonIncludes = null, expectedChecks = null) {
   const file = path.join(directory, `${name}.json`);
   fs.writeFileSync(file, typeof content === "string" ? content : JSON.stringify(content));
   const args = [verifier, file];
@@ -32,6 +68,7 @@ function check(name, content, expected, policy = null, reasonIncludes = null) {
   const report = JSON.parse(result.stdout);
   if (report.verified !== expected || result.status !== (expected ? 0 : 1) ||
       (reasonIncludes && !report.reason?.includes(reasonIncludes)) ||
+      (expectedChecks && Object.entries(expectedChecks).some(([key, value]) => report.checks?.[key] !== value)) ||
       (expected && policy && report.attribution_bound !== true)) {
     throw new Error(`${name}: unexpected Python result ${result.stdout} ${result.stderr}`);
   }
@@ -104,6 +141,45 @@ try {
   const largeBudgetSignature = signExecutionReceipt(largeBudgetReceipt, privateKey.export({ type: "pkcs8", format: "pem" }),
     { signer: "synthetic", timestamp: "2026-10-10T01:00:00.000Z" });
   results.push(check("signed-large-attention-budget", createEvidenceCapsule(largeBudgetSignature), true, signedPolicy));
+  const roundingLedger = createAttentionLedger(null);
+  for (const amount of [Number.MAX_SAFE_INTEGER, 1, 1]) consumeAttention(roundingLedger, amount);
+  if (roundingLedger.consumed !== 2 ** 53) throw new Error("Ledger rounding fixture changed");
+  const roundingReceipt = receiptWithLedger(receipt, roundingLedger);
+  if (!verifyExecutionReceipt(roundingReceipt).verified) throw new Error("JavaScript rejected the rounding fixture");
+  const roundingSignature = signExecutionReceipt(roundingReceipt, privateKey.export({ type: "pkcs8", format: "pem" }),
+    { signer: "synthetic", timestamp: "2026-10-10T01:00:00.000Z" });
+  results.push(check("signed-ledger-binary64-sum", createEvidenceCapsule(roundingSignature), true, signedPolicy));
+  const roundingSource = JSON.stringify(createEvidenceCapsule(roundingSignature));
+  const negativeZeroSequence = roundingSource.replace('"sequence":0', '"sequence":-0');
+  if (negativeZeroSequence === roundingSource ||
+      !verifyExecutionReceipt(JSON.parse(negativeZeroSequence).receipt).verified) {
+    throw new Error("Negative-zero sequence fixture changed JavaScript verification");
+  }
+  results.push(check("signed-negative-zero-sequence", negativeZeroSequence, true, signedPolicy));
+
+  const oneLedger = createAttentionLedger(1);
+  const oneSignature = signExecutionReceipt(receiptWithLedger(receipt, oneLedger),
+    privateKey.export({ type: "pkcs8", format: "pem" }),
+    { signer: "synthetic", timestamp: "2026-10-10T01:00:00.000Z" });
+  const forgedBalance = createEvidenceCapsule(oneSignature);
+  forgedBalance.receipt.attention_ledger.remaining = true;
+  resign(forgedBalance.receipt, privateKey);
+  forgedBalance.summary.receipt_sha256 = forgedBalance.receipt.receipt_sha256;
+  rehash(forgedBalance);
+  if (verifyExecutionReceipt(forgedBalance.receipt).verified) throw new Error("JavaScript accepted a boolean balance");
+  results.push(check("signed-ledger-boolean-balance-rejected", forgedBalance, false, signedPolicy,
+    null, { receipt_hash: true, signature: true, ledger: false, summary: true }));
+
+  const zeroSignature = signExecutionReceipt(receiptWithLedger(receipt, createAttentionLedger(0)),
+    privateKey.export({ type: "pkcs8", format: "pem" }),
+    { signer: "synthetic", timestamp: "2026-10-10T01:00:00.000Z" });
+  const zeroSource = JSON.stringify(createEvidenceCapsule(zeroSignature));
+  const negativeZero = zeroSource.replace('"remaining":0', '"remaining":-0');
+  if (negativeZero === zeroSource || verifyExecutionReceipt(JSON.parse(negativeZero).receipt).verified) {
+    throw new Error("Negative-zero balance fixture does not diverge from JavaScript");
+  }
+  results.push(check("signed-ledger-negative-zero-balance-rejected", negativeZero, false, signedPolicy,
+    null, { receipt_hash: true, signature: true, ledger: false, summary: true }));
   for (const [name, key_probe] of [
     ["array-index-keys", { "10": "ten", "2": "two", "01": "leading", "0": "zero",
       "4294967294": "last index", "4294967295": "ordinary key" }],

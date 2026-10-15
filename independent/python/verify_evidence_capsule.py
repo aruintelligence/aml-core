@@ -40,8 +40,10 @@ def reject_constant(value):
 
 
 def parse_js_int(raw):
-    # JSON.parse represents every JSON number as binary64. Preserve small integers
-    # for Python structural checks; round larger decimal tokens to the same value.
+    # JSON.parse represents every JSON number as binary64. Preserve small positive
+    # and negative integers for structural checks, but retain the sign of -0.
+    if raw == "-0":
+        return -0.0
     number = int(raw)
     if abs(number) <= MAX_SAFE_INTEGER:
         return number
@@ -129,6 +131,11 @@ def hash_text(value):
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def js_integer(value):
+    # Number.isInteger(-0) is true; Python's int type check would reject it.
+    return type(value) is int or (type(value) is float and math.isfinite(value) and value.is_integer())
+
+
 def verify_signature(receipt, policy):
     if not isinstance(policy, dict):
         raise ValueError("external_receipt_trust_required")
@@ -175,21 +182,38 @@ def valid_ledger(ledger):
     budget = ledger.get("initial_budget")
     if budget is not None and (type(budget) not in (int, float) or budget < 0):
         return False
-    remaining, consumed = budget, 0
+
+    def same_number(actual, expected, *, object_is=False):
+        # JS uses === for consumed values and Object.is for before/after/remaining.
+        # Python's True == 1 and -0.0 == 0.0 must not silently change that contract.
+        if actual is None or expected is None:
+            return actual is None and expected is None
+        if type(actual) not in (int, float) or type(expected) not in (int, float):
+            return False
+        if object_is and actual == expected == 0:
+            return math.copysign(1, actual) == math.copysign(1, expected)
+        return actual == expected
+
+    # JavaScript adds and subtracts binary64 Numbers, even when each input is a
+    # safe integer. Python integer arithmetic would diverge after the sum crosses
+    # 2**53, rejecting an otherwise valid signed receipt.
+    remaining, consumed = (None if budget is None else float(budget)), 0.0
     for index, entry in enumerate(ledger["entries"]):
         amount = entry.get("amount_requested")
         if type(amount) not in (int, float) or amount < 0:
             return False
         allowed = budget is None or amount <= remaining
-        charged = amount if allowed else 0
-        after = None if budget is None else max(0, remaining - charged)
-        if (type(entry.get("sequence")) is not int or entry.get("sequence") != index or entry.get("allowed") is not allowed or
-            entry.get("budget_before") != remaining or entry.get("amount_consumed") != charged or
-            entry.get("budget_after") != after):
+        charged = float(amount) if allowed else 0.0
+        after = None if budget is None else max(0.0, remaining - charged)
+        if (not js_integer(entry.get("sequence")) or entry.get("sequence") != index or entry.get("allowed") is not allowed or
+            not same_number(entry.get("budget_before"), remaining, object_is=True) or
+            not same_number(entry.get("amount_consumed"), charged) or
+            not same_number(entry.get("budget_after"), after, object_is=True)):
             return False
         consumed += charged
         remaining = after
-    return ledger.get("consumed") == consumed and ledger.get("remaining") == remaining
+    return (same_number(ledger.get("consumed"), consumed) and
+            same_number(ledger.get("remaining"), remaining, object_is=True))
 
 
 def valid_audit(stream):
@@ -198,7 +222,7 @@ def valid_audit(stream):
     previous = None
     for index, entry in enumerate(stream["entries"]):
         core = {key: entry[key] for key in ("sequence", "timestamp", "event_type", "payload", "previous_hash")}
-        if type(entry["sequence"]) is not int or entry["sequence"] != index or entry["previous_hash"] != previous or entry["entry_hash"] != hash_value(core):
+        if not js_integer(entry["sequence"]) or entry["sequence"] != index or entry["previous_hash"] != previous or entry["entry_hash"] != hash_value(core):
             return False
         previous = entry["entry_hash"]
     return True
@@ -230,7 +254,7 @@ def verify(capsule, policy=None):
         "simulation": hash_value(receipt["simulations"]) == receipt["simulation_sha256"],
         "decision": hash_value(decisions) == receipt["decision_sha256"],
         "output": hash_text(selected["html"]) == receipt["output_sha256"],
-        "counts": type(selected["allowed"]) is int and type(selected["suppressed"]) is int
+        "counts": js_integer(selected["allowed"]) and js_integer(selected["suppressed"])
                   and selected["allowed"] == sum(item["render_allowed"] is True for item in decisions)
                   and selected["suppressed"] == sum(item["render_allowed"] is not True for item in decisions),
         "audit": hash_value(receipt["runtime_audit_stream"]) == receipt["audit_stream_sha256"]
