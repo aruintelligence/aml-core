@@ -32,10 +32,29 @@ function hashValue(value) {
   return crypto.createHash("sha256").update(stableStringify(value)).digest("hex");
 }
 
+function rehashAudit(receipt) {
+  let previous = null;
+  for (const entry of receipt.runtime_audit_stream.entries) {
+    entry.previous_hash = previous;
+    const { entry_hash, ...core } = entry;
+    entry.entry_hash = hashValue(core);
+    previous = entry.entry_hash;
+  }
+  receipt.audit_stream_sha256 = hashValue(receipt.runtime_audit_stream);
+}
+
+function rebindLedgerAudit(receipt) {
+  const selected = receipt.runtime_audit_stream.entries[3].payload;
+  selected.attention_ledger_remaining = receipt.attention_ledger.remaining;
+  selected.attention_ledger_consumed = receipt.attention_ledger.consumed;
+  rehashAudit(receipt);
+}
+
 function receiptWithLedger(base, ledger) {
   const updated = structuredClone(base);
   updated.attention_ledger = ledger;
   updated.attention_ledger_sha256 = hashValue(ledger);
+  rebindLedgerAudit(updated);
   const payload = { ...updated };
   delete payload.receipt_sha256;
   updated.receipt_sha256 = hashValue(payload);
@@ -55,6 +74,7 @@ function signModifiedReceipt(receipt, privateKey) {
 
 function resign(receipt, privateKey) {
   receipt.attention_ledger_sha256 = hashValue(receipt.attention_ledger);
+  rebindLedgerAudit(receipt);
   signModifiedReceipt(receipt, privateKey);
 }
 
@@ -100,6 +120,25 @@ try {
   const signedPolicy = { trusted_receipt_fingerprints: [signed.signature.public_key_sha256] };
   results.push(check("signed-external-trust-required", signedCapsule, false));
   results.push(check("signed-valid", signedCapsule, true, signedPolicy));
+  const changedIntent = structuredClone(signedCapsule);
+  changedIntent.receipt.intent.audit_probe = "different declaration";
+  changedIntent.receipt.intent_sha256 = hashValue(changedIntent.receipt.intent);
+  signModifiedReceipt(changedIntent.receipt, privateKey);
+  changedIntent.summary.receipt_sha256 = changedIntent.receipt.receipt_sha256;
+  rehash(changedIntent);
+  if (verifyEvidenceCapsule(changedIntent).verified) throw new Error("JavaScript accepted a signed receipt with a stale audit intent");
+  results.push(check("signed-audit-intent-binding-rejected", changedIntent, false, signedPolicy,
+    null, { receipt_hash: true, intent: true, audit: true, audit_binding: false, signature: true, summary: true }));
+
+  const changedAudit = structuredClone(signedCapsule);
+  changedAudit.receipt.runtime_audit_stream.entries[3].payload.attention_ledger_consumed = 999;
+  rehashAudit(changedAudit.receipt);
+  signModifiedReceipt(changedAudit.receipt, privateKey);
+  changedAudit.summary.receipt_sha256 = changedAudit.receipt.receipt_sha256;
+  rehash(changedAudit);
+  if (verifyEvidenceCapsule(changedAudit).verified) throw new Error("JavaScript accepted a signed receipt with a conflicting audit event");
+  results.push(check("signed-audit-ledger-binding-rejected", changedAudit, false, signedPolicy,
+    null, { receipt_hash: true, audit: true, audit_binding: false, ledger: true, signature: true, summary: true }));
   for (const field of ["runtime_audit_stream", "attention_ledger"]) {
     const omitted = structuredClone(signedCapsule);
     delete omitted.receipt[field];

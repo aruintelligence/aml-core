@@ -74,9 +74,12 @@ const receipt = executeAccountableIntent(intent, {
 ```
 
 ### `verifyExecutionReceipt(receipt)`
-Recomputes receipt integrity and verifies bound runtime artifacts. A receipt
-missing its audit stream or attention ledger, or carrying a non-array audit,
-cannot verify even if its outer hash is recalculated.
+Recomputes receipt integrity and verifies bound runtime artifacts. The audit
+stream must contain five ordered events whose timestamps, types, and payloads
+agree with the receipt's intent, profile, AML, simulations, selected decision,
+attention ledger, and output hashes. `audit_receipt_binding_valid` reports this
+semantic check. A missing, malformed, or contradictory stream cannot verify
+even if its chain and outer receipt hash are recalculated.
 
 ### `signExecutionReceipt(receipt, privateKeyPem, options?)`
 Adds an Ed25519 attestation to a valid receipt. Rejects private keys of other algorithm types.

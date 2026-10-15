@@ -136,6 +136,29 @@ def js_integer(value):
     return type(value) is int or (type(value) is float and math.isfinite(value) and value.is_integer())
 
 
+def same_number(actual, expected, *, object_is=False):
+    # JS uses === for consumed values and Object.is for before/after/remaining.
+    # Python's True == 1 and -0.0 == 0.0 must not silently change that contract.
+    if actual is None or expected is None:
+        return actual is None and expected is None
+    if type(actual) not in (int, float) or type(expected) not in (int, float):
+        return False
+    if object_is and actual == expected == 0:
+        return math.copysign(1, actual) == math.copysign(1, expected)
+    return actual == expected
+
+
+def same_json_value(actual, expected):
+    if type(actual) is dict and type(expected) is dict:
+        return (actual.keys() == expected.keys() and
+                all(same_json_value(actual[key], expected[key]) for key in actual))
+    if type(actual) is list and type(expected) is list:
+        return len(actual) == len(expected) and all(same_json_value(a, b) for a, b in zip(actual, expected))
+    if type(actual) in (int, float) or type(expected) in (int, float):
+        return same_number(actual, expected, object_is=True)
+    return type(actual) is type(expected) and actual == expected
+
+
 def verify_signature(receipt, policy):
     if not isinstance(policy, dict):
         raise ValueError("external_receipt_trust_required")
@@ -183,17 +206,6 @@ def valid_ledger(ledger):
     if budget is not None and (type(budget) not in (int, float) or budget < 0):
         return False
 
-    def same_number(actual, expected, *, object_is=False):
-        # JS uses === for consumed values and Object.is for before/after/remaining.
-        # Python's True == 1 and -0.0 == 0.0 must not silently change that contract.
-        if actual is None or expected is None:
-            return actual is None and expected is None
-        if type(actual) not in (int, float) or type(expected) not in (int, float):
-            return False
-        if object_is and actual == expected == 0:
-            return math.copysign(1, actual) == math.copysign(1, expected)
-        return actual == expected
-
     # JavaScript adds and subtracts binary64 Numbers, even when each input is a
     # safe integer. Python integer arithmetic would diverge after the sum crosses
     # 2**53, rejecting an otherwise valid signed receipt.
@@ -228,6 +240,28 @@ def valid_audit(stream):
     return True
 
 
+def valid_audit_receipt_binding(receipt):
+    stream = receipt["runtime_audit_stream"]
+    entries = stream["entries"]
+    if (stream.get("version") != "1.0" or stream.get("created_at") != receipt["timestamp"] or
+        not isinstance(entries, list) or len(entries) != 5):
+        return False
+    expected = [
+        ("intent_received", {"intent_sha256": receipt["intent_sha256"], "profile_id": receipt["profile"]["id"]}),
+        ("aml_generated", {"aml_sha256": receipt["aml_sha256"]}),
+        ("policy_simulated", {"simulation_sha256": receipt["simulation_sha256"],
+                              "policies": receipt["profile"]["policies"]}),
+        ("policy_selected", {"policy_id": receipt["selected_render"]["policy_id"],
+                             "decision_sha256": receipt["decision_sha256"],
+                             "attention_ledger_remaining": receipt["attention_ledger"]["remaining"],
+                             "attention_ledger_consumed": receipt["attention_ledger"]["consumed"]}),
+        ("output_rendered", {"output_sha256": receipt["output_sha256"]}),
+    ]
+    return all(entry.get("timestamp") == receipt["timestamp"] and entry.get("event_type") == event_type and
+               same_json_value(entry.get("payload"), payload)
+               for entry, (event_type, payload) in zip(entries, expected))
+
+
 def verify(capsule, policy=None):
     if set(capsule) != FIELDS or capsule["protocol"] != "aml-evidence-capsule/1" or capsule["canonicalization"] != "aml-sorted-json/1":
         raise ValueError("unsupported capsule contract")
@@ -259,6 +293,7 @@ def verify(capsule, policy=None):
                   and selected["suppressed"] == sum(item["render_allowed"] is not True for item in decisions),
         "audit": hash_value(receipt["runtime_audit_stream"]) == receipt["audit_stream_sha256"]
                  and valid_audit(receipt["runtime_audit_stream"]) and receipt["runtime_audit_verified"] is True,
+        "audit_binding": valid_audit_receipt_binding(receipt),
         "ledger": hash_value(receipt["attention_ledger"]) == receipt["attention_ledger_sha256"]
                   and valid_ledger(receipt["attention_ledger"]),
         "signature": not signed or verify_signature(receipt, policy),

@@ -108,6 +108,9 @@ export interface ReceiptVerification {
   verified: boolean;
   receipt_hash_valid: boolean;
   bindings_valid: boolean;
+  audit_stream_valid: boolean;
+  /** Checks the five ordered audit events against their receipt fields and timestamps. */
+  audit_receipt_binding_valid: boolean;
   expected_sha256: string;
   receipt_sha256: string;
   [key: string]: unknown;

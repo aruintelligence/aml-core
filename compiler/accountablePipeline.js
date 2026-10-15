@@ -2,6 +2,7 @@
 // ĀML v1.3 — end-to-end accountable AI intent execution pipeline.
 
 import crypto from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 import { generateAMLFromIntent } from "./intentCompiler.js";
 import { compileSource } from "./compiler.js";
 import { simulatePolicies } from "./policySimulator.js";
@@ -48,6 +49,31 @@ function resolveInitialAttentionBudget(context) {
   if (typeof context.attention_budget_remaining === "number" && Number.isFinite(context.attention_budget_remaining)) return context.attention_budget_remaining;
   if (typeof context.attention_budget_initial === "number" && Number.isFinite(context.attention_budget_initial)) return context.attention_budget_initial;
   return null;
+}
+
+function verifyExecutionAuditBinding(receipt) {
+  const stream = receipt.runtime_audit_stream;
+  const entries = stream?.entries;
+  if (stream?.version !== "1.0" || stream.created_at !== receipt.timestamp ||
+      !Array.isArray(entries) || entries.length !== 5) return false;
+
+  const expected = [
+    ["intent_received", { intent_sha256: receipt.intent_sha256, profile_id: receipt.profile?.id }],
+    ["aml_generated", { aml_sha256: receipt.aml_sha256 }],
+    ["policy_simulated", { simulation_sha256: receipt.simulation_sha256, policies: receipt.profile?.policies }],
+    ["policy_selected", {
+      policy_id: receipt.selected_render?.policy_id,
+      decision_sha256: receipt.decision_sha256,
+      attention_ledger_remaining: receipt.attention_ledger?.remaining,
+      attention_ledger_consumed: receipt.attention_ledger?.consumed
+    }],
+    ["output_rendered", { output_sha256: receipt.output_sha256 }]
+  ];
+  return expected.every(([type, payload], index) =>
+    Object.values(payload).every(value => value !== undefined) &&
+    entries[index]?.timestamp === receipt.timestamp &&
+    entries[index]?.event_type === type &&
+    isDeepStrictEqual(entries[index]?.payload, payload));
 }
 
 export function executeAccountableIntent(intent, options = {}) {
@@ -153,7 +179,8 @@ export function verifyExecutionReceipt(receipt) {
     }
   }
 
-  const bindingsValid = intentHashValid && amlHashValid && simulationHashValid && decisionHashValid && outputHashValid && selectedRenderCountsValid && auditHashValid && audit.verified && runtimeAuditFlagValid && ledgerHashValid && ledgerStructureValid;
+  const auditReceiptBindingValid = audit.verified && verifyExecutionAuditBinding(receipt);
+  const bindingsValid = intentHashValid && amlHashValid && simulationHashValid && decisionHashValid && outputHashValid && selectedRenderCountsValid && auditHashValid && auditReceiptBindingValid && runtimeAuditFlagValid && ledgerHashValid && ledgerStructureValid;
   return {
     verified: receiptHashValid && bindingsValid,
     receipt_hash_valid: receiptHashValid,
@@ -164,7 +191,8 @@ export function verifyExecutionReceipt(receipt) {
     decision_binding_valid: decisionHashValid,
     output_binding_valid: outputHashValid,
     selected_render_counts_valid: selectedRenderCountsValid,
-    audit_stream_valid: audit.verified && auditHashValid && runtimeAuditFlagValid,
+    audit_stream_valid: audit.verified && auditHashValid && auditReceiptBindingValid && runtimeAuditFlagValid,
+    audit_receipt_binding_valid: auditReceiptBindingValid,
     runtime_audit_flag_valid: runtimeAuditFlagValid,
     attention_ledger_valid: ledgerHashValid && ledgerStructureValid,
     attention_ledger_hash_valid: ledgerHashValid,
