@@ -93,6 +93,7 @@ try {
 
   const intent = JSON.parse(fs.readFileSync("pilots/enterprise-30min/intent-allowed.json", "utf8"));
   const keyedReceipt = signExecutionReceipt(executeAccountableIntent({ ...intent,
+    numeric_probe: 2 ** 53, large_exponent_probe: 1e100,
     key_probe: { "10": "ten", "2": "two", "\uE000": "private use", "\u{1F4A1}": "astral", lone: "\uD800" }
   }, { profile: "human_first", timestamp: "2026-10-10T00:00:00.000Z" }), privateKey,
   { signer: "synthetic", timestamp: "2026-10-10T03:00:00.000Z" });
@@ -103,7 +104,7 @@ try {
     trusted_receipt_fingerprints: [keyedReceipt.signature.public_key_sha256] };
   const keyedArchive = createEvidenceArchive(keyedCapsule, [{ record: keyedRecord, witnesses: [keyedWitness] }], keyedPolicy);
   const keyedMigration = createEvidenceMigration(keyedArchive, keyedPolicy);
-  const keyed = check("signed-index-and-unicode-keys", keyedMigration, keyedPolicy, true, null, "recover");
+  const keyed = check("signed-complex-json-values", keyedMigration, keyedPolicy, true, null, "recover");
   if (!fs.readFileSync(keyed.destination).equals(Buffer.from(`${canonicalJSONStringify(keyedArchive)}\n`))) {
     throw new Error("Python did not preserve the exact keyed v1 archive bytes");
   }

@@ -9,7 +9,7 @@ import pathlib
 import re
 import sys
 
-from verify_evidence_capsule import canonical, unique_pairs, reject_constant, verify
+from verify_evidence_capsule import canonical, unique_pairs, reject_constant, parse_js_int, verify
 
 MAX_FILE_BYTES = 8 * 1024 * 1024
 NONCE = re.compile(r"[0-9a-f]{64}\Z")
@@ -25,7 +25,7 @@ def read_json(filename):
     if path.stat().st_size > MAX_FILE_BYTES:
         raise ValueError("input_too_large")
     return json.loads(path.read_text(encoding="utf-8"),
-                      object_pairs_hook=unique_pairs, parse_constant=reject_constant)
+                      object_pairs_hook=unique_pairs, parse_constant=reject_constant, parse_int=parse_js_int)
 
 
 def check_exchange(exchange, capsule, expected, policy):

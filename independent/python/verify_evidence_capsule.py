@@ -39,15 +39,30 @@ def reject_constant(value):
     raise ValueError(f"unsupported JSON constant: {value}")
 
 
+def parse_js_int(raw):
+    # JSON.parse represents every JSON number as binary64. Preserve small integers
+    # for Python structural checks; round larger decimal tokens to the same value.
+    number = int(raw)
+    if abs(number) <= MAX_SAFE_INTEGER:
+        return number
+    rounded = float(raw)
+    if not math.isfinite(rounded):
+        raise ValueError("unsupported non-finite JSON number")
+    return rounded
+
+
 def number_text(value):
-    # Match JSON.stringify's fixed/exponent boundary for the supported numeric subset.
+    # Match JSON.stringify's fixed/exponent boundary for finite binary64 numbers.
     # repr(float) supplies the shortest round-trip digits; Decimal only places the point.
     if type(value) is int:
-        if abs(value) > MAX_SAFE_INTEGER:
-            raise ValueError("unsupported JSON integer outside JavaScript safe range")
-        return str(value)
-    if not math.isfinite(value) or abs(value) > MAX_SAFE_INTEGER:
-        raise ValueError("unsupported JSON number outside finite safe-magnitude subset")
+        if abs(value) <= MAX_SAFE_INTEGER:
+            return str(value)
+        try:
+            value = float(value)
+        except OverflowError as error:
+            raise ValueError("unsupported non-finite JSON number") from error
+    if not math.isfinite(value):
+        raise ValueError("unsupported non-finite JSON number")
     if value == 0:
         return "0"
     sign = "-" if value < 0 else ""
@@ -238,9 +253,9 @@ if __name__ == "__main__":
         if len(sys.argv) not in (2, 3):
             raise ValueError("Usage: python3 independent/python/verify_evidence_capsule.py <capsule.json> [trusted-policy.json]")
         capsule = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"),
-                             object_pairs_hook=unique_pairs, parse_constant=reject_constant)
+                             object_pairs_hook=unique_pairs, parse_constant=reject_constant, parse_int=parse_js_int)
         policy = json.loads(pathlib.Path(sys.argv[2]).read_text(encoding="utf-8"),
-                            object_pairs_hook=unique_pairs, parse_constant=reject_constant) if len(sys.argv) == 3 else None
+                            object_pairs_hook=unique_pairs, parse_constant=reject_constant, parse_int=parse_js_int) if len(sys.argv) == 3 else None
         report = verify(capsule, policy)
     except (ValueError, KeyError, TypeError, OSError, OverflowError, RecursionError) as error:
         report = {"protocol": "aml-evidence-capsule-python-report/1", "verified": False, "reason": str(error)}
