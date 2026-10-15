@@ -5,6 +5,7 @@ import {
   AML_GOVERNANCE_STREAM_NODE,
   AML_GOVERNANCE_STREAM_OPEN,
   compileSource,
+  applyLockedHttpDecision,
   createAmlHttpServer,
   createAgentUiGateway,
   createDeploymentFirewall,
@@ -12,6 +13,7 @@ import {
   createGovernanceStreamSession,
   createInterfaceFirewall,
   evaluateAgentUI,
+  evaluateLockedHttpAndRender,
   executeAccountableIntent,
   formatMeaningReport,
   generateAMLFromIntent,
@@ -85,6 +87,16 @@ createAmlHttpServer({ request_auth: async (_req, { signal }) => !signal.aborted 
 // Keep expected type errors in the compiler's view without executing invalid
 // calls when newer Node versions discover this .mts fixture under --test.
 if (false) {
+  const fingerprints: string[] = ["a".repeat(64)];
+  evaluateLockedHttpAndRender({ url: "https://example.test/v1/deployment/evaluate", token: "secret",
+    intent, profile: "human_first", context: {}, trustedReceiptFingerprints: fingerprints,
+    render: async (html) => { void html; }, timeoutMs: 2000 }).then(result => {
+    const status: "blocked" | "rendered" | "unknown" = result.status;
+    void status;
+  });
+  applyLockedHttpDecision({ httpStatus: 503, body: null, intent, profile: "human_first",
+    context: {}, trustedReceiptFingerprints: fingerprints, requestNonce: "b".repeat(64),
+    render: () => {} });
   const signed = signExecutionReceipt(receipt, "private key PEM", { signer: "consumer" });
   const fingerprint: string = signed.signature.public_key_sha256;
   const attributionBound: boolean = verifySignedExecutionReceipt(signed).attribution_bound;
