@@ -70,12 +70,42 @@ export function accountRenderDecisions(ledger, decisions, options = {}) {
 }
 
 export function enforceCumulativeAttentionBudget(decisions, initialBudget, options = {}) {
+  if (!Array.isArray(decisions)) throw new TypeError("Render decisions must be an array.");
+  const parents = options.parent_decision_indices;
+  if (parents !== undefined) {
+    if (!Array.isArray(parents) || parents.length !== decisions.length) {
+      throw new TypeError("Parent decision indices must identify earlier decisions or null.");
+    }
+    for (const [index, parent] of parents.entries()) {
+      if (parent !== null && (!Number.isSafeInteger(parent) || parent < 0 || parent >= index)) {
+        throw new TypeError("Parent decision indices must identify earlier decisions or null.");
+      }
+    }
+  }
   const ledger = createAttentionLedger(initialBudget, options);
   const enforced = [];
 
-  for (const decision of decisions) {
+  for (const [index, decision] of decisions.entries()) {
     if (!decision.render_allowed) {
       enforced.push({ ...decision });
+      continue;
+    }
+
+    const parent = parents?.[index];
+    if (parent !== null && parent !== undefined && !enforced[parent].render_allowed) {
+      const existingRationale = decision.policy_rationale;
+      const ancestorRationale = `suppressed by ancestor render decision ${parent}`;
+      enforced.push({
+        ...decision,
+        render_allowed: false,
+        fallback_triggered: true,
+        policy_rationale: Array.isArray(existingRationale)
+          ? [...existingRationale, { policy_id: "ancestor_render_gate_v1", render_allowed: false, rationale: ancestorRationale }]
+          : [
+              { policy_id: decision.policy_id, render_allowed: true, rationale: existingRationale ?? "prior policy allowed" },
+              { policy_id: "ancestor_render_gate_v1", render_allowed: false, rationale: ancestorRationale }
+            ]
+      });
       continue;
     }
 

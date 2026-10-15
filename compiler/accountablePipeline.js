@@ -7,6 +7,7 @@ import { generateAMLFromIntent } from "./intentCompiler.js";
 import { compileSource } from "./compiler.js";
 import { simulatePolicies } from "./policySimulator.js";
 import { generateHTML } from "./htmlGenerator.js";
+import { parentRenderDecisionIndices } from "./renderEvaluator.js";
 import { policyFromProfile } from "../runtime/policyComposition.js";
 import { resolvePolicyProfile } from "../runtime/policyProfiles.js";
 import { createAuditStream, appendAuditEvent, verifyAuditStream } from "../runtime/auditStream.js";
@@ -92,7 +93,10 @@ export function executeAccountableIntent(intent, options = {}) {
 
   const composedPolicy = policyFromProfile(profile);
   const selectedCompilation = compileSource(amlSource, { timestamp, policy: composedPolicy, context });
-  const cumulative = enforceCumulativeAttentionBudget(selectedCompilation.renderDecisions, resolveInitialAttentionBudget(context), { session_id: context.session_id || null });
+  const cumulative = enforceCumulativeAttentionBudget(selectedCompilation.renderDecisions, resolveInitialAttentionBudget(context), {
+    session_id: context.session_id || null,
+    parent_decision_indices: parentRenderDecisionIndices(selectedCompilation.amt)
+  });
   const finalDecisions = cumulative.decisions;
   const finalHtml = generateHTML(selectedCompilation.amt, finalDecisions);
 

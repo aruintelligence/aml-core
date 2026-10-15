@@ -62,6 +62,26 @@ export function requiresRenderDecision(node) {
   );
 }
 
+// Index each decision's nearest decision-bearing ancestor in the same preorder
+// used by evaluateRenderDecisions and the HTML generator. Structural nodes
+// without a decision do not interrupt inheritance.
+export function parentRenderDecisionIndices(amt) {
+  const parents = [];
+  let nextIndex = 0;
+
+  function walk(node, parentIndex) {
+    let childParentIndex = parentIndex;
+    if (requiresRenderDecision(node)) {
+      childParentIndex = nextIndex++;
+      parents.push(parentIndex);
+    }
+    for (const child of node.children || []) walk(child, childParentIndex);
+  }
+
+  for (const node of amt.root) walk(node, null);
+  return parents;
+}
+
 function createRenderDecision(node, timestamp, policy, context) {
   const metadata = node.render_metadata || {};
 

@@ -143,6 +143,8 @@ Declared consent, privacy, motion, contrast, and cognitive-load controls now tri
 
 Every semantic content block below a transmission now receives a decision, even without optional metadata. This lets a custom policy suppress a bare engram, mirror, or container; `npm run proof` checks a bare-node denial against HTML, and `node --test test/unannotated-render-coverage.test.js` covers browser parity, malformed policies, nested suppression, and cumulative budget accounting. Bare blocks can now consume calculated attention budget, and older receipts with formerly skipped blocks need regeneration for deterministic replay.
 
+Nested suppression now reaches every descendant before cumulative attention accounting. A child hidden by a denied parent cannot consume budget or count as allowed in the selected receipt; a later permitted sibling keeps the remaining budget. Run `npm run proof` for the nested counterexample or `node --test test/hierarchical-attention.test.js` for consent, budget-denied, and unbounded cases. The public flat ledger helper accepts optional `parent_decision_indices` for callers with a semantic tree; accountable execution supplies them automatically. Affected older receipts should be regenerated for deterministic replay.
+
 If the behavior does not reproduce, that is useful evidence. Please publish **PASS / FAIL / MIXED** with enough detail for someone else to repeat your result.
 
 - [Independent verification call](https://github.com/aruintelligence/aml-core/issues/88)

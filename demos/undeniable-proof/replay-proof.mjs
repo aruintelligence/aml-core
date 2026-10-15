@@ -73,6 +73,29 @@ assert.equal(bare.renderDecisions[0]?.render_allowed, false);
 assert.doesNotMatch(bare.html, /BARE_PRIVATE_PROOF_7164/,
   "custom-policy denial must remove bare content from HTML");
 
+const nested = executeAccountableIntent({ transmission: "nested_budget_proof", nodes: [
+  { type: "coherence_gate", identifier: "denied_parent", properties: {
+    purpose: "Requires consent", attention_cost: 1, restoration_value: 8,
+    consent_required: "required"
+  }, children: [{ type: "engram", identifier: "hidden_child", properties: {
+    value: "HIDDEN_BUDGET_PROOF_6721", purpose: "Hidden child",
+    attention_cost: 4, restoration_value: 8
+  } }] },
+  { type: "engram", identifier: "visible_sibling", properties: {
+    value: "VISIBLE_BUDGET_PROOF_4328", purpose: "Useful sibling",
+    attention_cost: 2, restoration_value: 8
+  } }
+] }, { ...options, context: { consent_granted: false, attention_budget_remaining: 5 } });
+assert.deepEqual(nested.selected_render.decisions.map(item => item.render_allowed),
+  [false, false, true], "a denied parent must suppress its child before accounting");
+assert.deepEqual(nested.attention_ledger.entries.map(entry => entry.metadata.identifier),
+  ["visible_sibling"], "the hidden child must not consume attention");
+assert.equal(nested.attention_ledger.consumed, 2);
+assert.doesNotMatch(nested.selected_render.html, /HIDDEN_BUDGET_PROOF_6721/);
+assert.match(nested.selected_render.html, /VISIBLE_BUDGET_PROOF_4328/);
+assert.equal(verifyExecutionReceipt(nested).verified, true);
+assert.equal(replayExecutionReceipt(nested).verified, true);
+
 console.log(JSON.stringify({
   proof: "PASS",
   receipt_sha256: first.receipt_sha256,
@@ -86,5 +109,12 @@ console.log(JSON.stringify({
     allowed: controlOnly.selected_render.allowed,
     replay_verified: true
   },
-  unannotated_custom_policy: { calls: barePolicyCalls, suppressed: 1 }
+  unannotated_custom_policy: { calls: barePolicyCalls, suppressed: 1 },
+  nested_attention: {
+    receipt_sha256: nested.receipt_sha256,
+    suppressed: nested.selected_render.suppressed,
+    allowed: nested.selected_render.allowed,
+    consumed: nested.attention_ledger.consumed,
+    replay_verified: true
+  }
 }, null, 2));
