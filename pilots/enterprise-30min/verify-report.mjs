@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { executeAccountableIntent, verifyExecutionReceipt, viewMeaning } from "../../index.js";
+import { getSourceState } from "./source-state.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
@@ -23,6 +24,10 @@ try {
   const { report_sha256, ...payload } = report;
   requireTrue(report_sha256 === sha256(JSON.stringify(payload)), "report digest mismatch");
   requireTrue(report.protocol === "aml-enterprise-pilot-report/1", "unsupported report protocol");
+  const source = getSourceState();
+  requireTrue(report.source_revision === source.source_revision, "source revision mismatch");
+  requireTrue(report.tracked_worktree_modified === source.tracked_worktree_modified,
+    "tracked worktree status mismatch");
   requireTrue(report.profile === "human_first" && report.passed === true, "pilot did not pass");
   requireTrue(report.decision_timestamp === "2026-09-08T00:00:00.000Z", "decision timestamp drift");
   requireTrue(Array.isArray(report.scenarios) && report.scenarios.length === cases.length, "scenario count drift");
@@ -54,7 +59,9 @@ try {
   const tampered = structuredClone(report.scenarios[0].receipt);
   tampered.intent.transmission = "tampered-after-evaluation";
   requireTrue(report.tamper_rejected === true && !verifyExecutionReceipt(tampered).verified, "tamper rejection failed");
-  process.stdout.write(`${JSON.stringify({ protocol: "aml-enterprise-pilot-verification/1", verified: true, report_sha256, scenarios: cases.length })}\n`);
+  process.stdout.write(`${JSON.stringify({ protocol: "aml-enterprise-pilot-verification/1", verified: true,
+    report_sha256, source_revision: source.source_revision,
+    tracked_worktree_modified: source.tracked_worktree_modified, scenarios: cases.length })}\n`);
 } catch (error) {
   console.error(`Enterprise pilot report rejected: ${error.message}`);
   process.exitCode = 1;
