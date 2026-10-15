@@ -23,7 +23,8 @@ test("a consent denial cannot inherit a sibling engram's allow decision", () => 
     [identifier, render_allowed]), [["public", true], ["private", false]]);
   assert.match(result.html, /<h2>PUBLIC_2481<\/h2>/);
   assert.doesNotMatch(result.html, /PRIVATE_7392/);
-  assert.match(result.html, /data-aml-identifier="private"[^>]*hidden data-aml-suppressed="true"/);
+  assert.match(result.html, /<section hidden data-aml-suppressed="true" data-render-allowed="false">/);
+  assert.doesNotMatch(result.html, /data-aml-identifier="private"|data-purpose="Need consent"/);
 
   assert.throws(() => generateHTML(result.amt, result.renderDecisions.slice(0, 1)),
     /does not match semantic node/);
@@ -61,7 +62,9 @@ test("cumulative attention denial stays suppressed in a verifiable receipt", () 
   assert.match(receipt.selected_render.html, /<h2>FIRST_5227<\/h2>/);
   assert.doesNotMatch(receipt.selected_render.html, /SECOND_9391/);
   assert.match(receipt.selected_render.html,
-    /data-aml-identifier="second"[^>]*hidden data-aml-suppressed="true"/);
+    /<section hidden data-aml-suppressed="true" data-render-allowed="false">/);
+  assert.doesNotMatch(receipt.selected_render.html,
+    /data-aml-identifier="second"|data-purpose="Helpful second"/);
   assert.equal(verifyExecutionReceipt(receipt).verified, true);
   assert.equal(replayExecutionReceipt(receipt).verified, true);
 });

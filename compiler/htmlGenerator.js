@@ -24,13 +24,15 @@ ${body}
 function renderNode(node, decisionsByNode) {
   const decision = decisionsByNode.get(node);
 
-  const attrs = buildAttributes(node, decision);
-
   if (decision && decision.render_allowed === false) {
-    return `<section ${attrs} hidden data-aml-suppressed="true">
+    // Hidden HTML remains inspectable. Keep all node-derived metadata in the
+    // receipt, not in a suppressed element's DOM attributes.
+    return `<section hidden data-aml-suppressed="true" data-render-allowed="false">
   <p>Rendering suppressed by EthicalRenderGate.</p>
 </section>`;
   }
+
+  const attrs = buildAttributes(node, decision);
 
   if (node.type === "TransmissionNode") {
     return `<main ${attrs}>

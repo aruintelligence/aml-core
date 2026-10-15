@@ -33,13 +33,15 @@ const purchase = first.selected_render.decisions.find(item => item.identifier ==
 assert.equal(countdown?.render_allowed, false, "countdown pressure must be suppressed");
 assert.equal(purchase?.render_allowed, true, "ordinary purchase action must remain allowed");
 assert.match(first.selected_render.html,
-  /data-aml-identifier="countdown_pressure"[^>]*data-render-allowed="false"[^>]*hidden data-aml-suppressed="true"/,
+  /<section hidden data-aml-suppressed="true" data-render-allowed="false">/,
   "the denied node must be suppressed in the actual HTML");
+assert.doesNotMatch(first.selected_render.html,
+  /countdown_pressure|Increase urgency during checkout/,
+  "the denied node's metadata must not appear in HTML");
 assert.match(first.selected_render.html,
   /data-aml-identifier="purchase_action"[^>]*data-render-allowed="true"[^>]*>/,
   "the allowed sibling must appear in the actual HTML");
-assert.doesNotMatch(first.selected_render.html,
-  /data-aml-identifier="purchase_action"[^>]*hidden data-aml-suppressed="true"/,
+assert.equal((first.selected_render.html.match(/data-aml-suppressed="true"/g) || []).length, 1,
   "the allowed sibling must not inherit the denied node's decision");
 
 // Policy-only declarations must be evaluated even without a purpose or score.
