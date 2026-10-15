@@ -26,6 +26,8 @@ AI or app proposes interface intent
 
 This pilot does not itself install an enforcement boundary in another application. The application must ensure that every relevant rendering path goes through its chosen gate.
 
+For a separate local HTTP example that actually gates a simulated host render callback, run the [locked HTTP render gate pilot](../enterprise-http-gate/README.md).
+
 ## What to inspect
 
 - `intent-allowed.json` and `intent-sensitive.json`: declared purpose and prototype attention/restoration values.
