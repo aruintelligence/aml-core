@@ -148,18 +148,25 @@ export function evaluateRenderDecisions(amt) {
   const decisions = [];
   const policyDeclarations = ["consent_required", "collects_personal_data", "motion_required",
     "reduced_motion_alternative", "contrast_safe", "cognitive_load"];
-  const walk = node => {
+  const walk = (node, parentIndex) => {
+    let nextParentIndex = parentIndex;
     const m = node.render_metadata || {};
     const properties = node.properties || {};
     const explicitPolicy = m.purpose || m.memory_role || m.user_effect ||
       typeof m.attention_cost === "number" || typeof m.restoration_value === "number" ||
       policyDeclarations.some(key => Object.hasOwn(properties, key));
     if (node.type !== "MeaningProperty" && (node.type !== "TransmissionNode" || explicitPolicy)) {
-      decisions.push(createDecision(node));
+      const decision = createDecision(node);
+      if (parentIndex !== null && !decisions[parentIndex].render_allowed && decision.render_allowed) {
+        decision.render_allowed = false;
+        decision.fallback_triggered = true;
+      }
+      nextParentIndex = decisions.length;
+      decisions.push(decision);
     }
-    for (const child of node.children || []) walk(child);
+    for (const child of node.children || []) walk(child, nextParentIndex);
   };
-  for (const node of amt.root) walk(node);
+  for (const node of amt.root) walk(node, null);
   return decisions;
 }
 

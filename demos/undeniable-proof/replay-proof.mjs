@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { compileSource, executeAccountableIntent, replayExecutionReceipt,
-  verifyExecutionReceipt } from "../../index.js";
+  policyFromProfile, verifyExecutionReceipt } from "../../index.js";
 
 const intent = JSON.parse(fs.readFileSync(new URL("./intent.json", import.meta.url), "utf8"));
 const options = {
@@ -95,6 +95,12 @@ assert.deepEqual(nested.attention_ledger.entries.map(entry => entry.metadata.ide
 assert.equal(nested.attention_ledger.consumed, 2);
 assert.doesNotMatch(nested.selected_render.html, /HIDDEN_BUDGET_PROOF_6721/);
 assert.match(nested.selected_render.html, /VISIBLE_BUDGET_PROOF_4328/);
+const directNested = compileSource(nested.aml_source, {
+  timestamp: options.timestamp, policy: policyFromProfile("calm_default"),
+  context: { consent_granted: false, attention_budget_remaining: 5 }
+});
+assert.deepEqual(directNested.renderDecisions.map(item => item.render_allowed),
+  [false, false, true], "direct compilation must count the hidden child as suppressed");
 assert.equal(verifyExecutionReceipt(nested).verified, true);
 assert.equal(replayExecutionReceipt(nested).verified, true);
 

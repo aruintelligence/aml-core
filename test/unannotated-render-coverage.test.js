@@ -46,7 +46,8 @@ test("an unannotated wrapper's denial suppresses its children", () => {
       restoration_value: 1 };
   } });
   assert.deepEqual(result.renderDecisions.map(({ identifier, render_allowed }) =>
-    [identifier, render_allowed]), [["wrapper", false], ["inside", true]]);
+    [identifier, render_allowed]), [["wrapper", false], ["inside", false]]);
+  assert.match(JSON.stringify(result.renderDecisions[1].policy_rationale), /ancestor_render_gate_v1/);
   assert.doesNotMatch(result.html, /NESTED_BARE_4528/);
 });
 

@@ -69,6 +69,24 @@ export function accountRenderDecisions(ledger, decisions, options = {}) {
   return results;
 }
 
+// Preserve the policy's original rationale while recording that an ancestor
+// prevents an otherwise allowed node from appearing in the rendered output.
+export function suppressRenderDecisionByAncestor(decision, parentIndex) {
+  const existingRationale = decision.policy_rationale;
+  const ancestorRationale = `suppressed by ancestor render decision ${parentIndex}`;
+  return {
+    ...decision,
+    render_allowed: false,
+    fallback_triggered: true,
+    policy_rationale: Array.isArray(existingRationale)
+      ? [...existingRationale, { policy_id: "ancestor_render_gate_v1", render_allowed: false, rationale: ancestorRationale }]
+      : [
+          { policy_id: decision.policy_id, render_allowed: true, rationale: existingRationale ?? "prior policy allowed" },
+          { policy_id: "ancestor_render_gate_v1", render_allowed: false, rationale: ancestorRationale }
+        ]
+  };
+}
+
 export function enforceCumulativeAttentionBudget(decisions, initialBudget, options = {}) {
   if (!Array.isArray(decisions)) throw new TypeError("Render decisions must be an array.");
   const parents = options.parent_decision_indices;
@@ -93,19 +111,7 @@ export function enforceCumulativeAttentionBudget(decisions, initialBudget, optio
 
     const parent = parents?.[index];
     if (parent !== null && parent !== undefined && !enforced[parent].render_allowed) {
-      const existingRationale = decision.policy_rationale;
-      const ancestorRationale = `suppressed by ancestor render decision ${parent}`;
-      enforced.push({
-        ...decision,
-        render_allowed: false,
-        fallback_triggered: true,
-        policy_rationale: Array.isArray(existingRationale)
-          ? [...existingRationale, { policy_id: "ancestor_render_gate_v1", render_allowed: false, rationale: ancestorRationale }]
-          : [
-              { policy_id: decision.policy_id, render_allowed: true, rationale: existingRationale ?? "prior policy allowed" },
-              { policy_id: "ancestor_render_gate_v1", render_allowed: false, rationale: ancestorRationale }
-            ]
-      });
+      enforced.push(suppressRenderDecisionByAncestor(decision, parent));
       continue;
     }
 
