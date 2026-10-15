@@ -134,6 +134,53 @@ test("AML HTTP rejects excess in-flight work and releases the slot", async () =>
   } });
 });
 
+test("a stalled HTTP body receives 408 and releases its in-flight slot", async () => {
+  let entered;
+  let release;
+  const started = new Promise(resolve => { entered = resolve; });
+  const held = new Promise(resolve => { release = resolve; });
+  let resolverCalls = 0;
+  await withServer(async (base) => {
+    let slow;
+    try {
+      const timedOut = new Promise((resolve, reject) => {
+        slow = http.request(`${base}/v1/deployment/evaluate`, { method: "POST",
+          headers: { "content-type": "application/json", "content-length": "1000" } }, res => {
+          let body = "";
+          res.on("data", chunk => { body += chunk; });
+          res.on("end", () => resolve({ status: res.statusCode,
+            connection: res.headers.connection, body: JSON.parse(body) }));
+        });
+        slow.on("error", reject);
+        slow.write("{"); // Keep the declared body unfinished.
+      });
+      await started; // First request has acquired the only slot.
+      const busy = await fetch(`${base}/v1/deployment/evaluate`, { method: "POST",
+        body: JSON.stringify({ intent: intent() }) });
+      assert.equal(busy.status, 503);
+      assert.equal((await busy.json()).error, "server_busy");
+      release();
+      const response = await timedOut;
+      assert.equal(response.status, 408);
+      assert.equal(response.connection, "close");
+      assert.deepEqual(response.body, { error: "request_timeout" });
+      assert.equal(resolverCalls, 0);
+
+      const recovered = await fetch(`${base}/v1/deployment/evaluate`, { method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ intent: intent() }) });
+      assert.equal(recovered.status, 200);
+      await recovered.text();
+      assert.equal(resolverCalls, 1);
+    } finally {
+      release();
+      slow?.destroy();
+    }
+  }, { max_inflight_requests: 1, request_body_timeout_ms: 40,
+    request_auth: async () => { entered(); await held; return true; },
+    locked_policy: { resolve_context: () => { resolverCalls += 1; return {}; } } });
+});
+
 test("AML HTTP health and capabilities endpoints respond", async () => {
   await withServer(async (base) => {
     const health = await fetch(`${base}/health`).then((res) => res.json());

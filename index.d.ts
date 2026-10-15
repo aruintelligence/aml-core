@@ -715,6 +715,8 @@ export interface AmlHttpServerOptions {
   default_profile?: string;
   allowed_origin?: string | null;
   max_body_bytes?: number;
+  /** Absolute deadline for a JSON request body in ms (default 10000). */
+  request_body_timeout_ms?: number;
   max_batch_items?: number;
   max_inflight_requests?: number;
   brand_trust_roots?: unknown;

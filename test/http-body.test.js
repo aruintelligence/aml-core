@@ -68,7 +68,18 @@ test("advertised and streaming oversized bodies reject without resetting the soc
   streaming.destroy();
 });
 
+test("bounded JSON rejects a stalled body after an absolute deadline", async () => {
+  const slow = request();
+  const result = readJson(slow, 32, 30);
+  slow.write("{");
+  await assert.rejects(result, { message: "request_timeout", statusCode: 408 });
+  assert.equal(slow.destroyed, false);
+  slow.destroy();
+});
+
 test("invalid size configuration is rejected", () => {
   assert.throws(() => readJson({}, 0), /positive safe integer/);
   assert.throws(() => readJson({}, Number.NaN), /positive safe integer/);
+  assert.throws(() => readJson({}, 32, 0), /timer range/);
+  assert.throws(() => readJson({}, 32, 2_147_483_648), /timer range/);
 });

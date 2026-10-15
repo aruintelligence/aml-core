@@ -19,7 +19,7 @@ function send(res, status, body, headers = {}) {
     "content-length": Buffer.byteLength(payload),
     "cache-control": "no-store",
     ...headers,
-    ...([401, 413, 503].includes(status) ? { connection: "close" } : {})
+    ...([401, 408, 413, 503].includes(status) ? { connection: "close" } : {})
   });
   res.end(payload);
 }
@@ -76,6 +76,10 @@ export function createAmlHttpServer(options = {}) {
   const maxBodyBytes = options.max_body_bytes ?? 1024 * 1024;
   if (!Number.isSafeInteger(maxBodyBytes) || maxBodyBytes < 1) {
     throw new TypeError("max_body_bytes must be a positive safe integer");
+  }
+  const bodyTimeoutMs = options.request_body_timeout_ms ?? 10_000;
+  if (!Number.isSafeInteger(bodyTimeoutMs) || bodyTimeoutMs < 1 || bodyTimeoutMs > 2_147_483_647) {
+    throw new TypeError("request_body_timeout_ms must be a positive integer within the timer range");
   }
   const defaultProfile = options.default_profile ?? "human_first";
   const allowedOrigin = options.allowed_origin ?? null;
@@ -139,7 +143,7 @@ export function createAmlHttpServer(options = {}) {
 
     if (req.method === "POST" && url.pathname === "/v1/evaluate") {
       try {
-        const body = await readJson(req, maxBodyBytes);
+        const body = await readJson(req, maxBodyBytes, bodyTimeoutMs);
         if (!body.intent) return send(res, 400, { error: "intent_required" }, headers);
         const receipt = executeAccountableIntent(body.intent, {
           profile: body.profile ?? defaultProfile,
@@ -160,7 +164,7 @@ export function createAmlHttpServer(options = {}) {
 
     if (req.method === "POST" && url.pathname === "/v1/deployment/evaluate") {
       try {
-        const body = await readJson(req, maxBodyBytes);
+        const body = await readJson(req, maxBodyBytes, bodyTimeoutMs);
         if (!body.intent) return send(res, 400, { error: "intent_required" }, headers);
         if (receiptSigner && !REQUEST_NONCE.test(body.request_nonce)) {
           return send(res, 400, { error: "invalid_request_nonce" }, headers);
@@ -203,7 +207,7 @@ export function createAmlHttpServer(options = {}) {
 
     if (req.method === "POST" && url.pathname === "/v1/deployment/batch") {
       try {
-        const body = await readJson(req, maxBodyBytes);
+        const body = await readJson(req, maxBodyBytes, bodyTimeoutMs);
         if (!Array.isArray(body.intents)) return send(res, 400, { error: "intents_array_required" }, headers);
         if (receiptSigner && !REQUEST_NONCE.test(body.request_nonce)) {
           return send(res, 400, { error: "invalid_request_nonce" }, headers);
@@ -246,7 +250,7 @@ export function createAmlHttpServer(options = {}) {
 
     if (req.method === "POST" && url.pathname === "/v1/deployment/canary") {
       try {
-        const body = await readJson(req, maxBodyBytes);
+        const body = await readJson(req, maxBodyBytes, bodyTimeoutMs);
         if (!body.intent) return send(res, 400, { error: "intent_required" }, headers);
         const result = evaluatePolicyCanary(body.intent, {
           baseline_profile: body.baseline_profile ?? "calm_default",
@@ -266,7 +270,7 @@ export function createAmlHttpServer(options = {}) {
 
     if (req.method === "POST" && url.pathname === "/v1/verify-receipt") {
       try {
-        const body = await readJson(req, maxBodyBytes);
+        const body = await readJson(req, maxBodyBytes, bodyTimeoutMs);
         if (!body.receipt) return send(res, 400, { error: "receipt_required" }, headers);
         const verification = verifyExecutionReceipt(body.receipt);
         return send(res, verification.verified ? 200 : 422, verification, headers);
@@ -277,7 +281,7 @@ export function createAmlHttpServer(options = {}) {
 
     if (req.method === "POST" && url.pathname === "/v1/verify-witness-bundle") {
       try {
-        const body = await readJson(req, maxBodyBytes);
+        const body = await readJson(req, maxBodyBytes, bodyTimeoutMs);
         if (!body.bundle) return send(res, 400, { error: "bundle_required" }, headers);
         const now = body.now == null
           ? Date.now()
@@ -295,7 +299,7 @@ export function createAmlHttpServer(options = {}) {
 
     if (req.method === "POST" && url.pathname === "/v1/verify-brand-authorization") {
       try {
-        const body = await readJson(req, maxBodyBytes);
+        const body = await readJson(req, maxBodyBytes, bodyTimeoutMs);
         if (!body.credential) return send(res, 400, { error: "credential_required" }, headers);
         const result = verifyOfficialBrandAuthorization(body.credential, trustRoots, {
           now: body.now ?? null,

@@ -7,7 +7,9 @@ info:
     verifying execution receipts, verifying challenge-bound browser witness bundles, and checking
     official AML brand-authorization trust. The contract does not imply hosted service availability.
     POST endpoints use optional request_auth. A configured bearer_token requires bearer authentication;
-    an application callback may use another authentication scheme.
+    an application callback may use another authentication scheme. Each JSON POST body has a
+    configurable absolute receive deadline (10 seconds by default); an unfinished upload returns
+    HTTP 408 and closes the connection.
 servers:
   - url: http://127.0.0.1:8787
 paths:
@@ -78,6 +80,8 @@ paths:
                     type: object
         '400':
           description: Invalid request or AML evaluation error
+        '408':
+          description: JSON request body did not complete before the configured deadline
         '413':
           description: Request body exceeds configured size limit
   /v1/deployment/evaluate:
@@ -139,6 +143,8 @@ paths:
           description: Authentication required or bearer token rejected when request_auth is configured
         '403':
           description: Caller attempted to override a server-owned control under locked_policy
+        '408':
+          description: JSON request body did not complete before the configured deadline
         '413':
           description: Request body exceeds configured size limit
         '503':
@@ -201,6 +207,8 @@ paths:
           description: Authentication required or bearer token rejected when request_auth is configured
         '403':
           description: Caller attempted to override a server-owned control under locked_policy
+        '408':
+          description: JSON request body did not complete before the configured deadline
         '413':
           description: Batch exceeds server ceiling or request body exceeds configured size limit
         '503':
@@ -247,6 +255,8 @@ paths:
           description: Authentication required or bearer token rejected when request_auth is configured
         '403':
           description: Endpoint disabled under locked_policy
+        '408':
+          description: JSON request body did not complete before the configured deadline
         '413':
           description: Request body exceeds configured size limit
   /v1/verify-receipt:
@@ -269,6 +279,8 @@ paths:
           description: Receipt supplied but integrity verification failed
         '400':
           description: Invalid request
+        '408':
+          description: JSON request body did not complete before the configured deadline
   /v1/verify-witness-bundle:
     post:
       summary: Verify a challenge-bound AML browser witness bundle
@@ -311,6 +323,8 @@ paths:
           description: Bundle was supplied but failed integrity, challenge, or signature verification
         '400':
           description: Invalid request
+        '408':
+          description: JSON request body did not complete before the configured deadline
   /v1/verify-brand-authorization:
     post:
       summary: Verify whether an AML brand authorization is officially trusted by the configured AML trust roots
@@ -338,6 +352,8 @@ paths:
           description: Credential is not officially trusted, is invalid, expired, revoked, or signed by an untrusted key
         '400':
           description: Invalid request
+        '408':
+          description: JSON request body did not complete before the configured deadline
 components:
   securitySchemes:
     bearerAuth:
