@@ -9,6 +9,7 @@ import {
   createInterfaceFirewall,
   executeAccountableIntent,
   verifyExecutionReceipt,
+  replayExecutionReceipt,
   viewMeaning
 } from "./index.js";
 ```
@@ -81,6 +82,19 @@ attention ledger, and output hashes. `audit_receipt_binding_valid` reports this
 semantic check. A missing, malformed, or contradictory stream cannot verify
 even if its chain and outer receipt hash are recalculated.
 
+### `replayExecutionReceipt(receipt)`
+Re-executes the receipt's declared intent, full profile, context, timestamp,
+audit stream ID, and optional request nonce with the **installed ĀML engine**.
+It compares every unsigned receipt field to the reproduced result and reports
+`integrity_valid`, `replay_valid`, `reason`, and `mismatched_fields`. A valid
+hash chain and signature can still describe a result the engine never produced;
+replay detects that mismatch. It does not authenticate a signer, independently
+validate policy correctness, or prove the declared inputs were truthful.
+Historic receipts need the matching engine and policy implementation for this
+check; a failed replay after an upgrade can indicate version drift. The CLI
+equivalent, `aml replay-receipt receipt.json`, exits nonzero on failure. It does
+not check signature trust; verify signer fingerprints separately.
+
 ### `signExecutionReceipt(receipt, privateKeyPem, options?)`
 Adds an Ed25519 attestation to a valid receipt. Rejects private keys of other algorithm types.
 
@@ -89,7 +103,7 @@ Verifies receipt integrity, the actual Ed25519 public-key type and signature, ca
 
 ### `evaluateLockedHttpAndRender(options)`
 
-Sends an intent to a host-configured locked HTTP service with a fresh request nonce. Before invoking the host's `render(html)` callback, it checks the signed receipt against separately configured trusted public-key fingerprints, the nonce, expected intent/profile/context, and the enforce/closed effective decision. It uses a 5-second exchange deadline and an 8 MiB response limit by default; configure `timeoutMs` and `maxResponseBytes` to fit the integration.
+Sends an intent to a host-configured locked HTTP service with a fresh request nonce. Before invoking the host's `render(html)` callback, it checks the signed receipt against separately configured trusted public-key fingerprints, the nonce, expected intent/context, the complete installed built-in profile (including its policy list), and the enforce/closed effective decision. It also replays the receipt with the installed engine and blocks `receipt_replay_mismatch` if any declared execution field differs. It uses a 5-second exchange deadline and an 8 MiB response limit by default; configure `timeoutMs` and `maxResponseBytes` to fit the integration.
 
 ```js
 import { evaluateLockedHttpAndRender } from "aml-core";

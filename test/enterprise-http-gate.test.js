@@ -50,13 +50,22 @@ test("adversarial HTTP comparison rejects ambiguous wire JSON before the verifie
   assert.equal(report.protocol, "aml-signed-gate-adversarial/1");
   assert.equal(report.seed, seed);
   assert.equal(report.passed, true);
-  assert.equal(report.case_count, 17);
-  assert.equal(report.cases.filter(item => item.naive_callback_entries).length, 16);
+  assert.equal(report.case_count, 19);
+  assert.equal(report.cases.filter(item => item.naive_callback_entries).length, 18);
   assert.equal(report.cases.filter(item => item.verified_callback_entries).length, 2);
   const swapped = report.cases.find(item => item.id === "outer_html_swap");
   assert.equal(swapped.verified_status, "rendered");
   assert.equal(swapped.verified_html_sha256, swapped.original_html_sha256);
   assert.notEqual(swapped.naive_html_sha256, swapped.original_html_sha256);
+  for (const [id, reason] of [
+    ["coherent_signed_output_forgery", "receipt_replay_mismatch"],
+    ["same_id_weaker_policy", "receipt_binding_mismatch"]
+  ]) {
+    const item = report.cases.find(candidate => candidate.id === id);
+    assert.equal(item.verified_reason, reason);
+    assert.equal(item.naive_callback_entries, 1);
+    assert.equal(item.verified_callback_entries, 0);
+  }
   for (const id of ["duplicate_outer_key", "escaped_duplicate_outer_key", "duplicate_receipt_key"]) {
     const item = report.cases.find(candidate => candidate.id === id);
     assert.equal(item.verified_status, "blocked");

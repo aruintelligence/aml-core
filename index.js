@@ -12,7 +12,7 @@ export { createInTotoSemanticReleaseStatement, verifyInTotoSemanticReleaseStatem
 export { policyDiff } from "./compiler/policyDiff.js";
 export { policyMatrix } from "./compiler/policyMatrix.js";
 export { buildProvenanceGraph, verifyProvenanceGraph } from "./compiler/provenanceGraph.js";
-export { executeAccountableIntent, verifyExecutionReceipt, signExecutionReceipt, verifySignedExecutionReceipt } from "./compiler/accountablePipeline.js";
+export { executeAccountableIntent, verifyExecutionReceipt, replayExecutionReceipt, signExecutionReceipt, verifySignedExecutionReceipt } from "./compiler/accountablePipeline.js";
 export { analyzeAMT } from "./compiler/diagnostics.js";
 export { explainCompilation } from "./compiler/explain.js";
 export { verifyBuildManifest } from "./compiler/verifyBuild.js";

@@ -3,7 +3,7 @@ import { createHash, generateKeyPairSync, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { once } from "node:events";
 import { createAmlHttpServer, evaluateLockedHttpAndRender,
-  signExecutionReceipt } from "../../index.js";
+  executeAccountableIntent, signExecutionReceipt } from "../../index.js";
 import { getSourceState } from "../enterprise-30min/source-state.mjs";
 
 const args = process.argv.slice(2);
@@ -26,6 +26,10 @@ const fingerprint = createHash("sha256")
   .update(keypair.publicKey.export({ type: "spki", format: "der" })).digest("hex");
 const foreignKeyPem = generateKeyPairSync("ed25519").privateKey.export({ type: "pkcs8", format: "pem" });
 const sha256 = value => createHash("sha256").update(value).digest("hex");
+const sortedJson = value => Array.isArray(value) ? `[${value.map(sortedJson).join(",")}]` :
+  value && typeof value === "object" ? `{${Object.keys(value).sort()
+    .map(key => `${JSON.stringify(key)}:${sortedJson(value[key])}`).join(",")}}` : JSON.stringify(value);
+const receiptHash = value => sha256(typeof value === "string" ? value : sortedJson(value));
 const injectedHtml = `<h2>Unreviewed replacement ${seed}</h2>`;
 
 async function start(profile, context) {
@@ -42,6 +46,8 @@ const cases = [
   { id: "valid_suppression", intent: sensitiveIntent, status: "blocked", reason: "policy_suppressed", naive: 0, verified: 0 },
   { id: "outer_html_swap", intent: allowedIntent, status: "rendered", reason: "verified_allow", naive: 1, verified: 1 },
   { id: "receipt_html_swap", intent: allowedIntent, status: "blocked", reason: "receipt_invalid", naive: 1, verified: 0 },
+  { id: "coherent_signed_output_forgery", intent: allowedIntent, status: "blocked", reason: "receipt_replay_mismatch", naive: 1, verified: 0 },
+  { id: "same_id_weaker_policy", intent: sensitiveIntent, status: "blocked", reason: "receipt_binding_mismatch", naive: 1, verified: 0 },
   { id: "unsigned_receipt", intent: allowedIntent, status: "blocked", reason: "receipt_invalid", naive: 1, verified: 0 },
   { id: "foreign_signer", intent: allowedIntent, status: "blocked", reason: "receipt_untrusted", naive: 1, verified: 0 },
   { id: "replayed_nonce", intent: allowedIntent, status: "blocked", reason: "receipt_binding_mismatch", naive: 1, verified: 0 },
@@ -107,6 +113,39 @@ try {
             wire.receipt.selected_render.html = injectedHtml;
             wire.selected_render.html = injectedHtml;
             break;
+          case "coherent_signed_output_forgery": {
+            // The project fixture deliberately uses the trusted test key to
+            // sign internally consistent evidence for an output it never computed.
+            const forged = wire.receipt;
+            forged.selected_render.html = injectedHtml;
+            forged.output_sha256 = receiptHash(injectedHtml);
+            const event = forged.runtime_audit_stream.entries.at(-1);
+            event.payload.output_sha256 = forged.output_sha256;
+            const { entry_hash, ...core } = event;
+            event.entry_hash = receiptHash(core);
+            forged.audit_stream_sha256 = receiptHash(forged.runtime_audit_stream);
+            const { signature, receipt_sha256, ...payload } = forged;
+            forged.receipt_sha256 = receiptHash(payload);
+            wire.receipt = signExecutionReceipt(forged, privateKeyPem, { signer: "adversarial-local-pilot" });
+            wire.selected_render.html = injectedHtml;
+            assert.equal(wire.receipt.signature.public_key_sha256, fingerprint);
+            break;
+          }
+          case "same_id_weaker_policy": {
+            const forged = executeAccountableIntent(item.intent, {
+              profile: { id: "human_first", description: "Forged profile with fewer checks.",
+                policies: ["restorative_v1"] },
+              context: deniedContext, request_nonce,
+              timestamp: wire.receipt.timestamp, stream_id: wire.receipt.runtime_audit_stream.stream_id
+            });
+            assert.equal(forged.selected_render.suppressed, 0);
+            wire.receipt = signExecutionReceipt(forged, privateKeyPem, { signer: "adversarial-local-pilot" });
+            wire.selected_render.html = forged.selected_render.html;
+            wire.aml_allowed = true;
+            wire.effective_allowed = true;
+            wire.would_suppress = false;
+            break;
+          }
           case "unsigned_receipt":
             delete wire.receipt.signature;
             break;
