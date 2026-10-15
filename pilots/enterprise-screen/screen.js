@@ -54,3 +54,21 @@ async function evaluate(fixture) {
 document.querySelectorAll("[data-fixture]").forEach(button => {
   button.addEventListener("click", () => evaluate(button.dataset.fixture));
 });
+
+try {
+  const response = await fetch("/api/info");
+  if (!response.ok) throw new Error("host unavailable");
+  const { mode } = await response.json();
+  if (mode !== "demo" && mode !== "custom") throw new Error("unknown mode");
+  document.querySelector("#scenario-description").textContent = mode === "custom"
+    ? "The host loaded your intent and context from local files. The browser cannot change the policy or claim consent."
+    : "Consent is denied in the host-owned example context. The browser cannot change it.";
+  document.querySelectorAll("[data-fixture]").forEach(button => {
+    button.hidden = mode === "custom" ? button.dataset.fixture !== "custom" : button.dataset.fixture === "custom";
+    button.disabled = button.hidden;
+  });
+} catch {
+  clearRegion("The host is unavailable. No proposal can be displayed.");
+  status.textContent = "BLOCKED · host unavailable";
+  status.dataset.state = "blocked";
+}
