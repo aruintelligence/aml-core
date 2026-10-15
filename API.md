@@ -353,6 +353,10 @@ for cancelling their own downstream lookups. Timeouts return generic 503 errors.
 Each gateway also limits concurrent POST requests to 100 by default; set
 `max_inflight_requests` for a different per-instance ceiling. Excess work returns
 `503 server_busy` with `Retry-After: 1` before authentication or evaluation.
+The main service has a 10-second absolute deadline to receive each JSON request body.
+Set `request_body_timeout_ms` (1 to 2,147,483,647 ms) to match your ingress
+policy. An unfinished body returns `408 request_timeout` and closes the connection;
+the deadline starts after the optional authentication callback succeeds.
 
 Production deployments still require normal authentication, authorization, transport security, rate limiting, logging, and secure key management.
 
