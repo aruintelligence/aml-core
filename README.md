@@ -224,6 +224,8 @@ Run the [30-minute enterprise pilot](pilots/enterprise-30min/README.md) to gener
 
 The [signed HTTP render gate pilot](pilots/enterprise-http-gate/README.md) runs the locked service locally and gates a host callback on a nonce-bound receipt from a pinned Ed25519 key. Thirteen asserted outcomes include an untrusted signer and a replayed response. It remains a project-authored local integration exercise.
 
+Its [14-case adversarial comparison](pilots/enterprise-http-gate/README.md#try-an-adversarial-comparison) relays altered responses from real locked services to an intentionally unsafe host and the verified gate, then records callback counts and HTML hashes. The verified host rejects the selected forgeries; an outer HTML swap shows it uses the signed receipt's bytes even when the unsigned envelope changes.
+
 The [localhost screen pilot](pilots/enterprise-screen/README.md) makes that boundary visible: an allowed proposal reaches an isolated display frame after host verification; a consent-gated one leaves the frame empty. Run it with Node.js 20+ using `node pilots/enterprise-screen/server.mjs`, or point it at your own local intent and host-owned context JSON files. Its credentials and signing key are ephemeral; the pilot is not a production integration.
 
 Applications can import [`evaluateLockedHttpAndRender`](API.md#evaluatelockedhttpandrenderoptions) from `aml-core` to run the same signed host gate with a bounded response and a transport deadline.

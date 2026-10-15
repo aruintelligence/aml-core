@@ -41,6 +41,8 @@ jobs:
         run: node pilots/enterprise-30min/verify-report.mjs "${RUNNER_TEMP}/aml-enterprise-pilot.json"
       - name: Exercise locked HTTP host render gate
         run: node pilots/enterprise-http-gate/run.mjs > "${RUNNER_TEMP}/aml-enterprise-http-gate.json"
+      - name: Challenge signed gate with altered HTTP responses
+        run: node pilots/enterprise-http-gate/adversarial.mjs --seed 0123456789abcdef0123456789abcdef > "${RUNNER_TEMP}/aml-signed-gate-adversarial.json"
       - name: Exercise localhost screen host and suppression
         run: node --test test/enterprise-screen.test.js
       - name: Upload enterprise pilot evidence
@@ -55,6 +57,13 @@ jobs:
         with:
           name: aml-enterprise-http-gate-${{ github.sha }}
           path: ${{ runner.temp }}/aml-enterprise-http-gate.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload adversarial gate comparison
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-signed-gate-adversarial-${{ github.sha }}
+          path: ${{ runner.temp }}/aml-signed-gate-adversarial.json
           if-no-files-found: error
           retention-days: 30
       - name: Upload SBOM artifact
