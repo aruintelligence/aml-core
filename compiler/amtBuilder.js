@@ -25,7 +25,7 @@ function transformNode(node) {
       name: node.name,
       identifier: node.identifier,
       children: node.children.map(transformNode),
-      properties: collectProperties(node.children)
+      properties: collectProperties(node.children, node.name)
     };
 
     base.meaning = inferMeaning(base);
@@ -58,16 +58,21 @@ function mapBlockType(name) {
   return types[name] || "SemanticBlockNode";
 }
 
-function collectProperties(children) {
-  const properties = {};
+function collectProperties(children, blockName) {
+  const properties = new Map();
 
   for (const child of children) {
     if (child.type === "Property") {
-      properties[child.name] = child.value;
+      if (properties.has(child.name)) {
+        throw new Error(`Duplicate ĀML property "${child.name}" in ${blockName} block.`);
+      }
+      properties.set(child.name, child.value);
     }
   }
 
-  return properties;
+  // Object.fromEntries preserves own keys such as "__proto__" as data rather
+  // than invoking a prototype setter on an ordinary object.
+  return Object.fromEntries(properties);
 }
 
 function extractRenderMetadata(properties) {

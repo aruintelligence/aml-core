@@ -119,6 +119,15 @@ assert.equal(replayExecutionReceipt(literalReceipt).verified, true);
 assert.throws(() => executeAccountableIntent({ transmission: "invalid_score", nodes: [
   { type: "engram", properties: { attention_cost: NaN } }
 ] }, options), /property attention_cost must be a non-negative finite number/);
+assert.throws(() => compileSource(`transmission "ambiguous_proof" {
+  engram "private" {
+    value: "PRIVATE_DUPLICATE_2764"
+    consent_required: required
+    consent_required: false
+  }
+}`, { timestamp: options.timestamp, policy: policyFromProfile("calm_default"),
+  context: { consent_granted: false } }),
+  /Duplicate ĀML property "consent_required" in engram block/);
 
 console.log(JSON.stringify({
   proof: "PASS",
@@ -143,5 +152,6 @@ console.log(JSON.stringify({
   },
   literal_roundtrip: { receipt_sha256: literalReceipt.receipt_sha256,
     attention_cost: literalReceipt.selected_render.decisions[0].attention_cost,
-    replay_verified: true, nonfinite_score_rejected: true }
+    replay_verified: true, nonfinite_score_rejected: true,
+    duplicate_declaration_rejected: true }
 }, null, 2));

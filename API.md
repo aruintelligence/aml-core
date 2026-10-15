@@ -20,6 +20,7 @@ import {
 Pure in-memory AML compilation.
 
 Returns tokens, AST, Abstract Meaning Tree, render decisions, HTML, and related compiler structures without writing files.
+Duplicate property declarations within one AML block cause compilation to fail; the same property name may appear in different blocks.
 
 ### `compileAML(inputPath, outputDir, options?)`
 Filesystem compiler. Writes browser output and accountability artifacts.
