@@ -46,3 +46,25 @@ This second runner starts three real locked HTTP services on loopback: the expec
 | Eleven other adverse cases enter the unsafe callback and none enter the verified callback | Those exact mutations are rejected before the verified callback |
 
 Run `node --test test/enterprise-http-gate.test.js` or inspect the `aml-signed-gate-adversarial-<commit>` artifact from the Enterprise Readiness workflow. The example adversary controls the relay, not the pinned private signing key or the host's trust configuration. The unsafe comparison is intentionally flawed, not a measured customer application. Passing these cases cannot establish protection against every attack, browser paint, independent verification, or production readiness.
+
+## Recheck a real HTTP exchange with Python
+
+The project also supplies a separate Python verifier for saved, parsed responses from this locked HTTP service. Install Python 3.12 and `cryptography>=42,<51`, then capture the repository's synthetic allow and consent suppression fixtures into a **new** directory:
+
+```bash
+node pilots/enterprise-http-gate/capture.mjs --out /tmp/aml-http-capture-example
+python3 independent/python/verify_http_exchange.py \
+  /tmp/aml-http-capture-example/exchange-allow.json \
+  /tmp/aml-http-capture-example/capsule-allow.json \
+  /tmp/aml-http-capture-example/host-expected-allow.json \
+  /tmp/aml-http-capture-example/trusted-policy.json
+python3 independent/python/verify_http_exchange.py \
+  /tmp/aml-http-capture-example/exchange-suppress.json \
+  /tmp/aml-http-capture-example/capsule-suppress.json \
+  /tmp/aml-http-capture-example/host-expected-suppress.json \
+  /tmp/aml-http-capture-example/trusted-policy.json
+```
+
+The first report has `verified: true`, `status: "allow"`; the second has `verified: true`, `status: "suppressed"`, and `render_eligible: false`. The verifier compares each response receipt to its evidence capsule, checks the capsule's internal hashes, audit chain, ledger, Ed25519 signature and **separately supplied** fingerprint policy, then binds the signed nonce, intent, profile and context to the host's saved expectation. It checks the HTTP status, server-owned enforcement settings, and effective decision. It reports the signed output hash; it never executes the HTML or trusts the outer `selected_render.html` as output. It exits nonzero on rejected evidence.
+
+Run `node scripts/check-http-exchange-python.mjs` to generate fresh loopback exchanges and exercise 22 cross-runtime cases, including replay, foreign keys, changed receipt content, altered decision, changed context, revocation, and an outer HTML swap. Enterprise Readiness CI uploads the compact `aml-locked-http-python-<commit>` report. The capture creates its own ephemeral key and writes the corresponding fingerprint to a separate file for this local fixture; a real host must provision and review that trust pin independently. Only the project fixtures are used here. The full saved exchanges may contain declared intent and context, so review them before sharing. Neither this project-authored Python implementation nor its passing examples establish an external witness, truthful inputs, live network identity, browser paint, or production fitness.

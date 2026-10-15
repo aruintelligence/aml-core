@@ -24,6 +24,8 @@ python3 independent/python/verify_evidence_capsule.py signed-capsule.json truste
 
 Unsigned capsules need one argument. Signed v1.1 capsules require a second JSON file with `trusted_receipt_fingerprints` (an array of SHA-256 SPKI DER fingerprints) and optional `revoked_receipt_fingerprints`. The embedded key is not a trust source. Legacy v1.0 signatures are unsupported in Python because their signer and signed time were not bound. The two implementations and their mutation cases are exercised with `node scripts/check-evidence-capsule-python.mjs` on CI. This is cross-runtime engineering evidence maintained by the project, not an independent external witness.
 
+For a saved response from the locked HTTP deployment endpoint, the [HTTP exchange pilot](../pilots/enterprise-http-gate/README.md#recheck-a-real-http-exchange-with-python) additionally checks host-owned expected inputs, nonce, HTTP envelope and effective decision in Python while reusing this signed capsule verifier. The capsule alone does not make those request and response claims.
+
 ## Frozen v1 contract
 
 The capsule has exactly six top-level keys: `protocol`, `canonicalization`, `claim_boundary`, `summary`, `receipt`, and `digests`. The digest material consists of the first five keys, serialized with `canonicalJSONStringify` from `protocol/canonicalJson.js`: ordinary JSON values, object keys sorted by JavaScript UTF-16 code-unit order, no whitespace, JSON string escaping, and JSON number serialization. `undefined`, non-finite numbers, executable values, and non-plain objects are rejected. Hash the resulting UTF-8 bytes with SHA-256 and SHA-512 as lowercase hexadecimal.
