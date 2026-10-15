@@ -35,6 +35,8 @@ https://github.com/aruintelligence/aml-core/tree/main/pilots/enterprise-30min
 Local signed HTTP render gate pilot (thirteen asserted outcomes, including tampering, untrusted signers, replay, and service failure):
 https://github.com/aruintelligence/aml-core/tree/main/pilots/enterprise-http-gate
 
+The same pilot now includes a 14-case adversarial comparison of a deliberately unsafe host and the verified gate, with callback counts and HTML hashes in a CI artifact. This is project-authored engineering evidence, not an independent security review.
+
 Local screen pilot (verified allowed HTML reaches an isolated frame; missing consent leaves it empty). You can supply one local intent JSON and a separate host-owned context JSON to try your own proposed interface:
 https://github.com/aruintelligence/aml-core/tree/main/pilots/enterprise-screen
 
