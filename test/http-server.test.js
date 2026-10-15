@@ -5,7 +5,7 @@ import http from "node:http";
 import fs from "node:fs";
 import { once } from "node:events";
 import { createAmlHttpServer } from "../server/httpServer.js";
-import { verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
+import { verifyExecutionReceipt, verifySignedExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { signBrandAuthorization } from "../runtime/brandAuthorization.js";
 
 function intent() {
@@ -245,6 +245,73 @@ test("AML HTTP deployment batch preserves aggregate and per-intent evidence", as
     assert.equal(body.results.length, 2);
     assert.equal(typeof body.results[0].receipt_sha256, "string");
   });
+});
+
+test("locked HTTP signs nonce-bound single and batch receipts with an opt-in Ed25519 key", async () => {
+  const { privateKey, publicKey } = crypto.generateKeyPairSync("ed25519");
+  const signerFingerprint = crypto.createHash("sha256")
+    .update(publicKey.export({ type: "spki", format: "der" })).digest("hex");
+  const options = { locked_policy: { profile: "human_first", context: {} },
+    receipt_signing: { private_key_pem: privateKey.export({ type: "pkcs8", format: "pem" }),
+      signer: "test-host" } };
+  await withServer(async (base) => {
+    const post = async (path, payload) => {
+      const response = await fetch(`${base}${path}`, { method: "POST",
+        headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+      return { status: response.status, body: await response.json() };
+    };
+    const nonce = crypto.randomBytes(32).toString("hex");
+    const single = await post("/v1/deployment/evaluate", { intent: intent(), request_nonce: nonce });
+    assert.equal(single.status, 200);
+    assert.equal(single.body.receipt.request_nonce, nonce);
+    assert.equal(single.body.receipt.signature.public_key_sha256, signerFingerprint);
+    assert.equal(verifySignedExecutionReceipt(single.body.receipt).attribution_bound, true);
+
+    const batch = await post("/v1/deployment/batch", {
+      intents: [intent(), suppressedIntent()], request_nonce: nonce
+    });
+    assert.equal(batch.status, 200);
+    assert.equal(batch.body.results.length, 2);
+    for (const item of batch.body.results) {
+      const receipt = item.evaluation.result.receipt;
+      assert.equal(receipt.request_nonce, nonce);
+      assert.equal(receipt.signature.public_key_sha256, signerFingerprint);
+      assert.equal(verifySignedExecutionReceipt(receipt).verified, true);
+      assert.equal(item.evaluation.result.report.receipt.signature.signature_base64,
+        receipt.signature.signature_base64);
+    }
+    assert.notEqual(batch.body.results[0].receipt_sha256, batch.body.results[1].receipt_sha256);
+  }, options);
+});
+
+test("signed locked HTTP rejects missing or weak nonces before trusted context lookup", async () => {
+  const { privateKey } = crypto.generateKeyPairSync("ed25519");
+  let resolverCalls = 0;
+  await withServer(async (base) => {
+    for (const path of ["/v1/deployment/evaluate", "/v1/deployment/batch"]) {
+      for (const nonce of [undefined, "weak", "A".repeat(64)]) {
+        const body = path.endsWith("batch") ? { intents: [intent()] } : { intent: intent() };
+        const response = await fetch(`${base}${path}`, { method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ...body, request_nonce: nonce }) });
+        assert.equal(response.status, 400);
+        assert.equal((await response.json()).error, "invalid_request_nonce");
+      }
+    }
+    assert.equal(resolverCalls, 0);
+  }, { locked_policy: { resolve_context: () => { resolverCalls += 1; return {}; } },
+    receipt_signing: { private_key_pem: privateKey.export({ type: "pkcs8", format: "pem" }),
+      signer: "test-host" } });
+});
+
+test("HTTP signing configuration rejects unlocked mode and non-Ed25519 keys", () => {
+  const { privateKey: rsa } = crypto.generateKeyPairSync("rsa", { modulusLength: 2048 });
+  assert.throws(() => createAmlHttpServer({ receipt_signing: {
+    private_key_pem: rsa.export({ type: "pkcs8", format: "pem" }), signer: "test-host"
+  } }), /requires locked_policy/);
+  assert.throws(() => createAmlHttpServer({ locked_policy: {}, receipt_signing: {
+    private_key_pem: rsa.export({ type: "pkcs8", format: "pem" }), signer: "test-host"
+  } }), /must be Ed25519/);
 });
 
 test("unlocked HTTP batch keeps a server-owned ceiling when callers raise max_items", async () => {

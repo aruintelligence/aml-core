@@ -1,10 +1,10 @@
 import http from "node:http";
-import { randomUUID } from "node:crypto";
+import { createPrivateKey, randomUUID } from "node:crypto";
 import { readJson } from "./readJson.js";
 import { createLockedHttpPolicy } from "./lockedPolicy.js";
 import { createRequestAuthenticator } from "./requestAuth.js";
 import { createInflightLimit } from "./inflightLimit.js";
-import { executeAccountableIntent, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
+import { executeAccountableIntent, signExecutionReceipt, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { verifyOfficialBrandAuthorization } from "../runtime/brandTrust.js";
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
 import { evaluateInterfaceBatch } from "../runtime/batchInterfaceFirewall.js";
@@ -46,6 +46,32 @@ function loadBrandTrustRoots() {
   });
 }
 
+const REQUEST_NONCE = /^[0-9a-f]{64}$/;
+
+function createReceiptSigner(config, lockedPolicy) {
+  if (config == null) return null;
+  if (!lockedPolicy) throw new TypeError("receipt_signing requires locked_policy");
+  if (typeof config !== "object" || Array.isArray(config) ||
+      Object.keys(config).some(key => key !== "private_key_pem" && key !== "signer") ||
+      typeof config.private_key_pem !== "string" ||
+      typeof config.signer !== "string" || !config.signer.trim()) {
+    throw new TypeError("receipt_signing requires private_key_pem and a nonempty signer");
+  }
+  const privateKeyPem = config.private_key_pem;
+  const signer = config.signer;
+  const key = createPrivateKey(privateKeyPem);
+  if (key.asymmetricKeyType !== "ed25519") throw new TypeError("receipt_signing key must be Ed25519");
+  return receipt => signExecutionReceipt(receipt, privateKeyPem, { signer });
+}
+
+function signDeploymentReceipt(deployment, signer) {
+  const receipt = deployment.result?.receipt;
+  if (!receipt) return;
+  const signed = signer(receipt);
+  deployment.result.receipt = signed;
+  if (deployment.result.report) deployment.result.report.receipt = signed;
+}
+
 export function createAmlHttpServer(options = {}) {
   const maxBodyBytes = options.max_body_bytes ?? 1024 * 1024;
   if (!Number.isSafeInteger(maxBodyBytes) || maxBodyBytes < 1) {
@@ -55,6 +81,7 @@ export function createAmlHttpServer(options = {}) {
   const allowedOrigin = options.allowed_origin ?? null;
   const trustRoots = options.brand_trust_roots ?? loadBrandTrustRoots();
   const lockedPolicy = createLockedHttpPolicy(options.locked_policy, defaultProfile);
+  const receiptSigner = createReceiptSigner(options.receipt_signing, lockedPolicy);
   const maxBatchItems = options.max_batch_items ?? 100;
   if (!Number.isSafeInteger(maxBatchItems) || maxBatchItems < 1) {
     throw new TypeError("max_batch_items must be a positive safe integer");
@@ -135,6 +162,9 @@ export function createAmlHttpServer(options = {}) {
       try {
         const body = await readJson(req, maxBodyBytes);
         if (!body.intent) return send(res, 400, { error: "intent_required" }, headers);
+        if (receiptSigner && !REQUEST_NONCE.test(body.request_nonce)) {
+          return send(res, 400, { error: "invalid_request_nonce" }, headers);
+        }
         const controls = lockedPolicy ? await lockedPolicy.select(body, req) : {
           profile: body.profile ?? defaultProfile,
           context: body.context ?? {},
@@ -148,7 +178,12 @@ export function createAmlHttpServer(options = {}) {
           // The audit stream identifies this server evaluation. A locked
           // caller must not choose or reuse another evaluation's stream ID.
           stream_id: lockedPolicy ? randomUUID() : body.stream_id,
+          ...(receiptSigner ? { request_nonce: body.request_nonce } : {}),
         });
+        if (receiptSigner) {
+          try { signDeploymentReceipt(result, receiptSigner); }
+          catch { return send(res, 503, { error: "receipt_signing_unavailable" }, headers); }
+        }
         return send(res, result.evaluation_error ? 422 : 200, {
           protocol: "aml-http-deployment-evaluation/1",
           policy_source: lockedPolicy ? "server" : "request_or_default",
@@ -170,6 +205,9 @@ export function createAmlHttpServer(options = {}) {
       try {
         const body = await readJson(req, maxBodyBytes);
         if (!Array.isArray(body.intents)) return send(res, 400, { error: "intents_array_required" }, headers);
+        if (receiptSigner && !REQUEST_NONCE.test(body.request_nonce)) {
+          return send(res, 400, { error: "invalid_request_nonce" }, headers);
+        }
         // Reject excess work before resolving trusted context or allocating
         // audit IDs. The configured locked ceiling is independent of the
         // unlocked server ceiling.
@@ -188,8 +226,13 @@ export function createAmlHttpServer(options = {}) {
           ...controls,
           // Each locked item is a separate server evaluation, even when the
           // intent and request-wide timestamp are identical.
-          ...(lockedPolicy ? { stream_ids: body.intents.map(() => randomUUID()) } : {})
+          ...(lockedPolicy ? { stream_ids: body.intents.map(() => randomUUID()) } : {}),
+          ...(receiptSigner ? { request_nonce: body.request_nonce } : {})
         });
+        if (receiptSigner) {
+          try { result.results.forEach(item => signDeploymentReceipt(item.evaluation, receiptSigner)); }
+          catch { return send(res, 503, { error: "receipt_signing_unavailable" }, headers); }
+        }
         return send(res, 200, {
           ...result,
           protocol: "aml-http-deployment-batch/1",

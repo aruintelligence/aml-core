@@ -76,6 +76,19 @@ test("decision cache only caches automatically when evaluation time is fixed", (
   assert.equal(cache.stats().hits, 1);
 });
 
+test("decision cache binds the caller challenge before reusing a receipt", () => {
+  const cache = createDecisionCache();
+  const firewall = createDeploymentFirewall({ cache, profile: "calm_default" });
+  const first = firewall.evaluate(allowedIntent, { timestamp: fixed, request_nonce: "a".repeat(64) });
+  const second = firewall.evaluate(allowedIntent, { timestamp: fixed, request_nonce: "b".repeat(64) });
+  assert.equal(first.cache.hit, false);
+  assert.equal(second.cache.hit, false);
+  assert.equal(second.result.receipt.request_nonce, "b".repeat(64));
+  assert.notEqual(first.result.receipt.receipt_sha256, second.result.receipt.receipt_sha256);
+  assert.equal(firewall.evaluate(allowedIntent, { timestamp: fixed,
+    request_nonce: "a".repeat(64) }).cache.hit, true);
+});
+
 test("decision cache refuses implicit dynamic-time caching", () => {
   const cache = createDecisionCache({ max_entries: 8, ttl_ms: 60_000 });
   const firewall = createDeploymentFirewall({ cache });

@@ -20,14 +20,15 @@ function normalizeMode(value, allowed, name) {
   return value;
 }
 
-function cacheInput(intent, profile, context, timestamp, streamId, mode, failureMode, manualKey) {
+function cacheInput(intent, profile, context, timestamp, streamId, requestNonce, mode, failureMode, manualKey) {
   // An explicit key is a namespace, never a substitute for the evaluated inputs.
   // A dynamic timestamp can affect policy and receipts even with a manual key.
   if (!timestamp) return null;
   // Use the same snapshot for evaluation and the key. Otherwise a getter or a
   // mutated custom profile can make the cached decision describe other inputs.
   const input = JSON.parse(canonicalJSONStringify({
-    intent, profile, context, timestamp, stream_id: streamId || null
+    intent, profile, context, timestamp, stream_id: streamId || null,
+    request_nonce: requestNonce ?? null
   }));
   const namespace = typeof manualKey === "string" && manualKey.length > 0 ? manualKey : null;
   return {
@@ -69,9 +70,10 @@ export function createDeploymentFirewall(options = {}) {
     const context = { ...defaultContext, ...(runOptions.context || {}) };
     const timestamp = runOptions.timestamp;
     const streamId = runOptions.stream_id;
+    const requestNonce = runOptions.request_nonce;
     let snapshot = null;
     try {
-      if (cache) snapshot = cacheInput(intent, selectedProfile, context, timestamp, streamId,
+      if (cache) snapshot = cacheInput(intent, selectedProfile, context, timestamp, streamId, requestNonce,
         selectedMode, selectedFailureMode, runOptions.cache_key);
     } catch {
       // Unsupported/cyclic inputs cannot be safely cached. Let the evaluator
@@ -94,7 +96,8 @@ export function createDeploymentFirewall(options = {}) {
         profile: snapshot?.input.profile ?? selectedProfile,
         context: snapshot?.input.context ?? context,
         timestamp: snapshot?.input.timestamp ?? timestamp,
-        stream_id: snapshot?.input.stream_id ?? streamId
+        stream_id: snapshot?.input.stream_id ?? streamId,
+        request_nonce: snapshot?.input.request_nonce ?? requestNonce
       });
       const amlAllowed = result.allowed;
       const effectiveAllowed = selectedMode === "shadow" ? true : amlAllowed;

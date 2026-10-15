@@ -101,6 +101,7 @@ export function executeAccountableIntent(intent, options = {}) {
     runtime_audit_stream: auditStream,
     runtime_audit_verified: auditVerification.verified,
     attention_ledger: cumulative.ledger,
+    ...(options.request_nonce === undefined ? {} : { request_nonce: options.request_nonce }),
     selected_render: {
       policy_id: composedPolicy.id,
       allowed: finalDecisions.filter(item => item.render_allowed).length,

@@ -56,6 +56,9 @@ export interface ExecutionReceipt {
   protocol: "ĀML Accountable Execution Receipt";
   version: string;
   timestamp: string;
+  /** Optional caller challenge included in the receipt hash; authenticate the receipt before trusting it. */
+  request_nonce?: string;
+  signature?: ExecutionReceiptSignature;
   profile: { id: string; description: string; policies: string[] };
   context: AmlContext;
   intent_sha256: string;
@@ -71,6 +74,29 @@ export interface ExecutionReceipt {
     html: string;
   };
   [key: string]: unknown;
+}
+
+export interface ExecutionReceiptSignature {
+  protocol: "ĀML Execution Receipt Attestation";
+  version: "1.0" | "1.1";
+  algorithm: "Ed25519";
+  signer: string | null;
+  signed_at: string;
+  public_key_pem: string;
+  public_key_sha256: string;
+  signature_base64: string;
+}
+
+export interface SignedReceiptVerification {
+  verified: boolean;
+  integrity_valid: boolean;
+  signature_valid: boolean;
+  public_key_fingerprint_valid: boolean;
+  attribution_bound: boolean;
+  signer: string | null;
+  signed_at: string | null;
+  claimed_signer?: string | null;
+  claimed_signed_at?: string | null;
 }
 
 export interface ReceiptVerification {
@@ -336,6 +362,7 @@ export interface InterfaceFirewallOptions {
 export interface InterfaceFirewallRunOptions extends InterfaceFirewallOptions {
   timestamp?: string;
   stream_id?: string;
+  request_nonce?: string;
 }
 
 export interface InterfaceInspection {
@@ -486,6 +513,7 @@ export interface DeploymentOptions {
   context?: AmlContext;
   timestamp?: string;
   stream_id?: string;
+  request_nonce?: string;
   cache_key?: string;
   cache?: unknown;
 }
@@ -693,6 +721,8 @@ export interface AmlHttpServerOptions {
   request_auth?: RequestAuthenticator;
   auth_timeout_ms?: number;
   locked_policy?: LockedHttpPolicy;
+  /** Opt-in signed receipts for locked deployment evaluation and batch endpoints. */
+  receipt_signing?: { private_key_pem: string; signer: string };
 }
 
 export interface AgentUiGatewayOptions {
@@ -740,6 +770,11 @@ export function compileSource(source: string, options?: CompileOptions): Compile
 export function generateAMLFromIntent(intent: AmlIntent): string;
 export function executeAccountableIntent(intent: AmlIntent, options?: DeploymentOptions): ExecutionReceipt;
 export function verifyExecutionReceipt(receipt: ExecutionReceipt): ReceiptVerification;
+export function signExecutionReceipt(receipt: ExecutionReceipt, privateKeyPem: string,
+  options?: { signer?: string | null; timestamp?: string }): ExecutionReceipt & {
+    signature: ExecutionReceiptSignature & { version: "1.1" }
+  };
+export function verifySignedExecutionReceipt(receipt: ExecutionReceipt): SignedReceiptVerification;
 export function createDeploymentFirewall(options?: DeploymentOptions): DeploymentFirewall;
 export function evaluateDeploymentIntent(intent: AmlIntent, options?: DeploymentOptions): DeploymentResult;
 export function evaluateInterfaceBatch(intents: AmlIntent[], options?: BatchDeploymentOptions): BatchDeploymentResult;
