@@ -140,7 +140,14 @@ jobs:
       - name: Install Python Ed25519 verifier dependency
         run: python -m pip install 'cryptography>=42,<51'
       - name: Verify evidence capsules across JavaScript and Python
-        run: node scripts/check-evidence-capsule-python.mjs
+        run: node scripts/check-evidence-capsule-python.mjs > "${RUNNER_TEMP}/aml-capsule-cross-runtime.json"
+      - name: Upload capsule comparison
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-capsule-cross-runtime-${{ github.sha }}
+          path: ${{ runner.temp }}/aml-capsule-cross-runtime.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Check fixed archive wire bytes and digests
         run: node scripts/check-evidence-archive-vector.mjs
       - name: Verify archives and renewal witnesses across JavaScript and Python

@@ -31,8 +31,8 @@ try {
     ["pilots/enterprise-http-gate/capture.mjs", "--out", captureDir], { encoding: "utf8" });
   assert.equal(capture.status, 0, capture.stderr);
   const captured = JSON.parse(capture.stdout);
-  assert.equal(captured.cases.length, 2);
-  const original = Object.fromEntries(["allow", "suppress"].map(name => [name, {
+  assert.equal(captured.cases.length, 3);
+  const original = Object.fromEntries(["allow", "suppress", "numeric"].map(name => [name, {
     exchange: read(`exchange-${name}.json`), capsule: read(`capsule-${name}.json`),
     expected: read(`host-expected-${name}.json`)
   }]));
@@ -61,6 +61,10 @@ try {
   }
   const allowed = check("valid_allow", "allow", "allow", "verified_allow");
   check("valid_suppression", "suppress", "suppressed", "policy_suppressed");
+  check("valid_numeric_exponent", "numeric", "allow", "verified_allow");
+  check("numeric_host_expectation_changed", "numeric", "blocked", "receipt_binding_mismatch", sample => {
+    sample.expected.intent.numeric_probe = 2e-7;
+  });
   const swapped = check("outer_html_swap", "allow", "allow", "verified_allow", sample => {
     sample.exchange.body.selected_render.html = "<h2>Unreviewed replacement</h2>";
   });

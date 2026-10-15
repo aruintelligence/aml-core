@@ -1,4 +1,4 @@
-// Save two real loopback HTTP evaluations for verification without the JS gate.
+// Save real loopback HTTP evaluations for verification without the JS gate.
 // Only synthetic repository fixtures are used. The private key and token stay in memory.
 import assert from "node:assert/strict";
 import { createHash, generateKeyPairSync, randomBytes } from "node:crypto";
@@ -32,9 +32,11 @@ try {
   const url = `http://127.0.0.1:${server.address().port}/v1/deployment/evaluate`;
   const results = [];
   for (const [name, intentName, shouldAllow] of [
-    ["allow", "intent-allowed.json", true], ["suppress", "intent-sensitive.json", false]
+    ["allow", "intent-allowed.json", true], ["suppress", "intent-sensitive.json", false],
+    ["numeric", "intent-allowed.json", true]
   ]) {
     const intent = fixture(intentName);
+    if (name === "numeric") intent.numeric_probe = 1e-7;
     const request_nonce = randomBytes(32).toString("hex");
     const expected = { protocol: "aml-locked-http-host-expected/1", intent, profile, context, request_nonce };
     save(`host-expected-${name}.json`, expected);

@@ -8,9 +8,11 @@ import base64
 import binascii
 import hashlib
 import json
+import math
 import pathlib
 import re
 import sys
+from decimal import Decimal
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import serialization
@@ -21,6 +23,7 @@ FIELDS = {"protocol", "canonicalization", "claim_boundary", "summary", "receipt"
 SIGNATURE_FIELDS = {"protocol", "version", "algorithm", "signer", "signed_at", "public_key_pem", "public_key_sha256", "signature_base64"}
 FINGERPRINT = re.compile(r"[a-f0-9]{64}\Z")
 UTC = re.compile(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z\Z")
+MAX_SAFE_INTEGER = 2**53 - 1
 
 
 def unique_pairs(pairs):
@@ -36,8 +39,42 @@ def reject_constant(value):
     raise ValueError(f"unsupported JSON constant: {value}")
 
 
+def number_text(value):
+    # Match JSON.stringify's fixed/exponent boundary for the supported numeric subset.
+    # repr(float) supplies the shortest round-trip digits; Decimal only places the point.
+    if type(value) is int:
+        if abs(value) > MAX_SAFE_INTEGER:
+            raise ValueError("unsupported JSON integer outside JavaScript safe range")
+        return str(value)
+    if not math.isfinite(value) or abs(value) > MAX_SAFE_INTEGER:
+        raise ValueError("unsupported JSON number outside finite safe-magnitude subset")
+    if value == 0:
+        return "0"
+    sign = "-" if value < 0 else ""
+    decimal = Decimal(repr(abs(value))).normalize()
+    exponent = decimal.adjusted()
+    if -6 <= exponent < 21:
+        return sign + format(decimal, "f")
+    digits = "".join(str(digit) for digit in decimal.as_tuple().digits)
+    coefficient = digits[0] + ("." + digits[1:] if len(digits) > 1 else "")
+    return sign + coefficient + "e" + ("+" if exponent >= 0 else "") + str(exponent)
+
+
 def canonical(value):
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
+    def serialize(item):
+        if isinstance(item, dict):
+            if any(not isinstance(key, str) for key in item):
+                raise ValueError("non-string JSON object key")
+            return "{" + ",".join(serialize(key) + ":" + serialize(item[key]) for key in sorted(item)) + "}"
+        if isinstance(item, list):
+            return "[" + ",".join(serialize(child) for child in item) + "]"
+        if item is None or type(item) in (str, bool):
+            return json.dumps(item, ensure_ascii=False, allow_nan=False)
+        if type(item) in (int, float):
+            return number_text(item)
+        raise ValueError("unsupported JSON value")
+
+    return serialize(value).encode("utf-8")
 
 
 def hash_value(value):

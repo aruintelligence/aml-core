@@ -18,7 +18,7 @@ function rehash(capsule) {
   capsule.digests = Object.fromEntries(["sha256", "sha512"].map(algorithm => [algorithm, crypto.createHash(algorithm).update(bytes).digest("hex")]));
 }
 
-function check(name, content, expected, policy = null) {
+function check(name, content, expected, policy = null, reasonIncludes = null) {
   const file = path.join(directory, `${name}.json`);
   fs.writeFileSync(file, typeof content === "string" ? content : JSON.stringify(content));
   const args = [verifier, file];
@@ -30,7 +30,9 @@ function check(name, content, expected, policy = null) {
   const result = spawnSync("python3", args, { encoding: "utf8" });
   if (result.error) throw result.error;
   const report = JSON.parse(result.stdout);
-  if (report.verified !== expected || result.status !== (expected ? 0 : 1)) {
+  if (report.verified !== expected || result.status !== (expected ? 0 : 1) ||
+      (reasonIncludes && !report.reason?.includes(reasonIncludes)) ||
+      (expected && policy && report.attribution_bound !== true)) {
     throw new Error(`${name}: unexpected Python result ${result.stdout} ${result.stderr}`);
   }
   return { name, verified: report.verified };
@@ -57,6 +59,31 @@ try {
   const signedPolicy = { trusted_receipt_fingerprints: [signed.signature.public_key_sha256] };
   results.push(check("signed-external-trust-required", signedCapsule, false));
   results.push(check("signed-valid", signedCapsule, true, signedPolicy));
+  for (const [name, value] of [
+    ["small-exponent", 1e-7], ["fixed-boundary", 1e-6],
+    ["negative-fraction", -0.0000015], ["negative-zero", -0],
+    ["minimum-subnormal", Number.MIN_VALUE],
+    ["maximum-safe-integer", Number.MAX_SAFE_INTEGER]
+  ]) {
+    const numericReceipt = executeAccountableIntent({ ...intent, numeric_probe: value },
+      { profile: "human_first", timestamp: "2026-10-10T00:00:00.000Z" });
+    const numericSignature = signExecutionReceipt(numericReceipt, privateKey.export({ type: "pkcs8", format: "pem" }),
+      { signer: "synthetic", timestamp: "2026-10-10T01:00:00.000Z" });
+    const numericCapsule = createEvidenceCapsule(numericSignature);
+    results.push(check(`signed-numeric-${name}`, numericCapsule, true, signedPolicy));
+    if (name === "small-exponent") {
+      const tampered = structuredClone(numericCapsule);
+      tampered.receipt.intent.numeric_probe = 2e-7;
+      rehash(tampered);
+      results.push(check("signed-numeric-tampered", tampered, false, signedPolicy));
+    }
+  }
+  const unsafeReceipt = executeAccountableIntent({ ...intent, numeric_probe: 2 ** 53 },
+    { profile: "human_first", timestamp: "2026-10-10T00:00:00.000Z" });
+  const unsafeSignature = signExecutionReceipt(unsafeReceipt, privateKey.export({ type: "pkcs8", format: "pem" }),
+    { signer: "synthetic", timestamp: "2026-10-10T01:00:00.000Z" });
+  results.push(check("signed-unsafe-integer-rejected", createEvidenceCapsule(unsafeSignature), false, signedPolicy,
+    "outside JavaScript safe range"));
   results.push(check("signed-wrong-trust", signedCapsule, false, { trusted_receipt_fingerprints: ["f".repeat(64)] }));
   results.push(check("signed-revoked", signedCapsule, false, { ...signedPolicy, revoked_receipt_fingerprints: signedPolicy.trusted_receipt_fingerprints }));
   const forgedSigner = structuredClone(signedCapsule);
