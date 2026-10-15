@@ -17,16 +17,7 @@ export function evaluateRenderDecisions(amt, options = {}) {
 }
 
 function walkNode(node, decisions, timestamp, policy, context) {
-  const metadata = node.render_metadata || {};
-
-  const hasRenderableMetadata =
-    metadata.purpose ||
-    metadata.memory_role ||
-    metadata.user_effect ||
-    typeof metadata.attention_cost === "number" ||
-    typeof metadata.restoration_value === "number";
-
-  if (hasRenderableMetadata) {
+  if (requiresRenderDecision(node)) {
     decisions.push(createRenderDecision(node, timestamp, policy, context));
   }
 
@@ -35,6 +26,19 @@ function walkNode(node, decisions, timestamp, policy, context) {
       walkNode(child, decisions, timestamp, policy, context);
     }
   }
+}
+
+// The renderer uses the same predicate and traversal order to bind each
+// decision to the node that produced it. Keep this in one place.
+export function requiresRenderDecision(node) {
+  const metadata = node.render_metadata || {};
+  return Boolean(
+    metadata.purpose ||
+    metadata.memory_role ||
+    metadata.user_effect ||
+    typeof metadata.attention_cost === "number" ||
+    typeof metadata.restoration_value === "number"
+  );
 }
 
 function createRenderDecision(node, timestamp, policy, context) {
