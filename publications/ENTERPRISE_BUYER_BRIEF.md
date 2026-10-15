@@ -35,4 +35,7 @@ https://github.com/aruintelligence/aml-core/tree/main/pilots/enterprise-30min
 Local signed HTTP render gate pilot (thirteen asserted outcomes, including tampering, untrusted signers, replay, and service failure):
 https://github.com/aruintelligence/aml-core/tree/main/pilots/enterprise-http-gate
 
+Local screen pilot (verified allowed HTML reaches an isolated frame; missing consent leaves it empty):
+https://github.com/aruintelligence/aml-core/tree/main/pilots/enterprise-screen
+
 Partnership/OEM inquiries: Office@aruintelligence.com

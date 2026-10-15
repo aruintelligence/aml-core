@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ĀML | Signed interface gate</title>
+  <link rel="stylesheet" href="/screen.css">
+  <script src="/screen.js" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead"><span class="brand">ĀML <span class="brand-mark">/</span> FIELD LAB</span><span class="local">LOCALHOST PILOT · PROJECT-AUTHORED</span></header>
+    <section class="hero">
+      <p class="eyebrow">ONE REGION. ONE DECISION. VISIBLE RESULT.</p>
+      <h1>Let the receipt decide<br><em>what reaches the screen.</em></h1>
+      <p class="intro">Choose a proposed interface. A locked service evaluates it, signs a nonce-bound receipt, and this host verifies that receipt before handing HTML to an isolated frame.</p>
+    </section>
+    <section class="workspace" aria-label="Interface pilot">
+      <div class="controls">
+        <div class="section-label">01 / PROPOSED INTERFACE</div>
+        <h2>Try both cases</h2>
+        <p>Consent is denied in the host-owned example context. The browser cannot change it.</p>
+        <button type="button" data-fixture="allowed"><span class="button-icon">↗</span><span><strong>Pricing explanation</strong><small>Purposeful, no personal data</small></span></button>
+        <button type="button" data-fixture="sensitive"><span class="button-icon">◉</span><span><strong>Personalization prompt</strong><small>Requests data without consent</small></span></button>
+        <p class="hint">The private signing key and service token remain in Node. This page receives only the host decision, receipt hash, and HTML after a verified allow.</p>
+      </div>
+      <div class="stage">
+        <div class="section-label">02 / DISPLAY REGION</div>
+        <div class="stage-card">
+          <div class="stage-top"><span class="dot"></span><span>GUARDED REGION</span><span class="right">SANDBOXED FRAME</span></div>
+          <div id="placeholder" class="placeholder">Select a proposal to see whether its HTML reaches this region.</div>
+          <iframe id="output" title="Verified ĀML output" sandbox hidden></iframe>
+        </div>
+        <div id="status" class="status" role="status" aria-live="polite">Ready for evaluation.</div>
+        <div class="receipt"><span>RECEIPT SHA-256</span><code id="receipt">—</code></div>
+      </div>
+    </section>
+    <footer>Local demonstration with fixed fixtures and an ephemeral key. It does not establish production security, customer adoption, or independent validation.</footer>
+  </main>
+</body>
+</html>
