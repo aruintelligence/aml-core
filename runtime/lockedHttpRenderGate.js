@@ -3,6 +3,7 @@
 import { randomBytes } from "node:crypto";
 import { verifySignedExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
+import { parseJsonWithoutDuplicateKeys } from "./strictJson.js";
 
 const DEFAULT_TIMEOUT_MS = 5000;
 const DEFAULT_MAX_RESPONSE_BYTES = 8 * 1024 * 1024;
@@ -89,7 +90,7 @@ async function readBoundedJson(response, maxResponseBytes) {
   } finally {
     reader.releaseLock();
   }
-  return JSON.parse(new TextDecoder("utf-8", { fatal: true })
+  return parseJsonWithoutDuplicateKeys(new TextDecoder("utf-8", { fatal: true })
     .decode(Buffer.concat(parts, bytes)));
 }
 
@@ -145,6 +146,7 @@ export async function evaluateLockedHttpAndRender({ url, token, intent, profile,
     controller.abort();
     if (error?.code === "AML_EVALUATION_TIMEOUT") return blocked("evaluation_timeout");
     if (error?.code === "AML_RESPONSE_TOO_LARGE") return blocked("response_too_large");
+    if (error?.code === "AML_DUPLICATE_JSON_KEY") return blocked("ambiguous_json");
     return blocked("transport_or_response_error");
   } finally {
     clearTimeout(timer);

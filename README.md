@@ -224,7 +224,7 @@ Run the [30-minute enterprise pilot](pilots/enterprise-30min/README.md) to gener
 
 The [signed HTTP render gate pilot](pilots/enterprise-http-gate/README.md) runs the locked service locally and gates a host callback on a nonce-bound receipt from a pinned Ed25519 key. Thirteen asserted outcomes include an untrusted signer and a replayed response. It remains a project-authored local integration exercise.
 
-Its [14-case adversarial comparison](pilots/enterprise-http-gate/README.md#try-an-adversarial-comparison) relays altered responses from real locked services to an intentionally unsafe host and the verified gate, then records callback counts and HTML hashes. The verified host rejects the selected forgeries; an outer HTML swap shows it uses the signed receipt's bytes even when the unsigned envelope changes.
+Its [17-case adversarial comparison](pilots/enterprise-http-gate/README.md#try-an-adversarial-comparison) relays altered responses from real locked services to an intentionally unsafe host and the verified gate, then records callback counts and HTML hashes. The verified host rejects the selected forgeries, including duplicate JSON names that previously passed the JavaScript parser; an outer HTML swap shows it uses the signed receipt's bytes even when the unsigned envelope changes.
 
 A [separate Python check of captured HTTP exchanges](pilots/enterprise-http-gate/README.md#recheck-a-real-http-exchange-with-python) verifies the saved signed receipt, a host-held nonce and context, the pinned key, and the final allow or suppress decision. Its 22 project-authored cases include replay, substitution, revocation, and altered envelope controls; CI publishes a compact report.
 
