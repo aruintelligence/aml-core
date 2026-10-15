@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Project-authored cross-runtime check of a captured locked HTTP evaluation.
+"""Project-authored saved-evidence check of a captured locked HTTP evaluation.
 
-The expected request and signer fingerprints must come from the host, not the
-HTTP response. This verifies saved JSON; it does not fetch or render anything.
+The expected request, complete profile snapshot, and signer fingerprints must
+come from the host, not the HTTP response. This does not replay AML policy or
+HTML generation and never authorizes rendering.
 """
 import json
 import pathlib
@@ -16,8 +17,10 @@ NONCE = re.compile(r"[0-9a-f]{64}\Z")
 
 
 def failure(reason):
-    return {"protocol": "aml-locked-http-python-report/1", "verified": False,
-            "status": "blocked", "render_eligible": False, "reason": reason}
+    return {"protocol": "aml-locked-http-python-report/2", "verified": False,
+            "status": "blocked", "render_eligible": False,
+            "execution_replayed": False, "profile_snapshot_bound": False,
+            "reason": reason}
 
 
 def read_json(filename):
@@ -29,12 +32,21 @@ def read_json(filename):
 
 
 def check_exchange(exchange, capsule, expected, policy):
+    if isinstance(expected, dict) and expected.get("protocol") == "aml-locked-http-host-expected/1":
+        return failure("host_profile_snapshot_required")
     if (not isinstance(expected, dict) or set(expected) !=
-        {"protocol", "intent", "profile", "context", "request_nonce"} or
-        expected["protocol"] != "aml-locked-http-host-expected/1" or
+        {"protocol", "intent", "profile", "profile_snapshot", "context", "request_nonce"} or
+        expected["protocol"] != "aml-locked-http-host-expected/2" or
         not isinstance(expected["intent"], dict) or
         not isinstance(expected["context"], dict) or
         not isinstance(expected["profile"], str) or not expected["profile"] or
+        not isinstance(expected["profile_snapshot"], dict) or
+        set(expected["profile_snapshot"]) != {"id", "description", "policies"} or
+        expected["profile_snapshot"].get("id") != expected["profile"] or
+        not isinstance(expected["profile_snapshot"].get("description"), str) or
+        not isinstance(expected["profile_snapshot"].get("policies"), list) or
+        not expected["profile_snapshot"]["policies"] or
+        any(not isinstance(item, str) or not item for item in expected["profile_snapshot"]["policies"]) or
         not isinstance(expected["request_nonce"], str) or
         not NONCE.fullmatch(expected["request_nonce"])):
         return failure("invalid_host_expectation")
@@ -61,7 +73,7 @@ def check_exchange(exchange, capsule, expected, policy):
         return failure("invalid_capsule_or_trust")
     if not capsule_report["verified"] or not capsule_report["attribution_bound"]:
         return failure("invalid_capsule_or_trust")
-    if (receipt.get("profile", {}).get("id") != expected["profile"] or
+    if (canonical(receipt.get("profile")) != canonical(expected["profile_snapshot"]) or
         receipt.get("request_nonce") != expected["request_nonce"] or
         canonical(receipt.get("intent")) != canonical(expected["intent"]) or
         canonical(receipt.get("context")) != canonical(expected["context"])):
@@ -71,12 +83,13 @@ def check_exchange(exchange, capsule, expected, policy):
         body.get("effective_allowed") is not allowed or
         body.get("would_suppress") is not (not allowed)):
         return failure("decision_mismatch")
-    return {"protocol": "aml-locked-http-python-report/1", "verified": True,
-            "status": "allow" if allowed else "suppressed", "render_eligible": allowed,
-            "reason": "verified_allow" if allowed else "policy_suppressed",
+    return {"protocol": "aml-locked-http-python-report/2", "verified": True,
+            "status": "declared_allow" if allowed else "declared_suppressed", "render_eligible": False,
+            "execution_replayed": False, "profile_snapshot_bound": True,
+            "reason": "verified_declared_allow" if allowed else "verified_declared_suppression",
             "receipt_sha256": receipt["receipt_sha256"], "output_sha256": receipt["output_sha256"],
             "signer_fingerprint": receipt["signature"]["public_key_sha256"],
-            "scope": "Project-authored Python check of saved localhost JSON on the capsule canonical subset; render_eligible reflects these saved-evidence checks only. No AML execution replay, full-profile pinning, external witness, live transport, or rendered UI proof."}
+            "scope": "Project-authored Python verification of saved signature, evidence, host profile snapshot, and declared outcome. No AML execution replay, render authorization, external witness, live transport, or rendered UI proof."}
 
 
 if __name__ == "__main__":
