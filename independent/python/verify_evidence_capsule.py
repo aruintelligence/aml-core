@@ -60,16 +60,43 @@ def number_text(value):
     return sign + coefficient + "e" + ("+" if exponent >= 0 else "") + str(exponent)
 
 
-def canonical(value):
+def utf16_key(value):
+    return value.encode("utf-16-be", errors="surrogatepass")
+
+
+def array_index(key):
+    # JSON.stringify enumerates these keys numerically, even after Object.fromEntries.
+    if (key == "0" or (len(key) <= 10 and key.isascii() and key.isdecimal() and key[0] != "0")):
+        number = int(key)
+        if number < 2**32 - 1:
+            return number
+    return None
+
+
+def string_text(value):
+    # Well-formed JSON.stringify escapes lone surrogates; Python's ensure_ascii=False
+    # leaves them raw, which cannot be encoded as UTF-8.
+    escaped = json.dumps(value, ensure_ascii=False)
+    return "".join(f"\\u{ord(char):04x}" if 0xD800 <= ord(char) <= 0xDFFF else char
+                   for char in escaped)
+
+
+def canonical(value, *, receipt_order=False):
     def serialize(item):
         if isinstance(item, dict):
             if any(not isinstance(key, str) for key in item):
                 raise ValueError("non-string JSON object key")
-            return "{" + ",".join(serialize(key) + ":" + serialize(item[key]) for key in sorted(item)) + "}"
+            keys = sorted(item, key=utf16_key)
+            if not receipt_order:
+                indices = [key for key in keys if array_index(key) is not None]
+                keys = sorted(indices, key=array_index) + [key for key in keys if array_index(key) is None]
+            return "{" + ",".join(serialize(key) + ":" + serialize(item[key]) for key in keys) + "}"
         if isinstance(item, list):
             return "[" + ",".join(serialize(child) for child in item) + "]"
-        if item is None or type(item) in (str, bool):
-            return json.dumps(item, ensure_ascii=False, allow_nan=False)
+        if type(item) is str:
+            return string_text(item)
+        if item is None or type(item) is bool:
+            return json.dumps(item)
         if type(item) in (int, float):
             return number_text(item)
         raise ValueError("unsupported JSON value")
@@ -78,7 +105,9 @@ def canonical(value):
 
 
 def hash_value(value):
-    return hashlib.sha256(canonical(value)).hexdigest()
+    # The accountable receipt and audit stream use hand-built sorted JSON; unlike
+    # the capsule's Object.fromEntries + JSON.stringify, index keys stay lexical.
+    return hashlib.sha256(canonical(value, receipt_order=True)).hexdigest()
 
 
 def hash_text(value):

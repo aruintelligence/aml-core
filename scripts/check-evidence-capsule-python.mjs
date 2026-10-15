@@ -84,6 +84,25 @@ try {
     { signer: "synthetic", timestamp: "2026-10-10T01:00:00.000Z" });
   results.push(check("signed-unsafe-integer-rejected", createEvidenceCapsule(unsafeSignature), false, signedPolicy,
     "outside JavaScript safe range"));
+  for (const [name, key_probe] of [
+    ["array-index-keys", { "10": "ten", "2": "two", "01": "leading", "0": "zero",
+      "4294967294": "last index", "4294967295": "ordinary key" }],
+    ["utf16-key-order", { "\uE000": "private use", "\u{1F4A1}": "astral" }],
+    ["lone-surrogates", { "\uD800": "lone key", text: "before\uDC00after", control: "\b\n\u2028" }]
+  ]) {
+    const keyedReceipt = executeAccountableIntent({ ...intent, key_probe },
+      { profile: "human_first", timestamp: "2026-10-10T00:00:00.000Z" });
+    const keyedSignature = signExecutionReceipt(keyedReceipt, privateKey.export({ type: "pkcs8", format: "pem" }),
+      { signer: "synthetic", timestamp: "2026-10-10T01:00:00.000Z" });
+    const keyedCapsule = createEvidenceCapsule(keyedSignature);
+    results.push(check(`signed-${name}`, keyedCapsule, true, signedPolicy));
+    if (name === "array-index-keys") {
+      const tampered = structuredClone(keyedCapsule);
+      tampered.receipt.intent.key_probe["2"] = "changed";
+      rehash(tampered);
+      results.push(check("signed-array-index-key-tampered", tampered, false, signedPolicy));
+    }
+  }
   results.push(check("signed-wrong-trust", signedCapsule, false, { trusted_receipt_fingerprints: ["f".repeat(64)] }));
   results.push(check("signed-revoked", signedCapsule, false, { ...signedPolicy, revoked_receipt_fingerprints: signedPolicy.trusted_receipt_fingerprints }));
   const forgedSigner = structuredClone(signedCapsule);
@@ -91,6 +110,7 @@ try {
   rehash(forgedSigner);
   results.push(check("signed-attribution-mutated", forgedSigner, false, signedPolicy));
   results.push(check("duplicate-key", JSON.stringify(original).replace('"protocol":"aml-evidence-capsule/1"', '"protocol":"aml-evidence-capsule/1","protocol":"aml-evidence-capsule/1"'), false));
+  results.push(check("duplicate-escaped-key", JSON.stringify(original).replace('"protocol":"aml-evidence-capsule/1"', '"protocol":"aml-evidence-capsule/1","\\u0070rotocol":"aml-evidence-capsule/1"'), false));
 
   process.stdout.write(`${JSON.stringify({ protocol: "aml-capsule-cross-runtime-check/1", passed: true, results }, null, 2)}\n`);
 } finally {
