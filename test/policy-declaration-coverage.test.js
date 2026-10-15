@@ -69,7 +69,7 @@ test("a consent-only parent suppresses unannotated descendants", () => {
   }`, { timestamp, policy: policyFromProfile("calm_default"),
     context: { consent_granted: false } });
   assert.deepEqual(result.renderDecisions.map(({ identifier, render_allowed }) =>
-    [identifier, render_allowed]), [["boundary", false]]);
+    [identifier, render_allowed]), [["boundary", false], ["inside", true]]);
   assert.doesNotMatch(result.html, /NESTED_PRIVATE_9381/);
 });
 

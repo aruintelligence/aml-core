@@ -141,6 +141,8 @@ Run `npm run proof` to check that two same-type nodes keep separate decisions **
 
 Declared consent, privacy, motion, contrast, and cognitive-load controls now trigger a decision even without purpose or numeric attention/restoration metadata. The proof command includes a consent-only example; `node --test test/policy-declaration-coverage.test.js` checks all five controls against the generated HTML with both denying and permitting contexts. Older receipts affected by this decision-coverage change should be regenerated for deterministic replay.
 
+Every semantic content block below a transmission now receives a decision, even without optional metadata. This lets a custom policy suppress a bare engram, mirror, or container; `npm run proof` checks a bare-node denial against HTML, and `node --test test/unannotated-render-coverage.test.js` covers browser parity, malformed policies, nested suppression, and cumulative budget accounting. Bare blocks can now consume calculated attention budget, and older receipts with formerly skipped blocks need regeneration for deterministic replay.
+
 If the behavior does not reproduce, that is useful evidence. Please publish **PASS / FAIL / MIXED** with enough detail for someone else to repeat your result.
 
 - [Independent verification call](https://github.com/aruintelligence/aml-core/issues/88)

@@ -43,6 +43,13 @@ function walkNode(node, decisions, timestamp, policy, context) {
 // The renderer uses the same predicate and traversal order to bind each
 // decision to the node that produced it. Keep this in one place.
 export function requiresRenderDecision(node) {
+  // Every semantic block below a transmission can emit HTML. Do not let
+  // missing optional metadata bypass a custom policy or its render decision.
+  if (node.type === "MeaningProperty") return false;
+  if (node.type !== "TransmissionNode") return true;
+
+  // A transmission is structural by default, but explicit policy inputs on
+  // the root can suppress the entire output.
   const metadata = node.render_metadata || {};
   const properties = node.properties || {};
   return Boolean(
