@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { executeAccountableIntent, replayExecutionReceipt, verifyExecutionReceipt } from "../../index.js";
+import { compileSource, executeAccountableIntent, replayExecutionReceipt,
+  verifyExecutionReceipt } from "../../index.js";
 
 const intent = JSON.parse(fs.readFileSync(new URL("./intent.json", import.meta.url), "utf8"));
 const options = {
@@ -59,6 +60,19 @@ assert.match(controlOnly.selected_render.html, /<h2>PUBLIC_PROOF_5913<\/h2>/,
 assert.equal(verifyExecutionReceipt(controlOnly).verified, true);
 assert.equal(replayExecutionReceipt(controlOnly).verified, true);
 
+let barePolicyCalls = 0;
+const bare = compileSource(`transmission "bare_proof" {
+  engram "private" { value: "BARE_PRIVATE_PROOF_7164" }
+}`, { timestamp: options.timestamp, policy(_element, { node }) {
+  barePolicyCalls += 1;
+  assert.equal(node.identifier, "private");
+  return { render_allowed: false, attention_cost: 1, restoration_value: 1 };
+} });
+assert.equal(barePolicyCalls, 1, "a bare content node must reach the custom policy");
+assert.equal(bare.renderDecisions[0]?.render_allowed, false);
+assert.doesNotMatch(bare.html, /BARE_PRIVATE_PROOF_7164/,
+  "custom-policy denial must remove bare content from HTML");
+
 console.log(JSON.stringify({
   proof: "PASS",
   receipt_sha256: first.receipt_sha256,
@@ -71,5 +85,6 @@ console.log(JSON.stringify({
     suppressed: controlOnly.selected_render.suppressed,
     allowed: controlOnly.selected_render.allowed,
     replay_verified: true
-  }
+  },
+  unannotated_custom_policy: { calls: barePolicyCalls, suppressed: 1 }
 }, null, 2));
