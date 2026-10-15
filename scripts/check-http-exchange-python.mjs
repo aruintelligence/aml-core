@@ -8,6 +8,7 @@ import { spawnSync } from "node:child_process";
 import { signExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { createEvidenceCapsule } from "../runtime/evidenceCapsule.js";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
+import { resolvePolicyProfile } from "../runtime/policyProfiles.js";
 
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-locked-http-python-"));
 const captureDir = path.join(directory, "capture");
@@ -31,8 +32,10 @@ try {
     ["pilots/enterprise-http-gate/capture.mjs", "--out", captureDir], { encoding: "utf8" });
   assert.equal(capture.status, 0, capture.stderr);
   const captured = JSON.parse(capture.stdout);
-  assert.equal(captured.cases.length, 5);
-  const original = Object.fromEntries(["allow", "suppress", "numeric", "keys", "large"].map(name => [name, {
+  assert.equal(captured.protocol, "aml-locked-http-capture/2");
+  assert.equal(captured.cases.length, 7);
+  const original = Object.fromEntries(["allow", "suppress", "numeric", "keys", "large",
+    "forged-output", "weaker-profile"].map(name => [name, {
     exchange: read(`exchange-${name}.json`), capsule: read(`capsule-${name}.json`),
     expected: read(`host-expected-${name}.json`)
   }]));
@@ -51,40 +54,62 @@ try {
     assert.equal(report.status, status, name);
     assert.equal(report.reason, reason, name);
     assert.equal(report.verified, status !== "blocked", name);
-    assert.equal(report.render_eligible, status === "allow", name);
+    assert.equal(report.protocol, "aml-locked-http-python-report/2", name);
+    assert.equal(report.execution_replayed, false, name);
+    assert.equal(report.render_eligible, false, name);
+    assert.equal(report.profile_snapshot_bound, status !== "blocked", name);
     if (status !== "blocked") {
       assert.equal(report.receipt_sha256, sample.exchange.body.receipt.receipt_sha256, name);
       assert.equal(report.output_sha256, sample.exchange.body.receipt.output_sha256, name);
     }
-    results.push({ id: name, status: report.status, reason: report.reason });
+    results.push({ id: name, status: report.status, reason: report.reason,
+      profile_snapshot_bound: report.profile_snapshot_bound,
+      execution_replayed: report.execution_replayed, render_eligible: report.render_eligible });
     return report;
   }
-  const allowed = check("valid_allow", "allow", "allow", "verified_allow");
-  check("valid_suppression", "suppress", "suppressed", "policy_suppressed");
-  check("valid_numeric_exponent", "numeric", "allow", "verified_allow");
+  const allowed = check("valid_allow", "allow", "declared_allow", "verified_declared_allow");
+  check("valid_suppression", "suppress", "declared_suppressed", "verified_declared_suppression");
+  check("valid_numeric_exponent", "numeric", "declared_allow", "verified_declared_allow");
   check("numeric_host_expectation_changed", "numeric", "blocked", "receipt_binding_mismatch", sample => {
     sample.expected.intent.numeric_probe = 2e-7;
   });
-  check("valid_key_order_unicode", "keys", "allow", "verified_allow");
+  check("valid_key_order_unicode", "keys", "declared_allow", "verified_declared_allow");
   check("keyed_host_expectation_changed", "keys", "blocked", "receipt_binding_mismatch", sample => {
     sample.expected.intent.key_probe["2"] = "altered";
   });
-  check("valid_large_finite_numbers", "large", "allow", "verified_allow");
+  check("valid_large_finite_numbers", "large", "declared_allow", "verified_declared_allow");
   check("large_host_expectation_changed", "large", "blocked", "receipt_binding_mismatch", sample => {
     sample.expected.intent.numeric_probe = 2 ** 53 + 2;
   });
-  const swapped = check("outer_html_swap", "allow", "allow", "verified_allow", sample => {
+  const swapped = check("outer_html_swap", "allow", "declared_allow", "verified_declared_allow", sample => {
     sample.exchange.body.selected_render.html = "<h2>Unreviewed replacement</h2>";
   });
   assert.equal(swapped.output_sha256, allowed.output_sha256);
   assert.notEqual(createHash("sha256").update("<h2>Unreviewed replacement</h2>").digest("hex"), swapped.output_sha256);
+  const fabricated = check("validly_signed_invented_output_requires_replay", "forged-output",
+    "declared_allow", "verified_declared_allow");
+  assert.notEqual(fabricated.output_sha256, allowed.output_sha256);
+  check("signed_same_id_weaker_profile_rejected", "weaker-profile", "blocked", "receipt_binding_mismatch");
   check("http_failure", "allow", "blocked", "invalid_http_exchange", sample => { sample.exchange.http_status = 503; });
   check("request_selected_policy", "allow", "blocked", "unexpected_deployment_policy", sample => { sample.exchange.body.policy_source = "request_or_default"; });
   check("shadow_mode", "allow", "blocked", "unexpected_deployment_policy", sample => { sample.exchange.body.mode = "shadow"; });
   check("open_failure_mode", "allow", "blocked", "unexpected_deployment_policy", sample => { sample.exchange.body.failure_mode = "open"; });
   check("evaluation_error", "allow", "blocked", "unexpected_deployment_policy", sample => { sample.exchange.body.evaluation_error = "failed"; });
   check("flipped_decision", "allow", "blocked", "decision_mismatch", sample => { sample.exchange.body.effective_allowed = false; });
-  check("profile_substitution", "allow", "blocked", "receipt_binding_mismatch", sample => { sample.expected.profile = "calm_default"; });
+  check("profile_substitution", "allow", "blocked", "receipt_binding_mismatch", sample => {
+    sample.expected.profile = "calm_default";
+    sample.expected.profile_snapshot = resolvePolicyProfile("calm_default");
+  });
+  check("host_profile_snapshot_changed", "allow", "blocked", "receipt_binding_mismatch", sample => {
+    sample.expected.profile_snapshot.policies.pop();
+  });
+  check("host_profile_snapshot_missing", "allow", "blocked", "invalid_host_expectation", sample => {
+    delete sample.expected.profile_snapshot;
+  });
+  check("legacy_host_expectation_rejected", "allow", "blocked", "host_profile_snapshot_required", sample => {
+    sample.expected.protocol = "aml-locked-http-host-expected/1";
+    delete sample.expected.profile_snapshot;
+  });
   check("consent_context_substitution", "suppress", "blocked", "receipt_binding_mismatch", sample => { sample.expected.context.consent_granted = true; });
   check("intent_substitution", "allow", "blocked", "receipt_binding_mismatch", sample => { sample.expected.intent.transmission = "other"; });
   check("replayed_nonce", "allow", "blocked", "receipt_binding_mismatch", sample => { sample.expected.request_nonce = "a".repeat(64); });
@@ -122,11 +147,12 @@ try {
   const parsed = spawnSync("python3", [verifier, ...files], { encoding: "utf8", env: pythonEnv });
   assert.equal(parsed.status, 1, parsed.stderr);
   assert.equal(JSON.parse(parsed.stdout).reason, "invalid_input");
-  results.push({ id: "duplicate_json_key", status: "blocked", reason: "invalid_input" });
+  results.push({ id: "duplicate_json_key", status: "blocked", reason: "invalid_input",
+    profile_snapshot_bound: false, execution_replayed: false, render_eligible: false });
 
-  process.stdout.write(`${JSON.stringify({ protocol: "aml-locked-http-python-cross-runtime/1",
+  process.stdout.write(`${JSON.stringify({ protocol: "aml-locked-http-python-cross-runtime/2",
     passed: true, case_count: results.length, cases: results,
-    claim_boundary: "Project-authored localhost fixtures, separate Python verification of saved JSON; no external witness, network identity, or browser render proof." }, null, 2)}\n`);
+    claim_boundary: "Project-authored localhost fixtures, separate Python verification of saved signatures, profile snapshots, and declared outcomes. No AML execution replay, render authorization, external witness, network identity, or browser render proof." }, null, 2)}\n`);
 } finally {
   fs.rmSync(directory, { recursive: true, force: true });
 }
