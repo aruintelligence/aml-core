@@ -51,6 +51,9 @@ const cases = [
   { id: "flipped_decision", intent: sensitiveIntent, status: "blocked", reason: "decision_mismatch", naive: 1, verified: 0 },
   { id: "shadow_override", intent: sensitiveIntent, status: "blocked", reason: "unexpected_deployment_policy", naive: 1, verified: 0 },
   { id: "untrusted_policy_source", intent: allowedIntent, status: "blocked", reason: "unexpected_deployment_policy", naive: 1, verified: 0 },
+  { id: "duplicate_outer_key", intent: allowedIntent, status: "blocked", reason: "ambiguous_json", naive: 1, verified: 0 },
+  { id: "escaped_duplicate_outer_key", intent: allowedIntent, status: "blocked", reason: "ambiguous_json", naive: 1, verified: 0 },
+  { id: "duplicate_receipt_key", intent: allowedIntent, status: "blocked", reason: "ambiguous_json", naive: 1, verified: 0 },
   { id: "response_too_large", intent: allowedIntent, status: "blocked", reason: "response_too_large", naive: 1, verified: 0 }
 ];
 
@@ -124,7 +127,23 @@ try {
             wire.policy_source = "request_or_default";
             break;
         }
-        return new Response(JSON.stringify(wire), { status: 200 });
+        let responseText = JSON.stringify(wire);
+        if (item.id === "duplicate_outer_key") {
+          responseText = responseText.replace('"effective_allowed":true',
+            '"effective_allowed":false,"effective_allowed":true');
+        } else if (item.id === "escaped_duplicate_outer_key") {
+          responseText = responseText.replace('"effective_allowed":true',
+            String.raw`"effective_allowed":false,"effective_\u0061llowed":true`);
+        } else if (item.id === "duplicate_receipt_key") {
+          responseText = responseText.replace('"receipt":{"protocol":',
+            '"receipt":{"protocol":"forged","protocol":');
+        }
+        if (item.id.startsWith("duplicate_") || item.id === "escaped_duplicate_outer_key") {
+          assert.notEqual(responseText, JSON.stringify(wire));
+          // The deliberately unsafe host applies the usual last-key-wins parse.
+          wire = JSON.parse(responseText);
+        }
+        return new Response(responseText, { status: 200 });
       }
     });
     // An intentionally unsafe comparison host trusts the unsigned outer

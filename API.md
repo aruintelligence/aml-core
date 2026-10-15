@@ -100,13 +100,13 @@ const result = await evaluateLockedHttpAndRender({
 });
 ```
 
-The host must derive `trustedContext` and `trustedFingerprints` independently of the response. Results are `rendered`, `blocked`, or `unknown`; `unknown` means a callback was attempted and may have changed the UI before throwing. The exchange deadline does not interrupt a render callback after verification. HTTP errors, timeouts, oversized or malformed responses, missing signer trust, and invalid receipts block before rendering. The embedding application must prevent other render paths from bypassing this gate. See the [runnable signed pilot](pilots/enterprise-http-gate/README.md) and [locked service configuration](docs/LOCKED_HTTP_POLICY.md).
+The host must derive `trustedContext` and `trustedFingerprints` independently of the response. Results are `rendered`, `blocked`, or `unknown`; `unknown` means a callback was attempted and may have changed the UI before throwing. The exchange deadline does not interrupt a render callback after verification. HTTP errors, timeouts, oversized or malformed responses, missing signer trust, and invalid receipts block before rendering. The request flow also rejects duplicate object keys in the raw HTTP JSON, including differently escaped names, with `reason: "ambiguous_json"`. The embedding application must prevent other render paths from bypassing this gate. See the [runnable signed pilot](pilots/enterprise-http-gate/README.md) and [locked service configuration](docs/LOCKED_HTTP_POLICY.md).
 
 This entry point is available in the current repository package. Check the installed release before using it from a registry package; adding it to `main` does not publish a new version.
 
 ### `applyLockedHttpDecision(options)`
 
-Checks a response already obtained by the host using the same signed receipt and policy bindings. The host supplies its outstanding `requestNonce` and the HTTP status alongside its trusted inputs. Use the function above for the ordinary request flow, including nonce generation and bounded transport handling.
+Checks a response already parsed by the host using the same signed receipt and policy bindings. The host supplies its outstanding `requestNonce` and the HTTP status alongside its trusted inputs. Use the function above for the ordinary request flow, including nonce generation, rejection of ambiguous raw JSON, and bounded transport handling. A parsed object alone cannot reveal duplicate keys in its original wire bytes.
 
 ## AI Interface Firewall™
 
