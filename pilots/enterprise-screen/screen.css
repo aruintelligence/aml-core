@@ -17,6 +17,8 @@ h2 { margin: 22px 0 4px; font-size: 29px; letter-spacing: -.035em; }
 .controls p { color: #a9bdbe; line-height: 1.6; }
 button { width: 100%; display: flex; gap: 16px; align-items: center; text-align: left; margin-top: 15px; padding: 19px; color: #edf7ee; border-radius: 10px; border: 1px solid #3a5d5e; background: #153038; cursor: pointer; font: inherit; transition: background .15s, border-color .15s; }
 button:hover, button:focus-visible { background: #1b4147; border-color: #8decc5; outline: none; }
+button[hidden] { display: none; }
+button:disabled { cursor: not-allowed; opacity: .65; }
 .button-icon { color: #8decc5; font-size: 27px; width: 30px; }
 button strong, button small { display: block; }
 button small { color: #a5babb; margin-top: 5px; }

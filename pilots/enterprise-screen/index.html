@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ĀML | Signed interface gate</title>
   <link rel="stylesheet" href="/screen.css">
-  <script src="/screen.js" defer></script>
+  <script src="/screen.js" type="module"></script>
 </head>
 <body>
   <main class="shell">
@@ -19,9 +19,10 @@
       <div class="controls">
         <div class="section-label">01 / PROPOSED INTERFACE</div>
         <h2>Try both cases</h2>
-        <p>Consent is denied in the host-owned example context. The browser cannot change it.</p>
-        <button type="button" data-fixture="allowed"><span class="button-icon">↗</span><span><strong>Pricing explanation</strong><small>Purposeful, no personal data</small></span></button>
-        <button type="button" data-fixture="sensitive"><span class="button-icon">◉</span><span><strong>Personalization prompt</strong><small>Requests data without consent</small></span></button>
+        <p id="scenario-description">Consent is denied in the host-owned example context. The browser cannot change it.</p>
+        <button type="button" data-fixture="allowed" disabled><span class="button-icon">↗</span><span><strong>Pricing explanation</strong><small>Purposeful, no personal data</small></span></button>
+        <button type="button" data-fixture="sensitive" disabled><span class="button-icon">◉</span><span><strong>Personalization prompt</strong><small>Requests data without consent</small></span></button>
+        <button type="button" data-fixture="custom" disabled hidden><span class="button-icon">↗</span><span><strong>Your local proposal</strong><small>Evaluated with your host-supplied context</small></span></button>
         <p class="hint">The private signing key and service token remain in Node. This page receives only the host decision, receipt hash, and HTML after a verified allow.</p>
       </div>
       <div class="stage">
