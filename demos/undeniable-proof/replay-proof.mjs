@@ -31,6 +31,15 @@ const countdown = first.selected_render.decisions.find(item => item.identifier =
 const purchase = first.selected_render.decisions.find(item => item.identifier === "purchase_action");
 assert.equal(countdown?.render_allowed, false, "countdown pressure must be suppressed");
 assert.equal(purchase?.render_allowed, true, "ordinary purchase action must remain allowed");
+assert.match(first.selected_render.html,
+  /data-aml-identifier="countdown_pressure"[^>]*data-render-allowed="false"[^>]*hidden data-aml-suppressed="true"/,
+  "the denied node must be suppressed in the actual HTML");
+assert.match(first.selected_render.html,
+  /data-aml-identifier="purchase_action"[^>]*data-render-allowed="true"[^>]*>/,
+  "the allowed sibling must appear in the actual HTML");
+assert.doesNotMatch(first.selected_render.html,
+  /data-aml-identifier="purchase_action"[^>]*hidden data-aml-suppressed="true"/,
+  "the allowed sibling must not inherit the denied node's decision");
 
 console.log(JSON.stringify({
   proof: "PASS",

@@ -2,8 +2,11 @@
 // ĀML_CORE v1.0 — Initial HTML Generator
 // Converts AMT semantic nodes into HTML with accountability metadata.
 
+import { requiresRenderDecision } from "./renderEvaluator.js";
+
 export function generateHTML(amt, renderDecisions = []) {
-  const body = amt.root.map((node) => renderNode(node, renderDecisions)).join("\n");
+  const decisionsByNode = bindRenderDecisions(amt, renderDecisions);
+  const body = amt.root.map((node) => renderNode(node, decisionsByNode)).join("\n");
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -18,8 +21,8 @@ ${body}
 </html>`;
 }
 
-function renderNode(node, renderDecisions) {
-  const decision = findDecision(node, renderDecisions);
+function renderNode(node, decisionsByNode) {
+  const decision = decisionsByNode.get(node);
 
   const attrs = buildAttributes(node, decision);
 
@@ -31,7 +34,7 @@ function renderNode(node, renderDecisions) {
 
   if (node.type === "TransmissionNode") {
     return `<main ${attrs}>
-${renderChildren(node, renderDecisions)}
+${renderChildren(node, decisionsByNode)}
 </main>`;
   }
 
@@ -40,7 +43,7 @@ ${renderChildren(node, renderDecisions)}
 
     return `<section ${attrs}>
   <h2>${escapeHTML(value)}</h2>
-${renderChildren(node, renderDecisions)}
+${renderChildren(node, decisionsByNode)}
 </section>`;
   }
 
@@ -51,13 +54,13 @@ ${renderChildren(node, renderDecisions)}
     return `<section ${attrs}>
   <p>${escapeHTML(speak)}</p>
   <p><em>${escapeHTML(reflect)}</em></p>
-${renderChildren(node, renderDecisions)}
+${renderChildren(node, decisionsByNode)}
 </section>`;
   }
 
   if (node.type === "CoherenceGateNode") {
     return `<section ${attrs}>
-${renderChildren(node, renderDecisions)}
+${renderChildren(node, decisionsByNode)}
 </section>`;
   }
 
@@ -66,27 +69,56 @@ ${renderChildren(node, renderDecisions)}
   }
 
   return `<section ${attrs}>
-${renderChildren(node, renderDecisions)}
+${renderChildren(node, decisionsByNode)}
 </section>`;
 }
 
-function renderChildren(node, renderDecisions) {
+function renderChildren(node, decisionsByNode) {
   if (!node.children || node.children.length === 0) return "";
 
   return node.children
-    .map((child) => renderNode(child, renderDecisions))
+    .map((child) => renderNode(child, decisionsByNode))
     .filter(Boolean)
     .join("\n");
 }
 
-function findDecision(node, renderDecisions) {
-  return renderDecisions.find((decision) => {
-    return (
-      decision.identifier === node.identifier ||
-      decision.node_type === node.type ||
-      decision.purpose === node.render_metadata?.purpose
-    );
-  });
+function bindRenderDecisions(amt, renderDecisions) {
+  if (!Array.isArray(renderDecisions)) {
+    throw new TypeError("Render decisions must be an array.");
+  }
+
+  const decisionsByNode = new WeakMap();
+  let cursor = 0;
+
+  function walk(node) {
+    if (requiresRenderDecision(node)) {
+      // evaluateRenderDecisions emits one decision per eligible node in
+      // preorder. Names, types and purposes are not unique node identities.
+      const decision = renderDecisions[cursor++];
+      const metadata = node.render_metadata || {};
+      const identity = {
+        node_type: node.type,
+        name: node.name,
+        identifier: node.identifier,
+        purpose: metadata.purpose || null,
+        memory_role: metadata.memory_role || null,
+        user_effect: metadata.user_effect || null
+      };
+      if (!decision || typeof decision.render_allowed !== "boolean" ||
+          Object.entries(identity).some(([key, value]) => decision[key] !== value)) {
+        throw new Error(`Render decision does not match semantic node at index ${cursor - 1}.`);
+      }
+      decisionsByNode.set(node, decision);
+    }
+
+    for (const child of node.children || []) walk(child);
+  }
+
+  for (const node of amt.root) walk(node);
+  if (cursor !== renderDecisions.length) {
+    throw new Error("Render decisions contain entries without semantic nodes.");
+  }
+  return decisionsByNode;
 }
 
 function buildAttributes(node, decision) {

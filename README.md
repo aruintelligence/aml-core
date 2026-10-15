@@ -137,6 +137,8 @@ render_allowed = restoration_value >= attention_cost
 
 The attention/restoration scores are declared or model-supplied prototype inputs. They are **not** claimed objective measurements of cognition, wellbeing, morality, or clinical state.
 
+Run `npm run proof` to check that two same-type nodes keep separate decisions **and** that the generated HTML suppresses only the denied node. `node --test test/render-decision-binding.test.js` also covers consent and cumulative attention cases, including a receipt that verifies and replays. These are project-authored local checks; old receipts produced by the earlier renderer can pass hash verification but fail replay against the corrected renderer.
+
 If the behavior does not reproduce, that is useful evidence. Please publish **PASS / FAIL / MIXED** with enough detail for someone else to repeat your result.
 
 - [Independent verification call](https://github.com/aruintelligence/aml-core/issues/88)
