@@ -304,6 +304,49 @@ test("signed locked HTTP rejects missing or weak nonces before trusted context l
       signer: "test-host" } });
 });
 
+test("signed locked HTTP rejects ambiguous or malformed request bytes before context resolution", async () => {
+  const { privateKey } = crypto.generateKeyPairSync("ed25519");
+  const nonce = crypto.randomBytes(32).toString("hex");
+  let resolverCalls = 0;
+  await withServer(async (base) => {
+    const post = (path, body) => fetch(`${base}${path}`, { method: "POST",
+      headers: { "content-type": "application/json" }, body });
+    const cases = [
+      ["/v1/deployment/evaluate",
+        `{"intent":${JSON.stringify(intent())},"intent":${JSON.stringify(suppressedIntent())},"request_nonce":"${nonce}"}`,
+        "ambiguous_json"],
+      ["/v1/deployment/evaluate",
+        String.raw`{"intent":{"transmission":"first","\u0074ransmission":"second","nodes":[]},"request_nonce":"${nonce}"}`,
+        "ambiguous_json"],
+      ["/v1/deployment/batch",
+        `{"intents":[${JSON.stringify(intent())}],"intents":[${JSON.stringify(suppressedIntent())}],"request_nonce":"${nonce}"}`,
+        "ambiguous_json"],
+      ["/v1/deployment/evaluate",
+        Buffer.concat([Buffer.from(`{"intent":${JSON.stringify(intent())},"request_nonce":"${nonce}","note":"`),
+          Buffer.from([0xff]), Buffer.from('"}')]),
+        "invalid_json"]
+    ];
+    for (const [path, wire, reason] of cases) {
+      const response = await post(path, wire);
+      assert.equal(response.status, 400);
+      assert.deepEqual(await response.json(), { error: reason });
+      assert.equal(resolverCalls, 0);
+    }
+
+    const unicodeIntent = { ...intent(), transmission: "ĀRU 🌊" };
+    const response = await post("/v1/deployment/evaluate",
+      JSON.stringify({ intent: unicodeIntent, request_nonce: nonce }));
+    assert.equal(response.status, 200);
+    const { receipt } = await response.json();
+    assert.equal(resolverCalls, 1);
+    assert.deepEqual(receipt.intent, unicodeIntent);
+    assert.equal(receipt.request_nonce, nonce);
+    assert.equal(verifySignedExecutionReceipt(receipt).verified, true);
+  }, { locked_policy: { resolve_context: () => { resolverCalls += 1; return {}; } },
+    receipt_signing: { private_key_pem: privateKey.export({ type: "pkcs8", format: "pem" }),
+      signer: "test-host" } });
+});
+
 test("HTTP signing configuration rejects unlocked mode and non-Ed25519 keys", () => {
   const { privateKey: rsa } = crypto.generateKeyPairSync("rsa", { modulusLength: 2048 });
   assert.throws(() => createAmlHttpServer({ receipt_signing: {
