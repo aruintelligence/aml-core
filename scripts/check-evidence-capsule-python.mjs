@@ -63,7 +63,11 @@ try {
     ["small-exponent", 1e-7], ["fixed-boundary", 1e-6],
     ["negative-fraction", -0.0000015], ["negative-zero", -0],
     ["minimum-subnormal", Number.MIN_VALUE],
-    ["maximum-safe-integer", Number.MAX_SAFE_INTEGER]
+    ["maximum-safe-integer", Number.MAX_SAFE_INTEGER],
+    ["first-beyond-safe", 2 ** 53], ["rounded-large-integer", 1000000000000000100],
+    ["large-fixed", 1e20], ["large-exponent-boundary", 1e21],
+    ["large-exponent", 1e100], ["maximum-finite", Number.MAX_VALUE],
+    ["negative-large", -1e250]
   ]) {
     const numericReceipt = executeAccountableIntent({ ...intent, numeric_probe: value },
       { profile: "human_first", timestamp: "2026-10-10T00:00:00.000Z" });
@@ -77,13 +81,29 @@ try {
       rehash(tampered);
       results.push(check("signed-numeric-tampered", tampered, false, signedPolicy));
     }
+    if (name === "first-beyond-safe") {
+      const tampered = structuredClone(numericCapsule);
+      tampered.receipt.intent.numeric_probe = 2 ** 53 + 2;
+      rehash(tampered);
+      results.push(check("signed-large-number-tampered", tampered, false, signedPolicy));
+      const serialized = JSON.stringify(numericCapsule);
+      const alias = serialized.replace('"numeric_probe":9007199254740992', '"numeric_probe":9007199254740993');
+      if (alias === serialized || JSON.parse(alias).receipt.intent.numeric_probe !== value) {
+        throw new Error("Numeric alias fixture does not preserve the JavaScript Number");
+      }
+      results.push(check("signed-large-number-same-value-alias", alias, true, signedPolicy));
+      const nonFinite = serialized.replace('"numeric_probe":9007199254740992', '"numeric_probe":1e400');
+      results.push(check("signed-nonfinite-json-rejected", nonFinite, false, signedPolicy,
+        "unsupported non-finite JSON number"));
+    }
   }
-  const unsafeReceipt = executeAccountableIntent({ ...intent, numeric_probe: 2 ** 53 },
-    { profile: "human_first", timestamp: "2026-10-10T00:00:00.000Z" });
-  const unsafeSignature = signExecutionReceipt(unsafeReceipt, privateKey.export({ type: "pkcs8", format: "pem" }),
+  const largeBudgetContext = JSON.parse(fs.readFileSync("pilots/enterprise-30min/context-denied.json", "utf8"));
+  largeBudgetContext.attention_budget_remaining = 2 ** 53;
+  const largeBudgetReceipt = executeAccountableIntent(intent,
+    { profile: "human_first", context: largeBudgetContext, timestamp: "2026-10-10T00:00:00.000Z" });
+  const largeBudgetSignature = signExecutionReceipt(largeBudgetReceipt, privateKey.export({ type: "pkcs8", format: "pem" }),
     { signer: "synthetic", timestamp: "2026-10-10T01:00:00.000Z" });
-  results.push(check("signed-unsafe-integer-rejected", createEvidenceCapsule(unsafeSignature), false, signedPolicy,
-    "outside JavaScript safe range"));
+  results.push(check("signed-large-attention-budget", createEvidenceCapsule(largeBudgetSignature), true, signedPolicy));
   for (const [name, key_probe] of [
     ["array-index-keys", { "10": "ten", "2": "two", "01": "leading", "0": "zero",
       "4294967294": "last index", "4294967295": "ordinary key" }],

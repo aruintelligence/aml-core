@@ -17,7 +17,7 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-from verify_evidence_capsule import canonical, reject_constant, unique_pairs, verify as verify_capsule
+from verify_evidence_capsule import canonical, parse_js_int, reject_constant, unique_pairs, verify as verify_capsule
 
 PROTOCOL = "aml-evidence-archive/1"
 ENCODING = "canonical-json-utf8-base64/1"
@@ -42,7 +42,7 @@ def sha3(data):
 
 
 def strict_json(data):
-    return json.loads(data, object_pairs_hook=unique_pairs, parse_constant=reject_constant)
+    return json.loads(data, object_pairs_hook=unique_pairs, parse_constant=reject_constant, parse_int=parse_js_int)
 
 
 def component(archive, name, digest_name):
