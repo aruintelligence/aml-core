@@ -108,8 +108,13 @@ function mapBlockType(name) {
 
 function transformNode(node) {
   if (node.type === "Property") return { type:"MeaningProperty", name:node.name, value:node.value };
-  const properties = {};
-  for (const child of node.children || []) if (child.type === "Property") properties[child.name] = child.value;
+  const entries = new Map();
+  for (const child of node.children || []) {
+    if (child.type !== "Property") continue;
+    if (entries.has(child.name)) throw new Error(`Duplicate ĀML property "${child.name}" in ${node.name} block.`);
+    entries.set(child.name, child.value);
+  }
+  const properties = Object.fromEntries(entries);
   const base = {
     type: mapBlockType(node.name), name: node.name, identifier: node.identifier,
     children: (node.children || []).map(transformNode), properties

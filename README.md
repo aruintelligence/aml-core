@@ -151,6 +151,8 @@ Direct compilation and policy simulation now count a child hidden by a denied an
 
 Machine intent string literals now round-trip through the Node and browser parsers, including quoted text, backslashes, newlines, and Unicode escapes. Numeric literals accept finite signed/exponent notation; HTML renders zero and numeric text as declared. Intent properties that cannot be represented as scalar AML values, and non-negative numeric policy fields supplied as invalid types or values in either machine intent or authored AML, fail before evaluation. Run `node --test test/intent-literal-roundtrip.test.js` for quoted-node containment, browser parity, invalid-input rejection, and receipt replay. AML source containing backslash escapes may parse differently than under the older literal-backslash lexer; regenerate affected receipts before deterministic replay.
 
+Duplicate property declarations within one AML block now fail compilation instead of silently letting the last declaration win. The Node and browser engines agree on this rule; independent sibling blocks can use the same property names. Run `node --test test/duplicate-aml-properties.test.js` or `npm run proof` for a consent counterexample, duplicate content and score cases, and prototype-like property names. Older builds that relied on last-declaration behavior must be corrected and regenerated.
+
 If the behavior does not reproduce, that is useful evidence. Please publish **PASS / FAIL / MIXED** with enough detail for someone else to repeat your result.
 
 - [Independent verification call](https://github.com/aruintelligence/aml-core/issues/88)
