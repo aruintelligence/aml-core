@@ -147,6 +147,8 @@ Nested suppression now reaches every descendant before cumulative attention acco
 
 Suppressed HTML now emits a generic placeholder without the denied node's identifier, purpose, or other metadata; a `hidden` element is still inspectable in the DOM. The detailed decision remains in the execution receipt, which may contain sensitive input and should be shared only with authorized reviewers. Run `node --test test/suppressed-html-privacy.test.js` to check denied and allowed siblings, nested nodes, and deterministic receipt replay. Older receipts with suppressed HTML should be regenerated for deterministic replay.
 
+Direct compilation and policy simulation now count a child hidden by a denied ancestor as suppressed. Each child still receives its own policy evaluation, and an otherwise allowed child records the ancestor override in its decision rationale. The browser playground mirrors the effective allow/suppress flags for its restorative policy. Run `node --test test/hierarchical-policy-decisions.test.js` or `npm run proof` for the counterexamples. Affected older simulation and execution receipts need regeneration for deterministic replay.
+
 If the behavior does not reproduce, that is useful evidence. Please publish **PASS / FAIL / MIXED** with enough detail for someone else to repeat your result.
 
 - [Independent verification call](https://github.com/aruintelligence/aml-core/issues/88)

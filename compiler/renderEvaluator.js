@@ -2,6 +2,7 @@
 // ĀML_CORE v1.2 research surface — policy-driven Render Evaluator
 
 import { resolvePolicy } from "../runtime/policyEngine.js";
+import { suppressRenderDecisionByAncestor } from "../runtime/attentionLedger.js";
 
 // Built-in policies also read these declarations directly from node.properties.
 // A policy constraint must be evaluated even when no purpose or numeric score
@@ -22,20 +23,28 @@ export function evaluateRenderDecisions(amt, options = {}) {
   const context = options.context ?? {};
 
   for (const node of amt.root) {
-    walkNode(node, decisions, timestamp, policy, context);
+    walkNode(node, decisions, timestamp, policy, context, null);
   }
 
   return decisions;
 }
 
-function walkNode(node, decisions, timestamp, policy, context) {
+function walkNode(node, decisions, timestamp, policy, context, parentIndex) {
+  let nextParentIndex = parentIndex;
   if (requiresRenderDecision(node)) {
-    decisions.push(createRenderDecision(node, timestamp, policy, context));
+    // Every node is evaluated by the policy, then its effective visibility is
+    // bound to the nearest decision-bearing ancestor in the same preorder.
+    let decision = createRenderDecision(node, timestamp, policy, context);
+    if (parentIndex !== null && !decisions[parentIndex].render_allowed && decision.render_allowed) {
+      decision = suppressRenderDecisionByAncestor(decision, parentIndex);
+    }
+    nextParentIndex = decisions.length;
+    decisions.push(decision);
   }
 
   if (node.children && node.children.length > 0) {
     for (const child of node.children) {
-      walkNode(child, decisions, timestamp, policy, context);
+      walkNode(child, decisions, timestamp, policy, context, nextParentIndex);
     }
   }
 }
