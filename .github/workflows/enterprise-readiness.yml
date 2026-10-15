@@ -39,11 +39,20 @@ jobs:
         run: node pilots/enterprise-30min/run.mjs > "${RUNNER_TEMP}/aml-enterprise-pilot.json"
       - name: Replay and verify enterprise pilot report
         run: node pilots/enterprise-30min/verify-report.mjs "${RUNNER_TEMP}/aml-enterprise-pilot.json"
+      - name: Exercise locked HTTP host render gate
+        run: node pilots/enterprise-http-gate/run.mjs > "${RUNNER_TEMP}/aml-enterprise-http-gate.json"
       - name: Upload enterprise pilot evidence
         uses: actions/upload-artifact@v4
         with:
           name: aml-enterprise-pilot-${{ github.sha }}
           path: ${{ runner.temp }}/aml-enterprise-pilot.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload local HTTP gate evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-enterprise-http-gate-${{ github.sha }}
+          path: ${{ runner.temp }}/aml-enterprise-http-gate.json
           if-no-files-found: error
           retention-days: 30
       - name: Upload SBOM artifact
