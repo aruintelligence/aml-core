@@ -44,6 +44,7 @@ export function appendAuditEvent(stream, event, options = {}) {
 
 export function verifyAuditStream(stream) {
   if (!stream || stream.protocol !== "ĀML Runtime Audit Stream") throw new Error("Invalid ĀML runtime audit stream.");
+  if (!Array.isArray(stream.entries)) throw new Error("ĀML runtime audit entries must be an array.");
   const checks = [];
   let previous = null;
   for (let i = 0; i < stream.entries.length; i++) {

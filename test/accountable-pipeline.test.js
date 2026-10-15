@@ -198,6 +198,36 @@ test("receipt verification rejects re-hashed audit verification flag mismatch", 
   assert.equal(verification.verified, false);
 });
 
+test("receipt verification and signing require present audit and attention evidence", () => {
+  const { privateKey } = crypto.generateKeyPairSync("ed25519");
+  const pem = privateKey.export({ type: "pkcs8", format: "pem" });
+  for (const [field, validity] of [
+    ["runtime_audit_stream", "audit_stream_valid"],
+    ["attention_ledger", "attention_ledger_valid"]
+  ]) {
+    const receipt = freshReceipt();
+    delete receipt[field];
+    refreshOuterReceiptHash(receipt);
+    const verification = verifyExecutionReceipt(receipt);
+    assert.equal(verification.receipt_hash_valid, true);
+    assert.equal(verification[validity], false);
+    assert.equal(verification.verified, false);
+    assert.throws(() => signExecutionReceipt(receipt, pem), /invalid ĀML execution receipt/);
+  }
+});
+
+test("receipt verification rejects a non-array audit even when its hashes are refreshed", () => {
+  const receipt = freshReceipt();
+  receipt.runtime_audit_stream.entries = "";
+  receipt.audit_stream_sha256 = sha256(receipt.runtime_audit_stream);
+  refreshOuterReceiptHash(receipt);
+
+  const verification = verifyExecutionReceipt(receipt);
+  assert.equal(verification.receipt_hash_valid, true);
+  assert.equal(verification.audit_stream_valid, false);
+  assert.equal(verification.verified, false);
+});
+
 test("receipt verification rejects a structurally invalid ledger even when its hashes are refreshed", () => {
   const receipt = freshReceipt();
   const entry = receipt.attention_ledger.entries[0];

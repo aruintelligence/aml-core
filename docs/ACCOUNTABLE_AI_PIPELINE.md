@@ -35,6 +35,7 @@ The resulting execution receipt binds together:
 - counterfactual policy simulations
 - selected composed-policy decision
 - final browser output
+- hash-chained runtime audit stream and cumulative attention ledger
 - SHA-256 hashes for each major stage
 - optional Ed25519 signature
 
@@ -73,7 +74,7 @@ That makes policy differences inspectable instead of silently embedding them in 
 
 ## Receipt integrity
 
-`receipt_sha256` covers the unsigned execution receipt. A mutation to intent, context, simulations, decisions, AML source, or output causes `verifyExecutionReceipt()` to fail.
+`receipt_sha256` covers the unsigned execution receipt. A mutation to intent, context, simulations, decisions, AML source, or output causes `verifyExecutionReceipt()` to fail. Verification also requires the runtime audit stream and attention ledger and checks their hashes and structure. Recalculating an outer receipt hash cannot make missing evidence or a non-array audit pass.
 
 The receipt can additionally be signed with Ed25519, providing a detached identity/attestation layer on top of content integrity. Signing rejects RSA and EC private keys, and verification requires an actual Ed25519 public key and one canonical 64-byte Ed25519 signature encoding. A trusted fingerprint still has to come from outside the receipt.
 

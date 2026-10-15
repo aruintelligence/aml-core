@@ -126,9 +126,9 @@ export function verifyExecutionReceipt(receipt) {
   const outputHashValid = typeof receipt.selected_render?.html === "string" && sha256(receipt.selected_render.html) === receipt.output_sha256;
   const selectedRenderCountsValid = decisions !== null && Number.isInteger(receipt.selected_render?.allowed) && Number.isInteger(receipt.selected_render?.suppressed) && receipt.selected_render.allowed === decisions.filter(item => item?.render_allowed).length && receipt.selected_render.suppressed === decisions.filter(item => !item?.render_allowed).length;
 
-  let audit = { verified: true };
-  let auditHashValid = true;
-  let runtimeAuditFlagValid = true;
+  let audit = { verified: false };
+  let auditHashValid = false;
+  let runtimeAuditFlagValid = false;
   if (receipt.runtime_audit_stream) {
     try {
       audit = verifyAuditStream(receipt.runtime_audit_stream);
@@ -141,8 +141,8 @@ export function verifyExecutionReceipt(receipt) {
     }
   }
 
-  let ledgerHashValid = true;
-  let ledgerStructureValid = true;
+  let ledgerHashValid = false;
+  let ledgerStructureValid = false;
   if (receipt.attention_ledger) {
     try {
       ledgerHashValid = sha256(receipt.attention_ledger) === receipt.attention_ledger_sha256;

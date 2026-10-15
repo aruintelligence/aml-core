@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/aruintelligence/aml-core/blob/main/schema/execution-receipt.schema.json",
   "title": "ĀML Accountable Execution Receipt",
-  "description": "Machine-readable contract for intent-to-render accountability receipts emitted by the ĀML v1.2 research pipeline.",
+  "description": "Machine-readable contract for intent-to-render accountability receipts emitted by the ĀML pipeline. Runtime audit and attention evidence must be present for verification.",
   "type": "object",
   "additionalProperties": true,
   "required": [
@@ -14,11 +14,16 @@
     "intent_sha256",
     "aml_sha256",
     "simulation_sha256",
+    "audit_stream_sha256",
+    "attention_ledger_sha256",
     "output_sha256",
     "decision_sha256",
     "intent",
     "aml_source",
     "simulations",
+    "runtime_audit_stream",
+    "runtime_audit_verified",
+    "attention_ledger",
     "selected_render",
     "receipt_sha256"
   ],
@@ -39,12 +44,31 @@
     "intent_sha256": { "$ref": "#/$defs/sha256" },
     "aml_sha256": { "$ref": "#/$defs/sha256" },
     "simulation_sha256": { "$ref": "#/$defs/sha256" },
+    "audit_stream_sha256": { "$ref": "#/$defs/sha256" },
+    "attention_ledger_sha256": { "$ref": "#/$defs/sha256" },
     "output_sha256": { "$ref": "#/$defs/sha256" },
     "decision_sha256": { "$ref": "#/$defs/sha256" },
     "receipt_sha256": { "$ref": "#/$defs/sha256" },
     "intent": { "type": "object" },
     "aml_source": { "type": "string" },
     "simulations": { "type": "object" },
+    "runtime_audit_stream": {
+      "type": "object",
+      "required": ["protocol", "entries"],
+      "properties": {
+        "protocol": { "const": "ĀML Runtime Audit Stream" },
+        "entries": { "type": "array" }
+      }
+    },
+    "runtime_audit_verified": { "type": "boolean" },
+    "attention_ledger": {
+      "type": "object",
+      "required": ["protocol", "entries"],
+      "properties": {
+        "protocol": { "const": "ĀML Attention Ledger" },
+        "entries": { "type": "array" }
+      }
+    },
     "selected_render": {
       "type": "object",
       "required": ["policy_id", "allowed", "suppressed", "decisions", "html"],

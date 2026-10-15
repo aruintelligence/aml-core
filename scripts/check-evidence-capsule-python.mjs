@@ -42,8 +42,7 @@ function receiptWithLedger(base, ledger) {
   return updated;
 }
 
-function resign(receipt, privateKey) {
-  receipt.attention_ledger_sha256 = hashValue(receipt.attention_ledger);
+function signModifiedReceipt(receipt, privateKey) {
   const payload = { ...receipt };
   delete payload.receipt_sha256;
   delete payload.signature;
@@ -52,6 +51,11 @@ function resign(receipt, privateKey) {
   const material = { protocol: "ĀML Execution Receipt Attestation", version: "1.1", algorithm: "Ed25519",
     receipt_sha256: receipt.receipt_sha256, signer: signature.signer, signed_at: signature.signed_at };
   signature.signature_base64 = crypto.sign(null, Buffer.from(stableStringify(material)), privateKey).toString("base64");
+}
+
+function resign(receipt, privateKey) {
+  receipt.attention_ledger_sha256 = hashValue(receipt.attention_ledger);
+  signModifiedReceipt(receipt, privateKey);
 }
 
 function check(name, content, expected, policy = null, reasonIncludes = null, expectedChecks = null) {
@@ -96,6 +100,24 @@ try {
   const signedPolicy = { trusted_receipt_fingerprints: [signed.signature.public_key_sha256] };
   results.push(check("signed-external-trust-required", signedCapsule, false));
   results.push(check("signed-valid", signedCapsule, true, signedPolicy));
+  for (const field of ["runtime_audit_stream", "attention_ledger"]) {
+    const omitted = structuredClone(signedCapsule);
+    delete omitted.receipt[field];
+    signModifiedReceipt(omitted.receipt, privateKey);
+    omitted.summary.receipt_sha256 = omitted.receipt.receipt_sha256;
+    rehash(omitted);
+    if (verifyEvidenceCapsule(omitted).verified) throw new Error(`JavaScript accepted a receipt missing ${field}`);
+    results.push(check(`signed-missing-${field}-rejected`, omitted, false, signedPolicy, field));
+  }
+  const nonArrayAudit = structuredClone(signedCapsule);
+  nonArrayAudit.receipt.runtime_audit_stream.entries = "";
+  nonArrayAudit.receipt.audit_stream_sha256 = hashValue(nonArrayAudit.receipt.runtime_audit_stream);
+  signModifiedReceipt(nonArrayAudit.receipt, privateKey);
+  nonArrayAudit.summary.receipt_sha256 = nonArrayAudit.receipt.receipt_sha256;
+  rehash(nonArrayAudit);
+  if (verifyEvidenceCapsule(nonArrayAudit).verified) throw new Error("JavaScript accepted non-array audit entries");
+  results.push(check("signed-non-array-audit-rejected", nonArrayAudit, false, signedPolicy,
+    null, { receipt_hash: true, audit: false, signature: true, summary: true }));
   const alteredEncoding = structuredClone(signedCapsule);
   alteredEncoding.receipt.signature.signature_base64 += "!!!!";
   rehash(alteredEncoding);

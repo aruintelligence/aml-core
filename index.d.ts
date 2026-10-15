@@ -63,9 +63,14 @@ export interface ExecutionReceipt {
   context: AmlContext;
   intent_sha256: string;
   aml_sha256: string;
+  audit_stream_sha256: string;
+  attention_ledger_sha256: string;
   output_sha256: string;
   receipt_sha256: string;
   intent: AmlIntent;
+  runtime_audit_stream: { protocol: "ĀML Runtime Audit Stream"; entries: unknown[]; [key: string]: unknown };
+  runtime_audit_verified: boolean;
+  attention_ledger: { protocol: "ĀML Attention Ledger"; entries: unknown[]; [key: string]: unknown };
   selected_render: {
     policy_id: string;
     allowed: number;
