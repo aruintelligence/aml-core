@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { randomBytes } from "node:crypto";
+import { createHash, generateKeyPairSync, randomBytes } from "node:crypto";
 import fs from "node:fs";
 import { once } from "node:events";
 import { createAmlHttpServer } from "../../server/httpServer.js";
+import { signExecutionReceipt } from "../../compiler/accountablePipeline.js";
 import { getSourceState } from "../enterprise-30min/source-state.mjs";
 import { applyVerifiedDecision, evaluateAndGate } from "./host-gate.mjs";
 
@@ -12,8 +13,15 @@ const sensitiveIntent = load("intent-sensitive.json");
 const context = load("context-denied.json");
 const profile = "human_first";
 const token = randomBytes(32).toString("hex");
+// Ephemeral demonstration key. Real hosts provision private keys and pin the
+// trusted public fingerprint through a separate, reviewed configuration path.
+const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+const privateKeyPem = privateKey.export({ type: "pkcs8", format: "pem" });
+const trustedReceiptFingerprints = [createHash("sha256")
+  .update(publicKey.export({ type: "spki", format: "der" })).digest("hex")];
 const server = createAmlHttpServer({ request_auth: { bearer_token: token },
-  locked_policy: { profile, mode: "enforce", failure_mode: "closed", context } });
+  locked_policy: { profile, mode: "enforce", failure_mode: "closed", context },
+  receipt_signing: { private_key_pem: privateKeyPem, signer: "local-pilot" } });
 
 server.listen(0, "127.0.0.1");
 await once(server, "listening");
@@ -21,25 +29,28 @@ const url = `http://127.0.0.1:${server.address().port}/v1/deployment/evaluate`;
 const renderLog = [];
 const render = async (html) => { renderLog.push(html); };
 const request = async (intent, override = {}) => {
+  const requestNonce = randomBytes(32).toString("hex");
   const response = await fetch(url, { method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-    body: JSON.stringify({ intent, ...override }) });
-  return { httpStatus: response.status, body: await response.json() };
+    body: JSON.stringify({ intent, request_nonce: requestNonce, ...override }) });
+  return { httpStatus: response.status, body: await response.json(), requestNonce };
 };
 const gate = (response, intent, callback = render) => applyVerifiedDecision({
-  ...response, intent, profile, context, render: callback
+  ...response, intent, profile, context, trustedReceiptFingerprints, render: callback
 });
 const cases = [];
 
 try {
-  const allowed = await evaluateAndGate({ url, token, intent: allowedIntent, profile, context, render });
+  const allowed = await evaluateAndGate({ url, token, intent: allowedIntent, profile, context,
+    trustedReceiptFingerprints, render });
   cases.push({ id: "verified_allow", ...allowed });
   assert.equal(allowed.status, "rendered");
   assert.equal(renderLog.length, 1);
   assert.ok(typeof renderLog[0] === "string" && renderLog[0].length > 0);
 
   const allowedResponse = await request(allowedIntent);
-  const sensitive = await evaluateAndGate({ url, token, intent: sensitiveIntent, profile, context, render });
+  const sensitive = await evaluateAndGate({ url, token, intent: sensitiveIntent, profile, context,
+    trustedReceiptFingerprints, render });
   cases.push({ id: "consent_suppression", ...sensitive });
   assert.deepEqual([sensitive.status, sensitive.reason, renderLog.length], ["blocked", "policy_suppressed", 1]);
 
@@ -50,6 +61,25 @@ try {
   const changedReceipt = await gate(tampered, allowedIntent);
   cases.push({ id: "changed_receipt", ...changedReceipt });
   assert.deepEqual([changedReceipt.status, changedReceipt.reason, renderLog.length], ["blocked", "receipt_invalid", 1]);
+
+  const unsigned = structuredClone(allowedResponse);
+  delete unsigned.body.receipt.signature;
+  const noSignature = await gate(unsigned, allowedIntent);
+  cases.push({ id: "unsigned_receipt", ...noSignature });
+  assert.deepEqual([noSignature.status, noSignature.reason, renderLog.length], ["blocked", "receipt_invalid", 1]);
+
+  const foreign = structuredClone(allowedResponse);
+  const otherKey = generateKeyPairSync("ed25519").privateKey.export({ type: "pkcs8", format: "pem" });
+  foreign.body.receipt = signExecutionReceipt(foreign.body.receipt, otherKey, { signer: "untrusted" });
+  const foreignSignature = await gate(foreign, allowedIntent);
+  cases.push({ id: "untrusted_signer", ...foreignSignature });
+  assert.deepEqual([foreignSignature.status, foreignSignature.reason, renderLog.length],
+    ["blocked", "receipt_untrusted", 1]);
+
+  const replay = await gate({ ...allowedResponse, requestNonce: randomBytes(32).toString("hex") }, allowedIntent);
+  cases.push({ id: "receipt_replay_other_nonce", ...replay });
+  assert.deepEqual([replay.status, replay.reason, renderLog.length],
+    ["blocked", "receipt_binding_mismatch", 1]);
 
   const swapped = await gate(allowedResponse, sensitiveIntent);
   cases.push({ id: "valid_receipt_for_other_intent", ...swapped });
@@ -76,11 +106,13 @@ try {
     [403, "policy_override_forbidden", "blocked", 1]);
 
   const invalidIntent = { transmission: "invalid", nodes: [{ type: "not a valid type", properties: {} }] };
-  const invalid = await evaluateAndGate({ url, token, intent: invalidIntent, profile, context, render });
+  const invalid = await evaluateAndGate({ url, token, intent: invalidIntent, profile, context,
+    trustedReceiptFingerprints, render });
   cases.push({ id: "evaluation_error", ...invalid });
   assert.deepEqual([invalid.status, invalid.reason, renderLog.length], ["blocked", "http_evaluation_unavailable", 1]);
 
-  const outage = await evaluateAndGate({ url, token, intent: allowedIntent, profile, context, render,
+  const outage = await evaluateAndGate({ url, token, intent: allowedIntent, profile, context,
+    trustedReceiptFingerprints, render,
     fetchImpl: async () => { throw new Error("simulated connection loss"); } });
   cases.push({ id: "transport_failure", ...outage });
   assert.deepEqual([outage.status, outage.reason, renderLog.length], ["blocked", "transport_or_response_error", 1]);

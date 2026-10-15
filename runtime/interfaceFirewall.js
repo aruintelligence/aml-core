@@ -21,7 +21,8 @@ export function createInterfaceFirewall(options = {}) {
         profile: selectedProfile,
         context,
         timestamp: runOptions.timestamp,
-        stream_id: runOptions.stream_id
+        stream_id: runOptions.stream_id,
+        request_nonce: runOptions.request_nonce
       });
       const compilation = compileSource(receipt.aml_source, {
         timestamp: runOptions.timestamp,

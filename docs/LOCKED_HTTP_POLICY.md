@@ -41,6 +41,24 @@ const server = createAmlHttpServer({
 
 `lookupAuthenticatedSession` is an application function, not an ĀML API. A static `context` object may be configured instead of `resolve_context`; the two are mutually exclusive. The server snapshots static context at startup. A resolver error, timeout, or invalid result returns `503 trusted_context_unavailable` without using caller-supplied context. The resolver deadline defaults to 5000 ms for all three gateways; `resolve_context_timeout_ms` must be a positive safe integer. A deadline aborts the optional `{ signal }` passed to the callback. Forward it to cancellable database/network operations. A callback that ignores the signal can continue its own work after the HTTP response ends.
 
+## Opt-in signed HTTP receipts
+
+A digest alone does not authenticate a response producer: someone who can replace a receipt can compute a new digest. For the locked main HTTP service, configure `receipt_signing` with a host-owned Ed25519 private key and signer label:
+
+```js
+const server = createAmlHttpServer({
+  locked_policy: { profile: "human_first", mode: "enforce", failure_mode: "closed",
+    resolve_context: trustedContextResolver },
+  request_auth: { bearer_token: process.env.AML_API_TOKEN },
+  receipt_signing: { private_key_pem: process.env.AML_RECEIPT_PRIVATE_KEY_PEM,
+    signer: "my-service" }
+});
+```
+
+The key must be supplied privately by the embedding host; this example does not provision or publish one. Signing requires `locked_policy` and a valid Ed25519 private key at server startup. Clients must send a new, unpredictable 32-byte nonce encoded as 64 lowercase hexadecimal characters in `request_nonce` alongside `intent` or `intents`. Missing or malformed nonces return HTTP 400 before trusted context resolution. Successful single and batch evaluations bind the nonce into each receipt hash and attach a v1.1 Ed25519 signature. Signing failure returns HTTP 503 with no evaluation receipt.
+
+The host should verify the signature **and** match its public-key fingerprint against a trust list provisioned outside the response, then match `receipt.request_nonce` to its outstanding request. It must also bind the receipt to the intended input, profile, context, and effective decision. [`pilots/enterprise-http-gate`](../pilots/enterprise-http-gate/README.md) runs that flow locally. A new nonce blocks replay of an old response into another request; this stateless service cannot stop a host that reuses a nonce or allows another render path around its gate. Plan key rotation and revocation, protect the private key, and use TLS and host authorization in a real deployment. This option signs only deployment evaluation and batch receipts on the main HTTP service; it does not sign `/v1/evaluate`, Agent UI, or governance stream responses.
+
 In locked mode, `POST /v1/deployment/evaluate` and `/v1/deployment/batch` return `policy_source: "server"`. The batch ceiling comes from `max_batch_items` (default 100). Caller attempts to supply `max_items`, `timestamp`, `stream_id`, `stream_ids`, `profile`, `mode`, `failure_mode`, or `context` are rejected. Each locked single evaluation and each locked batch item receives a fresh server-generated audit stream UUID, including repeated identical intents in one batch. The ID distinguishes evaluation records; it does not authenticate a caller or prove that declared intent is truthful. Direct `evaluateInterfaceBatch` calls remain deterministic with fixed inputs and time unless the trusted host supplies a unique `stream_ids` array with one nonempty ID per intent. `POST /v1/evaluate` and `/v1/deployment/canary` are disabled in this mode. Receipt and witness verification endpoints remain available.
 
 With or without `locked_policy`, the HTTP service applies the configured server-owned batch ceiling before resolving trusted context or evaluating intents. Oversized batches return HTTP 413 with `batch_limit_exceeded`. A caller cannot raise the unlocked ceiling with `max_items`; configure `max_batch_items` on `createAmlHttpServer` to change that ceiling (default 100). Locked mode uses its own `locked_policy.max_batch_items` (default 100). The Agent UI gateway separately limits an envelope to 256 components by default; set `max_components` on `createAgentUiGateway` for a different server-owned limit. Oversized Agent UI envelopes return HTTP 413.

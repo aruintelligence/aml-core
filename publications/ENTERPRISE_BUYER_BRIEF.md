@@ -32,7 +32,7 @@ What not to assume:
 30-minute pilot:
 https://github.com/aruintelligence/aml-core/tree/main/pilots/enterprise-30min
 
-Local HTTP render gate pilot (ten asserted outcomes, including tampering and service failure):
+Local signed HTTP render gate pilot (thirteen asserted outcomes, including tampering, untrusted signers, replay, and service failure):
 https://github.com/aruintelligence/aml-core/tree/main/pilots/enterprise-http-gate
 
 Partnership/OEM inquiries: Office@aruintelligence.com

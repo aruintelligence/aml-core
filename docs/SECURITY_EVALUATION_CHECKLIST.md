@@ -25,6 +25,7 @@ Verify:
 - capability boundaries cannot be expanded by untrusted interface content;
 - administrative actions require appropriate privilege;
 - signed capability/authorization artifacts are validated against the intended trust roots;
+- signed execution receipts are validated against host-pinned, separately provisioned trust roots and a fresh request challenge when used to gate rendering;
 - revocation behavior is defined and tested.
 
 Do not treat a render decision as an authorization decision unless the surrounding system explicitly and safely defines that contract.

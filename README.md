@@ -222,6 +222,8 @@ flowchart LR
 
 Run the [30-minute enterprise pilot](pilots/enterprise-30min/README.md) to generate a decision report with full receipts, declared fixture hashes, three asserted outcomes, deterministic replay, and a tamper-rejection check. The CI workflow saves the report for review. This is project-authored evidence, with explicit deployment and claim boundaries.
 
+The [signed HTTP render gate pilot](pilots/enterprise-http-gate/README.md) runs the locked service locally and gates a host callback on a nonce-bound receipt from a pinned Ed25519 key. Thirteen asserted outcomes include an untrusted signer and a replayed response. It remains a project-authored local integration exercise.
+
 ### 2. Put it in front of an existing interface
 
 Zero-install custom element:

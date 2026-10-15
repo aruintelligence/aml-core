@@ -17,8 +17,10 @@ import {
   generateAMLFromIntent,
   policyDiff,
   semanticDiff,
+  signExecutionReceipt,
   simulatePolicies,
   verifyExecutionReceipt,
+  verifySignedExecutionReceipt,
   viewMeaning,
   type AmlIntent
 } from "aml-core";
@@ -83,6 +85,13 @@ createAmlHttpServer({ request_auth: async (_req, { signal }) => !signal.aborted 
 // Keep expected type errors in the compiler's view without executing invalid
 // calls when newer Node versions discover this .mts fixture under --test.
 if (false) {
+  const signed = signExecutionReceipt(receipt, "private key PEM", { signer: "consumer" });
+  const fingerprint: string = signed.signature.public_key_sha256;
+  const attributionBound: boolean = verifySignedExecutionReceipt(signed).attribution_bound;
+  createAmlHttpServer({ locked_policy: { profile: "human_first" }, receipt_signing: {
+    private_key_pem: "private key PEM", signer: "consumer"
+  } });
+  void [fingerprint, attributionBound];
   // @ts-expect-error the runtime session exposes accept(), never handle().
   session.handle({ protocol: AML_GOVERNANCE_STREAM_FINALIZE });
   // @ts-expect-error a caller cannot select an unknown deployment mode.
