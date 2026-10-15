@@ -5,7 +5,7 @@ export type AmlContext = Record<string, unknown>;
 export interface AmlIntentNode {
   type: string;
   identifier?: string;
-  properties?: Record<string, unknown>;
+  properties?: Record<string, string | number | boolean>;
   children?: AmlIntentNode[];
 }
 

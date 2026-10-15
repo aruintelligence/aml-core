@@ -15,6 +15,7 @@ const POLICY_DECLARATIONS = [
   "contrast_safe",
   "cognitive_load"
 ];
+const NUMERIC_POLICY_FIELDS = ["attention_cost", "restoration_value", "cognitive_load"];
 
 export function evaluateRenderDecisions(amt, options = {}) {
   const decisions = [];
@@ -30,6 +31,13 @@ export function evaluateRenderDecisions(amt, options = {}) {
 }
 
 function walkNode(node, decisions, timestamp, policy, context, parentIndex) {
+  for (const key of NUMERIC_POLICY_FIELDS) {
+    const value = node.properties?.[key];
+    if (Object.hasOwn(node.properties || {}, key) &&
+        (typeof value !== "number" || !Number.isFinite(value) || value < 0)) {
+      throw new TypeError(`property ${key} must be a non-negative finite number.`);
+    }
+  }
   let nextParentIndex = parentIndex;
   if (requiresRenderDecision(node)) {
     // Every node is evaluated by the policy, then its effective visibility is

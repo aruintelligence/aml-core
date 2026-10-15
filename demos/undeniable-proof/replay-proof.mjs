@@ -104,6 +104,22 @@ assert.deepEqual(directNested.renderDecisions.map(item => item.render_allowed),
 assert.equal(verifyExecutionReceipt(nested).verified, true);
 assert.equal(replayExecutionReceipt(nested).verified, true);
 
+const literalIntent = { transmission: 'quoted "review"', nodes: [
+  { type: "engram", identifier: 'card "A"', properties: {
+    value: 'Stay with "plan A"\n<draft>', purpose: "Explain the choice",
+    attention_cost: 1e-7, restoration_value: 1
+  } }
+] };
+const literalReceipt = executeAccountableIntent(literalIntent, options);
+assert.equal(literalReceipt.selected_render.decisions[0].identifier, 'card "A"');
+assert.equal(literalReceipt.selected_render.decisions[0].attention_cost, 1e-7);
+assert.match(literalReceipt.selected_render.html, /Stay with &quot;plan A&quot;\n&lt;draft&gt;/);
+assert.equal(verifyExecutionReceipt(literalReceipt).verified, true);
+assert.equal(replayExecutionReceipt(literalReceipt).verified, true);
+assert.throws(() => executeAccountableIntent({ transmission: "invalid_score", nodes: [
+  { type: "engram", properties: { attention_cost: NaN } }
+] }, options), /property attention_cost must be a non-negative finite number/);
+
 console.log(JSON.stringify({
   proof: "PASS",
   receipt_sha256: first.receipt_sha256,
@@ -124,5 +140,8 @@ console.log(JSON.stringify({
     allowed: nested.selected_render.allowed,
     consumed: nested.attention_ledger.consumed,
     replay_verified: true
-  }
+  },
+  literal_roundtrip: { receipt_sha256: literalReceipt.receipt_sha256,
+    attention_cost: literalReceipt.selected_render.decisions[0].attention_cost,
+    replay_verified: true, nonfinite_score_rejected: true }
 }, null, 2));

@@ -21,14 +21,28 @@ export function tokenize(source) {
     if ([">","<","=","!"].includes(ch)) { const l=line,c=column; let value=advance(); if (peek()==="=") value += advance(); add("OPERATOR", value, l, c); continue; }
     if (ch === '"') {
       const l = line, c = column; let value = ""; advance();
-      while (i < source.length && peek() !== '"') value += advance();
+      while (i < source.length && peek() !== '"') {
+        if (peek() !== "\\") { value += advance(); continue; }
+        advance();
+        const escaped = advance();
+        const escapes = { '"': '"', "\\": "\\", "/": "/", b: "\b", f: "\f", n: "\n", r: "\r", t: "\t" };
+        if (escaped === "u") {
+          let hex = "";
+          for (let digit = 0; digit < 4; digit++) hex += advance() ?? "";
+          if (!/^[0-9a-fA-F]{4}$/.test(hex)) throw new Error(`Invalid unicode escape at line ${l}, column ${c}`);
+          value += String.fromCharCode(parseInt(hex, 16));
+        } else if (Object.hasOwn(escapes, escaped)) value += escapes[escaped];
+        else throw new Error(`Invalid string escape at line ${l}, column ${c}`);
+      }
       if (peek() !== '"') throw new Error(`Unterminated string at line ${l}, column ${c}`);
       advance(); add("STRING", value, l, c); continue;
     }
-    if (/[0-9]/.test(ch)) {
-      const l = line, c = column; let value = "";
-      while (i < source.length && /[0-9.]/.test(peek())) value += advance();
-      add("NUMBER", Number(value), l, c); continue;
+    if (/[0-9-]/.test(ch)) {
+      const l = line, c = column;
+      const literal = source.slice(i).match(/^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?/)?.[0];
+      if (!literal || !Number.isFinite(Number(literal))) throw new Error(`Invalid number at line ${l}, column ${c}`);
+      for (let digit = 0; digit < literal.length; digit++) advance();
+      add("NUMBER", Number(literal), l, c); continue;
     }
     if (/[A-Za-z_Āā]/.test(ch)) {
       const l = line, c = column; let value = "";
@@ -148,10 +162,18 @@ export function evaluateRenderDecisions(amt) {
   const decisions = [];
   const policyDeclarations = ["consent_required", "collects_personal_data", "motion_required",
     "reduced_motion_alternative", "contrast_safe", "cognitive_load"];
+  const numericPolicyFields = ["attention_cost", "restoration_value", "cognitive_load"];
   const walk = (node, parentIndex) => {
     let nextParentIndex = parentIndex;
     const m = node.render_metadata || {};
     const properties = node.properties || {};
+    for (const key of numericPolicyFields) {
+      const value = properties[key];
+      if (Object.hasOwn(properties, key) &&
+          (typeof value !== "number" || !Number.isFinite(value) || value < 0)) {
+        throw new TypeError(`property ${key} must be a non-negative finite number.`);
+      }
+    }
     const explicitPolicy = m.purpose || m.memory_role || m.user_effect ||
       typeof m.attention_cost === "number" || typeof m.restoration_value === "number" ||
       policyDeclarations.some(key => Object.hasOwn(properties, key));

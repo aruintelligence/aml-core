@@ -26,6 +26,7 @@ Filesystem compiler. Writes browser output and accountability artifacts.
 
 ### `generateAMLFromIntent(intent)`
 Deterministically translates constrained machine-readable intent into AML source.
+The optional transmission and node identifiers are strings; node properties are strings, finite numbers, or booleans. `attention_cost`, `restoration_value`, and `cognitive_load` must be non-negative finite numbers when supplied, including in directly authored AML source. Unsupported values are rejected before policy evaluation. Quoted AML literals use JSON-style escapes for quotes, backslashes, newlines, and Unicode; a quoted identifier or property value stays within its node even if it contains AML punctuation.
 
 ### `semanticDiff(leftSource, rightSource)`
 Compares Abstract Meaning Trees rather than raw text lines.

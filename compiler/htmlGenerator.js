@@ -41,7 +41,7 @@ ${renderChildren(node, decisionsByNode)}
   }
 
   if (node.type === "EngramNode") {
-    const value = node.properties?.value || node.identifier || "Engram";
+    const value = node.properties?.value ?? node.identifier ?? "Engram";
 
     return `<section ${attrs}>
   <h2>${escapeHTML(value)}</h2>
@@ -50,8 +50,8 @@ ${renderChildren(node, decisionsByNode)}
   }
 
   if (node.type === "MirrorNode") {
-    const speak = node.properties?.speak || "";
-    const reflect = node.properties?.reflect || "";
+    const speak = node.properties?.speak ?? "";
+    const reflect = node.properties?.reflect ?? "";
 
     return `<section ${attrs}>
   <p>${escapeHTML(speak)}</p>
@@ -143,7 +143,7 @@ function buildAttributes(node, decision) {
 }
 
 function escapeHTML(value) {
-  return value
+  return String(value)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
