@@ -19,6 +19,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python signature verification dependency
+        run: python -m pip install 'cryptography>=42,<51'
       - name: Verify protected API surface
         run: npm run api:stability
       - name: Verify upgrade contract
@@ -43,6 +49,8 @@ jobs:
         run: node pilots/enterprise-http-gate/run.mjs > "${RUNNER_TEMP}/aml-enterprise-http-gate.json"
       - name: Challenge signed gate with altered HTTP responses
         run: node pilots/enterprise-http-gate/adversarial.mjs --seed 0123456789abcdef0123456789abcdef > "${RUNNER_TEMP}/aml-signed-gate-adversarial.json"
+      - name: Verify captured locked HTTP responses in Python
+        run: node scripts/check-http-exchange-python.mjs > "${RUNNER_TEMP}/aml-locked-http-python.json"
       - name: Exercise localhost screen host and suppression
         run: node --test test/enterprise-screen.test.js
       - name: Upload enterprise pilot evidence
@@ -64,6 +72,13 @@ jobs:
         with:
           name: aml-signed-gate-adversarial-${{ github.sha }}
           path: ${{ runner.temp }}/aml-signed-gate-adversarial.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload cross-runtime HTTP verification report
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-locked-http-python-${{ github.sha }}
+          path: ${{ runner.temp }}/aml-locked-http-python.json
           if-no-files-found: error
           retention-days: 30
       - name: Upload SBOM artifact
