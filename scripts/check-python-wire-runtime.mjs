@@ -57,9 +57,41 @@ try {
   assert.equal(validateWireEnvelope(badEnvelope).valid, false);
   verify("envelope", "bad-envelope", badEnvelope, false);
   verify("envelope", "expired-envelope", envelope, false, ["--now", "2030-01-02T00:00:00Z"]);
-  const extraEnvelope = { ...envelope, unregistered_field: true };
-  assert.equal(validateWireEnvelope(extraEnvelope).valid, true);
-  assert.equal(verify("envelope", "extra-envelope", extraEnvelope, false).reason, "invalid_structure");
+  const envelopeCases = [
+    ["valid-offset", {}, null, { now: "2030-01-01T11:00:00-01:00" }],
+    ["valid-empty-caps", { capabilities: [] }, null],
+    ["extra-field", { unregistered_field: true }, "invalid_structure"],
+    ["missing-payload", { payload: undefined }, "invalid_structure"],
+    ["missing-caps", { capabilities: undefined }, "invalid_structure"],
+    ["duplicate-capability", { capabilities: ["policy-passports", "policy-passports"] }, "invalid_capabilities"],
+    ["numeric-capability", { capabilities: [1] }, "invalid_capabilities"],
+    ["non-array-capabilities", { capabilities: "policy-passports" }, "invalid_capabilities"],
+    ["numeric-kind", { kind: 1 }, "missing_header"],
+    ["numeric-version", { version: 1 }, "missing_header"],
+    ["numeric-nonce", { nonce: 1 }, "invalid_nonce"],
+    ["numeric-session", { session_id: 1 }, "invalid_session_id"],
+    ["invalid-issued", { issued_at: "not-a-date" }, "invalid_issued_at"],
+    ["invalid-calendar-day", { issued_at: "2030-02-30T00:00:00Z" }, "invalid_issued_at"],
+    ["submillisecond-expiry", { expires_at: "2030-01-02T00:00:00.0001Z" }, "invalid_expires_at"],
+    ["invalid-zone", { expires_at: "2030-01-02T00:00:00+24:00" }, "invalid_expires_at"],
+    ["invalid-now", {}, "invalid_now", { now: "not-a-date" }],
+    ["expired", {}, "expired", { now: "2030-01-02T00:00:00Z" }],
+    ["unsupported-kind", {}, "unsupported_kind", { allowedKinds: ["other-kind"] }]
+  ];
+  const envelopeResults = [];
+  for (const [name, changes, expectedReason, options = {}] of envelopeCases) {
+    const candidate = { ...envelope, ...changes };
+    const js = validateWireEnvelope(candidate, options);
+    const extra = [
+      ...(options.now ? ["--now", options.now] : []),
+      ...(options.allowedKinds || []).flatMap(value => ["--allowed-kind", value])
+    ];
+    const python = verify("envelope", name, candidate, expectedReason === null, extra);
+    assert.deepEqual({ valid: js.valid, reason: js.reason },
+      { valid: python.valid, reason: python.reason }, name);
+    assert.equal(js.reason, expectedReason, name);
+    envelopeResults.push({ id: name, valid: js.valid, reason: js.reason, runtimes_agree: true });
+  }
 
   const passport = createPolicyPassport({
     subject: "example", profile: "calm_default", preferences: { reduced_motion: true, attention_budget: 3 },
@@ -108,7 +140,10 @@ try {
   assert.equal(verifyCausalExecutionGraph(orphanGraph).valid, false);
   assert.equal(verify("graph", "orphan-graph", orphanGraph, false).reason, "missing_parent");
 
-  console.log("Python wire runtime: negotiation, five artifact classes, and tamper cases passed");
+  console.log(JSON.stringify({ protocol: "aml-wire-envelope-cross-runtime/1", passed: true,
+    envelope_case_count: envelopeResults.length, envelope_cases: envelopeResults,
+    other_checks: "negotiation, five artifact classes, and tamper cases passed",
+    claim_boundary: "Project-authored JavaScript/Python comparison of selected wire fixtures; not complete JSON interoperability or external validation." }, null, 2));
 } finally {
   fs.rmSync(temp, { recursive: true, force: true });
 }

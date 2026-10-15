@@ -7,6 +7,8 @@ on:
       - "independent/python/wire_runtime.py"
       - "independent/python/WIRE_RUNTIME.md"
       - "scripts/check-python-wire-runtime.mjs"
+      - "protocol/wireProtocol.js"
+      - "schema/wire-envelope.schema.json"
       - "independent/python/verify_evidence_capsule.py"
       - "scripts/check-evidence-capsule-python.mjs"
       - "independent/python/verify_evidence_archive.py"
@@ -61,6 +63,8 @@ on:
       - "independent/python/wire_runtime.py"
       - "independent/python/WIRE_RUNTIME.md"
       - "scripts/check-python-wire-runtime.mjs"
+      - "protocol/wireProtocol.js"
+      - "schema/wire-envelope.schema.json"
       - "independent/python/verify_evidence_capsule.py"
       - "scripts/check-evidence-capsule-python.mjs"
       - "independent/python/verify_evidence_archive.py"
@@ -125,7 +129,14 @@ jobs:
         with:
           python-version: "3.12"
       - name: Verify reference-produced artifacts with standalone Python
-        run: node scripts/check-python-wire-runtime.mjs
+        run: node scripts/check-python-wire-runtime.mjs > "${RUNNER_TEMP}/aml-wire-envelope-cross-runtime.json"
+      - name: Upload wire envelope comparison
+        uses: actions/upload-artifact@v4
+        with:
+          name: aml-wire-envelope-cross-runtime-${{ github.sha }}
+          path: ${{ runner.temp }}/aml-wire-envelope-cross-runtime.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Install Python Ed25519 verifier dependency
         run: python -m pip install 'cryptography>=42,<51'
       - name: Verify evidence capsules across JavaScript and Python
