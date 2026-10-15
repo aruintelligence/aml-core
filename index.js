@@ -33,6 +33,7 @@ export { auditAccessibilityNode, auditAccessibilityTree } from "./runtime/access
 export { createInterfaceFirewall, enforceInterfaceIntent } from "./runtime/interfaceFirewall.js";
 export { createDecisionCache } from "./runtime/decisionCache.js";
 export { createDeploymentFirewall, evaluateDeploymentIntent } from "./runtime/deploymentFirewall.js";
+export { applyLockedHttpDecision, evaluateLockedHttpAndRender } from "./runtime/lockedHttpRenderGate.js";
 export { createStreamingInterfaceFirewall } from "./runtime/streamingInterfaceFirewall.js";
 export { evaluateInterfaceBatch } from "./runtime/batchInterfaceFirewall.js";
 export { evaluatePolicyCanary } from "./runtime/policyCanary.js";

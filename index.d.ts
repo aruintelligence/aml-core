@@ -725,6 +725,39 @@ export interface AmlHttpServerOptions {
   receipt_signing?: { private_key_pem: string; signer: string };
 }
 
+export interface LockedHttpDecisionInput {
+  httpStatus: number;
+  body: unknown;
+  intent: AmlIntent;
+  profile: string;
+  context: AmlContext;
+  /** Separately provisioned SHA-256 fingerprints of trusted Ed25519 public keys. */
+  trustedReceiptFingerprints: readonly string[];
+  requestNonce: string;
+  render: (html: string) => void | Promise<void>;
+}
+
+export interface LockedHttpEvaluationInput extends Omit<LockedHttpDecisionInput,
+  "httpStatus" | "body" | "requestNonce"> {
+  url: string;
+  token: string;
+  /** Deadline for the HTTP exchange and bounded JSON read; default 5000 ms. */
+  timeoutMs?: number;
+  /** Maximum accepted response body; default 8 MiB. */
+  maxResponseBytes?: number;
+  fetchImpl?: typeof fetch;
+}
+
+export interface LockedHttpRenderResult {
+  status: "blocked" | "rendered" | "unknown";
+  reason: string;
+  render_attempted: boolean;
+  receipt_sha256: string | null;
+}
+
+export function applyLockedHttpDecision(input: LockedHttpDecisionInput): Promise<LockedHttpRenderResult>;
+export function evaluateLockedHttpAndRender(input: LockedHttpEvaluationInput): Promise<LockedHttpRenderResult>;
+
 export interface AgentUiGatewayOptions {
   default_profile?: string;
   default_mode?: AmlMode;

@@ -224,6 +224,8 @@ Run the [30-minute enterprise pilot](pilots/enterprise-30min/README.md) to gener
 
 The [signed HTTP render gate pilot](pilots/enterprise-http-gate/README.md) runs the locked service locally and gates a host callback on a nonce-bound receipt from a pinned Ed25519 key. Thirteen asserted outcomes include an untrusted signer and a replayed response. It remains a project-authored local integration exercise.
 
+Applications can import [`evaluateLockedHttpAndRender`](API.md#evaluatelockedhttpandrenderoptions) from `aml-core` to run the same signed host gate with a bounded response and a transport deadline.
+
 ### 2. Put it in front of an existing interface
 
 Zero-install custom element:

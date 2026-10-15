@@ -82,6 +82,32 @@ Adds an Ed25519 attestation to a valid receipt.
 ### `verifySignedExecutionReceipt(signedReceipt)`
 Verifies receipt integrity, Ed25519 signature, and signer fingerprint.
 
+### `evaluateLockedHttpAndRender(options)`
+
+Sends an intent to a host-configured locked HTTP service with a fresh request nonce. Before invoking the host's `render(html)` callback, it checks the signed receipt against separately configured trusted public-key fingerprints, the nonce, expected intent/profile/context, and the enforce/closed effective decision. It uses a 5-second exchange deadline and an 8 MiB response limit by default; configure `timeoutMs` and `maxResponseBytes` to fit the integration.
+
+```js
+import { evaluateLockedHttpAndRender } from "aml-core";
+
+const result = await evaluateLockedHttpAndRender({
+  url: process.env.AML_EVALUATION_URL,
+  token: process.env.AML_API_TOKEN,
+  intent,
+  profile: "human_first",
+  context: trustedContext,
+  trustedReceiptFingerprints: trustedFingerprints,
+  render: async html => hostRender(html)
+});
+```
+
+The host must derive `trustedContext` and `trustedFingerprints` independently of the response. Results are `rendered`, `blocked`, or `unknown`; `unknown` means a callback was attempted and may have changed the UI before throwing. The exchange deadline does not interrupt a render callback after verification. HTTP errors, timeouts, oversized or malformed responses, missing signer trust, and invalid receipts block before rendering. The embedding application must prevent other render paths from bypassing this gate. See the [runnable signed pilot](pilots/enterprise-http-gate/README.md) and [locked service configuration](docs/LOCKED_HTTP_POLICY.md).
+
+This entry point is available in the current repository package. Check the installed release before using it from a registry package; adding it to `main` does not publish a new version.
+
+### `applyLockedHttpDecision(options)`
+
+Checks a response already obtained by the host using the same signed receipt and policy bindings. The host supplies its outstanding `requestNonce` and the HTTP status alongside its trusted inputs. Use the function above for the ordinary request flow, including nonce generation and bounded transport handling.
+
 ## AI Interface Firewall™
 
 ### `createInterfaceFirewall(options?)`

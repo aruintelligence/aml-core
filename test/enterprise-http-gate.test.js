@@ -4,7 +4,8 @@ import { createHash, generateKeyPairSync, randomBytes } from "node:crypto";
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { applyVerifiedDecision, evaluateAndGate } from "../pilots/enterprise-http-gate/host-gate.mjs";
+import { applyLockedHttpDecision as applyVerifiedDecision,
+  evaluateLockedHttpAndRender as evaluateAndGate } from "../index.js";
 import { executeAccountableIntent, signExecutionReceipt } from "../compiler/accountablePipeline.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));

@@ -5,7 +5,8 @@ import { once } from "node:events";
 import { createAmlHttpServer } from "../../server/httpServer.js";
 import { signExecutionReceipt } from "../../compiler/accountablePipeline.js";
 import { getSourceState } from "../enterprise-30min/source-state.mjs";
-import { applyVerifiedDecision, evaluateAndGate } from "./host-gate.mjs";
+import { applyLockedHttpDecision as applyVerifiedDecision,
+  evaluateLockedHttpAndRender as evaluateAndGate } from "../../index.js";
 
 const load = (name) => JSON.parse(fs.readFileSync(new URL(`../enterprise-30min/${name}`, import.meta.url), "utf8"));
 const allowedIntent = load("intent-allowed.json");

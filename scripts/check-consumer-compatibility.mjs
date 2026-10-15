@@ -46,7 +46,7 @@ try {
   fs.writeFileSync(path.join(tempRoot, 'sample.aml'), `transmission "consumer-compat" {\n  title: "Consumer compatibility"\n  engram proof {\n    value: "Cross-platform package smoke test"\n    purpose: "verify installed AML consumer path"\n    memory_role: "compatibility_fixture"\n    user_effect: "clarity"\n    attention_cost: 1\n    restoration_value: 3\n  }\n}\n`);
 
   runNpm(['install', '--ignore-scripts', '--save-exact', tarballPath], tempRoot);
-  const apiOutput = run(process.execPath, ['-e', "import('aml-core').then(m=>{if(!m||Object.keys(m).length===0)process.exit(2);console.log(Object.keys(m).length)}).catch(e=>{console.error(e);process.exit(1)})"], tempRoot);
+  const apiOutput = run(process.execPath, ['-e', "import('aml-core').then(m=>{if(!m||Object.keys(m).length===0||typeof m.applyLockedHttpDecision!=='function'||typeof m.evaluateLockedHttpAndRender!=='function')process.exit(2);console.log(Object.keys(m).length)}).catch(e=>{console.error(e);process.exit(1)})"], tempRoot);
 
   const installedRoot = path.join(tempRoot, 'node_modules', pkg.name);
   const doctorOutput = run(process.execPath, [path.join(installedRoot, 'bin', 'aml-doctor.js')], tempRoot);
@@ -80,6 +80,7 @@ try {
       clean_tarball_install: true,
       javascript_api_import: true,
       exported_symbol_count: Number(apiOutput),
+      signed_http_gate_exported: true,
       aml_doctor: doctorOutput.length > 0,
       aml_cli_validate: /VALID:/i.test(validateOutput),
       consumer_quickstart_api: true,
