@@ -3,6 +3,18 @@
 
 import { resolvePolicy } from "../runtime/policyEngine.js";
 
+// Built-in policies also read these declarations directly from node.properties.
+// A policy constraint must be evaluated even when no purpose or numeric score
+// was supplied; otherwise the node would render without any decision.
+const POLICY_DECLARATIONS = [
+  "consent_required",
+  "collects_personal_data",
+  "motion_required",
+  "reduced_motion_alternative",
+  "contrast_safe",
+  "cognitive_load"
+];
+
 export function evaluateRenderDecisions(amt, options = {}) {
   const decisions = [];
   const timestamp = options.timestamp ?? null;
@@ -32,12 +44,14 @@ function walkNode(node, decisions, timestamp, policy, context) {
 // decision to the node that produced it. Keep this in one place.
 export function requiresRenderDecision(node) {
   const metadata = node.render_metadata || {};
+  const properties = node.properties || {};
   return Boolean(
     metadata.purpose ||
     metadata.memory_role ||
     metadata.user_effect ||
     typeof metadata.attention_cost === "number" ||
-    typeof metadata.restoration_value === "number"
+    typeof metadata.restoration_value === "number" ||
+    POLICY_DECLARATIONS.some(key => Object.hasOwn(properties, key))
   );
 }
 
