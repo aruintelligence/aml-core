@@ -1,5 +1,8 @@
 // Bounded JSON intake for the reference HTTP service. The caller closes the
 // connection after a 413 so a rejected upload cannot occupy a keep-alive slot.
+import { TextDecoder } from "node:util";
+import { parseJsonWithoutDuplicateKeys } from "../runtime/strictJson.js";
+
 export function readJson(req, maxBytes = 1024 * 1024) {
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 1) {
     throw new TypeError("maxBytes must be a positive safe integer");
@@ -34,10 +37,14 @@ export function readJson(req, maxBytes = 1024 * 1024) {
       settled = true;
       cleanup();
       try {
-        const raw = Buffer.concat(chunks).toString("utf8");
-        resolve(raw ? JSON.parse(raw) : {});
-      } catch {
-        reject(Object.assign(new Error("invalid_json"), { statusCode: 400 }));
+        // Preserve JSON.parse's BOM behavior while refusing lossy UTF-8
+        // replacement and duplicate keys at every nesting level.
+        const raw = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true })
+          .decode(Buffer.concat(chunks));
+        resolve(raw ? parseJsonWithoutDuplicateKeys(raw) : {});
+      } catch (error) {
+        const reason = error?.code === "AML_DUPLICATE_JSON_KEY" ? "ambiguous_json" : "invalid_json";
+        reject(Object.assign(new Error(reason), { statusCode: 400 }));
       }
     };
     const onError = (error) => fail(error.message || "request_error", 400);
