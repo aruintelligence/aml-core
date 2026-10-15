@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { executeAccountableIntent, verifyExecutionReceipt, viewMeaning } from "../../index.js";
+import { getSourceState } from "./source-state.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const timestamp = "2026-09-08T00:00:00.000Z";
@@ -66,7 +67,7 @@ const report = {
   protocol: "aml-enterprise-pilot-report/1",
   profile: "human_first",
   decision_timestamp: timestamp,
-  source_revision: process.env.GITHUB_SHA || null,
+  ...getSourceState(),
   evidence_level: "project-authored demonstration",
   claim_boundary: "Declared prototype policy inputs; no objective human-impact measurement, independent validation, certification, or production approval.",
   passed: results.every((result) => result.counts_match && result.receipt_verified) && tamper_rejected,

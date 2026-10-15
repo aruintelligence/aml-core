@@ -4,14 +4,14 @@ This reproducible pilot runs the actual ĀML API against three small, public fix
 
 ## Run and verify
 
-From the repository root, with Node.js 20 or later:
+From a Git checkout of this repository, with Node.js 20 or later and Git installed:
 
 ```bash
 node pilots/enterprise-30min/run.mjs > /tmp/aml-enterprise-pilot.json
 node pilots/enterprise-30min/verify-report.mjs /tmp/aml-enterprise-pilot.json
 ```
 
-Both commands must exit successfully. The second command checks the report digest, fixture hashes, all three expected decisions, every receipt's internal integrity, View Meaning output, a deterministic replay, and rejection of a mutated receipt. CI also saves the report as a workflow artifact for a reviewer to download and rerun.
+Both commands must exit successfully. The second command checks the report digest, actual checkout revision, whether tracked files have changed, fixture hashes, all three expected decisions, every receipt's internal integrity, View Meaning output, a deterministic replay, and rejection of a mutated receipt. To verify a downloaded CI artifact, check out the exact revision named in its `source_revision` before running the verifier. CI also saves the report as a workflow artifact for a reviewer to download and rerun.
 
 The report contains the **full demo receipts**, including intent and context. Review it before sharing. Do not put actual customer data into these fixtures or publish real customer receipts without a separate data-handling review.
 
@@ -33,6 +33,8 @@ This pilot does not itself install an enforcement boundary in another applicatio
 - `scenarios[].receipt`: the actual decision and internal audit evidence.
 - `scenarios[].meaning`: a compact View Meaning interpretation.
 - `report_sha256`: SHA-256 of the compact JSON serialization of the report with this field omitted. It detects changes to this report representation; it is **not a signature or proof of authorship**.
+- `source_revision`: the Git `HEAD` actually checked out when the pilot ran, independently of runner environment variables. The verifier requires the same revision.
+- `tracked_worktree_modified`: whether tracked files differ from `HEAD`; the verifier checks the same state. A `true` value means the commit alone does not identify all code and fixture bytes. Untracked files are outside this flag.
 
 The fixed decision timestamp and stream IDs make the three receipts replayable against the same version of the code and fixtures. The verifier uses the repository's own implementation, so its success is **project-authored evidence**, not independent validation. A reviewer can challenge the behavior using an independent implementation or the repository's external verifier protocols.
 
