@@ -36,11 +36,13 @@ assert.match(first.selected_render.html,
   /<section hidden data-aml-suppressed="true" data-render-allowed="false">/,
   "the denied node must be suppressed in the actual HTML");
 assert.doesNotMatch(first.selected_render.html,
-  /countdown_pressure|Increase urgency during checkout/,
-  "the denied node's metadata must not appear in HTML");
+  /countdown_pressure|Increase urgency during checkout|Your offer expires in 04:59\./,
+  "the denied node's metadata and content must not appear in HTML");
 assert.match(first.selected_render.html,
   /data-aml-identifier="purchase_action"[^>]*data-render-allowed="true"[^>]*>/,
   "the allowed sibling must appear in the actual HTML");
+assert.match(first.selected_render.html, /<p>Buy now<\/p>/,
+  "the allowed sibling's content must appear in the actual HTML");
 assert.equal((first.selected_render.html.match(/data-aml-suppressed="true"/g) || []).length, 1,
   "the allowed sibling must not inherit the denied node's decision");
 
