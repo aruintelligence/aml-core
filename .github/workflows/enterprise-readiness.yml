@@ -41,6 +41,8 @@ jobs:
         run: node pilots/enterprise-30min/verify-report.mjs "${RUNNER_TEMP}/aml-enterprise-pilot.json"
       - name: Exercise locked HTTP host render gate
         run: node pilots/enterprise-http-gate/run.mjs > "${RUNNER_TEMP}/aml-enterprise-http-gate.json"
+      - name: Exercise localhost screen host and suppression
+        run: node --test test/enterprise-screen.test.js
       - name: Upload enterprise pilot evidence
         uses: actions/upload-artifact@v4
         with:

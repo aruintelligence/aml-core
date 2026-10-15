@@ -1,0 +1,18 @@
+{
+  "transmission": "screen_pilot_personalization",
+  "nodes": [{
+    "type": "engram",
+    "identifier": "PersonalizationPrompt",
+    "properties": {
+      "value": "Personalize your plan using your data?",
+      "purpose": "Ask whether the user wants personalized recommendations.",
+      "user_effect": "Offer optional personalization with an explicit choice.",
+      "attention_cost": 2,
+      "restoration_value": 4,
+      "collects_personal_data": true,
+      "consent_required": true,
+      "contrast_safe": true,
+      "cognitive_load": 2
+    }
+  }]
+}
