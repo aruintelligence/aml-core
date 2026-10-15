@@ -140,6 +140,50 @@ test("malformed execution receipt public key returns a clean verification failur
   assert.equal(verification.public_key_fingerprint_valid, false);
 });
 
+test("execution receipt signer and verifier enforce the declared Ed25519 key type", () => {
+  for (const [type, options] of [["rsa", { modulusLength: 2048 }], ["ec", { namedCurve: "prime256v1" }]]) {
+    const { privateKey, publicKey } = crypto.generateKeyPairSync(type, options);
+    const privatePem = privateKey.export({ type: "pkcs8", format: "pem" });
+    assert.throws(() => signExecutionReceipt(receipt(), privatePem), /requires an Ed25519 private key/);
+
+    // A valid RSA/ECDSA signature can be mislabeled as Ed25519 because Node's
+    // crypto.sign(null, ...) selects a default for those key types as well.
+    const unsigned = receipt();
+    const attestation = { protocol: "ĀML Execution Receipt Attestation", version: "1.1",
+      algorithm: "Ed25519", signer: "synthetic", signed_at: timestamp,
+      public_key_pem: publicKey.export({ type: "spki", format: "pem" }).toString(),
+      public_key_sha256: sha256(publicKey.export({ type: "spki", format: "der" })) };
+    const material = { protocol: attestation.protocol, version: attestation.version,
+      algorithm: attestation.algorithm, receipt_sha256: unsigned.receipt_sha256,
+      signer: attestation.signer, signed_at: attestation.signed_at };
+    const bytes = Buffer.from(stableStringify(material));
+    const raw = crypto.sign(null, bytes, privateKey);
+    assert.equal(crypto.verify(null, bytes, publicKey, raw), true);
+    const fabricated = { ...unsigned, signature: { ...attestation, signature_base64: raw.toString("base64") } };
+    const result = verifySignedExecutionReceipt(fabricated);
+    assert.equal(result.integrity_valid, true);
+    assert.equal(result.verified, false);
+    assert.equal(result.attribution_bound, false);
+  }
+});
+
+test("execution receipt verifier rejects signature text that decodes to valid bytes noncanonically", () => {
+  const signed = signExecutionReceipt(receipt(), keyPair().privatePem, { signer: "synthetic", timestamp });
+  const original = signed.signature.signature_base64;
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  const alternate = original.slice(0, -3) + alphabet[alphabet.indexOf(original.at(-3)) + 1] + "==";
+  for (const encoded of [original + "!!!!", original.slice(0, -2), alternate]) {
+    assert.deepEqual(Buffer.from(encoded, "base64"), Buffer.from(original, "base64"));
+    const mutated = structuredClone(signed);
+    mutated.signature.signature_base64 = encoded;
+    const result = verifySignedExecutionReceipt(mutated);
+    assert.equal(result.integrity_valid, true);
+    assert.equal(result.public_key_fingerprint_valid, true);
+    assert.equal(result.signature_valid, false);
+    assert.equal(result.verified, false);
+  }
+});
+
 test("current policy pack attestation binds signer and signing time", () => {
   const keys = keyPair();
   const signed = signPolicyPack(policyPack(), keys.privatePem, {

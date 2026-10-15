@@ -178,6 +178,9 @@ export function signExecutionReceipt(receipt, privateKeyPem, options = {}) {
   const integrity = verifyExecutionReceipt(receipt);
   if (!integrity.verified) throw new Error("Cannot sign a mutated or invalid ĀML execution receipt.");
   const privateKey = crypto.createPrivateKey(privateKeyPem);
+  if (privateKey.asymmetricKeyType !== "ed25519") {
+    throw new TypeError("Execution receipt signing requires an Ed25519 private key.");
+  }
   const publicKey = crypto.createPublicKey(privateKey);
   const publicKeyDer = publicKey.export({ type: "spki", format: "der" });
   const attestation = {
@@ -211,11 +214,19 @@ export function verifySignedExecutionReceipt(receipt) {
 
   try {
     const publicKey = crypto.createPublicKey(attestation.public_key_pem);
+    if (publicKey.asymmetricKeyType !== "ed25519") {
+      return { verified: false, integrity_valid: true, signature_valid: false, public_key_fingerprint_valid: false,
+        attribution_bound: false, signer: null, signed_at: null,
+        claimed_signer: attestation.signer ?? null, claimed_signed_at: attestation.signed_at ?? null };
+    }
     const publicKeyDer = publicKey.export({ type: "spki", format: "der" });
     const expectedFingerprint = current ? sha256Bytes(publicKeyDer) : sha256(publicKeyDer);
     const fingerprintValid = expectedFingerprint === attestation.public_key_sha256;
     const signedBytes = current ? Buffer.from(stableStringify(executionAttestationMaterial(receipt.receipt_sha256, attestation)), "utf8") : Buffer.from(receipt.receipt_sha256, "utf8");
-    const signatureValid = crypto.verify(null, signedBytes, publicKey, Buffer.from(attestation.signature_base64, "base64"));
+    const encoded = attestation.signature_base64;
+    const raw = typeof encoded === "string" && encoded.length === 88 ? Buffer.from(encoded, "base64") : null;
+    const signatureValid = raw !== null && raw.length === 64 && raw.toString("base64") === encoded &&
+      crypto.verify(null, signedBytes, publicKey, raw);
     const verified = integrity.verified && fingerprintValid && signatureValid;
     return {
       verified,
