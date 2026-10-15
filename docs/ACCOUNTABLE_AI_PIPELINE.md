@@ -75,7 +75,7 @@ That makes policy differences inspectable instead of silently embedding them in 
 
 `receipt_sha256` covers the unsigned execution receipt. A mutation to intent, context, simulations, decisions, AML source, or output causes `verifyExecutionReceipt()` to fail.
 
-The receipt can additionally be signed with Ed25519, providing a detached identity/attestation layer on top of content integrity.
+The receipt can additionally be signed with Ed25519, providing a detached identity/attestation layer on top of content integrity. Signing rejects RSA and EC private keys, and verification requires an actual Ed25519 public key and one canonical 64-byte Ed25519 signature encoding. A trusted fingerprint still has to come from outside the receipt.
 
 ## Evidence boundary
 

@@ -5,7 +5,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { executeAccountableIntent, signExecutionReceipt, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { createAttentionLedger, consumeAttention } from "../runtime/attentionLedger.js";
-import { createEvidenceCapsule } from "../runtime/evidenceCapsule.js";
+import { createEvidenceCapsule, verifyEvidenceCapsule } from "../runtime/evidenceCapsule.js";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-capsule-python-"));
@@ -96,6 +96,30 @@ try {
   const signedPolicy = { trusted_receipt_fingerprints: [signed.signature.public_key_sha256] };
   results.push(check("signed-external-trust-required", signedCapsule, false));
   results.push(check("signed-valid", signedCapsule, true, signedPolicy));
+  const alteredEncoding = structuredClone(signedCapsule);
+  alteredEncoding.receipt.signature.signature_base64 += "!!!!";
+  rehash(alteredEncoding);
+  if (verifyEvidenceCapsule(alteredEncoding).verified) throw new Error("JavaScript accepted a noncanonical signature");
+  results.push(check("signed-noncanonical-base64-rejected", alteredEncoding, false, signedPolicy,
+    null, { receipt_hash: true, signature: false }));
+  for (const [type, options] of [["rsa", { modulusLength: 2048 }], ["ec", { namedCurve: "prime256v1" }]]) {
+    const foreign = crypto.generateKeyPairSync(type, options);
+    const mislabeled = structuredClone(signedCapsule);
+    const attestation = mislabeled.receipt.signature;
+    const der = foreign.publicKey.export({ type: "spki", format: "der" });
+    attestation.public_key_pem = foreign.publicKey.export({ type: "spki", format: "pem" }).toString();
+    attestation.public_key_sha256 = crypto.createHash("sha256").update(der).digest("hex");
+    const material = { protocol: attestation.protocol, version: attestation.version,
+      algorithm: attestation.algorithm, receipt_sha256: mislabeled.receipt.receipt_sha256,
+      signer: attestation.signer, signed_at: attestation.signed_at };
+    attestation.signature_base64 = crypto.sign(null, Buffer.from(stableStringify(material)),
+      foreign.privateKey).toString("base64");
+    rehash(mislabeled);
+    if (verifyEvidenceCapsule(mislabeled).verified) throw new Error(`JavaScript accepted ${type} as Ed25519`);
+    results.push(check(`signed-${type}-mislabeled-ed25519-rejected`, mislabeled, false,
+      { trusted_receipt_fingerprints: [attestation.public_key_sha256] },
+      null, { receipt_hash: true, signature: false }));
+  }
   for (const [name, value] of [
     ["small-exponent", 1e-7], ["fixed-boundary", 1e-6],
     ["negative-fraction", -0.0000015], ["negative-zero", -0],

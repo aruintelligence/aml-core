@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createHash, generateKeyPairSync } from "node:crypto";
+import { createHash, generateKeyPairSync, sign, verify } from "node:crypto";
 import { evaluateLockedHttpAndRender, executeAccountableIntent,
   signExecutionReceipt } from "../index.js";
 
@@ -107,4 +107,61 @@ test("network deadline ends before a verified host render callback runs", async 
     trustedReceiptFingerprints: [fingerprint], timeoutMs: 250
   });
   assert.deepEqual([result.status, result.reason, renders], ["rendered", "verified_allow", 1]);
+});
+
+test("host gate blocks signatures mislabeled as Ed25519 even when their key is pinned", async () => {
+  for (const [type, keyOptions] of [["rsa", { modulusLength: 2048 }], ["ec", { namedCurve: "prime256v1" }]]) {
+    const { privateKey, publicKey } = generateKeyPairSync(type, keyOptions);
+    const fingerprint = createHash("sha256")
+      .update(publicKey.export({ type: "spki", format: "der" })).digest("hex");
+    let renders = 0;
+    const result = await evaluateLockedHttpAndRender({
+      ...options(async (_url, init) => {
+        const { intent: submitted, request_nonce } = JSON.parse(init.body);
+        const receipt = executeAccountableIntent(submitted, { profile: "human_first", context: {},
+          request_nonce, timestamp: "2030-01-01T00:00:00.000Z" });
+        const signedAt = "2030-01-01T01:00:00.000Z";
+        // The sorted v1.1 material is validly signed by this RSA/EC key, but
+        // its attestation falsely declares the Ed25519 algorithm.
+        const material = JSON.stringify({ algorithm: "Ed25519", protocol: "ĀML Execution Receipt Attestation",
+          receipt_sha256: receipt.receipt_sha256, signed_at: signedAt, signer: "synthetic", version: "1.1" });
+        const bytes = Buffer.from(material);
+        const signature = sign(null, bytes, privateKey);
+        assert.equal(verify(null, bytes, publicKey, signature), true);
+        receipt.signature = { protocol: "ĀML Execution Receipt Attestation", version: "1.1",
+          algorithm: "Ed25519", signer: "synthetic", signed_at: signedAt,
+          public_key_pem: publicKey.export({ type: "spki", format: "pem" }).toString(),
+          public_key_sha256: fingerprint, signature_base64: signature.toString("base64") };
+        return new Response(JSON.stringify({ protocol: "aml-http-deployment-evaluation/1",
+          policy_source: "server", mode: "enforce", failure_mode: "closed",
+          evaluation_error: null, aml_allowed: true, effective_allowed: true,
+          would_suppress: false, receipt }), { status: 200 });
+      }, () => { renders += 1; }), trustedReceiptFingerprints: [fingerprint]
+    });
+    assert.deepEqual([result.status, result.reason, renders], ["blocked", "receipt_invalid", 0]);
+  }
+});
+
+test("host gate blocks alternate base64 spelling of an otherwise valid signature", async () => {
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+  const fingerprint = createHash("sha256")
+    .update(publicKey.export({ type: "spki", format: "der" })).digest("hex");
+  let renders = 0;
+  const result = await evaluateLockedHttpAndRender({
+    ...options(async (_url, init) => {
+      const { intent: submitted, request_nonce } = JSON.parse(init.body);
+      const receipt = signExecutionReceipt(executeAccountableIntent(submitted, {
+        profile: "human_first", context: {}, request_nonce,
+        timestamp: "2030-01-01T00:00:00.000Z"
+      }), privateKey.export({ type: "pkcs8", format: "pem" }), { signer: "synthetic" });
+      const original = receipt.signature.signature_base64;
+      receipt.signature.signature_base64 += "!!!!";
+      assert.deepEqual(Buffer.from(receipt.signature.signature_base64, "base64"), Buffer.from(original, "base64"));
+      return new Response(JSON.stringify({ protocol: "aml-http-deployment-evaluation/1",
+        policy_source: "server", mode: "enforce", failure_mode: "closed",
+        evaluation_error: null, aml_allowed: true, effective_allowed: true,
+        would_suppress: false, receipt }), { status: 200 });
+    }, () => { renders += 1; }), trustedReceiptFingerprints: [fingerprint]
+  });
+  assert.deepEqual([result.status, result.reason, renders], ["blocked", "receipt_invalid", 0]);
 });

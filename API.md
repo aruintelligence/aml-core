@@ -77,10 +77,10 @@ const receipt = executeAccountableIntent(intent, {
 Recomputes receipt integrity and verifies bound runtime artifacts.
 
 ### `signExecutionReceipt(receipt, privateKeyPem, options?)`
-Adds an Ed25519 attestation to a valid receipt.
+Adds an Ed25519 attestation to a valid receipt. Rejects private keys of other algorithm types.
 
 ### `verifySignedExecutionReceipt(signedReceipt)`
-Verifies receipt integrity, Ed25519 signature, and signer fingerprint.
+Verifies receipt integrity, the actual Ed25519 public-key type and signature, canonical base64 signature bytes, and signer fingerprint. This does not supply an external trust anchor; a host must pin trusted fingerprints separately.
 
 ### `evaluateLockedHttpAndRender(options)`
 
