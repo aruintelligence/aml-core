@@ -45,6 +45,7 @@ The resulting execution receipt binds together:
 import {
   executeAccountableIntent,
   verifyExecutionReceipt,
+  replayExecutionReceipt,
   signExecutionReceipt,
   verifySignedExecutionReceipt
 } from "aml-core";
@@ -64,6 +65,7 @@ const receipt = executeAccountableIntent(intent, {
 ```bash
 aml execute intent.json privacy_first context.json receipt.json
 aml verify-receipt receipt.json
+aml replay-receipt receipt.json
 ```
 
 ## Counterfactual simulation
@@ -77,6 +79,8 @@ That makes policy differences inspectable instead of silently embedding them in 
 `receipt_sha256` covers the unsigned execution receipt. A mutation to intent, context, simulations, decisions, AML source, or output causes `verifyExecutionReceipt()` to fail. Verification requires the runtime audit stream and attention ledger and checks their hashes and structure. It also checks that the five ordered audit events match the receipt's timestamp, intent and profile, generated AML, simulations, selected policy and decisions, ledger balances, and output. `audit_receipt_binding_valid` identifies that check. Recalculating the audit chain, outer receipt hash, or signature cannot make contradictory or missing evidence pass verification.
 
 The receipt can additionally be signed with Ed25519, providing a detached identity/attestation layer on top of content integrity. Signing rejects RSA and EC private keys, and verification requires an actual Ed25519 public key and one canonical 64-byte Ed25519 signature encoding. A trusted fingerprint still has to come from outside the receipt.
+
+`replayExecutionReceipt(receipt)` goes further than integrity verification: it runs the declared intent, full profile, context, timestamp, stream ID, and request nonce through the installed compiler and policy engine and compares every unsigned receipt field with the reproduced result. The host-side locked HTTP render gate pins the complete built-in profile and requires a successful replay before its callback. An internally consistent, validly signed receipt containing invented HTML or a substituted policy list under the same profile ID cannot pass that gate. Replaying historical evidence requires the matching engine and policy implementation; a mismatch after an upgrade can reflect version drift. Replay does not establish signer trust by itself.
 
 ## Evidence boundary
 

@@ -1,7 +1,8 @@
 // Host-side gate for nonce-bound signed responses from the locked HTTP service.
 // The host owns its token, signer trust, expected inputs, and render callback.
 import { randomBytes } from "node:crypto";
-import { verifySignedExecutionReceipt } from "../compiler/accountablePipeline.js";
+import { verifySignedExecutionReceipt, replayExecutionReceipt } from "../compiler/accountablePipeline.js";
+import { resolvePolicyProfile } from "./policyProfiles.js";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 import { parseJsonWithoutDuplicateKeys } from "./strictJson.js";
 
@@ -39,10 +40,14 @@ export async function applyLockedHttpDecision({ httpStatus, body, intent, profil
       return blocked("receipt_untrusted");
     }
     if (receipt.profile?.id !== profile ||
+        canonicalJSONStringify(receipt.profile) !== canonicalJSONStringify(resolvePolicyProfile(profile)) ||
         receipt.request_nonce !== requestNonce ||
         canonicalJSONStringify(receipt.intent) !== canonicalJSONStringify(intent) ||
         canonicalJSONStringify(receipt.context) !== canonicalJSONStringify(context)) {
       return blocked("receipt_binding_mismatch", receipt.receipt_sha256);
+    }
+    if (!replayExecutionReceipt(receipt).verified) {
+      return blocked("receipt_replay_mismatch", receipt.receipt_sha256);
     }
     const allowed = receipt.selected_render.suppressed === 0;
     if (body.aml_allowed !== allowed || body.effective_allowed !== allowed ||

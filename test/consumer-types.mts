@@ -18,6 +18,7 @@ import {
   formatMeaningReport,
   generateAMLFromIntent,
   policyDiff,
+  replayExecutionReceipt,
   semanticDiff,
   signExecutionReceipt,
   simulatePolicies,
@@ -39,6 +40,7 @@ const html: string = compiled.html;
 const receipt = executeAccountableIntent(intent, { profile: "calm_default", timestamp: "2030-01-01T00:00:00Z" });
 const receiptHash: string = receipt.receipt_sha256;
 const verified: boolean = verifyExecutionReceipt(receipt).verified;
+const replayMismatchFields: string[] = replayExecutionReceipt(receipt).mismatched_fields;
 const decision: boolean = createDeploymentFirewall({ mode: "enforce", failure_mode: "closed" })
   .evaluate(intent).effective_allowed;
 const firewall = createInterfaceFirewall({ profile: "calm_default" });
@@ -103,7 +105,7 @@ if (false) {
   createAmlHttpServer({ locked_policy: { profile: "human_first" }, receipt_signing: {
     private_key_pem: "private key PEM", signer: "consumer"
   } });
-  void [fingerprint, attributionBound];
+  void [fingerprint, attributionBound, replayMismatchFields];
   // @ts-expect-error the runtime session exposes accept(), never handle().
   session.handle({ protocol: AML_GOVERNANCE_STREAM_FINALIZE });
   // @ts-expect-error a caller cannot select an unknown deployment mode.

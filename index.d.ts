@@ -116,6 +116,14 @@ export interface ReceiptVerification {
   [key: string]: unknown;
 }
 
+export interface ExecutionReplayVerification {
+  verified: boolean;
+  integrity_valid: boolean;
+  replay_valid: boolean;
+  reason: "reproduced" | "invalid_receipt" | "unsupported_receipt_version" | "replay_mismatch" | "replay_unavailable";
+  mismatched_fields: string[];
+}
+
 export interface EvidenceCapsule {
   protocol: "aml-evidence-capsule/1";
   canonicalization: "aml-sorted-json/1";
@@ -813,6 +821,8 @@ export function compileSource(source: string, options?: CompileOptions): Compile
 export function generateAMLFromIntent(intent: AmlIntent): string;
 export function executeAccountableIntent(intent: AmlIntent, options?: DeploymentOptions): ExecutionReceipt;
 export function verifyExecutionReceipt(receipt: ExecutionReceipt): ReceiptVerification;
+/** Re-executes declared inputs with the installed engine; does not authenticate the signer or prove input truth. */
+export function replayExecutionReceipt(receipt: ExecutionReceipt): ExecutionReplayVerification;
 export function signExecutionReceipt(receipt: ExecutionReceipt, privateKeyPem: string,
   options?: { signer?: string | null; timestamp?: string }): ExecutionReceipt & {
     signature: ExecutionReceiptSignature & { version: "1.1" }

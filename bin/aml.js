@@ -12,6 +12,7 @@ import { policyDiff } from "../compiler/policyDiff.js";
 import {
   executeAccountableIntent,
   verifyExecutionReceipt,
+  replayExecutionReceipt,
   signExecutionReceipt,
   verifySignedExecutionReceipt
 } from "../compiler/accountablePipeline.js";
@@ -44,6 +45,7 @@ Usage:
   aml deploy <intent.json> [--mode shadow|enforce] [--profile profile] [--failure-mode open|closed] [--context context.json] [--timestamp ISO] [--require-effective-allow]
   aml canary <intent.json> [--baseline profile] [--candidate profile] [--context context.json] [--timestamp ISO] [--fail-on-change]
   aml verify-receipt <receipt.json>
+  aml replay-receipt <receipt.json>
   aml sign-receipt <receipt.json> <private-key.pem> [signed-receipt.json]
   aml verify-signed-receipt <signed-receipt.json>
   aml simulate <file.aml> [policy1,policy2]
@@ -74,6 +76,7 @@ Commands:
   deploy                      Evaluate intent with enforce/shadow rollout and explicit failure posture
   canary                      Compare the same intent under baseline and candidate policy profiles
   verify-receipt              Verify receipt hash, audit stream, and attention-ledger integrity
+  replay-receipt              Re-execute declared receipt inputs with the installed engine
   sign-receipt                Add an Ed25519 attestation to a valid execution receipt
   verify-signed-receipt       Verify receipt integrity, signature, and public-key fingerprint
   simulate                    Compare identical AML meaning under multiple policy engines
@@ -110,6 +113,7 @@ Examples:
   aml attention-account examples/simple.aml 10 restorative_v1
   aml execute examples/intent-checkout.json human_first context.json receipt.json
   aml verify-receipt receipt.json
+  aml replay-receipt receipt.json
 `);
 }
 
@@ -223,6 +227,11 @@ try {
   }
   if (command === "verify-receipt") {
     const result = verifyExecutionReceipt(JSON.parse(readSource(inputPath)));
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(result.verified ? 0 : 1);
+  }
+  if (command === "replay-receipt") {
+    const result = replayExecutionReceipt(JSON.parse(readSource(inputPath)));
     console.log(JSON.stringify(result, null, 2));
     process.exit(result.verified ? 0 : 1);
   }

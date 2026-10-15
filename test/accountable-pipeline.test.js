@@ -1,10 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
+import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   executeAccountableIntent,
   verifyExecutionReceipt,
+  replayExecutionReceipt,
   verifyAuditStream,
   signExecutionReceipt,
   verifySignedExecutionReceipt,
@@ -114,6 +120,76 @@ test("accountable AI pipeline emits a verifiable execution receipt", () => {
   assert.equal(receipt.simulations.policy_count, 2);
   assert.equal(receipt.selected_render.suppressed, 0);
   assert.equal(verifyExecutionReceipt(receipt).verified, true);
+  assert.deepEqual(replayExecutionReceipt(receipt), {
+    verified: true, integrity_valid: true, replay_valid: true,
+    reason: "reproduced", mismatched_fields: []
+  });
+});
+
+test("execution replay reproduces a serialized, signed receipt with a custom profile and nonce", () => {
+  const custom = { id: "team_guard", description: "Custom team profile.",
+    policies: ["restorative_v1", "consent_guard_v1"] };
+  const receipt = executeAccountableIntent(intent, { timestamp, profile: custom,
+    context: { consent_granted: false, attention_budget_remaining: 2, session_id: "session-1" },
+    request_nonce: "b".repeat(64), stream_id: "stream-1" });
+  const { privateKey } = crypto.generateKeyPairSync("ed25519");
+  const signed = JSON.parse(JSON.stringify(signExecutionReceipt(receipt,
+    privateKey.export({ type: "pkcs8", format: "pem" }), { signer: "test" })));
+  const original = JSON.stringify(signed);
+  assert.equal(replayExecutionReceipt(signed).verified, true);
+  assert.equal(JSON.stringify(signed), original, "replay must not mutate evidence");
+});
+
+test("execution replay rejects coherent forged output and AML even when signing accepts them", () => {
+  const { privateKey } = crypto.generateKeyPairSync("ed25519");
+  const pem = privateKey.export({ type: "pkcs8", format: "pem" });
+  for (const [stage, mutate, mismatch] of [
+    ["output", receipt => {
+      receipt.selected_render.html += "<aside>Unreviewed output</aside>";
+      receipt.output_sha256 = sha256(receipt.selected_render.html);
+      receipt.runtime_audit_stream.entries[4].payload.output_sha256 = receipt.output_sha256;
+    }, "selected_render"],
+    ["AML", receipt => {
+      receipt.aml_source += "\n// unreviewed source";
+      receipt.aml_sha256 = sha256(receipt.aml_source);
+      receipt.runtime_audit_stream.entries[1].payload.aml_sha256 = receipt.aml_sha256;
+    }, "aml_source"]
+  ]) {
+    const receipt = freshReceipt();
+    mutate(receipt);
+    refreshAuditAndReceiptHashes(receipt);
+    const signed = signExecutionReceipt(receipt, pem);
+    assert.equal(verifySignedExecutionReceipt(signed).verified, true, stage);
+    const replay = replayExecutionReceipt(signed);
+    assert.equal(replay.integrity_valid, true, stage);
+    assert.equal(replay.verified, false, stage);
+    assert.equal(replay.reason, "replay_mismatch", stage);
+    assert.ok(replay.mismatched_fields.includes(mismatch), stage);
+  }
+});
+
+test("replay-receipt CLI exits nonzero for a hash-consistent invented output", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-replay-receipt-"));
+  const receiptPath = path.join(directory, "receipt.json");
+  const cli = fileURLToPath(new URL("../bin/aml.js", import.meta.url));
+  const invoke = command => spawnSync(process.execPath, [cli, command, receiptPath], { encoding: "utf8" });
+  try {
+    const receipt = freshReceipt();
+    fs.writeFileSync(receiptPath, JSON.stringify(receipt));
+    assert.equal(invoke("replay-receipt").status, 0);
+
+    receipt.selected_render.html += "<aside>Unreviewed output</aside>";
+    receipt.output_sha256 = sha256(receipt.selected_render.html);
+    receipt.runtime_audit_stream.entries[4].payload.output_sha256 = receipt.output_sha256;
+    refreshAuditAndReceiptHashes(receipt);
+    fs.writeFileSync(receiptPath, JSON.stringify(receipt));
+    assert.equal(invoke("verify-receipt").status, 0);
+    const replay = invoke("replay-receipt");
+    assert.equal(replay.status, 1, replay.stderr);
+    assert.equal(JSON.parse(replay.stdout).reason, "replay_mismatch");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 test("default accountable receipt survives a JSON serialization round trip", () => {

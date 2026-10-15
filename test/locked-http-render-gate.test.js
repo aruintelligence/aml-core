@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash, generateKeyPairSync, sign, verify } from "node:crypto";
-import { evaluateLockedHttpAndRender, executeAccountableIntent,
-  signExecutionReceipt } from "../index.js";
+import { applyLockedHttpDecision, evaluateLockedHttpAndRender, executeAccountableIntent,
+  replayExecutionReceipt, signExecutionReceipt, verifySignedExecutionReceipt } from "../index.js";
 
 const intent = { transmission: "host_gate_test", nodes: [{ type: "message", identifier: "continue",
   properties: { purpose: "Let the person continue", attention_cost: 1, restoration_value: 3 } }] };
@@ -12,6 +12,69 @@ function options(fetchImpl, render = () => {}) {
     intent, profile: "human_first", context: {},
     trustedReceiptFingerprints: ["a".repeat(64)], fetchImpl, render };
 }
+
+function hashValue(value) {
+  const canonical = item => Array.isArray(item) ? `[${item.map(canonical).join(",")}]` :
+    item && typeof item === "object" ? `{${Object.keys(item).sort()
+      .map(key => `${JSON.stringify(key)}:${canonical(item[key])}`).join(",")}}` : JSON.stringify(item);
+  return createHash("sha256").update(typeof value === "string" ? value : canonical(value)).digest("hex");
+}
+
+function allowBody(receipt) {
+  return { protocol: "aml-http-deployment-evaluation/1", policy_source: "server",
+    mode: "enforce", failure_mode: "closed", evaluation_error: null,
+    aml_allowed: true, effective_allowed: true, would_suppress: false, receipt };
+}
+
+test("host gate replays signed execution before rendering coherent but invented HTML", async () => {
+  const { privateKey } = generateKeyPairSync("ed25519");
+  const requestNonce = "a".repeat(64);
+  const receipt = executeAccountableIntent(intent, { profile: "human_first", context: {},
+    request_nonce: requestNonce, timestamp: "2030-01-01T00:00:00.000Z" });
+  receipt.selected_render.html += "<aside>Unreviewed output</aside>";
+  receipt.output_sha256 = hashValue(receipt.selected_render.html);
+  const event = receipt.runtime_audit_stream.entries[4];
+  event.payload.output_sha256 = receipt.output_sha256;
+  const { entry_hash, ...core } = event;
+  event.entry_hash = hashValue(core);
+  receipt.audit_stream_sha256 = hashValue(receipt.runtime_audit_stream);
+  const { receipt_sha256, ...payload } = receipt;
+  receipt.receipt_sha256 = hashValue(payload);
+  const signed = signExecutionReceipt(receipt,
+    privateKey.export({ type: "pkcs8", format: "pem" }));
+  assert.equal(verifySignedExecutionReceipt(signed).verified, true);
+  assert.equal(replayExecutionReceipt(signed).verified, false);
+  let renders = 0;
+  const result = await applyLockedHttpDecision({ httpStatus: 200, body: allowBody(signed),
+    intent, profile: "human_first", context: {}, requestNonce,
+    trustedReceiptFingerprints: [signed.signature.public_key_sha256],
+    render: () => { renders += 1; } });
+  assert.deepEqual([result.status, result.reason, renders], ["blocked", "receipt_replay_mismatch", 0]);
+});
+
+test("host gate pins the complete profile, including policies, before rendering", async () => {
+  const { privateKey } = generateKeyPairSync("ed25519");
+  const requestNonce = "b".repeat(64);
+  const consentIntent = { transmission: "consent_probe", nodes: [{ type: "message", identifier: "offer",
+    properties: { purpose: "Help the person", attention_cost: 1, restoration_value: 3,
+      consent_required: "required" } }] };
+  const correct = executeAccountableIntent(consentIntent, { profile: "human_first", context: {},
+    request_nonce: requestNonce, timestamp: "2030-01-01T00:00:00.000Z" });
+  const weakened = executeAccountableIntent(consentIntent, { profile: { id: "human_first",
+    description: "Claimed human-first profile with fewer checks.", policies: ["restorative_v1"] },
+    context: {}, request_nonce: requestNonce, timestamp: "2030-01-01T00:00:00.000Z" });
+  assert.ok(correct.selected_render.suppressed > 0);
+  assert.equal(weakened.selected_render.suppressed, 0);
+  const signed = signExecutionReceipt(weakened,
+    privateKey.export({ type: "pkcs8", format: "pem" }));
+  assert.equal(replayExecutionReceipt(signed).verified, true);
+  let renders = 0;
+  const result = await applyLockedHttpDecision({ httpStatus: 200, body: allowBody(signed),
+    intent: consentIntent, profile: "human_first", context: {}, requestNonce,
+    trustedReceiptFingerprints: [signed.signature.public_key_sha256],
+    render: () => { renders += 1; } });
+  assert.deepEqual([result.status, result.reason, renders], ["blocked", "receipt_binding_mismatch", 0]);
+});
 
 test("public host gate times out a fetch that ignores abort and never renders", async () => {
   let signal;

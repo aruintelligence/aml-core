@@ -202,6 +202,46 @@ export function verifyExecutionReceipt(receipt) {
   };
 }
 
+/** Re-execute a receipt's declared inputs with this installed ĀML engine. */
+export function replayExecutionReceipt(receipt) {
+  let integrity;
+  try {
+    integrity = verifyExecutionReceipt(receipt);
+  } catch {
+    return { verified: false, integrity_valid: false, replay_valid: false,
+      reason: "invalid_receipt", mismatched_fields: [] };
+  }
+  if (!integrity.verified) {
+    return { verified: false, integrity_valid: false, replay_valid: false,
+      reason: "invalid_receipt", mismatched_fields: [] };
+  }
+  if (receipt.version !== "1.1") {
+    return { verified: false, integrity_valid: true, replay_valid: false,
+      reason: "unsupported_receipt_version", mismatched_fields: [] };
+  }
+  try {
+    const reproduced = executeAccountableIntent(receipt.intent, {
+      profile: receipt.profile,
+      context: receipt.context,
+      timestamp: receipt.timestamp,
+      stream_id: receipt.runtime_audit_stream.stream_id,
+      ...(Object.hasOwn(receipt, "request_nonce") ? { request_nonce: receipt.request_nonce } : {})
+    });
+    const actual = receiptPayload(receipt);
+    const expected = receiptPayload(reproduced);
+    const mismatched_fields = [...new Set([...Object.keys(expected), ...Object.keys(actual)])]
+      .filter(key => !Object.hasOwn(actual, key) || !Object.hasOwn(expected, key) ||
+        !isDeepStrictEqual(actual[key], expected[key]));
+    return { verified: mismatched_fields.length === 0, integrity_valid: true,
+      replay_valid: mismatched_fields.length === 0,
+      reason: mismatched_fields.length === 0 ? "reproduced" : "replay_mismatch",
+      mismatched_fields };
+  } catch {
+    return { verified: false, integrity_valid: true, replay_valid: false,
+      reason: "replay_unavailable", mismatched_fields: [] };
+  }
+}
+
 export function signExecutionReceipt(receipt, privateKeyPem, options = {}) {
   const integrity = verifyExecutionReceipt(receipt);
   if (!integrity.verified) throw new Error("Cannot sign a mutated or invalid ĀML execution receipt.");

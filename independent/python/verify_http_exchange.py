@@ -76,7 +76,7 @@ def check_exchange(exchange, capsule, expected, policy):
             "reason": "verified_allow" if allowed else "policy_suppressed",
             "receipt_sha256": receipt["receipt_sha256"], "output_sha256": receipt["output_sha256"],
             "signer_fingerprint": receipt["signature"]["public_key_sha256"],
-            "scope": "Project-authored Python check of saved localhost JSON on the capsule canonical subset; no external witness, live transport, or rendered UI proof."}
+            "scope": "Project-authored Python check of saved localhost JSON on the capsule canonical subset; render_eligible reflects these saved-evidence checks only. No AML execution replay, full-profile pinning, external witness, live transport, or rendered UI proof."}
 
 
 if __name__ == "__main__":

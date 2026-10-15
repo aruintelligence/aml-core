@@ -16,6 +16,7 @@ import {
   simulatePolicies,
   executeAccountableIntent,
   verifyExecutionReceipt,
+  replayExecutionReceipt,
   signExecutionReceipt,
   verifySignedExecutionReceipt
 } from "aml-core";
