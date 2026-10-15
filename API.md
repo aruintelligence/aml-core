@@ -74,7 +74,9 @@ const receipt = executeAccountableIntent(intent, {
 ```
 
 ### `verifyExecutionReceipt(receipt)`
-Recomputes receipt integrity and verifies bound runtime artifacts.
+Recomputes receipt integrity and verifies bound runtime artifacts. A receipt
+missing its audit stream or attention ledger, or carrying a non-array audit,
+cannot verify even if its outer hash is recalculated.
 
 ### `signExecutionReceipt(receipt, privateKeyPem, options?)`
 Adds an Ed25519 attestation to a valid receipt. Rejects private keys of other algorithm types.
