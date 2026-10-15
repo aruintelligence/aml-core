@@ -33,10 +33,13 @@ try {
   const results = [];
   for (const [name, intentName, shouldAllow] of [
     ["allow", "intent-allowed.json", true], ["suppress", "intent-sensitive.json", false],
-    ["numeric", "intent-allowed.json", true]
+    ["numeric", "intent-allowed.json", true], ["keys", "intent-allowed.json", true]
   ]) {
     const intent = fixture(intentName);
     if (name === "numeric") intent.numeric_probe = 1e-7;
+    if (name === "keys") intent.key_probe = {
+      "10": "ten", "2": "two", "\uE000": "private use", "\u{1F4A1}": "astral", lone: "\uD800"
+    };
     const request_nonce = randomBytes(32).toString("hex");
     const expected = { protocol: "aml-locked-http-host-expected/1", intent, profile, context, request_nonce };
     save(`host-expected-${name}.json`, expected);

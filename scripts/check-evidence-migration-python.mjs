@@ -7,7 +7,7 @@ import { createEvidenceMigration } from "../runtime/evidenceMigration.js";
 import { createEvidenceArchive } from "../runtime/evidenceArchive.js";
 import { createEvidenceCapsule } from "../runtime/evidenceCapsule.js";
 import { createEvidenceRenewal, attestEvidenceRenewal } from "../runtime/evidenceRenewal.js";
-import { signExecutionReceipt } from "../compiler/accountablePipeline.js";
+import { executeAccountableIntent, signExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-migration-python-"));
@@ -90,6 +90,24 @@ try {
   results.push({ name: "receipt-revoked", reason: check("receipt-revoked", signed,
     { ...trusted, revoked_receipt_fingerprints: trusted.trusted_receipt_fingerprints }, false,
     "invalid_or_unsupported_capsule").report.reason });
+
+  const intent = JSON.parse(fs.readFileSync("pilots/enterprise-30min/intent-allowed.json", "utf8"));
+  const keyedReceipt = signExecutionReceipt(executeAccountableIntent({ ...intent,
+    key_probe: { "10": "ten", "2": "two", "\uE000": "private use", "\u{1F4A1}": "astral", lone: "\uD800" }
+  }, { profile: "human_first", timestamp: "2026-10-10T00:00:00.000Z" }), privateKey,
+  { signer: "synthetic", timestamp: "2026-10-10T03:00:00.000Z" });
+  const keyedCapsule = createEvidenceCapsule(keyedReceipt);
+  const keyedRecord = createEvidenceRenewal(keyedCapsule, { sequence: 1, created_at: "2026-10-10T04:00:00.000Z" });
+  const keyedWitness = attestEvidenceRenewal(keyedRecord, privateKey, { signer: "synthetic", signed_at: keyedRecord.created_at });
+  const keyedPolicy = { threshold: 1, trusted_fingerprints: [keyedWitness.public_key_fingerprint_sha256],
+    trusted_receipt_fingerprints: [keyedReceipt.signature.public_key_sha256] };
+  const keyedArchive = createEvidenceArchive(keyedCapsule, [{ record: keyedRecord, witnesses: [keyedWitness] }], keyedPolicy);
+  const keyedMigration = createEvidenceMigration(keyedArchive, keyedPolicy);
+  const keyed = check("signed-index-and-unicode-keys", keyedMigration, keyedPolicy, true, null, "recover");
+  if (!fs.readFileSync(keyed.destination).equals(Buffer.from(`${canonicalJSONStringify(keyedArchive)}\n`))) {
+    throw new Error("Python did not preserve the exact keyed v1 archive bytes");
+  }
+  results.push({ name: keyed.name, verified: keyed.report.verified, component_equivalent: keyed.report.component_equivalent });
 
   process.stdout.write(`${JSON.stringify({ protocol: "aml-migration-cross-runtime-check/1", passed: true, results }, null, 2)}\n`);
 } finally {

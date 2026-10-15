@@ -107,6 +107,17 @@ try {
   results.push(check("signed-archive-trust-missing", signedArchive, { threshold: 1, trusted_fingerprints: signedPolicy.trusted_fingerprints }, false, "external_receipt_trust_required"));
   results.push(check("signed-archive-key-revoked", signedArchive,
     { ...signedPolicy, revoked_receipt_fingerprints: signedPolicy.trusted_receipt_fingerprints }, false, "invalid_or_unsupported_capsule"));
+  const keyedReceipt = signExecutionReceipt(executeAccountableIntent({ ...intent,
+    key_probe: { "10": "ten", "2": "two", "\uE000": "private use", "\u{1F4A1}": "astral", lone: "\uD800" }
+  }, { profile: "human_first", timestamp: "2026-10-10T00:00:00.000Z" }), keys[0],
+  { signer: "synthetic-receipt", timestamp: "2026-10-10T00:30:00.000Z" });
+  const keyedCapsule = createEvidenceCapsule(keyedReceipt);
+  const keyedRecord = createEvidenceRenewal(keyedCapsule, { sequence: 1, created_at: "2026-10-10T01:00:00.000Z" });
+  const keyedWitness = attest(keyedRecord, keys[0], "synthetic");
+  const keyedPolicy = { threshold: 1, trusted_fingerprints: [keyedWitness.public_key_fingerprint_sha256],
+    trusted_receipt_fingerprints: [keyedReceipt.signature.public_key_sha256] };
+  const keyedArchive = createEvidenceArchive(keyedCapsule, [{ record: keyedRecord, witnesses: [keyedWitness] }], keyedPolicy);
+  results.push(check("signed-archive-index-and-unicode-keys", keyedArchive, keyedPolicy, true));
 
   process.stdout.write(`${JSON.stringify({ protocol: "aml-archive-cross-runtime-check/1", passed: true, results }, null, 2)}\n`);
 } finally {
