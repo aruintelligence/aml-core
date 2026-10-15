@@ -30,6 +30,8 @@ The current mechanism is a hash commitment/inclusion proof. It is deliberately *
 
 `createWireEnvelope()` wraps a typed payload in an explicit protocol/version/capability header. This creates a stable boundary for future cross-runtime transport.
 
+`validateWireEnvelope()` now applies the required fields, unknown-field, capability uniqueness, and optional metadata checks used by the [Python wire verifier](../independent/python/WIRE_RUNTIME.md). Their 19-case mutation report is saved by CI. Both apply a calendar-valid timestamp subset with an explicit timezone and up to millisecond precision; callers with looser timestamps or extra properties must normalize them before validation. The cross-runtime result covers those fixtures, not arbitrary JSON numeric canonicalization.
+
 ## Why this matters
 
 A standard becomes much more credible when two independently written systems can:

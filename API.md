@@ -320,6 +320,7 @@ The public trust registry is `BRAND_TRUST_ROOTS.json`. Production private key ma
 - `acceptWireEnvelope(guard, envelope, options?)`
 
 Canonical serialization and protocol vectors help independent implementations converge on the same hashes and signatures.
+`validateWireEnvelope` rejects missing or unknown fields, repeated or malformed capabilities, invalid optional metadata, and malformed or expired timestamps. The portable timestamp profile requires a calendar-valid ISO date-time with an explicit timezone and at most millisecond precision. Callers that previously relied on permissive acceptance of other shapes should normalize their envelopes before upgrading. The [JavaScript/Python comparison](independent/python/WIRE_RUNTIME.md) records the selected shared cases.
 
 ## HTTP service
 

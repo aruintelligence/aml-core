@@ -13,6 +13,7 @@ import re
 HEX = re.compile(r"^[0-9a-f]{64}$")
 LOWER_KEY = re.compile(r"^[a-z]+$")
 VERSION = re.compile(r"^[0-9]+(?:\.[0-9]+)*$")
+WIRE_TIME = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,3})?(?:Z|[+-][0-9]{2}:[0-9]{2})\Z")
 MAX_SAFE_INTEGER = 2**53 - 1
 
 
@@ -73,6 +74,14 @@ def parse_time(value):
         return None
 
 
+def parse_wire_time(value):
+    # A shared millisecond ISO subset avoids Date.parse accepting normalized
+    # calendar dates or Python accepting fractions JavaScript would truncate.
+    if not isinstance(value, str) or not WIRE_TIME.fullmatch(value):
+        return None
+    return parse_time(value)
+
+
 def compare_versions(left, right):
     if left == right:
         return 0
@@ -124,13 +133,13 @@ def verify_envelope(envelope, *, now=None, allowed_kinds=()):
         if envelope.get(key) is not None and not isinstance(envelope[key], str):
             return failure("invalid_" + key)
     for key in ("issued_at", "expires_at"):
-        if envelope.get(key) is not None and parse_time(envelope[key]) is None:
+        if envelope.get(key) is not None and parse_wire_time(envelope[key]) is None:
             return failure("invalid_" + key)
     if now is not None:
-        current = parse_time(now)
+        current = parse_wire_time(now)
         if current is None:
             return failure("invalid_now")
-        expiry = parse_time(envelope.get("expires_at"))
+        expiry = parse_wire_time(envelope.get("expires_at"))
         if expiry is not None and current >= expiry:
             return failure("expired")
     return {"valid": True, "reason": None, "kind": envelope["kind"], "version": envelope["version"]}
