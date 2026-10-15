@@ -74,7 +74,7 @@ That makes policy differences inspectable instead of silently embedding them in 
 
 ## Receipt integrity
 
-`receipt_sha256` covers the unsigned execution receipt. A mutation to intent, context, simulations, decisions, AML source, or output causes `verifyExecutionReceipt()` to fail. Verification also requires the runtime audit stream and attention ledger and checks their hashes and structure. Recalculating an outer receipt hash cannot make missing evidence or a non-array audit pass.
+`receipt_sha256` covers the unsigned execution receipt. A mutation to intent, context, simulations, decisions, AML source, or output causes `verifyExecutionReceipt()` to fail. Verification requires the runtime audit stream and attention ledger and checks their hashes and structure. It also checks that the five ordered audit events match the receipt's timestamp, intent and profile, generated AML, simulations, selected policy and decisions, ledger balances, and output. `audit_receipt_binding_valid` identifies that check. Recalculating the audit chain, outer receipt hash, or signature cannot make contradictory or missing evidence pass verification.
 
 The receipt can additionally be signed with Ed25519, providing a detached identity/attestation layer on top of content integrity. Signing rejects RSA and EC private keys, and verification requires an actual Ed25519 public key and one canonical 64-byte Ed25519 signature encoding. A trusted fingerprint still has to come from outside the receipt.
 

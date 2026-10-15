@@ -5,6 +5,7 @@ import crypto from "node:crypto";
 import {
   executeAccountableIntent,
   verifyExecutionReceipt,
+  verifyAuditStream,
   signExecutionReceipt,
   verifySignedExecutionReceipt,
   listPolicyProfiles,
@@ -46,6 +47,18 @@ function refreshOuterReceiptHash(receipt) {
   const { receipt_sha256, signature, ...payload } = receipt;
   receipt.receipt_sha256 = sha256(payload);
   return receipt;
+}
+
+function refreshAuditAndReceiptHashes(receipt) {
+  let previous = null;
+  for (const entry of receipt.runtime_audit_stream.entries) {
+    entry.previous_hash = previous;
+    const { entry_hash, ...core } = entry;
+    entry.entry_hash = sha256(core);
+    previous = entry.entry_hash;
+  }
+  receipt.audit_stream_sha256 = sha256(receipt.runtime_audit_stream);
+  return refreshOuterReceiptHash(receipt);
 }
 
 function freshReceipt() {
@@ -226,6 +239,55 @@ test("receipt verification rejects a non-array audit even when its hashes are re
   assert.equal(verification.receipt_hash_valid, true);
   assert.equal(verification.audit_stream_valid, false);
   assert.equal(verification.verified, false);
+});
+
+test("receipt verification and signing reject audit events that contradict a re-hashed receipt", () => {
+  const { privateKey } = crypto.generateKeyPairSync("ed25519");
+  const pem = privateKey.export({ type: "pkcs8", format: "pem" });
+  for (const [stage, mutate] of [
+    ["intent", receipt => { receipt.intent.audit_probe = "different declaration"; receipt.intent_sha256 = sha256(receipt.intent); }],
+    ["AML", receipt => { receipt.aml_source += "\n// different source"; receipt.aml_sha256 = sha256(receipt.aml_source); }],
+    ["simulation", receipt => { receipt.simulations.audit_probe = "different simulation"; receipt.simulation_sha256 = sha256(receipt.simulations); }],
+    ["decision", receipt => { receipt.decision_sha256 = "f".repeat(64); }],
+    ["output", receipt => { receipt.output_sha256 = "f".repeat(64); }],
+    ["profile", receipt => { receipt.profile.id = "another_profile"; }],
+    ["policy list", receipt => { receipt.profile.policies = [...receipt.profile.policies, "another_policy"]; }],
+    ["selected policy", receipt => { receipt.selected_render.policy_id = "another_policy"; }]
+  ]) {
+    const receipt = freshReceipt();
+    mutate(receipt);
+    refreshOuterReceiptHash(receipt);
+    const verification = verifyExecutionReceipt(receipt);
+    assert.equal(verification.receipt_hash_valid, true, stage);
+    assert.equal(verifyAuditStream(receipt.runtime_audit_stream).verified, true, stage);
+    assert.equal(verification.audit_receipt_binding_valid, false, stage);
+    assert.equal(verification.audit_stream_valid, false, stage);
+    assert.equal(verification.verified, false, stage);
+    assert.throws(() => signExecutionReceipt(receipt, pem), /invalid ĀML execution receipt/, stage);
+  }
+});
+
+test("receipt verification rejects a re-hashed audit chain that contradicts its receipt", () => {
+  for (const [label, mutate] of [
+    ["event payload", receipt => { receipt.runtime_audit_stream.entries[3].payload.attention_ledger_consumed = 999; }],
+    ["event type", receipt => { receipt.runtime_audit_stream.entries[4].event_type = "wrong_stage"; }],
+    ["event timestamp", receipt => { receipt.runtime_audit_stream.entries[2].timestamp = "2031-01-01T00:00:00.000Z"; }],
+    ["stream timestamp", receipt => { receipt.runtime_audit_stream.created_at = "2031-01-01T00:00:00.000Z"; }],
+    ["extra event", receipt => {
+      const extra = structuredClone(receipt.runtime_audit_stream.entries[4]);
+      extra.sequence = 5;
+      receipt.runtime_audit_stream.entries.push(extra);
+    }]
+  ]) {
+    const receipt = freshReceipt();
+    mutate(receipt);
+    refreshAuditAndReceiptHashes(receipt);
+    assert.equal(verifyAuditStream(receipt.runtime_audit_stream).verified, true, label);
+    const verification = verifyExecutionReceipt(receipt);
+    assert.equal(verification.receipt_hash_valid, true, label);
+    assert.equal(verification.audit_receipt_binding_valid, false, label);
+    assert.equal(verification.verified, false, label);
+  }
 });
 
 test("receipt verification rejects a structurally invalid ledger even when its hashes are refreshed", () => {
