@@ -149,6 +149,8 @@ Suppressed HTML now emits a generic placeholder without the denied node's identi
 
 Direct compilation and policy simulation now count a child hidden by a denied ancestor as suppressed. Each child still receives its own policy evaluation, and an otherwise allowed child records the ancestor override in its decision rationale. The browser playground mirrors the effective allow/suppress flags for its restorative policy. Run `node --test test/hierarchical-policy-decisions.test.js` or `npm run proof` for the counterexamples. Affected older simulation and execution receipts need regeneration for deterministic replay.
 
+Machine intent string literals now round-trip through the Node and browser parsers, including quoted text, backslashes, newlines, and Unicode escapes. Numeric literals accept finite signed/exponent notation; HTML renders zero and numeric text as declared. Intent properties that cannot be represented as scalar AML values, and non-negative numeric policy fields supplied as invalid types or values in either machine intent or authored AML, fail before evaluation. Run `node --test test/intent-literal-roundtrip.test.js` for quoted-node containment, browser parity, invalid-input rejection, and receipt replay. AML source containing backslash escapes may parse differently than under the older literal-backslash lexer; regenerate affected receipts before deterministic replay.
+
 If the behavior does not reproduce, that is useful evidence. Please publish **PASS / FAIL / MIXED** with enough detail for someone else to repeat your result.
 
 - [Independent verification call](https://github.com/aruintelligence/aml-core/issues/88)

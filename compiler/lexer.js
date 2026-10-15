@@ -99,7 +99,27 @@ export function tokenize(source) {
       const startColumn = column;
       let value = "";
       advance();
-      while (i < source.length && peek() !== '"') value += advance();
+      while (i < source.length && peek() !== '"') {
+        if (peek() !== "\\") {
+          value += advance();
+          continue;
+        }
+        advance();
+        const escaped = advance();
+        const escapes = { '"': '"', "\\": "\\", "/": "/", b: "\b", f: "\f", n: "\n", r: "\r", t: "\t" };
+        if (escaped === "u") {
+          let hex = "";
+          for (let digit = 0; digit < 4; digit++) hex += advance() ?? "";
+          if (!/^[0-9a-fA-F]{4}$/.test(hex)) {
+            throw new Error(`Invalid unicode escape at line ${startLine}, column ${startColumn}`);
+          }
+          value += String.fromCharCode(parseInt(hex, 16));
+        } else if (Object.hasOwn(escapes, escaped)) {
+          value += escapes[escaped];
+        } else {
+          throw new Error(`Invalid string escape at line ${startLine}, column ${startColumn}`);
+        }
+      }
       if (peek() !== '"') {
         throw new Error(`Unterminated string at line ${startLine}, column ${startColumn}`);
       }
@@ -108,12 +128,15 @@ export function tokenize(source) {
       continue;
     }
 
-    if (/[0-9]/.test(char)) {
+    if (/[0-9-]/.test(char)) {
       const startLine = line;
       const startColumn = column;
-      let value = "";
-      while (i < source.length && /[0-9.]/.test(peek())) value += advance();
-      addToken("NUMBER", Number(value), startLine, startColumn);
+      const literal = source.slice(i).match(/^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?/)?.[0];
+      if (!literal || !Number.isFinite(Number(literal))) {
+        throw new Error(`Invalid number at line ${startLine}, column ${startColumn}`);
+      }
+      for (let digit = 0; digit < literal.length; digit++) advance();
+      addToken("NUMBER", Number(literal), startLine, startColumn);
       continue;
     }
 
