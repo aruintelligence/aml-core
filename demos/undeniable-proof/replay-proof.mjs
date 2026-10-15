@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { executeAccountableIntent, verifyExecutionReceipt } from "../../index.js";
+import { executeAccountableIntent, replayExecutionReceipt, verifyExecutionReceipt } from "../../index.js";
 
 const intent = JSON.parse(fs.readFileSync(new URL("./intent.json", import.meta.url), "utf8"));
 const options = {
@@ -41,11 +41,35 @@ assert.doesNotMatch(first.selected_render.html,
   /data-aml-identifier="purchase_action"[^>]*hidden data-aml-suppressed="true"/,
   "the allowed sibling must not inherit the denied node's decision");
 
+// Policy-only declarations must be evaluated even without a purpose or score.
+const controlOnly = executeAccountableIntent({ transmission: "consent_only", nodes: [
+  { type: "engram", identifier: "private", properties: {
+    value: "PRIVATE_PROOF_2841", consent_required: "required"
+  } },
+  { type: "engram", identifier: "public", properties: {
+    value: "PUBLIC_PROOF_5913", consent_required: false
+  } }
+] }, options);
+assert.deepEqual(controlOnly.selected_render.decisions.map(item => item.render_allowed),
+  [false, true], "the control-only nodes must both receive their own decisions");
+assert.doesNotMatch(controlOnly.selected_render.html, /PRIVATE_PROOF_2841/,
+  "the denied content must not appear in HTML");
+assert.match(controlOnly.selected_render.html, /<h2>PUBLIC_PROOF_5913<\/h2>/,
+  "the permitted content must appear in HTML");
+assert.equal(verifyExecutionReceipt(controlOnly).verified, true);
+assert.equal(replayExecutionReceipt(controlOnly).verified, true);
+
 console.log(JSON.stringify({
   proof: "PASS",
   receipt_sha256: first.receipt_sha256,
   decision_sha256: first.decision_sha256,
   output_sha256: first.output_sha256,
   suppressed: first.selected_render.suppressed,
-  allowed: first.selected_render.allowed
+  allowed: first.selected_render.allowed,
+  control_only_consent: {
+    receipt_sha256: controlOnly.receipt_sha256,
+    suppressed: controlOnly.selected_render.suppressed,
+    allowed: controlOnly.selected_render.allowed,
+    replay_verified: true
+  }
 }, null, 2));
