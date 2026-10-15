@@ -153,6 +153,8 @@ Machine intent string literals now round-trip through the Node and browser parse
 
 Duplicate property declarations within one AML block now fail compilation instead of silently letting the last declaration win. The Node and browser engines agree on this rule; independent sibling blocks can use the same property names. Run `node --test test/duplicate-aml-properties.test.js` or `npm run proof` for a consent counterexample, duplicate content and score cases, and prototype-like property names. Older builds that relied on last-declaration behavior must be corrected and regenerated.
 
+Generic semantic blocks such as `message` now render their permitted `content` as escaped paragraph text. A denied block still emits only the generic suppression placeholder, without its content or identifying metadata. Run `node --test test/generic-content-rendering.test.js` and `npm run proof` to check HTML containment and deterministic receipt replay. Older receipts with permitted generic content need regeneration for replay against this renderer.
+
 If the behavior does not reproduce, that is useful evidence. Please publish **PASS / FAIL / MIXED** with enough detail for someone else to repeat your result.
 
 - [Independent verification call](https://github.com/aruintelligence/aml-core/issues/88)

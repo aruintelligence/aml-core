@@ -70,8 +70,10 @@ ${renderChildren(node, decisionsByNode)}
     return "";
   }
 
+  const content = node.properties?.content;
+  const visibleContent = content === undefined ? "" : `  <p>${escapeHTML(content)}</p>\n`;
   return `<section ${attrs}>
-${renderChildren(node, decisionsByNode)}
+${visibleContent}${renderChildren(node, decisionsByNode)}
 </section>`;
 }
 
