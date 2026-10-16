@@ -176,6 +176,71 @@ test('verifier-held policy binds the artifact and an independently retained key 
   );
 });
 
+test('buyer-held trust groups require distinct key material across chosen groups', async () => {
+  const a = await signVerificationReport(report('a'), await createVerifierKeyPair());
+  const b = await signVerificationReport(report('b'), await createVerifierKeyPair());
+  const c = await signVerificationReport(report('c'), await createVerifierKeyPair());
+  const policy = {
+    schema: 'aml-signed-quorum-held-policy/2', prototype: true,
+    artifact_type: 'aml-witness-bundle/1', artifact_hash: 'a'.repeat(64),
+    trusted_keys: [
+      { verifier_key_fingerprint: a.verifier_key_fingerprint, trust_group: 'lab-a' },
+      { verifier_key_fingerprint: b.verifier_key_fingerprint, trust_group: 'lab-a' },
+      { verifier_key_fingerprint: c.verifier_key_fingerprint, trust_group: 'lab-b' }
+    ],
+    threshold: 2, group_threshold: 2
+  };
+  const sameGroupQuorum = await createSignedVerificationQuorum([a, b], { threshold: 2 });
+  const sameGroup = await verifySignedVerificationQuorum(sameGroupQuorum, { policy });
+  assert.equal(sameGroup.valid, true);
+  assert.equal(sameGroup.threshold_met, true);
+  assert.equal(sameGroup.policy_met, false);
+  assert.equal(sameGroup.policy_evaluation.distinct_trusted_keys, 2);
+  assert.equal(sameGroup.policy_evaluation.distinct_trust_groups, 1);
+
+  const diverseQuorum = await createSignedVerificationQuorum([a, c], { threshold: 2 });
+  const diverse = await verifySignedVerificationQuorum(diverseQuorum, { policy });
+  assert.equal(diverse.policy_met, true);
+  assert.equal(diverse.policy_evaluation.distinct_trust_groups, 2);
+  assert.deepEqual(diverse.policy_evaluation.conflicting_key_material_fingerprints, []);
+
+  const unmet = await verifySignedVerificationQuorum(
+    await createSignedVerificationQuorum([a, c], { threshold: 3 }), { policy }
+  );
+  assert.equal(unmet.valid, true);
+  assert.equal(unmet.threshold_met, false);
+  assert.equal(unmet.policy_met, true);
+
+  const alias = structuredClone(a);
+  alias.verifier_public_key_jwk.kid = 'metadata-label-for-same-key';
+  alias.verifier_key_fingerprint = await sha256Browser(alias.verifier_public_key_jwk);
+  const conflictingPolicy = { ...policy, trusted_keys: [
+    policy.trusted_keys[0],
+    { verifier_key_fingerprint: alias.verifier_key_fingerprint, trust_group: 'lab-b' },
+    policy.trusted_keys[1]
+  ] };
+  const aliasQuorum = await createSignedVerificationQuorum([a, alias, b], { threshold: 2 });
+  const conflict = await verifySignedVerificationQuorum(aliasQuorum, { policy: conflictingPolicy });
+  assert.equal(conflict.valid, true);
+  assert.equal(conflict.threshold_met, true);
+  assert.equal(conflict.policy_met, false);
+  assert.equal(conflict.policy_evaluation.distinct_trusted_keys, 2);
+  assert.equal(conflict.policy_evaluation.distinct_trust_groups, 1);
+  assert.equal(conflict.policy_evaluation.conflicting_key_material_fingerprints.length, 1);
+
+  for (const [invalid, reason] of [
+    [{ ...policy, group_threshold: 3 }, /AML_SIGNED_QUORUM_POLICY_GROUP_THRESHOLD_INVALID/],
+    [{ ...policy, trusted_keys: [policy.trusted_keys[0], policy.trusted_keys[0]] },
+      /AML_SIGNED_QUORUM_POLICY_KEYS_INVALID/],
+    [{ ...policy, trusted_keys: [{ ...policy.trusted_keys[0], trust_group: 'Lab A' }] },
+      /AML_SIGNED_QUORUM_POLICY_GROUPS_INVALID/],
+    [{ ...policy, trusted_keys: [{ ...policy.trusted_keys[0], certified: true }] },
+      /AML_SIGNED_QUORUM_POLICY_GROUPS_INVALID/]
+  ]) {
+    await assert.rejects(() => verifySignedVerificationQuorum(diverseQuorum, { policy: invalid }), reason);
+  }
+});
+
 test('JWK metadata aliases cannot turn one P-256 key into two endorsers', async () => {
   const envelope = await signVerificationReport(report('a'), await createVerifierKeyPair());
   const alias = structuredClone(envelope);

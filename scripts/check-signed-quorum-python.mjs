@@ -53,6 +53,7 @@ async function compare(name, quorum, policy, expected, { bundle, challenge } = {
     assert.equal(py.witness_evaluation.artifact_matches, js.witness_evaluation.artifact_matches, name);
     assert.deepEqual(py.replayable_claims_evaluation, js.replayable_claims_evaluation, name);
   }
+  if (policy && js.valid) assert.deepEqual(py.policy_evaluation, js.policy_evaluation, name);
   assert.equal(py.valid && py.threshold_met && (!policy || py.policy_met) &&
     (!bundle || (py.witness_met && py.replayable_claims_consistent)), expected, name);
   assert.equal(run.status, expected ? 0 : 2, `${name}: ${run.stderr} ${run.stdout}`);
@@ -70,6 +71,10 @@ try {
     'independent/python/signed-quorum-held-policy-vector.json', 'utf8'
   ));
   await compare('published-synthetic-vector', fixedQuorum, fixedPolicy, true);
+  const fixedGroupPolicy = JSON.parse(fs.readFileSync(
+    'independent/python/signed-quorum-held-group-policy-vector.json', 'utf8'
+  ));
+  await compare('published-synthetic-group-vector', fixedQuorum, fixedGroupPolicy, true);
   const keyA = await createVerifierKeyPair();
   const keyB = await createVerifierKeyPair();
   const a = await signVerificationReport(report('a'), keyA);
@@ -82,6 +87,29 @@ try {
   };
   const quorum = await createSignedVerificationQuorum([a, b], { threshold: 2 });
   await compare('two-distinct-keys', quorum, policy, true);
+  const keyC = await createVerifierKeyPair();
+  const c = await signVerificationReport(report('c'), keyC);
+  const groupedPolicy = {
+    schema: 'aml-signed-quorum-held-policy/2', prototype: true,
+    artifact_type: policy.artifact_type, artifact_hash: policy.artifact_hash,
+    trusted_keys: [
+      { verifier_key_fingerprint: a.verifier_key_fingerprint, trust_group: 'lab-a' },
+      { verifier_key_fingerprint: b.verifier_key_fingerprint, trust_group: 'lab-b' }
+    ],
+    threshold: 2, group_threshold: 2
+  };
+  await compare('two-buyer-held-trust-groups', quorum, groupedPolicy, true);
+  await compare('grouped-policy-met-but-saved-threshold-unmet',
+    await createSignedVerificationQuorum([a, b], { threshold: 3 }), groupedPolicy, false);
+  await compare('two-keys-one-buyer-held-group', quorum, { ...groupedPolicy, trusted_keys: [
+    groupedPolicy.trusted_keys[0],
+    { verifier_key_fingerprint: b.verifier_key_fingerprint, trust_group: 'lab-a' },
+    { verifier_key_fingerprint: c.verifier_key_fingerprint, trust_group: 'lab-b' }
+  ] }, false);
+  await compare('missing-key-in-group-policy', quorum, { ...groupedPolicy, trusted_keys: [
+    groupedPolicy.trusted_keys[0],
+    { verifier_key_fingerprint: c.verifier_key_fingerprint, trust_group: 'lab-b' }
+  ] }, false);
   await compare('without-held-policy', quorum, undefined, true);
   await compare('wrong-held-artifact', quorum, { ...policy, artifact_hash: 'b'.repeat(64) }, false);
   await compare('untrusted-key', quorum, { ...policy,
@@ -106,6 +134,13 @@ try {
   await compare('key-metadata-alias', aliasQuorum, {
     ...policy, trusted_key_fingerprints: [a.verifier_key_fingerprint, alias.verifier_key_fingerprint]
   }, false);
+  await compare('key-alias-assigned-to-two-trust-groups',
+    await createSignedVerificationQuorum([a, alias, b], { threshold: 2 }),
+    { ...groupedPolicy, trusted_keys: [
+      groupedPolicy.trusted_keys[0],
+      { verifier_key_fingerprint: alias.verifier_key_fingerprint, trust_group: 'lab-b' },
+      { verifier_key_fingerprint: b.verifier_key_fingerprint, trust_group: 'lab-a' }
+    ] }, false);
   const dissent = await signVerificationReport(report('dissent', false), keyB);
   await compare('authenticated-dissent',
     await createSignedVerificationQuorum([a, dissent], { threshold: 2 }), policy, false);
@@ -136,6 +171,21 @@ try {
   };
   const replay = { bundle, challenge };
   await compare('replayed-signed-witness', witnessQuorum, witnessPolicy, true, replay);
+  const witnessGroupPolicy = {
+    ...groupedPolicy, artifact_hash: bundle.integrity.value,
+    trusted_keys: [
+      { verifier_key_fingerprint: witnessA.verifier_key_fingerprint, trust_group: 'lab-a' },
+      { verifier_key_fingerprint: witnessB.verifier_key_fingerprint, trust_group: 'lab-b' }
+    ]
+  };
+  await compare('replayed-witness-with-two-held-groups',
+    witnessQuorum, witnessGroupPolicy, true, replay);
+  await compare('replayed-witness-with-only-one-held-group', witnessQuorum,
+    { ...witnessGroupPolicy, trusted_keys: [
+      witnessGroupPolicy.trusted_keys[0],
+      { verifier_key_fingerprint: witnessB.verifier_key_fingerprint, trust_group: 'lab-a' },
+      { verifier_key_fingerprint: '0'.repeat(64), trust_group: 'lab-b' }
+    ] }, false, replay);
   const mismatchedChallenge = {
     ...challenge, issued_at: new Date(Date.parse(challenge.issued_at) - 1000).toISOString()
   };
@@ -235,6 +285,13 @@ try {
     { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
   assert.equal(usage.status, 1, usage.stderr);
   assert.equal(JSON.parse(usage.stdout).reason, 'AML_SIGNED_QUORUM_POLICY_THRESHOLD_INVALID');
+  const invalidGroupPolicy = { ...groupedPolicy, group_threshold: 3 };
+  const invalidGroupUsage = spawnSync('python3', [python, save('group-quorum.json', quorum),
+    '--policy', save('invalid-group-policy.json', invalidGroupPolicy)],
+  { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  assert.equal(invalidGroupUsage.status, 1, invalidGroupUsage.stderr);
+  assert.equal(JSON.parse(invalidGroupUsage.stdout).reason,
+    'AML_SIGNED_QUORUM_POLICY_GROUP_THRESHOLD_INVALID');
 
   const missingChallenge = spawnSync('python3',
     [python, save('pair-quorum.json', witnessQuorum), '--bundle', save('pair-bundle.json', bundle)],
@@ -298,7 +355,8 @@ try {
     protocol: 'aml-signed-quorum-python-cross-runtime/1',
     passed: true, cases: checks,
     additional_checks: ['duplicate_json_key', 'fractional_canonical_value',
-      'malformed_signature', 'invalid_held_policy', 'missing_held_challenge',
+      'malformed_signature', 'invalid_held_policy', 'invalid_trust_group_policy',
+      'missing_held_challenge',
       'matching_held_challenge', 'mismatched_held_challenge', 'duplicate_witness_key',
       'malformed_witness_signature', 'malformed_witness_attestation',
       'before_challenge_issue', 'after_challenge_expiry'],

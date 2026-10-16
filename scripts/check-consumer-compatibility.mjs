@@ -116,6 +116,35 @@ try {
   if (!policyValid.valid || !policyValid.threshold_met || !policyValid.policy_met) {
     throw new Error('Installed-package signed quorum CLI did not enforce verifier-held policy');
   }
+  const groupPolicy = {
+    schema: 'aml-signed-quorum-held-policy/2', prototype: true,
+    artifact_type: signedQuorum.artifact_type, artifact_hash: signedQuorum.artifact_hash,
+    trusted_keys: [
+      { verifier_key_fingerprint: signedA.verifier_key_fingerprint, trust_group: 'lab-a' },
+      { verifier_key_fingerprint: signedB.verifier_key_fingerprint, trust_group: 'lab-b' }
+    ],
+    threshold: 2, group_threshold: 2
+  };
+  fs.writeFileSync(path.join(tempRoot, 'group-policy.json'), `${JSON.stringify(groupPolicy)}\n`);
+  const groupBound = JSON.parse(runNpm(['exec', '--', 'aml', 'verify-signed-quorum',
+    'signed-quorum.json', '--policy', 'group-policy.json'], tempRoot));
+  if (!groupBound.policy_met || groupBound.policy_evaluation.distinct_trust_groups !== 2) {
+    throw new Error('Installed-package signed quorum CLI did not enforce held trust groups');
+  }
+  const collapsedPolicy = { ...groupPolicy, trusted_keys: [
+    groupPolicy.trusted_keys[0],
+    { verifier_key_fingerprint: signedB.verifier_key_fingerprint, trust_group: 'lab-a' },
+    { verifier_key_fingerprint: '0'.repeat(64), trust_group: 'lab-b' }
+  ] };
+  fs.writeFileSync(path.join(tempRoot, 'collapsed-policy.json'), `${JSON.stringify(collapsedPolicy)}\n`);
+  const collapsedRun = spawnSync(process.execPath, [path.join(installedRoot, 'bin', 'aml.js'),
+    'verify-signed-quorum', 'signed-quorum.json', '--policy', 'collapsed-policy.json'],
+  { cwd: tempRoot, encoding: 'utf8' });
+  const collapsed = JSON.parse(collapsedRun.stdout);
+  if (collapsedRun.status !== 2 || !collapsed.valid || !collapsed.threshold_met ||
+      collapsed.policy_met !== false || collapsed.policy_evaluation.distinct_trust_groups !== 1) {
+    throw new Error('Installed-package signed quorum CLI accepted one trust group as two');
+  }
   const witnessBound = JSON.parse(runNpm(['exec', '--', 'aml', 'verify-signed-quorum',
     'signed-quorum.json', '--policy', 'held-policy.json', '--bundle', 'witness.json',
     '--challenge', 'held-challenge.json'], tempRoot));
@@ -198,6 +227,8 @@ try {
       signed_quorum_cli_valid: true,
       signed_quorum_cli_rejects_inflation: true,
       signed_quorum_cli_held_policy_valid: true,
+      signed_quorum_cli_group_policy_valid: true,
+      signed_quorum_cli_rejects_one_trust_group: true,
       signed_quorum_cli_rejects_untrusted_key: true,
       signed_quorum_cli_held_witness_valid: true,
       signed_quorum_cli_rejects_conflicting_claims: true,

@@ -103,6 +103,43 @@ of their reports. The policy lists envelope fingerprints so that the checker
 can recognize pinned public-key documents; key distinctness is still measured
 from the public key material.
 
+If you need endorsements from separately chosen trust groups, use the
+versioned buyer-held policy below. Obtain each fingerprint and its group
+assignment independently of the saved quorum, then retain this policy before
+receiving reports:
+
+```json
+{
+  "schema": "aml-signed-quorum-held-policy/2",
+  "prototype": true,
+  "artifact_type": "aml-witness-bundle/1",
+  "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "trusted_keys": [
+    { "verifier_key_fingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "trust_group": "lab-a" },
+    { "verifier_key_fingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "trust_group": "lab-b" }
+  ],
+  "threshold": 2,
+  "group_threshold": 2
+}
+```
+
+The same `--policy` option accepts either version. Version 2 requires its key
+threshold **and** its trust-group threshold among allowlisted, positively
+signed reports about the pinned artifact. Both distinct keys and groups are
+counted from the submitted reports; the trusted key list may contain groups
+that never endorsed. A key's P-256 public point counts once, even if its JWK
+metadata changes. If two pinned envelope fingerprints for that same public
+point appear in positive signed reports and assign it to different groups,
+`policy_met` is false and the conflicting key material is listed in
+`policy_evaluation`. The checker cannot detect aliases that are absent from
+the submitted reports using envelope fingerprints alone.
+
+Trust-group labels are buyer-supplied lowercase identifiers of 1–64 ASCII
+letters, digits, dots, underscores, or hyphens, beginning with a letter or
+digit. They express the buyer's trust roster; they do not verify an operator's
+identity, legal status, independence, control of a key, or the truth of a
+report. Version 1 remains supported when group diversity is not required.
+
 For cross-runtime checking of the saved quorum and held policy, use the
 [project-authored Python verifier](../independent/python/verify_signed_quorum.py):
 

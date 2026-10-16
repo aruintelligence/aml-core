@@ -26,6 +26,7 @@ BOUNDARY = (
 HEX64 = re.compile(r"^[a-f0-9]{64}$")
 BASE64URL = re.compile(r"^[A-Za-z0-9_-]{43}$")
 SIGNATURE_B64URL = re.compile(r"^[A-Za-z0-9_-]{86}$")
+TRUST_GROUP = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 REPLAYABLE_WITNESS_CHECKS = (
     "bundle_integrity", "receipt_integrity", "evidence_integrity",
     "challenge_freshness", "challenge_binding", "session_signature",
@@ -120,9 +121,13 @@ def verify_report(envelope):
 
 
 def validate_policy(policy):
-    fields = {"artifact_hash", "artifact_type", "prototype", "schema", "threshold", "trusted_key_fingerprints"}
-    if (not isinstance(policy, dict) or set(policy) != fields or
-            policy.get("schema") != "aml-signed-quorum-held-policy/1" or
+    if not isinstance(policy, dict):
+        raise ValueError("AML_SIGNED_QUORUM_POLICY_INVALID")
+    grouped = policy.get("schema") == "aml-signed-quorum-held-policy/2"
+    fields = ({"artifact_hash", "artifact_type", "group_threshold", "prototype", "schema", "threshold", "trusted_keys"}
+              if grouped else {"artifact_hash", "artifact_type", "prototype", "schema", "threshold", "trusted_key_fingerprints"})
+    if (set(policy) != fields or
+            policy.get("schema") not in ("aml-signed-quorum-held-policy/1", "aml-signed-quorum-held-policy/2") or
             policy.get("prototype") is not True):
         raise ValueError("AML_SIGNED_QUORUM_POLICY_INVALID")
     check_json(policy)
@@ -131,13 +136,28 @@ def validate_policy(policy):
             not isinstance(policy["artifact_hash"], str) or
             not HEX64.fullmatch(policy["artifact_hash"])):
         raise ValueError("AML_SIGNED_QUORUM_POLICY_ARTIFACT_INVALID")
-    keys = policy["trusted_key_fingerprints"]
+    if grouped:
+        entries = policy["trusted_keys"]
+        if (not isinstance(entries, list) or any(
+            not isinstance(entry, dict) or
+            set(entry) != {"verifier_key_fingerprint", "trust_group"} or
+            not isinstance(entry["trust_group"], str) or
+            not TRUST_GROUP.fullmatch(entry["trust_group"])
+            for entry in entries
+        )):
+            raise ValueError("AML_SIGNED_QUORUM_POLICY_GROUPS_INVALID")
+    keys = ([entry["verifier_key_fingerprint"] for entry in entries]
+            if grouped else policy["trusted_key_fingerprints"])
     if (not isinstance(keys, list) or not 1 <= len(keys) <= 64 or
             any(not isinstance(k, str) or not HEX64.fullmatch(k) for k in keys) or
             len(set(keys)) != len(keys)):
         raise ValueError("AML_SIGNED_QUORUM_POLICY_KEYS_INVALID")
     if type(policy["threshold"]) is not int or not 1 <= policy["threshold"] <= len(keys):
         raise ValueError("AML_SIGNED_QUORUM_POLICY_THRESHOLD_INVALID")
+    if grouped:
+        groups = {entry["trust_group"] for entry in entries}
+        if type(policy["group_threshold"]) is not int or not 1 <= policy["group_threshold"] <= len(groups):
+            raise ValueError("AML_SIGNED_QUORUM_POLICY_GROUP_THRESHOLD_INVALID")
 
 
 def canonical_report_time(value):
@@ -216,7 +236,13 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
         trusted = set()
         valid_reports = 0
         reasons = []
-        allowed = set(policy["trusted_key_fingerprints"]) if policy is not None else set()
+        grouped = policy is not None and policy["schema"] == "aml-signed-quorum-held-policy/2"
+        assignments = ({entry["verifier_key_fingerprint"]: entry["trust_group"]
+                        for entry in policy["trusted_keys"]} if grouped else {})
+        allowed = (set(assignments) if grouped else
+                   set(policy["trusted_key_fingerprints"]) if policy is not None else set())
+        material_groups = {}
+        conflicting_materials = []
         artifact_matches = (policy is not None and
                             artifact_type == policy["artifact_type"] and
                             artifact_hash == policy["artifact_hash"])
@@ -229,6 +255,13 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
                 endorsers.add(key_material)
                 if artifact_matches and envelope["verifier_key_fingerprint"] in allowed:
                     trusted.add(key_material)
+                    if grouped:
+                        group = assignments[envelope["verifier_key_fingerprint"]]
+                        if key_material in material_groups and material_groups[key_material] != group:
+                            if key_material not in conflicting_materials:
+                                conflicting_materials.append(key_material)
+                        else:
+                            material_groups[key_material] = group
             elif envelope["report"]["reason"] not in reasons:
                 reasons.append(envelope["report"]["reason"])
         invalid_reports = len(reports) - valid_reports
@@ -252,10 +285,16 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
                   "reason": "AML_PY_SIGNED_QUORUM_VALID" if valid else "AML_PY_SIGNED_QUORUM_MISMATCH",
                   "summary": summary}
         if policy is not None:
-            result["policy_met"] = valid and artifact_matches and len(trusted) >= policy["threshold"]
+            distinct_groups = len({group for material, group in material_groups.items()
+                                   if material not in conflicting_materials})
+            result["policy_met"] = (valid and artifact_matches and len(trusted) >= policy["threshold"] and
+                                    (not grouped or (distinct_groups >= policy["group_threshold"] and
+                                                     not conflicting_materials)))
             result["policy_evaluation"] = {
                 "artifact_matches": artifact_matches, "distinct_trusted_keys": len(trusted),
                 "threshold": policy["threshold"],
+                **({"distinct_trust_groups": distinct_groups, "group_threshold": policy["group_threshold"],
+                    "conflicting_key_material_fingerprints": conflicting_materials} if grouped else {}),
             }
         if with_witness:
             witness_valid, witness_reason = verify_bundle(witness_bundle, expected_challenge=expected_challenge)
