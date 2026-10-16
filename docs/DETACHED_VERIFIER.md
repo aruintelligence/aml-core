@@ -91,7 +91,10 @@ An installed preview package can use `aml verify-witness` instead. The
 command prints the verifier result as JSON and exits `0` for valid, `2` for
 rejected evidence, and `1` for a missing file or malformed input. It requires
 both files and uses the current clock for expiration; extracting a challenge
-from the untrusted bundle would defeat the verifier-held comparison. This
+from the untrusted bundle would defeat the verifier-held comparison. The CLI
+requires strict UTF-8 and rejects duplicate JSON object names in both files,
+including escaped aliases and nested names, as malformed input (exit `1`). An
+already-parsed JavaScript object has lost that source-byte ambiguity. This
 command is in the current preview checkout, not the pinned `v1.3.0` stable
 package.
 

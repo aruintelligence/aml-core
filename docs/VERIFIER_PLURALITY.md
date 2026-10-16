@@ -60,6 +60,12 @@ exit `1` means usage or unreadable/malformed JSON. This command is in the
 current preview checkout, not the pinned `v1.3.0` stable package. The saved
 signed quorum counts distinct valid endorser **keys**, and accepts at most 64
 supplied reports.
+The CLI requires strict UTF-8 and rejects duplicate JSON object names in every
+input file, including escaped spellings of the same name and duplicates nested
+in signed reports. A malformed byte sequence or duplicate name is a usage
+error (exit `1`), even when lossy decoding or last-key-wins parsing would
+produce a valid quorum. The browser API accepts already-parsed objects and
+cannot recover source-byte errors or duplicate names from them.
 It derives distinctness from the P-256 public point. Two JWK envelopes for the
 same key with different optional metadata still count as one key, even if the
 envelope fingerprints differ.
