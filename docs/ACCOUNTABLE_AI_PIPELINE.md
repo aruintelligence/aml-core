@@ -60,6 +60,8 @@ const receipt = executeAccountableIntent(intent, {
 });
 ```
 
+Numeric context limits (`attention_budget_remaining`, `attention_budget_initial`, and `max_cognitive_load`) must be non-negative finite numbers when supplied. `null` acts like an omitted field; with no finite attention budget the cumulative ledger is unbounded. A malformed string, negative number, boolean, or non-finite number throws before the pipeline issues a receipt. The same validation applies to direct compilation and policy simulation. The cumulative ledger uses a finite `attention_budget_remaining` first, then a finite `attention_budget_initial`.
+
 ## CLI
 
 ```bash

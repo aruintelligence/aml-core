@@ -1,6 +1,11 @@
 export type AmlMode = "enforce" | "shadow";
 export type AmlFailureMode = "closed" | "open";
-export type AmlContext = Record<string, unknown>;
+export type AmlContext = Record<string, unknown> & {
+  /** Numeric limits must be finite and non-negative; null acts like an omitted field. */
+  attention_budget_remaining?: number | null;
+  attention_budget_initial?: number | null;
+  max_cognitive_load?: number | null;
+};
 
 export interface AmlIntentNode {
   type: string;
