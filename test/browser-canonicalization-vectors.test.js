@@ -20,6 +20,11 @@ test('browser canonicalization matches every published golden vector', async () 
 
 test('a literal __proto__ data key is bound to the browser receipt hash', async () => {
   const metadata = JSON.parse('{"__proto__":{"approved":false},"label":"item"}');
+  const canonical = '{"__proto__":{"approved":false},"label":"item"}';
+  assert.equal(canonicalJSONStringify(metadata), canonical);
+  assert.equal(canonicalJSONStringifyBrowser(metadata), canonical);
+  assert.equal(await sha256Browser(metadata),
+    'c871b10ecf17d4e6fbeaab740ee8a96a35fffa3fdee53d39aa958937f9716d79');
   const receipt = await sealBrowserReceipt({ schema: 'aml-dom-receipt/1', metadata });
   assert.equal((await verifyBrowserReceipt(receipt)).valid, true);
   assert.equal(Object.hasOwn(metadata, '__proto__'), true);
