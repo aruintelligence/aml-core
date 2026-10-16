@@ -7,7 +7,10 @@ import { sealBrowserReceipt } from '../docs/aml-browser-integrity.js';
 import { createBrowserEvidence } from '../docs/aml-browser-evidence.js';
 import { createVerificationChallenge } from '../docs/aml-verification-challenge.js';
 import { createSessionAttestation } from '../docs/aml-session-attestation.js';
-import { createWitnessBundle } from '../docs/aml-witness-bundle.js';
+import { createWitnessBundle, verifyWitnessBundle } from '../docs/aml-witness-bundle.js';
+import { witnessVerificationReport } from '../docs/aml-verification-report.js';
+import { createVerifierKeyPair, signVerificationReport } from '../docs/aml-signed-verification-report.js';
+import { createSignedVerificationQuorum } from '../docs/aml-signed-verification-quorum.js';
 
 const root = process.cwd();
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-consumer-compat-'));
@@ -90,6 +93,27 @@ try {
     throw new Error('Installed-package witness CLI accepted a different retained challenge');
   }
 
+  const witnessCheck = await verifyWitnessBundle(bundle, { expectedChallenge: challenge });
+  const reportA = witnessVerificationReport(bundle, witnessCheck, { verifier: 'compat-a' });
+  const reportB = witnessVerificationReport(bundle, witnessCheck, { verifier: 'compat-b' });
+  const signedA = await signVerificationReport(reportA, await createVerifierKeyPair());
+  const signedB = await signVerificationReport(reportB, await createVerifierKeyPair());
+  const signedQuorum = await createSignedVerificationQuorum([signedA, signedB], { threshold: 2 });
+  fs.writeFileSync(path.join(tempRoot, 'signed-quorum.json'), `${JSON.stringify(signedQuorum)}\n`);
+  const quorumValid = JSON.parse(runNpm(['exec', '--', 'aml', 'verify-signed-quorum', 'signed-quorum.json'], tempRoot));
+  if (!quorumValid.valid || !quorumValid.threshold_met) {
+    throw new Error('Installed-package signed quorum CLI did not verify the saved threshold');
+  }
+  const inflatedQuorum = structuredClone(signedQuorum);
+  inflatedQuorum.summary.distinct_keys += 1;
+  fs.writeFileSync(path.join(tempRoot, 'inflated-quorum.json'), `${JSON.stringify(inflatedQuorum)}\n`);
+  const rejectedQuorum = spawnSync(process.execPath, [path.join(installedRoot, 'bin', 'aml.js'),
+    'verify-signed-quorum', 'inflated-quorum.json'], { cwd: tempRoot, encoding: 'utf8' });
+  if (rejectedQuorum.status !== 2 ||
+      JSON.parse(rejectedQuorum.stdout).reason !== 'AML_SIGNED_QUORUM_MISMATCH') {
+    throw new Error('Installed-package signed quorum CLI accepted an inflated summary');
+  }
+
   const report = {
     protocol: 'aml-consumer-compatibility-report/1',
     package: pkg.name,
@@ -114,6 +138,8 @@ try {
       consumer_quickstart_cli: true,
       browser_witness_cli_valid: true,
       browser_witness_cli_rejects_other_challenge: true,
+      signed_quorum_cli_valid: true,
+      signed_quorum_cli_rejects_inflation: true,
       consumer_receipt_sha256: quickstart.receipt_sha256
     },
     claim_boundary: matrix.claim_boundary

@@ -12,7 +12,7 @@ import {
   signVerificationReport,
   verifySignedVerificationReport
 } from '../docs/aml-signed-verification-report.js';
-import { createSignedVerificationQuorum } from '../docs/aml-signed-verification-quorum.js';
+import { createSignedVerificationQuorum, verifySignedVerificationQuorum } from '../docs/aml-signed-verification-quorum.js';
 
 function report(verifier, artifactHash = 'a'.repeat(64), valid = true) {
   return {
@@ -52,7 +52,7 @@ test('signed reports reject live claims that the signature did not cover', async
   assert.equal(check.reason, 'AML_CANONICAL_JSON_NON_JSON_OBJECT');
   await assert.rejects(
     () => createSignedVerificationQuorum([envelope], { threshold: 1 }),
-    /AML_SIGNED_QUORUM_NO_VALID_SIGNED_REPORTS/
+    /AML_CANONICAL_JSON_NON_JSON_OBJECT/
   );
   await assert.rejects(
     () => signVerificationReport(envelope.report, keys),
@@ -72,6 +72,36 @@ test('signed verification quorum requires distinct valid key fingerprints', asyn
   assert.equal(quorum.summary.unanimous, true);
 });
 
+test('saved signed quorum recomputes signatures, summary, threshold, and claim boundary', async () => {
+  const envelopeA = await signVerificationReport(report('verifier-a'), await createVerifierKeyPair());
+  const envelopeB = await signVerificationReport(report('verifier-b'), await createVerifierKeyPair());
+  const quorum = await createSignedVerificationQuorum([envelopeA, envelopeB], { threshold: 2 });
+  const saved = JSON.parse(JSON.stringify(quorum));
+  const verified = await verifySignedVerificationQuorum(saved);
+  assert.equal(verified.valid, true);
+  assert.equal(verified.threshold_met, true);
+
+  const wrongSchema = await verifySignedVerificationQuorum({ schema: 'other-quorum/1' });
+  assert.equal(wrongSchema.valid, false);
+  assert.equal(wrongSchema.threshold_met, false);
+
+  const inflated = structuredClone(saved);
+  inflated.summary.distinct_keys = 3;
+  assert.equal((await verifySignedVerificationQuorum(inflated)).reason, 'AML_SIGNED_QUORUM_MISMATCH');
+
+  const rewritten = structuredClone(saved);
+  rewritten.claim_boundary = 'Certified by an independent authority';
+  assert.equal((await verifySignedVerificationQuorum(rewritten)).valid, false);
+
+  const changedReport = structuredClone(saved);
+  changedReport.signed_reports[0].report.reason = 'changed after signing';
+  assert.equal((await verifySignedVerificationQuorum(changedReport)).valid, false);
+
+  const hiddenClaim = structuredClone(saved);
+  Object.defineProperty(hiddenClaim, 'approval', { value: 'unbound' });
+  assert.equal((await verifySignedVerificationQuorum(hiddenClaim)).reason, 'AML_CANONICAL_JSON_NON_JSON_OBJECT');
+});
+
 test('reusing one verifier key cannot satisfy a two-key threshold', async () => {
   const key = await createVerifierKeyPair();
   const envelopeA = await signVerificationReport(report('verifier-a'), key);
@@ -80,6 +110,9 @@ test('reusing one verifier key cannot satisfy a two-key threshold', async () => 
   assert.equal(quorum.summary.distinct_keys, 1);
   assert.equal(quorum.summary.valid_reports, 2);
   assert.equal(quorum.summary.threshold_met, false);
+  const verified = await verifySignedVerificationQuorum(JSON.parse(JSON.stringify(quorum)));
+  assert.equal(verified.valid, true);
+  assert.equal(verified.threshold_met, false);
 });
 
 test('a correctly signed invalid report is dissent and cannot satisfy the distinct-key quorum', async () => {

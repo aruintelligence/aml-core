@@ -2,11 +2,14 @@
 // Requires valid signed reports over one exact artifact and counts distinct verifier-key fingerprints.
 // Distinct keys do not prove distinct people, organizations, independence, or correctness.
 
+import { assertBrowserJSON, canonicalJSONStringifyBrowser } from './aml-browser-integrity.js';
 import { verifySignedVerificationReport } from './aml-signed-verification-report.js';
 
 export async function createSignedVerificationQuorum(signedReports, { threshold = 2 } = {}) {
   if (!Array.isArray(signedReports) || signedReports.length === 0) throw new Error('AML_SIGNED_QUORUM_REPORTS_REQUIRED');
+  if (signedReports.length > 64) throw new Error('AML_SIGNED_QUORUM_TOO_MANY_REPORTS');
   if (!Number.isInteger(threshold) || threshold < 1) throw new Error('AML_SIGNED_QUORUM_THRESHOLD_INVALID');
+  assertBrowserJSON(signedReports);
 
   const checks = [];
   for (const envelope of signedReports) {
@@ -87,4 +90,23 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
     },
     claim_boundary: 'Threshold agreement means enough supplied reports were validly signed by distinct public-key fingerprints over the same exact artifact and reported valid. Correctly signed invalid reports are authenticated dissent and never count toward the endorsement quorum. Distinct keys do not prove distinct people, organizations, independence, authorization, certification, or correctness.'
   };
+}
+
+export async function verifySignedVerificationQuorum(quorum) {
+  try {
+    assertBrowserJSON(quorum);
+    if (!quorum || quorum.schema !== 'aml-signed-verification-quorum/1') {
+      return { valid: false, reason: 'AML_SIGNED_QUORUM_INVALID', threshold_met: false };
+    }
+    const rebuilt = await createSignedVerificationQuorum(quorum.signed_reports, { threshold: quorum.threshold });
+    const valid = canonicalJSONStringifyBrowser(quorum) === canonicalJSONStringifyBrowser(rebuilt);
+    return {
+      valid,
+      reason: valid ? 'AML_SIGNED_QUORUM_VALID' : 'AML_SIGNED_QUORUM_MISMATCH',
+      threshold_met: valid && rebuilt.summary.threshold_met,
+      quorum: rebuilt
+    };
+  } catch (error) {
+    return { valid: false, reason: error?.message || 'AML_SIGNED_QUORUM_VERIFY_ERROR', threshold_met: false };
+  }
 }
