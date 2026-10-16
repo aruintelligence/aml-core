@@ -69,6 +69,24 @@ and expiration; it does not independently sign `issued_at`. The final
 bundle digest is not a keyed signature, so a verifier must keep its own
 challenge to establish that the response answers its request.
 
+## Verify a saved bundle from the CLI
+
+From a checkout or packed preview that contains this command, save the
+challenge **you generated and retained** as `my-challenge.json`. Save the
+response separately as `bundle.json`, then run:
+
+```bash
+node bin/aml.js verify-witness bundle.json my-challenge.json
+```
+
+An installed preview package can use `aml verify-witness` instead. The
+command prints the verifier result as JSON and exits `0` for valid, `2` for
+rejected evidence, and `1` for a missing file or malformed input. It requires
+both files and uses the current clock for expiration; extracting a challenge
+from the untrusted bundle would defeat the verifier-held comparison. This
+command is in the current preview checkout, not the pinned `v1.3.0` stable
+package.
+
 ## Claim boundary
 
 A valid result shows that the project-defined cryptographic checks passed for the exact supplied artifact and challenge.

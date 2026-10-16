@@ -4,6 +4,7 @@
 // ĀML_CORE — Command-Line Interface
 
 import fs from "fs";
+import { webcrypto } from "node:crypto";
 import { compileAML, compileSource } from "../compiler/compiler.js";
 import { generateAMLFromIntent } from "../compiler/intentCompiler.js";
 import { simulatePolicies } from "../compiler/policySimulator.js";
@@ -28,6 +29,7 @@ import { enforceCumulativeAttentionBudget } from "../runtime/attentionLedger.js"
 import { signBrandAuthorization, verifyBrandAuthorization } from "../runtime/brandAuthorization.js";
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
 import { evaluatePolicyCanary } from "../runtime/policyCanary.js";
+import { verifyWitnessBundle } from "../docs/aml-witness-bundle.js";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -45,6 +47,7 @@ Usage:
   aml deploy <intent.json> [--mode shadow|enforce] [--profile profile] [--failure-mode open|closed] [--context context.json] [--timestamp ISO] [--require-effective-allow]
   aml canary <intent.json> [--baseline profile] [--candidate profile] [--context context.json] [--timestamp ISO] [--fail-on-change]
   aml verify-receipt <receipt.json>
+  aml verify-witness <bundle.json> <verifier-held-challenge.json>
   aml replay-receipt <receipt.json>
   aml sign-receipt <receipt.json> <private-key.pem> [signed-receipt.json]
   aml verify-signed-receipt <signed-receipt.json>
@@ -76,6 +79,7 @@ Commands:
   deploy                      Evaluate intent with enforce/shadow rollout and explicit failure posture
   canary                      Compare the same intent under baseline and candidate policy profiles
   verify-receipt              Verify receipt hash, audit stream, and attention-ledger integrity
+  verify-witness              Verify a browser witness bundle against your retained challenge
   replay-receipt              Re-execute declared receipt inputs with the installed engine
   sign-receipt                Add an Ed25519 attestation to a valid execution receipt
   verify-signed-receipt       Verify receipt integrity, signature, and public-key fingerprint
@@ -113,6 +117,7 @@ Examples:
   aml attention-account examples/simple.aml 10 restorative_v1
   aml execute examples/intent-checkout.json human_first context.json receipt.json
   aml verify-receipt receipt.json
+  aml verify-witness bundle.json my-challenge.json
   aml replay-receipt receipt.json
 `);
 }
@@ -229,6 +234,18 @@ try {
     const result = verifyExecutionReceipt(JSON.parse(readSource(inputPath)));
     console.log(JSON.stringify(result, null, 2));
     process.exit(result.verified ? 0 : 1);
+  }
+  if (command === "verify-witness") {
+    if (args.length !== 3 || !args[1] || !args[2]) {
+      throw new Error("Usage: aml verify-witness <bundle.json> <verifier-held-challenge.json>");
+    }
+    // Support Node builds that do not expose Web Crypto on globalThis.
+    if (!globalThis.crypto?.subtle) globalThis.crypto = webcrypto;
+    const bundle = JSON.parse(readSource(args[1]));
+    const expectedChallenge = JSON.parse(readSource(args[2]));
+    const result = await verifyWitnessBundle(bundle, { expectedChallenge });
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(result.valid ? 0 : 2);
   }
   if (command === "replay-receipt") {
     const result = replayExecutionReceipt(JSON.parse(readSource(inputPath)));

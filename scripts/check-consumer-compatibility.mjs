@@ -1,7 +1,13 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { webcrypto } from 'node:crypto';
+import { sealBrowserReceipt } from '../docs/aml-browser-integrity.js';
+import { createBrowserEvidence } from '../docs/aml-browser-evidence.js';
+import { createVerificationChallenge } from '../docs/aml-verification-challenge.js';
+import { createSessionAttestation } from '../docs/aml-session-attestation.js';
+import { createWitnessBundle } from '../docs/aml-witness-bundle.js';
 
 const root = process.cwd();
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-consumer-compat-'));
@@ -38,8 +44,8 @@ try {
   if (matrix.package !== pkg.name) throw new Error('Compatibility matrix package name does not match package.json');
   if (matrix.runtime?.node_engine !== pkg.engines?.node) throw new Error('Compatibility matrix Node engine does not match package.json');
 
-  const packResult = JSON.parse(runNpm(['pack', '--json'], root))[0];
-  tarballPath = path.join(root, packResult.filename);
+  const packResult = JSON.parse(runNpm(['pack', '--json', '--pack-destination', tempRoot], root))[0];
+  tarballPath = path.join(tempRoot, packResult.filename);
   if (!fs.existsSync(tarballPath)) throw new Error(`npm pack did not create ${tarballPath}`);
 
   fs.writeFileSync(path.join(tempRoot, 'package.json'), '{"private":true,"type":"module"}\n');
@@ -61,6 +67,27 @@ try {
   const cliVerification = JSON.parse(runNpm(['exec', '--', 'aml', 'verify-receipt', 'cli-receipt.json'], tempRoot));
   if (cliReceipt.selected_render?.allowed !== 1 || cliReceipt.selected_render?.suppressed !== 1 || !cliVerification.verified) {
     throw new Error('Installed-package CLI execution or receipt verification failed');
+  }
+
+  if (!globalThis.crypto?.subtle) globalThis.crypto = webcrypto;
+  const browserReceipt = await sealBrowserReceipt({ schema: 'aml-dom-receipt/1', decisions: [] });
+  const browserEvidence = await createBrowserEvidence(browserReceipt, { url: 'https://example.test/' });
+  const challenge = createVerificationChallenge({ ttl_ms: 120000 });
+  const attestation = await createSessionAttestation({ evidence: browserEvidence, challenge });
+  const bundle = await createWitnessBundle({ evidence: browserEvidence, challenge, attestation });
+  fs.writeFileSync(path.join(tempRoot, 'witness.json'), `${JSON.stringify(bundle)}\n`);
+  fs.writeFileSync(path.join(tempRoot, 'held-challenge.json'), `${JSON.stringify(challenge)}\n`);
+  const witnessValid = JSON.parse(runNpm(['exec', '--', 'aml', 'verify-witness', 'witness.json', 'held-challenge.json'], tempRoot));
+  if (!witnessValid.valid || witnessValid.reason !== 'AML_WITNESS_BUNDLE_VALID') {
+    throw new Error('Installed-package witness CLI did not verify the retained challenge');
+  }
+  const differentChallenge = { ...challenge, issued_at: new Date(Date.parse(challenge.issued_at) - 1000).toISOString() };
+  fs.writeFileSync(path.join(tempRoot, 'other-challenge.json'), `${JSON.stringify(differentChallenge)}\n`);
+  const rejectedWitness = spawnSync(process.execPath, [path.join(installedRoot, 'bin', 'aml.js'),
+    'verify-witness', 'witness.json', 'other-challenge.json'], { cwd: tempRoot, encoding: 'utf8' });
+  if (rejectedWitness.status !== 2 ||
+      JSON.parse(rejectedWitness.stdout).reason !== 'AML_WITNESS_BUNDLE_CHALLENGE_MISMATCH') {
+    throw new Error('Installed-package witness CLI accepted a different retained challenge');
   }
 
   const report = {
@@ -85,6 +112,8 @@ try {
       aml_cli_validate: /VALID:/i.test(validateOutput),
       consumer_quickstart_api: true,
       consumer_quickstart_cli: true,
+      browser_witness_cli_valid: true,
+      browser_witness_cli_rejects_other_challenge: true,
       consumer_receipt_sha256: quickstart.receipt_sha256
     },
     claim_boundary: matrix.claim_boundary
