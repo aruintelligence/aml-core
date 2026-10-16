@@ -65,6 +65,18 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   assert.equal(JSON.parse(run(write('reordered.json', reordered)).stdout)
     .input_fingerprints.quorum_sha256, inputHash(quorum));
 
+  // The command must finish writing even when its result exceeds pipe buffers
+  // on Linux and macOS; an immediate process.exit can truncate valid JSON.
+  const verbose = report('verbose');
+  verbose.notes = ['x'.repeat(128 * 1024)];
+  const largeQuorum = await createSignedVerificationQuorum([
+    await signVerificationReport(verbose, await createVerifierKeyPair())
+  ], { threshold: 1 });
+  const large = run(write('large-quorum.json', largeQuorum));
+  assert.equal(large.status, 0, large.stderr);
+  assert.ok(large.stdout.length > 128 * 1024);
+  assert.equal(JSON.parse(large.stdout).input_fingerprints.quorum_sha256, inputHash(largeQuorum));
+
   const padded = { ...b, signature: `${b.signature}==` };
   const paddedQuorum = await createSignedVerificationQuorum([a, padded], { threshold: 2 });
   const paddedRun = run(write('padded-signature-quorum.json', paddedQuorum));
