@@ -120,8 +120,26 @@ try {
     'signed-quorum.json', '--policy', 'held-policy.json', '--bundle', 'witness.json',
     '--challenge', 'held-challenge.json'], tempRoot));
   if (!witnessBound.valid || !witnessBound.threshold_met ||
-      !witnessBound.policy_met || !witnessBound.witness_met) {
+      !witnessBound.policy_met || !witnessBound.witness_met ||
+      !witnessBound.replayable_claims_consistent) {
     throw new Error('Installed-package signed quorum CLI did not recheck the retained witness');
+  }
+  const conflictingReport = { ...reportA, session_key_fingerprint: '0'.repeat(64) };
+  const conflictingSigned = await signVerificationReport(conflictingReport, await createVerifierKeyPair());
+  const conflictingQuorum = await createSignedVerificationQuorum([conflictingSigned, signedB], { threshold: 2 });
+  fs.writeFileSync(path.join(tempRoot, 'conflicting-quorum.json'), `${JSON.stringify(conflictingQuorum)}\n`);
+  const conflictingPolicy = { ...heldPolicy,
+    trusted_key_fingerprints: [conflictingSigned.verifier_key_fingerprint, signedB.verifier_key_fingerprint]
+  };
+  fs.writeFileSync(path.join(tempRoot, 'conflicting-policy.json'), `${JSON.stringify(conflictingPolicy)}\n`);
+  const conflictingResult = spawnSync(process.execPath, [path.join(installedRoot, 'bin', 'aml.js'),
+    'verify-signed-quorum', 'conflicting-quorum.json', '--policy', 'conflicting-policy.json',
+    '--bundle', 'witness.json', '--challenge', 'held-challenge.json'],
+  { cwd: tempRoot, encoding: 'utf8' });
+  const conflict = JSON.parse(conflictingResult.stdout);
+  if (conflictingResult.status !== 2 || !conflict.valid || !conflict.threshold_met ||
+      !conflict.policy_met || !conflict.witness_met || conflict.replayable_claims_consistent !== false) {
+    throw new Error('Installed-package signed quorum CLI accepted contradictory signed witness claims');
   }
   const wrongWitness = spawnSync(process.execPath, [path.join(installedRoot, 'bin', 'aml.js'),
     'verify-signed-quorum', 'signed-quorum.json', '--bundle', 'witness.json',
@@ -182,6 +200,7 @@ try {
       signed_quorum_cli_held_policy_valid: true,
       signed_quorum_cli_rejects_untrusted_key: true,
       signed_quorum_cli_held_witness_valid: true,
+      signed_quorum_cli_rejects_conflicting_claims: true,
       signed_quorum_cli_rejects_other_witness_challenge: true,
       consumer_receipt_sha256: quickstart.receipt_sha256
     },
