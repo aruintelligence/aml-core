@@ -131,7 +131,7 @@ receiving reports:
 }
 ```
 
-The same `--policy` option accepts all three versions. Version 2 requires its key
+The same `--policy` option accepts the versioned policies. Version 2 requires its key
 threshold **and** its trust-group threshold among allowlisted, positively
 signed reports about the pinned artifact. Both distinct keys and groups are
 counted from the submitted reports; the trusted key list may contain groups
@@ -193,6 +193,51 @@ group thresholds. An absent key document cannot be checked against its
 claimed material fingerprint until it is supplied, and an invented group or
 multiple keys controlled by one operator remain outside cryptographic proof.
 The older policy versions remain available for existing consumers.
+
+### Require complete signed witness claims
+
+The optional version 4 held policy extends version 3 for an
+`aml-witness-bundle/1`. It requires the bundle and separately retained
+challenge to be supplied with the quorum. Add this field to a version 3
+policy and change its schema:
+
+```json
+{
+  "schema": "aml-signed-quorum-held-policy/4",
+  "prototype": true,
+  "artifact_type": "aml-witness-bundle/1",
+  "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "trusted_keys": [
+    { "verifier_key_fingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "key_material_fingerprint": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "trust_group": "lab-a" },
+    { "verifier_key_fingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "key_material_fingerprint": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "trust_group": "lab-b" }
+  ],
+  "threshold": 2,
+  "group_threshold": 2,
+  "require_complete_witness_claims": true
+}
+```
+
+Run `aml verify-signed-quorum saved-quorum.json --policy held-policy.json
+--bundle witness.json --challenge held-challenge.json` (or the Python
+equivalent). Omitting the witness inputs is a usage error. In addition to the
+material and group thresholds, `policy_met` now requires successful replay,
+consistent replayable claims, and complete **affirmative signed assertions**
+in every trusted, positive, correctly signed report with a matching material
+pin. Each must include non-null `session_key_fingerprint`,
+`challenge_expires_at`, and `checked_at`, and boolean `true` for all six
+replayable reference checks plus `verifier_held_challenge`. The replay
+comparison checks the first six and the signed session fields; a separate
+replay cannot establish the signer's claim that it held a challenge. A
+missing or false assertion appears by report index and field name in
+`policy_evaluation.unsatisfied_claims`. An untrusted report cannot satisfy the
+held policy and does not acquire a complete-claim obligation.
+
+The other result fields retain their meaning: a quorum may be internally
+`valid` and meet its own `threshold_met` while this stronger held policy fails.
+Version 4 does not prove that signers actually ran the reference verifier,
+controlled distinct organizations, or checked the bundle at the claimed
+time. It makes signed omissions visible and rejectable under a buyer's prior
+rule. Policies 1–3 retain their existing acceptance rules.
 
 For cross-runtime checking of the saved quorum and held policy, use the
 [project-authored Python verifier](../independent/python/verify_signed_quorum.py):

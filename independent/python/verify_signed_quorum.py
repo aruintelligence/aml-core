@@ -31,6 +31,7 @@ REPLAYABLE_WITNESS_CHECKS = (
     "bundle_integrity", "receipt_integrity", "evidence_integrity",
     "challenge_freshness", "challenge_binding", "session_signature",
 )
+REQUIRED_WITNESS_CHECKS = REPLAYABLE_WITNESS_CHECKS + ("verifier_held_challenge",)
 REPORT_TIME = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$")
 
 
@@ -123,14 +124,19 @@ def verify_report(envelope):
 def validate_policy(policy):
     if not isinstance(policy, dict):
         raise ValueError("AML_SIGNED_QUORUM_POLICY_INVALID")
-    material_pinned = policy.get("schema") == "aml-signed-quorum-held-policy/3"
+    complete_claims = policy.get("schema") == "aml-signed-quorum-held-policy/4"
+    material_pinned = complete_claims or policy.get("schema") == "aml-signed-quorum-held-policy/3"
     grouped = material_pinned or policy.get("schema") == "aml-signed-quorum-held-policy/2"
     fields = ({"artifact_hash", "artifact_type", "group_threshold", "prototype", "schema", "threshold", "trusted_keys"}
               if grouped else {"artifact_hash", "artifact_type", "prototype", "schema", "threshold", "trusted_key_fingerprints"})
+    if complete_claims:
+        fields.add("require_complete_witness_claims")
     if (set(policy) != fields or
             policy.get("schema") not in ("aml-signed-quorum-held-policy/1", "aml-signed-quorum-held-policy/2",
-                                         "aml-signed-quorum-held-policy/3") or
-            policy.get("prototype") is not True):
+                                         "aml-signed-quorum-held-policy/3", "aml-signed-quorum-held-policy/4") or
+            policy.get("prototype") is not True or
+            (complete_claims and (policy.get("require_complete_witness_claims") is not True or
+                                  policy.get("artifact_type") != "aml-witness-bundle/1"))):
         raise ValueError("AML_SIGNED_QUORUM_POLICY_INVALID")
     check_json(policy)
     if (not isinstance(policy["artifact_type"], str) or
@@ -207,7 +213,18 @@ def conflicting_witness_claims(report, bundle):
     return conflicts
 
 
+def unsatisfied_witness_claims(report):
+    fields = [name for name in ("session_key_fingerprint", "challenge_expires_at", "checked_at")
+              if report.get(name) is None]
+    checks = report.get("checks")
+    fields.extend(f"checks.{name}" for name in REQUIRED_WITNESS_CHECKS
+                  if not isinstance(checks, dict) or checks.get(name) is not True)
+    return fields
+
+
 def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=None):
+    if policy is not None and policy["schema"] == "aml-signed-quorum-held-policy/4" and expected_challenge is None:
+        raise ValueError("AML_SIGNED_QUORUM_POLICY_WITNESS_REQUIRED")
     with_witness = expected_challenge is not None
     rejected = {"valid": False, "threshold_met": False}
     if policy is not None:
@@ -244,7 +261,8 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
         trusted = set()
         valid_reports = 0
         reasons = []
-        material_pinned = policy is not None and policy["schema"] == "aml-signed-quorum-held-policy/3"
+        material_pinned = policy is not None and policy["schema"] in (
+            "aml-signed-quorum-held-policy/3", "aml-signed-quorum-held-policy/4")
         grouped = material_pinned or (policy is not None and policy["schema"] == "aml-signed-quorum-held-policy/2")
         assignments = ({entry["verifier_key_fingerprint"]: entry
                         for entry in policy["trusted_keys"]} if grouped else {})
@@ -341,6 +359,21 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
                 "positive_signed_reports": positive_signed_reports,
                 "conflicts": conflicts,
             }
+        if policy is not None and policy["schema"] == "aml-signed-quorum-held-policy/4" and valid:
+            unsatisfied = []
+            if result["witness_met"]:
+                for index, (envelope, (ok, _, key_material)) in enumerate(zip(reports, signed)):
+                    if (not ok or envelope["report"]["valid"] is not True or
+                            envelope["verifier_key_fingerprint"] not in assignments or
+                            key_material != assignments[envelope["verifier_key_fingerprint"]]["key_material_fingerprint"]):
+                        continue
+                    fields = unsatisfied_witness_claims(envelope["report"])
+                    if fields:
+                        unsatisfied.append({"report_index": index, "fields": fields})
+            result["policy_evaluation"]["complete_claims_checked"] = result["witness_met"]
+            result["policy_evaluation"]["unsatisfied_claims"] = unsatisfied
+            result["policy_met"] = (result["policy_met"] and result["witness_met"] and
+                                    result["replayable_claims_consistent"] and not unsatisfied)
         return result
     except (ValueError, TypeError, KeyError, UnicodeError, RecursionError) as error:
         return {**rejected, "reason": str(error) or "AML_PY_SIGNED_QUORUM_INVALID"}
@@ -374,6 +407,8 @@ def main():
         policy = load_json(args.policy) if args.policy else None
         if policy is not None:
             validate_policy(policy)
+            if policy["schema"] == "aml-signed-quorum-held-policy/4" and not args.bundle:
+                raise ValueError("AML_SIGNED_QUORUM_POLICY_WITNESS_REQUIRED")
         witness_bundle = load_json(args.bundle) if args.bundle else None
         expected_challenge = load_json(args.challenge) if args.challenge else None
         if args.challenge and not isinstance(expected_challenge, dict):

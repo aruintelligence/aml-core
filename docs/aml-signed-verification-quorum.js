@@ -13,6 +13,7 @@ const replayableWitnessChecks = [
   'bundle_integrity', 'receipt_integrity', 'evidence_integrity',
   'challenge_freshness', 'challenge_binding', 'session_signature'
 ];
+const requiredWitnessChecks = [...replayableWitnessChecks, 'verifier_held_challenge'];
 
 // The reference report generator emits canonical UTC milliseconds. This
 // narrow profile has the same exact interpretation in JS and Python, and
@@ -59,6 +60,20 @@ function conflictingWitnessClaims(report, witness, bundle) {
     }
   }
   return conflicts;
+}
+
+// Policy /4 requires signed affirmative claims from each trusted positive
+// report. These are assertions by the signer; replay separately checks the
+// reference steps and cannot establish the signer's own process.
+function unsatisfiedWitnessClaims(report) {
+  const fields = [];
+  for (const name of ['session_key_fingerprint', 'challenge_expires_at', 'checked_at']) {
+    if (report[name] == null) fields.push(name);
+  }
+  for (const name of requiredWitnessChecks) {
+    if (report.checks?.[name] !== true) fields.push(`checks.${name}`);
+  }
+  return fields;
 }
 
 // Envelope fingerprints bind the complete JWK JSON, including optional metadata.
@@ -189,15 +204,19 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
 
 export function validateSignedVerificationQuorumPolicy(policy) {
   assertBrowserJSON(policy);
-  const materialPinned = policy?.schema === 'aml-signed-quorum-held-policy/3';
+  const completeClaims = policy?.schema === 'aml-signed-quorum-held-policy/4';
+  const materialPinned = completeClaims || policy?.schema === 'aml-signed-quorum-held-policy/3';
   const grouped = materialPinned || policy?.schema === 'aml-signed-quorum-held-policy/2';
-  const fields = grouped
+  const fields = completeClaims
+    ? ['artifact_hash', 'artifact_type', 'group_threshold', 'prototype', 'require_complete_witness_claims', 'schema', 'threshold', 'trusted_keys']
+    : grouped
     ? ['artifact_hash', 'artifact_type', 'group_threshold', 'prototype', 'schema', 'threshold', 'trusted_keys']
     : ['artifact_hash', 'artifact_type', 'prototype', 'schema', 'threshold', 'trusted_key_fingerprints'];
   if (!policy || Array.isArray(policy) || Object.keys(policy).sort().join('|') !== fields.join('|') ||
       !['aml-signed-quorum-held-policy/1', 'aml-signed-quorum-held-policy/2',
-        'aml-signed-quorum-held-policy/3'].includes(policy.schema) ||
-      policy.prototype !== true) {
+        'aml-signed-quorum-held-policy/3', 'aml-signed-quorum-held-policy/4'].includes(policy.schema) ||
+      policy.prototype !== true || (completeClaims &&
+        (policy.require_complete_witness_claims !== true || policy.artifact_type !== 'aml-witness-bundle/1'))) {
     throw new Error('AML_SIGNED_QUORUM_POLICY_INVALID');
   }
   if (typeof policy.artifact_type !== 'string' || !policy.artifact_type.trim() ||
@@ -249,6 +268,9 @@ export async function verifySignedVerificationQuorum(quorum, {
   if ((witnessBundle === undefined) !== (expectedChallenge === undefined)) {
     throw new Error('AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED');
   }
+  if (policy?.schema === 'aml-signed-quorum-held-policy/4' && witnessBundle === undefined) {
+    throw new Error('AML_SIGNED_QUORUM_POLICY_WITNESS_REQUIRED');
+  }
   const reject = (reason) => ({
     valid: false, reason, threshold_met: false,
     ...(policy === undefined ? {} : { policy_met: false }),
@@ -273,7 +295,8 @@ export async function verifySignedVerificationQuorum(quorum, {
       } else {
         const artifactMatches = rebuilt.artifact_type === policy.artifact_type &&
           rebuilt.artifact_hash === policy.artifact_hash;
-        const materialPinned = policy.schema === 'aml-signed-quorum-held-policy/3';
+        const materialPinned = ['aml-signed-quorum-held-policy/3',
+          'aml-signed-quorum-held-policy/4'].includes(policy.schema);
         const grouped = materialPinned || policy.schema === 'aml-signed-quorum-held-policy/2';
         const assignments = grouped ? new Map(policy.trusted_keys.map(entry =>
           [entry.verifier_key_fingerprint, entry])) : null;
@@ -356,6 +379,26 @@ export async function verifySignedVerificationQuorum(quorum, {
         positive_signed_reports: positiveSignedReports,
         conflicts
       };
+    }
+    if (policy?.schema === 'aml-signed-quorum-held-policy/4' && valid) {
+      const unsatisfied = [];
+      if (result.witness_met) {
+        const assignments = new Map(policy.trusted_keys.map(entry =>
+          [entry.verifier_key_fingerprint, entry.key_material_fingerprint]));
+        for (const [index, envelope] of rebuilt.signed_reports.entries()) {
+          if (envelope?.report?.valid !== true ||
+              !(await verifySignedVerificationReport(envelope)).valid ||
+              !assignments.has(envelope.verifier_key_fingerprint)) continue;
+          if (await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk) !==
+              assignments.get(envelope.verifier_key_fingerprint)) continue;
+          const fields = unsatisfiedWitnessClaims(envelope.report);
+          if (fields.length) unsatisfied.push({ report_index: index, fields });
+        }
+      }
+      result.policy_evaluation.complete_claims_checked = result.witness_met;
+      result.policy_evaluation.unsatisfied_claims = unsatisfied;
+      result.policy_met = result.policy_met && result.witness_met &&
+        result.replayable_claims_consistent && unsatisfied.length === 0;
     }
     return result;
   } catch (error) {
