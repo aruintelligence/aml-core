@@ -53,7 +53,11 @@ export function witnessVerificationReport(bundle, result, { verifier = 'aml-refe
       bundle_integrity: Boolean(result?.valid) || !bundleIntegrityFailed,
       receipt_integrity: result?.valid || !String(result?.reason || '').includes('RECEIPT'),
       evidence_integrity: result?.valid || !String(result?.reason || '').includes('EVIDENCE'),
-      challenge_freshness: result?.valid || result?.reason !== 'AML_CHALLENGE_EXPIRED',
+      challenge_freshness: Boolean(result?.valid) || ![
+        'AML_CHALLENGE_EXPIRED',
+        'AML_CHALLENGE_NOT_YET_VALID',
+        'AML_CHALLENGE_TIME_INVALID'
+      ].includes(result?.reason),
       challenge_binding: result?.valid || ![
         'AML_SESSION_CHALLENGE_MISMATCH',
         'AML_WITNESS_BUNDLE_CHALLENGE_MISMATCH'

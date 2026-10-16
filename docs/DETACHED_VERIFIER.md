@@ -33,7 +33,7 @@ expired challenge -> FAIL
 - sealed `aml-dom-receipt/1` integrity;
 - sealed `aml-browser-evidence/1` integrity;
 - verifier-generated random challenge;
-- challenge expiration;
+- challenge issue time and expiration against the verifier clock;
 - evidence-hash equality;
 - ephemeral P-256 public-key fingerprint;
 - ECDSA P-256 / SHA-256 signature;

@@ -87,6 +87,41 @@ test('expired challenge fails detached verification', async () => {
   assert.equal(check.reason, 'AML_CHALLENGE_EXPIRED');
 });
 
+test('signed witness cannot pass before its challenge issue time', async () => {
+  const { bundle, challenge } = await createFixture();
+  const beforeIssue = Date.parse(challenge.issued_at) - 1;
+  assert.equal(verifyVerificationChallenge(challenge, { now: beforeIssue }).reason,
+    'AML_CHALLENGE_NOT_YET_VALID');
+  for (const options of [{ now: beforeIssue }, { now: beforeIssue, expectedChallenge: challenge }]) {
+    const result = await verifyWitnessBundle(bundle, options);
+    assert.equal(result.valid, false);
+    assert.equal(result.reason, 'AML_CHALLENGE_NOT_YET_VALID');
+  }
+  assert.equal(verifyVerificationChallenge(challenge, { now: Date.parse(challenge.issued_at) }).valid, true);
+});
+
+test('invalid verifier clocks and malformed time fields fail closed', async () => {
+  const { bundle, challenge } = await createFixture();
+  for (const now of [NaN, Infinity, 'not-a-clock', null]) {
+    assert.equal(verifyVerificationChallenge(challenge, { now }).reason, 'AML_CHALLENGE_TIME_INVALID');
+    for (const options of [{ now }, { now, expectedChallenge: challenge }]) {
+      const result = await verifyWitnessBundle(bundle, options);
+      assert.equal(result.valid, false);
+      assert.equal(result.reason, 'AML_CHALLENGE_TIME_INVALID');
+    }
+  }
+  assert.equal(verifyVerificationChallenge({ ...challenge, issued_at: 2030 }).reason,
+    'AML_CHALLENGE_TIME_INVALID');
+});
+
+test('challenge creation rejects invalid durations before producing an artifact', () => {
+  for (const ttl_ms of [0, -1, 0.5, '60000', NaN, Infinity, Number.MAX_SAFE_INTEGER]) {
+    assert.throws(() => createVerificationChallenge({ ttl_ms }), /AML_CHALLENGE_TTL_INVALID/);
+  }
+  const challenge = createVerificationChallenge({ ttl_ms: 1 });
+  assert.equal(verifyVerificationChallenge(challenge, { now: Date.parse(challenge.issued_at) }).valid, true);
+});
+
 test('a hidden bundle field preserves the old canonical bytes but fails verification and export', async () => {
   const { bundle } = await createFixture();
   const canonical = canonicalJSONStringifyBrowser(bundle);
