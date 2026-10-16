@@ -24,9 +24,24 @@ python3 independent/python/verify_signed_quorum.py \
   --policy independent/python/signed-quorum-held-policy-vector.json
 ```
 
+The same fixed signatures have a buyer-held trust-group example:
+
+```bash
+python3 independent/python/verify_signed_quorum.py \
+  independent/python/signed-quorum-vector.json \
+  --policy independent/python/signed-quorum-held-group-policy-vector.json
+```
+
 The fixture policy sits beside the quorum for test convenience; in a real
 decision, retain your policy separately before receiving the quorum. The
 fixture has no underlying witness artifact and does not test witness replay.
+
+The Python and JavaScript CLIs also accept the version 2 buyer-held policy
+documented in [Verifier Plurality](../../docs/VERIFIER_PLURALITY.md). It pins
+each allowed key fingerprint to a buyer-defined trust group and requires both
+distinct key material and the specified number of distinct groups. Assigning
+group labels in a local policy does not establish the real-world identity or
+independence of their operators.
 
 For an actual `aml-witness-bundle/1`, also supply the saved bundle and the
 challenge you retained before receiving it:
@@ -39,7 +54,8 @@ python3 independent/python/verify_signed_quorum.py saved-quorum.json \
 
 `valid` means the quorum is internally consistent; `threshold_met` means its
 own endorsement threshold was reached. `policy_met` pins the expected artifact
-and trusted verifier keys when a held policy is supplied. `witness_met` requires
+and trusted verifier keys, and optionally requires buyer-held trust-group
+diversity with policy version 2. `witness_met` requires
 a valid bundle at the current time, a matching retained challenge, and the
 exact bundle type and hash named by the quorum. `replayable_claims_consistent`
 rejects authenticated positive reports whose explicit session fingerprint,

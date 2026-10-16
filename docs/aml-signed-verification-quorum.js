@@ -171,16 +171,28 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
 
 export function validateSignedVerificationQuorumPolicy(policy) {
   assertBrowserJSON(policy);
-  const fields = ['artifact_hash', 'artifact_type', 'prototype', 'schema', 'threshold', 'trusted_key_fingerprints'];
+  const grouped = policy?.schema === 'aml-signed-quorum-held-policy/2';
+  const fields = grouped
+    ? ['artifact_hash', 'artifact_type', 'group_threshold', 'prototype', 'schema', 'threshold', 'trusted_keys']
+    : ['artifact_hash', 'artifact_type', 'prototype', 'schema', 'threshold', 'trusted_key_fingerprints'];
   if (!policy || Array.isArray(policy) || Object.keys(policy).sort().join('|') !== fields.join('|') ||
-      policy.schema !== 'aml-signed-quorum-held-policy/1' || policy.prototype !== true) {
+      !['aml-signed-quorum-held-policy/1', 'aml-signed-quorum-held-policy/2'].includes(policy.schema) ||
+      policy.prototype !== true) {
     throw new Error('AML_SIGNED_QUORUM_POLICY_INVALID');
   }
   if (typeof policy.artifact_type !== 'string' || !policy.artifact_type.trim() ||
       typeof policy.artifact_hash !== 'string' || !/^[a-f0-9]{64}$/.test(policy.artifact_hash)) {
     throw new Error('AML_SIGNED_QUORUM_POLICY_ARTIFACT_INVALID');
   }
-  const keys = policy.trusted_key_fingerprints;
+  if (grouped && (!Array.isArray(policy.trusted_keys) || policy.trusted_keys.some(entry =>
+    !entry || Array.isArray(entry) || typeof entry !== 'object' ||
+    Object.keys(entry).sort().join('|') !== 'trust_group|verifier_key_fingerprint' ||
+    typeof entry.trust_group !== 'string' ||
+    !/^[a-z0-9][a-z0-9._-]{0,63}$/.test(entry.trust_group)))) {
+    throw new Error('AML_SIGNED_QUORUM_POLICY_GROUPS_INVALID');
+  }
+  const keys = grouped ? policy.trusted_keys.map(entry => entry.verifier_key_fingerprint)
+    : policy.trusted_key_fingerprints;
   if (!Array.isArray(keys) || keys.length === 0 || keys.length > 64 ||
       keys.some(key => typeof key !== 'string' || !/^[a-f0-9]{64}$/.test(key)) ||
       new Set(keys).size !== keys.length) {
@@ -188,6 +200,13 @@ export function validateSignedVerificationQuorumPolicy(policy) {
   }
   if (!Number.isInteger(policy.threshold) || policy.threshold < 1 || policy.threshold > keys.length) {
     throw new Error('AML_SIGNED_QUORUM_POLICY_THRESHOLD_INVALID');
+  }
+  if (grouped) {
+    const groups = new Set(policy.trusted_keys.map(entry => entry.trust_group));
+    if (!Number.isInteger(policy.group_threshold) || policy.group_threshold < 1 ||
+        policy.group_threshold > groups.size) {
+      throw new Error('AML_SIGNED_QUORUM_POLICY_GROUP_THRESHOLD_INVALID');
+    }
   }
   return policy;
 }
@@ -225,21 +244,43 @@ export async function verifySignedVerificationQuorum(quorum, {
       } else {
         const artifactMatches = rebuilt.artifact_type === policy.artifact_type &&
           rebuilt.artifact_hash === policy.artifact_hash;
-        const allowed = new Set(policy.trusted_key_fingerprints);
+        const grouped = policy.schema === 'aml-signed-quorum-held-policy/2';
+        const assignments = grouped ? new Map(policy.trusted_keys.map(entry =>
+          [entry.verifier_key_fingerprint, entry.trust_group])) : null;
+        const allowed = new Set(grouped ? assignments.keys() : policy.trusted_key_fingerprints);
         const trusted = new Set();
+        const materialGroups = new Map();
+        const conflictingMaterials = new Set();
         if (artifactMatches) {
           for (const envelope of rebuilt.signed_reports) {
             if (envelope?.report?.valid !== true || !allowed.has(envelope.verifier_key_fingerprint)) continue;
             if ((await verifySignedVerificationReport(envelope)).valid) {
-              trusted.add(await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk));
+              const material = await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk);
+              trusted.add(material);
+              if (grouped) {
+                const group = assignments.get(envelope.verifier_key_fingerprint);
+                if (materialGroups.has(material) && materialGroups.get(material) !== group) {
+                  conflictingMaterials.add(material);
+                } else {
+                  materialGroups.set(material, group);
+                }
+              }
             }
           }
         }
-        result.policy_met = artifactMatches && trusted.size >= policy.threshold;
+        const distinctGroups = grouped ? new Set([...materialGroups].filter(([material]) =>
+          !conflictingMaterials.has(material)).map(([, group]) => group)).size : 0;
+        result.policy_met = artifactMatches && trusted.size >= policy.threshold &&
+          (!grouped || (distinctGroups >= policy.group_threshold && conflictingMaterials.size === 0));
         result.policy_evaluation = {
           artifact_matches: artifactMatches,
           distinct_trusted_keys: trusted.size,
-          threshold: policy.threshold
+          threshold: policy.threshold,
+          ...(grouped ? {
+            distinct_trust_groups: distinctGroups,
+            group_threshold: policy.group_threshold,
+            conflicting_key_material_fingerprints: [...conflictingMaterials]
+          } : {})
         };
       }
     }
