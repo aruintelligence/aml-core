@@ -60,6 +60,32 @@ exit `1` means usage or unreadable/malformed JSON. This command is in the
 current preview checkout, not the pinned `v1.3.0` stable package. The saved
 signed quorum counts distinct valid endorser **keys**, and accepts at most 64
 supplied reports.
+
+For a structurally checkable quorum and ordinary JSON inputs, the result also
+includes `input_fingerprints`. It identifies the **supplied** quorum, and, when
+present, the separate policy, witness bundle, and held challenge by SHA-256 of
+each complete `sorted-json-v1` canonical JSON document:
+
+```json
+{
+  "canonicalization": "sorted-json-v1",
+  "quorum_sha256": "...",
+  "policy_sha256": "...",
+  "witness_bundle_sha256": "...",
+  "held_challenge_sha256": "..."
+}
+```
+
+Optional input fields appear only when supplied. Compare these values with
+independently retained inputs when reviewing an archived decision. Reordering
+JSON keys or changing whitespace leaves the fingerprints unchanged; changing
+an input value changes its fingerprint. A rejected malformed quorum may have
+no fingerprints, and a live API call with non-JSON witness values has no
+portable input binding. The output is neither signed nor timestamped: anyone
+holding the inputs can generate a new output, and witness freshness is checked
+at the time of replay. A matching fingerprint establishes content identity
+under this canonicalization, not custody, signer identity, approval, or the
+truth of a report.
 The CLI requires strict UTF-8 and rejects duplicate JSON object names in every
 input file, including escaped spellings of the same name and duplicates nested
 in signed reports. A malformed byte sequence or duplicate name is a usage

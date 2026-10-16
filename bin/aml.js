@@ -288,7 +288,12 @@ try {
     const result = await verifySignedVerificationQuorum(readUnambiguousJSON(args[1]), {
       policy, witnessBundle, expectedChallenge
     });
-    console.log(JSON.stringify(result, null, 2));
+    // A saved quorum can produce more JSON than a pipe can buffer. Wait for
+    // stdout to finish writing before exiting with the verification status.
+    await new Promise((resolve, reject) => {
+      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`, error =>
+        error ? reject(error) : resolve());
+    });
     process.exit(result.valid && result.threshold_met &&
       (!options.has('--policy') || result.policy_met) &&
       (!options.has('--bundle') || (result.witness_met && result.replayable_claims_consistent)) ? 0 : 2);
