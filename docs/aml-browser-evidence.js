@@ -1,4 +1,4 @@
-import { canonicalJSONStringifyBrowser, sha256Browser, verifyBrowserReceipt } from './aml-browser-integrity.js';
+import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser, verifyBrowserReceipt } from './aml-browser-integrity.js';
 
 let evidenceRevision = 0;
 
@@ -7,6 +7,7 @@ function currentViolations() {
 }
 
 export function browserEvidencePayload(evidence) {
+  assertBrowserJSON(evidence);
   if (!evidence || evidence.schema !== 'aml-browser-evidence/1') {
     throw new Error('AML_BROWSER_EVIDENCE_INVALID');
   }
@@ -58,8 +59,19 @@ export async function createBrowserEvidence(
 
 export async function verifyBrowserEvidence(evidence) {
   try {
+    assertBrowserJSON(evidence);
     if (!evidence?.integrity || evidence.integrity.schema !== 'aml-integrity/1') {
       return { valid: false, reason: 'AML_BROWSER_EVIDENCE_UNSEALED' };
+    }
+    if (evidence.integrity.algorithm !== 'SHA-256') {
+      return { valid: false, reason: 'AML_BROWSER_EVIDENCE_ALGORITHM_UNSUPPORTED' };
+    }
+    if (evidence.integrity.canonicalization !== 'sorted-json-v1') {
+      return { valid: false, reason: 'AML_BROWSER_EVIDENCE_CANONICALIZATION_UNSUPPORTED' };
+    }
+    if (Object.keys(evidence.integrity).sort().join('|') !== 'algorithm|canonicalization|schema|value' ||
+        !/^[a-f0-9]{64}$/.test(evidence.integrity.value)) {
+      return { valid: false, reason: 'AML_BROWSER_EVIDENCE_INTEGRITY_INVALID' };
     }
     const receipt = await verifyBrowserReceipt(evidence.receipt);
     if (!receipt.valid) {
@@ -81,6 +93,7 @@ export async function verifyBrowserEvidence(evidence) {
 
 export function exportBrowserEvidence(evidence = globalThis.__AML_EVIDENCE__) {
   if (!evidence) throw new Error('AML_BROWSER_EVIDENCE_MISSING');
+  assertBrowserJSON(evidence);
   return canonicalJSONStringifyBrowser(evidence);
 }
 

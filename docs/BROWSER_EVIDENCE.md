@@ -56,9 +56,9 @@ A sealed browser receipt carries:
 }
 ```
 
-`verifyBrowserReceipt(receipt)` recomputes the digest from the receipt payload with `integrity` excluded and compares the exact result.
+`verifyBrowserReceipt(receipt)` recomputes the digest from the receipt payload with `integrity` excluded and compares the exact result. Receipt and evidence issuance and verification require ordinary JSON data throughout: sparse arrays, array properties, hidden or symbol fields, accessors, unsupported values, and cycles are rejected. Verification also checks the declared algorithm, canonicalization, digest format, and exact integrity fields. This keeps live JavaScript packet fields from changing without changing the hash; consumers should exchange packets as JSON.
 
-The browser canonicalizer preserves a literal `__proto__` JSON data key. `node --test test/browser-canonicalization-vectors.test.js` checks the exact Node/browser bytes and SHA-256 digest and proves that changing such a key invalidates a sealed browser receipt. The historical published vector set remains unchanged. Older browser receipts containing this key should be resealed; SHA-256 only establishes integrity of the covered bytes, not who produced them.
+The browser canonicalizer preserves a literal `__proto__` JSON data key. `node --test test/browser-canonicalization-vectors.test.js test/browser-packet-json-integrity.test.js` checks the exact Node/browser bytes and SHA-256 digest and proves that changing such a key or adding data invisible to JSON invalidates a sealed browser receipt. The historical published vector set remains unchanged. Older browser receipts containing this key should be resealed; SHA-256 only establishes integrity of the covered bytes, not who produced them.
 
 ## Evidence integrity
 

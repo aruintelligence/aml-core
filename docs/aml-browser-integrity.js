@@ -47,7 +47,58 @@ export async function sha256Browser(value) {
     .join('');
 }
 
+// Sealed browser packets must be ordinary JSON data. JSON.stringify silently
+// drops array properties, object symbols, and hidden keys, and turns holes into
+// null; accepting those values would let a live packet change without a new hash.
+export function assertBrowserJSON(value) {
+  const ancestors = new Set();
+
+  function walk(item) {
+    if (item === null || typeof item === 'string' || typeof item === 'boolean') return;
+    if (typeof item === 'number') {
+      if (!Number.isFinite(item)) throw new TypeError('AML_CANONICAL_JSON_NON_FINITE_NUMBER');
+      return;
+    }
+    if (!item || typeof item !== 'object') {
+      throw new TypeError('AML_CANONICAL_JSON_UNSUPPORTED_VALUE');
+    }
+    if (ancestors.has(item)) throw new TypeError('AML_CANONICAL_JSON_CYCLE');
+    ancestors.add(item);
+    try {
+      if (Array.isArray(item)) {
+        if (Reflect.ownKeys(item).length !== item.length + 1) {
+          throw new TypeError('AML_CANONICAL_JSON_NON_JSON_ARRAY');
+        }
+        for (let index = 0; index < item.length; index++) {
+          const descriptor = Object.getOwnPropertyDescriptor(item, index);
+          if (!descriptor || !descriptor.enumerable || !('value' in descriptor)) {
+            throw new TypeError('AML_CANONICAL_JSON_NON_JSON_ARRAY');
+          }
+          walk(descriptor.value);
+        }
+        return;
+      }
+      const prototype = Object.getPrototypeOf(item);
+      if (prototype !== Object.prototype && prototype !== null) {
+        throw new TypeError('AML_CANONICAL_JSON_NON_PLAIN_OBJECT');
+      }
+      for (const key of Reflect.ownKeys(item)) {
+        const descriptor = Object.getOwnPropertyDescriptor(item, key);
+        if (typeof key !== 'string' || !descriptor?.enumerable || !('value' in descriptor)) {
+          throw new TypeError('AML_CANONICAL_JSON_NON_JSON_OBJECT');
+        }
+        walk(descriptor.value);
+      }
+    } finally {
+      ancestors.delete(item);
+    }
+  }
+
+  walk(value);
+}
+
 export function browserReceiptPayload(receipt) {
+  assertBrowserJSON(receipt);
   if (!receipt || receipt.schema !== 'aml-dom-receipt/1') {
     throw new Error('AML_BROWSER_RECEIPT_INVALID');
   }
@@ -69,11 +120,19 @@ export async function sealBrowserReceipt(receipt) {
 
 export async function verifyBrowserReceipt(receipt) {
   try {
+    assertBrowserJSON(receipt);
     if (!receipt?.integrity || receipt.integrity.schema !== 'aml-integrity/1') {
       return { valid: false, reason: 'AML_BROWSER_RECEIPT_UNSEALED' };
     }
     if (receipt.integrity.algorithm !== 'SHA-256') {
       return { valid: false, reason: 'AML_BROWSER_RECEIPT_ALGORITHM_UNSUPPORTED' };
+    }
+    if (receipt.integrity.canonicalization !== 'sorted-json-v1') {
+      return { valid: false, reason: 'AML_BROWSER_RECEIPT_CANONICALIZATION_UNSUPPORTED' };
+    }
+    if (Object.keys(receipt.integrity).sort().join('|') !== 'algorithm|canonicalization|schema|value' ||
+        !/^[a-f0-9]{64}$/.test(receipt.integrity.value)) {
+      return { valid: false, reason: 'AML_BROWSER_RECEIPT_INTEGRITY_INVALID' };
     }
     const expected = await sha256Browser(browserReceiptPayload(receipt));
     const valid = expected === receipt.integrity.value;
