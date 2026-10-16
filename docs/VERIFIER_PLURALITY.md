@@ -103,6 +103,30 @@ of their reports. The policy lists envelope fingerprints so that the checker
 can recognize pinned public-key documents; key distinctness is still measured
 from the public key material.
 
+### Recheck the named witness bundle
+
+If the reports name an `aml-witness-bundle/1`, supply the bundle and your own
+separately retained challenge when verifying the quorum:
+
+```bash
+aml verify-signed-quorum saved-quorum.json \
+  --policy held-policy.json \
+  --bundle witness.json --challenge held-challenge.json
+```
+
+`witness_met` is a fourth, separate result. It requires the locally rechecked
+bundle to pass with the retained challenge **now**, and requires its integrity
+hash to match the signed quorum's artifact hash and type. When these inputs are
+supplied, the CLI also requires `witness_met` for exit `0`. A changed challenge,
+tampered bundle, mismatched artifact, or expired challenge fails this check.
+Use `verifySignedVerificationQuorum(quorum, { policy, witnessBundle,
+expectedChallenge })` for the same check in browser JavaScript. Supplying only
+one of the bundle and challenge is a usage error.
+
+This is a local reference verifier replay of the supplied artifact. It does
+not establish that the signers ran that verifier, that their other claims are
+true, or that the signers are independent.
+
 ## What this does not prove
 
 A distinct `verifier` string does **not** prove that the implementation is operated by a distinct institution, written independently, uncompromised, or correct.

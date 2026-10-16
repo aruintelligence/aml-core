@@ -116,6 +116,21 @@ try {
   if (!policyValid.valid || !policyValid.threshold_met || !policyValid.policy_met) {
     throw new Error('Installed-package signed quorum CLI did not enforce verifier-held policy');
   }
+  const witnessBound = JSON.parse(runNpm(['exec', '--', 'aml', 'verify-signed-quorum',
+    'signed-quorum.json', '--policy', 'held-policy.json', '--bundle', 'witness.json',
+    '--challenge', 'held-challenge.json'], tempRoot));
+  if (!witnessBound.valid || !witnessBound.threshold_met ||
+      !witnessBound.policy_met || !witnessBound.witness_met) {
+    throw new Error('Installed-package signed quorum CLI did not recheck the retained witness');
+  }
+  const wrongWitness = spawnSync(process.execPath, [path.join(installedRoot, 'bin', 'aml.js'),
+    'verify-signed-quorum', 'signed-quorum.json', '--bundle', 'witness.json',
+    '--challenge', 'other-challenge.json'], { cwd: tempRoot, encoding: 'utf8' });
+  const wrongWitnessResult = JSON.parse(wrongWitness.stdout);
+  if (wrongWitness.status !== 2 || !wrongWitnessResult.valid ||
+      !wrongWitnessResult.threshold_met || wrongWitnessResult.witness_met !== false) {
+    throw new Error('Installed-package signed quorum CLI accepted a different retained challenge');
+  }
   const otherPolicy = { ...heldPolicy, trusted_key_fingerprints: [
     signedA.verifier_key_fingerprint, '0'.repeat(64)
   ] };
@@ -166,6 +181,8 @@ try {
       signed_quorum_cli_rejects_inflation: true,
       signed_quorum_cli_held_policy_valid: true,
       signed_quorum_cli_rejects_untrusted_key: true,
+      signed_quorum_cli_held_witness_valid: true,
+      signed_quorum_cli_rejects_other_witness_challenge: true,
       consumer_receipt_sha256: quickstart.receipt_sha256
     },
     claim_boundary: matrix.claim_boundary
