@@ -112,7 +112,8 @@ python3 independent/python/verify_signed_quorum.py saved-quorum.json --policy he
 
 It recomputes report signatures and the saved summary with Python's standard
 library, including the distinct P-256 key count. It has a narrower documented
-canonical JSON domain and does not perform the optional witness replay below.
+canonical JSON domain. It can also replay the named witness and retained
+challenge using the same `--bundle` and `--challenge` options shown below.
 Agreement between two implementations maintained in this repository is useful
 interoperability evidence, not an independent institutional witness.
 
@@ -126,6 +127,20 @@ aml verify-signed-quorum saved-quorum.json \
   --policy held-policy.json \
   --bundle witness.json --challenge held-challenge.json
 ```
+
+The standard-library Python verifier accepts the same input paths:
+
+```bash
+python3 independent/python/verify_signed_quorum.py saved-quorum.json \
+  --policy held-policy.json \
+  --bundle witness.json --challenge held-challenge.json
+```
+
+Its cross-runtime comparison harness generates a live bundle and signed
+quorum, then checks both runtimes' five decision booleans and the indexed
+conflicts on matching and adversarial inputs. The Python verifier rejects
+JSON outside its documented portable subset, so its acceptance domain is
+narrower than JavaScript's.
 
 `witness_met` is a fourth, separate result. It requires the locally rechecked
 bundle to pass with the retained challenge **now**, and requires its integrity

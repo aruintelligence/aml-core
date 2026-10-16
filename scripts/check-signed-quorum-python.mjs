@@ -5,7 +5,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { webcrypto } from 'node:crypto';
-import { sha256Browser } from '../docs/aml-browser-integrity.js';
+import { sealBrowserReceipt, sha256Browser } from '../docs/aml-browser-integrity.js';
+import { createBrowserEvidence } from '../docs/aml-browser-evidence.js';
+import { createVerificationChallenge } from '../docs/aml-verification-challenge.js';
+import { createSessionAttestation } from '../docs/aml-session-attestation.js';
+import { createWitnessBundle, verifyWitnessBundle, witnessBundlePayload } from '../docs/aml-witness-bundle.js';
+import { witnessVerificationReport } from '../docs/aml-verification-report.js';
 import { createVerifierKeyPair, signVerificationReport } from '../docs/aml-signed-verification-report.js';
 import { createSignedVerificationQuorum, verifySignedVerificationQuorum } from '../docs/aml-signed-verification-quorum.js';
 
@@ -25,24 +30,38 @@ const report = (verifier, valid = true) => ({
   checked_at: '2030-01-01T00:05:00.000Z', checks: { bundle_integrity: valid }, notes: []
 });
 
-async function compare(name, quorum, policy, expected) {
+async function compare(name, quorum, policy, expected, { bundle, challenge } = {}) {
   const args = [python, save(`${name}-quorum.json`, quorum)];
   if (policy) args.push('--policy', save(`${name}-policy.json`, policy));
+  if (bundle && challenge) args.push('--bundle', save(`${name}-bundle.json`, bundle),
+    '--challenge', save(`${name}-challenge.json`, challenge));
   const run = spawnSync('python3', args, {
     encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' }
   });
   if (run.error) throw run.error;
   assert.ok(run.stdout, `${name}: ${run.stderr}`);
   const py = JSON.parse(run.stdout);
-  const js = await verifySignedVerificationQuorum(quorum, { policy });
-  for (const field of ['valid', 'threshold_met', ...(policy ? ['policy_met'] : [])]) {
+  const js = await verifySignedVerificationQuorum(quorum, {
+    policy, ...(bundle ? { witnessBundle: bundle, expectedChallenge: challenge } : {})
+  });
+  for (const field of ['valid', 'threshold_met', ...(policy ? ['policy_met'] : []),
+    ...(bundle ? ['witness_met', 'replayable_claims_consistent'] : [])]) {
     assert.equal(py[field], js[field], `${name}: ${field}: ${run.stderr} ${run.stdout}`);
   }
-  assert.equal(py.valid && py.threshold_met && (!policy || py.policy_met), expected, name);
+  if (bundle) {
+    assert.equal(py.witness_evaluation.local_bundle_valid, js.witness_evaluation.local_bundle_valid, name);
+    assert.equal(py.witness_evaluation.artifact_matches, js.witness_evaluation.artifact_matches, name);
+    assert.deepEqual(py.replayable_claims_evaluation, js.replayable_claims_evaluation, name);
+  }
+  assert.equal(py.valid && py.threshold_met && (!policy || py.policy_met) &&
+    (!bundle || (py.witness_met && py.replayable_claims_consistent)), expected, name);
   assert.equal(run.status, expected ? 0 : 2, `${name}: ${run.stderr} ${run.stdout}`);
   if (js.valid) assert.deepEqual(py.summary, js.quorum.summary, name);
   checks.push({ case: name, valid: py.valid, threshold_met: py.threshold_met,
-    ...(policy ? { policy_met: py.policy_met } : {}), python_matches_js: true });
+    ...(policy ? { policy_met: py.policy_met } : {}),
+    ...(bundle ? { witness_met: py.witness_met,
+      replayable_claims_consistent: py.replayable_claims_consistent } : {}),
+    python_matches_js: true });
 }
 
 try {
@@ -95,6 +114,76 @@ try {
   await compare('invalid-signature-counted-as-rejection',
     await createSignedVerificationQuorum([a, invalidSignature], { threshold: 2 }), policy, false);
 
+  const receipt = await sealBrowserReceipt({ schema: 'aml-dom-receipt/1', decisions: [] });
+  const evidence = await createBrowserEvidence(receipt, { url: 'https://example.test/' });
+  const challenge = createVerificationChallenge({ ttl_ms: 120000 });
+  const attestation = await createSessionAttestation({ evidence, challenge });
+  const bundle = await createWitnessBundle({ evidence, challenge, attestation });
+  const witness = await verifyWitnessBundle(bundle, { expectedChallenge: challenge });
+  assert.equal(witness.valid, true);
+  const witnessKeyA = await createVerifierKeyPair();
+  const witnessKeyB = await createVerifierKeyPair();
+  const witnessA = await signVerificationReport(
+    witnessVerificationReport(bundle, witness, { verifier: 'witness-a' }), witnessKeyA);
+  const witnessB = await signVerificationReport(
+    witnessVerificationReport(bundle, witness, { verifier: 'witness-b' }), witnessKeyB);
+  const witnessQuorum = await createSignedVerificationQuorum([witnessA, witnessB], { threshold: 2 });
+  const witnessPolicy = {
+    ...policy, artifact_hash: bundle.integrity.value,
+    trusted_key_fingerprints: [witnessA.verifier_key_fingerprint, witnessB.verifier_key_fingerprint]
+  };
+  const replay = { bundle, challenge };
+  await compare('replayed-signed-witness', witnessQuorum, witnessPolicy, true, replay);
+  const mismatchedChallenge = {
+    ...challenge, issued_at: new Date(Date.parse(challenge.issued_at) - 1000).toISOString()
+  };
+  await compare('different-held-challenge', witnessQuorum, witnessPolicy, false,
+    { bundle, challenge: mismatchedChallenge });
+  const tamperedBundle = structuredClone(bundle);
+  tamperedBundle.created_at = '2030-01-01T00:00:00.000Z';
+  await compare('tampered-witness', witnessQuorum, witnessPolicy, false,
+    { bundle: tamperedBundle, challenge });
+  const differentBundle = structuredClone(tamperedBundle);
+  differentBundle.integrity.value = await sha256Browser(witnessBundlePayload(differentBundle));
+  await compare('valid-witness-wrong-artifact', witnessQuorum, witnessPolicy, false,
+    { bundle: differentBundle, challenge });
+  const invalidReceiptProfile = structuredClone(bundle);
+  invalidReceiptProfile.evidence.receipt.integrity.canonicalization = 'untrusted-profile';
+  invalidReceiptProfile.evidence.integrity.value = await sha256Browser(
+    Object.fromEntries(Object.entries(invalidReceiptProfile.evidence).filter(([key]) => key !== 'integrity'))
+  );
+  invalidReceiptProfile.integrity.value = await sha256Browser(witnessBundlePayload(invalidReceiptProfile));
+  await compare('invalid-receipt-profile', witnessQuorum, witnessPolicy, false,
+    { bundle: invalidReceiptProfile, challenge });
+
+  const unauthenticatedClaim = structuredClone(witnessA);
+  unauthenticatedClaim.report.session_key_fingerprint = '0'.repeat(64);
+  await compare('unauthenticated-claim-ignored',
+    await createSignedVerificationQuorum([witnessA, witnessB, unauthenticatedClaim], { threshold: 2 }),
+    witnessPolicy, true, replay);
+  for (const [name, change] of [
+    ['fingerprint-conflict', value => { value.session_key_fingerprint = '0'.repeat(64); }],
+    ['expiry-conflict', value => { value.challenge_expires_at = '2030-01-01T00:00:00.000Z'; }],
+    ['check-conflict', value => { value.checks.session_signature = false; }],
+    ['malformed-check', value => { value.checks.challenge_binding = 'true'; }]
+  ]) {
+    const claim = witnessVerificationReport(bundle, witness, { verifier: name });
+    change(claim);
+    const conflicting = await signVerificationReport(claim, witnessKeyA);
+    await compare(name,
+      await createSignedVerificationQuorum([conflicting, witnessB], { threshold: 2 }),
+      { ...witnessPolicy, trusted_key_fingerprints: [
+        conflicting.verifier_key_fingerprint, witnessB.verifier_key_fingerprint
+      ] }, false, replay);
+  }
+  const selfContained = await verifyWitnessBundle(bundle);
+  const processClaim = witnessVerificationReport(bundle, selfContained, { verifier: 'self-contained' });
+  processClaim.checks.unknown_step = false;
+  const signedProcessClaim = await signVerificationReport(processClaim, witnessKeyA);
+  await compare('signer-process-claim-not-inferred',
+    await createSignedVerificationQuorum([signedProcessClaim, witnessB], { threshold: 2 }),
+    witnessPolicy, true, replay);
+
   const duplicate = JSON.stringify(quorum).replace(
     '"schema":"aml-signed-verification-quorum/1"',
     '"schema":"aml-signed-verification-quorum/1","schema":"aml-signed-verification-quorum/1"'
@@ -131,12 +220,73 @@ try {
   assert.equal(usage.status, 1, usage.stderr);
   assert.equal(JSON.parse(usage.stdout).reason, 'AML_SIGNED_QUORUM_POLICY_THRESHOLD_INVALID');
 
+  const missingChallenge = spawnSync('python3',
+    [python, save('pair-quorum.json', witnessQuorum), '--bundle', save('pair-bundle.json', bundle)],
+    { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  assert.equal(missingChallenge.status, 1, missingChallenge.stderr);
+  assert.equal(JSON.parse(missingChallenge.stdout).reason, 'AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED');
+
+  const witnessPython = path.resolve('independent/python/verify_witness.py');
+  const goldenBundle = 'independent/python/witness-vector.json';
+  const golden = JSON.parse(fs.readFileSync(goldenBundle, 'utf8'));
+  const fixedTime = '2030-01-01T00:05:00Z';
+  const heldChallenge = save('golden-held-challenge.json', golden.challenge);
+  const heldRun = spawnSync('python3', [witnessPython, goldenBundle, '--now', fixedTime,
+    '--challenge', heldChallenge],
+    { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  assert.equal(heldRun.status, 0, heldRun.stderr);
+  assert.equal(JSON.parse(heldRun.stdout).valid, true);
+  const changedHeld = { ...golden.challenge,
+    issued_at: '2030-01-01T00:00:01.000Z' };
+  const mismatchedHeld = spawnSync('python3', [witnessPython, goldenBundle, '--now', fixedTime,
+    '--challenge', save('different-golden-challenge.json', changedHeld)],
+    { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  assert.equal(mismatchedHeld.status, 1, mismatchedHeld.stderr);
+  assert.equal(JSON.parse(mismatchedHeld.stdout).reason, 'AML_PY_BUNDLE_CHALLENGE_MISMATCH');
+  const duplicateWitness = fs.readFileSync(goldenBundle, 'utf8').replace(
+    '"schema": "aml-witness-bundle/1",',
+    '"schema": "aml-witness-bundle/1", "schema": "aml-witness-bundle/1",'
+  );
+  const duplicateWitnessRun = spawnSync('python3', [witnessPython,
+    save('duplicate-witness.json', duplicateWitness), '--now', fixedTime],
+    { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  assert.equal(duplicateWitnessRun.status, 1, duplicateWitnessRun.stderr);
+  assert.equal(JSON.parse(duplicateWitnessRun.stdout).reason, 'duplicate_json_key');
+  const brokenSignature = structuredClone(golden);
+  brokenSignature.attestation.signature = 'A';
+  brokenSignature.integrity.value = await sha256Browser(witnessBundlePayload(brokenSignature));
+  const brokenSignatureRun = spawnSync('python3', [witnessPython,
+    save('broken-witness-signature.json', brokenSignature), '--now', fixedTime],
+    { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  assert.equal(brokenSignatureRun.status, 1, brokenSignatureRun.stderr);
+  assert.equal(JSON.parse(brokenSignatureRun.stdout).valid, false);
+  const brokenAttestation = structuredClone(golden);
+  brokenAttestation.attestation = [];
+  brokenAttestation.integrity.value = await sha256Browser(witnessBundlePayload(brokenAttestation));
+  const brokenAttestationRun = spawnSync('python3', [witnessPython,
+    save('broken-witness-attestation.json', brokenAttestation), '--now', fixedTime],
+    { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  assert.equal(brokenAttestationRun.status, 1, brokenAttestationRun.stderr);
+  assert.equal(JSON.parse(brokenAttestationRun.stdout).reason, 'AML_PY_ATTESTATION_INVALID');
+  for (const [name, now, expectedReason] of [
+    ['before-issue', '2029-12-31T23:59:59Z', 'AML_PY_CHALLENGE_NOT_YET_VALID'],
+    ['after-expiry', '2030-01-01T00:11:00Z', 'AML_PY_CHALLENGE_EXPIRED']
+  ]) {
+    const actual = spawnSync('python3', [witnessPython, goldenBundle, '--now', now],
+      { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+    assert.equal(actual.status, 1, `${name}: ${actual.stderr}`);
+    assert.equal(JSON.parse(actual.stdout).reason, expectedReason, name);
+  }
+
   console.log(JSON.stringify({
     protocol: 'aml-signed-quorum-python-cross-runtime/1',
     passed: true, cases: checks,
-    additional_rejections: ['duplicate_json_key', 'fractional_canonical_value',
-      'malformed_signature', 'invalid_held_policy'],
-    claim_boundary: 'Project-authored Python and JavaScript implementations agree on these saved quorum and held-policy cases. This is not an external witness, signer identity, or independent certification.'
+    additional_checks: ['duplicate_json_key', 'fractional_canonical_value',
+      'malformed_signature', 'invalid_held_policy', 'missing_held_challenge',
+      'matching_held_challenge', 'mismatched_held_challenge', 'duplicate_witness_key',
+      'malformed_witness_signature', 'malformed_witness_attestation',
+      'before_challenge_issue', 'after_challenge_expiry'],
+    claim_boundary: 'Project-authored Python and JavaScript implementations agree on these saved quorum, held-policy, and live witness-replay cases. This is not an external witness, signer identity, or independent certification.'
   }, null, 2));
 } finally {
   fs.rmSync(directory, { recursive: true, force: true });
