@@ -197,6 +197,7 @@ For the smallest deterministic reproduction, start with:
 
 - [10-minute reproduction](docs/TRY_AML_10_MINUTES.md)
 - [Five-minute installed-package quickstart](docs/CONSUMER_QUICKSTART.md)
+- [Verify a saved browser witness](docs/DETACHED_VERIFIER.md#verify-a-saved-bundle-from-the-cli) — the preview CLI requires the challenge retained by the verifier.
 - [Preserve a decision](docs/EVIDENCE_CAPSULE.md) — create and recheck a self-contained evidence capsule after an interface changes.
 - [Renew its evidence](docs/EVIDENCE_RENEWAL.md) — link the original capsule into an append-only SHA3-512 chain with verifier-trusted witness quorum.
 - [Keep a cold archive](docs/EVIDENCE_ARCHIVE.md) — preserve canonical capsule and renewal bytes with an offline recovery path and externally supplied trust.

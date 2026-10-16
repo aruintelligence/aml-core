@@ -40,6 +40,7 @@ for (const requiredPath of required) {
 }
 
 const forbiddenPatterns = [
+  /\.tgz$/i,
   /(^|\/)\.env($|\.)/i,
   /private[-_. ]?key/i,
   /(^|\/)id_(rsa|ed25519)(\.|$)/i,

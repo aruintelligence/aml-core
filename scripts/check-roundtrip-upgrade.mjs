@@ -16,7 +16,7 @@ try {
   execFileSync('tar', ['-xf', path.join(tmp, 'stable.tar'), '-C', stableDir], { stdio: 'inherit' });
 
   const stablePack = execFileSync('npm', ['pack', '--silent'], { cwd: stableDir, encoding: 'utf8' }).trim().split(/\r?\n/).pop();
-  const currentPack = execFileSync('npm', ['pack', '--silent'], { encoding: 'utf8' }).trim().split(/\r?\n/).pop();
+  const currentPack = execFileSync('npm', ['pack', '--silent', '--pack-destination', tmp], { encoding: 'utf8' }).trim().split(/\r?\n/).pop();
   if (!stablePack || !currentPack) fail('Unable to pack one or both release candidates');
 
   const stableConsumer = path.join(tmp, 'stable-consumer');
@@ -27,7 +27,7 @@ try {
   }
 
   execFileSync('npm', ['install', '--ignore-scripts', path.resolve(stableDir, stablePack)], { cwd: stableConsumer, stdio: 'inherit' });
-  execFileSync('npm', ['install', '--ignore-scripts', path.resolve(currentPack)], { cwd: currentConsumer, stdio: 'inherit' });
+  execFileSync('npm', ['install', '--ignore-scripts', path.join(tmp, currentPack)], { cwd: currentConsumer, stdio: 'inherit' });
 
   const source = fs.readFileSync(fixture, 'utf8');
   fs.writeFileSync(path.join(stableConsumer, 'fixture.aml'), source);
