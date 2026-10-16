@@ -98,7 +98,8 @@ try {
   const reportA = witnessVerificationReport(bundle, witnessCheck, { verifier: 'compat-a' });
   const reportB = witnessVerificationReport(bundle, witnessCheck, { verifier: 'compat-b' });
   const signedA = await signVerificationReport(reportA, await createVerifierKeyPair());
-  const signedB = await signVerificationReport(reportB, await createVerifierKeyPair());
+  const verifierKeyB = await createVerifierKeyPair();
+  const signedB = await signVerificationReport(reportB, verifierKeyB);
   const signedQuorum = await createSignedVerificationQuorum([signedA, signedB], { threshold: 2 });
   fs.writeFileSync(path.join(tempRoot, 'signed-quorum.json'), `${JSON.stringify(signedQuorum)}\n`);
   const quorumValid = JSON.parse(runNpm(['exec', '--', 'aml', 'verify-signed-quorum', 'signed-quorum.json'], tempRoot));
@@ -223,6 +224,32 @@ try {
       completeBound.policy_evaluation.unsatisfied_claims.length) {
     throw new Error('Installed-package signed quorum CLI did not require complete signed claims');
   }
+  const vetoPolicy = { ...completePolicy, schema: 'aml-signed-quorum-held-policy/5',
+    reject_trusted_dissent: true };
+  fs.writeFileSync(path.join(tempRoot, 'veto-policy.json'), `${JSON.stringify(vetoPolicy)}\n`);
+  const noDissent = JSON.parse(runNpm(['exec', '--', 'aml', 'verify-signed-quorum',
+    'signed-quorum.json', '--policy', 'veto-policy.json', '--bundle', 'witness.json',
+    '--challenge', 'held-challenge.json'], tempRoot));
+  if (!noDissent.policy_met || noDissent.policy_evaluation.trusted_dissent.length) {
+    throw new Error('Installed-package signed quorum CLI rejected a dissent-free held policy');
+  }
+  const signedDissent = await signVerificationReport({
+    ...reportB, valid: false, reason: 'AML_TEST_SIGNED_DISSENT'
+  }, verifierKeyB);
+  const dissentQuorum = await createSignedVerificationQuorum(
+    [signedA, signedB, signedDissent], { threshold: 2 });
+  fs.writeFileSync(path.join(tempRoot, 'dissent-quorum.json'), `${JSON.stringify(dissentQuorum)}\n`);
+  const dissentRun = spawnSync(process.execPath, [path.join(installedRoot, 'bin', 'aml.js'),
+    'verify-signed-quorum', 'dissent-quorum.json', '--policy', 'veto-policy.json',
+    '--bundle', 'witness.json', '--challenge', 'held-challenge.json'],
+  { cwd: tempRoot, encoding: 'utf8' });
+  const dissentResult = JSON.parse(dissentRun.stdout);
+  if (dissentRun.status !== 2 || !dissentResult.valid || !dissentResult.threshold_met ||
+      !dissentResult.witness_met || !dissentResult.replayable_claims_consistent ||
+      dissentResult.policy_met !== false ||
+      dissentResult.policy_evaluation.trusted_dissent[0]?.report_index !== 2) {
+    throw new Error('Installed-package signed quorum CLI accepted trusted signed dissent');
+  }
   const sparseSigned = await signVerificationReport({ ...reportA, checks: {} },
     await createVerifierKeyPair());
   const sparseQuorum = await createSignedVerificationQuorum([sparseSigned, signedB], { threshold: 2 });
@@ -326,6 +353,7 @@ try {
       signed_quorum_cli_rejects_untrusted_key: true,
       signed_quorum_cli_held_witness_valid: true,
       signed_quorum_cli_complete_claims_valid: true,
+      signed_quorum_cli_trusted_dissent_veto_valid: true,
       signed_quorum_cli_rejects_omitted_signed_checks: true,
       signed_quorum_cli_rejects_conflicting_claims: true,
       signed_quorum_cli_rejects_other_witness_challenge: true,

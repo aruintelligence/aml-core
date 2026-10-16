@@ -171,10 +171,11 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.ok(Date.parse(bundle.created_at) > Date.parse(attestation.issued_at));
   const check = await verifyWitnessBundle(bundle, { expectedChallenge: challenge });
   assert.equal(check.valid, true);
+  const keyB = await createVerifierKeyPair();
   const a = await signVerificationReport(witnessVerificationReport(bundle, check, { verifier: 'a' }),
     await createVerifierKeyPair());
   const b = await signVerificationReport(witnessVerificationReport(bundle, check, { verifier: 'b' }),
-    await createVerifierKeyPair());
+    keyB);
   const quorum = await createSignedVerificationQuorum([a, b], { threshold: 2 });
   const quorumPath = write('quorum.json', quorum);
   const bundlePath = write('bundle.json', bundle);
@@ -208,6 +209,70 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(complete.status, 0, complete.stderr);
   assert.equal(JSON.parse(complete.stdout).policy_met, true);
   assert.deepEqual(JSON.parse(complete.stdout).policy_evaluation.unsatisfied_claims, []);
+
+  const vetoPolicy = { ...completePolicy, schema: 'aml-signed-quorum-held-policy/5',
+    reject_trusted_dissent: true };
+  const vetoPath = write('veto-policy.json', vetoPolicy);
+  const cleanVeto = run(quorumPath, '--policy', vetoPath,
+    '--bundle', bundlePath, '--challenge', challengePath);
+  assert.equal(cleanVeto.status, 0, cleanVeto.stderr);
+  assert.deepEqual(JSON.parse(cleanVeto.stdout).policy_evaluation.trusted_dissent, []);
+
+  const negative = witnessVerificationReport(bundle, check, { verifier: 'b-dissent' });
+  negative.valid = false;
+  negative.reason = 'AML_TEST_SIGNED_DISSENT';
+  const dissent = await signVerificationReport(negative, keyB);
+  const withDissent = await createSignedVerificationQuorum([a, b, dissent], { threshold: 2 });
+  const olderPolicy = await verifySignedVerificationQuorum(withDissent, {
+    policy: completePolicy, witnessBundle: bundle, expectedChallenge: challenge
+  });
+  assert.equal(olderPolicy.policy_met, true);
+  const vetoed = await verifySignedVerificationQuorum(withDissent, {
+    policy: vetoPolicy, witnessBundle: bundle, expectedChallenge: challenge
+  });
+  assert.equal(vetoed.valid, true);
+  assert.equal(vetoed.threshold_met, true);
+  assert.equal(vetoed.witness_met, true);
+  assert.equal(vetoed.replayable_claims_consistent, true);
+  assert.equal(vetoed.policy_met, false);
+  assert.deepEqual(vetoed.policy_evaluation.trusted_dissent,
+    [{ report_index: 2, key_material_fingerprint: vetoPolicy.trusted_keys[1].key_material_fingerprint }]);
+  const vetoRun = run(write('dissent-quorum.json', withDissent), '--policy', vetoPath,
+    '--bundle', bundlePath, '--challenge', challengePath);
+  assert.equal(vetoRun.status, 2, vetoRun.stderr);
+  assert.equal(JSON.parse(vetoRun.stdout).policy_met, false);
+
+  const alias = structuredClone(dissent);
+  alias.verifier_public_key_jwk.kid = 'alternate-metadata-for-same-key';
+  alias.verifier_key_fingerprint = await sha256Browser(alias.verifier_public_key_jwk);
+  const aliasQuorum = await createSignedVerificationQuorum([a, b, alias], { threshold: 2 });
+  const aliasResult = await verifySignedVerificationQuorum(aliasQuorum, {
+    policy: vetoPolicy, witnessBundle: bundle, expectedChallenge: challenge
+  });
+  assert.notEqual(alias.verifier_key_fingerprint, b.verifier_key_fingerprint);
+  assert.equal(aliasResult.policy_met, false);
+  assert.deepEqual(aliasResult.policy_evaluation.trusted_dissent,
+    [{ report_index: 2, key_material_fingerprint: vetoPolicy.trusted_keys[1].key_material_fingerprint }]);
+
+  for (const ignoredDissent of [
+    await signVerificationReport(negative, await createVerifierKeyPair()),
+    { ...dissent, report: { ...negative, reason: 'changed-without-resigning' } }
+  ]) {
+    const ignoredQuorum = await createSignedVerificationQuorum([a, b, ignoredDissent], { threshold: 2 });
+    const result = await verifySignedVerificationQuorum(ignoredQuorum, {
+      policy: vetoPolicy, witnessBundle: bundle, expectedChallenge: challenge
+    });
+    assert.equal(result.policy_met, true);
+    assert.deepEqual(result.policy_evaluation.trusted_dissent, []);
+  }
+  const missingVetoWitness = run(quorumPath, '--policy', vetoPath);
+  assert.equal(missingVetoWitness.status, 1);
+  assert.match(missingVetoWitness.stderr, /AML_SIGNED_QUORUM_POLICY_WITNESS_REQUIRED/);
+  const malformedVeto = run(quorumPath, '--policy',
+    write('malformed-veto.json', { ...vetoPolicy, reject_trusted_dissent: false }),
+    '--bundle', bundlePath, '--challenge', challengePath);
+  assert.equal(malformedVeto.status, 1);
+  assert.match(malformedVeto.stderr, /AML_SIGNED_QUORUM_POLICY_INVALID/);
 
   for (const [name, change, fields] of [
     ['no-checks', report => { report.checks = {}; }, [

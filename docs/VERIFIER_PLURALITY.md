@@ -245,6 +245,37 @@ controlled distinct organizations, or checked the bundle at the claimed
 time. It makes signed omissions visible and rejectable under a buyer's prior
 rule. Policies 1–3 retain their existing acceptance rules.
 
+### Give a trusted negative report veto power
+
+Version 5 extends version 4 with an opt-in dissent veto. In the retained
+version 4 policy, change `schema` to `aml-signed-quorum-held-policy/5` and add
+`"reject_trusted_dissent": true`. Keep its complete-claim requirement,
+material-pinned keys, artifact, thresholds, and trust groups. It also requires
+the named witness and a separately retained challenge:
+
+```bash
+aml verify-signed-quorum saved-quorum.json --policy veto-policy.json \
+  --bundle witness.json --challenge held-challenge.json
+```
+
+When an authenticated, negative report over the quorum's artifact is supplied
+by **any** pinned P-256 public-key material, `policy_met` is false even if two
+other positive reports satisfy the saved and buyer-held thresholds. The veto
+follows the public point: a negative report signed with the same key under a
+different JWK metadata label still counts. The result lists report indexes
+and material fingerprints in `policy_evaluation.trusted_dissent`. Invalid
+signatures and negative reports from keys outside the held material roster
+cannot trigger the veto. The saved quorum's `valid` and `threshold_met`
+remain separate from this buyer-held decision.
+
+This rule considers only reports actually supplied with the saved quorum. It
+cannot detect a withheld dissent, infer whether a later report supersedes an
+earlier one, establish who controlled a key, or prove institutional
+independence. Choose this rule before accepting a quorum if any supplied
+trusted negative report should block approval. Policies 1–4 keep their
+existing behavior, where signed dissent is counted and displayed but does
+not by itself veto a positive threshold.
+
 For cross-runtime checking of the saved quorum and held policy, use the
 [project-authored Python verifier](../independent/python/verify_signed_quorum.py):
 

@@ -243,6 +243,47 @@ try {
     ]
   };
   await compare('complete-signed-witness-claims', witnessQuorum, completePolicy, true, replay);
+  const vetoPolicy = { ...completePolicy, schema: 'aml-signed-quorum-held-policy/5',
+    reject_trusted_dissent: true };
+  await compare('veto-policy-without-dissent', witnessQuorum, vetoPolicy, true, replay);
+  const negative = witnessVerificationReport(bundle, witness, { verifier: 'witness-b-dissent' });
+  negative.valid = false;
+  negative.reason = 'AML_TEST_SIGNED_DISSENT';
+  const signedDissent = await signVerificationReport(negative, witnessKeyB);
+  const withDissent = await createSignedVerificationQuorum(
+    [witnessA, witnessB, signedDissent], { threshold: 2 });
+  await compare('trusted-dissent-older-policy', withDissent, completePolicy, true, replay);
+  await compare('trusted-dissent-veto', withDissent, vetoPolicy, false, replay);
+  const aliasDissent = structuredClone(signedDissent);
+  aliasDissent.verifier_public_key_jwk.kid = 'same-key-different-envelope';
+  aliasDissent.verifier_key_fingerprint = await sha256Browser(aliasDissent.verifier_public_key_jwk);
+  assert.notEqual(aliasDissent.verifier_key_fingerprint, signedDissent.verifier_key_fingerprint);
+  await compare('trusted-dissent-metadata-alias-veto',
+    await createSignedVerificationQuorum([witnessA, witnessB, aliasDissent], { threshold: 2 }),
+    vetoPolicy, false, replay);
+  const outsiderDissent = await signVerificationReport(negative, await createVerifierKeyPair());
+  await compare('untrusted-dissent-cannot-veto',
+    await createSignedVerificationQuorum([witnessA, witnessB, outsiderDissent], { threshold: 2 }),
+    vetoPolicy, true, replay);
+  await compare('unauthenticated-dissent-cannot-veto',
+    await createSignedVerificationQuorum([witnessA, witnessB,
+      { ...signedDissent, report: { ...negative, reason: 'changed-without-resigning' } }
+    ], { threshold: 2 }), vetoPolicy, true, replay);
+  assert.throws(() => validateSignedVerificationQuorumPolicy({
+    ...vetoPolicy, reject_trusted_dissent: false
+  }), /AML_SIGNED_QUORUM_POLICY_INVALID/);
+  const missingVetoReplay = spawnSync('python3', [python,
+    save('veto-without-bundle.json', witnessQuorum),
+    '--policy', save('veto-without-bundle-policy.json', vetoPolicy)],
+  { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  assert.equal(missingVetoReplay.status, 1, missingVetoReplay.stderr);
+  assert.equal(JSON.parse(missingVetoReplay.stdout).reason, 'AML_SIGNED_QUORUM_POLICY_WITNESS_REQUIRED');
+  const malformedVetoRun = spawnSync('python3', [python,
+    save('malformed-veto-quorum.json', witnessQuorum), '--policy',
+    save('malformed-veto-policy.json', { ...vetoPolicy, reject_trusted_dissent: false })],
+  { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  assert.equal(malformedVetoRun.status, 1, malformedVetoRun.stderr);
+  assert.equal(JSON.parse(malformedVetoRun.stdout).reason, 'AML_SIGNED_QUORUM_POLICY_INVALID');
   const belowSavedThreshold = await createSignedVerificationQuorum([witnessA, witnessB],
     { threshold: 3 });
   const heldVsSaved = await verifySignedVerificationQuorum(belowSavedThreshold, {
@@ -253,6 +294,14 @@ try {
   assert.equal(heldVsSaved.policy_met, true);
   await compare('complete-held-policy-met-but-saved-threshold-unmet', belowSavedThreshold,
     completePolicy, false, replay);
+  const vetoBelowSaved = await verifySignedVerificationQuorum(belowSavedThreshold, {
+    policy: vetoPolicy, witnessBundle: bundle, expectedChallenge: challenge
+  });
+  assert.equal(vetoBelowSaved.valid, true);
+  assert.equal(vetoBelowSaved.threshold_met, false);
+  assert.equal(vetoBelowSaved.policy_met, true);
+  await compare('veto-held-policy-met-but-saved-threshold-unmet', belowSavedThreshold,
+    vetoPolicy, false, replay);
   const noChecks = witnessVerificationReport(bundle, witness, { verifier: 'no-checks' });
   noChecks.checks = {};
   const sparseA = await signVerificationReport(noChecks, witnessKeyA);
@@ -460,6 +509,7 @@ try {
     additional_checks: ['duplicate_json_key', 'fractional_canonical_value',
       'malformed_signature', 'invalid_held_policy', 'invalid_trust_group_policy',
       'dormant_key_material_alias', 'complete_claims_without_witness',
+      'veto_policy_without_witness', 'invalid_veto_policy',
       'missing_held_challenge',
       'matching_held_challenge', 'mismatched_held_challenge', 'duplicate_witness_key',
       'malformed_witness_signature', 'malformed_witness_attestation',
