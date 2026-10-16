@@ -67,6 +67,8 @@ jobs:
         run: python3 independent/python/check_canonical_vectors.py > "${RUNNER_TEMP}/aml-python-canonicalization.json"
       - name: Verify dependency-free Python witness vector
         run: python3 independent/python/verify_witness.py independent/python/witness-vector.json --now 2030-01-01T00:05:00Z > "${RUNNER_TEMP}/aml-python-witness.json"
+      - name: Compare signed quorum decisions with Python
+        run: node scripts/check-signed-quorum-python.mjs > "${RUNNER_TEMP}/aml-python-signed-quorum.json"
       - name: Run black-box conformance against Python verifier
         run: node scripts/run-verifier-conformance.mjs -- python3 independent/python/verify_witness.py > "${RUNNER_TEMP}/aml-python-verifier-conformance.json"
       - name: Run black-box conformance against Go verifier
