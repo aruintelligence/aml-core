@@ -219,6 +219,55 @@ try {
       { ...await fingerprintVerifierPublicKey(witnessA.verifier_public_key_jwk), trust_group: 'lab-a' },
       { ...await fingerprintVerifierPublicKey(witnessB.verifier_public_key_jwk), trust_group: 'lab-b' }
     ] }, true, replay);
+  const completePolicy = {
+    ...witnessGroupPolicy, schema: 'aml-signed-quorum-held-policy/4',
+    require_complete_witness_claims: true,
+    trusted_keys: [
+      { ...await fingerprintVerifierPublicKey(witnessA.verifier_public_key_jwk), trust_group: 'lab-a' },
+      { ...await fingerprintVerifierPublicKey(witnessB.verifier_public_key_jwk), trust_group: 'lab-b' }
+    ]
+  };
+  await compare('complete-signed-witness-claims', witnessQuorum, completePolicy, true, replay);
+  const belowSavedThreshold = await createSignedVerificationQuorum([witnessA, witnessB],
+    { threshold: 3 });
+  const heldVsSaved = await verifySignedVerificationQuorum(belowSavedThreshold, {
+    policy: completePolicy, witnessBundle: bundle, expectedChallenge: challenge
+  });
+  assert.equal(heldVsSaved.valid, true);
+  assert.equal(heldVsSaved.threshold_met, false);
+  assert.equal(heldVsSaved.policy_met, true);
+  await compare('complete-held-policy-met-but-saved-threshold-unmet', belowSavedThreshold,
+    completePolicy, false, replay);
+  const noChecks = witnessVerificationReport(bundle, witness, { verifier: 'no-checks' });
+  noChecks.checks = {};
+  const sparseA = await signVerificationReport(noChecks, witnessKeyA);
+  const sparseQuorum = await createSignedVerificationQuorum([sparseA, witnessB], { threshold: 2 });
+  await compare('sparse-signed-claims-older-policy', sparseQuorum, witnessPolicy, true, replay);
+  await compare('sparse-signed-claims-required', sparseQuorum, completePolicy, false, replay);
+  const noTime = witnessVerificationReport(bundle, witness, { verifier: 'no-time' });
+  delete noTime.checked_at;
+  await compare('missing-signed-time-required',
+    await createSignedVerificationQuorum([
+      await signVerificationReport(noTime, witnessKeyA), witnessB
+    ], { threshold: 2 }), completePolicy, false, replay);
+  const falseProcess = witnessVerificationReport(bundle, witness, { verifier: 'false-process' });
+  falseProcess.checks.verifier_held_challenge = false;
+  await compare('missing-affirmative-process-claim',
+    await createSignedVerificationQuorum([
+      await signVerificationReport(falseProcess, witnessKeyA), witnessB
+    ], { threshold: 2 }), completePolicy, false, replay);
+  const untrustedSparse = await signVerificationReport(noChecks, await createVerifierKeyPair());
+  await compare('untrusted-sparse-report-not-required',
+    await createSignedVerificationQuorum([witnessA, witnessB, untrustedSparse], { threshold: 2 }),
+    completePolicy, true, replay);
+  await compare('complete-claims-wrong-challenge', witnessQuorum, completePolicy, false,
+    { bundle, challenge: { ...challenge,
+      issued_at: new Date(Date.parse(challenge.issued_at) - 1000).toISOString() } });
+  const missingReplayRun = spawnSync('python3', [python, save('complete-without-bundle.json', witnessQuorum),
+    '--policy', save('complete-without-bundle-policy.json', completePolicy)],
+  { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  assert.equal(missingReplayRun.status, 1, missingReplayRun.stderr);
+  assert.equal(JSON.parse(missingReplayRun.stdout).reason, 'AML_SIGNED_QUORUM_POLICY_WITNESS_REQUIRED');
   await compare('replayed-witness-with-only-one-held-group', witnessQuorum,
     { ...witnessGroupPolicy, trusted_keys: [
       witnessGroupPolicy.trusted_keys[0],
@@ -395,7 +444,7 @@ try {
     passed: true, cases: checks,
     additional_checks: ['duplicate_json_key', 'fractional_canonical_value',
       'malformed_signature', 'invalid_held_policy', 'invalid_trust_group_policy',
-      'dormant_key_material_alias',
+      'dormant_key_material_alias', 'complete_claims_without_witness',
       'missing_held_challenge',
       'matching_held_challenge', 'mismatched_held_challenge', 'duplicate_witness_key',
       'malformed_witness_signature', 'malformed_witness_attestation',

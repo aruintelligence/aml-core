@@ -184,6 +184,69 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(JSON.parse(accepted.stdout).witness_met, true);
   assert.equal(JSON.parse(accepted.stdout).replayable_claims_consistent, true);
 
+  const completePolicy = {
+    schema: 'aml-signed-quorum-held-policy/4', prototype: true,
+    artifact_type: quorum.artifact_type, artifact_hash: quorum.artifact_hash,
+    trusted_keys: [
+      { ...await fingerprintVerifierPublicKey(a.verifier_public_key_jwk), trust_group: 'lab-a' },
+      { ...await fingerprintVerifierPublicKey(b.verifier_public_key_jwk), trust_group: 'lab-b' }
+    ],
+    threshold: 2, group_threshold: 2, require_complete_witness_claims: true
+  };
+  const completePolicyPath = write('complete-policy.json', completePolicy);
+  const complete = run(quorumPath, '--policy', completePolicyPath,
+    '--bundle', bundlePath, '--challenge', challengePath);
+  assert.equal(complete.status, 0, complete.stderr);
+  assert.equal(JSON.parse(complete.stdout).policy_met, true);
+  assert.deepEqual(JSON.parse(complete.stdout).policy_evaluation.unsatisfied_claims, []);
+
+  for (const [name, change, fields] of [
+    ['no-checks', report => { report.checks = {}; }, [
+      'checks.bundle_integrity', 'checks.receipt_integrity', 'checks.evidence_integrity',
+      'checks.challenge_freshness', 'checks.challenge_binding', 'checks.session_signature',
+      'checks.verifier_held_challenge'
+    ]],
+    ['no-checked-at', report => { delete report.checked_at; }, ['checked_at']],
+    ['no-session-key', report => { report.session_key_fingerprint = null; },
+      ['session_key_fingerprint']],
+    ['no-expiry', report => { delete report.challenge_expires_at; },
+      ['challenge_expires_at']],
+    ['process-not-asserted', report => { report.checks.verifier_held_challenge = false; },
+      ['checks.verifier_held_challenge']]
+  ]) {
+    const sparse = witnessVerificationReport(bundle, check, { verifier: `sparse-${name}` });
+    change(sparse);
+    const signedSparse = await signVerificationReport(sparse, await createVerifierKeyPair());
+    const sparseQuorum = await createSignedVerificationQuorum([signedSparse, b], { threshold: 2 });
+    const sparsePolicy = { ...completePolicy, trusted_keys: [
+      { ...await fingerprintVerifierPublicKey(signedSparse.verifier_public_key_jwk),
+        trust_group: 'lab-a' }, completePolicy.trusted_keys[1]
+    ] };
+    const result = await verifySignedVerificationQuorum(sparseQuorum, {
+      policy: sparsePolicy, witnessBundle: bundle, expectedChallenge: challenge
+    });
+    assert.equal(result.valid, true, name);
+    assert.equal(result.threshold_met, true, name);
+    assert.equal(result.witness_met, true, name);
+    assert.equal(result.replayable_claims_consistent, true, name);
+    assert.equal(result.policy_met, false, name);
+    assert.deepEqual(result.policy_evaluation.unsatisfied_claims,
+      [{ report_index: 0, fields }], name);
+    const fromCli = run(write(`sparse-${name}.json`, sparseQuorum), '--policy',
+      write(`sparse-${name}-policy.json`, sparsePolicy),
+      '--bundle', bundlePath, '--challenge', challengePath);
+    assert.equal(fromCli.status, 2, `${name}: ${fromCli.stderr}`);
+  }
+
+  const missingReplay = run(quorumPath, '--policy', completePolicyPath);
+  assert.equal(missingReplay.status, 1);
+  assert.match(missingReplay.stderr, /AML_SIGNED_QUORUM_POLICY_WITNESS_REQUIRED/);
+  const malformedCompletePolicy = run(quorumPath, '--policy',
+    write('invalid-complete-policy.json', { ...completePolicy, require_complete_witness_claims: false }),
+    '--bundle', bundlePath, '--challenge', challengePath);
+  assert.equal(malformedCompletePolicy.status, 1);
+  assert.match(malformedCompletePolicy.stderr, /AML_SIGNED_QUORUM_POLICY_INVALID/);
+
   for (const [name, original, other] of [
     ['bundle', bundle, challengePath], ['challenge', challenge, bundlePath]
   ]) {

@@ -10,7 +10,8 @@ import { createSessionAttestation } from '../docs/aml-session-attestation.js';
 import { createWitnessBundle, verifyWitnessBundle } from '../docs/aml-witness-bundle.js';
 import { witnessVerificationReport } from '../docs/aml-verification-report.js';
 import { createVerifierKeyPair, signVerificationReport } from '../docs/aml-signed-verification-report.js';
-import { createSignedVerificationQuorum } from '../docs/aml-signed-verification-quorum.js';
+import { createSignedVerificationQuorum,
+  fingerprintVerifierPublicKey } from '../docs/aml-signed-verification-quorum.js';
 
 const root = process.cwd();
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-consumer-compat-'));
@@ -199,6 +200,38 @@ try {
       !witnessBound.replayable_claims_consistent) {
     throw new Error('Installed-package signed quorum CLI did not recheck the retained witness');
   }
+  const completePolicy = { ...materialPolicy, schema: 'aml-signed-quorum-held-policy/4',
+    require_complete_witness_claims: true };
+  fs.writeFileSync(path.join(tempRoot, 'complete-policy.json'),
+    `${JSON.stringify(completePolicy)}\n`);
+  const completeBound = JSON.parse(runNpm(['exec', '--', 'aml', 'verify-signed-quorum',
+    'signed-quorum.json', '--policy', 'complete-policy.json', '--bundle', 'witness.json',
+    '--challenge', 'held-challenge.json'], tempRoot));
+  if (!completeBound.policy_met || !completeBound.witness_met ||
+      !completeBound.policy_evaluation.complete_claims_checked ||
+      completeBound.policy_evaluation.unsatisfied_claims.length) {
+    throw new Error('Installed-package signed quorum CLI did not require complete signed claims');
+  }
+  const sparseSigned = await signVerificationReport({ ...reportA, checks: {} },
+    await createVerifierKeyPair());
+  const sparseQuorum = await createSignedVerificationQuorum([sparseSigned, signedB], { threshold: 2 });
+  fs.writeFileSync(path.join(tempRoot, 'sparse-quorum.json'), `${JSON.stringify(sparseQuorum)}\n`);
+  const sparsePolicy = { ...completePolicy, trusted_keys: [
+    { ...await fingerprintVerifierPublicKey(sparseSigned.verifier_public_key_jwk), trust_group: 'lab-a' },
+    completePolicy.trusted_keys[1]
+  ] };
+  fs.writeFileSync(path.join(tempRoot, 'sparse-policy.json'), `${JSON.stringify(sparsePolicy)}\n`);
+  const sparseRun = spawnSync(process.execPath, [path.join(installedRoot, 'bin', 'aml.js'),
+    'verify-signed-quorum', 'sparse-quorum.json', '--policy', 'sparse-policy.json',
+    '--bundle', 'witness.json', '--challenge', 'held-challenge.json'],
+  { cwd: tempRoot, encoding: 'utf8' });
+  const sparseResult = JSON.parse(sparseRun.stdout);
+  if (sparseRun.status !== 2 || !sparseResult.valid || !sparseResult.threshold_met ||
+      !sparseResult.witness_met || !sparseResult.replayable_claims_consistent ||
+      sparseResult.policy_met !== false ||
+      sparseResult.policy_evaluation.unsatisfied_claims[0]?.report_index !== 0) {
+    throw new Error('Installed-package signed quorum CLI accepted omitted signed checks');
+  }
   const conflictingReport = { ...reportA, session_key_fingerprint: '0'.repeat(64) };
   const conflictingSigned = await signVerificationReport(conflictingReport, await createVerifierKeyPair());
   const conflictingQuorum = await createSignedVerificationQuorum([conflictingSigned, signedB], { threshold: 2 });
@@ -280,6 +313,8 @@ try {
       signed_quorum_cli_rejects_one_trust_group: true,
       signed_quorum_cli_rejects_untrusted_key: true,
       signed_quorum_cli_held_witness_valid: true,
+      signed_quorum_cli_complete_claims_valid: true,
+      signed_quorum_cli_rejects_omitted_signed_checks: true,
       signed_quorum_cli_rejects_conflicting_claims: true,
       signed_quorum_cli_rejects_other_witness_challenge: true,
       consumer_receipt_sha256: quickstart.receipt_sha256
