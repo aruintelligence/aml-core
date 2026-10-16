@@ -16,6 +16,7 @@ test('verification report normalizes a successful witness result', () => {
   assert.equal(report.artifact_hash, 'a'.repeat(64));
   assert.equal(report.session_key_fingerprint, 'b'.repeat(64));
   assert.equal(report.checks.bundle_integrity, true);
+  assert.equal(report.checks.verifier_held_challenge, false);
   assert.match(report.notes.join(' '), /does not prove identity/i);
 });
 
@@ -37,6 +38,13 @@ test('verification report does not call an invalid challenge fresh', () => {
   ]) {
     const report = witnessVerificationReport({ challenge: {} }, { valid: false, reason });
     assert.equal(report.checks.challenge_freshness, false, reason);
+  }
+});
+
+test('a failure reason alone never asserts that unrelated steps passed', () => {
+  for (const reason of ['AML_SESSION_EVIDENCE_INVALID', 'AML_WITNESS_BUNDLE_HASH_MISMATCH']) {
+    const report = witnessVerificationReport({}, { valid: false, reason });
+    assert.equal(Object.values(report.checks).every((passed) => passed === false), true, reason);
   }
 });
 

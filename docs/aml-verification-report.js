@@ -33,15 +33,15 @@ export function createVerificationReport({
 }
 
 export function witnessVerificationReport(bundle, result, { verifier = 'aml-reference-js' } = {}) {
-  const reason = String(result?.reason || '');
-  const bundleIntegrityFailed = [
-    'AML_WITNESS_BUNDLE_UNSEALED',
-    'AML_WITNESS_BUNDLE_INVALID',
-    'AML_WITNESS_BUNDLE_HASH_MISMATCH',
-    'AML_WITNESS_BUNDLE_INTEGRITY_INVALID',
-    'AML_WITNESS_BUNDLE_ALGORITHM_UNSUPPORTED',
-    'AML_WITNESS_BUNDLE_CANONICALIZATION_UNSUPPORTED'
-  ].includes(reason) || reason.startsWith('AML_CANONICAL_JSON_');
+  const checkNames = [
+    'bundle_integrity', 'receipt_integrity', 'evidence_integrity',
+    'challenge_freshness', 'challenge_binding', 'session_signature',
+    'verifier_held_challenge'
+  ];
+  const recordedChecks = result?.checks && typeof result.checks === 'object' ? result.checks : null;
+  const checks = Object.fromEntries(checkNames.map((name) => [name,
+    recordedChecks ? recordedChecks[name] === true : name !== 'verifier_held_challenge' && result?.valid === true
+  ]));
   return createVerificationReport({
     verifier,
     artifact_type: 'aml-witness-bundle/1',
@@ -49,23 +49,10 @@ export function witnessVerificationReport(bundle, result, { verifier = 'aml-refe
     artifact_hash: bundle?.integrity?.value || null,
     session_key_fingerprint: bundle?.attestation?.session_key_fingerprint || null,
     challenge_expires_at: bundle?.challenge?.expires_at || null,
-    checks: {
-      bundle_integrity: Boolean(result?.valid) || !bundleIntegrityFailed,
-      receipt_integrity: result?.valid || !String(result?.reason || '').includes('RECEIPT'),
-      evidence_integrity: result?.valid || !String(result?.reason || '').includes('EVIDENCE'),
-      challenge_freshness: Boolean(result?.valid) || ![
-        'AML_CHALLENGE_EXPIRED',
-        'AML_CHALLENGE_NOT_YET_VALID',
-        'AML_CHALLENGE_TIME_INVALID'
-      ].includes(result?.reason),
-      challenge_binding: result?.valid || ![
-        'AML_SESSION_CHALLENGE_MISMATCH',
-        'AML_WITNESS_BUNDLE_CHALLENGE_MISMATCH'
-      ].includes(result?.reason),
-      session_signature: result?.valid || result?.reason !== 'AML_SESSION_SIGNATURE_INVALID'
-    },
+    checks,
     notes: [
-      'PASS means the project-defined integrity, freshness, binding, and signature checks represented by this verifier succeeded.',
+      'A true check records a project-defined verification step as passed; false means it failed or was not reached.',
+      'verifier_held_challenge is true only when a separate retained challenge was supplied and matched.',
       'It does not prove identity, truthful declared intent, policy quality, official AML authorization, or regulatory compliance.'
     ]
   });

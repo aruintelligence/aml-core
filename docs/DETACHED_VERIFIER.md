@@ -69,6 +69,14 @@ and expiration; it does not independently sign `issued_at`. The final
 bundle digest is not a keyed signature, so a verifier must keep its own
 challenge to establish that the response answers its request.
 
+The downloadable report records each verification step that passed. A false
+check means that step failed or was not reached after an earlier failure; it
+does not claim a separate failure for every later step. In particular,
+`verifier_held_challenge` is true only when the verifier supplied its retained
+challenge and the complete challenge matched. A self-contained bundle can
+pass its own cryptographic checks without establishing that it answered a
+verifier's request.
+
 ## Verify a saved bundle from the CLI
 
 From a checkout or packed preview that contains this command, save the

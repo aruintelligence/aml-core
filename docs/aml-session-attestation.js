@@ -84,27 +84,39 @@ export async function createSessionAttestation({
 }
 
 export async function verifySessionAttestation({ evidence, challenge, attestation, now = Date.now() } = {}) {
+  const checks = {
+    receipt_integrity: false,
+    evidence_integrity: false,
+    challenge_freshness: false,
+    challenge_binding: false,
+    session_signature: false
+  };
+  const fail = (reason, extra = {}) => ({ valid: false, reason, checks: { ...checks }, ...extra });
   try {
     const evidenceCheck = await verifyBrowserEvidence(evidence);
-    if (!evidenceCheck.valid) return { valid: false, reason: 'AML_SESSION_EVIDENCE_INVALID', evidence: evidenceCheck };
+    checks.receipt_integrity = evidenceCheck.receipt?.valid === true;
+    if (!evidenceCheck.valid) return fail('AML_SESSION_EVIDENCE_INVALID', { evidence: evidenceCheck });
+    checks.evidence_integrity = true;
     const challengeCheck = verifyVerificationChallenge(challenge, { now });
-    if (!challengeCheck.valid) return { valid: false, reason: challengeCheck.reason };
+    if (!challengeCheck.valid) return fail(challengeCheck.reason);
+    checks.challenge_freshness = true;
     assertBrowserJSON(attestation);
     if (!attestation || attestation.schema !== 'aml-session-attestation/1') {
-      return { valid: false, reason: 'AML_SESSION_ATTESTATION_INVALID' };
+      return fail('AML_SESSION_ATTESTATION_INVALID');
     }
     if (attestation.algorithm !== 'ECDSA-P256-SHA256') {
-      return { valid: false, reason: 'AML_SESSION_ALGORITHM_UNSUPPORTED' };
+      return fail('AML_SESSION_ALGORITHM_UNSUPPORTED');
     }
     if (attestation.evidence_hash !== evidence.integrity.value) {
-      return { valid: false, reason: 'AML_SESSION_EVIDENCE_HASH_MISMATCH' };
+      return fail('AML_SESSION_EVIDENCE_HASH_MISMATCH');
     }
     if (attestation.challenge_nonce !== challenge.nonce || attestation.challenge_expires_at !== challenge.expires_at) {
-      return { valid: false, reason: 'AML_SESSION_CHALLENGE_MISMATCH' };
+      return fail('AML_SESSION_CHALLENGE_MISMATCH');
     }
+    checks.challenge_binding = true;
     const expectedFingerprint = await sha256Browser(attestation.session_public_key_jwk);
     if (expectedFingerprint !== attestation.session_key_fingerprint) {
-      return { valid: false, reason: 'AML_SESSION_KEY_FINGERPRINT_MISMATCH' };
+      return fail('AML_SESSION_KEY_FINGERPRINT_MISMATCH');
     }
     const key = await crypto.subtle.importKey(
       'jwk',
@@ -120,14 +132,16 @@ export async function verifySessionAttestation({ evidence, challenge, attestatio
       base64UrlToBytes(attestation.signature),
       bytes
     );
+    checks.session_signature = valid;
     return {
       valid,
       reason: valid ? 'AML_SESSION_ATTESTATION_VALID' : 'AML_SESSION_SIGNATURE_INVALID',
+      checks: { ...checks },
       session_key_fingerprint: attestation.session_key_fingerprint,
       evidence_hash: attestation.evidence_hash
     };
   } catch (error) {
-    return { valid: false, reason: error?.message || 'AML_SESSION_VERIFY_ERROR' };
+    return fail(error?.message || 'AML_SESSION_VERIFY_ERROR');
   }
 }
 
