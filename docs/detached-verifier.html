@@ -72,14 +72,7 @@
       try {
         if (!currentChallenge) throw new Error('GENERATE_CHALLENGE_FIRST');
         const bundle = JSON.parse(bundleEl.value);
-        if (bundle.challenge?.nonce !== currentChallenge.nonce || bundle.challenge?.expires_at !== currentChallenge.expires_at) {
-          const check = { valid:false, reason:'DETACHED_VERIFIER_CHALLENGE_MISMATCH' };
-          latestReport = witnessVerificationReport(bundle, check, { verifier: 'aml-detached-browser' });
-          resultEl.textContent = JSON.stringify(latestReport, null, 2);
-          resultEl.className = 'bad';
-          return;
-        }
-        const check = await verifyWitnessBundle(bundle);
+        const check = await verifyWitnessBundle(bundle, { expectedChallenge: currentChallenge });
         latestReport = witnessVerificationReport(bundle, check, { verifier: 'aml-detached-browser' });
         resultEl.textContent = JSON.stringify(latestReport, null, 2);
         resultEl.className = check.valid ? 'ok' : 'bad';

@@ -3,7 +3,7 @@
 // This proves possession of the ephemeral session key and exact payload binding.
 // It does NOT prove human identity, organization identity, authorization, intent truth, safety, or policy quality.
 
-import { canonicalJSONStringifyBrowser, sha256Browser } from './aml-browser-integrity.js';
+import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser } from './aml-browser-integrity.js';
 import { verifyBrowserEvidence } from './aml-browser-evidence.js';
 import { verifyVerificationChallenge } from './aml-verification-challenge.js';
 
@@ -37,6 +37,7 @@ async function ensureSessionKey() {
 }
 
 export function sessionAttestationPayload(attestation) {
+  assertBrowserJSON(attestation);
   if (!attestation || attestation.schema !== 'aml-session-attestation/1') {
     throw new Error('AML_SESSION_ATTESTATION_INVALID');
   }
@@ -88,6 +89,7 @@ export async function verifySessionAttestation({ evidence, challenge, attestatio
     if (!evidenceCheck.valid) return { valid: false, reason: 'AML_SESSION_EVIDENCE_INVALID', evidence: evidenceCheck };
     const challengeCheck = verifyVerificationChallenge(challenge, { now });
     if (!challengeCheck.valid) return { valid: false, reason: challengeCheck.reason };
+    assertBrowserJSON(attestation);
     if (!attestation || attestation.schema !== 'aml-session-attestation/1') {
       return { valid: false, reason: 'AML_SESSION_ATTESTATION_INVALID' };
     }

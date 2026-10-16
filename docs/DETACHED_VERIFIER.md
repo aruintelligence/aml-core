@@ -39,6 +39,13 @@ expired challenge -> FAIL
 - ECDSA P-256 / SHA-256 signature;
 - whole `aml-witness-bundle/1` integrity.
 
+Challenge, attestation, and witness-bundle verification reject live JavaScript
+values that cannot be faithfully represented as JSON (including hidden and
+symbol fields, accessors, and sparse arrays). The bundle verifier also checks
+the exact integrity metadata, including the SHA-256 algorithm and
+`sorted-json-v1` canonicalization. Exchange bundles as JSON; a cryptographic
+PASS refers to the fields that the protocol actually binds.
+
 ## One-script API
 
 ```html
@@ -49,10 +56,18 @@ The bootstrap exposes the prototype browser API as `window.AML` (also available 
 
 ```js
 const challenge = window.AML.createChallenge();
+const expectedChallenge = structuredClone(challenge); // keep this copy on the verifier
 const attestation = await window.AML.attest({ challenge });
 const bundle = await window.AML.createWitnessBundle({ challenge, attestation });
-const check = await window.AML.verifyWitnessBundle(bundle);
+const check = await window.AML.verifyWitnessBundle(bundle, { expectedChallenge });
 ```
+
+Pass the challenge retained by the verifier as `expectedChallenge`. The
+verifier compares the complete challenge JSON, including `issued_at`, with
+the one inside the bundle. The session signature directly binds the nonce
+and expiration; it does not independently sign `issued_at`. The final
+bundle digest is not a keyed signature, so a verifier must keep its own
+challenge to establish that the response answers its request.
 
 ## Claim boundary
 

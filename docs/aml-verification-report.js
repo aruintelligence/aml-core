@@ -33,6 +33,15 @@ export function createVerificationReport({
 }
 
 export function witnessVerificationReport(bundle, result, { verifier = 'aml-reference-js' } = {}) {
+  const reason = String(result?.reason || '');
+  const bundleIntegrityFailed = [
+    'AML_WITNESS_BUNDLE_UNSEALED',
+    'AML_WITNESS_BUNDLE_INVALID',
+    'AML_WITNESS_BUNDLE_HASH_MISMATCH',
+    'AML_WITNESS_BUNDLE_INTEGRITY_INVALID',
+    'AML_WITNESS_BUNDLE_ALGORITHM_UNSUPPORTED',
+    'AML_WITNESS_BUNDLE_CANONICALIZATION_UNSUPPORTED'
+  ].includes(reason) || reason.startsWith('AML_CANONICAL_JSON_');
   return createVerificationReport({
     verifier,
     artifact_type: 'aml-witness-bundle/1',
@@ -41,11 +50,14 @@ export function witnessVerificationReport(bundle, result, { verifier = 'aml-refe
     session_key_fingerprint: bundle?.attestation?.session_key_fingerprint || null,
     challenge_expires_at: bundle?.challenge?.expires_at || null,
     checks: {
-      bundle_integrity: result?.valid || result?.reason !== 'AML_WITNESS_BUNDLE_HASH_MISMATCH',
+      bundle_integrity: Boolean(result?.valid) || !bundleIntegrityFailed,
       receipt_integrity: result?.valid || !String(result?.reason || '').includes('RECEIPT'),
       evidence_integrity: result?.valid || !String(result?.reason || '').includes('EVIDENCE'),
       challenge_freshness: result?.valid || result?.reason !== 'AML_CHALLENGE_EXPIRED',
-      challenge_binding: result?.valid || result?.reason !== 'AML_SESSION_CHALLENGE_MISMATCH',
+      challenge_binding: result?.valid || ![
+        'AML_SESSION_CHALLENGE_MISMATCH',
+        'AML_WITNESS_BUNDLE_CHALLENGE_MISMATCH'
+      ].includes(result?.reason),
       session_signature: result?.valid || result?.reason !== 'AML_SESSION_SIGNATURE_INVALID'
     },
     notes: [

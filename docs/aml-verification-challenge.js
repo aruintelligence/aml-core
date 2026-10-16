@@ -2,6 +2,8 @@
 // A verifier-generated random challenge binds a later session attestation to a fresh request.
 // This is replay resistance for the prototype flow, not identity or authorization.
 
+import { assertBrowserJSON } from './aml-browser-integrity.js';
+
 function bytesToBase64Url(bytes) {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
@@ -23,17 +25,22 @@ export function createVerificationChallenge({ ttl_ms = 120000 } = {}) {
 }
 
 export function verifyVerificationChallenge(challenge, { now = Date.now() } = {}) {
-  if (!challenge || challenge.schema !== 'aml-verification-challenge/1') {
-    return { valid: false, reason: 'AML_CHALLENGE_INVALID' };
+  try {
+    assertBrowserJSON(challenge);
+    if (!challenge || challenge.schema !== 'aml-verification-challenge/1') {
+      return { valid: false, reason: 'AML_CHALLENGE_INVALID' };
+    }
+    if (typeof challenge.nonce !== 'string' || challenge.nonce.length < 32) {
+      return { valid: false, reason: 'AML_CHALLENGE_NONCE_INVALID' };
+    }
+    const issued = Date.parse(challenge.issued_at);
+    const expires = Date.parse(challenge.expires_at);
+    if (!Number.isFinite(issued) || !Number.isFinite(expires) || expires <= issued) {
+      return { valid: false, reason: 'AML_CHALLENGE_TIME_INVALID' };
+    }
+    if (now > expires) return { valid: false, reason: 'AML_CHALLENGE_EXPIRED' };
+    return { valid: true, reason: 'AML_CHALLENGE_VALID' };
+  } catch (error) {
+    return { valid: false, reason: error?.message || 'AML_CHALLENGE_INVALID' };
   }
-  if (typeof challenge.nonce !== 'string' || challenge.nonce.length < 32) {
-    return { valid: false, reason: 'AML_CHALLENGE_NONCE_INVALID' };
-  }
-  const issued = Date.parse(challenge.issued_at);
-  const expires = Date.parse(challenge.expires_at);
-  if (!Number.isFinite(issued) || !Number.isFinite(expires) || expires <= issued) {
-    return { valid: false, reason: 'AML_CHALLENGE_TIME_INVALID' };
-  }
-  if (now > expires) return { valid: false, reason: 'AML_CHALLENGE_EXPIRED' };
-  return { valid: true, reason: 'AML_CHALLENGE_VALID' };
 }

@@ -11,7 +11,7 @@ verifier creates random challenge
         ↓
 page creates sealed AML browser evidence
         ↓
-page signs evidence hash + verifier challenge
+page signs evidence hash + challenge nonce and expiration
 with an ephemeral P-256 browser key
         ↓
 page exports aml-witness-bundle/1
@@ -56,6 +56,11 @@ Official ĀRU brand authorization uses a separate trust-root system.
 ## Freshness
 
 The verifier challenge expires. An archived witness bundle remains evidence of what was signed, but a later verifier should not describe an expired challenge as freshly verified.
+
+The session signature covers the challenge nonce and expiration, not its
+`issued_at` field. A detached verifier should retain the challenge it
+generated and call `verifyWitnessBundle(bundle, { expectedChallenge })` to
+compare the entire challenge against its own copy.
 
 ## Try it
 
