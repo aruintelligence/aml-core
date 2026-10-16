@@ -71,6 +71,12 @@ same key with different optional metadata still count as one key, even if the
 envelope fingerprints differ. The signed-report checker requires canonical
 unpadded base64url coordinates; changing unused encoding bits does not create
 a second key or a valid alternate signed envelope.
+It also requires each raw P-256 ECDSA signature to be exactly 64 bytes in its
+unique 86-character unpadded base64url spelling. Added padding, whitespace,
+truncation, or changed unused encoding bits make that report's signature
+invalid, even when a permissive decoder would recover the original bytes.
+An otherwise consistent saved quorum containing such a report can still have
+`valid: true`, while its endorsement `threshold_met` is false.
 
 ### Check against your own retained expectations
 

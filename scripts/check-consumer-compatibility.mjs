@@ -105,6 +105,17 @@ try {
   if (!quorumValid.valid || !quorumValid.threshold_met) {
     throw new Error('Installed-package signed quorum CLI did not verify the saved threshold');
   }
+  const paddedSigned = { ...signedB, signature: `${signedB.signature}==` };
+  const paddedQuorum = await createSignedVerificationQuorum([signedA, paddedSigned], { threshold: 2 });
+  fs.writeFileSync(path.join(tempRoot, 'padded-quorum.json'), `${JSON.stringify(paddedQuorum)}\n`);
+  const paddedRun = spawnSync(process.execPath, [path.join(installedRoot, 'bin', 'aml.js'),
+    'verify-signed-quorum', 'padded-quorum.json'], { cwd: tempRoot, encoding: 'utf8' });
+  const paddedResult = JSON.parse(paddedRun.stdout);
+  if (paddedRun.status !== 2 || !paddedResult.valid || paddedResult.threshold_met !== false ||
+      paddedResult.quorum.summary.disagreement_reasons[0] !==
+        'AML_SIGNED_REPORT_SIGNATURE_ENCODING_INVALID') {
+    throw new Error('Installed-package signed quorum CLI accepted padded report signature');
+  }
   const heldPolicy = {
     schema: 'aml-signed-quorum-held-policy/1', prototype: true,
     artifact_type: signedQuorum.artifact_type, artifact_hash: signedQuorum.artifact_hash,
@@ -304,6 +315,7 @@ try {
       browser_witness_cli_valid: true,
       browser_witness_cli_rejects_other_challenge: true,
       signed_quorum_cli_valid: true,
+      signed_quorum_cli_rejects_noncanonical_signature: true,
       signed_quorum_cli_rejects_inflation: true,
       signed_quorum_cli_held_policy_valid: true,
       signed_quorum_cli_rejects_duplicate_json_key: true,

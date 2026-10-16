@@ -182,6 +182,21 @@ try {
   invalidSignature.signature = `${invalidSignature.signature[0] === 'A' ? 'B' : 'A'}${invalidSignature.signature.slice(1)}`;
   await compare('invalid-signature-counted-as-rejection',
     await createSignedVerificationQuorum([a, invalidSignature], { threshold: 2 }), policy, false);
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const last = b.signature.at(-1);
+  const alternate = b.signature.slice(0, -1) + alphabet[alphabet.indexOf(last) ^ 1];
+  assert.deepEqual(Buffer.from(alternate, 'base64url'), Buffer.from(b.signature, 'base64url'));
+  for (const [name, signature] of [
+    ['signature-unused-bits', alternate],
+    ['signature-padding', `${b.signature}==`],
+    ['signature-whitespace', `${b.signature.slice(0, 10)} ${b.signature.slice(10)}`],
+    ['signature-truncated', b.signature.slice(0, -1)],
+    ['signature-null', null]
+  ]) {
+    await compare(name,
+      await createSignedVerificationQuorum([a, { ...b, signature }], { threshold: 2 }),
+      policy, false);
+  }
 
   const receipt = await sealBrowserReceipt({ schema: 'aml-dom-receipt/1', decisions: [] });
   const evidence = await createBrowserEvidence(receipt, { url: 'https://example.test/' });

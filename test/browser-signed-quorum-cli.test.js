@@ -56,6 +56,15 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   assert.equal(valid.status, 0, valid.stderr);
   assert.equal(JSON.parse(valid.stdout).threshold_met, true);
 
+  const padded = { ...b, signature: `${b.signature}==` };
+  const paddedQuorum = await createSignedVerificationQuorum([a, padded], { threshold: 2 });
+  const paddedRun = run(write('padded-signature-quorum.json', paddedQuorum));
+  assert.equal(paddedRun.status, 2, paddedRun.stderr);
+  assert.equal(JSON.parse(paddedRun.stdout).valid, true);
+  assert.equal(JSON.parse(paddedRun.stdout).threshold_met, false);
+  assert.deepEqual(JSON.parse(paddedRun.stdout).quorum.summary.disagreement_reasons,
+    ['AML_SIGNED_REPORT_SIGNATURE_ENCODING_INVALID']);
+
   const policy = {
     schema: 'aml-signed-quorum-held-policy/1', prototype: true,
     artifact_type: 'aml-witness-bundle/1', artifact_hash: 'a'.repeat(64),
