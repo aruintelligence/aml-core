@@ -394,6 +394,19 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
             result["policy_evaluation"]["unsatisfied_claims"] = unsatisfied
             result["policy_met"] = (result["policy_met"] and result["witness_met"] and
                                     result["replayable_claims_consistent"] and not unsatisfied)
+        # Fingerprint all supplied canonical JSON inputs, including held inputs
+        # outside the saved quorum. An unsupported live witness value has no
+        # portable input binding; preserve the separate verification decision.
+        try:
+            fingerprints = {"canonicalization": "sorted-json-v1", "quorum_sha256": digest(quorum)}
+            if policy is not None:
+                fingerprints["policy_sha256"] = digest(policy)
+            if with_witness:
+                fingerprints["witness_bundle_sha256"] = digest(witness_bundle)
+                fingerprints["held_challenge_sha256"] = digest(expected_challenge)
+            result["input_fingerprints"] = fingerprints
+        except (UnsupportedJSON, UnicodeError, RecursionError):
+            pass
         return result
     except (ValueError, TypeError, KeyError, UnicodeError, RecursionError) as error:
         return {**rejected, "reason": str(error) or "AML_PY_SIGNED_QUORUM_INVALID"}

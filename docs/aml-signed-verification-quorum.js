@@ -425,6 +425,34 @@ export async function verifySignedVerificationQuorum(quorum, {
       result.policy_met = result.policy_met && result.witness_met &&
         result.replayable_claims_consistent && unsatisfied.length === 0;
     }
+    // Identify the exact JSON inputs evaluated, including buyer-held inputs
+    // that are intentionally absent from the signed quorum. Hash the canonical
+    // JSON text explicitly: sha256Browser treats a string as raw bytes.
+    // A live non-JSON witness input can still be rejected by the replay without
+    // changing the quorum's independent validity result; it has no fingerprint.
+    let hashable = true;
+    if (witnessBundle !== undefined) {
+      try {
+        assertBrowserJSON(witnessBundle);
+        assertBrowserJSON(expectedChallenge);
+      } catch (error) {
+        if (!(error instanceof TypeError)) throw error;
+        hashable = false;
+      }
+    }
+    if (hashable) {
+      result.input_fingerprints = {
+        canonicalization: 'sorted-json-v1',
+        quorum_sha256: await sha256Browser(canonicalJSONStringifyBrowser(quorum)),
+        ...(policy === undefined ? {} : {
+          policy_sha256: await sha256Browser(canonicalJSONStringifyBrowser(policy))
+        }),
+        ...(witnessBundle === undefined ? {} : {
+          witness_bundle_sha256: await sha256Browser(canonicalJSONStringifyBrowser(witnessBundle)),
+          held_challenge_sha256: await sha256Browser(canonicalJSONStringifyBrowser(expectedChallenge))
+        })
+      };
+    }
     return result;
   } catch (error) {
     return reject(error?.message || 'AML_SIGNED_QUORUM_VERIFY_ERROR');

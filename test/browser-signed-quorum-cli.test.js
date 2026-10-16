@@ -4,11 +4,11 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { webcrypto } from 'node:crypto';
+import { createHash, webcrypto } from 'node:crypto';
 
 if (!globalThis.crypto?.subtle) globalThis.crypto = webcrypto;
 
-import { sealBrowserReceipt, sha256Browser } from '../docs/aml-browser-integrity.js';
+import { canonicalJSONStringifyBrowser, sealBrowserReceipt, sha256Browser } from '../docs/aml-browser-integrity.js';
 import { createBrowserEvidence } from '../docs/aml-browser-evidence.js';
 import { createVerificationChallenge } from '../docs/aml-verification-challenge.js';
 import { createSessionAttestation } from '../docs/aml-session-attestation.js';
@@ -17,6 +17,9 @@ import { witnessVerificationReport } from '../docs/aml-verification-report.js';
 import { createVerifierKeyPair, signVerificationReport } from '../docs/aml-signed-verification-report.js';
 import { createSignedVerificationQuorum, fingerprintVerifierPublicKey,
   verifySignedVerificationQuorum } from '../docs/aml-signed-verification-quorum.js';
+
+const inputHash = value => createHash('sha256')
+  .update(canonicalJSONStringifyBrowser(value)).digest('hex');
 
 function report(verifier) {
   return {
@@ -55,6 +58,12 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   const valid = run(write('quorum.json', quorum));
   assert.equal(valid.status, 0, valid.stderr);
   assert.equal(JSON.parse(valid.stdout).threshold_met, true);
+  assert.deepEqual(JSON.parse(valid.stdout).input_fingerprints, {
+    canonicalization: 'sorted-json-v1', quorum_sha256: inputHash(quorum)
+  });
+  const reordered = Object.fromEntries(Object.entries(quorum).reverse());
+  assert.equal(JSON.parse(run(write('reordered.json', reordered)).stdout)
+    .input_fingerprints.quorum_sha256, inputHash(quorum));
 
   const padded = { ...b, signature: `${b.signature}==` };
   const paddedQuorum = await createSignedVerificationQuorum([a, padded], { threshold: 2 });
@@ -75,6 +84,10 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   const pinned = run(write('pinned.json', quorum), '--policy', policyFile);
   assert.equal(pinned.status, 0, pinned.stderr);
   assert.equal(JSON.parse(pinned.stdout).policy_met, true);
+  assert.deepEqual(JSON.parse(pinned.stdout).input_fingerprints, {
+    canonicalization: 'sorted-json-v1', quorum_sha256: inputHash(quorum),
+    policy_sha256: inputHash(policy)
+  });
 
   // Each ambiguous file would have passed the old last-key-wins JSON.parse
   // path. A nested escaped alias must fail just like a duplicate top-level key.
@@ -138,6 +151,8 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   const rejected = run(write('inflated.json', inflated));
   assert.equal(rejected.status, 2, rejected.stderr);
   assert.equal(JSON.parse(rejected.stdout).reason, 'AML_SIGNED_QUORUM_MISMATCH');
+  assert.equal(JSON.parse(rejected.stdout).input_fingerprints.quorum_sha256, inputHash(inflated));
+  assert.notEqual(inputHash(inflated), inputHash(quorum));
 
   const unmet = await createSignedVerificationQuorum([a], { threshold: 2 });
   const belowThreshold = run(write('unmet.json', unmet));
@@ -189,10 +204,15 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(replayed.witness_met, true);
   assert.equal(replayed.replayable_claims_consistent, true);
   assert.equal(replayed.replayable_claims_evaluation.positive_signed_reports, 2);
+  assert.deepEqual(replayed.input_fingerprints, {
+    canonicalization: 'sorted-json-v1', quorum_sha256: inputHash(quorum),
+    witness_bundle_sha256: inputHash(bundle), held_challenge_sha256: inputHash(challenge)
+  });
   const accepted = run(quorumPath, '--bundle', bundlePath, '--challenge', challengePath);
   assert.equal(accepted.status, 0, accepted.stderr);
   assert.equal(JSON.parse(accepted.stdout).witness_met, true);
   assert.equal(JSON.parse(accepted.stdout).replayable_claims_consistent, true);
+  assert.deepEqual(JSON.parse(accepted.stdout).input_fingerprints, replayed.input_fingerprints);
 
   const completePolicy = {
     schema: 'aml-signed-quorum-held-policy/4', prototype: true,
@@ -209,6 +229,9 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(complete.status, 0, complete.stderr);
   assert.equal(JSON.parse(complete.stdout).policy_met, true);
   assert.deepEqual(JSON.parse(complete.stdout).policy_evaluation.unsatisfied_claims, []);
+  assert.deepEqual(JSON.parse(complete.stdout).input_fingerprints, {
+    ...replayed.input_fingerprints, policy_sha256: inputHash(completePolicy)
+  });
 
   const vetoPolicy = { ...completePolicy, schema: 'aml-signed-quorum-held-policy/5',
     reject_trusted_dissent: true };
@@ -217,6 +240,8 @@ test('signed quorum rechecks the named witness against a separately held challen
     '--bundle', bundlePath, '--challenge', challengePath);
   assert.equal(cleanVeto.status, 0, cleanVeto.stderr);
   assert.deepEqual(JSON.parse(cleanVeto.stdout).policy_evaluation.trusted_dissent, []);
+  assert.equal(JSON.parse(cleanVeto.stdout).input_fingerprints.policy_sha256, inputHash(vetoPolicy));
+  assert.notEqual(inputHash(vetoPolicy), inputHash(completePolicy));
 
   const negative = witnessVerificationReport(bundle, check, { verifier: 'b-dissent' });
   negative.valid = false;
@@ -348,6 +373,10 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(rejection.witness_met, false);
   assert.equal(rejection.replayable_claims_consistent, false);
   assert.equal(rejection.witness_evaluation.reason, 'AML_WITNESS_BUNDLE_CHALLENGE_MISMATCH');
+  assert.equal(rejection.input_fingerprints.quorum_sha256, inputHash(quorum));
+  assert.equal(rejection.input_fingerprints.held_challenge_sha256, inputHash(differentChallenge));
+  assert.notEqual(rejection.input_fingerprints.held_challenge_sha256,
+    replayed.input_fingerprints.held_challenge_sha256);
 
   const tampered = structuredClone(bundle);
   tampered.created_at = '2030-01-01T00:00:00.000Z';
@@ -357,6 +386,19 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(damaged.valid, true);
   assert.equal(damaged.witness_met, false);
   assert.equal(damaged.witness_evaluation.reason, 'AML_WITNESS_BUNDLE_HASH_MISMATCH');
+  assert.equal(damaged.input_fingerprints.witness_bundle_sha256, inputHash(tampered));
+  assert.notEqual(damaged.input_fingerprints.witness_bundle_sha256,
+    replayed.input_fingerprints.witness_bundle_sha256);
+
+  const hiddenBundle = structuredClone(bundle);
+  Object.defineProperty(hiddenBundle, 'unbound', { value: 'hidden' });
+  const nonJSON = await verifySignedVerificationQuorum(quorum, {
+    witnessBundle: hiddenBundle, expectedChallenge: challenge
+  });
+  assert.equal(nonJSON.valid, true);
+  assert.equal(nonJSON.threshold_met, true);
+  assert.equal(nonJSON.witness_met, false);
+  assert.equal(Object.hasOwn(nonJSON, 'input_fingerprints'), false);
 
   const otherBundle = structuredClone(bundle);
   otherBundle.created_at = '2030-01-01T00:00:00.000Z';

@@ -80,6 +80,15 @@ does not authenticate when the signer performed the check. All five
 are separate results; a valid quorum can fail any later condition. Supplying
 only a bundle or only a challenge is a usage error.
 
+The quorum result includes `input_fingerprints` for the canonical JSON quorum
+and each supplied held policy, bundle, and challenge. These are SHA-256 hashes
+of complete `sorted-json-v1` JSON values, not hashes of the source file bytes.
+The JavaScript and Python comparison harness checks their agreement, including
+changed held policies and challenges. An unsupported input has no portable
+input binding. The output is unsigned and replay time affects witness freshness;
+retain the inputs and evaluate the decision again when needed. These hashes
+identify evaluated content, not an independent certification.
+
 Exit `0` requires internal validity, the saved threshold, and every held
 condition supplied. Exit `2` means a verification condition failed; exit `1`
 means unreadable JSON, missing paired inputs, or invalid held configuration. Run

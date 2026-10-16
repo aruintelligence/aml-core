@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { webcrypto } from 'node:crypto';
-import { sealBrowserReceipt } from '../docs/aml-browser-integrity.js';
+import { createHash, webcrypto } from 'node:crypto';
+import { canonicalJSONStringifyBrowser, sealBrowserReceipt } from '../docs/aml-browser-integrity.js';
 import { createBrowserEvidence } from '../docs/aml-browser-evidence.js';
 import { createVerificationChallenge } from '../docs/aml-verification-challenge.js';
 import { createSessionAttestation } from '../docs/aml-session-attestation.js';
@@ -211,6 +211,15 @@ try {
       !witnessBound.policy_met || !witnessBound.witness_met ||
       !witnessBound.replayable_claims_consistent) {
     throw new Error('Installed-package signed quorum CLI did not recheck the retained witness');
+  }
+  const fingerprint = value => createHash('sha256')
+    .update(canonicalJSONStringifyBrowser(value)).digest('hex');
+  if (witnessBound.input_fingerprints?.canonicalization !== 'sorted-json-v1' ||
+      witnessBound.input_fingerprints.quorum_sha256 !== fingerprint(signedQuorum) ||
+      witnessBound.input_fingerprints.policy_sha256 !== fingerprint(heldPolicy) ||
+      witnessBound.input_fingerprints.witness_bundle_sha256 !== fingerprint(bundle) ||
+      witnessBound.input_fingerprints.held_challenge_sha256 !== fingerprint(challenge)) {
+    throw new Error('Installed-package signed quorum CLI did not bind the evaluated inputs');
   }
   const completePolicy = { ...materialPolicy, schema: 'aml-signed-quorum-held-policy/4',
     require_complete_witness_claims: true };

@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { webcrypto } from 'node:crypto';
-import { sealBrowserReceipt, sha256Browser } from '../docs/aml-browser-integrity.js';
+import { canonicalJSONStringifyBrowser, sealBrowserReceipt, sha256Browser } from '../docs/aml-browser-integrity.js';
 import { createBrowserEvidence } from '../docs/aml-browser-evidence.js';
 import { createVerificationChallenge } from '../docs/aml-verification-challenge.js';
 import { createSessionAttestation } from '../docs/aml-session-attestation.js';
@@ -56,6 +56,12 @@ async function compare(name, quorum, policy, expected, { bundle, challenge } = {
     assert.deepEqual(py.replayable_claims_evaluation, js.replayable_claims_evaluation, name);
   }
   if (policy && js.valid) assert.deepEqual(py.policy_evaluation, js.policy_evaluation, name);
+  assert.deepEqual(py.input_fingerprints, js.input_fingerprints,
+    `${name}: independently computed input fingerprints`);
+  if (py.input_fingerprints) {
+    assert.equal(py.input_fingerprints.quorum_sha256,
+      await sha256Browser(canonicalJSONStringifyBrowser(quorum)), name);
+  }
   assert.equal(py.valid && py.threshold_met && (!policy || py.policy_met) &&
     (!bundle || (py.witness_met && py.replayable_claims_consistent)), expected, name);
   assert.equal(run.status, expected ? 0 : 2, `${name}: ${run.stderr} ${run.stdout}`);
@@ -65,6 +71,7 @@ async function compare(name, quorum, policy, expected, { bundle, challenge } = {
     ...(bundle ? { witness_met: py.witness_met,
       replayable_claims_consistent: py.replayable_claims_consistent } : {}),
     python_matches_js: true });
+  return py.input_fingerprints;
 }
 
 try {
@@ -242,10 +249,14 @@ try {
       { ...await fingerprintVerifierPublicKey(witnessB.verifier_public_key_jwk), trust_group: 'lab-b' }
     ]
   };
-  await compare('complete-signed-witness-claims', witnessQuorum, completePolicy, true, replay);
+  const completeInputs = await compare('complete-signed-witness-claims',
+    witnessQuorum, completePolicy, true, replay);
   const vetoPolicy = { ...completePolicy, schema: 'aml-signed-quorum-held-policy/5',
     reject_trusted_dissent: true };
-  await compare('veto-policy-without-dissent', witnessQuorum, vetoPolicy, true, replay);
+  const vetoInputs = await compare('veto-policy-without-dissent',
+    witnessQuorum, vetoPolicy, true, replay);
+  assert.notEqual(vetoInputs.policy_sha256, completeInputs.policy_sha256);
+  assert.equal(vetoInputs.quorum_sha256, completeInputs.quorum_sha256);
   const negative = witnessVerificationReport(bundle, witness, { verifier: 'witness-b-dissent' });
   negative.valid = false;
   negative.reason = 'AML_TEST_SIGNED_DISSENT';
@@ -324,9 +335,14 @@ try {
   await compare('untrusted-sparse-report-not-required',
     await createSignedVerificationQuorum([witnessA, witnessB, untrustedSparse], { threshold: 2 }),
     completePolicy, true, replay);
-  await compare('complete-claims-wrong-challenge', witnessQuorum, completePolicy, false,
+  const changedChallengeInputs = await compare('complete-claims-wrong-challenge',
+    witnessQuorum, completePolicy, false,
     { bundle, challenge: { ...challenge,
       issued_at: new Date(Date.parse(challenge.issued_at) - 1000).toISOString() } });
+  assert.equal(changedChallengeInputs.quorum_sha256, completeInputs.quorum_sha256);
+  assert.equal(changedChallengeInputs.policy_sha256, completeInputs.policy_sha256);
+  assert.notEqual(changedChallengeInputs.held_challenge_sha256,
+    completeInputs.held_challenge_sha256);
   const missingReplayRun = spawnSync('python3', [python, save('complete-without-bundle.json', witnessQuorum),
     '--policy', save('complete-without-bundle-policy.json', completePolicy)],
   { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
