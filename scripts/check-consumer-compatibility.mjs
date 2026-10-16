@@ -116,6 +116,16 @@ try {
   if (!policyValid.valid || !policyValid.threshold_met || !policyValid.policy_met) {
     throw new Error('Installed-package signed quorum CLI did not enforce verifier-held policy');
   }
+  fs.writeFileSync(path.join(tempRoot, 'ambiguous-held-policy.json'),
+    `${JSON.stringify(heldPolicy).replace('"prototype":true',
+      String.raw`"prot\u006ftype":false,"prototype":true`)}\n`);
+  const ambiguousPolicyRun = spawnSync(process.execPath, [path.join(installedRoot, 'bin', 'aml.js'),
+    'verify-signed-quorum', 'signed-quorum.json', '--policy', 'ambiguous-held-policy.json'],
+  { cwd: tempRoot, encoding: 'utf8' });
+  if (ambiguousPolicyRun.status !== 1 || ambiguousPolicyRun.stdout ||
+      !ambiguousPolicyRun.stderr.includes('duplicate JSON object key')) {
+    throw new Error('Installed-package signed quorum CLI accepted an ambiguous held policy');
+  }
   const groupPolicy = {
     schema: 'aml-signed-quorum-held-policy/2', prototype: true,
     artifact_type: signedQuorum.artifact_type, artifact_hash: signedQuorum.artifact_hash,
@@ -227,6 +237,7 @@ try {
       signed_quorum_cli_valid: true,
       signed_quorum_cli_rejects_inflation: true,
       signed_quorum_cli_held_policy_valid: true,
+      signed_quorum_cli_rejects_duplicate_json_key: true,
       signed_quorum_cli_group_policy_valid: true,
       signed_quorum_cli_rejects_one_trust_group: true,
       signed_quorum_cli_rejects_untrusted_key: true,

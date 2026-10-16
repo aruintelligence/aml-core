@@ -35,6 +35,20 @@ test('the CLI verifies a real signed bundle only against a retained challenge', 
   assert.equal(valid.status, 0, valid.stderr);
   assert.equal(JSON.parse(valid.stdout).reason, 'AML_WITNESS_BUNDLE_VALID');
 
+  for (const [name, original, other] of [
+    ['bundle', bundle, heldPath], ['challenge', challenge, bundlePath]
+  ]) {
+    const ambiguousPath = path.join(directory, `ambiguous-${name}.json`);
+    const ambiguousWire = JSON.stringify(original).replace('"prototype":true',
+      String.raw`"prot\u006ftype":false,"prototype":true`);
+    assert.deepEqual(JSON.parse(ambiguousWire), original);
+    fs.writeFileSync(ambiguousPath, `${ambiguousWire}\n`);
+    const ambiguous = name === 'bundle' ? run(ambiguousPath, other) : run(other, ambiguousPath);
+    assert.equal(ambiguous.status, 1, `${name}: ${ambiguous.stderr}`);
+    assert.match(ambiguous.stderr, /duplicate JSON object key/, name);
+    assert.equal(ambiguous.stdout, '', name);
+  }
+
   const changed = structuredClone(bundle);
   changed.challenge.issued_at = new Date(Date.parse(challenge.issued_at) - 1000).toISOString();
   changed.integrity.value = await sha256Browser(witnessBundlePayload(changed));

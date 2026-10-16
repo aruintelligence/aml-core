@@ -1,5 +1,5 @@
 // JSON.parse accepts duplicate object names with last-key-wins semantics.
-// Signed HTTP evidence must not depend on a parser's choice of first or last.
+// Signed evidence must not depend on a parser's choice of first or last.
 // Parse syntax with the platform parser, then scan the same source for names.
 export function parseJsonWithoutDuplicateKeys(source) {
   const parsed = JSON.parse(source);

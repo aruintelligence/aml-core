@@ -56,6 +56,50 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   assert.equal(pinned.status, 0, pinned.stderr);
   assert.equal(JSON.parse(pinned.stdout).policy_met, true);
 
+  // Each ambiguous file would have passed the old last-key-wins JSON.parse
+  // path. A nested escaped alias must fail just like a duplicate top-level key.
+  for (const [name, source, isPolicy] of [
+    ['duplicate-quorum', JSON.stringify(quorum).replace('"prototype":true',
+      '"prototype":false,"prototype":true'), false],
+    ['escaped-report-key', JSON.stringify(quorum).replace('"valid":true',
+      String.raw`"v\u0061lid":false,"valid":true`), false],
+    ['duplicate-policy', JSON.stringify(policy).replace('"prototype":true',
+      String.raw`"prot\u006ftype":false,"prototype":true`), true]
+  ]) {
+    assert.deepEqual(JSON.parse(source), isPolicy ? policy : quorum, name);
+    const raw = path.join(directory, `${name}.json`);
+    fs.writeFileSync(raw, `${source}\n`);
+    const args = isPolicy ? [write(`${name}-quorum.json`, quorum), '--policy', raw] : [raw];
+    const ambiguous = run(...args);
+    assert.equal(ambiguous.status, 1, `${name}: ${ambiguous.stderr}`);
+    assert.match(ambiguous.stderr, /duplicate JSON object key/, name);
+    assert.equal(ambiguous.stdout, '', name);
+  }
+
+  // A lossy UTF-8 decode could turn invalid bytes into the signed U+FFFD
+  // character and accept a malformed file as that signed JSON value.
+  const replacement = await signVerificationReport(report('\uFFFD'), await createVerifierKeyPair());
+  const replacementQuorum = await createSignedVerificationQuorum([replacement], { threshold: 1 });
+  const exactBytes = Buffer.from(JSON.stringify(replacementQuorum));
+  const marker = Buffer.from('\uFFFD');
+  const markerAt = exactBytes.indexOf(marker);
+  assert.ok(markerAt >= 0);
+  const invalidBytes = Buffer.concat([exactBytes.subarray(0, markerAt), Buffer.from([0xff]),
+    exactBytes.subarray(markerAt + marker.length)]);
+  assert.deepEqual(JSON.parse(invalidBytes.toString('utf8')), replacementQuorum);
+  const invalidUtf8Path = path.join(directory, 'invalid-utf8.json');
+  fs.writeFileSync(invalidUtf8Path, invalidBytes);
+  const lossy = run(invalidUtf8Path);
+  assert.equal(lossy.status, 1, lossy.stderr);
+  assert.match(lossy.stderr, /not valid for encoding utf-8/);
+  assert.equal(lossy.stdout, '');
+  const bomPath = path.join(directory, 'bom.json');
+  fs.writeFileSync(bomPath, Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]),
+    Buffer.from(JSON.stringify(quorum))]));
+  const bom = run(bomPath);
+  assert.equal(bom.status, 1, bom.stderr);
+  assert.equal(bom.stdout, '');
+
   const selfSelected = await signVerificationReport(report('self-selected'), await createVerifierKeyPair());
   const otherQuorum = await createSignedVerificationQuorum([a, selfSelected], { threshold: 2 });
   const blocked = run(write('self-selected.json', otherQuorum), '--policy', policyFile);
@@ -128,6 +172,22 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(accepted.status, 0, accepted.stderr);
   assert.equal(JSON.parse(accepted.stdout).witness_met, true);
   assert.equal(JSON.parse(accepted.stdout).replayable_claims_consistent, true);
+
+  for (const [name, original, other] of [
+    ['bundle', bundle, challengePath], ['challenge', challenge, bundlePath]
+  ]) {
+    const raw = path.join(directory, `duplicate-${name}.json`);
+    fs.writeFileSync(raw, `${JSON.stringify(original).replace('"prototype":true',
+      String.raw`"prot\u006ftype":false,"prototype":true`)}\n`);
+    assert.deepEqual(JSON.parse(fs.readFileSync(raw, 'utf8')), original, name);
+    const args = name === 'bundle'
+      ? [quorumPath, '--bundle', raw, '--challenge', other]
+      : [quorumPath, '--bundle', other, '--challenge', raw];
+    const ambiguous = run(...args);
+    assert.equal(ambiguous.status, 1, `${name}: ${ambiguous.stderr}`);
+    assert.match(ambiguous.stderr, /duplicate JSON object key/, name);
+    assert.equal(ambiguous.stdout, '', name);
+  }
 
   const differentChallenge = { ...challenge,
     issued_at: new Date(Date.parse(challenge.issued_at) - 1000).toISOString() };

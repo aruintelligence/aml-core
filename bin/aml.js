@@ -31,6 +31,7 @@ import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
 import { evaluatePolicyCanary } from "../runtime/policyCanary.js";
 import { verifyWitnessBundle } from "../docs/aml-witness-bundle.js";
 import { verifySignedVerificationQuorum } from "../docs/aml-signed-verification-quorum.js";
+import { parseJsonWithoutDuplicateKeys } from "../runtime/strictJson.js";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -132,6 +133,12 @@ function showVersion() {
 
 function readSource(filePath) {
   return fs.readFileSync(filePath, "utf8");
+}
+
+function readUnambiguousJSON(filePath) {
+  const source = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true })
+    .decode(fs.readFileSync(filePath));
+  return parseJsonWithoutDuplicateKeys(source);
 }
 
 function writeOrPrint(value, outputPath, label = "WROTE") {
@@ -245,8 +252,8 @@ try {
     }
     // Support Node builds that do not expose Web Crypto on globalThis.
     if (!globalThis.crypto?.subtle) globalThis.crypto = webcrypto;
-    const bundle = JSON.parse(readSource(args[1]));
-    const expectedChallenge = JSON.parse(readSource(args[2]));
+    const bundle = readUnambiguousJSON(args[1]);
+    const expectedChallenge = readUnambiguousJSON(args[2]);
     const result = await verifyWitnessBundle(bundle, { expectedChallenge });
     console.log(JSON.stringify(result, null, 2));
     process.exit(result.valid ? 0 : 2);
@@ -264,10 +271,10 @@ try {
     }
     if (options.has('--bundle') !== options.has('--challenge')) throw new Error(usage);
     if (!globalThis.crypto?.subtle) globalThis.crypto = webcrypto;
-    const policy = options.has('--policy') ? JSON.parse(readSource(options.get('--policy'))) : undefined;
-    const witnessBundle = options.has('--bundle') ? JSON.parse(readSource(options.get('--bundle'))) : undefined;
-    const expectedChallenge = options.has('--challenge') ? JSON.parse(readSource(options.get('--challenge'))) : undefined;
-    const result = await verifySignedVerificationQuorum(JSON.parse(readSource(args[1])), {
+    const policy = options.has('--policy') ? readUnambiguousJSON(options.get('--policy')) : undefined;
+    const witnessBundle = options.has('--bundle') ? readUnambiguousJSON(options.get('--bundle')) : undefined;
+    const expectedChallenge = options.has('--challenge') ? readUnambiguousJSON(options.get('--challenge')) : undefined;
+    const result = await verifySignedVerificationQuorum(readUnambiguousJSON(args[1]), {
       policy, witnessBundle, expectedChallenge
     });
     console.log(JSON.stringify(result, null, 2));
