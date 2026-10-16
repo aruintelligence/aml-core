@@ -7,10 +7,14 @@ export function createVerificationQuorum(reports, { threshold = 2 } = {}) {
   if (!Number.isInteger(threshold) || threshold < 1) throw new Error('AML_QUORUM_THRESHOLD_INVALID');
 
   const normalized = reports.map((report) => {
-    if (!report || report.schema !== 'aml-verification-report/1') throw new Error('AML_QUORUM_REPORT_INVALID');
-    if (!report.verifier) throw new Error('AML_QUORUM_VERIFIER_REQUIRED');
-    if (!report.artifact_type) throw new Error('AML_QUORUM_ARTIFACT_TYPE_REQUIRED');
-    if (!report.artifact_hash) throw new Error('AML_QUORUM_ARTIFACT_HASH_REQUIRED');
+    if (!report || report.schema !== 'aml-verification-report/1' || report.prototype !== true) {
+      throw new Error('AML_QUORUM_REPORT_INVALID');
+    }
+    if (typeof report.verifier !== 'string' || !report.verifier.trim()) throw new Error('AML_QUORUM_VERIFIER_REQUIRED');
+    if (typeof report.artifact_type !== 'string' || !report.artifact_type.trim()) throw new Error('AML_QUORUM_ARTIFACT_TYPE_REQUIRED');
+    if (typeof report.artifact_hash !== 'string' || !report.artifact_hash.trim()) throw new Error('AML_QUORUM_ARTIFACT_HASH_REQUIRED');
+    if (typeof report.valid !== 'boolean') throw new Error('AML_QUORUM_REPORT_VERDICT_INVALID');
+    if (typeof report.reason !== 'string' || !report.reason.trim()) throw new Error('AML_QUORUM_REPORT_REASON_INVALID');
     return report;
   });
 
