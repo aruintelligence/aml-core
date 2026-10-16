@@ -23,9 +23,11 @@ export function canonicalizeBrowser(value) {
     if (prototype !== Object.prototype && prototype !== null) {
       throw new TypeError('AML_CANONICAL_JSON_NON_PLAIN_OBJECT');
     }
-    const out = {};
-    for (const key of Object.keys(value).sort()) out[key] = canonicalizeBrowser(value[key]);
-    return out;
+    // Assignment to an ordinary object's "__proto__" changes its prototype
+    // instead of preserving that key as signed data.
+    return Object.fromEntries(
+      Object.keys(value).sort().map(key => [key, canonicalizeBrowser(value[key])])
+    );
   }
   throw new TypeError('AML_CANONICAL_JSON_UNSUPPORTED_VALUE');
 }
