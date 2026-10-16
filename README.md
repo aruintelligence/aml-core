@@ -159,6 +159,8 @@ Runtime numeric limits now fail explicitly when malformed instead of silently dr
 
 Signed receipts now reject values that JavaScript hashes or JSON serialization would silently omit. A signed receipt with an added `undefined` context field previously kept the same hash and passed signature verification; `node --test test/receipt-json-integrity.test.js` proves it now fails. Issuance also rejects non-JSON inputs, and attestation verification rejects unsigned extension fields. Run `npm run proof` for an in-place hash-collision counterexample. Existing non-JSON receipts need correction and regeneration.
 
+Browser receipt canonicalization now preserves a literal `__proto__` data key instead of losing it during object assignment. A Node/browser regression test binds the exact bytes and hash and proves the hash changes when that key changes. Run `node --test test/browser-canonicalization-vectors.test.js`; browser receipts containing this key from the earlier canonicalizer should be resealed.
+
 If the behavior does not reproduce, that is useful evidence. Please publish **PASS / FAIL / MIXED** with enough detail for someone else to repeat your result.
 
 - [Independent verification call](https://github.com/aruintelligence/aml-core/issues/88)

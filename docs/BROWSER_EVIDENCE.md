@@ -58,6 +58,8 @@ A sealed browser receipt carries:
 
 `verifyBrowserReceipt(receipt)` recomputes the digest from the receipt payload with `integrity` excluded and compares the exact result.
 
+The browser canonicalizer preserves a literal `__proto__` JSON data key. `node --test test/browser-canonicalization-vectors.test.js` checks the exact Node/browser bytes and SHA-256 digest and proves that changing such a key invalidates a sealed browser receipt. The historical published vector set remains unchanged. Older browser receipts containing this key should be resealed; SHA-256 only establishes integrity of the covered bytes, not who produced them.
+
 ## Evidence integrity
 
 `aml-browser-evidence/1` repeats the same pattern over the complete evidence packet, including the already-sealed receipt and current strict-zone violations.
