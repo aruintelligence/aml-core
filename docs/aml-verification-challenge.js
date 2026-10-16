@@ -11,16 +11,23 @@ function bytesToBase64Url(bytes) {
 }
 
 export function createVerificationChallenge({ ttl_ms = 120000 } = {}) {
+  if (!Number.isSafeInteger(ttl_ms) || ttl_ms <= 0) {
+    throw new Error('AML_CHALLENGE_TTL_INVALID');
+  }
   if (!globalThis.crypto?.getRandomValues) throw new Error('AML_CHALLENGE_CRYPTO_UNAVAILABLE');
   const nonce = new Uint8Array(32);
   crypto.getRandomValues(nonce);
   const issued = Date.now();
+  const expires = issued + ttl_ms;
+  if (!Number.isFinite(expires) || Math.abs(expires) > 8.64e15) {
+    throw new Error('AML_CHALLENGE_TTL_INVALID');
+  }
   return {
     schema: 'aml-verification-challenge/1',
     prototype: true,
     nonce: bytesToBase64Url(nonce),
     issued_at: new Date(issued).toISOString(),
-    expires_at: new Date(issued + ttl_ms).toISOString()
+    expires_at: new Date(expires).toISOString()
   };
 }
 
@@ -33,11 +40,13 @@ export function verifyVerificationChallenge(challenge, { now = Date.now() } = {}
     if (typeof challenge.nonce !== 'string' || challenge.nonce.length < 32) {
       return { valid: false, reason: 'AML_CHALLENGE_NONCE_INVALID' };
     }
-    const issued = Date.parse(challenge.issued_at);
-    const expires = Date.parse(challenge.expires_at);
-    if (!Number.isFinite(issued) || !Number.isFinite(expires) || expires <= issued) {
+    const issued = typeof challenge.issued_at === 'string' ? Date.parse(challenge.issued_at) : NaN;
+    const expires = typeof challenge.expires_at === 'string' ? Date.parse(challenge.expires_at) : NaN;
+    if (typeof now !== 'number' || !Number.isFinite(now) ||
+        !Number.isFinite(issued) || !Number.isFinite(expires) || expires <= issued) {
       return { valid: false, reason: 'AML_CHALLENGE_TIME_INVALID' };
     }
+    if (now < issued) return { valid: false, reason: 'AML_CHALLENGE_NOT_YET_VALID' };
     if (now > expires) return { valid: false, reason: 'AML_CHALLENGE_EXPIRED' };
     return { valid: true, reason: 'AML_CHALLENGE_VALID' };
   } catch (error) {

@@ -31,6 +31,15 @@ test('verification report records a verifier-held challenge mismatch', () => {
   assert.equal(report.checks.challenge_binding, false);
 });
 
+test('verification report does not call an invalid challenge fresh', () => {
+  for (const reason of [
+    'AML_CHALLENGE_EXPIRED', 'AML_CHALLENGE_NOT_YET_VALID', 'AML_CHALLENGE_TIME_INVALID'
+  ]) {
+    const report = witnessVerificationReport({ challenge: {} }, { valid: false, reason });
+    assert.equal(report.checks.challenge_freshness, false, reason);
+  }
+});
+
 test('verification report does not mark malformed bundle integrity as passed', () => {
   for (const reason of [
     'AML_WITNESS_BUNDLE_UNSEALED',

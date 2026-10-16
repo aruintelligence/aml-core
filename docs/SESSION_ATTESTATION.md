@@ -55,7 +55,7 @@ Official ĀRU brand authorization uses a separate trust-root system.
 
 ## Freshness
 
-The verifier challenge expires. An archived witness bundle remains evidence of what was signed, but a later verifier should not describe an expired challenge as freshly verified.
+The verifier accepts a challenge only from its issue time through its expiration time, inclusive. An invalid verifier clock fails closed. An archived witness bundle remains evidence of what was signed, but a later verifier should not describe an expired challenge as freshly verified. Challenge creation requires a positive integer duration in milliseconds.
 
 The session signature covers the challenge nonce and expiration, not its
 `issued_at` field. A detached verifier should retain the challenge it
