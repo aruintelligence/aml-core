@@ -8,8 +8,14 @@ import { webcrypto } from 'node:crypto';
 
 if (!globalThis.crypto?.subtle) globalThis.crypto = webcrypto;
 
+import { sealBrowserReceipt, sha256Browser } from '../docs/aml-browser-integrity.js';
+import { createBrowserEvidence } from '../docs/aml-browser-evidence.js';
+import { createVerificationChallenge } from '../docs/aml-verification-challenge.js';
+import { createSessionAttestation } from '../docs/aml-session-attestation.js';
+import { createWitnessBundle, verifyWitnessBundle, witnessBundlePayload } from '../docs/aml-witness-bundle.js';
+import { witnessVerificationReport } from '../docs/aml-verification-report.js';
 import { createVerifierKeyPair, signVerificationReport } from '../docs/aml-signed-verification-report.js';
-import { createSignedVerificationQuorum } from '../docs/aml-signed-verification-quorum.js';
+import { createSignedVerificationQuorum, verifySignedVerificationQuorum } from '../docs/aml-signed-verification-quorum.js';
 
 function report(verifier) {
   return {
@@ -78,4 +84,80 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   const missing = run();
   assert.equal(missing.status, 1);
   assert.match(missing.stderr, /Usage: aml verify-signed-quorum/);
+});
+
+test('signed quorum rechecks the named witness against a separately held challenge', async (t) => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-quorum-witness-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const write = (name, value) => {
+    const file = path.join(directory, name);
+    fs.writeFileSync(file, `${JSON.stringify(value)}\n`);
+    return file;
+  };
+  const run = (...args) => spawnSync(process.execPath, ['bin/aml.js', 'verify-signed-quorum', ...args], {
+    cwd: process.cwd(), encoding: 'utf8'
+  });
+
+  const receipt = await sealBrowserReceipt({ schema: 'aml-dom-receipt/1', decisions: [] });
+  const evidence = await createBrowserEvidence(receipt, { url: 'https://example.test/' });
+  const challenge = createVerificationChallenge({ ttl_ms: 120000 });
+  const attestation = await createSessionAttestation({ evidence, challenge });
+  const bundle = await createWitnessBundle({ evidence, challenge, attestation });
+  const check = await verifyWitnessBundle(bundle, { expectedChallenge: challenge });
+  assert.equal(check.valid, true);
+  const a = await signVerificationReport(witnessVerificationReport(bundle, check, { verifier: 'a' }),
+    await createVerifierKeyPair());
+  const b = await signVerificationReport(witnessVerificationReport(bundle, check, { verifier: 'b' }),
+    await createVerifierKeyPair());
+  const quorum = await createSignedVerificationQuorum([a, b], { threshold: 2 });
+  const quorumPath = write('quorum.json', quorum);
+  const bundlePath = write('bundle.json', bundle);
+  const challengePath = write('held-challenge.json', challenge);
+
+  const replayed = await verifySignedVerificationQuorum(quorum, {
+    witnessBundle: bundle, expectedChallenge: challenge
+  });
+  assert.equal(replayed.valid, true);
+  assert.equal(replayed.threshold_met, true);
+  assert.equal(replayed.witness_met, true);
+  const accepted = run(quorumPath, '--bundle', bundlePath, '--challenge', challengePath);
+  assert.equal(accepted.status, 0, accepted.stderr);
+  assert.equal(JSON.parse(accepted.stdout).witness_met, true);
+
+  const differentChallenge = { ...challenge,
+    issued_at: new Date(Date.parse(challenge.issued_at) - 1000).toISOString() };
+  const rejected = run(quorumPath, '--bundle', bundlePath, '--challenge',
+    write('other-challenge.json', differentChallenge));
+  assert.equal(rejected.status, 2, rejected.stderr);
+  const rejection = JSON.parse(rejected.stdout);
+  assert.equal(rejection.valid, true);
+  assert.equal(rejection.threshold_met, true);
+  assert.equal(rejection.witness_met, false);
+  assert.equal(rejection.witness_evaluation.reason, 'AML_WITNESS_BUNDLE_CHALLENGE_MISMATCH');
+
+  const tampered = structuredClone(bundle);
+  tampered.created_at = '2030-01-01T00:00:00.000Z';
+  const damaged = await verifySignedVerificationQuorum(quorum, {
+    witnessBundle: tampered, expectedChallenge: challenge
+  });
+  assert.equal(damaged.valid, true);
+  assert.equal(damaged.witness_met, false);
+  assert.equal(damaged.witness_evaluation.reason, 'AML_WITNESS_BUNDLE_HASH_MISMATCH');
+
+  const otherBundle = structuredClone(bundle);
+  otherBundle.created_at = '2030-01-01T00:00:00.000Z';
+  otherBundle.integrity.value = await sha256Browser(witnessBundlePayload(otherBundle));
+  const other = await verifySignedVerificationQuorum(quorum, {
+    witnessBundle: otherBundle, expectedChallenge: challenge
+  });
+  assert.equal(other.valid, true);
+  assert.equal(other.witness_evaluation.local_bundle_valid, true);
+  assert.equal(other.witness_evaluation.artifact_matches, false);
+  assert.equal(other.witness_met, false);
+
+  await assert.rejects(
+    () => verifySignedVerificationQuorum(quorum, { witnessBundle: bundle }),
+    /AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED/
+  );
+  assert.equal(run(quorumPath, '--bundle', bundlePath).status, 1);
 });

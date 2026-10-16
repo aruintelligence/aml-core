@@ -49,7 +49,7 @@ Usage:
   aml canary <intent.json> [--baseline profile] [--candidate profile] [--context context.json] [--timestamp ISO] [--fail-on-change]
   aml verify-receipt <receipt.json>
   aml verify-witness <bundle.json> <verifier-held-challenge.json>
-  aml verify-signed-quorum <quorum.json> [--policy held-policy.json]
+  aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json]
   aml replay-receipt <receipt.json>
   aml sign-receipt <receipt.json> <private-key.pem> [signed-receipt.json]
   aml verify-signed-receipt <signed-receipt.json>
@@ -252,15 +252,28 @@ try {
     process.exit(result.valid ? 0 : 2);
   }
   if (command === "verify-signed-quorum") {
-    const withPolicy = args.length === 4 && args[2] === "--policy" && !!args[3];
-    if (!args[1] || (args.length !== 2 && !withPolicy)) {
-      throw new Error("Usage: aml verify-signed-quorum <quorum.json> [--policy held-policy.json]");
+    const usage = "Usage: aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json]";
+    if (!args[1] || args.length % 2 !== 0) throw new Error(usage);
+    const options = new Map();
+    for (let index = 2; index < args.length; index += 2) {
+      const flag = args[index];
+      const value = args[index + 1];
+      if (!['--policy', '--bundle', '--challenge'].includes(flag) || !value ||
+          value.startsWith('--') || options.has(flag)) throw new Error(usage);
+      options.set(flag, value);
     }
+    if (options.has('--bundle') !== options.has('--challenge')) throw new Error(usage);
     if (!globalThis.crypto?.subtle) globalThis.crypto = webcrypto;
-    const policy = withPolicy ? JSON.parse(readSource(args[3])) : undefined;
-    const result = await verifySignedVerificationQuorum(JSON.parse(readSource(args[1])), { policy });
+    const policy = options.has('--policy') ? JSON.parse(readSource(options.get('--policy'))) : undefined;
+    const witnessBundle = options.has('--bundle') ? JSON.parse(readSource(options.get('--bundle'))) : undefined;
+    const expectedChallenge = options.has('--challenge') ? JSON.parse(readSource(options.get('--challenge'))) : undefined;
+    const result = await verifySignedVerificationQuorum(JSON.parse(readSource(args[1])), {
+      policy, witnessBundle, expectedChallenge
+    });
     console.log(JSON.stringify(result, null, 2));
-    process.exit(result.valid && result.threshold_met && (!withPolicy || result.policy_met) ? 0 : 2);
+    process.exit(result.valid && result.threshold_met &&
+      (!options.has('--policy') || result.policy_met) &&
+      (!options.has('--bundle') || result.witness_met) ? 0 : 2);
   }
   if (command === "replay-receipt") {
     const result = replayExecutionReceipt(JSON.parse(readSource(inputPath)));

@@ -4,6 +4,7 @@
 
 import { assertBrowserJSON, canonicalJSONStringifyBrowser } from './aml-browser-integrity.js';
 import { verifySignedVerificationReport } from './aml-signed-verification-report.js';
+import { verifyWitnessBundle } from './aml-witness-bundle.js';
 
 // Envelope fingerprints bind the complete JWK JSON, including optional metadata.
 // For quorum identity, hash the P-256 public point instead: one key must count once
@@ -136,13 +137,19 @@ export function validateSignedVerificationQuorumPolicy(policy) {
   return policy;
 }
 
-export async function verifySignedVerificationQuorum(quorum, { policy } = {}) {
+export async function verifySignedVerificationQuorum(quorum, {
+  policy, witnessBundle, expectedChallenge
+} = {}) {
   // A verifier-held policy is configuration, not part of the untrusted quorum.
   // Reject malformed configuration as a usage error before checking the quorum.
   if (policy !== undefined) validateSignedVerificationQuorumPolicy(policy);
+  if ((witnessBundle === undefined) !== (expectedChallenge === undefined)) {
+    throw new Error('AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED');
+  }
   const reject = (reason) => ({
     valid: false, reason, threshold_met: false,
-    ...(policy === undefined ? {} : { policy_met: false })
+    ...(policy === undefined ? {} : { policy_met: false }),
+    ...(witnessBundle === undefined ? {} : { witness_met: false })
   });
   try {
     assertBrowserJSON(quorum);
@@ -157,30 +164,44 @@ export async function verifySignedVerificationQuorum(quorum, { policy } = {}) {
       threshold_met: valid && rebuilt.summary.threshold_met,
       quorum: rebuilt
     };
-    if (policy === undefined) return result;
-    if (!valid) return { ...result, policy_met: false };
-
-    const artifactMatches = rebuilt.artifact_type === policy.artifact_type &&
-      rebuilt.artifact_hash === policy.artifact_hash;
-    const allowed = new Set(policy.trusted_key_fingerprints);
-    const trusted = new Set();
-    if (artifactMatches) {
-      for (const envelope of rebuilt.signed_reports) {
-        if (envelope?.report?.valid !== true || !allowed.has(envelope.verifier_key_fingerprint)) continue;
-        if ((await verifySignedVerificationReport(envelope)).valid) {
-          trusted.add(await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk));
+    if (policy !== undefined) {
+      if (!valid) {
+        result.policy_met = false;
+      } else {
+        const artifactMatches = rebuilt.artifact_type === policy.artifact_type &&
+          rebuilt.artifact_hash === policy.artifact_hash;
+        const allowed = new Set(policy.trusted_key_fingerprints);
+        const trusted = new Set();
+        if (artifactMatches) {
+          for (const envelope of rebuilt.signed_reports) {
+            if (envelope?.report?.valid !== true || !allowed.has(envelope.verifier_key_fingerprint)) continue;
+            if ((await verifySignedVerificationReport(envelope)).valid) {
+              trusted.add(await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk));
+            }
+          }
         }
+        result.policy_met = artifactMatches && trusted.size >= policy.threshold;
+        result.policy_evaluation = {
+          artifact_matches: artifactMatches,
+          distinct_trusted_keys: trusted.size,
+          threshold: policy.threshold
+        };
       }
     }
-    return {
-      ...result,
-      policy_met: artifactMatches && trusted.size >= policy.threshold,
-      policy_evaluation: {
-        artifact_matches: artifactMatches,
-        distinct_trusted_keys: trusted.size,
-        threshold: policy.threshold
-      }
-    };
+    if (witnessBundle !== undefined) {
+      const witness = await verifyWitnessBundle(witnessBundle, { expectedChallenge });
+      const artifactMatches = rebuilt.artifact_type === 'aml-witness-bundle/1' &&
+        rebuilt.artifact_hash === witnessBundle?.integrity?.value;
+      result.witness_met = valid && witness.valid &&
+        witness.checks?.verifier_held_challenge === true && artifactMatches;
+      result.witness_evaluation = {
+        local_bundle_valid: witness.valid,
+        reason: witness.reason,
+        retained_challenge_matched: witness.checks?.verifier_held_challenge === true,
+        artifact_matches: artifactMatches
+      };
+    }
+    return result;
   } catch (error) {
     return reject(error?.message || 'AML_SIGNED_QUORUM_VERIFY_ERROR');
   }
