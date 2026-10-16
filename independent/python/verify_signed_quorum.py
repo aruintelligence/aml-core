@@ -109,10 +109,11 @@ def verify_report(envelope):
             return False, "AML_SIGNED_REPORT_KEY_FINGERPRINT_MISMATCH", None
         signature = envelope.get("signature")
         if not isinstance(signature, str) or not SIGNATURE_B64URL.fullmatch(signature):
-            raise ValueError("invalid_signature")
+            return False, "AML_SIGNED_REPORT_SIGNATURE_ENCODING_INVALID", None
         signature_bytes = base64.urlsafe_b64decode(signature + "==")
-        if base64.urlsafe_b64encode(signature_bytes).rstrip(b"=").decode("ascii") != signature:
-            raise ValueError("invalid_signature")
+        if (len(signature_bytes) != 64 or
+                base64.urlsafe_b64encode(signature_bytes).rstrip(b"=").decode("ascii") != signature):
+            return False, "AML_SIGNED_REPORT_SIGNATURE_ENCODING_INVALID", None
         valid, _ = verify_p256_raw_signature(jwk, canonical(report), signature)
         if not valid:
             return False, "AML_SIGNED_REPORT_SIGNATURE_INVALID", None

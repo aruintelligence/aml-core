@@ -17,6 +17,20 @@ function base64UrlToBytes(value) {
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
+// Web Crypto verifies decoded bytes, while other runtimes may reject alternate
+// text spellings. A raw P-256 ECDSA signature is exactly 64 bytes and has one
+// unpadded base64url encoding of 86 characters.
+function canonicalSignatureBytes(value) {
+  if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{86}$/.test(value)) {
+    throw new Error('AML_SIGNED_REPORT_SIGNATURE_ENCODING_INVALID');
+  }
+  const bytes = base64UrlToBytes(value);
+  if (bytes.length !== 64 || bytesToBase64Url(bytes) !== value) {
+    throw new Error('AML_SIGNED_REPORT_SIGNATURE_ENCODING_INVALID');
+  }
+  return bytes;
+}
+
 // P-256 coordinates must each be exactly 32 bytes in one unpadded base64url
 // spelling. Web Crypto may import alternate encodings of the same point;
 // rejecting them keeps the key document unambiguous across runtimes.
@@ -95,10 +109,11 @@ export async function verifySignedVerificationReport(envelope) {
       ['verify']
     );
     const bytes = new TextEncoder().encode(canonicalJSONStringifyBrowser(envelope.report));
+    const signature = canonicalSignatureBytes(envelope.signature);
     const valid = await crypto.subtle.verify(
       { name: 'ECDSA', hash: 'SHA-256' },
       publicKey,
-      base64UrlToBytes(envelope.signature),
+      signature,
       bytes
     );
     return {

@@ -63,6 +63,31 @@ test('rejects alternate base64url spellings of the same P-256 public point', asy
     /AML_SIGNED_REPORT_KEY_ENCODING_INVALID/);
 });
 
+test('rejects alternate text spellings of a valid P-256 report signature', async () => {
+  const a = await signVerificationReport(report('canonical-signature-a'), await createVerifierKeyPair());
+  const b = await signVerificationReport(report('canonical-signature-b'), await createVerifierKeyPair());
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const last = b.signature.at(-1);
+  const alternate = b.signature.slice(0, -1) + alphabet[alphabet.indexOf(last) ^ 1];
+  assert.notEqual(alternate, b.signature);
+  assert.deepEqual(Buffer.from(alternate, 'base64url'), Buffer.from(b.signature, 'base64url'));
+
+  for (const signature of [alternate, `${b.signature}==`,
+    `${b.signature.slice(0, 20)} ${b.signature.slice(20)}`, b.signature.slice(0, -1), null]) {
+    const mutated = { ...b, signature };
+    assert.deepEqual(await verifySignedVerificationReport(mutated), {
+      valid: false, reason: 'AML_SIGNED_REPORT_SIGNATURE_ENCODING_INVALID'
+    });
+    const quorum = await createSignedVerificationQuorum([a, mutated], { threshold: 2 });
+    assert.equal(quorum.summary.valid_signatures, 1);
+    assert.equal(quorum.summary.threshold_met, false);
+    const checked = await verifySignedVerificationQuorum(JSON.parse(JSON.stringify(quorum)));
+    assert.equal(checked.valid, true);
+    assert.equal(checked.threshold_met, false);
+  }
+  assert.equal((await verifySignedVerificationReport(b)).valid, true);
+});
+
 test('signed reports reject live claims that the signature did not cover', async () => {
   const keys = await createVerifierKeyPair();
   const envelope = await signVerificationReport(report('verifier-a'), keys);
