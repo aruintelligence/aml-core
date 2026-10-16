@@ -141,6 +141,42 @@ try {
   if (!groupBound.policy_met || groupBound.policy_evaluation.distinct_trust_groups !== 2) {
     throw new Error('Installed-package signed quorum CLI did not enforce held trust groups');
   }
+  fs.writeFileSync(path.join(tempRoot, 'verifier-a.json'),
+    `${JSON.stringify(signedA.verifier_public_key_jwk)}\n`);
+  fs.writeFileSync(path.join(tempRoot, 'verifier-b.json'),
+    `${JSON.stringify(signedB.verifier_public_key_jwk)}\n`);
+  const keyA = JSON.parse(runNpm(['exec', '--', 'aml', 'fingerprint-verifier-key',
+    'verifier-a.json'], tempRoot));
+  const keyB = JSON.parse(runNpm(['exec', '--', 'aml', 'fingerprint-verifier-key',
+    'verifier-b.json'], tempRoot));
+  if (keyA.verifier_key_fingerprint !== signedA.verifier_key_fingerprint ||
+      keyB.verifier_key_fingerprint !== signedB.verifier_key_fingerprint ||
+      !/^[a-f0-9]{64}$/.test(keyA.key_material_fingerprint) ||
+      !/^[a-f0-9]{64}$/.test(keyB.key_material_fingerprint)) {
+    throw new Error('Installed-package key fingerprint command produced incorrect identifiers');
+  }
+  const materialPolicy = { ...groupPolicy, schema: 'aml-signed-quorum-held-policy/3',
+    trusted_keys: [{ ...keyA, trust_group: 'lab-a' }, { ...keyB, trust_group: 'lab-b' }]
+  };
+  fs.writeFileSync(path.join(tempRoot, 'material-policy.json'), `${JSON.stringify(materialPolicy)}\n`);
+  const materialBound = JSON.parse(runNpm(['exec', '--', 'aml', 'verify-signed-quorum',
+    'signed-quorum.json', '--policy', 'material-policy.json'], tempRoot));
+  if (!materialBound.policy_met || materialBound.policy_evaluation.distinct_trust_groups !== 2) {
+    throw new Error('Installed-package signed quorum CLI did not enforce material pins');
+  }
+  const wrongMaterialPolicy = { ...materialPolicy, trusted_keys: [materialPolicy.trusted_keys[0],
+    { ...materialPolicy.trusted_keys[1], key_material_fingerprint: '0'.repeat(64) }] };
+  fs.writeFileSync(path.join(tempRoot, 'wrong-material-policy.json'),
+    `${JSON.stringify(wrongMaterialPolicy)}\n`);
+  const wrongMaterialRun = spawnSync(process.execPath, [path.join(installedRoot, 'bin', 'aml.js'),
+    'verify-signed-quorum', 'signed-quorum.json', '--policy', 'wrong-material-policy.json'],
+  { cwd: tempRoot, encoding: 'utf8' });
+  const wrongMaterial = JSON.parse(wrongMaterialRun.stdout);
+  if (wrongMaterialRun.status !== 2 || !wrongMaterial.valid || !wrongMaterial.threshold_met ||
+      wrongMaterial.policy_met !== false ||
+      wrongMaterial.policy_evaluation.mismatched_key_fingerprints[0] !== signedB.verifier_key_fingerprint) {
+    throw new Error('Installed-package signed quorum CLI accepted a mismatched material pin');
+  }
   const collapsedPolicy = { ...groupPolicy, trusted_keys: [
     groupPolicy.trusted_keys[0],
     { verifier_key_fingerprint: signedB.verifier_key_fingerprint, trust_group: 'lab-a' },
@@ -239,6 +275,8 @@ try {
       signed_quorum_cli_held_policy_valid: true,
       signed_quorum_cli_rejects_duplicate_json_key: true,
       signed_quorum_cli_group_policy_valid: true,
+      signed_quorum_cli_material_policy_valid: true,
+      signed_quorum_cli_rejects_wrong_material_pin: true,
       signed_quorum_cli_rejects_one_trust_group: true,
       signed_quorum_cli_rejects_untrusted_key: true,
       signed_quorum_cli_held_witness_valid: true,

@@ -17,6 +17,25 @@ function base64UrlToBytes(value) {
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
+// P-256 coordinates must each be exactly 32 bytes in one unpadded base64url
+// spelling. Web Crypto may import alternate encodings of the same point;
+// rejecting them keeps the key document unambiguous across runtimes.
+export function assertCanonicalVerifierPublicKey(jwk) {
+  if (!jwk || typeof jwk !== 'object' || Array.isArray(jwk) ||
+      jwk.kty !== 'EC' || jwk.crv !== 'P-256') {
+    throw new Error('AML_SIGNED_REPORT_KEY_ENCODING_INVALID');
+  }
+  for (const coordinate of [jwk.x, jwk.y]) {
+    if (typeof coordinate !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(coordinate)) {
+      throw new Error('AML_SIGNED_REPORT_KEY_ENCODING_INVALID');
+    }
+    const bytes = base64UrlToBytes(coordinate);
+    if (bytes.length !== 32 || bytesToBase64Url(bytes) !== coordinate) {
+      throw new Error('AML_SIGNED_REPORT_KEY_ENCODING_INVALID');
+    }
+  }
+}
+
 export async function createVerifierKeyPair() {
   if (!globalThis.crypto?.subtle) throw new Error('AML_VERIFIER_CRYPTO_UNAVAILABLE');
   return crypto.subtle.generateKey(
@@ -63,6 +82,7 @@ export async function verifySignedVerificationReport(envelope) {
     if (envelope.report?.schema !== 'aml-verification-report/1') {
       return { valid: false, reason: 'AML_SIGNED_REPORT_REPORT_INVALID' };
     }
+    assertCanonicalVerifierPublicKey(envelope.verifier_public_key_jwk);
     const expectedFingerprint = await sha256Browser(envelope.verifier_public_key_jwk);
     if (expectedFingerprint !== envelope.verifier_key_fingerprint) {
       return { valid: false, reason: 'AML_SIGNED_REPORT_KEY_FINGERPRINT_MISMATCH' };

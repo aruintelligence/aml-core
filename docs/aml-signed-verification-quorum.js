@@ -2,8 +2,8 @@
 // Requires valid signed reports over one exact artifact and counts distinct P-256 public keys.
 // Distinct keys do not prove distinct people, organizations, independence, or correctness.
 
-import { assertBrowserJSON, canonicalJSONStringifyBrowser } from './aml-browser-integrity.js';
-import { verifySignedVerificationReport } from './aml-signed-verification-report.js';
+import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser } from './aml-browser-integrity.js';
+import { assertCanonicalVerifierPublicKey, verifySignedVerificationReport } from './aml-signed-verification-report.js';
 import { verifyWitnessBundle } from './aml-witness-bundle.js';
 
 // These fields describe properties the local witness replay can check. The
@@ -80,6 +80,24 @@ async function verifierKeyMaterialFingerprint(jwk) {
   rawPoint.set(y, 33);
   const digest = await crypto.subtle.digest('SHA-256', rawPoint);
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+// Derive both identifiers from a public JWK obtained through the buyer's own
+// channel. This calculates identifiers; it does not identify or authorize its
+// holder. The full-document fingerprint includes optional JWK metadata.
+export async function fingerprintVerifierPublicKey(jwk) {
+  assertBrowserJSON(jwk);
+  if (!jwk || typeof jwk !== 'object' || Array.isArray(jwk) || Object.hasOwn(jwk, 'd')) {
+    throw new Error('AML_SIGNED_QUORUM_PUBLIC_KEY_INVALID');
+  }
+  assertCanonicalVerifierPublicKey(jwk);
+  const imported = await crypto.subtle.importKey('jwk', jwk,
+    { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
+  if (imported.type !== 'public') throw new Error('AML_SIGNED_QUORUM_PUBLIC_KEY_INVALID');
+  return {
+    verifier_key_fingerprint: await sha256Browser(jwk),
+    key_material_fingerprint: await verifierKeyMaterialFingerprint(jwk)
+  };
 }
 
 export async function createSignedVerificationQuorum(signedReports, { threshold = 2 } = {}) {
@@ -171,12 +189,14 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
 
 export function validateSignedVerificationQuorumPolicy(policy) {
   assertBrowserJSON(policy);
-  const grouped = policy?.schema === 'aml-signed-quorum-held-policy/2';
+  const materialPinned = policy?.schema === 'aml-signed-quorum-held-policy/3';
+  const grouped = materialPinned || policy?.schema === 'aml-signed-quorum-held-policy/2';
   const fields = grouped
     ? ['artifact_hash', 'artifact_type', 'group_threshold', 'prototype', 'schema', 'threshold', 'trusted_keys']
     : ['artifact_hash', 'artifact_type', 'prototype', 'schema', 'threshold', 'trusted_key_fingerprints'];
   if (!policy || Array.isArray(policy) || Object.keys(policy).sort().join('|') !== fields.join('|') ||
-      !['aml-signed-quorum-held-policy/1', 'aml-signed-quorum-held-policy/2'].includes(policy.schema) ||
+      !['aml-signed-quorum-held-policy/1', 'aml-signed-quorum-held-policy/2',
+        'aml-signed-quorum-held-policy/3'].includes(policy.schema) ||
       policy.prototype !== true) {
     throw new Error('AML_SIGNED_QUORUM_POLICY_INVALID');
   }
@@ -186,7 +206,9 @@ export function validateSignedVerificationQuorumPolicy(policy) {
   }
   if (grouped && (!Array.isArray(policy.trusted_keys) || policy.trusted_keys.some(entry =>
     !entry || Array.isArray(entry) || typeof entry !== 'object' ||
-    Object.keys(entry).sort().join('|') !== 'trust_group|verifier_key_fingerprint' ||
+    Object.keys(entry).sort().join('|') !== (materialPinned
+      ? 'key_material_fingerprint|trust_group|verifier_key_fingerprint'
+      : 'trust_group|verifier_key_fingerprint') ||
     typeof entry.trust_group !== 'string' ||
     !/^[a-z0-9][a-z0-9._-]{0,63}$/.test(entry.trust_group)))) {
     throw new Error('AML_SIGNED_QUORUM_POLICY_GROUPS_INVALID');
@@ -197,6 +219,13 @@ export function validateSignedVerificationQuorumPolicy(policy) {
       keys.some(key => typeof key !== 'string' || !/^[a-f0-9]{64}$/.test(key)) ||
       new Set(keys).size !== keys.length) {
     throw new Error('AML_SIGNED_QUORUM_POLICY_KEYS_INVALID');
+  }
+  if (materialPinned) {
+    const materials = policy.trusted_keys.map(entry => entry.key_material_fingerprint);
+    if (materials.some(value => typeof value !== 'string' || !/^[a-f0-9]{64}$/.test(value)) ||
+        new Set(materials).size !== materials.length) {
+      throw new Error('AML_SIGNED_QUORUM_POLICY_MATERIAL_INVALID');
+    }
   }
   if (!Number.isInteger(policy.threshold) || policy.threshold < 1 || policy.threshold > keys.length) {
     throw new Error('AML_SIGNED_QUORUM_POLICY_THRESHOLD_INVALID');
@@ -244,21 +273,28 @@ export async function verifySignedVerificationQuorum(quorum, {
       } else {
         const artifactMatches = rebuilt.artifact_type === policy.artifact_type &&
           rebuilt.artifact_hash === policy.artifact_hash;
-        const grouped = policy.schema === 'aml-signed-quorum-held-policy/2';
+        const materialPinned = policy.schema === 'aml-signed-quorum-held-policy/3';
+        const grouped = materialPinned || policy.schema === 'aml-signed-quorum-held-policy/2';
         const assignments = grouped ? new Map(policy.trusted_keys.map(entry =>
-          [entry.verifier_key_fingerprint, entry.trust_group])) : null;
+          [entry.verifier_key_fingerprint, entry])) : null;
         const allowed = new Set(grouped ? assignments.keys() : policy.trusted_key_fingerprints);
         const trusted = new Set();
         const materialGroups = new Map();
         const conflictingMaterials = new Set();
+        const mismatchedPins = new Set();
         if (artifactMatches) {
           for (const envelope of rebuilt.signed_reports) {
             if (envelope?.report?.valid !== true || !allowed.has(envelope.verifier_key_fingerprint)) continue;
             if ((await verifySignedVerificationReport(envelope)).valid) {
               const material = await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk);
+              if (materialPinned && assignments.get(envelope.verifier_key_fingerprint)
+                .key_material_fingerprint !== material) {
+                mismatchedPins.add(envelope.verifier_key_fingerprint);
+                continue;
+              }
               trusted.add(material);
               if (grouped) {
-                const group = assignments.get(envelope.verifier_key_fingerprint);
+                const group = assignments.get(envelope.verifier_key_fingerprint).trust_group;
                 if (materialGroups.has(material) && materialGroups.get(material) !== group) {
                   conflictingMaterials.add(material);
                 } else {
@@ -271,7 +307,8 @@ export async function verifySignedVerificationQuorum(quorum, {
         const distinctGroups = grouped ? new Set([...materialGroups].filter(([material]) =>
           !conflictingMaterials.has(material)).map(([, group]) => group)).size : 0;
         result.policy_met = artifactMatches && trusted.size >= policy.threshold &&
-          (!grouped || (distinctGroups >= policy.group_threshold && conflictingMaterials.size === 0));
+          (!grouped || (distinctGroups >= policy.group_threshold && conflictingMaterials.size === 0)) &&
+          (!materialPinned || mismatchedPins.size === 0);
         result.policy_evaluation = {
           artifact_matches: artifactMatches,
           distinct_trusted_keys: trusted.size,
@@ -280,7 +317,8 @@ export async function verifySignedVerificationQuorum(quorum, {
             distinct_trust_groups: distinctGroups,
             group_threshold: policy.group_threshold,
             conflicting_key_material_fingerprints: [...conflictingMaterials]
-          } : {})
+          } : {}),
+          ...(materialPinned ? { mismatched_key_fingerprints: [...mismatchedPins] } : {})
         };
       }
     }

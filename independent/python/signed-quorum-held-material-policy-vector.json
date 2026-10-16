@@ -1,0 +1,20 @@
+{
+  "schema": "aml-signed-quorum-held-policy/3",
+  "prototype": true,
+  "artifact_type": "aml-cross-runtime-fixture/1",
+  "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "trusted_keys": [
+    {
+      "verifier_key_fingerprint": "352b06cc9a1e6dfce7a615117215792753b555bceaad4e06e63d966311e69e5f",
+      "key_material_fingerprint": "b265324c22e2f965d55245c7c6700c4eb6bcb44c0b12de0f32fd7e1eb21d5c4d",
+      "trust_group": "fixture-a"
+    },
+    {
+      "verifier_key_fingerprint": "5954d526e769f49cda3c6253ef243d216bed8f4609faabb79fec90cf661c3231",
+      "key_material_fingerprint": "58267e1d941d7a054069de884cce6b6b39c2cd193d17b6f1fcbbb77125f949e4",
+      "trust_group": "fixture-b"
+    }
+  ],
+  "threshold": 2,
+  "group_threshold": 2
+}

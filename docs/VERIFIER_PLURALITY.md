@@ -68,7 +68,9 @@ produce a valid quorum. The browser API accepts already-parsed objects and
 cannot recover source-byte errors or duplicate names from them.
 It derives distinctness from the P-256 public point. Two JWK envelopes for the
 same key with different optional metadata still count as one key, even if the
-envelope fingerprints differ.
+envelope fingerprints differ. The signed-report checker requires canonical
+unpadded base64url coordinates; changing unused encoding bits does not create
+a second key or a valid alternate signed envelope.
 
 ### Check against your own retained expectations
 
@@ -129,7 +131,7 @@ receiving reports:
 }
 ```
 
-The same `--policy` option accepts either version. Version 2 requires its key
+The same `--policy` option accepts all three versions. Version 2 requires its key
 threshold **and** its trust-group threshold among allowlisted, positively
 signed reports about the pinned artifact. Both distinct keys and groups are
 counted from the submitted reports; the trusted key list may contain groups
@@ -145,6 +147,52 @@ letters, digits, dots, underscores, or hyphens, beginning with a letter or
 digit. They express the buyer's trust roster; they do not verify an operator's
 identity, legal status, independence, control of a key, or the truth of a
 report. Version 1 remains supported when group diversity is not required.
+
+### Pin the public-key material in the held roster
+
+Version 3 adds a SHA-256 fingerprint of each P-256 uncompressed public point
+(`04 || x || y`) to each trusted-key entry. First obtain the public JWK through
+a channel you trust independently of the saved quorum, then derive its two
+identifiers:
+
+```bash
+aml fingerprint-verifier-key lab-a-public-jwk.json
+```
+
+The command prints `verifier_key_fingerprint` (the canonical complete JWK,
+including optional metadata) and `key_material_fingerprint` (the raw P-256
+public point). It accepts a public P-256 verification JWK; it rejects a JWK
+containing private material. Fingerprinting identifies bytes, not the owner or
+authorization of a key. Retain the JWK and your policy separately from the
+quorum. Browser users can call `window.AML.fingerprintVerifierPublicKey(jwk)`
+for the same calculation. For example, add the derived material fingerprints
+to the version 2 policy and change the schema:
+
+```json
+{
+  "schema": "aml-signed-quorum-held-policy/3",
+  "prototype": true,
+  "artifact_type": "aml-witness-bundle/1",
+  "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "trusted_keys": [
+    { "verifier_key_fingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "key_material_fingerprint": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "trust_group": "lab-a" },
+    { "verifier_key_fingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "key_material_fingerprint": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "trust_group": "lab-b" }
+  ],
+  "threshold": 2,
+  "group_threshold": 2
+}
+```
+
+Version 3 rejects duplicate material fingerprints while validating the held
+roster, including aliases for one key assigned to different
+groups. It counts an endorsement only when its signed public key matches both
+held fingerprints; a positively signed allowlisted report with a mismatched
+material pin makes `policy_met` false and appears in
+`policy_evaluation.mismatched_key_fingerprints`. It still requires the key and
+group thresholds. An absent key document cannot be checked against its
+claimed material fingerprint until it is supplied, and an invented group or
+multiple keys controlled by one operator remain outside cryptographic proof.
+The older policy versions remain available for existing consumers.
 
 For cross-runtime checking of the saved quorum and held policy, use the
 [project-authored Python verifier](../independent/python/verify_signed_quorum.py):
