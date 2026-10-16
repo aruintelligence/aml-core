@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { webcrypto } from 'node:crypto';
+import { sha256Browser } from '../docs/aml-browser-integrity.js';
 
 if (!globalThis.crypto) globalThis.crypto = webcrypto;
 if (!globalThis.btoa) globalThis.btoa = (value) => Buffer.from(value, 'binary').toString('base64');
@@ -12,7 +13,10 @@ import {
   signVerificationReport,
   verifySignedVerificationReport
 } from '../docs/aml-signed-verification-report.js';
-import { createSignedVerificationQuorum, verifySignedVerificationQuorum } from '../docs/aml-signed-verification-quorum.js';
+import {
+  createSignedVerificationQuorum,
+  verifySignedVerificationQuorum
+} from '../docs/aml-signed-verification-quorum.js';
 
 function report(verifier, artifactHash = 'a'.repeat(64), valid = true) {
   return {
@@ -113,6 +117,89 @@ test('reusing one verifier key cannot satisfy a two-key threshold', async () => 
   const verified = await verifySignedVerificationQuorum(JSON.parse(JSON.stringify(quorum)));
   assert.equal(verified.valid, true);
   assert.equal(verified.threshold_met, false);
+});
+
+test('verifier-held policy binds the artifact and an independently retained key allowlist', async () => {
+  const a = await signVerificationReport(report('a'), await createVerifierKeyPair());
+  const b = await signVerificationReport(report('b'), await createVerifierKeyPair());
+  const outsider = await signVerificationReport(report('outsider'), await createVerifierKeyPair());
+  const policy = {
+    schema: 'aml-signed-quorum-held-policy/1', prototype: true,
+    artifact_type: 'aml-witness-bundle/1', artifact_hash: 'a'.repeat(64),
+    trusted_key_fingerprints: [a.verifier_key_fingerprint, b.verifier_key_fingerprint],
+    threshold: 2
+  };
+  const supported = await verifySignedVerificationQuorum(
+    JSON.parse(JSON.stringify(await createSignedVerificationQuorum([a, b], { threshold: 2 }))),
+    { policy }
+  );
+  assert.equal(supported.valid, true);
+  assert.equal(supported.threshold_met, true);
+  assert.equal(supported.policy_met, true);
+  assert.equal(supported.policy_evaluation.distinct_trusted_keys, 2);
+
+  const selfSelected = await verifySignedVerificationQuorum(
+    JSON.parse(JSON.stringify(await createSignedVerificationQuorum([a, outsider], { threshold: 2 }))),
+    { policy }
+  );
+  assert.equal(selfSelected.valid, true);
+  assert.equal(selfSelected.threshold_met, true);
+  assert.equal(selfSelected.policy_met, false);
+  assert.equal(selfSelected.policy_evaluation.distinct_trusted_keys, 1);
+
+  const wrongArtifact = await verifySignedVerificationQuorum(supported.quorum, {
+    policy: { ...policy, artifact_hash: 'b'.repeat(64) }
+  });
+  assert.equal(wrongArtifact.valid, true);
+  assert.equal(wrongArtifact.threshold_met, true);
+  assert.equal(wrongArtifact.policy_met, false);
+  assert.equal(wrongArtifact.policy_evaluation.artifact_matches, false);
+
+  const inflated = structuredClone(supported.quorum);
+  inflated.summary.distinct_keys += 1;
+  const mismatch = await verifySignedVerificationQuorum(inflated, { policy });
+  assert.equal(mismatch.valid, false);
+  assert.equal(mismatch.policy_met, false);
+
+  await assert.rejects(
+    () => verifySignedVerificationQuorum(supported.quorum, {
+      policy: { ...policy, trusted_key_fingerprints: [a.verifier_key_fingerprint, a.verifier_key_fingerprint] }
+    }), /AML_SIGNED_QUORUM_POLICY_KEYS_INVALID/
+  );
+  await assert.rejects(
+    () => verifySignedVerificationQuorum(supported.quorum, { policy: { ...policy, threshold: 3 } }),
+    /AML_SIGNED_QUORUM_POLICY_THRESHOLD_INVALID/
+  );
+  await assert.rejects(
+    () => verifySignedVerificationQuorum(supported.quorum, { policy: { ...policy, certified: true } }),
+    /AML_SIGNED_QUORUM_POLICY_INVALID/
+  );
+});
+
+test('JWK metadata aliases cannot turn one P-256 key into two endorsers', async () => {
+  const envelope = await signVerificationReport(report('a'), await createVerifierKeyPair());
+  const alias = structuredClone(envelope);
+  alias.verifier_public_key_jwk.kid = 'a second label for the same key';
+  alias.verifier_key_fingerprint = await sha256Browser(alias.verifier_public_key_jwk);
+  assert.notEqual(alias.verifier_key_fingerprint, envelope.verifier_key_fingerprint);
+  assert.equal((await verifySignedVerificationReport(alias)).valid, true);
+
+  const quorum = await createSignedVerificationQuorum([envelope, alias], { threshold: 2 });
+  assert.equal(quorum.summary.valid_signatures, 2);
+  assert.equal(quorum.summary.distinct_keys, 1);
+  assert.equal(quorum.summary.threshold_met, false);
+
+  const policy = {
+    schema: 'aml-signed-quorum-held-policy/1', prototype: true,
+    artifact_type: 'aml-witness-bundle/1', artifact_hash: 'a'.repeat(64),
+    trusted_key_fingerprints: [envelope.verifier_key_fingerprint, alias.verifier_key_fingerprint],
+    threshold: 2
+  };
+  const check = await verifySignedVerificationQuorum(JSON.parse(JSON.stringify(quorum)), { policy });
+  assert.equal(check.valid, true);
+  assert.equal(check.threshold_met, false);
+  assert.equal(check.policy_met, false);
+  assert.equal(check.policy_evaluation.distinct_trusted_keys, 1);
 });
 
 test('a correctly signed invalid report is dissent and cannot satisfy the distinct-key quorum', async () => {

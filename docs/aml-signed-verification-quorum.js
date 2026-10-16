@@ -1,9 +1,30 @@
 // ĀML key-distinct signed verification quorum — SHIPPED reference prototype.
-// Requires valid signed reports over one exact artifact and counts distinct verifier-key fingerprints.
+// Requires valid signed reports over one exact artifact and counts distinct P-256 public keys.
 // Distinct keys do not prove distinct people, organizations, independence, or correctness.
 
 import { assertBrowserJSON, canonicalJSONStringifyBrowser } from './aml-browser-integrity.js';
 import { verifySignedVerificationReport } from './aml-signed-verification-report.js';
+
+// Envelope fingerprints bind the complete JWK JSON, including optional metadata.
+// For quorum identity, hash the P-256 public point instead: one key must count once
+// even when the same JWK carries different labels, key_ops, or other metadata.
+async function verifierKeyMaterialFingerprint(jwk) {
+  if (!jwk || jwk.kty !== 'EC' || jwk.crv !== 'P-256' ||
+      typeof jwk.x !== 'string' || typeof jwk.y !== 'string') {
+    throw new Error('AML_SIGNED_QUORUM_KEY_MATERIAL_INVALID');
+  }
+  const decode = value => Uint8Array.from(atob(value.replace(/-/g, '+').replace(/_/g, '/')),
+    character => character.charCodeAt(0));
+  const x = decode(jwk.x);
+  const y = decode(jwk.y);
+  if (x.length !== 32 || y.length !== 32) throw new Error('AML_SIGNED_QUORUM_KEY_MATERIAL_INVALID');
+  const rawPoint = new Uint8Array(65);
+  rawPoint[0] = 4;
+  rawPoint.set(x, 1);
+  rawPoint.set(y, 33);
+  const digest = await crypto.subtle.digest('SHA-256', rawPoint);
+  return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+}
 
 export async function createSignedVerificationQuorum(signedReports, { threshold = 2 } = {}) {
   if (!Array.isArray(signedReports) || signedReports.length === 0) throw new Error('AML_SIGNED_QUORUM_REPORTS_REQUIRED');
@@ -51,7 +72,7 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
 
   // Only keys that signed a valid verdict count toward the endorsement quorum.
   // A correctly signed INVALID report is authenticated dissent, not support.
-  const validEndorserKeyFingerprints = new Set();
+  const validEndorserKeys = new Set();
   let validReports = 0;
   let invalidReports = 0;
   const reasons = new Set();
@@ -65,7 +86,7 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
 
     if (envelope.report.valid) {
       validReports += 1;
-      validEndorserKeyFingerprints.add(envelope.verifier_key_fingerprint);
+      validEndorserKeys.add(await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk));
     } else {
       invalidReports += 1;
       reasons.add(envelope.report.reason);
@@ -80,11 +101,11 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
     threshold,
     signed_reports: signedReports,
     summary: {
-      distinct_keys: validEndorserKeyFingerprints.size,
+      distinct_keys: validEndorserKeys.size,
       valid_signatures: checks.filter(({ signature }) => signature.valid).length,
       valid_reports: validReports,
       invalid_reports: invalidReports,
-      threshold_met: validReports >= threshold && validEndorserKeyFingerprints.size >= threshold,
+      threshold_met: validReports >= threshold && validEndorserKeys.size >= threshold,
       unanimous: invalidReports === 0 && validReports === signedReports.length,
       disagreement_reasons: [...reasons]
     },
@@ -92,21 +113,75 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
   };
 }
 
-export async function verifySignedVerificationQuorum(quorum) {
+export function validateSignedVerificationQuorumPolicy(policy) {
+  assertBrowserJSON(policy);
+  const fields = ['artifact_hash', 'artifact_type', 'prototype', 'schema', 'threshold', 'trusted_key_fingerprints'];
+  if (!policy || Array.isArray(policy) || Object.keys(policy).sort().join('|') !== fields.join('|') ||
+      policy.schema !== 'aml-signed-quorum-held-policy/1' || policy.prototype !== true) {
+    throw new Error('AML_SIGNED_QUORUM_POLICY_INVALID');
+  }
+  if (typeof policy.artifact_type !== 'string' || !policy.artifact_type.trim() ||
+      typeof policy.artifact_hash !== 'string' || !/^[a-f0-9]{64}$/.test(policy.artifact_hash)) {
+    throw new Error('AML_SIGNED_QUORUM_POLICY_ARTIFACT_INVALID');
+  }
+  const keys = policy.trusted_key_fingerprints;
+  if (!Array.isArray(keys) || keys.length === 0 || keys.length > 64 ||
+      keys.some(key => typeof key !== 'string' || !/^[a-f0-9]{64}$/.test(key)) ||
+      new Set(keys).size !== keys.length) {
+    throw new Error('AML_SIGNED_QUORUM_POLICY_KEYS_INVALID');
+  }
+  if (!Number.isInteger(policy.threshold) || policy.threshold < 1 || policy.threshold > keys.length) {
+    throw new Error('AML_SIGNED_QUORUM_POLICY_THRESHOLD_INVALID');
+  }
+  return policy;
+}
+
+export async function verifySignedVerificationQuorum(quorum, { policy } = {}) {
+  // A verifier-held policy is configuration, not part of the untrusted quorum.
+  // Reject malformed configuration as a usage error before checking the quorum.
+  if (policy !== undefined) validateSignedVerificationQuorumPolicy(policy);
+  const reject = (reason) => ({
+    valid: false, reason, threshold_met: false,
+    ...(policy === undefined ? {} : { policy_met: false })
+  });
   try {
     assertBrowserJSON(quorum);
     if (!quorum || quorum.schema !== 'aml-signed-verification-quorum/1') {
-      return { valid: false, reason: 'AML_SIGNED_QUORUM_INVALID', threshold_met: false };
+      return reject('AML_SIGNED_QUORUM_INVALID');
     }
     const rebuilt = await createSignedVerificationQuorum(quorum.signed_reports, { threshold: quorum.threshold });
     const valid = canonicalJSONStringifyBrowser(quorum) === canonicalJSONStringifyBrowser(rebuilt);
-    return {
+    const result = {
       valid,
       reason: valid ? 'AML_SIGNED_QUORUM_VALID' : 'AML_SIGNED_QUORUM_MISMATCH',
       threshold_met: valid && rebuilt.summary.threshold_met,
       quorum: rebuilt
     };
+    if (policy === undefined) return result;
+    if (!valid) return { ...result, policy_met: false };
+
+    const artifactMatches = rebuilt.artifact_type === policy.artifact_type &&
+      rebuilt.artifact_hash === policy.artifact_hash;
+    const allowed = new Set(policy.trusted_key_fingerprints);
+    const trusted = new Set();
+    if (artifactMatches) {
+      for (const envelope of rebuilt.signed_reports) {
+        if (envelope?.report?.valid !== true || !allowed.has(envelope.verifier_key_fingerprint)) continue;
+        if ((await verifySignedVerificationReport(envelope)).valid) {
+          trusted.add(await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk));
+        }
+      }
+    }
+    return {
+      ...result,
+      policy_met: artifactMatches && trusted.size >= policy.threshold,
+      policy_evaluation: {
+        artifact_matches: artifactMatches,
+        distinct_trusted_keys: trusted.size,
+        threshold: policy.threshold
+      }
+    };
   } catch (error) {
-    return { valid: false, reason: error?.message || 'AML_SIGNED_QUORUM_VERIFY_ERROR', threshold_met: false };
+    return reject(error?.message || 'AML_SIGNED_QUORUM_VERIFY_ERROR');
   }
 }
