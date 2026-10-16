@@ -22,3 +22,23 @@ test('verification report normalizes a successful witness result', () => {
 test('verification report rejects incomplete constructor input', () => {
   assert.throws(() => createVerificationReport({ verifier: 'x' }), /AML_VERIFICATION_REPORT_INPUT_INVALID/);
 });
+
+test('verification report records a verifier-held challenge mismatch', () => {
+  const report = witnessVerificationReport({ challenge: {} }, {
+    valid: false, reason: 'AML_WITNESS_BUNDLE_CHALLENGE_MISMATCH'
+  });
+  assert.equal(report.valid, false);
+  assert.equal(report.checks.challenge_binding, false);
+});
+
+test('verification report does not mark malformed bundle integrity as passed', () => {
+  for (const reason of [
+    'AML_WITNESS_BUNDLE_UNSEALED',
+    'AML_WITNESS_BUNDLE_CANONICALIZATION_UNSUPPORTED',
+    'AML_WITNESS_BUNDLE_INTEGRITY_INVALID',
+    'AML_CANONICAL_JSON_NON_JSON_OBJECT'
+  ]) {
+    const report = witnessVerificationReport({}, { valid: false, reason });
+    assert.equal(report.checks.bundle_integrity, false, reason);
+  }
+});

@@ -1,10 +1,12 @@
 // ĀML witness bundle — SHIPPED reference prototype.
 // Packages evidence + verifier challenge + ephemeral-session attestation into one portable JSON object.
 
-import { canonicalJSONStringifyBrowser, sha256Browser } from './aml-browser-integrity.js';
+import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser } from './aml-browser-integrity.js';
 import { verifySessionAttestation } from './aml-session-attestation.js';
+import { verifyVerificationChallenge } from './aml-verification-challenge.js';
 
 export function witnessBundlePayload(bundle) {
+  assertBrowserJSON(bundle);
   if (!bundle || bundle.schema !== 'aml-witness-bundle/1') throw new Error('AML_WITNESS_BUNDLE_INVALID');
   const { integrity, ...payload } = bundle;
   return payload;
@@ -30,14 +32,32 @@ export async function createWitnessBundle({ evidence, challenge, attestation }) 
   return bundle;
 }
 
-export async function verifyWitnessBundle(bundle, { now = Date.now() } = {}) {
+export async function verifyWitnessBundle(bundle, { now = Date.now(), expectedChallenge } = {}) {
   try {
+    assertBrowserJSON(bundle);
     if (!bundle?.integrity || bundle.integrity.schema !== 'aml-integrity/1') {
       return { valid: false, reason: 'AML_WITNESS_BUNDLE_UNSEALED' };
+    }
+    if (bundle.integrity.algorithm !== 'SHA-256') {
+      return { valid: false, reason: 'AML_WITNESS_BUNDLE_ALGORITHM_UNSUPPORTED' };
+    }
+    if (bundle.integrity.canonicalization !== 'sorted-json-v1') {
+      return { valid: false, reason: 'AML_WITNESS_BUNDLE_CANONICALIZATION_UNSUPPORTED' };
+    }
+    if (Object.keys(bundle.integrity).sort().join('|') !== 'algorithm|canonicalization|schema|value' ||
+        !/^[a-f0-9]{64}$/.test(bundle.integrity.value)) {
+      return { valid: false, reason: 'AML_WITNESS_BUNDLE_INTEGRITY_INVALID' };
     }
     const expected = await sha256Browser(witnessBundlePayload(bundle));
     if (expected !== bundle.integrity.value) {
       return { valid: false, reason: 'AML_WITNESS_BUNDLE_HASH_MISMATCH', expected, observed: bundle.integrity.value };
+    }
+    if (expectedChallenge !== undefined) {
+      const heldChallenge = verifyVerificationChallenge(expectedChallenge, { now });
+      if (!heldChallenge.valid) return { valid: false, reason: heldChallenge.reason };
+      if (canonicalJSONStringifyBrowser(bundle.challenge) !== canonicalJSONStringifyBrowser(expectedChallenge)) {
+        return { valid: false, reason: 'AML_WITNESS_BUNDLE_CHALLENGE_MISMATCH' };
+      }
     }
     const attestation = await verifySessionAttestation({
       evidence: bundle.evidence,
@@ -60,5 +80,6 @@ export async function verifyWitnessBundle(bundle, { now = Date.now() } = {}) {
 }
 
 export function exportWitnessBundle(bundle) {
+  assertBrowserJSON(bundle);
   return canonicalJSONStringifyBrowser(bundle);
 }
