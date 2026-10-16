@@ -12,7 +12,9 @@ import { createSessionAttestation } from '../docs/aml-session-attestation.js';
 import { createWitnessBundle, verifyWitnessBundle, witnessBundlePayload } from '../docs/aml-witness-bundle.js';
 import { witnessVerificationReport } from '../docs/aml-verification-report.js';
 import { createVerifierKeyPair, signVerificationReport } from '../docs/aml-signed-verification-report.js';
-import { createSignedVerificationQuorum, verifySignedVerificationQuorum } from '../docs/aml-signed-verification-quorum.js';
+import { createSignedVerificationQuorum, fingerprintVerifierPublicKey,
+  validateSignedVerificationQuorumPolicy, verifySignedVerificationQuorum
+} from '../docs/aml-signed-verification-quorum.js';
 
 if (!globalThis.crypto?.subtle) globalThis.crypto = webcrypto;
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-python-signed-quorum-'));
@@ -75,6 +77,10 @@ try {
     'independent/python/signed-quorum-held-group-policy-vector.json', 'utf8'
   ));
   await compare('published-synthetic-group-vector', fixedQuorum, fixedGroupPolicy, true);
+  const fixedMaterialPolicy = JSON.parse(fs.readFileSync(
+    'independent/python/signed-quorum-held-material-policy-vector.json', 'utf8'
+  ));
+  await compare('published-synthetic-material-vector', fixedQuorum, fixedMaterialPolicy, true);
   const keyA = await createVerifierKeyPair();
   const keyB = await createVerifierKeyPair();
   const a = await signVerificationReport(report('a'), keyA);
@@ -99,6 +105,23 @@ try {
     threshold: 2, group_threshold: 2
   };
   await compare('two-buyer-held-trust-groups', quorum, groupedPolicy, true);
+  const materialPolicy = { ...groupedPolicy, schema: 'aml-signed-quorum-held-policy/3',
+    trusted_keys: [
+      { ...await fingerprintVerifierPublicKey(a.verifier_public_key_jwk), trust_group: 'lab-a' },
+      { ...await fingerprintVerifierPublicKey(b.verifier_public_key_jwk), trust_group: 'lab-b' }
+    ]
+  };
+  await compare('two-material-pinned-trust-groups', quorum, materialPolicy, true);
+  await compare('wrong-held-material-pin', quorum, { ...materialPolicy, trusted_keys: [
+    materialPolicy.trusted_keys[0],
+    { ...materialPolicy.trusted_keys[1], key_material_fingerprint: '0'.repeat(64) }
+  ] }, false);
+  await compare('wrong-extra-pin-despite-sufficient-trusted-groups',
+    await createSignedVerificationQuorum([a, b, c], { threshold: 2 }),
+    { ...materialPolicy, trusted_keys: [...materialPolicy.trusted_keys,
+      { ...await fingerprintVerifierPublicKey(c.verifier_public_key_jwk),
+        key_material_fingerprint: '0'.repeat(64), trust_group: 'lab-c' }]
+    }, false);
   await compare('grouped-policy-met-but-saved-threshold-unmet',
     await createSignedVerificationQuorum([a, b], { threshold: 3 }), groupedPolicy, false);
   await compare('two-keys-one-buyer-held-group', quorum, { ...groupedPolicy, trusted_keys: [
@@ -141,6 +164,17 @@ try {
       { verifier_key_fingerprint: alias.verifier_key_fingerprint, trust_group: 'lab-b' },
       { verifier_key_fingerprint: b.verifier_key_fingerprint, trust_group: 'lab-a' }
     ] }, false);
+  const aliasMaterial = await fingerprintVerifierPublicKey(alias.verifier_public_key_jwk);
+  const dormantAliasPolicy = { ...materialPolicy, trusted_keys: [
+    materialPolicy.trusted_keys[0], { ...aliasMaterial, trust_group: 'lab-b' }
+  ] };
+  assert.throws(() => validateSignedVerificationQuorumPolicy(dormantAliasPolicy),
+    /AML_SIGNED_QUORUM_POLICY_MATERIAL_INVALID/);
+  const dormantAliasUsage = spawnSync('python3', [python, save('dormant-alias-quorum.json', quorum),
+    '--policy', save('dormant-alias-policy.json', dormantAliasPolicy)],
+  { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  assert.equal(dormantAliasUsage.status, 1, dormantAliasUsage.stderr);
+  assert.equal(JSON.parse(dormantAliasUsage.stdout).reason, 'AML_SIGNED_QUORUM_POLICY_MATERIAL_INVALID');
   const dissent = await signVerificationReport(report('dissent', false), keyB);
   await compare('authenticated-dissent',
     await createSignedVerificationQuorum([a, dissent], { threshold: 2 }), policy, false);
@@ -180,6 +214,11 @@ try {
   };
   await compare('replayed-witness-with-two-held-groups',
     witnessQuorum, witnessGroupPolicy, true, replay);
+  await compare('replayed-witness-with-material-pins', witnessQuorum,
+    { ...witnessGroupPolicy, schema: 'aml-signed-quorum-held-policy/3', trusted_keys: [
+      { ...await fingerprintVerifierPublicKey(witnessA.verifier_public_key_jwk), trust_group: 'lab-a' },
+      { ...await fingerprintVerifierPublicKey(witnessB.verifier_public_key_jwk), trust_group: 'lab-b' }
+    ] }, true, replay);
   await compare('replayed-witness-with-only-one-held-group', witnessQuorum,
     { ...witnessGroupPolicy, trusted_keys: [
       witnessGroupPolicy.trusted_keys[0],
@@ -356,6 +395,7 @@ try {
     passed: true, cases: checks,
     additional_checks: ['duplicate_json_key', 'fractional_canonical_value',
       'malformed_signature', 'invalid_held_policy', 'invalid_trust_group_policy',
+      'dormant_key_material_alias',
       'missing_held_challenge',
       'matching_held_challenge', 'mismatched_held_challenge', 'duplicate_witness_key',
       'malformed_witness_signature', 'malformed_witness_attestation',

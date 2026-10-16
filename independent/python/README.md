@@ -32,6 +32,15 @@ python3 independent/python/verify_signed_quorum.py \
   --policy independent/python/signed-quorum-held-group-policy-vector.json
 ```
 
+A material-pinned version 3 policy is also checked against those fixed
+signatures:
+
+```bash
+python3 independent/python/verify_signed_quorum.py \
+  independent/python/signed-quorum-vector.json \
+  --policy independent/python/signed-quorum-held-material-policy-vector.json
+```
+
 The fixture policy sits beside the quorum for test convenience; in a real
 decision, retain your policy separately before receiving the quorum. The
 fixture has no underlying witness artifact and does not test witness replay.
@@ -41,7 +50,10 @@ documented in [Verifier Plurality](../../docs/VERIFIER_PLURALITY.md). It pins
 each allowed key fingerprint to a buyer-defined trust group and requires both
 distinct key material and the specified number of distinct groups. Assigning
 group labels in a local policy does not establish the real-world identity or
-independence of their operators.
+independence of their operators. Version 3 additionally pins each public
+key's material fingerprint and rejects duplicate material pins in the held
+roster. Use `aml fingerprint-verifier-key <public-jwk.json>` on a separately
+obtained public key document to derive both fingerprints.
 
 For an actual `aml-witness-bundle/1`, also supply the saved bundle and the
 challenge you retained before receiving it:

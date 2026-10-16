@@ -15,7 +15,8 @@ import { createSessionAttestation } from '../docs/aml-session-attestation.js';
 import { createWitnessBundle, verifyWitnessBundle, witnessBundlePayload } from '../docs/aml-witness-bundle.js';
 import { witnessVerificationReport } from '../docs/aml-verification-report.js';
 import { createVerifierKeyPair, signVerificationReport } from '../docs/aml-signed-verification-report.js';
-import { createSignedVerificationQuorum, verifySignedVerificationQuorum } from '../docs/aml-signed-verification-quorum.js';
+import { createSignedVerificationQuorum, fingerprintVerifierPublicKey,
+  verifySignedVerificationQuorum } from '../docs/aml-signed-verification-quorum.js';
 
 function report(verifier) {
   return {
@@ -40,6 +41,16 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
 
   const a = await signVerificationReport(report('a'), await createVerifierKeyPair());
   const b = await signVerificationReport(report('b'), await createVerifierKeyPair());
+  const keyPath = write('verifier-key.json', a.verifier_public_key_jwk);
+  const fingerprintRun = spawnSync(process.execPath,
+    ['bin/aml.js', 'fingerprint-verifier-key', keyPath], { encoding: 'utf8' });
+  assert.equal(fingerprintRun.status, 0, fingerprintRun.stderr);
+  assert.deepEqual(JSON.parse(fingerprintRun.stdout),
+    await fingerprintVerifierPublicKey(a.verifier_public_key_jwk));
+  const privateKeyRun = spawnSync(process.execPath, ['bin/aml.js', 'fingerprint-verifier-key',
+    write('not-public.json', { ...a.verifier_public_key_jwk, d: 'secret' })], { encoding: 'utf8' });
+  assert.equal(privateKeyRun.status, 1);
+  assert.match(privateKeyRun.stderr, /AML_SIGNED_QUORUM_PUBLIC_KEY_INVALID/);
   const quorum = await createSignedVerificationQuorum([a, b], { threshold: 2 });
   const valid = run(write('quorum.json', quorum));
   assert.equal(valid.status, 0, valid.stderr);

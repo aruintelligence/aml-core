@@ -30,7 +30,7 @@ import { signBrandAuthorization, verifyBrandAuthorization } from "../runtime/bra
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
 import { evaluatePolicyCanary } from "../runtime/policyCanary.js";
 import { verifyWitnessBundle } from "../docs/aml-witness-bundle.js";
-import { verifySignedVerificationQuorum } from "../docs/aml-signed-verification-quorum.js";
+import { fingerprintVerifierPublicKey, verifySignedVerificationQuorum } from "../docs/aml-signed-verification-quorum.js";
 import { parseJsonWithoutDuplicateKeys } from "../runtime/strictJson.js";
 
 const args = process.argv.slice(2);
@@ -50,6 +50,7 @@ Usage:
   aml canary <intent.json> [--baseline profile] [--candidate profile] [--context context.json] [--timestamp ISO] [--fail-on-change]
   aml verify-receipt <receipt.json>
   aml verify-witness <bundle.json> <verifier-held-challenge.json>
+  aml fingerprint-verifier-key <public-jwk.json>
   aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json]
   aml replay-receipt <receipt.json>
   aml sign-receipt <receipt.json> <private-key.pem> [signed-receipt.json]
@@ -83,6 +84,7 @@ Commands:
   canary                      Compare the same intent under baseline and candidate policy profiles
   verify-receipt              Verify receipt hash, audit stream, and attention-ledger integrity
   verify-witness              Verify a browser witness bundle against your retained challenge
+  fingerprint-verifier-key    Derive full-JWK and P-256 material fingerprints from a public key
   verify-signed-quorum        Recheck a signed quorum, held policy, and witness report claims
   replay-receipt              Re-execute declared receipt inputs with the installed engine
   sign-receipt                Add an Ed25519 attestation to a valid execution receipt
@@ -257,6 +259,15 @@ try {
     const result = await verifyWitnessBundle(bundle, { expectedChallenge });
     console.log(JSON.stringify(result, null, 2));
     process.exit(result.valid ? 0 : 2);
+  }
+  if (command === "fingerprint-verifier-key") {
+    if (args.length !== 2 || !args[1]) {
+      throw new Error("Usage: aml fingerprint-verifier-key <public-jwk.json>");
+    }
+    if (!globalThis.crypto?.subtle) globalThis.crypto = webcrypto;
+    const fingerprints = await fingerprintVerifierPublicKey(readUnambiguousJSON(args[1]));
+    console.log(JSON.stringify(fingerprints, null, 2));
+    process.exit(0);
   }
   if (command === "verify-signed-quorum") {
     const usage = "Usage: aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json]";

@@ -15,6 +15,7 @@ import {
 } from '../docs/aml-signed-verification-report.js';
 import {
   createSignedVerificationQuorum,
+  fingerprintVerifierPublicKey,
   verifySignedVerificationQuorum
 } from '../docs/aml-signed-verification-quorum.js';
 
@@ -45,6 +46,21 @@ test('signed verification report detects report mutation', async () => {
   const check = await verifySignedVerificationReport(tampered);
   assert.equal(check.valid, false);
   assert.equal(check.reason, 'AML_SIGNED_REPORT_SIGNATURE_INVALID');
+});
+
+test('rejects alternate base64url spellings of the same P-256 public point', async () => {
+  const envelope = await signVerificationReport(report('canonical-key'), await createVerifierKeyPair());
+  const altered = structuredClone(envelope);
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const original = altered.verifier_public_key_jwk.x;
+  const index = alphabet.indexOf(original.at(-1));
+  altered.verifier_public_key_jwk.x = original.slice(0, -1) + alphabet[index ^ 1];
+  altered.verifier_key_fingerprint = await sha256Browser(altered.verifier_public_key_jwk);
+  assert.notEqual(altered.verifier_key_fingerprint, envelope.verifier_key_fingerprint);
+  const verdict = await verifySignedVerificationReport(altered);
+  assert.deepEqual(verdict, { valid: false, reason: 'AML_SIGNED_REPORT_KEY_ENCODING_INVALID' });
+  await assert.rejects(() => fingerprintVerifierPublicKey(altered.verifier_public_key_jwk),
+    /AML_SIGNED_REPORT_KEY_ENCODING_INVALID/);
 });
 
 test('signed reports reject live claims that the signature did not cover', async () => {
@@ -239,6 +255,71 @@ test('buyer-held trust groups require distinct key material across chosen groups
   ]) {
     await assert.rejects(() => verifySignedVerificationQuorum(diverseQuorum, { policy: invalid }), reason);
   }
+});
+
+test('material-pinned trust roster detects dormant aliases and wrong key material', async () => {
+  const a = await signVerificationReport(report('a'), await createVerifierKeyPair());
+  const b = await signVerificationReport(report('b'), await createVerifierKeyPair());
+  const fingerprintA = await fingerprintVerifierPublicKey(a.verifier_public_key_jwk);
+  const fingerprintB = await fingerprintVerifierPublicKey(b.verifier_public_key_jwk);
+  assert.equal(fingerprintA.verifier_key_fingerprint, a.verifier_key_fingerprint);
+  assert.equal(fingerprintB.verifier_key_fingerprint, b.verifier_key_fingerprint);
+  const policy = {
+    schema: 'aml-signed-quorum-held-policy/3', prototype: true,
+    artifact_type: 'aml-witness-bundle/1', artifact_hash: 'a'.repeat(64),
+    trusted_keys: [
+      { ...fingerprintA, trust_group: 'lab-a' },
+      { ...fingerprintB, trust_group: 'lab-b' }
+    ], threshold: 2, group_threshold: 2
+  };
+  const quorum = await createSignedVerificationQuorum([a, b], { threshold: 2 });
+  const verified = await verifySignedVerificationQuorum(quorum, { policy });
+  assert.equal(verified.valid, true);
+  assert.equal(verified.threshold_met, true);
+  assert.equal(verified.policy_met, true);
+  assert.deepEqual(verified.policy_evaluation.mismatched_key_fingerprints, []);
+
+  const wrongPin = { ...policy, trusted_keys: [policy.trusted_keys[0],
+    { ...policy.trusted_keys[1], key_material_fingerprint: '0'.repeat(64) }] };
+  const mismatch = await verifySignedVerificationQuorum(quorum, { policy: wrongPin });
+  assert.equal(mismatch.valid, true);
+  assert.equal(mismatch.threshold_met, true);
+  assert.equal(mismatch.policy_met, false);
+  assert.equal(mismatch.policy_evaluation.distinct_trusted_keys, 1);
+  assert.deepEqual(mismatch.policy_evaluation.mismatched_key_fingerprints, [b.verifier_key_fingerprint]);
+
+  const c = await signVerificationReport(report('c'), await createVerifierKeyPair());
+  const extraWrongPin = { ...policy, trusted_keys: [...policy.trusted_keys,
+    { ...await fingerprintVerifierPublicKey(c.verifier_public_key_jwk),
+      key_material_fingerprint: '0'.repeat(64), trust_group: 'lab-c' }] };
+  const mixed = await verifySignedVerificationQuorum(
+    await createSignedVerificationQuorum([a, b, c], { threshold: 2 }), { policy: extraWrongPin }
+  );
+  assert.equal(mixed.policy_evaluation.distinct_trusted_keys, 2);
+  assert.equal(mixed.policy_evaluation.distinct_trust_groups, 2);
+  assert.equal(mixed.policy_met, false);
+  assert.deepEqual(mixed.policy_evaluation.mismatched_key_fingerprints, [c.verifier_key_fingerprint]);
+
+  const alias = structuredClone(a.verifier_public_key_jwk);
+  alias.kid = 'other-label-same-public-point';
+  const aliasFingerprint = await fingerprintVerifierPublicKey(alias);
+  assert.notEqual(aliasFingerprint.verifier_key_fingerprint, fingerprintA.verifier_key_fingerprint);
+  assert.equal(aliasFingerprint.key_material_fingerprint, fingerprintA.key_material_fingerprint);
+  await assert.rejects(() => verifySignedVerificationQuorum(quorum, { policy: {
+    ...policy, trusted_keys: [policy.trusted_keys[0],
+      { ...aliasFingerprint, trust_group: 'lab-b' }]
+  } }), /AML_SIGNED_QUORUM_POLICY_MATERIAL_INVALID/);
+  for (const invalid of [
+    { ...policy, trusted_keys: [policy.trusted_keys[0],
+      { ...policy.trusted_keys[1], key_material_fingerprint: 'not-a-hash' }] },
+    { ...policy, trusted_keys: [policy.trusted_keys[0],
+      { ...policy.trusted_keys[1], key_material_fingerprint: fingerprintA.key_material_fingerprint }] }
+  ]) {
+    await assert.rejects(() => verifySignedVerificationQuorum(quorum, { policy: invalid }),
+      /AML_SIGNED_QUORUM_POLICY_MATERIAL_INVALID/);
+  }
+  await assert.rejects(() => fingerprintVerifierPublicKey({ ...a.verifier_public_key_jwk, d: 'private' }),
+    /AML_SIGNED_QUORUM_PUBLIC_KEY_INVALID/);
 });
 
 test('JWK metadata aliases cannot turn one P-256 key into two endorsers', async () => {
