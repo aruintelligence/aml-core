@@ -12,6 +12,7 @@ import {
 } from '../docs/aml-session-attestation.js';
 import { createWitnessBundle, exportWitnessBundle, verifyWitnessBundle,
   witnessBundlePayload } from '../docs/aml-witness-bundle.js';
+import { witnessVerificationReport } from '../docs/aml-verification-report.js';
 
 function makeReceipt() {
   return {
@@ -69,6 +70,60 @@ test('detached witness bundle rejects evidence mutation', async () => {
   const check = await verifyWitnessBundle(mutated);
   assert.equal(check.valid, false);
   assert.notEqual(check.reason, 'AML_WITNESS_BUNDLE_VALID');
+});
+
+test('witness report records only verification steps actually passed', async () => {
+  const { bundle, challenge } = await createFixture();
+  const complete = await verifyWitnessBundle(bundle, { expectedChallenge: challenge });
+  assert.equal(complete.valid, true);
+  assert.deepEqual(witnessVerificationReport(bundle, complete).checks, {
+    bundle_integrity: true,
+    receipt_integrity: true,
+    evidence_integrity: true,
+    challenge_freshness: true,
+    challenge_binding: true,
+    session_signature: true,
+    verifier_held_challenge: true
+  });
+
+  const selfContained = await verifyWitnessBundle(bundle);
+  assert.equal(selfContained.valid, true);
+  assert.equal(witnessVerificationReport(bundle, selfContained).checks.verifier_held_challenge, false);
+
+  const damaged = structuredClone(bundle);
+  damaged.evidence.receipt.decisions[0].purpose = 'tampered';
+  const unsealed = await verifyWitnessBundle(damaged, { expectedChallenge: challenge });
+  assert.equal(unsealed.reason, 'AML_WITNESS_BUNDLE_HASH_MISMATCH');
+  assert.deepEqual(Object.values(witnessVerificationReport(damaged, unsealed).checks),
+    Array(7).fill(false));
+
+  damaged.integrity.value = await sha256Browser(witnessBundlePayload(damaged));
+  const invalidReceipt = await verifyWitnessBundle(damaged, { expectedChallenge: challenge });
+  assert.equal(invalidReceipt.reason, 'AML_SESSION_EVIDENCE_INVALID');
+  assert.deepEqual(witnessVerificationReport(damaged, invalidReceipt).checks, {
+    bundle_integrity: true,
+    receipt_integrity: false,
+    evidence_integrity: false,
+    challenge_freshness: false,
+    challenge_binding: false,
+    session_signature: false,
+    verifier_held_challenge: true
+  });
+
+  const badSignature = structuredClone(bundle);
+  badSignature.attestation.signature = 'A'.repeat(86);
+  badSignature.integrity.value = await sha256Browser(witnessBundlePayload(badSignature));
+  const signatureResult = await verifyWitnessBundle(badSignature, { expectedChallenge: challenge });
+  assert.equal(signatureResult.reason, 'AML_SESSION_SIGNATURE_INVALID');
+  assert.deepEqual(witnessVerificationReport(badSignature, signatureResult).checks, {
+    bundle_integrity: true,
+    receipt_integrity: true,
+    evidence_integrity: true,
+    challenge_freshness: true,
+    challenge_binding: true,
+    session_signature: false,
+    verifier_held_challenge: true
+  });
 });
 
 test('session attestation rejects a verifier challenge mismatch', async () => {
