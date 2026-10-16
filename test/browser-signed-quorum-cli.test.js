@@ -39,6 +39,30 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   assert.equal(valid.status, 0, valid.stderr);
   assert.equal(JSON.parse(valid.stdout).threshold_met, true);
 
+  const policy = {
+    schema: 'aml-signed-quorum-held-policy/1', prototype: true,
+    artifact_type: 'aml-witness-bundle/1', artifact_hash: 'a'.repeat(64),
+    trusted_key_fingerprints: [a.verifier_key_fingerprint, b.verifier_key_fingerprint],
+    threshold: 2
+  };
+  const policyFile = write('held-policy.json', policy);
+  const pinned = run(write('pinned.json', quorum), '--policy', policyFile);
+  assert.equal(pinned.status, 0, pinned.stderr);
+  assert.equal(JSON.parse(pinned.stdout).policy_met, true);
+
+  const selfSelected = await signVerificationReport(report('self-selected'), await createVerifierKeyPair());
+  const otherQuorum = await createSignedVerificationQuorum([a, selfSelected], { threshold: 2 });
+  const blocked = run(write('self-selected.json', otherQuorum), '--policy', policyFile);
+  assert.equal(blocked.status, 2, blocked.stderr);
+  assert.equal(JSON.parse(blocked.stdout).valid, true);
+  assert.equal(JSON.parse(blocked.stdout).threshold_met, true);
+  assert.equal(JSON.parse(blocked.stdout).policy_met, false);
+
+  const badPolicy = run(write('quorum-for-bad-policy.json', quorum), '--policy',
+    write('bad-policy.json', { ...policy, threshold: 3 }));
+  assert.equal(badPolicy.status, 1);
+  assert.match(badPolicy.stderr, /AML_SIGNED_QUORUM_POLICY_THRESHOLD_INVALID/);
+
   const inflated = structuredClone(quorum);
   inflated.summary.distinct_keys = 3;
   const rejected = run(write('inflated.json', inflated));

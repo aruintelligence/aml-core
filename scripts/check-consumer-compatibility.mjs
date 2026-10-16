@@ -104,6 +104,30 @@ try {
   if (!quorumValid.valid || !quorumValid.threshold_met) {
     throw new Error('Installed-package signed quorum CLI did not verify the saved threshold');
   }
+  const heldPolicy = {
+    schema: 'aml-signed-quorum-held-policy/1', prototype: true,
+    artifact_type: signedQuorum.artifact_type, artifact_hash: signedQuorum.artifact_hash,
+    trusted_key_fingerprints: [signedA.verifier_key_fingerprint, signedB.verifier_key_fingerprint],
+    threshold: 2
+  };
+  fs.writeFileSync(path.join(tempRoot, 'held-policy.json'), `${JSON.stringify(heldPolicy)}\n`);
+  const policyValid = JSON.parse(runNpm(['exec', '--', 'aml', 'verify-signed-quorum',
+    'signed-quorum.json', '--policy', 'held-policy.json'], tempRoot));
+  if (!policyValid.valid || !policyValid.threshold_met || !policyValid.policy_met) {
+    throw new Error('Installed-package signed quorum CLI did not enforce verifier-held policy');
+  }
+  const otherPolicy = { ...heldPolicy, trusted_key_fingerprints: [
+    signedA.verifier_key_fingerprint, '0'.repeat(64)
+  ] };
+  fs.writeFileSync(path.join(tempRoot, 'other-policy.json'), `${JSON.stringify(otherPolicy)}\n`);
+  const policyRejected = spawnSync(process.execPath, [path.join(installedRoot, 'bin', 'aml.js'),
+    'verify-signed-quorum', 'signed-quorum.json', '--policy', 'other-policy.json'],
+  { cwd: tempRoot, encoding: 'utf8' });
+  const rejectedPolicyResult = JSON.parse(policyRejected.stdout);
+  if (policyRejected.status !== 2 || !rejectedPolicyResult.valid ||
+      !rejectedPolicyResult.threshold_met || rejectedPolicyResult.policy_met !== false) {
+    throw new Error('Installed-package signed quorum CLI accepted an untrusted verifier key');
+  }
   const inflatedQuorum = structuredClone(signedQuorum);
   inflatedQuorum.summary.distinct_keys += 1;
   fs.writeFileSync(path.join(tempRoot, 'inflated-quorum.json'), `${JSON.stringify(inflatedQuorum)}\n`);
@@ -140,6 +164,8 @@ try {
       browser_witness_cli_rejects_other_challenge: true,
       signed_quorum_cli_valid: true,
       signed_quorum_cli_rejects_inflation: true,
+      signed_quorum_cli_held_policy_valid: true,
+      signed_quorum_cli_rejects_untrusted_key: true,
       consumer_receipt_sha256: quickstart.receipt_sha256
     },
     claim_boundary: matrix.claim_boundary

@@ -60,6 +60,48 @@ exit `1` means usage or unreadable/malformed JSON. This command is in the
 current preview checkout, not the pinned `v1.3.0` stable package. The saved
 signed quorum counts distinct valid endorser **keys**, and accepts at most 64
 supplied reports.
+It derives distinctness from the P-256 public point. Two JWK envelopes for the
+same key with different optional metadata still count as one key, even if the
+envelope fingerprints differ.
+
+### Check against your own retained expectations
+
+The saved quorum supplies its own artifact hash, keys, and threshold. A producer
+can generate two keys and sign two reports. For a decision tied to known inputs,
+retain a separate policy that you chose **before** receiving the quorum:
+
+```json
+{
+  "schema": "aml-signed-quorum-held-policy/1",
+  "prototype": true,
+  "artifact_type": "aml-witness-bundle/1",
+  "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "trusted_key_fingerprints": [
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  ],
+  "threshold": 2
+}
+```
+
+Replace the example hashes with the expected artifact hash and key fingerprints
+you obtained independently of the quorum. Then run:
+
+```bash
+aml verify-signed-quorum saved-quorum.json --policy held-policy.json
+```
+
+The result keeps three separate booleans: `valid` checks the saved object's
+internal consistency; `threshold_met` checks the saved threshold using all
+valid endorser keys; `policy_met` checks the expected artifact and the policy's
+own threshold using only allowlisted keys with valid signatures and positive
+reports. With a policy, exit `0` requires all three. Exit `2` means a quorum
+or policy condition failed; malformed verifier-held policy is a usage error
+(exit `1`). The policy must be kept separately from the untrusted quorum.
+Allowlisting keys does not establish the operators' independence or the truth
+of their reports. The policy lists envelope fingerprints so that the checker
+can recognize pinned public-key documents; key distinctness is still measured
+from the public key material.
 
 ## What this does not prove
 

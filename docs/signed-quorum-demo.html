@@ -16,7 +16,7 @@
     <button id="distinct">Two verifier names, distinct keys</button>
   </div>
   <pre id="result">Choose a case.</pre>
-  <p class="small">A distinct key fingerprint only proves a distinct public key was used. One actor can control many keys.</p>
+  <p class="small">The quorum counts distinct public key material. JWK metadata can change an envelope fingerprint without changing the key. One actor can control many keys.</p>
 
   <script type="module">
     import { createVerifierKeyPair, signVerificationReport } from './aml-signed-verification-report.js';
