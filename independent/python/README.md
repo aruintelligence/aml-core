@@ -6,7 +6,44 @@ This directory implements `aml-witness-bundle/1` from the public contracts witho
 
 It uses only the Python standard library, including a compact P-256 ECDSA verifier implemented directly from the published public JWK coordinates.
 
-## Verify the golden vector
+## Verify a saved signed quorum
+
+It also includes a standalone saved signed-quorum verifier. It recomputes
+P-256 signatures, summary counts, distinct public-key material, and a separate
+verifier-held artifact/key policy:
+
+```bash
+python3 independent/python/verify_signed_quorum.py saved-quorum.json --policy held-policy.json
+```
+
+Reproduce the fixed synthetic vector:
+
+```bash
+python3 independent/python/verify_signed_quorum.py \
+  independent/python/signed-quorum-vector.json \
+  --policy independent/python/signed-quorum-held-policy-vector.json
+```
+
+The fixture policy sits beside the quorum for test convenience; in a real
+decision, retain your policy separately before receiving the quorum. The
+fixture has no underlying witness artifact and does not test witness replay.
+
+Exit `0` requires internal validity, the saved threshold, and the held policy
+if supplied. Exit `2` means a verification condition failed; exit `1` means
+unreadable JSON or invalid held configuration. Run
+`node scripts/check-signed-quorum-python.mjs` to compare its results against
+JavaScript on signed fixtures, including dissent, tampering, key metadata
+aliases, and untrusted keys.
+
+The Python quorum verifier accepts only the stated cross-language safe
+canonicalization domain: safe integers, no floating-point values, and BMP
+object keys. Public JWK coordinates and signatures must use canonical
+unpadded base64url. It rejects duplicate JSON keys. A rejection outside this subset
+does not imply the JavaScript verifier rejects the same object. It does not
+replay witness bundles or retained challenges; use the JavaScript verifier
+with `--bundle` and `--challenge` for those additional checks.
+
+## Verify the golden witness vector
 
 ```bash
 python3 independent/python/verify_witness.py \

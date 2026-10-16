@@ -103,6 +103,19 @@ of their reports. The policy lists envelope fingerprints so that the checker
 can recognize pinned public-key documents; key distinctness is still measured
 from the public key material.
 
+For cross-runtime checking of the saved quorum and held policy, use the
+[project-authored Python verifier](../independent/python/verify_signed_quorum.py):
+
+```bash
+python3 independent/python/verify_signed_quorum.py saved-quorum.json --policy held-policy.json
+```
+
+It recomputes report signatures and the saved summary with Python's standard
+library, including the distinct P-256 key count. It has a narrower documented
+canonical JSON domain and does not perform the optional witness replay below.
+Agreement between two implementations maintained in this repository is useful
+interoperability evidence, not an independent institutional witness.
+
 ### Recheck the named witness bundle
 
 If the reports name an `aml-witness-bundle/1`, supply the bundle and your own

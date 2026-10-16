@@ -1,0 +1,89 @@
+{
+  "schema": "aml-signed-verification-quorum/1",
+  "prototype": true,
+  "artifact_type": "aml-cross-runtime-fixture/1",
+  "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "threshold": 2,
+  "signed_reports": [
+    {
+      "schema": "aml-signed-verification-report/1",
+      "prototype": true,
+      "algorithm": "ECDSA-P256-SHA256",
+      "report": {
+        "schema": "aml-verification-report/1",
+        "prototype": true,
+        "verifier": "fixture-a",
+        "artifact_type": "aml-cross-runtime-fixture/1",
+        "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "valid": true,
+        "reason": "AML_FIXTURE_STRUCTURAL_OK",
+        "checked_at": "2030-01-01T00:05:00.000Z",
+        "session_key_fingerprint": null,
+        "challenge_expires_at": null,
+        "checks": {
+          "fixture_integrity": true
+        },
+        "notes": [
+          "Synthetic signature vector; no underlying witness bundle."
+        ]
+      },
+      "verifier_public_key_jwk": {
+        "key_ops": [
+          "verify"
+        ],
+        "ext": true,
+        "kty": "EC",
+        "x": "Xq6lvXDubHv-jCkUn6YfvLpajA5XyYiWTdaidMzSbVI",
+        "y": "ginIkVoqLSVwPx5pvrALxVjhvQ7LbI8MPuVEy5m-Ru0",
+        "crv": "P-256"
+      },
+      "verifier_key_fingerprint": "352b06cc9a1e6dfce7a615117215792753b555bceaad4e06e63d966311e69e5f",
+      "signature": "jzvAS658Ljz8EdnUkm5zxfb3M26SDa2W1qLwqesw0x4goCkYQ5qKD0V9XG-CsByzXS1H6QFT9BpSkCtFw8IKqg"
+    },
+    {
+      "schema": "aml-signed-verification-report/1",
+      "prototype": true,
+      "algorithm": "ECDSA-P256-SHA256",
+      "report": {
+        "schema": "aml-verification-report/1",
+        "prototype": true,
+        "verifier": "fixture-b",
+        "artifact_type": "aml-cross-runtime-fixture/1",
+        "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "valid": true,
+        "reason": "AML_FIXTURE_STRUCTURAL_OK",
+        "checked_at": "2030-01-01T00:05:00.000Z",
+        "session_key_fingerprint": null,
+        "challenge_expires_at": null,
+        "checks": {
+          "fixture_integrity": true
+        },
+        "notes": [
+          "Synthetic signature vector; no underlying witness bundle."
+        ]
+      },
+      "verifier_public_key_jwk": {
+        "key_ops": [
+          "verify"
+        ],
+        "ext": true,
+        "kty": "EC",
+        "x": "l3hb4fuxofwyFLf4N-IHy_L6f8kKmss8aC_-z1U-Dew",
+        "y": "pT3YcThfqOgIMqTxqHabk61kxXt2l_P9hkM_HLpeusU",
+        "crv": "P-256"
+      },
+      "verifier_key_fingerprint": "5954d526e769f49cda3c6253ef243d216bed8f4609faabb79fec90cf661c3231",
+      "signature": "X9RoCAB99ErIvIT60DcwIeTzXgrouljJ9LERfPc2KdVHkyXUnaKCGmdYIp_Gj-WuYjBF9X1ofeqDwpxmoGWaHQ"
+    }
+  ],
+  "summary": {
+    "distinct_keys": 2,
+    "valid_signatures": 2,
+    "valid_reports": 2,
+    "invalid_reports": 0,
+    "threshold_met": true,
+    "unanimous": true,
+    "disagreement_reasons": []
+  },
+  "claim_boundary": "Threshold agreement means enough supplied reports were validly signed by distinct public-key fingerprints over the same exact artifact and reported valid. Correctly signed invalid reports are authenticated dissent and never count toward the endorsement quorum. Distinct keys do not prove distinct people, organizations, independence, authorization, certification, or correctness."
+}
