@@ -13,7 +13,7 @@ import { createWitnessBundle, verifyWitnessBundle } from './aml-witness-bundle.j
 import { createVerificationReport, witnessVerificationReport } from './aml-verification-report.js';
 import { createVerificationQuorum, verifyVerificationQuorum } from './aml-verification-quorum.js';
 import { createVerifierKeyPair, signVerificationReport, verifySignedVerificationReport } from './aml-signed-verification-report.js';
-import { createSignedVerificationQuorum } from './aml-signed-verification-quorum.js';
+import { createSignedVerificationQuorum, verifySignedVerificationQuorum } from './aml-signed-verification-quorum.js';
 import {
   resolveAMLDeploymentMode,
   resolveAMLFailureMode,
@@ -40,6 +40,7 @@ const api = Object.freeze({
   signVerificationReport,
   verifySignedVerificationReport,
   createSignedVerificationQuorum,
+  verifySignedVerificationQuorum,
   getDeploymentMode: () => resolveAMLDeploymentMode(),
   setDeploymentMode: setAMLDeploymentMode,
   getFailureMode: () => resolveAMLFailureMode(),

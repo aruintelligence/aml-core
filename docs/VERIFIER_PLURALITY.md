@@ -28,7 +28,7 @@ Signed report verification also rejects live JavaScript fields that are hidden,
 symbol-keyed, or otherwise omitted from signed JSON. Exchange ordinary JSON
 reports so a visible claim cannot sit outside the signed bytes.
 
-It reports:
+The unsigned quorum reports:
 
 - number of distinct verifier IDs;
 - valid reports;
@@ -36,6 +36,30 @@ It reports:
 - whether a configured threshold was met;
 - whether all supplied reports were unanimous;
 - disagreement reasons.
+
+## Recheck an exported signed quorum
+
+Use `verifySignedVerificationQuorum(savedQuorum)` after JSON transport. It
+verifies each embedded report signature, rebuilds the key counts and threshold
+summary, and compares the complete saved object with the rebuilt version.
+It also checks that the claim-boundary text was not rewritten. A consistent
+quorum can have `valid: true` and `threshold_met: false` when too few distinct
+keys endorsed a valid report. The check establishes internal consistency of
+the supplied reports; it cannot establish verifier independence or whether
+their underlying verdicts were correct.
+
+From a checkout or installed preview package, the offline command is:
+
+```bash
+aml verify-signed-quorum saved-quorum.json
+```
+
+It prints the verification result as JSON. Exit `0` requires both a consistent
+quorum and a met threshold; exit `2` means rejection or an unmet threshold;
+exit `1` means usage or unreadable/malformed JSON. This command is in the
+current preview checkout, not the pinned `v1.3.0` stable package. The saved
+signed quorum counts distinct valid endorser **keys**, and accepts at most 64
+supplied reports.
 
 ## What this does not prove
 

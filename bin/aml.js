@@ -30,6 +30,7 @@ import { signBrandAuthorization, verifyBrandAuthorization } from "../runtime/bra
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
 import { evaluatePolicyCanary } from "../runtime/policyCanary.js";
 import { verifyWitnessBundle } from "../docs/aml-witness-bundle.js";
+import { verifySignedVerificationQuorum } from "../docs/aml-signed-verification-quorum.js";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -48,6 +49,7 @@ Usage:
   aml canary <intent.json> [--baseline profile] [--candidate profile] [--context context.json] [--timestamp ISO] [--fail-on-change]
   aml verify-receipt <receipt.json>
   aml verify-witness <bundle.json> <verifier-held-challenge.json>
+  aml verify-signed-quorum <quorum.json>
   aml replay-receipt <receipt.json>
   aml sign-receipt <receipt.json> <private-key.pem> [signed-receipt.json]
   aml verify-signed-receipt <signed-receipt.json>
@@ -80,6 +82,7 @@ Commands:
   canary                      Compare the same intent under baseline and candidate policy profiles
   verify-receipt              Verify receipt hash, audit stream, and attention-ledger integrity
   verify-witness              Verify a browser witness bundle against your retained challenge
+  verify-signed-quorum        Recheck a saved signed quorum and its threshold
   replay-receipt              Re-execute declared receipt inputs with the installed engine
   sign-receipt                Add an Ed25519 attestation to a valid execution receipt
   verify-signed-receipt       Verify receipt integrity, signature, and public-key fingerprint
@@ -118,6 +121,7 @@ Examples:
   aml execute examples/intent-checkout.json human_first context.json receipt.json
   aml verify-receipt receipt.json
   aml verify-witness bundle.json my-challenge.json
+  aml verify-signed-quorum saved-quorum.json
   aml replay-receipt receipt.json
 `);
 }
@@ -246,6 +250,15 @@ try {
     const result = await verifyWitnessBundle(bundle, { expectedChallenge });
     console.log(JSON.stringify(result, null, 2));
     process.exit(result.valid ? 0 : 2);
+  }
+  if (command === "verify-signed-quorum") {
+    if (args.length !== 2 || !args[1]) {
+      throw new Error("Usage: aml verify-signed-quorum <quorum.json>");
+    }
+    if (!globalThis.crypto?.subtle) globalThis.crypto = webcrypto;
+    const result = await verifySignedVerificationQuorum(JSON.parse(readSource(args[1])));
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(result.valid && result.threshold_met ? 0 : 2);
   }
   if (command === "replay-receipt") {
     const result = replayExecutionReceipt(JSON.parse(readSource(inputPath)));
