@@ -14,6 +14,10 @@ import { createAuditStream, appendAuditEvent, verifyAuditStream } from "../runti
 import { enforceCumulativeAttentionBudget } from "../runtime/attentionLedger.js";
 import { verifyAttentionLedger } from "../runtime/attentionIntegrity.js";
 import { validatePolicyContext } from "../runtime/contextValidation.js";
+import { assertReceiptJSON } from "./receiptJson.js";
+
+const ATTESTATION_FIELDS = ["protocol", "version", "algorithm", "signer", "signed_at",
+  "public_key_pem", "public_key_sha256", "signature_base64"].sort().join("|");
 
 function stableStringify(value) {
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
@@ -83,6 +87,11 @@ export function executeAccountableIntent(intent, options = {}) {
   const profile = resolvePolicyProfile(options.profile || "calm_default");
   const context = validatePolicyContext(options.context ?? {});
   const amlSource = generateAMLFromIntent(intent);
+  // Receipt hashes cover a JSON contract. Reject values that disappear or
+  // change meaning when serialized before any audit or signature is issued.
+  assertReceiptJSON({ intent, profile, context, timestamp,
+    ...(options.stream_id === undefined ? {} : { stream_id: options.stream_id }),
+    ...(options.request_nonce === undefined ? {} : { request_nonce: options.request_nonce }) });
   const streamId = options.stream_id || sha256({ intent, profile: profile.id, timestamp }).slice(0, 32);
   const auditStream = createAuditStream({ stream_id: streamId, timestamp });
 
@@ -147,6 +156,20 @@ export function executeAccountableIntent(intent, options = {}) {
 
 export function verifyExecutionReceipt(receipt) {
   if (!receipt || receipt.protocol !== "ĀML Accountable Execution Receipt") throw new Error("Invalid ĀML accountable execution receipt.");
+  try {
+    assertReceiptJSON(receipt);
+  } catch {
+    return {
+      verified: false, receipt_hash_valid: false, bindings_valid: false,
+      intent_binding_valid: false, aml_binding_valid: false, simulation_binding_valid: false,
+      decision_binding_valid: false, output_binding_valid: false,
+      selected_render_counts_valid: false, audit_stream_valid: false,
+      audit_receipt_binding_valid: false, runtime_audit_flag_valid: false,
+      attention_ledger_valid: false, attention_ledger_hash_valid: false,
+      attention_ledger_structure_valid: false, canonical_json_valid: false,
+      expected_sha256: "", receipt_sha256: receipt.receipt_sha256
+    };
+  }
   const expected = sha256(receiptPayload(receipt));
   const receiptHashValid = expected === receipt.receipt_sha256;
   const intentHashValid = Boolean(receipt.intent) && sha256(receipt.intent) === receipt.intent_sha256;
@@ -188,6 +211,7 @@ export function verifyExecutionReceipt(receipt) {
   const bindingsValid = intentHashValid && amlHashValid && simulationHashValid && decisionHashValid && outputHashValid && selectedRenderCountsValid && auditHashValid && auditReceiptBindingValid && runtimeAuditFlagValid && ledgerHashValid && ledgerStructureValid;
   return {
     verified: receiptHashValid && bindingsValid,
+    canonical_json_valid: true,
     receipt_hash_valid: receiptHashValid,
     bindings_valid: bindingsValid,
     intent_binding_valid: intentHashValid,
@@ -279,6 +303,12 @@ export function verifySignedExecutionReceipt(receipt) {
   if (!integrity.verified || !receipt.signature) return { verified: false, integrity_valid: integrity.verified, signature_valid: false, public_key_fingerprint_valid: false, attribution_bound: false, signer: null, signed_at: null };
 
   const attestation = receipt.signature;
+  if (Object.keys(attestation).sort().join("|") !== ATTESTATION_FIELDS) {
+    return { verified: false, integrity_valid: true, signature_valid: false,
+      public_key_fingerprint_valid: false, attribution_bound: false, signer: null,
+      signed_at: null, claimed_signer: attestation.signer ?? null,
+      claimed_signed_at: attestation.signed_at ?? null };
+  }
   const legacy = attestation.version === "1.0" && attestation.protocol === "ĀML Execution Receipt Attestation" && attestation.algorithm === "Ed25519";
   const current = attestation.version === "1.1" && attestation.protocol === "ĀML Execution Receipt Attestation" && attestation.algorithm === "Ed25519";
   if (!legacy && !current) {
