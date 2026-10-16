@@ -14,7 +14,7 @@ import json
 import re
 import sys
 
-from verify_witness import P, verify_p256_raw_signature
+from verify_witness import P, verify_bundle, verify_p256_raw_signature
 
 BOUNDARY = (
     "Threshold agreement means enough supplied reports were validly signed by distinct "
@@ -26,6 +26,10 @@ BOUNDARY = (
 HEX64 = re.compile(r"^[a-f0-9]{64}$")
 BASE64URL = re.compile(r"^[A-Za-z0-9_-]{43}$")
 SIGNATURE_B64URL = re.compile(r"^[A-Za-z0-9_-]{86}$")
+REPLAYABLE_WITNESS_CHECKS = (
+    "bundle_integrity", "receipt_integrity", "evidence_integrity",
+    "challenge_freshness", "challenge_binding", "session_signature",
+)
 
 
 class UnsupportedJSON(ValueError):
@@ -135,10 +139,30 @@ def validate_policy(policy):
         raise ValueError("AML_SIGNED_QUORUM_POLICY_THRESHOLD_INVALID")
 
 
-def verify_quorum(quorum, policy=None):
+def conflicting_witness_claims(report, bundle):
+    conflicts = []
+    fingerprint = bundle["attestation"]["session_key_fingerprint"]
+    expiry = bundle["challenge"]["expires_at"]
+    for field, expected in (("session_key_fingerprint", fingerprint), ("challenge_expires_at", expiry)):
+        if report.get(field) is not None and report[field] != expected:
+            conflicts.append(field)
+    checks = report.get("checks")
+    if not isinstance(checks, dict):
+        conflicts.append("checks")
+    else:
+        for name, value in checks.items():
+            if type(value) is not bool or (name in REPLAYABLE_WITNESS_CHECKS and value is not True):
+                conflicts.append(f"checks.{name}")
+    return conflicts
+
+
+def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=None):
+    with_witness = expected_challenge is not None
     rejected = {"valid": False, "threshold_met": False}
     if policy is not None:
         rejected["policy_met"] = False
+    if with_witness:
+        rejected.update(witness_met=False, replayable_claims_consistent=False)
     try:
         canonical(quorum)
         if not isinstance(quorum, dict) or quorum.get("schema") != "aml-signed-verification-quorum/1":
@@ -210,6 +234,34 @@ def verify_quorum(quorum, policy=None):
                 "artifact_matches": artifact_matches, "distinct_trusted_keys": len(trusted),
                 "threshold": policy["threshold"],
             }
+        if with_witness:
+            witness_valid, witness_reason = verify_bundle(witness_bundle, expected_challenge=expected_challenge)
+            bundle_hash = (witness_bundle.get("integrity", {}).get("value")
+                           if isinstance(witness_bundle, dict) and
+                           isinstance(witness_bundle.get("integrity"), dict) else None)
+            witness_artifact_matches = (artifact_type == "aml-witness-bundle/1" and
+                                        artifact_hash == bundle_hash)
+            result["witness_met"] = valid and witness_valid and witness_artifact_matches
+            result["witness_evaluation"] = {
+                "local_bundle_valid": witness_valid, "reason": witness_reason,
+                "artifact_matches": witness_artifact_matches,
+            }
+            conflicts = []
+            positive_signed_reports = 0
+            if result["witness_met"]:
+                for index, (envelope, (ok, _, _)) in enumerate(zip(reports, signed)):
+                    if not ok or envelope["report"]["valid"] is not True:
+                        continue
+                    positive_signed_reports += 1
+                    fields = conflicting_witness_claims(envelope["report"], witness_bundle)
+                    if fields:
+                        conflicts.append({"report_index": index, "fields": fields})
+            result["replayable_claims_consistent"] = result["witness_met"] and not conflicts
+            result["replayable_claims_evaluation"] = {
+                "checked": result["witness_met"],
+                "positive_signed_reports": positive_signed_reports,
+                "conflicts": conflicts,
+            }
         return result
     except (ValueError, TypeError, KeyError, UnicodeError, RecursionError) as error:
         return {**rejected, "reason": str(error) or "AML_PY_SIGNED_QUORUM_INVALID"}
@@ -233,18 +285,27 @@ def main():
     parser = argparse.ArgumentParser(description="Verify a saved AML signed quorum using Python")
     parser.add_argument("quorum")
     parser.add_argument("--policy", help="Separately retained artifact and verifier key expectations")
+    parser.add_argument("--bundle", help="Saved witness bundle named by the signed quorum")
+    parser.add_argument("--challenge", help="Separately retained verifier challenge; requires --bundle")
     args = parser.parse_args()
     try:
+        if bool(args.bundle) != bool(args.challenge):
+            raise ValueError("AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED")
         quorum = load_json(args.quorum)
         policy = load_json(args.policy) if args.policy else None
         if policy is not None:
             validate_policy(policy)
+        witness_bundle = load_json(args.bundle) if args.bundle else None
+        expected_challenge = load_json(args.challenge) if args.challenge else None
+        if args.challenge and not isinstance(expected_challenge, dict):
+            raise ValueError("AML_SIGNED_QUORUM_HELD_CHALLENGE_INVALID")
     except (OSError, ValueError) as error:
         print(json.dumps({"valid": False, "reason": str(error)}))
         return 1
-    result = verify_quorum(quorum, policy)
+    result = verify_quorum(quorum, policy, witness_bundle, expected_challenge)
     print(json.dumps(result, indent=2))
-    return 0 if result["valid"] and result["threshold_met"] and result.get("policy_met", True) else 2
+    return 0 if (result["valid"] and result["threshold_met"] and result.get("policy_met", True) and
+                 result.get("witness_met", True) and result.get("replayable_claims_consistent", True)) else 2
 
 
 if __name__ == "__main__":

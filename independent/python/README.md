@@ -28,20 +28,40 @@ The fixture policy sits beside the quorum for test convenience; in a real
 decision, retain your policy separately before receiving the quorum. The
 fixture has no underlying witness artifact and does not test witness replay.
 
-Exit `0` requires internal validity, the saved threshold, and the held policy
-if supplied. Exit `2` means a verification condition failed; exit `1` means
-unreadable JSON or invalid held configuration. Run
+For an actual `aml-witness-bundle/1`, also supply the saved bundle and the
+challenge you retained before receiving it:
+
+```bash
+python3 independent/python/verify_signed_quorum.py saved-quorum.json \
+  --policy held-policy.json \
+  --bundle witness.json --challenge held-challenge.json
+```
+
+`valid` means the quorum is internally consistent; `threshold_met` means its
+own endorsement threshold was reached. `policy_met` pins the expected artifact
+and trusted verifier keys when a held policy is supplied. `witness_met` requires
+a valid bundle at the current time, a matching retained challenge, and the
+exact bundle type and hash named by the quorum. `replayable_claims_consistent`
+rejects authenticated positive reports whose explicit session fingerprint,
+challenge expiry, or reference check results contradict the replay. All five
+are separate results; a valid quorum can fail any later condition. Supplying
+only a bundle or only a challenge is a usage error.
+
+Exit `0` requires internal validity, the saved threshold, and every held
+condition supplied. Exit `2` means a verification condition failed; exit `1`
+means unreadable JSON, missing paired inputs, or invalid held configuration. Run
 `node scripts/check-signed-quorum-python.mjs` to compare its results against
 JavaScript on signed fixtures, including dissent, tampering, key metadata
-aliases, and untrusted keys.
+aliases, untrusted keys, live witness replay, and contradictory signed claims.
 
 The Python quorum verifier accepts only the stated cross-language safe
 canonicalization domain: safe integers, no floating-point values, and BMP
 object keys. Public JWK coordinates and signatures must use canonical
 unpadded base64url. It rejects duplicate JSON keys. A rejection outside this subset
-does not imply the JavaScript verifier rejects the same object. It does not
-replay witness bundles or retained challenges; use the JavaScript verifier
-with `--bundle` and `--challenge` for those additional checks.
+does not imply the JavaScript verifier rejects the same object. The same
+cross-language domain applies to Python witness replay. Unknown report check
+names and signer process claims such as `verifier_held_challenge` are not
+inferred from a local replay.
 
 ## Verify the golden witness vector
 
@@ -60,12 +80,17 @@ Expected:
 }
 ```
 
+For a current witness, supply `--challenge held-challenge.json` to check a
+separately retained challenge as well. `--now` overrides the current time for
+test fixtures only; a historical override is not a live freshness check.
+
 ## What it checks
 
 - receipt SHA-256;
 - browser-evidence SHA-256;
 - whole witness-bundle SHA-256;
-- challenge schema, nonce and expiry;
+- challenge schema, nonce, issue time and expiry;
+- equality with a separately retained, fresh challenge when supplied;
 - challenge/evidence equality inside the session attestation;
 - P-256 public key is on curve;
 - public-JWK SHA-256 fingerprint;
