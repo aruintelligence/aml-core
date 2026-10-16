@@ -118,7 +118,9 @@ try {
   const evidence = await createBrowserEvidence(receipt, { url: 'https://example.test/' });
   const challenge = createVerificationChallenge({ ttl_ms: 120000 });
   const attestation = await createSessionAttestation({ evidence, challenge });
+  await new Promise(resolve => setTimeout(resolve, 10));
   const bundle = await createWitnessBundle({ evidence, challenge, attestation });
+  assert.ok(Date.parse(bundle.created_at) > Date.parse(attestation.issued_at));
   const witness = await verifyWitnessBundle(bundle, { expectedChallenge: challenge });
   assert.equal(witness.valid, true);
   const witnessKeyA = await createVerifierKeyPair();
@@ -164,6 +166,14 @@ try {
   for (const [name, change] of [
     ['fingerprint-conflict', value => { value.session_key_fingerprint = '0'.repeat(64); }],
     ['expiry-conflict', value => { value.challenge_expires_at = '2030-01-01T00:00:00.000Z'; }],
+    ['report-before-issue', value => {
+      value.checked_at = new Date(Date.parse(challenge.issued_at) - 1).toISOString();
+    }],
+    ['report-before-bundle', value => { value.checked_at = attestation.issued_at; }],
+    ['report-after-expiry', value => {
+      value.checked_at = new Date(Date.parse(challenge.expires_at) + 1).toISOString();
+    }],
+    ['invalid-calendar-date', value => { value.checked_at = '2030-02-30T00:00:00.000Z'; }],
     ['check-conflict', value => { value.checks.session_signature = false; }],
     ['malformed-check', value => { value.checks.challenge_binding = 'true'; }]
   ]) {
@@ -182,6 +192,12 @@ try {
   const signedProcessClaim = await signVerificationReport(processClaim, witnessKeyA);
   await compare('signer-process-claim-not-inferred',
     await createSignedVerificationQuorum([signedProcessClaim, witnessB], { threshold: 2 }),
+    witnessPolicy, true, replay);
+  const noClaimedTime = witnessVerificationReport(bundle, witness, { verifier: 'no-claimed-time' });
+  delete noClaimedTime.checked_at;
+  const signedWithoutTime = await signVerificationReport(noClaimedTime, witnessKeyA);
+  await compare('omitted-check-time-makes-no-time-claim',
+    await createSignedVerificationQuorum([signedWithoutTime, witnessB], { threshold: 2 }),
     witnessPolicy, true, replay);
 
   const duplicate = JSON.stringify(quorum).replace(

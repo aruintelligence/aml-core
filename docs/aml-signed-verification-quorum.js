@@ -14,7 +14,17 @@ const replayableWitnessChecks = [
   'challenge_freshness', 'challenge_binding', 'session_signature'
 ];
 
-function conflictingWitnessClaims(report, witness) {
+// The reference report generator emits canonical UTC milliseconds. This
+// narrow profile has the same exact interpretation in JS and Python, and
+// round-tripping rejects normalized dates such as February 30.
+function canonicalReportTime(value) {
+  if (typeof value !== 'string' ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)) return null;
+  const time = Date.parse(value);
+  return Number.isFinite(time) && new Date(time).toISOString() === value ? time : null;
+}
+
+function conflictingWitnessClaims(report, witness, bundle) {
   const conflicts = [];
   if (report.session_key_fingerprint != null &&
       report.session_key_fingerprint !== witness.session_key_fingerprint) {
@@ -23,6 +33,17 @@ function conflictingWitnessClaims(report, witness) {
   if (report.challenge_expires_at != null &&
       report.challenge_expires_at !== witness.challenge_expires_at) {
     conflicts.push('challenge_expires_at');
+  }
+  if (report.checked_at != null) {
+    const checked = canonicalReportTime(report.checked_at);
+    const issued = Date.parse(bundle.challenge.issued_at);
+    const assembled = canonicalReportTime(bundle.created_at);
+    const attested = canonicalReportTime(bundle.attestation.issued_at);
+    const expires = Date.parse(witness.challenge_expires_at);
+    if (checked === null || assembled === null || attested === null ||
+        checked < Math.max(issued, assembled, attested) || checked > expires) {
+      conflicts.push('checked_at');
+    }
   }
   if (!report.checks || typeof report.checks !== 'object' || Array.isArray(report.checks)) {
     conflicts.push('checks');
@@ -246,7 +267,7 @@ export async function verifySignedVerificationQuorum(quorum, {
           if (envelope?.report?.valid !== true ||
               !(await verifySignedVerificationReport(envelope)).valid) continue;
           positiveSignedReports += 1;
-          const fields = conflictingWitnessClaims(envelope.report, witness);
+          const fields = conflictingWitnessClaims(envelope.report, witness, witnessBundle);
           if (fields.length) conflicts.push({ report_index: index, fields });
         }
       }

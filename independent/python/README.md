@@ -43,7 +43,12 @@ and trusted verifier keys when a held policy is supplied. `witness_met` requires
 a valid bundle at the current time, a matching retained challenge, and the
 exact bundle type and hash named by the quorum. `replayable_claims_consistent`
 rejects authenticated positive reports whose explicit session fingerprint,
-challenge expiry, or reference check results contradict the replay. All five
+challenge expiry, claimed check time, or reference check results contradict
+the replay. A stated `checked_at` must be canonical UTC milliseconds inside
+the challenge's validity interval and at or after the bundle and attestation
+creation times, which must also be canonical UTC milliseconds for this
+comparison. This checks artifact and signer assertions for consistency; it
+does not authenticate when the signer performed the check. All five
 are separate results; a valid quorum can fail any later condition. Supplying
 only a bundle or only a challenge is a usage error.
 
