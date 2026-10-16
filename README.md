@@ -155,6 +155,8 @@ Duplicate property declarations within one AML block now fail compilation instea
 
 Generic semantic blocks such as `message` now render their permitted `content` as escaped paragraph text. A denied block still emits only the generic suppression placeholder, without its content or identifying metadata. Run `node --test test/generic-content-rendering.test.js` and `npm run proof` to check HTML containment and deterministic receipt replay. Older receipts with permitted generic content need regeneration for replay against this renderer.
 
+Runtime numeric limits now fail explicitly when malformed instead of silently dropping the session attention or cognitive-load guard. This applies to direct compilation, simulations, and accountable execution; `null` acts like an omitted field. Run `node --test test/policy-context-limits.test.js` for string/negative/non-finite counterexamples, zero-limit suppression, and receipt replay. Previously issued receipts with malformed limit fields may verify their hashes, but cannot replay against this engine.
+
 If the behavior does not reproduce, that is useful evidence. Please publish **PASS / FAIL / MIXED** with enough detail for someone else to repeat your result.
 
 - [Independent verification call](https://github.com/aruintelligence/aml-core/issues/88)

@@ -130,6 +130,13 @@ assert.throws(() => compileSource(`transmission "ambiguous_proof" {
 }`, { timestamp: options.timestamp, policy: policyFromProfile("calm_default"),
   context: { consent_granted: false } }),
   /Duplicate ĀML property "consent_required" in engram block/);
+for (const [key, value] of [["attention_budget_remaining", "0"],
+  ["attention_budget_initial", "0"], ["max_cognitive_load", "0"]]) {
+  assert.throws(() => executeAccountableIntent(intent, {
+    ...options, context: { ...options.context, [key]: value }
+  }), new RegExp(`context\\.${key} must be a non-negative finite number or null`),
+  `a malformed ${key} must not become an absent limit`);
+}
 
 console.log(JSON.stringify({
   proof: "PASS",
@@ -155,5 +162,6 @@ console.log(JSON.stringify({
   literal_roundtrip: { receipt_sha256: literalReceipt.receipt_sha256,
     attention_cost: literalReceipt.selected_render.decisions[0].attention_cost,
     replay_verified: true, nonfinite_score_rejected: true,
-    duplicate_declaration_rejected: true }
+    duplicate_declaration_rejected: true },
+  malformed_context_limits_rejected: 3
 }, null, 2));

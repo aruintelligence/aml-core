@@ -3,6 +3,7 @@
 
 import { resolvePolicy } from "../runtime/policyEngine.js";
 import { suppressRenderDecisionByAncestor } from "../runtime/attentionLedger.js";
+import { validatePolicyContext } from "../runtime/contextValidation.js";
 
 // Built-in policies also read these declarations directly from node.properties.
 // A policy constraint must be evaluated even when no purpose or numeric score
@@ -21,7 +22,7 @@ export function evaluateRenderDecisions(amt, options = {}) {
   const decisions = [];
   const timestamp = options.timestamp ?? null;
   const policy = resolvePolicy(options.policy ?? "restorative_v1");
-  const context = options.context ?? {};
+  const context = validatePolicyContext(options.context ?? {});
 
   for (const node of amt.root) {
     walkNode(node, decisions, timestamp, policy, context, null);

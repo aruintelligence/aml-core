@@ -2,6 +2,7 @@
 // ĀML v1.3 research surface — pluggable, context-aware rendering policies.
 
 import { ethicalRenderGate } from "./ethicalRenderGate.js";
+import { validatePolicyContext } from "./contextValidation.js";
 
 function baseMetrics(element) {
   const gate = ethicalRenderGate(element);
@@ -91,6 +92,7 @@ export const BUILTIN_POLICIES = Object.freeze({
     id: "session_attention_budget_v1",
     description: "Suppress a node when its declared/calculated attention cost exceeds the runtime session attention budget remaining.",
     evaluate(element, execution = {}) {
+      validatePolicyContext(execution.context ?? {});
       const { gate, attention, restoration } = baseMetrics(element);
       const budget = execution.context?.attention_budget_remaining;
       const hasBudget = typeof budget === "number" && Number.isFinite(budget);
@@ -150,6 +152,7 @@ export const BUILTIN_POLICIES = Object.freeze({
     id: "cognitive_load_guard_v1",
     description: "Suppress nodes whose declared cognitive load exceeds the runtime user's configured maximum.",
     evaluate(element, execution = {}) {
+      validatePolicyContext(execution.context ?? {});
       const { gate, attention, restoration } = baseMetrics(element);
       const rawLoad = execution.node?.properties?.cognitive_load;
       const load = typeof rawLoad === "number" ? rawLoad : attention;

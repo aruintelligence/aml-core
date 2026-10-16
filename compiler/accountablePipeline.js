@@ -13,6 +13,7 @@ import { resolvePolicyProfile } from "../runtime/policyProfiles.js";
 import { createAuditStream, appendAuditEvent, verifyAuditStream } from "../runtime/auditStream.js";
 import { enforceCumulativeAttentionBudget } from "../runtime/attentionLedger.js";
 import { verifyAttentionLedger } from "../runtime/attentionIntegrity.js";
+import { validatePolicyContext } from "../runtime/contextValidation.js";
 
 function stableStringify(value) {
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
@@ -80,7 +81,7 @@ function verifyExecutionAuditBinding(receipt) {
 export function executeAccountableIntent(intent, options = {}) {
   const timestamp = options.timestamp ?? new Date().toISOString();
   const profile = resolvePolicyProfile(options.profile || "calm_default");
-  const context = options.context || {};
+  const context = validatePolicyContext(options.context ?? {});
   const amlSource = generateAMLFromIntent(intent);
   const streamId = options.stream_id || sha256({ intent, profile: profile.id, timestamp }).slice(0, 32);
   const auditStream = createAuditStream({ stream_id: streamId, timestamp });
