@@ -155,7 +155,14 @@ When replay succeeds, `replayable_claims_consistent` checks every authenticated
 positive report for explicit claims that contradict the local result: a
 non-null session key fingerprint, a non-null challenge expiry, and any named
 reference checks for bundle and receipt integrity, evidence integrity,
-challenge freshness and binding, and session signature. The result includes
+challenge freshness and binding, and session signature. An explicit
+`checked_at` must be a canonical UTC millisecond timestamp within the
+challenge's inclusive issue-to-expiry interval, and cannot precede the
+bundle's or attestation's canonical creation time. A malformed, premature, or
+late claimed check time is a reported conflict. These times are artifact and
+signer assertions. The comparison cannot prove the signer actually performed
+the check at that time; a trusted time
+source would require separate evidence. The result includes
 report indexes and conflicting field names. The CLI also requires this result
 for exit `0` when the bundle and challenge are supplied. Omitted optional
 fields and unknown check names make no claim that this comparison can test.

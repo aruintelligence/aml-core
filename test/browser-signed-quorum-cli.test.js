@@ -102,7 +102,9 @@ test('signed quorum rechecks the named witness against a separately held challen
   const evidence = await createBrowserEvidence(receipt, { url: 'https://example.test/' });
   const challenge = createVerificationChallenge({ ttl_ms: 120000 });
   const attestation = await createSessionAttestation({ evidence, challenge });
+  await new Promise(resolve => setTimeout(resolve, 10));
   const bundle = await createWitnessBundle({ evidence, challenge, attestation });
+  assert.ok(Date.parse(bundle.created_at) > Date.parse(attestation.issued_at));
   const check = await verifyWitnessBundle(bundle, { expectedChallenge: challenge });
   assert.equal(check.valid, true);
   const a = await signVerificationReport(witnessVerificationReport(bundle, check, { verifier: 'a' }),
@@ -181,6 +183,16 @@ test('signed quorum rechecks the named witness against a separately held challen
   for (const [field, contradict] of [
     ['session_key_fingerprint', (report) => { report.session_key_fingerprint = '0'.repeat(64); }],
     ['challenge_expires_at', (report) => { report.challenge_expires_at = '2030-01-01T00:00:00.000Z'; }],
+    ['checked_at-before-issue', (report) => {
+      report.checked_at = new Date(Date.parse(challenge.issued_at) - 1).toISOString();
+    }],
+    ['checked_at-before-bundle', (report) => { report.checked_at = attestation.issued_at; }],
+    ['checked_at-after-expiry', (report) => {
+      report.checked_at = new Date(Date.parse(challenge.expires_at) + 1).toISOString();
+    }],
+    ['checked_at-invalid-calendar-date', (report) => {
+      report.checked_at = '2030-02-30T00:00:00.000Z';
+    }],
     ['checks.session_signature', (report) => { report.checks.session_signature = false; }],
     ['checks.challenge_binding', (report) => { report.checks.challenge_binding = 'true'; }]
   ]) {
@@ -203,7 +215,7 @@ test('signed quorum rechecks the named witness against a separately held challen
     assert.equal(result.witness_met, true, field);
     assert.equal(result.replayable_claims_consistent, false, field);
     assert.deepEqual(result.replayable_claims_evaluation.conflicts,
-      [{ report_index: 0, fields: [field] }]);
+      [{ report_index: 0, fields: [field.startsWith('checked_at-') ? 'checked_at' : field] }]);
     const fromCli = run(write(`quorum-${field}.json`, contradictoryQuorum),
       '--policy', write(`policy-${field}.json`, heldPolicy),
       '--bundle', bundlePath, '--challenge', challengePath);

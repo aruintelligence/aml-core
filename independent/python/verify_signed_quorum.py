@@ -14,7 +14,7 @@ import json
 import re
 import sys
 
-from verify_witness import P, verify_bundle, verify_p256_raw_signature
+from verify_witness import P, parse_time, verify_bundle, verify_p256_raw_signature
 
 BOUNDARY = (
     "Threshold agreement means enough supplied reports were validly signed by distinct "
@@ -30,6 +30,7 @@ REPLAYABLE_WITNESS_CHECKS = (
     "bundle_integrity", "receipt_integrity", "evidence_integrity",
     "challenge_freshness", "challenge_binding", "session_signature",
 )
+REPORT_TIME = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$")
 
 
 class UnsupportedJSON(ValueError):
@@ -139,6 +140,15 @@ def validate_policy(policy):
         raise ValueError("AML_SIGNED_QUORUM_POLICY_THRESHOLD_INVALID")
 
 
+def canonical_report_time(value):
+    if not isinstance(value, str) or not REPORT_TIME.fullmatch(value):
+        raise ValueError("invalid_report_time")
+    parsed = parse_time(value)
+    if parsed.isoformat(timespec="milliseconds").replace("+00:00", "Z") != value:
+        raise ValueError("invalid_report_time")
+    return parsed
+
+
 def conflicting_witness_claims(report, bundle):
     conflicts = []
     fingerprint = bundle["attestation"]["session_key_fingerprint"]
@@ -146,6 +156,19 @@ def conflicting_witness_claims(report, bundle):
     for field, expected in (("session_key_fingerprint", fingerprint), ("challenge_expires_at", expiry)):
         if report.get(field) is not None and report[field] != expected:
             conflicts.append(field)
+    checked_at = report.get("checked_at")
+    if checked_at is not None:
+        try:
+            checked = canonical_report_time(checked_at)
+            earliest = max(
+                parse_time(bundle["challenge"]["issued_at"]),
+                canonical_report_time(bundle["created_at"]),
+                canonical_report_time(bundle["attestation"]["issued_at"]),
+            )
+            if not earliest <= checked <= parse_time(expiry):
+                raise ValueError("invalid_report_time")
+        except (ValueError, TypeError, OverflowError):
+            conflicts.append("checked_at")
     checks = report.get("checks")
     if not isinstance(checks, dict):
         conflicts.append("checks")
