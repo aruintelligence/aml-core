@@ -120,9 +120,12 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(replayed.valid, true);
   assert.equal(replayed.threshold_met, true);
   assert.equal(replayed.witness_met, true);
+  assert.equal(replayed.replayable_claims_consistent, true);
+  assert.equal(replayed.replayable_claims_evaluation.positive_signed_reports, 2);
   const accepted = run(quorumPath, '--bundle', bundlePath, '--challenge', challengePath);
   assert.equal(accepted.status, 0, accepted.stderr);
   assert.equal(JSON.parse(accepted.stdout).witness_met, true);
+  assert.equal(JSON.parse(accepted.stdout).replayable_claims_consistent, true);
 
   const differentChallenge = { ...challenge,
     issued_at: new Date(Date.parse(challenge.issued_at) - 1000).toISOString() };
@@ -133,6 +136,7 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(rejection.valid, true);
   assert.equal(rejection.threshold_met, true);
   assert.equal(rejection.witness_met, false);
+  assert.equal(rejection.replayable_claims_consistent, false);
   assert.equal(rejection.witness_evaluation.reason, 'AML_WITNESS_BUNDLE_CHALLENGE_MISMATCH');
 
   const tampered = structuredClone(bundle);
@@ -160,4 +164,62 @@ test('signed quorum rechecks the named witness against a separately held challen
     /AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED/
   );
   assert.equal(run(quorumPath, '--bundle', bundlePath).status, 1);
+
+  const invalidSignature = structuredClone(a);
+  invalidSignature.report.session_key_fingerprint = '0'.repeat(64);
+  const withUnauthenticatedClaim = await createSignedVerificationQuorum(
+    [a, b, invalidSignature], { threshold: 2 }
+  );
+  const ignored = await verifySignedVerificationQuorum(withUnauthenticatedClaim, {
+    witnessBundle: bundle, expectedChallenge: challenge
+  });
+  assert.equal(ignored.replayable_claims_consistent, true);
+  assert.equal(ignored.replayable_claims_evaluation.positive_signed_reports, 2);
+
+  // The signatures and held policy can all pass even when a signer asserts a
+  // conflicting fact about the session or a step of the reference verifier.
+  for (const [field, contradict] of [
+    ['session_key_fingerprint', (report) => { report.session_key_fingerprint = '0'.repeat(64); }],
+    ['challenge_expires_at', (report) => { report.challenge_expires_at = '2030-01-01T00:00:00.000Z'; }],
+    ['checks.session_signature', (report) => { report.checks.session_signature = false; }],
+    ['checks.challenge_binding', (report) => { report.checks.challenge_binding = 'true'; }]
+  ]) {
+    const falseReport = witnessVerificationReport(bundle, check, { verifier: `contradicts-${field}` });
+    contradict(falseReport);
+    const signed = await signVerificationReport(falseReport, await createVerifierKeyPair());
+    const contradictoryQuorum = await createSignedVerificationQuorum([signed, b], { threshold: 2 });
+    const heldPolicy = {
+      schema: 'aml-signed-quorum-held-policy/1', prototype: true,
+      artifact_type: contradictoryQuorum.artifact_type, artifact_hash: contradictoryQuorum.artifact_hash,
+      trusted_key_fingerprints: [signed.verifier_key_fingerprint, b.verifier_key_fingerprint],
+      threshold: 2
+    };
+    const result = await verifySignedVerificationQuorum(contradictoryQuorum, {
+      policy: heldPolicy, witnessBundle: bundle, expectedChallenge: challenge
+    });
+    assert.equal(result.valid, true, field);
+    assert.equal(result.threshold_met, true, field);
+    assert.equal(result.policy_met, true, field);
+    assert.equal(result.witness_met, true, field);
+    assert.equal(result.replayable_claims_consistent, false, field);
+    assert.deepEqual(result.replayable_claims_evaluation.conflicts,
+      [{ report_index: 0, fields: [field] }]);
+    const fromCli = run(write(`quorum-${field}.json`, contradictoryQuorum),
+      '--policy', write(`policy-${field}.json`, heldPolicy),
+      '--bundle', bundlePath, '--challenge', challengePath);
+    assert.equal(fromCli.status, 2, `${field}: ${fromCli.stderr}`);
+    assert.equal(JSON.parse(fromCli.stdout).witness_met, true);
+    assert.equal(JSON.parse(fromCli.stdout).replayable_claims_consistent, false);
+  }
+
+  // A self-contained signer can truthfully say it did not retain a separate
+  // challenge. Replaying with ours cannot retroactively change that claim.
+  const selfContained = await verifyWitnessBundle(bundle);
+  const independentReport = witnessVerificationReport(bundle, selfContained, { verifier: 'self-contained' });
+  independentReport.checks.another_verifier_step = false;
+  const independent = await signVerificationReport(independentReport, await createVerifierKeyPair());
+  const mixed = await createSignedVerificationQuorum([independent, b], { threshold: 2 });
+  assert.equal((await verifySignedVerificationQuorum(mixed, {
+    witnessBundle: bundle, expectedChallenge: challenge
+  })).replayable_claims_consistent, true);
 });

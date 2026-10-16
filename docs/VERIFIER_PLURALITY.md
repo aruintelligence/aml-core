@@ -123,6 +123,17 @@ Use `verifySignedVerificationQuorum(quorum, { policy, witnessBundle,
 expectedChallenge })` for the same check in browser JavaScript. Supplying only
 one of the bundle and challenge is a usage error.
 
+When replay succeeds, `replayable_claims_consistent` checks every authenticated
+positive report for explicit claims that contradict the local result: a
+non-null session key fingerprint, a non-null challenge expiry, and any named
+reference checks for bundle and receipt integrity, evidence integrity,
+challenge freshness and binding, and session signature. The result includes
+report indexes and conflicting field names. The CLI also requires this result
+for exit `0` when the bundle and challenge are supplied. Omitted optional
+fields and unknown check names make no claim that this comparison can test.
+`verifier_held_challenge` describes what the signer did; a buyer replaying with
+their own retained challenge cannot establish that the signer held one.
+
 This is a local reference verifier replay of the supplied artifact. It does
 not establish that the signers ran that verifier, that their other claims are
 true, or that the signers are independent.

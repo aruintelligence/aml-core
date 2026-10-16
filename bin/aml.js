@@ -82,7 +82,7 @@ Commands:
   canary                      Compare the same intent under baseline and candidate policy profiles
   verify-receipt              Verify receipt hash, audit stream, and attention-ledger integrity
   verify-witness              Verify a browser witness bundle against your retained challenge
-  verify-signed-quorum        Recheck a saved signed quorum and optional verifier-held policy
+  verify-signed-quorum        Recheck a signed quorum, held policy, and witness report claims
   replay-receipt              Re-execute declared receipt inputs with the installed engine
   sign-receipt                Add an Ed25519 attestation to a valid execution receipt
   verify-signed-receipt       Verify receipt integrity, signature, and public-key fingerprint
@@ -273,7 +273,7 @@ try {
     console.log(JSON.stringify(result, null, 2));
     process.exit(result.valid && result.threshold_met &&
       (!options.has('--policy') || result.policy_met) &&
-      (!options.has('--bundle') || result.witness_met) ? 0 : 2);
+      (!options.has('--bundle') || (result.witness_met && result.replayable_claims_consistent)) ? 0 : 2);
   }
   if (command === "replay-receipt") {
     const result = replayExecutionReceipt(JSON.parse(readSource(inputPath)));

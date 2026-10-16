@@ -6,6 +6,40 @@ import { assertBrowserJSON, canonicalJSONStringifyBrowser } from './aml-browser-
 import { verifySignedVerificationReport } from './aml-signed-verification-report.js';
 import { verifyWitnessBundle } from './aml-witness-bundle.js';
 
+// These fields describe properties the local witness replay can check. The
+// verifier_held_challenge flag describes what the signer did independently;
+// replaying with our own held challenge cannot establish that process claim.
+const replayableWitnessChecks = [
+  'bundle_integrity', 'receipt_integrity', 'evidence_integrity',
+  'challenge_freshness', 'challenge_binding', 'session_signature'
+];
+
+function conflictingWitnessClaims(report, witness) {
+  const conflicts = [];
+  if (report.session_key_fingerprint != null &&
+      report.session_key_fingerprint !== witness.session_key_fingerprint) {
+    conflicts.push('session_key_fingerprint');
+  }
+  if (report.challenge_expires_at != null &&
+      report.challenge_expires_at !== witness.challenge_expires_at) {
+    conflicts.push('challenge_expires_at');
+  }
+  if (!report.checks || typeof report.checks !== 'object' || Array.isArray(report.checks)) {
+    conflicts.push('checks');
+  } else {
+    for (const [name, value] of Object.entries(report.checks)) {
+      if (typeof value !== 'boolean') conflicts.push(`checks.${name}`);
+    }
+    for (const name of replayableWitnessChecks) {
+      if (Object.hasOwn(report.checks, name) && report.checks[name] !== witness.checks[name] &&
+          !conflicts.includes(`checks.${name}`)) {
+        conflicts.push(`checks.${name}`);
+      }
+    }
+  }
+  return conflicts;
+}
+
 // Envelope fingerprints bind the complete JWK JSON, including optional metadata.
 // For quorum identity, hash the P-256 public point instead: one key must count once
 // even when the same JWK carries different labels, key_ops, or other metadata.
@@ -149,7 +183,7 @@ export async function verifySignedVerificationQuorum(quorum, {
   const reject = (reason) => ({
     valid: false, reason, threshold_met: false,
     ...(policy === undefined ? {} : { policy_met: false }),
-    ...(witnessBundle === undefined ? {} : { witness_met: false })
+    ...(witnessBundle === undefined ? {} : { witness_met: false, replayable_claims_consistent: false })
   });
   try {
     assertBrowserJSON(quorum);
@@ -199,6 +233,28 @@ export async function verifySignedVerificationQuorum(quorum, {
         reason: witness.reason,
         retained_challenge_matched: witness.checks?.verifier_held_challenge === true,
         artifact_matches: artifactMatches
+      };
+      // A successful replay verifies the artifact, but signed reports can also
+      // assert conflicting session details or step results. Check only the
+      // authenticated positive reports; invalid signatures and dissent are not
+      // endorsements. Unknown check names and signer process claims cannot be
+      // inferred from the reference replay.
+      const conflicts = [];
+      let positiveSignedReports = 0;
+      if (result.witness_met) {
+        for (const [index, envelope] of rebuilt.signed_reports.entries()) {
+          if (envelope?.report?.valid !== true ||
+              !(await verifySignedVerificationReport(envelope)).valid) continue;
+          positiveSignedReports += 1;
+          const fields = conflictingWitnessClaims(envelope.report, witness);
+          if (fields.length) conflicts.push({ report_index: index, fields });
+        }
+      }
+      result.replayable_claims_consistent = result.witness_met && conflicts.length === 0;
+      result.replayable_claims_evaluation = {
+        checked: result.witness_met,
+        positive_signed_reports: positiveSignedReports,
+        conflicts
       };
     }
     return result;
