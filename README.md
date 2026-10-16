@@ -157,6 +157,8 @@ Generic semantic blocks such as `message` now render their permitted `content` a
 
 Runtime numeric limits now fail explicitly when malformed instead of silently dropping the session attention or cognitive-load guard. This applies to direct compilation, simulations, and accountable execution; `null` acts like an omitted field. Run `node --test test/policy-context-limits.test.js` for string/negative/non-finite counterexamples, zero-limit suppression, and receipt replay. Previously issued receipts with malformed limit fields may verify their hashes, but cannot replay against this engine.
 
+Signed receipts now reject values that JavaScript hashes or JSON serialization would silently omit. A signed receipt with an added `undefined` context field previously kept the same hash and passed signature verification; `node --test test/receipt-json-integrity.test.js` proves it now fails. Issuance also rejects non-JSON inputs, and attestation verification rejects unsigned extension fields. Run `npm run proof` for an in-place hash-collision counterexample. Existing non-JSON receipts need correction and regeneration.
+
 If the behavior does not reproduce, that is useful evidence. Please publish **PASS / FAIL / MIXED** with enough detail for someone else to repeat your result.
 
 - [Independent verification call](https://github.com/aruintelligence/aml-core/issues/88)

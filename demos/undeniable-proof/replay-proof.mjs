@@ -121,6 +121,13 @@ assert.equal(replayExecutionReceipt(literalReceipt).verified, true);
 assert.throws(() => executeAccountableIntent({ transmission: "invalid_score", nodes: [
   { type: "engram", properties: { attention_cost: NaN } }
 ] }, options), /property attention_cost must be a non-negative finite number/);
+const unhashedMutation = structuredClone(first);
+unhashedMutation.context.audit_note = undefined;
+assert.equal(unhashedMutation.receipt_sha256, first.receipt_sha256,
+  "the former stable hash omitted undefined context fields");
+assert.equal(verifyExecutionReceipt(unhashedMutation).canonical_json_valid, false,
+  "the receipt verifier must reject values omitted by JSON hashing");
+assert.equal(replayExecutionReceipt(unhashedMutation).integrity_valid, false);
 assert.throws(() => compileSource(`transmission "ambiguous_proof" {
   engram "private" {
     value: "PRIVATE_DUPLICATE_2764"
@@ -163,5 +170,6 @@ console.log(JSON.stringify({
     attention_cost: literalReceipt.selected_render.decisions[0].attention_cost,
     replay_verified: true, nonfinite_score_rejected: true,
     duplicate_declaration_rejected: true },
-  malformed_context_limits_rejected: 3
+  malformed_context_limits_rejected: 3,
+  non_json_receipt_collision_rejected: true
 }, null, 2));

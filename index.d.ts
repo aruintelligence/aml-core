@@ -111,6 +111,8 @@ export interface SignedReceiptVerification {
 
 export interface ReceiptVerification {
   verified: boolean;
+  /** False if any receipt value cannot be represented unambiguously as JSON. */
+  canonical_json_valid: boolean;
   receipt_hash_valid: boolean;
   bindings_valid: boolean;
   audit_stream_valid: boolean;
