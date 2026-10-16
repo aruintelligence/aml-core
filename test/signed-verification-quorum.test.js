@@ -43,6 +43,23 @@ test('signed verification report detects report mutation', async () => {
   assert.equal(check.reason, 'AML_SIGNED_REPORT_SIGNATURE_INVALID');
 });
 
+test('signed reports reject live claims that the signature did not cover', async () => {
+  const keys = await createVerifierKeyPair();
+  const envelope = await signVerificationReport(report('verifier-a'), keys);
+  Object.defineProperty(envelope.report, 'unbound_claim', { value: 'approved by external auditor' });
+  const check = await verifySignedVerificationReport(envelope);
+  assert.equal(check.valid, false);
+  assert.equal(check.reason, 'AML_CANONICAL_JSON_NON_JSON_OBJECT');
+  await assert.rejects(
+    () => createSignedVerificationQuorum([envelope], { threshold: 1 }),
+    /AML_SIGNED_QUORUM_NO_VALID_SIGNED_REPORTS/
+  );
+  await assert.rejects(
+    () => signVerificationReport(envelope.report, keys),
+    /AML_CANONICAL_JSON_NON_JSON_OBJECT/
+  );
+});
+
 test('signed verification quorum requires distinct valid key fingerprints', async () => {
   const keyA = await createVerifierKeyPair();
   const keyB = await createVerifierKeyPair();
@@ -90,5 +107,29 @@ test('signed verification quorum rejects mixed artifact hashes', async () => {
   await assert.rejects(
     () => createSignedVerificationQuorum([envelopeA, envelopeB], { threshold: 2 }),
     /AML_SIGNED_QUORUM_ARTIFACT_HASH_MISMATCH/
+  );
+});
+
+test('signed quorum cannot count a report without a bound artifact as an endorsement', async () => {
+  const good = await signVerificationReport(report('verifier-a'), await createVerifierKeyPair());
+  const unboundReport = report('verifier-b');
+  unboundReport.artifact_hash = null;
+  const unbound = await signVerificationReport(unboundReport, await createVerifierKeyPair());
+  assert.equal((await verifySignedVerificationReport(unbound)).valid, true);
+  await assert.rejects(
+    () => createSignedVerificationQuorum([good, unbound], { threshold: 2 }),
+    /AML_SIGNED_QUORUM_ARTIFACT_HASH_REQUIRED/
+  );
+});
+
+test('signed quorum rejects truthy non-boolean verdicts even with distinct valid signatures', async () => {
+  const good = await signVerificationReport(report('verifier-a'), await createVerifierKeyPair());
+  const malformedReport = report('verifier-b');
+  malformedReport.valid = 'false';
+  const malformed = await signVerificationReport(malformedReport, await createVerifierKeyPair());
+  assert.equal((await verifySignedVerificationReport(malformed)).valid, true);
+  await assert.rejects(
+    () => createSignedVerificationQuorum([good, malformed], { threshold: 2 }),
+    /AML_SIGNED_QUORUM_REPORT_VERDICT_INVALID/
   );
 });

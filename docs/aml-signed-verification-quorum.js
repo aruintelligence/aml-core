@@ -14,18 +14,34 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
     checks.push({ envelope, signature });
   }
 
-  const structurallyValid = checks.filter(({ envelope, signature }) =>
-    signature.valid &&
-    envelope?.report?.schema === 'aml-verification-report/1' &&
-    envelope.report.artifact_hash
-  );
+  const signed = checks.filter(({ signature }) => signature.valid);
+  if (!signed.length) throw new Error('AML_SIGNED_QUORUM_NO_VALID_SIGNED_REPORTS');
 
-  if (!structurallyValid.length) throw new Error('AML_SIGNED_QUORUM_NO_VALID_SIGNED_REPORTS');
+  // Every authenticated report must identify the same artifact and carry a
+  // boolean verdict. A signature over malformed metadata is not an endorsement.
+  for (const { envelope } of signed) {
+    const report = envelope.report;
+    if (report.prototype !== true || typeof report.verifier !== 'string' || !report.verifier.trim()) {
+      throw new Error('AML_SIGNED_QUORUM_REPORT_INVALID');
+    }
+    if (typeof report.artifact_type !== 'string' || !report.artifact_type.trim()) {
+      throw new Error('AML_SIGNED_QUORUM_ARTIFACT_TYPE_REQUIRED');
+    }
+    if (typeof report.artifact_hash !== 'string' || !report.artifact_hash.trim()) {
+      throw new Error('AML_SIGNED_QUORUM_ARTIFACT_HASH_REQUIRED');
+    }
+    if (typeof report.valid !== 'boolean') {
+      throw new Error('AML_SIGNED_QUORUM_REPORT_VERDICT_INVALID');
+    }
+    if (typeof report.reason !== 'string' || !report.reason.trim()) {
+      throw new Error('AML_SIGNED_QUORUM_REPORT_REASON_INVALID');
+    }
+  }
 
-  const artifactType = structurallyValid[0].envelope.report.artifact_type;
-  const artifactHash = structurallyValid[0].envelope.report.artifact_hash;
+  const artifactType = signed[0].envelope.report.artifact_type;
+  const artifactHash = signed[0].envelope.report.artifact_hash;
 
-  for (const { envelope } of structurallyValid) {
+  for (const { envelope } of signed) {
     if (envelope.report.artifact_type !== artifactType) throw new Error('AML_SIGNED_QUORUM_ARTIFACT_TYPE_MISMATCH');
     if (envelope.report.artifact_hash !== artifactHash) throw new Error('AML_SIGNED_QUORUM_ARTIFACT_HASH_MISMATCH');
   }

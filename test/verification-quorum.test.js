@@ -57,3 +57,11 @@ test('verification quorum rejects reports for different artifacts', () => {
     report('browser-reference'), other
   ]), /AML_QUORUM_ARTIFACT_HASH_MISMATCH/);
 });
+
+test('verification quorum rejects truthy non-boolean verdicts', () => {
+  const malformed = report('python-reference');
+  malformed.valid = 'false';
+  assert.throws(() => createVerificationQuorum([
+    report('browser-reference'), malformed
+  ], { threshold: 2 }), /AML_QUORUM_REPORT_VERDICT_INVALID/);
+});

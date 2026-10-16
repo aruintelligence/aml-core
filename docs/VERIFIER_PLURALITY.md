@@ -18,6 +18,16 @@ A quorum aggregates `aml-verification-report/1` objects only when they agree on:
 - exact artifact hash;
 - distinct declared verifier IDs.
 
+The quorum requires each report's verdict to be a boolean and its artifact
+type and hash to be nonempty strings. The signed-key quorum applies the same
+checks to **every** report with a valid signature before counting it; a valid
+signature over a missing artifact hash or a string such as `"false"` cannot
+increase the endorsement threshold. Signature validity proves key possession
+over the report bytes, not that the report's claims are true.
+Signed report verification also rejects live JavaScript fields that are hidden,
+symbol-keyed, or otherwise omitted from signed JSON. Exchange ordinary JSON
+reports so a visible claim cannot sit outside the signed bytes.
+
 It reports:
 
 - number of distinct verifier IDs;
