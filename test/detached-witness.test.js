@@ -63,6 +63,26 @@ test('detached witness bundle verifies under Node WebCrypto', async () => {
   assert.equal(bundleCheck.reason, 'AML_WITNESS_BUNDLE_VALID');
 });
 
+test('sequential and concurrent attestations use isolated keys and remain replayable', async () => {
+  const { evidence, challenge, attestation: first } = await createFixture();
+  const second = await createSessionAttestation({ evidence, challenge });
+  const challenges = [createVerificationChallenge(), createVerificationChallenge()];
+  const concurrent = await Promise.all(challenges.map(next =>
+    createSessionAttestation({ evidence, challenge: next })));
+  const attestations = [first, second, ...concurrent];
+  assert.equal(new Set(attestations.map(item => item.session_key_fingerprint)).size, 4);
+  resetAMLSessionKey();
+  assert.equal(globalThis.__AML_SESSION_ATTESTATION__, null);
+  for (const [index, attestation] of attestations.entries()) {
+    const retained = index < 2 ? challenge : challenges[index - 2];
+    assert.equal((await verifySessionAttestation({ evidence, challenge: retained,
+      attestation })).valid, true, `attestation ${index}`);
+    const bundle = await createWitnessBundle({ evidence, challenge: retained, attestation });
+    assert.equal((await verifyWitnessBundle(bundle, { expectedChallenge: retained })).valid,
+      true, `bundle ${index}`);
+  }
+});
+
 test('detached witness bundle rejects evidence mutation', async () => {
   const { bundle } = await createFixture();
   const mutated = structuredClone(bundle);

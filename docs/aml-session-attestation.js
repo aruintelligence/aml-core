@@ -7,10 +7,6 @@ import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser } from 
 import { verifyBrowserEvidence } from './aml-browser-evidence.js';
 import { verifyVerificationChallenge } from './aml-verification-challenge.js';
 
-let sessionKeyPair = null;
-let sessionPublicJwk = null;
-let sessionKeyFingerprint = null;
-
 function bytesToBase64Url(bytes) {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
@@ -34,16 +30,17 @@ function canonicalBytes(value, length, encodedLength, reason) {
   return bytes;
 }
 
-async function ensureSessionKey() {
-  if (sessionKeyPair) return;
+async function createAttestationKey() {
   if (!globalThis.crypto?.subtle) throw new Error('AML_SESSION_CRYPTO_UNAVAILABLE');
-  sessionKeyPair = await crypto.subtle.generateKey(
+  // Keep the private key local to one attestation. Reusing a page-wide key
+  // links unrelated challenges and races when two attestations overlap.
+  const keyPair = await crypto.subtle.generateKey(
     { name: 'ECDSA', namedCurve: 'P-256' },
-    true,
+    false,
     ['sign', 'verify']
   );
-  sessionPublicJwk = await crypto.subtle.exportKey('jwk', sessionKeyPair.publicKey);
-  sessionKeyFingerprint = await sha256Browser(sessionPublicJwk);
+  const publicJwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
+  return { keyPair, publicJwk, fingerprint: await sha256Browser(publicJwk) };
 }
 
 export function sessionAttestationPayload(attestation) {
@@ -64,7 +61,7 @@ export async function createSessionAttestation({
   const challengeCheck = verifyVerificationChallenge(challenge);
   if (!challengeCheck.valid) throw new Error(challengeCheck.reason);
 
-  await ensureSessionKey();
+  const { keyPair, publicJwk, fingerprint } = await createAttestationKey();
   const issuedAt = new Date().toISOString();
   const attestation = {
     schema: 'aml-session-attestation/1',
@@ -74,14 +71,14 @@ export async function createSessionAttestation({
     challenge_nonce: challenge.nonce,
     challenge_expires_at: challenge.expires_at,
     issued_at: issuedAt,
-    session_public_key_jwk: sessionPublicJwk,
-    session_key_fingerprint: sessionKeyFingerprint
+    session_public_key_jwk: publicJwk,
+    session_key_fingerprint: fingerprint
   };
 
   const bytes = new TextEncoder().encode(canonicalJSONStringifyBrowser(sessionAttestationPayload({ ...attestation, signature: '' })));
   const signature = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
-    sessionKeyPair.privateKey,
+    keyPair.privateKey,
     bytes
   );
   attestation.signature = bytesToBase64Url(new Uint8Array(signature));
@@ -164,8 +161,7 @@ export async function verifySessionAttestation({ evidence, challenge, attestatio
 }
 
 export function resetAMLSessionKey() {
-  sessionKeyPair = null;
-  sessionPublicJwk = null;
-  sessionKeyFingerprint = null;
+  // Retained for callers that clear the last published attestation. Signing
+  // keys are already local to each createSessionAttestation invocation.
   globalThis.__AML_SESSION_ATTESTATION__ = null;
 }

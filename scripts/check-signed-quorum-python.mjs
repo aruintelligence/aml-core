@@ -264,6 +264,19 @@ try {
   assert.ok(Date.parse(bundle.created_at) > Date.parse(attestation.issued_at));
   const witness = await verifyWitnessBundle(bundle, { expectedChallenge: challenge });
   assert.equal(witness.valid, true);
+  const secondAttestation = await createSessionAttestation({ evidence, challenge });
+  assert.notEqual(secondAttestation.session_key_fingerprint,
+    attestation.session_key_fingerprint);
+  const secondBundle = await createWitnessBundle({ evidence, challenge,
+    attestation: secondAttestation });
+  assert.equal((await verifyWitnessBundle(secondBundle, { expectedChallenge: challenge })).valid,
+    true);
+  const secondPython = spawnSync('python3', [path.resolve('independent/python/verify_witness.py'),
+    save('second-key-bundle.json', secondBundle), '--challenge',
+    save('second-key-challenge.json', challenge)],
+  { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  assert.equal(secondPython.status, 0, secondPython.stderr);
+  assert.equal(JSON.parse(secondPython.stdout).valid, true);
   const witnessKeyA = await createVerifierKeyPair();
   const witnessKeyB = await createVerifierKeyPair();
   const witnessA = await signVerificationReport(
@@ -800,6 +813,7 @@ try {
       'malformed_witness_signature', 'malformed_witness_attestation',
       'witness_unused_signature_bits', 'witness_padded_signature',
       'witness_alternate_key_coordinate',
+      'fresh_second_attestation_key_python_replay',
       'challenge_calendar_rollover', 'challenge_offset_alias',
       'challenge_submillisecond', 'challenge_missing_milliseconds',
       'before_challenge_issue', 'after_challenge_expiry',
