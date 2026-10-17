@@ -399,12 +399,17 @@ export async function verifySignedVerificationQuorum(quorum, {
       }
     }
     if (witnessBundle !== undefined) {
-      const witness = await verifyWitnessBundle(witnessBundle, { expectedChallenge });
+      // Snapshot the local clock once for the freshness decision. The timestamp
+      // describes this replay, not when a signer checked or a trusted time source.
+      const replayNow = Date.now();
+      const witness = await verifyWitnessBundle(witnessBundle, { expectedChallenge, now: replayNow });
       const artifactMatches = rebuilt.artifact_type === 'aml-witness-bundle/1' &&
         rebuilt.artifact_hash === witnessBundle?.integrity?.value;
       result.witness_met = valid && witness.valid &&
         witness.checks?.verifier_held_challenge === true && artifactMatches;
       result.witness_evaluation = {
+        evaluated_at: new Date(replayNow).toISOString(),
+        clock_source: 'local_system',
         local_bundle_valid: witness.valid,
         reason: witness.reason,
         retained_challenge_matched: witness.checks?.verifier_held_challenge === true,
