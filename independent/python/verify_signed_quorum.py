@@ -212,7 +212,7 @@ def canonical_report_time(value):
     return parsed
 
 
-def conflicting_witness_claims(report, bundle):
+def conflicting_witness_claims(report, bundle, replay_now):
     conflicts = []
     fingerprint = bundle["attestation"]["session_key_fingerprint"]
     expiry = bundle["challenge"]["expires_at"]
@@ -228,7 +228,7 @@ def conflicting_witness_claims(report, bundle):
                 canonical_report_time(bundle["created_at"]),
                 canonical_report_time(bundle["attestation"]["issued_at"]),
             )
-            if not earliest <= checked <= parse_time(expiry):
+            if not earliest <= checked <= parse_time(expiry) or checked > replay_now:
                 raise ValueError("invalid_report_time")
         except (ValueError, TypeError, OverflowError):
             conflicts.append("checked_at")
@@ -404,7 +404,7 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
                     if not ok or envelope["report"]["valid"] is not True:
                         continue
                     positive_signed_reports += 1
-                    fields = conflicting_witness_claims(envelope["report"], witness_bundle)
+                    fields = conflicting_witness_claims(envelope["report"], witness_bundle, replay_now)
                     if fields:
                         conflicts.append({"report_index": index, "fields": fields})
             result["replayable_claims_consistent"] = result["witness_met"] and not conflicts

@@ -12,17 +12,41 @@ export function witnessBundlePayload(bundle) {
   return payload;
 }
 
+// Bundle and attestation creation times are claims inside the supplied JSON.
+// Use the same narrow UTC millisecond spelling as the signed report profile
+// so malformed dates and time-zone aliases cannot evade chronology checks.
+function canonicalTime(value) {
+  if (typeof value !== 'string' ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)) return null;
+  const time = Date.parse(value);
+  return Number.isFinite(time) && new Date(time).toISOString() === value ? time : null;
+}
+
+function bundleTimeFailure(bundle, now) {
+  const attested = canonicalTime(bundle.attestation.issued_at);
+  const created = canonicalTime(bundle.created_at);
+  if (attested === null || created === null) return 'AML_WITNESS_BUNDLE_TIME_INVALID';
+  if (attested < Date.parse(bundle.challenge.issued_at) || created < attested ||
+      created > Date.parse(bundle.challenge.expires_at)) {
+    return 'AML_WITNESS_BUNDLE_TIME_ORDER_INVALID';
+  }
+  return created > now ? 'AML_WITNESS_BUNDLE_NOT_YET_CREATED' : null;
+}
+
 export async function createWitnessBundle({ evidence, challenge, attestation }) {
   const attestationCheck = await verifySessionAttestation({ evidence, challenge, attestation });
   if (!attestationCheck.valid) throw new Error(attestationCheck.reason);
+  const createdNow = Date.now();
   const bundle = {
     schema: 'aml-witness-bundle/1',
     prototype: true,
-    created_at: new Date().toISOString(),
+    created_at: new Date(createdNow).toISOString(),
     evidence,
     challenge,
     attestation
   };
+  const timeFailure = bundleTimeFailure(bundle, createdNow);
+  if (timeFailure) throw new Error(timeFailure);
   bundle.integrity = {
     schema: 'aml-integrity/1',
     algorithm: 'SHA-256',
@@ -81,6 +105,8 @@ export async function verifyWitnessBundle(bundle, { now = Date.now(), expectedCh
       if (Object.hasOwn(checks, key)) checks[key] = attestation.checks[key] === true;
     }
     if (!attestation.valid) return fail(attestation.reason, { attestation });
+    const timeFailure = bundleTimeFailure(bundle, now);
+    if (timeFailure) return fail(timeFailure);
     return {
       valid: true,
       reason: 'AML_WITNESS_BUNDLE_VALID',
