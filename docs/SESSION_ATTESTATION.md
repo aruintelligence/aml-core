@@ -41,6 +41,16 @@ import { createWitnessBundle, verifyWitnessBundle } from './aml-witness-bundle.j
 
 A valid `aml-session-attestation/1` proves that the holder of an ephemeral browser session private key signed the exact bound evidence hash and verifier challenge.
 
+The producer generates a fresh P-256 key for each attestation and requests a
+nonextractable private key from Web Crypto. Its public key remains exportable
+for offline verification. Sequential and overlapping requests therefore do
+not reuse a page-wide fingerprint or compete over a mutable signing key.
+`resetAMLSessionKey()` still clears the last published attestation for callers
+using that helper; there is no cached signing key to reset. Existing consumers
+that grouped multiple attestations by one page-wide session fingerprint must
+use an explicit, separately justified correlation mechanism instead.
+Different fingerprints do not prove different people, browsers, or sessions.
+
 It does **not** prove:
 
 - who the human is;

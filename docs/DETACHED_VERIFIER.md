@@ -39,6 +39,11 @@ expired challenge -> FAIL
 - ECDSA P-256 / SHA-256 signature;
 - whole `aml-witness-bundle/1` integrity.
 
+The browser producer uses a fresh, nonextractable private key per attestation
+and exports only its public key. The fingerprint identifies that one signed
+attestation's key; distinct fingerprints do not establish distinct people or
+independent sessions.
+
 The session signature must be exactly 64 raw bytes encoded as 86 unpadded
 base64url characters. Each public-key coordinate must be exactly 32 bytes
 encoded as 43 unpadded base64url characters. Verification decodes and
