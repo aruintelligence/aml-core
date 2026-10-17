@@ -75,7 +75,17 @@ export async function verifyWitnessBundle(bundle, { now = Date.now(), expectedCh
     session_signature: false,
     verifier_held_challenge: false
   };
-  const fail = (reason, extra = {}) => ({ valid: false, reason, checks: { ...checks }, ...extra });
+  // Report construction may happen after the caller edits the original bundle.
+  // Carry the claims read from this call's snapshot with every result, including
+  // failed checks. Null means a field was missing or could not be safely read.
+  let inspected = {
+    artifact_hash: null,
+    session_key_fingerprint: null,
+    challenge_expires_at: null
+  };
+  const fail = (reason, extra = {}) => ({
+    valid: false, reason, checks: { ...checks }, inspected: { ...inspected }, ...extra
+  });
   try {
     let heldInputError;
     if (expectedChallenge !== undefined) {
@@ -83,6 +93,12 @@ export async function verifyWitnessBundle(bundle, { now = Date.now(), expectedCh
       catch (error) { heldInputError = error; }
     }
     bundle = snapshotBrowserJSON(bundle);
+    const stringOrNull = value => typeof value === 'string' ? value : null;
+    inspected = {
+      artifact_hash: stringOrNull(bundle?.integrity?.value),
+      session_key_fingerprint: stringOrNull(bundle?.attestation?.session_key_fingerprint),
+      challenge_expires_at: stringOrNull(bundle?.challenge?.expires_at)
+    };
     if (!bundle?.integrity || bundle.integrity.schema !== 'aml-integrity/1') {
       return fail('AML_WITNESS_BUNDLE_UNSEALED');
     }
@@ -126,6 +142,7 @@ export async function verifyWitnessBundle(bundle, { now = Date.now(), expectedCh
       valid: true,
       reason: 'AML_WITNESS_BUNDLE_VALID',
       checks: { ...checks },
+      inspected: { ...inspected },
       evidence_hash: bundle.evidence.integrity.value,
       session_key_fingerprint: bundle.attestation.session_key_fingerprint,
       challenge_expires_at: bundle.challenge.expires_at,

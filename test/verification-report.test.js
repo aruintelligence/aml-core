@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { createVerificationReport, witnessVerificationReport } from '../docs/aml-verification-report.js';
 
-test('verification report normalizes a successful witness result', () => {
+test('verification report never infers passed steps from an overall verdict', () => {
   const bundle = {
     integrity: { value: 'a'.repeat(64) },
     attestation: { session_key_fingerprint: 'b'.repeat(64) },
@@ -15,9 +15,26 @@ test('verification report normalizes a successful witness result', () => {
   assert.equal(report.artifact_type, 'aml-witness-bundle/1');
   assert.equal(report.artifact_hash, 'a'.repeat(64));
   assert.equal(report.session_key_fingerprint, 'b'.repeat(64));
-  assert.equal(report.checks.bundle_integrity, true);
-  assert.equal(report.checks.verifier_held_challenge, false);
+  assert.equal(Object.values(report.checks).every(passed => passed === false), true);
   assert.match(report.notes.join(' '), /does not prove identity/i);
+});
+
+test('only explicit true steps are reported as passed', () => {
+  const report = witnessVerificationReport({}, {
+    valid: true,
+    reason: 'AML_WITNESS_BUNDLE_VALID',
+    checks: { bundle_integrity: true, receipt_integrity: 'true', challenge_binding: 1 }
+  });
+  assert.equal(report.checks.bundle_integrity, true);
+  assert.equal(report.checks.receipt_integrity, false);
+  assert.equal(report.checks.challenge_binding, false);
+  assert.equal(report.checks.session_signature, false);
+});
+
+test('an incomplete observed snapshot cannot be mixed with live bundle fields', () => {
+  assert.throws(() => witnessVerificationReport({ integrity: { value: 'a'.repeat(64) } }, {
+    valid: true, inspected: { session_key_fingerprint: 'b'.repeat(64) }
+  }), /AML_VERIFICATION_REPORT_INSPECTED_INVALID/);
 });
 
 test('verification report rejects incomplete constructor input', () => {

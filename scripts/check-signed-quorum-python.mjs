@@ -279,6 +279,13 @@ try {
   assert.equal(JSON.parse(secondPython.stdout).valid, true);
   const witnessKeyA = await createVerifierKeyPair();
   const witnessKeyB = await createVerifierKeyPair();
+  // These adversarial cases explicitly claim a different artifact hash without
+  // verifying that artifact. The report helper itself now binds a real result
+  // to the bundle it inspected; replay must reject the signed false claims.
+  const claimUnverifiedBundle = (candidate, verifier) => ({
+    ...witnessVerificationReport(bundle, witness, { verifier }),
+    artifact_hash: candidate.integrity.value
+  });
   const witnessA = await signVerificationReport(
     witnessVerificationReport(bundle, witness, { verifier: 'witness-a' }), witnessKeyA);
   const witnessB = await signVerificationReport(
@@ -296,8 +303,7 @@ try {
   assert.equal(Date.parse(timeAliasBundle.challenge.issued_at), Date.parse(challenge.issued_at));
   timeAliasBundle.integrity.value = await sha256Browser(witnessBundlePayload(timeAliasBundle));
   const timeAliasReports = await Promise.all([witnessKeyA, witnessKeyB].map((key, index) =>
-    signVerificationReport(witnessVerificationReport(timeAliasBundle, witness,
-      { verifier: `time-alias-${index}` }), key)));
+    signVerificationReport(claimUnverifiedBundle(timeAliasBundle, `time-alias-${index}`), key)));
   const timeAliasQuorum = await createSignedVerificationQuorum(timeAliasReports, { threshold: 2 });
   const timeAliasPolicy = { ...witnessPolicy, artifact_hash: timeAliasBundle.integrity.value };
   const timeAliasDecision = await verifySignedVerificationQuorum(timeAliasQuorum, {
@@ -324,8 +330,7 @@ try {
     altered.challenge = changedChallenge;
     altered.integrity.value = await sha256Browser(witnessBundlePayload(altered));
     const reports = await Promise.all([witnessKeyA, witnessKeyB].map((key, index) =>
-      signVerificationReport(witnessVerificationReport(altered, witness,
-        { verifier: `${name}-${index}` }), key)));
+      signVerificationReport(claimUnverifiedBundle(altered, `${name}-${index}`), key)));
     const quorum = await createSignedVerificationQuorum(reports, { threshold: 2 });
     const heldPolicy = { ...witnessPolicy, artifact_hash: altered.integrity.value };
     const decision = await verifySignedVerificationQuorum(quorum, {
@@ -348,8 +353,8 @@ try {
     Buffer.from(bundle.attestation.signature, 'base64url'));
   aliasedBundle.integrity.value = await sha256Browser(witnessBundlePayload(aliasedBundle));
   const aliasedReports = await Promise.all([witnessKeyA, witnessKeyB].map((key, index) =>
-    signVerificationReport(witnessVerificationReport(aliasedBundle, witness,
-      { verifier: `aliased-witness-${index}` }), key)));
+    signVerificationReport(claimUnverifiedBundle(aliasedBundle,
+      `aliased-witness-${index}`), key)));
   const aliasedQuorum = await createSignedVerificationQuorum(aliasedReports, { threshold: 2 });
   const aliasedPolicy = { ...witnessPolicy, artifact_hash: aliasedBundle.integrity.value };
   const aliasedDecision = await verifySignedVerificationQuorum(aliasedQuorum, {
@@ -366,9 +371,9 @@ try {
   futureBundle.created_at = new Date(Date.now() + 30000).toISOString();
   futureBundle.integrity.value = await sha256Browser(witnessBundlePayload(futureBundle));
   const futureA = await signVerificationReport(
-    witnessVerificationReport(futureBundle, witness, { verifier: 'future-a' }), witnessKeyA);
+    claimUnverifiedBundle(futureBundle, 'future-a'), witnessKeyA);
   const futureB = await signVerificationReport(
-    witnessVerificationReport(futureBundle, witness, { verifier: 'future-b' }), witnessKeyB);
+    claimUnverifiedBundle(futureBundle, 'future-b'), witnessKeyB);
   const futureQuorum = await createSignedVerificationQuorum([futureA, futureB], { threshold: 2 });
   const futurePolicy = {
     ...witnessPolicy, artifact_hash: futureBundle.integrity.value,
