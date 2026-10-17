@@ -134,6 +134,42 @@ test('session attestation rejects a verifier challenge mismatch', async () => {
   assert.equal(check.reason, 'AML_SESSION_CHALLENGE_MISMATCH');
 });
 
+test('witness replay rejects alternate spellings of signed P-256 bytes', async () => {
+  const { bundle, evidence, challenge, attestation } = await createFixture();
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const alternate = value => value.slice(0, -1) +
+    alphabet[alphabet.indexOf(value.at(-1)) ^ 1];
+  const signatureAlias = alternate(attestation.signature);
+  assert.deepEqual(Buffer.from(signatureAlias, 'base64url'),
+    Buffer.from(attestation.signature, 'base64url'));
+  for (const [name, signature] of [
+    ['unused-bits', signatureAlias],
+    ['padding', `${attestation.signature}==`],
+    ['whitespace', `${attestation.signature.slice(0, 10)} ${attestation.signature.slice(10)}`],
+    ['truncated', attestation.signature.slice(0, -1)],
+    ['null', null]
+  ]) {
+    const altered = structuredClone(bundle);
+    altered.attestation.signature = signature;
+    altered.integrity.value = await sha256Browser(witnessBundlePayload(altered));
+    const direct = await verifySessionAttestation({ evidence, challenge,
+      attestation: altered.attestation });
+    const replay = await verifyWitnessBundle(altered, { expectedChallenge: challenge });
+    assert.equal(direct.reason, 'AML_SESSION_SIGNATURE_ENCODING_INVALID', name);
+    assert.equal(replay.reason, direct.reason, name);
+    assert.equal(replay.checks.session_signature, false, name);
+  }
+  const keyAlias = structuredClone(bundle);
+  const jwk = keyAlias.attestation.session_public_key_jwk;
+  const alternateX = alternate(jwk.x);
+  assert.deepEqual(Buffer.from(alternateX, 'base64url'), Buffer.from(jwk.x, 'base64url'));
+  jwk.x = alternateX;
+  keyAlias.attestation.session_key_fingerprint = await sha256Browser(jwk);
+  keyAlias.integrity.value = await sha256Browser(witnessBundlePayload(keyAlias));
+  assert.equal((await verifyWitnessBundle(keyAlias, { expectedChallenge: challenge })).reason,
+    'AML_SESSION_KEY_ENCODING_INVALID');
+});
+
 test('expired challenge fails detached verification', async () => {
   const { bundle } = await createFixture();
   const future = Date.parse(bundle.challenge.expires_at) + 1;

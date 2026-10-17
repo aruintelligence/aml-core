@@ -159,6 +159,11 @@ test fixtures only; a historical override is not a live freshness check.
 - public-JWK SHA-256 fingerprint;
 - raw 64-byte P-256 ECDSA signature over the canonical attestation payload.
 
+The session signature and both 32-byte public-key coordinates must have their
+unique unpadded base64url spelling. The JavaScript witness verifier enforces
+the same byte lengths and round-trip encoding checks; a changed unused bit,
+padding, or whitespace cannot be accepted by one implementation alone.
+
 ## Deliberate separation
 
 This implementation does **not** import:
