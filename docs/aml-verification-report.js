@@ -2,6 +2,8 @@
 // Normalizes verifier outcomes into one portable result object.
 // A report states which project-defined checks passed; it is not certification or identity proof.
 
+import { assertBrowserJSON } from './aml-browser-integrity.js';
+
 export function createVerificationReport({
   verifier,
   artifact_type,
@@ -40,15 +42,30 @@ export function witnessVerificationReport(bundle, result, { verifier = 'aml-refe
   ];
   const recordedChecks = result?.checks && typeof result.checks === 'object' ? result.checks : null;
   const checks = Object.fromEntries(checkNames.map((name) => [name,
-    recordedChecks ? recordedChecks[name] === true : name !== 'verifier_held_challenge' && result?.valid === true
+    recordedChecks?.[name] === true
   ]));
+  // A direct verifier result includes the fields captured from its input
+  // snapshot. Older hand-built results still use the supplied bundle.
+  const inspected = result?.inspected;
+  if (inspected !== undefined) {
+    assertBrowserJSON(inspected);
+    const names = ['artifact_hash', 'session_key_fingerprint', 'challenge_expires_at'];
+    if (!inspected || Array.isArray(inspected) ||
+        Object.keys(inspected).length !== names.length ||
+        names.some(name => !Object.hasOwn(inspected, name) ||
+          (inspected[name] !== null && typeof inspected[name] !== 'string'))) {
+      throw new Error('AML_VERIFICATION_REPORT_INSPECTED_INVALID');
+    }
+  }
   return createVerificationReport({
     verifier,
     artifact_type: 'aml-witness-bundle/1',
     result,
-    artifact_hash: bundle?.integrity?.value || null,
-    session_key_fingerprint: bundle?.attestation?.session_key_fingerprint || null,
-    challenge_expires_at: bundle?.challenge?.expires_at || null,
+    artifact_hash: inspected ? inspected.artifact_hash : bundle?.integrity?.value || null,
+    session_key_fingerprint: inspected ? inspected.session_key_fingerprint :
+      bundle?.attestation?.session_key_fingerprint || null,
+    challenge_expires_at: inspected ? inspected.challenge_expires_at :
+      bundle?.challenge?.expires_at || null,
     checks,
     notes: [
       'A true check records a project-defined verification step as passed; false means it failed or was not reached.',

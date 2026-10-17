@@ -89,6 +89,48 @@ test('direct session and bundle verification bind all inputs before Web Crypto y
   assert.equal((await verifyWitnessBundle(bundle, { expectedChallenge: heldChallenge })).valid, false);
 });
 
+test('witness reports describe the verified snapshot after the caller edits its bundle', async () => {
+  const { bundle, challenge } = await createFixture();
+  const original = {
+    artifact_hash: bundle.integrity.value,
+    session_key_fingerprint: bundle.attestation.session_key_fingerprint,
+    challenge_expires_at: bundle.challenge.expires_at
+  };
+  const pending = verifyWitnessBundle(bundle, { expectedChallenge: challenge });
+  bundle.integrity.value = '0'.repeat(64);
+  bundle.attestation.session_key_fingerprint = '1'.repeat(64);
+  bundle.challenge.expires_at = '2030-01-01T00:00:00.000Z';
+  const result = await pending;
+  assert.equal(result.valid, true);
+  assert.deepEqual(result.inspected, original);
+  const report = witnessVerificationReport(bundle, result);
+  for (const [field, value] of Object.entries(original)) {
+    assert.equal(report[field], value, field);
+  }
+  assert.equal(report.valid, true);
+  assert.equal((await verifyWitnessBundle(bundle, { expectedChallenge: challenge })).valid, false);
+});
+
+test('failed witness reports retain observed fields and omit malformed live inputs', async () => {
+  const { bundle } = await createFixture();
+  const originalHash = bundle.integrity.value;
+  const failed = structuredClone(bundle);
+  failed.attestation.signature = 'A'.repeat(86);
+  const result = await verifyWitnessBundle(failed);
+  assert.equal(result.reason, 'AML_WITNESS_BUNDLE_HASH_MISMATCH');
+  failed.integrity.value = '0'.repeat(64);
+  assert.equal(witnessVerificationReport(failed, result).artifact_hash, originalHash);
+
+  const malformed = structuredClone(bundle);
+  Object.defineProperty(malformed, 'hidden', { value: true });
+  const rejected = await verifyWitnessBundle(malformed);
+  assert.equal(rejected.reason, 'AML_CANONICAL_JSON_NON_JSON_OBJECT');
+  assert.deepEqual(rejected.inspected, {
+    artifact_hash: null, session_key_fingerprint: null, challenge_expires_at: null
+  });
+  assert.equal(witnessVerificationReport(malformed, rejected).artifact_hash, null);
+});
+
 test('witness creators package the inputs checked at call time', async () => {
   const source = await createFixture();
   const evidence = structuredClone(source.evidence);

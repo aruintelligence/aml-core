@@ -67,6 +67,15 @@ does not attach a seal to stale bytes. Recheck any packet after changing it.
 These rules prevent a live-object race, not a compromised page or false
 claims in the supplied JSON.
 
+When `witnessVerificationReport(bundle, result)` receives a result from
+`verifyWitnessBundle`, its artifact hash, session key fingerprint, challenge
+expiry, and step checks come from that verification call's snapshot. Editing
+the original bundle after the call cannot silently change those reported
+fields. In a failed result, these fields are observed input claims, not
+validated facts; malformed JSON that cannot be snapshotted yields nulls.
+The report helper marks a step passed only when `result.checks` explicitly
+records `true`. A bare overall `valid: true` cannot invent individual checks.
+
 From a checkout or installed preview package, the offline command is:
 
 ```bash

@@ -577,17 +577,20 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(other.witness_evaluation.artifact_matches, false);
   assert.equal(other.witness_met, false);
 
-  // A producer can reseal a future creation time and sign reports over its
-  // new hash. Internal quorum and held policy still pass; replay must refuse
-  // the impossible witness timeline as a separate condition.
+  // A signer can explicitly assert a false artifact hash. Internal quorum
+  // and held policy still pass; replay must refuse the impossible timeline.
   const futureBundle = structuredClone(bundle);
   futureBundle.created_at = new Date(Date.now() + 30000).toISOString();
   futureBundle.integrity.value = await sha256Browser(witnessBundlePayload(futureBundle));
+  const claimedFuture = verifier => ({
+    ...witnessVerificationReport(bundle, check, { verifier }),
+    artifact_hash: futureBundle.integrity.value
+  });
   const futureA = await signVerificationReport(
-    witnessVerificationReport(futureBundle, check, { verifier: 'future-a' }),
+    claimedFuture('future-a'),
     await createVerifierKeyPair());
   const futureB = await signVerificationReport(
-    witnessVerificationReport(futureBundle, check, { verifier: 'future-b' }),
+    claimedFuture('future-b'),
     await createVerifierKeyPair());
   const futureQuorum = await createSignedVerificationQuorum([futureA, futureB], { threshold: 2 });
   const futurePolicy = {
