@@ -285,6 +285,29 @@ test('invalid verifier clocks and malformed time fields fail closed', async () =
     'AML_CHALLENGE_TIME_INVALID');
 });
 
+test('challenge times use exact UTC milliseconds across verifiers', async () => {
+  const { bundle, challenge } = await createFixture();
+  const offsetAlias = new Date(Date.parse(challenge.issued_at) + 3600000)
+    .toISOString().replace('Z', '+01:00');
+  for (const [name, field, value] of [
+    ['invalid-calendar', 'issued_at', '2029-11-31T00:00:00.000Z'],
+    ['rollover-hour', 'issued_at', '2030-01-01T24:00:00.000Z'],
+    ['year-zero', 'issued_at', '0000-01-01T00:00:00.000Z'],
+    ['offset-alias', 'issued_at', offsetAlias],
+    ['submillisecond', 'issued_at', challenge.issued_at.replace('Z', '1Z')],
+    ['missing-milliseconds', 'expires_at', challenge.expires_at.replace(/\.[0-9]{3}Z$/, 'Z')]
+  ]) {
+    const altered = { ...challenge, [field]: value };
+    assert.equal(verifyVerificationChallenge(altered).reason, 'AML_CHALLENGE_TIME_INVALID', name);
+    const resealed = structuredClone(bundle);
+    resealed.challenge = altered;
+    resealed.integrity.value = await sha256Browser(witnessBundlePayload(resealed));
+    const result = await verifyWitnessBundle(resealed, { expectedChallenge: altered });
+    assert.equal(result.reason, 'AML_CHALLENGE_TIME_INVALID', name);
+  }
+  assert.equal(verifyVerificationChallenge(challenge).valid, true);
+});
+
 test('challenge creation rejects invalid durations before producing an artifact', () => {
   for (const ttl_ms of [0, -1, 0.5, '60000', NaN, Infinity, Number.MAX_SAFE_INTEGER]) {
     assert.throws(() => createVerificationChallenge({ ttl_ms }), /AML_CHALLENGE_TTL_INVALID/);

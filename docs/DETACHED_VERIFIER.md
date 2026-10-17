@@ -47,6 +47,14 @@ of the same bytes. The historical JSON schema remains a broad, frozen
 contract; these verifiers enforce the narrower canonical encoding profile.
 JavaScript and the project-authored Python verifier apply the same rule.
 
+Challenge issue and expiry times must use the exact UTC millisecond form
+emitted by `createVerificationChallenge`, such as
+`2030-01-01T00:00:02.000Z`. Calendar rollover, time-zone aliases, missing
+milliseconds, and extra fractional digits are rejected before freshness is
+evaluated. The historical JSON schema remains unchanged and permits a
+broader date-time shape; this is the current reference verifier profile.
+The local clock remains an unauthenticated input to the freshness decision.
+
 Challenge, attestation, and witness-bundle verification reject live JavaScript
 values that cannot be faithfully represented as JSON (including hidden and
 symbol fields, accessors, and sparse arrays). The bundle verifier also checks

@@ -150,6 +150,8 @@ test fixtures only; a historical override is not a live freshness check.
 - browser-evidence SHA-256;
 - whole witness-bundle SHA-256;
 - challenge schema, nonce, issue time and expiry;
+- challenge issue and expiry in exact UTC milliseconds, rejecting calendar
+  rollover, offset aliases, and extra fractional precision before freshness;
 - equality with a separately retained, fresh challenge when supplied;
 - challenge/evidence equality inside the session attestation;
 - canonical UTC millisecond evidence, attestation, and bundle times (and a

@@ -57,6 +57,12 @@ Official ĀRU brand authorization uses a separate trust-root system.
 
 The verifier accepts a challenge only from its issue time through its expiration time, inclusive. An invalid verifier clock fails closed. An archived witness bundle remains evidence of what was signed, but a later verifier should not describe an expired challenge as freshly verified. Challenge creation requires a positive integer duration in milliseconds.
 
+Challenge timestamps must have the exact UTC millisecond spelling generated
+by this API. Other ISO-8601 spellings, including offsets or extra precision,
+and normalized invalid dates are rejected by both project-authored verifiers.
+This narrows their input profile without changing the frozen historical schema;
+it does not make the machine clock a trusted time source.
+
 The session signature covers the challenge nonce and expiration, not its
 `issued_at` field. A detached verifier should retain the challenge it
 generated and call `verifyWitnessBundle(bundle, { expectedChallenge })` to

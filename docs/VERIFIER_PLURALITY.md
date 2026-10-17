@@ -410,6 +410,10 @@ fingerprints and rerun verification for a current decision.
 Use `verifySignedVerificationQuorum(quorum, { policy, witnessBundle,
 expectedChallenge })` for the same check in browser JavaScript. Supplying only
 one of the bundle and challenge is a usage error.
+Both project-authored witness verifiers require challenge issue and expiry
+in exact UTC milliseconds. This rejects normalized invalid calendar dates
+and precision or time-zone aliases before checking the local replay clock.
+The historical schema remains a broader frozen snapshot.
 
 When replay succeeds, `replayable_claims_consistent` checks every authenticated
 positive report for explicit claims that contradict the local result: a
