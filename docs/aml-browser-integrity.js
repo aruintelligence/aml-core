@@ -115,8 +115,14 @@ export function browserReceiptPayload(receipt) {
 }
 
 export async function sealBrowserReceipt(receipt) {
-  const payload = browserReceiptPayload(receipt);
+  const payload = snapshotBrowserJSON(browserReceiptPayload(receipt));
   const value = await sha256Browser(payload);
+  // The live receipt is published before its digest resolves. Preserve that
+  // object identity, but never attach a seal for stale payload bytes.
+  if (canonicalJSONStringifyBrowser(browserReceiptPayload(receipt)) !==
+      canonicalJSONStringifyBrowser(payload)) {
+    throw new Error('AML_BROWSER_RECEIPT_CHANGED_DURING_SEAL');
+  }
   receipt.integrity = {
     schema: 'aml-integrity/1',
     algorithm: 'SHA-256',
@@ -128,7 +134,7 @@ export async function sealBrowserReceipt(receipt) {
 
 export async function verifyBrowserReceipt(receipt) {
   try {
-    assertBrowserJSON(receipt);
+    receipt = snapshotBrowserJSON(receipt);
     if (!receipt?.integrity || receipt.integrity.schema !== 'aml-integrity/1') {
       return { valid: false, reason: 'AML_BROWSER_RECEIPT_UNSEALED' };
     }

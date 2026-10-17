@@ -3,7 +3,8 @@
 // This proves possession of the ephemeral session key and exact payload binding.
 // It does NOT prove human identity, organization identity, authorization, intent truth, safety, or policy quality.
 
-import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser } from './aml-browser-integrity.js';
+import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser,
+  snapshotBrowserJSON } from './aml-browser-integrity.js';
 import { verifyBrowserEvidence } from './aml-browser-evidence.js';
 import { verifyVerificationChallenge } from './aml-verification-challenge.js';
 
@@ -56,6 +57,7 @@ export async function createSessionAttestation({
   evidence = globalThis.__AML_EVIDENCE__,
   challenge
 } = {}) {
+  ({ evidence, challenge } = snapshotBrowserJSON({ evidence, challenge }));
   const evidenceCheck = await verifyBrowserEvidence(evidence);
   if (!evidenceCheck.valid) throw new Error('AML_SESSION_EVIDENCE_INVALID');
   const challengeCheck = verifyVerificationChallenge(challenge);
@@ -100,13 +102,29 @@ export async function verifySessionAttestation({ evidence, challenge, attestatio
   };
   const fail = (reason, extra = {}) => ({ valid: false, reason, checks: { ...checks }, ...extra });
   try {
-    const evidenceCheck = await verifyBrowserEvidence(evidence);
+    // Capture all three inputs before the first await, but retain the usual
+    // evidence -> challenge -> attestation error order for malformed inputs.
+    const capture = value => {
+      try { return { value: snapshotBrowserJSON(value) }; }
+      catch (error) { return { error }; }
+    };
+    const evidenceInput = capture(evidence);
+    const challengeInput = capture(challenge);
+    const attestationInput = capture(attestation);
+    const evidenceCheck = evidenceInput.error
+      ? { valid: false, reason: evidenceInput.error?.message || 'AML_BROWSER_EVIDENCE_VERIFY_ERROR' }
+      : await verifyBrowserEvidence(evidenceInput.value);
     checks.receipt_integrity = evidenceCheck.receipt?.valid === true;
     if (!evidenceCheck.valid) return fail('AML_SESSION_EVIDENCE_INVALID', { evidence: evidenceCheck });
     checks.evidence_integrity = true;
+    if (challengeInput.error) return fail(challengeInput.error?.message || 'AML_CHALLENGE_INVALID');
+    challenge = challengeInput.value;
+    evidence = evidenceInput.value;
     const challengeCheck = verifyVerificationChallenge(challenge, { now });
     if (!challengeCheck.valid) return fail(challengeCheck.reason);
     checks.challenge_freshness = true;
+    if (attestationInput.error) return fail(attestationInput.error?.message || 'AML_SESSION_VERIFY_ERROR');
+    attestation = attestationInput.value;
     assertBrowserJSON(attestation);
     if (!attestation || attestation.schema !== 'aml-session-attestation/1') {
       return fail('AML_SESSION_ATTESTATION_INVALID');

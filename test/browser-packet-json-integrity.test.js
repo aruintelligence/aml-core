@@ -99,6 +99,42 @@ test('browser evidence rejects receipt and packet changes invisible to their has
   assert.equal((await verifyBrowserEvidence(evidence)).reason, 'AML_BROWSER_EVIDENCE_INTEGRITY_INVALID');
   delete evidence.integrity.audit_note;
   receipt.decisions.audit_note = 'added';
-  assert.equal((await verifyBrowserEvidence(evidence)).valid, false);
+  // The evidence retains the sealed receipt bytes, not the caller's later edit.
+  assert.equal((await verifyBrowserEvidence(evidence)).valid, true);
   await assert.rejects(createBrowserEvidence(receipt), /AML_BROWSER_EVIDENCE_RECEIPT_INVALID/);
+});
+
+test('receipt and evidence verification use their call-time bytes', async () => {
+  const receipt = await sealBrowserReceipt(makeReceipt());
+  const receiptCheck = verifyBrowserReceipt(receipt);
+  receipt.decisions[0].id = 'changed';
+  assert.equal((await receiptCheck).valid, true);
+  assert.equal((await verifyBrowserReceipt(receipt)).reason, 'AML_BROWSER_RECEIPT_HASH_MISMATCH');
+
+  const sealed = await sealBrowserReceipt(makeReceipt());
+  const evidence = await createBrowserEvidence(sealed);
+  const evidenceCheck = verifyBrowserEvidence(evidence);
+  evidence.zone_violations.push({ reason: 'changed' });
+  assert.equal((await evidenceCheck).valid, true);
+  assert.equal((await verifyBrowserEvidence(evidence)).reason, 'AML_BROWSER_EVIDENCE_HASH_MISMATCH');
+});
+
+test('receipt sealing rejects a payload changed while its digest is pending', async () => {
+  const receipt = makeReceipt();
+  const pending = sealBrowserReceipt(receipt);
+  receipt.decisions[0].id = 'changed';
+  await assert.rejects(pending, /AML_BROWSER_RECEIPT_CHANGED_DURING_SEAL/);
+  assert.equal(receipt.integrity, undefined);
+});
+
+test('evidence creation detaches its receipt and zone violations', async () => {
+  const receipt = await sealBrowserReceipt(makeReceipt());
+  globalThis.__AML_ZONE_VIOLATIONS__ = [{ reason: 'first' }];
+  const pending = createBrowserEvidence(receipt);
+  receipt.decisions[0].id = 'changed';
+  const evidence = await pending;
+  assert.equal(evidence.receipt.decisions[0].id, 'one');
+  globalThis.__AML_ZONE_VIOLATIONS__[0].reason = 'second';
+  assert.equal(evidence.zone_violations[0].reason, 'first');
+  assert.equal((await verifyBrowserEvidence(evidence)).valid, true);
 });

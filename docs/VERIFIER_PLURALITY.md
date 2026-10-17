@@ -57,6 +57,16 @@ objects. A later edit requires a new verification call. The CLI reads saved
 files; this behavior does not authenticate who supplied them or prevent a
 file from changing before it is read.
 
+The browser receipt, evidence, session attestation, and witness bundle helpers
+also copy ordinary JSON inputs before their first asynchronous check. Direct
+verification results describe those call-time bytes. Evidence and bundle
+creators embed detached copies of the inputs they checked, so later caller
+edits cannot change the generated packet. Receipt sealing preserves its
+published object identity and rejects a payload edited while hashing; it
+does not attach a seal to stale bytes. Recheck any packet after changing it.
+These rules prevent a live-object race, not a compromised page or false
+claims in the supplied JSON.
+
 From a checkout or installed preview package, the offline command is:
 
 ```bash
