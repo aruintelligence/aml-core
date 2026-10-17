@@ -65,7 +65,21 @@ export async function createWitnessBundle({ evidence, challenge, attestation }) 
   return bundle;
 }
 
-export async function verifyWitnessBundle(bundle, { now = Date.now(), expectedChallenge } = {}) {
+export async function verifyWitnessBundle(bundle, options = {}) {
+  const callerSuppliedClock = Object.hasOwn(options, 'now');
+  // Avoid reading Date.now twice when an outer verifier already captured one
+  // replay instant and supplied it through `now`.
+  const localNow = callerSuppliedClock ? new Date().getTime() : Date.now();
+  const now = callerSuppliedClock ? options.now : localNow;
+  let expectedChallenge = Object.hasOwn(options, 'expectedChallenge')
+    ? options.expectedChallenge : undefined;
+  // Keep the local observation separate from a caller's optional test clock.
+  // Neither value proves a trusted timestamp.
+  const timing = {
+    evaluated_at: Number.isFinite(localNow) && Math.abs(localNow) <= 8.64e15
+      ? new Date(localNow).toISOString() : null,
+    freshness_clock_source: callerSuppliedClock ? 'caller_supplied' : 'local_system'
+  };
   const checks = {
     bundle_integrity: false,
     receipt_integrity: false,
@@ -84,7 +98,8 @@ export async function verifyWitnessBundle(bundle, { now = Date.now(), expectedCh
     challenge_expires_at: null
   };
   const fail = (reason, extra = {}) => ({
-    valid: false, reason, checks: { ...checks }, inspected: { ...inspected }, ...extra
+    valid: false, reason, checks: { ...checks }, inspected: { ...inspected },
+    ...timing, ...extra
   });
   try {
     let heldInputError;
@@ -143,6 +158,7 @@ export async function verifyWitnessBundle(bundle, { now = Date.now(), expectedCh
       reason: 'AML_WITNESS_BUNDLE_VALID',
       checks: { ...checks },
       inspected: { ...inspected },
+      ...timing,
       evidence_hash: bundle.evidence.integrity.value,
       session_key_fingerprint: bundle.attestation.session_key_fingerprint,
       challenge_expires_at: bundle.challenge.expires_at,

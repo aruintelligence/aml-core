@@ -75,6 +75,13 @@ fields. In a failed result, these fields are observed input claims, not
 validated facts; malformed JSON that cannot be snapshotted yields nulls.
 The report helper marks a step passed only when `result.checks` explicitly
 records `true`. A bare overall `valid: true` cannot invent individual checks.
+The report's `checked_at` uses the local system time captured when direct
+witness verification starts, even if the report is assembled later. The
+direct API's optional `now` override is for controlled replay; a positive
+`witnessVerificationReport` refuses a result that used that supplied clock.
+The Worker verifier ignores any message-supplied `now` and checks freshness
+with its own local clock. These machine times are observations, not trusted
+timestamps or evidence of an independent verifier.
 
 From a checkout or installed preview package, the offline command is:
 

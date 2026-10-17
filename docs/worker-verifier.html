@@ -38,7 +38,7 @@
     document.getElementById('verify').addEventListener('click', () => {
       try {
         const bundle = JSON.parse(input.value);
-        worker.postMessage({ id: ++counter, bundle, now: Date.now() });
+        worker.postMessage({ id: ++counter, bundle });
       } catch (error) {
         result.textContent = JSON.stringify({ valid:false, reason:error?.message || 'INVALID_JSON' }, null, 2);
         result.className = 'bad';

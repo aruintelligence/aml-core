@@ -111,6 +111,32 @@ test('witness reports describe the verified snapshot after the caller edits its 
   assert.equal((await verifyWitnessBundle(bundle, { expectedChallenge: challenge })).valid, false);
 });
 
+test('witness report time records the verifier invocation, not later report assembly', async () => {
+  const { bundle, challenge } = await createFixture();
+  const started = Date.now();
+  const result = await verifyWitnessBundle(bundle, { expectedChallenge: challenge });
+  assert.equal(result.valid, true);
+  assert.equal(result.freshness_clock_source, 'local_system');
+  assert.ok(Date.parse(result.evaluated_at) >= started);
+  assert.ok(Date.parse(result.evaluated_at) <= Date.now());
+  await new Promise(resolve => setTimeout(resolve, 15));
+  const report = witnessVerificationReport(bundle, result);
+  assert.equal(report.checked_at, result.evaluated_at);
+
+  const supplied = await verifyWitnessBundle(bundle, { expectedChallenge: challenge, now: Date.now() });
+  assert.equal(supplied.valid, true);
+  assert.equal(supplied.freshness_clock_source, 'caller_supplied');
+  assert.throws(() => witnessVerificationReport(bundle, supplied),
+    /AML_VERIFICATION_REPORT_CALLER_CLOCK_UNTRUSTED/);
+
+  const inherited = Object.create({ now: Date.parse(challenge.expires_at) + 1 });
+  inherited.expectedChallenge = challenge;
+  const inheritedResult = await verifyWitnessBundle(bundle, inherited);
+  assert.equal(inheritedResult.valid, true);
+  assert.equal(inheritedResult.freshness_clock_source, 'local_system');
+  assert.equal(witnessVerificationReport(bundle, inheritedResult).valid, true);
+});
+
 test('failed witness reports retain observed fields and omit malformed live inputs', async () => {
   const { bundle } = await createFixture();
   const originalHash = bundle.integrity.value;

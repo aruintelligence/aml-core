@@ -31,6 +31,25 @@ test('only explicit true steps are reported as passed', () => {
   assert.equal(report.checks.session_signature, false);
 });
 
+test('inherited check names cannot turn an omitted step into a passed step', () => {
+  const checks = Object.create({ bundle_integrity: true, verifier_held_challenge: true });
+  checks.session_signature = true;
+  const report = witnessVerificationReport({}, { valid: true, checks });
+  assert.equal(report.checks.bundle_integrity, false);
+  assert.equal(report.checks.verifier_held_challenge, false);
+  assert.equal(report.checks.session_signature, true);
+});
+
+test('a positive report refuses a caller-supplied freshness clock', () => {
+  assert.throws(() => witnessVerificationReport({}, {
+    valid: true, freshness_clock_source: 'caller_supplied',
+    evaluated_at: '2026-10-17T00:00:00.000Z'
+  }), /AML_VERIFICATION_REPORT_CALLER_CLOCK_UNTRUSTED/);
+  assert.throws(() => witnessVerificationReport({}, {
+    valid: false, evaluated_at: '2030-02-30T00:00:00.000Z'
+  }), /AML_VERIFICATION_REPORT_TIME_INVALID/);
+});
+
 test('an incomplete observed snapshot cannot be mixed with live bundle fields', () => {
   assert.throws(() => witnessVerificationReport({ integrity: { value: 'a'.repeat(64) } }, {
     valid: true, inspected: { session_key_fingerprint: 'b'.repeat(64) }

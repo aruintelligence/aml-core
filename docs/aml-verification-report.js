@@ -42,8 +42,18 @@ export function witnessVerificationReport(bundle, result, { verifier = 'aml-refe
   ];
   const recordedChecks = result?.checks && typeof result.checks === 'object' ? result.checks : null;
   const checks = Object.fromEntries(checkNames.map((name) => [name,
-    recordedChecks?.[name] === true
+    recordedChecks !== null && Object.hasOwn(recordedChecks, name) && recordedChecks[name] === true
   ]));
+  if (result?.valid === true && result.freshness_clock_source === 'caller_supplied') {
+    throw new Error('AML_VERIFICATION_REPORT_CALLER_CLOCK_UNTRUSTED');
+  }
+  const evaluatedAt = result?.evaluated_at;
+  if (evaluatedAt != null && (typeof evaluatedAt !== 'string' ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(evaluatedAt) ||
+      !Number.isFinite(Date.parse(evaluatedAt)) ||
+      new Date(Date.parse(evaluatedAt)).toISOString() !== evaluatedAt)) {
+    throw new Error('AML_VERIFICATION_REPORT_TIME_INVALID');
+  }
   // A direct verifier result includes the fields captured from its input
   // snapshot. Older hand-built results still use the supplied bundle.
   const inspected = result?.inspected;
@@ -61,6 +71,7 @@ export function witnessVerificationReport(bundle, result, { verifier = 'aml-refe
     verifier,
     artifact_type: 'aml-witness-bundle/1',
     result,
+    checked_at: evaluatedAt ?? new Date().toISOString(),
     artifact_hash: inspected ? inspected.artifact_hash : bundle?.integrity?.value || null,
     session_key_fingerprint: inspected ? inspected.session_key_fingerprint :
       bundle?.attestation?.session_key_fingerprint || null,
