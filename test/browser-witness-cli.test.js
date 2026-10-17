@@ -35,6 +35,19 @@ test('the CLI verifies a real signed bundle only against a retained challenge', 
   assert.equal(valid.status, 0, valid.stderr);
   assert.equal(JSON.parse(valid.stdout).reason, 'AML_WITNESS_BUNDLE_VALID');
 
+  const extraHeldClaim = run(bundlePath,
+    write('held-extra-claim.json', { ...challenge, certified_issuer: true }));
+  assert.equal(extraHeldClaim.status, 2, extraHeldClaim.stderr);
+  assert.equal(JSON.parse(extraHeldClaim.stdout).reason, 'AML_CHALLENGE_INVALID');
+
+  const textNonce = structuredClone(bundle);
+  textNonce.challenge.nonce = 'n'.repeat(32);
+  textNonce.integrity.value = await sha256Browser(witnessBundlePayload(textNonce));
+  const invalidNonce = run(write('text-nonce.json', textNonce),
+    write('held-text-nonce.json', textNonce.challenge));
+  assert.equal(invalidNonce.status, 2, invalidNonce.stderr);
+  assert.equal(JSON.parse(invalidNonce.stdout).reason, 'AML_CHALLENGE_NONCE_INVALID');
+
   for (const [name, original, other] of [
     ['bundle', bundle, heldPath], ['challenge', challenge, bundlePath]
   ]) {

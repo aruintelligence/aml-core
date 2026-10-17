@@ -149,7 +149,8 @@ test fixtures only; a historical override is not a live freshness check.
 - receipt SHA-256;
 - browser-evidence SHA-256;
 - whole witness-bundle SHA-256;
-- challenge schema, nonce, issue time and expiry;
+- exactly the generated five challenge fields, `prototype: true`, and a
+  uniquely encoded 32-byte nonce (43 unpadded base64url characters);
 - challenge issue and expiry in exact UTC milliseconds, rejecting calendar
   rollover, offset aliases, and extra fractional precision before freshness;
 - equality with a separately retained, fresh challenge when supplied;
@@ -165,6 +166,9 @@ The session signature and both 32-byte public-key coordinates must have their
 unique unpadded base64url spelling. The JavaScript witness verifier enforces
 the same byte lengths and round-trip encoding checks; a changed unused bit,
 padding, or whitespace cannot be accepted by one implementation alone.
+Nonce encoding does not attest to the quality of randomness. Custom historical
+challenges outside the generator's shape need to be regenerated for this
+reference verifier profile; the frozen schema is unchanged.
 
 ## Deliberate separation
 

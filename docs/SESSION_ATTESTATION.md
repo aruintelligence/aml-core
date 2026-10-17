@@ -73,6 +73,12 @@ and normalized invalid dates are rejected by both project-authored verifiers.
 This narrows their input profile without changing the frozen historical schema;
 it does not make the machine clock a trusted time source.
 
+The reference verifiers also require exactly the five fields emitted by the
+challenge generator and a canonically encoded 32-byte nonce. This rejects
+extra unsigned issuer claims and ambiguous nonce spellings. Older custom
+challenges outside this profile must be regenerated. The encoding check
+cannot establish the quality of the verifier's randomness.
+
 The session signature covers the challenge nonce and expiration, not its
 `issued_at` field. A detached verifier should retain the challenge it
 generated and call `verifyWitnessBundle(bundle, { expectedChallenge })` to
