@@ -5,9 +5,9 @@ import { verifyWitnessBundle } from './aml-witness-bundle.js';
 import { witnessVerificationReport } from './aml-verification-report.js';
 
 self.addEventListener('message', async (event) => {
-  const { id = null, bundle, now = Date.now(), expectedChallenge } = event.data || {};
+  const { id = null, bundle, expectedChallenge } = event.data || {};
   try {
-    const result = await verifyWitnessBundle(bundle, { now, expectedChallenge });
+    const result = await verifyWitnessBundle(bundle, { expectedChallenge });
     const report = witnessVerificationReport(bundle, result, { verifier: 'aml-web-worker' });
     self.postMessage({ id, report });
   } catch (error) {
