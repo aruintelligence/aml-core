@@ -328,6 +328,39 @@ test('challenge times use exact UTC milliseconds across verifiers', async () => 
   assert.equal(verifyVerificationChallenge(challenge).valid, true);
 });
 
+test('challenge replay accepts only the generated field shape and canonical 32-byte nonce', async () => {
+  const { bundle, challenge, evidence } = await createFixture();
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const alias = challenge.nonce.slice(0, -1) +
+    alphabet[alphabet.indexOf(challenge.nonce.at(-1)) ^ 1];
+  assert.deepEqual(Buffer.from(alias, 'base64url'), Buffer.from(challenge.nonce, 'base64url'));
+  const cases = [
+    ['missing-prototype', { prototype: undefined }, 'AML_CHALLENGE_INVALID'],
+    ['false-prototype', { prototype: false }, 'AML_CHALLENGE_INVALID'],
+    ['extra-claim', { issuer_verified: true }, 'AML_CHALLENGE_INVALID'],
+    ['short-nonce', { nonce: challenge.nonce.slice(0, -1) }, 'AML_CHALLENGE_NONCE_INVALID'],
+    ['padded-nonce', { nonce: `${challenge.nonce}=` }, 'AML_CHALLENGE_NONCE_INVALID'],
+    ['nonce-byte-alias', { nonce: alias }, 'AML_CHALLENGE_NONCE_INVALID'],
+    ['non-base64-nonce', { nonce: 'x'.repeat(42) + '!' }, 'AML_CHALLENGE_NONCE_INVALID']
+  ];
+  for (const [name, changes, reason] of cases) {
+    const altered = { ...challenge, ...changes };
+    if (Object.hasOwn(changes, 'prototype') && changes.prototype === undefined) {
+      delete altered.prototype;
+    }
+    assert.equal(verifyVerificationChallenge(altered).reason, reason, name);
+    await assert.rejects(createSessionAttestation({ evidence, challenge: altered }),
+      new RegExp(reason), name);
+    const resealed = structuredClone(bundle);
+    resealed.challenge = altered;
+    resealed.integrity.value = await sha256Browser(witnessBundlePayload(resealed));
+    const result = await verifyWitnessBundle(resealed, { expectedChallenge: altered });
+    assert.equal(result.reason, reason, name);
+    assert.equal(result.checks.verifier_held_challenge, false, name);
+  }
+  assert.equal(verifyVerificationChallenge(challenge).valid, true);
+});
+
 test('challenge creation rejects invalid durations before producing an artifact', () => {
   for (const ttl_ms of [0, -1, 0.5, '60000', NaN, Infinity, Number.MAX_SAFE_INTEGER]) {
     assert.throws(() => createVerificationChallenge({ ttl_ms }), /AML_CHALLENGE_TTL_INVALID/);

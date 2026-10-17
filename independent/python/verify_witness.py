@@ -175,10 +175,16 @@ def canonical_challenge_time(value):
 
 
 def verify_challenge(challenge, now):
-    if not isinstance(challenge, dict) or challenge.get("schema") != "aml-verification-challenge/1":
+    if (not isinstance(challenge, dict) or
+            set(challenge) != {"schema", "prototype", "nonce", "issued_at", "expires_at"} or
+            challenge.get("schema") != "aml-verification-challenge/1" or
+            challenge.get("prototype") is not True):
         return False, "AML_PY_CHALLENGE_INVALID"
     nonce = challenge.get("nonce")
-    if not isinstance(nonce, str) or len(nonce) < 32:
+    try:
+        if len(b64url_decode(nonce)) != 32 or len(nonce) != 43:
+            return False, "AML_PY_CHALLENGE_NONCE_INVALID"
+    except ValueError:
         return False, "AML_PY_CHALLENGE_NONCE_INVALID"
     try:
         issued = canonical_challenge_time(challenge.get("issued_at"))

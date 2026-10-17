@@ -10,6 +10,16 @@ function bytesToBase64Url(bytes) {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
+function canonicalChallengeNonce(value) {
+  // A generated nonce is 32 bytes in its unique unpadded base64url spelling.
+  // This checks representation and length, not whether its issuer used a
+  // trustworthy random source; the verifier must retain its own challenge.
+  if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(value)) return false;
+  const encoded = value.replace(/-/g, '+').replace(/_/g, '/');
+  const decoded = Uint8Array.from(atob(`${encoded}=`), char => char.charCodeAt(0));
+  return decoded.length === 32 && bytesToBase64Url(decoded) === value;
+}
+
 // The challenge producer emits exact UTC milliseconds. Requiring that form
 // prevents Date.parse calendar rollover and submillisecond truncation from
 // giving another verifier a different freshness decision.
@@ -45,10 +55,15 @@ export function createVerificationChallenge({ ttl_ms = 120000 } = {}) {
 export function verifyVerificationChallenge(challenge, { now = Date.now() } = {}) {
   try {
     assertBrowserJSON(challenge);
-    if (!challenge || challenge.schema !== 'aml-verification-challenge/1') {
+    if (!challenge || typeof challenge !== 'object' || Array.isArray(challenge) ||
+        challenge.schema !== 'aml-verification-challenge/1' || challenge.prototype !== true ||
+        Object.keys(challenge).length !== 5 ||
+        Object.keys(challenge).some(key => ![
+          'schema', 'prototype', 'nonce', 'issued_at', 'expires_at'
+        ].includes(key))) {
       return { valid: false, reason: 'AML_CHALLENGE_INVALID' };
     }
-    if (typeof challenge.nonce !== 'string' || challenge.nonce.length < 32) {
+    if (!canonicalChallengeNonce(challenge.nonce)) {
       return { valid: false, reason: 'AML_CHALLENGE_NONCE_INVALID' };
     }
     const issued = canonicalChallengeTime(challenge.issued_at);

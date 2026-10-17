@@ -311,6 +311,34 @@ try {
   assert.equal(timeAliasDecision.witness_evaluation.reason, 'AML_CHALLENGE_TIME_INVALID');
   await compare('signed-challenge-time-alias-rejected', timeAliasQuorum,
     timeAliasPolicy, false, { bundle: timeAliasBundle, challenge: timeAliasBundle.challenge });
+  const nonceAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const nonceAlias = challenge.nonce.slice(0, -1) +
+    nonceAlphabet[nonceAlphabet.indexOf(challenge.nonce.at(-1)) ^ 1];
+  assert.deepEqual(Buffer.from(nonceAlias, 'base64url'), Buffer.from(challenge.nonce, 'base64url'));
+  for (const [name, changedChallenge, reason] of [
+    ['unexpected-challenge-claim', { ...challenge, certified_issuer: true }, 'AML_CHALLENGE_INVALID'],
+    ['noncanonical-challenge-nonce', { ...challenge, nonce: nonceAlias }, 'AML_CHALLENGE_NONCE_INVALID'],
+    ['text-challenge-nonce', { ...challenge, nonce: 'n'.repeat(32) }, 'AML_CHALLENGE_NONCE_INVALID']
+  ]) {
+    const altered = structuredClone(bundle);
+    altered.challenge = changedChallenge;
+    altered.integrity.value = await sha256Browser(witnessBundlePayload(altered));
+    const reports = await Promise.all([witnessKeyA, witnessKeyB].map((key, index) =>
+      signVerificationReport(witnessVerificationReport(altered, witness,
+        { verifier: `${name}-${index}` }), key)));
+    const quorum = await createSignedVerificationQuorum(reports, { threshold: 2 });
+    const heldPolicy = { ...witnessPolicy, artifact_hash: altered.integrity.value };
+    const decision = await verifySignedVerificationQuorum(quorum, {
+      policy: heldPolicy, witnessBundle: altered, expectedChallenge: changedChallenge
+    });
+    assert.equal(decision.valid, true, name);
+    assert.equal(decision.threshold_met, true, name);
+    assert.equal(decision.policy_met, true, name);
+    assert.equal(decision.witness_met, false, name);
+    assert.equal(decision.witness_evaluation.reason, reason, name);
+    await compare(`signed-${name}-rejected`, quorum, heldPolicy, false,
+      { bundle: altered, challenge: changedChallenge });
+  }
   const alphabetWitness = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
   const alternateWitness = value => value.slice(0, -1) +
     alphabetWitness[alphabetWitness.indexOf(value.at(-1)) ^ 1];

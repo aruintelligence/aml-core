@@ -60,6 +60,16 @@ evaluated. The historical JSON schema remains unchanged and permits a
 broader date-time shape; this is the current reference verifier profile.
 The local clock remains an unauthenticated input to the freshness decision.
 
+The challenge must have exactly the five generated fields (`schema`,
+`prototype`, `nonce`, `issued_at`, `expires_at`), with `prototype: true` and a
+32-byte nonce in its unique 43-character unpadded base64url spelling. Extra
+issuer claims, arbitrary text nonces, padding, and changed unused encoding
+bits fail in both the JavaScript and project-authored Python verifiers. This
+narrows the frozen schema's broader historical input profile: custom
+challenges outside the generated shape need to be regenerated. A correctly
+encoded nonce does not prove that its issuer chose it randomly; keep the
+original challenge through a channel controlled by the verifier.
+
 Challenge, attestation, and witness-bundle verification reject live JavaScript
 values that cannot be faithfully represented as JSON (including hidden and
 symbol fields, accessors, and sparse arrays). The bundle verifier also checks
