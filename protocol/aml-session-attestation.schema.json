@@ -19,12 +19,12 @@
       "properties": {
         "kty": { "const": "EC" },
         "crv": { "const": "P-256" },
-        "x": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" },
-        "y": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" }
+        "x": { "type": "string" },
+        "y": { "type": "string" }
       }
     },
     "session_key_fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-    "signature": { "type": "string", "pattern": "^[A-Za-z0-9_-]{86}$" }
+    "signature": { "type": "string", "minLength": 64 }
   },
   "additionalProperties": false
 }
