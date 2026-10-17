@@ -1,7 +1,8 @@
 // ĀML witness bundle — SHIPPED reference prototype.
 // Packages evidence + verifier challenge + ephemeral-session attestation into one portable JSON object.
 
-import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser } from './aml-browser-integrity.js';
+import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser,
+  snapshotBrowserJSON } from './aml-browser-integrity.js';
 import { verifySessionAttestation } from './aml-session-attestation.js';
 import { verifyVerificationChallenge } from './aml-verification-challenge.js';
 
@@ -41,6 +42,7 @@ function bundleTimeFailure(bundle, now) {
 }
 
 export async function createWitnessBundle({ evidence, challenge, attestation }) {
+  ({ evidence, challenge, attestation } = snapshotBrowserJSON({ evidence, challenge, attestation }));
   const attestationCheck = await verifySessionAttestation({ evidence, challenge, attestation });
   if (!attestationCheck.valid) throw new Error(attestationCheck.reason);
   const createdNow = Date.now();
@@ -75,7 +77,12 @@ export async function verifyWitnessBundle(bundle, { now = Date.now(), expectedCh
   };
   const fail = (reason, extra = {}) => ({ valid: false, reason, checks: { ...checks }, ...extra });
   try {
-    assertBrowserJSON(bundle);
+    let heldInputError;
+    if (expectedChallenge !== undefined) {
+      try { expectedChallenge = snapshotBrowserJSON(expectedChallenge); }
+      catch (error) { heldInputError = error; }
+    }
+    bundle = snapshotBrowserJSON(bundle);
     if (!bundle?.integrity || bundle.integrity.schema !== 'aml-integrity/1') {
       return fail('AML_WITNESS_BUNDLE_UNSEALED');
     }
@@ -95,6 +102,7 @@ export async function verifyWitnessBundle(bundle, { now = Date.now(), expectedCh
     }
     checks.bundle_integrity = true;
     if (expectedChallenge !== undefined) {
+      if (heldInputError) return fail(heldInputError?.message || 'AML_CHALLENGE_INVALID');
       const heldChallenge = verifyVerificationChallenge(expectedChallenge, { now });
       if (!heldChallenge.valid) return fail(heldChallenge.reason);
       if (canonicalJSONStringifyBrowser(bundle.challenge) !== canonicalJSONStringifyBrowser(expectedChallenge)) {

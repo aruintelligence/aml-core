@@ -1,4 +1,5 @@
-import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser, verifyBrowserReceipt } from './aml-browser-integrity.js';
+import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser,
+  snapshotBrowserJSON, verifyBrowserReceipt } from './aml-browser-integrity.js';
 
 let evidenceRevision = 0;
 
@@ -20,6 +21,9 @@ export async function createBrowserEvidence(
   { url = globalThis.location?.href || 'about:blank' } = {}
 ) {
   if (!receipt?.integrity) throw new Error('AML_BROWSER_EVIDENCE_REQUIRES_SEALED_RECEIPT');
+  try { receipt = snapshotBrowserJSON(receipt); }
+  catch { throw new Error('AML_BROWSER_EVIDENCE_RECEIPT_INVALID'); }
+  url = snapshotBrowserJSON(url);
   const receiptCheck = await verifyBrowserReceipt(receipt);
   if (!receiptCheck.valid) throw new Error('AML_BROWSER_EVIDENCE_RECEIPT_INVALID');
 
@@ -31,7 +35,7 @@ export async function createBrowserEvidence(
     url,
     generated_at: new Date().toISOString(),
     receipt,
-    zone_violations: currentViolations()
+    zone_violations: snapshotBrowserJSON(currentViolations())
   };
 
   evidence.integrity = {
@@ -59,7 +63,7 @@ export async function createBrowserEvidence(
 
 export async function verifyBrowserEvidence(evidence) {
   try {
-    assertBrowserJSON(evidence);
+    evidence = snapshotBrowserJSON(evidence);
     if (!evidence?.integrity || evidence.integrity.schema !== 'aml-integrity/1') {
       return { valid: false, reason: 'AML_BROWSER_EVIDENCE_UNSEALED' };
     }

@@ -63,6 +63,75 @@ test('detached witness bundle verifies under Node WebCrypto', async () => {
   assert.equal(bundleCheck.reason, 'AML_WITNESS_BUNDLE_VALID');
 });
 
+test('direct session and bundle verification bind all inputs before Web Crypto yields', async () => {
+  const source = await createFixture();
+  const evidence = structuredClone(source.evidence);
+  const challenge = structuredClone(source.challenge);
+  const attestation = structuredClone(source.attestation);
+  const sessionCheck = verifySessionAttestation({ evidence, challenge, attestation });
+  evidence.receipt.decisions[0].purpose = 'changed after call';
+  challenge.nonce = 'A'.repeat(43);
+  attestation.signature = 'A'.repeat(86);
+  const session = await sessionCheck;
+  assert.equal(session.valid, true);
+  assert.equal(session.evidence_hash, source.evidence.integrity.value);
+  assert.equal((await verifySessionAttestation({ evidence, challenge, attestation })).valid, false);
+
+  const bundle = structuredClone(source.bundle);
+  const heldChallenge = structuredClone(source.challenge);
+  const pending = verifyWitnessBundle(bundle, { expectedChallenge: heldChallenge });
+  bundle.evidence.receipt.decisions[0].purpose = 'changed after call';
+  bundle.attestation.signature = 'A'.repeat(86);
+  heldChallenge.issued_at = '2030-01-01T00:00:00.000Z';
+  const replay = await pending;
+  assert.equal(replay.valid, true);
+  assert.equal(replay.checks.verifier_held_challenge, true);
+  assert.equal((await verifyWitnessBundle(bundle, { expectedChallenge: heldChallenge })).valid, false);
+});
+
+test('witness creators package the inputs checked at call time', async () => {
+  const source = await createFixture();
+  const evidence = structuredClone(source.evidence);
+  const challenge = structuredClone(source.challenge);
+  const pendingAttestation = createSessionAttestation({ evidence, challenge });
+  evidence.receipt.decisions[0].purpose = 'changed after call';
+  challenge.nonce = 'A'.repeat(43);
+  const attestation = await pendingAttestation;
+  assert.equal(attestation.challenge_nonce, source.challenge.nonce);
+  assert.equal((await verifySessionAttestation({ evidence: source.evidence,
+    challenge: source.challenge, attestation })).valid, true);
+
+  const bundleEvidence = structuredClone(source.evidence);
+  const bundleChallenge = structuredClone(source.challenge);
+  const bundleAttestation = structuredClone(attestation);
+  const pendingBundle = createWitnessBundle({ evidence: bundleEvidence,
+    challenge: bundleChallenge, attestation: bundleAttestation });
+  bundleEvidence.receipt.decisions[0].purpose = 'changed after call';
+  bundleChallenge.nonce = 'A'.repeat(43);
+  bundleAttestation.signature = 'A'.repeat(86);
+  const bundle = await pendingBundle;
+  assert.equal(bundle.challenge.nonce, source.challenge.nonce);
+  assert.equal((await verifyWitnessBundle(bundle, { expectedChallenge: source.challenge })).valid, true);
+});
+
+test('hidden call-time inputs cannot become valid by deletion during replay', async () => {
+  const source = await createFixture();
+  const held = structuredClone(source.challenge);
+  Object.defineProperty(held, 'unbound', { value: true, configurable: true });
+  const pending = verifyWitnessBundle(source.bundle, { expectedChallenge: held });
+  delete held.unbound;
+  assert.equal((await pending).reason, 'AML_CANONICAL_JSON_NON_JSON_OBJECT');
+  assert.equal((await verifyWitnessBundle(source.bundle, { expectedChallenge: held })).valid, true);
+
+  const attestation = structuredClone(source.attestation);
+  Object.defineProperty(attestation.session_public_key_jwk, 'unbound',
+    { value: true, configurable: true });
+  const pendingSession = verifySessionAttestation({ evidence: source.evidence,
+    challenge: source.challenge, attestation });
+  delete attestation.session_public_key_jwk.unbound;
+  assert.equal((await pendingSession).reason, 'AML_CANONICAL_JSON_NON_JSON_OBJECT');
+});
+
 test('sequential and concurrent attestations use isolated keys and remain replayable', async () => {
   const { evidence, challenge, attestation: first } = await createFixture();
   const second = await createSessionAttestation({ evidence, challenge });
@@ -385,6 +454,8 @@ test('a hidden challenge field fails direct challenge, signature, and bundle che
   assert.equal(canonicalJSONStringifyBrowser(bundle), canonical);
   assert.equal(verifyVerificationChallenge(challenge).reason, 'AML_CANONICAL_JSON_NON_JSON_OBJECT');
   assert.equal((await verifySessionAttestation({ evidence, challenge, attestation })).valid, false);
+  assert.equal((await verifyWitnessBundle(bundle)).valid, true);
+  Object.defineProperty(bundle.challenge, 'unbound_claim', { value: 'added after signing' });
   assert.equal((await verifyWitnessBundle(bundle)).reason, 'AML_CANONICAL_JSON_NON_JSON_OBJECT');
 });
 
@@ -395,6 +466,8 @@ test('an unsigned hidden attestation field fails direct signature and bundle che
   assert.equal(canonicalJSONStringifyBrowser(bundle), canonical);
   assert.equal((await verifySessionAttestation({ evidence, challenge, attestation })).reason,
     'AML_CANONICAL_JSON_NON_JSON_OBJECT');
+  assert.equal((await verifyWitnessBundle(bundle)).valid, true);
+  Object.defineProperty(bundle.attestation.session_public_key_jwk, 'unbound_claim', { value: 'added' });
   assert.equal((await verifyWitnessBundle(bundle)).reason, 'AML_CANONICAL_JSON_NON_JSON_OBJECT');
   await assert.rejects(createWitnessBundle({ evidence, challenge, attestation }),
     /AML_CANONICAL_JSON_NON_JSON_OBJECT/);
@@ -427,7 +500,7 @@ test('verifier-held challenge detects a changed issued_at even after the bundle 
   const { bundle, challenge } = await createFixture();
   const heldChallenge = structuredClone(challenge);
   assert.equal((await verifyWitnessBundle(bundle, { expectedChallenge: heldChallenge })).valid, true);
-  challenge.issued_at = new Date(Date.parse(challenge.issued_at) - 1000).toISOString();
+  bundle.challenge.issued_at = new Date(Date.parse(challenge.issued_at) - 1000).toISOString();
   bundle.integrity.value = await sha256Browser(witnessBundlePayload(bundle));
   // The ephemeral signature binds the nonce and expiration, not issued_at.
   assert.equal((await verifyWitnessBundle(bundle)).valid, true);
