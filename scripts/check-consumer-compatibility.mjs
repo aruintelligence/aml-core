@@ -212,6 +212,11 @@ try {
       !witnessBound.replayable_claims_consistent) {
     throw new Error('Installed-package signed quorum CLI did not recheck the retained witness');
   }
+  if (witnessBound.witness_evaluation?.clock_source !== 'local_system' ||
+      new Date(witnessBound.witness_evaluation.evaluated_at).toISOString() !==
+        witnessBound.witness_evaluation.evaluated_at) {
+    throw new Error('Installed-package signed quorum CLI omitted its local replay time');
+  }
   const fingerprint = value => createHash('sha256')
     .update(canonicalJSONStringifyBrowser(value)).digest('hex');
   if (witnessBound.input_fingerprints?.canonicalization !== 'sorted-json-v1' ||

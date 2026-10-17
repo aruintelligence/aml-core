@@ -9,6 +9,7 @@ integers, no floats, and BMP object keys. This is not an external certification.
 import argparse
 import base64
 import binascii
+import datetime as dt
 import hashlib
 import json
 import re
@@ -378,7 +379,12 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
                 **({"trusted_dissent": trusted_dissent} if veto_dissent else {}),
             }
         if with_witness:
-            witness_valid, witness_reason = verify_bundle(witness_bundle, expected_challenge=expected_challenge)
+            # Use a single millisecond snapshot for freshness and its reported
+            # observation time. This local clock is not an authenticated clock.
+            replay_now = dt.datetime.now(dt.timezone.utc)
+            replay_now = replay_now.replace(microsecond=replay_now.microsecond // 1000 * 1000)
+            witness_valid, witness_reason = verify_bundle(
+                witness_bundle, now=replay_now, expected_challenge=expected_challenge)
             bundle_hash = (witness_bundle.get("integrity", {}).get("value")
                            if isinstance(witness_bundle, dict) and
                            isinstance(witness_bundle.get("integrity"), dict) else None)
@@ -386,6 +392,8 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
                                         artifact_hash == bundle_hash)
             result["witness_met"] = valid and witness_valid and witness_artifact_matches
             result["witness_evaluation"] = {
+                "evaluated_at": replay_now.isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+                "clock_source": "local_system",
                 "local_bundle_valid": witness_valid, "reason": witness_reason,
                 "artifact_matches": witness_artifact_matches,
             }

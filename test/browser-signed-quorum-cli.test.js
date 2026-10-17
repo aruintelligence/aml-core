@@ -287,9 +287,15 @@ test('signed quorum rechecks the named witness against a separately held challen
   const bundlePath = write('bundle.json', bundle);
   const challengePath = write('held-challenge.json', challenge);
 
+  const replayStarted = Date.now();
   const replayed = await verifySignedVerificationQuorum(quorum, {
     witnessBundle: bundle, expectedChallenge: challenge
   });
+  assert.equal(replayed.witness_evaluation.clock_source, 'local_system');
+  assert.ok(Date.parse(replayed.witness_evaluation.evaluated_at) >= replayStarted);
+  assert.ok(Date.parse(replayed.witness_evaluation.evaluated_at) <= Date.now());
+  assert.equal(new Date(Date.parse(replayed.witness_evaluation.evaluated_at)).toISOString(),
+    replayed.witness_evaluation.evaluated_at);
   assert.equal(replayed.valid, true);
   assert.equal(replayed.threshold_met, true);
   assert.equal(replayed.witness_met, true);
@@ -303,7 +309,30 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(accepted.status, 0, accepted.stderr);
   assert.equal(JSON.parse(accepted.stdout).witness_met, true);
   assert.equal(JSON.parse(accepted.stdout).replayable_claims_consistent, true);
+  assert.equal(JSON.parse(accepted.stdout).witness_evaluation.clock_source, 'local_system');
+  assert.ok(Date.parse(JSON.parse(accepted.stdout).witness_evaluation.evaluated_at) >= replayStarted);
+  assert.ok(Date.parse(JSON.parse(accepted.stdout).witness_evaluation.evaluated_at) <= Date.now());
   assert.deepEqual(JSON.parse(accepted.stdout).input_fingerprints, replayed.input_fingerprints);
+
+  // Prove the printed instant is the same single instant used for freshness.
+  const originalNow = Date.now;
+  const afterExpiry = Date.parse(challenge.expires_at) + 1;
+  let clockReads = 0;
+  Date.now = () => { clockReads += 1; return afterExpiry; };
+  try {
+    const expired = await verifySignedVerificationQuorum(quorum, {
+      witnessBundle: bundle, expectedChallenge: challenge
+    });
+    assert.equal(clockReads, 1);
+    assert.equal(expired.valid, true);
+    assert.equal(expired.threshold_met, true);
+    assert.equal(expired.witness_met, false);
+    assert.equal(expired.witness_evaluation.reason, 'AML_CHALLENGE_EXPIRED');
+    assert.equal(expired.witness_evaluation.evaluated_at, new Date(afterExpiry).toISOString());
+    assert.equal(expired.witness_evaluation.clock_source, 'local_system');
+  } finally {
+    Date.now = originalNow;
+  }
 
   const completePolicy = {
     schema: 'aml-signed-quorum-held-policy/4', prototype: true,

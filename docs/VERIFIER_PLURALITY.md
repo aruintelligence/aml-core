@@ -81,11 +81,11 @@ independently retained inputs when reviewing an archived decision. Reordering
 JSON keys or changing whitespace leaves the fingerprints unchanged; changing
 an input value changes its fingerprint. A rejected malformed quorum may have
 no fingerprints, and a live API call with non-JSON witness values has no
-portable input binding. The output is neither signed nor timestamped: anyone
-holding the inputs can generate a new output, and witness freshness is checked
-at the time of replay. A matching fingerprint establishes content identity
-under this canonicalization, not custody, signer identity, approval, or the
-truth of a report.
+portable input binding. The output is unsigned: anyone holding the inputs can
+generate a new output, and witness freshness is checked at the time of replay.
+A matching fingerprint establishes content identity under this
+canonicalization, not custody, signer identity, approval, or the truth of a
+report.
 
 The CLI requires strict UTF-8 and rejects duplicate JSON object names in every
 input file, including escaped spellings of the same name and duplicates nested
@@ -400,6 +400,13 @@ bundle to pass with the retained challenge **now**, and requires its integrity
 hash to match the signed quorum's artifact hash and type. When these inputs are
 supplied, the CLI also requires `witness_met` for exit `0`. A changed challenge,
 tampered bundle, mismatched artifact, or expired challenge fails this check.
+For a structurally checkable quorum, `witness_evaluation.evaluated_at` records
+the single UTC millisecond instant used for this freshness check, and
+`clock_source: "local_system"` identifies the machine clock. Both fields are
+present for a failed witness replay too. They are unsigned observations, not
+a trusted timestamp, proof of when a signer checked, or evidence that the
+challenge is still fresh when someone later reads the result. Save the input
+fingerprints and rerun verification for a current decision.
 Use `verifySignedVerificationQuorum(quorum, { policy, witnessBundle,
 expectedChallenge })` for the same check in browser JavaScript. Supplying only
 one of the bundle and challenge is a usage error.

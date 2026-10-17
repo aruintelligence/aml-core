@@ -38,6 +38,7 @@ async function compare(name, quorum, policy, expected, { bundle, challenge, expe
   if (bundle && challenge) args.push('--bundle', save(`${name}-bundle.json`, bundle),
     '--challenge', save(`${name}-challenge.json`, challenge));
   if (expectedInputs) args.push('--expect-inputs', save(`${name}-expected-inputs.json`, expectedInputs));
+  const replayStarted = Date.now();
   const run = spawnSync('python3', args, {
     encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' }
   });
@@ -48,12 +49,21 @@ async function compare(name, quorum, policy, expected, { bundle, challenge, expe
     policy, expectedInputFingerprints: expectedInputs,
     ...(bundle ? { witnessBundle: bundle, expectedChallenge: challenge } : {})
   });
+  const replayFinished = Date.now();
   for (const field of ['valid', 'threshold_met', ...(policy ? ['policy_met'] : []),
     ...(bundle ? ['witness_met', 'replayable_claims_consistent'] : []),
     ...(expectedInputs ? ['inputs_met'] : [])]) {
     assert.equal(py[field], js[field], `${name}: ${field}: ${run.stderr} ${run.stdout}`);
   }
   if (bundle) {
+    for (const result of [py, js]) {
+      assert.equal(result.witness_evaluation.clock_source, 'local_system', name);
+      const observed = result.witness_evaluation.evaluated_at;
+      assert.match(observed, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/, name);
+      assert.ok(Date.parse(observed) >= replayStarted && Date.parse(observed) <= replayFinished,
+        `${name}: freshness time must come from the replay interval`);
+      assert.equal(new Date(Date.parse(observed)).toISOString(), observed, name);
+    }
     assert.equal(py.witness_evaluation.local_bundle_valid, js.witness_evaluation.local_bundle_valid, name);
     assert.equal(py.witness_evaluation.artifact_matches, js.witness_evaluation.artifact_matches, name);
     assert.deepEqual(py.replayable_claims_evaluation, js.replayable_claims_evaluation, name);

@@ -85,9 +85,14 @@ and each supplied held policy, bundle, and challenge. These are SHA-256 hashes
 of complete `sorted-json-v1` JSON values, not hashes of the source file bytes.
 The JavaScript and Python comparison harness checks their agreement, including
 changed held policies and challenges. An unsupported input has no portable
-input binding. The output is unsigned and replay time affects witness freshness;
-retain the inputs and evaluate the decision again when needed. These hashes
-identify evaluated content, not an independent certification.
+input binding. For a structurally checkable quorum with witness inputs,
+`witness_evaluation.evaluated_at` is the UTC millisecond instant sampled once
+from the verifier's local clock and used for challenge freshness. The
+`clock_source` is `local_system`. A failed witness replay records this instant
+too. It is an unsigned observation, not a trusted timestamp or evidence of
+when the signer checked; retain the inputs and evaluate again for a current
+decision. These hashes identify evaluated content, not an independent
+certification.
 
 To turn independently retained fingerprints into an acceptance gate, pass a
 strict `aml-signed-quorum-input-expectations/1` JSON file with one or more
