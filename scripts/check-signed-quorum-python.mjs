@@ -277,6 +277,28 @@ try {
   };
   const replay = { bundle, challenge };
   await compare('replayed-signed-witness', witnessQuorum, witnessPolicy, true, replay);
+  const futureBundle = structuredClone(bundle);
+  futureBundle.created_at = new Date(Date.now() + 30000).toISOString();
+  futureBundle.integrity.value = await sha256Browser(witnessBundlePayload(futureBundle));
+  const futureA = await signVerificationReport(
+    witnessVerificationReport(futureBundle, witness, { verifier: 'future-a' }), witnessKeyA);
+  const futureB = await signVerificationReport(
+    witnessVerificationReport(futureBundle, witness, { verifier: 'future-b' }), witnessKeyB);
+  const futureQuorum = await createSignedVerificationQuorum([futureA, futureB], { threshold: 2 });
+  const futurePolicy = {
+    ...witnessPolicy, artifact_hash: futureBundle.integrity.value,
+    trusted_key_fingerprints: [futureA.verifier_key_fingerprint, futureB.verifier_key_fingerprint]
+  };
+  const futureDecision = await verifySignedVerificationQuorum(futureQuorum, {
+    policy: futurePolicy, witnessBundle: futureBundle, expectedChallenge: challenge
+  });
+  assert.equal(futureDecision.valid, true);
+  assert.equal(futureDecision.threshold_met, true);
+  assert.equal(futureDecision.policy_met, true);
+  assert.equal(futureDecision.witness_evaluation.artifact_matches, true);
+  assert.equal(futureDecision.witness_evaluation.reason, 'AML_WITNESS_BUNDLE_NOT_YET_CREATED');
+  await compare('signed-future-bundle-rejected', futureQuorum, futurePolicy, false,
+    { bundle: futureBundle, challenge });
   const witnessGroupPolicy = {
     ...groupedPolicy, artifact_hash: bundle.integrity.value,
     trusted_keys: [
@@ -425,6 +447,7 @@ try {
   await compare('tampered-witness', witnessQuorum, witnessPolicy, false,
     { bundle: tamperedBundle, challenge });
   const differentBundle = structuredClone(tamperedBundle);
+  differentBundle.created_at = new Date(Date.parse(bundle.created_at) + 1).toISOString();
   differentBundle.integrity.value = await sha256Browser(witnessBundlePayload(differentBundle));
   await compare('valid-witness-wrong-artifact', witnessQuorum, witnessPolicy, false,
     { bundle: differentBundle, challenge });
@@ -451,6 +474,9 @@ try {
     ['report-before-bundle', value => { value.checked_at = attestation.issued_at; }],
     ['report-after-expiry', value => {
       value.checked_at = new Date(Date.parse(challenge.expires_at) + 1).toISOString();
+    }],
+    ['report-after-replay', value => {
+      value.checked_at = new Date(Date.now() + 30000).toISOString();
     }],
     ['invalid-calendar-date', value => { value.checked_at = '2030-02-30T00:00:00.000Z'; }],
     ['check-conflict', value => { value.checks.session_signature = false; }],
@@ -580,6 +606,38 @@ try {
     assert.equal(JSON.parse(actual.stdout).reason, expectedReason, name);
   }
 
+  // A fixed, signed 2030 vector tests chronology without racing the machine
+  // clock. Resealing a bundle is possible for its producer, but cannot turn
+  // an impossible timeline into a successful witness replay.
+  for (const [name, change, jsReason, pyReason] of [
+    ['invalid-bundle-calendar', value => { value.created_at = '2030-02-30T00:00:00.000Z'; },
+      'AML_WITNESS_BUNDLE_TIME_INVALID', 'AML_PY_BUNDLE_TIME_INVALID'],
+    ['bundle-before-attestation', value => { value.created_at = '2030-01-01T00:00:02.999Z'; },
+      'AML_WITNESS_BUNDLE_TIME_ORDER_INVALID', 'AML_PY_BUNDLE_TIME_ORDER_INVALID'],
+    ['bundle-after-expiry', value => { value.created_at = '2030-01-01T00:10:02.001Z'; },
+      'AML_WITNESS_BUNDLE_TIME_ORDER_INVALID', 'AML_PY_BUNDLE_TIME_ORDER_INVALID'],
+    ['bundle-after-replay', value => { value.created_at = '2030-01-01T00:06:00.000Z'; },
+      'AML_WITNESS_BUNDLE_NOT_YET_CREATED', 'AML_PY_BUNDLE_NOT_YET_CREATED'],
+    ['attestation-before-challenge', value => {
+      value.challenge.issued_at = '2030-01-01T00:00:03.001Z';
+    }, 'AML_WITNESS_BUNDLE_TIME_ORDER_INVALID', 'AML_PY_BUNDLE_TIME_ORDER_INVALID']
+  ]) {
+    const altered = structuredClone(golden);
+    change(altered);
+    altered.integrity.value = await sha256Browser(witnessBundlePayload(altered));
+    const held = save(`${name}-challenge.json`, altered.challenge);
+    const pathToBundle = save(`${name}-bundle.json`, altered);
+    const pyRun = spawnSync('python3', [witnessPython, pathToBundle,
+      '--challenge', held, '--now', fixedTime],
+    { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+    assert.equal(pyRun.status, 1, `${name}: ${pyRun.stderr}`);
+    assert.equal(JSON.parse(pyRun.stdout).reason, pyReason, name);
+    const jsResult = await verifyWitnessBundle(altered, {
+      expectedChallenge: altered.challenge, now: Date.parse(fixedTime)
+    });
+    assert.equal(jsResult.reason, jsReason, name);
+  }
+
   console.log(JSON.stringify({
     protocol: 'aml-signed-quorum-python-cross-runtime/1',
     passed: true, cases: checks,
@@ -591,6 +649,9 @@ try {
       'matching_held_challenge', 'mismatched_held_challenge', 'duplicate_witness_key',
       'malformed_witness_signature', 'malformed_witness_attestation',
       'before_challenge_issue', 'after_challenge_expiry',
+      'fixed_vector_bundle_calendar', 'fixed_vector_bundle_before_attestation',
+      'fixed_vector_bundle_after_expiry', 'fixed_vector_bundle_after_replay',
+      'fixed_vector_attestation_before_challenge',
       'null_input_expectations_rejected', 'null_held_policy_rejected'],
     claim_boundary: 'Project-authored Python and JavaScript implementations agree on these saved quorum, held-policy, and live witness-replay cases. This is not an external witness, signer identity, or independent certification.'
   }, null, 2));

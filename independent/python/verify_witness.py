@@ -270,6 +270,28 @@ def _verify_bundle(bundle, now, expected_challenge):
     if not signature_ok:
         return False, reason
 
+    # These are claims in the supplied artifact, not trusted time evidence.
+    # Still reject a timeline that cannot hold at the replay instant.
+    def canonical_utc_millis(value):
+        if not isinstance(value, str) or not re.fullmatch(
+                r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", value):
+            raise ValueError("AML_PY_BUNDLE_TIME_INVALID")
+        try:
+            parsed = parse_time(value)
+            if parsed.isoformat(timespec="milliseconds").replace("+00:00", "Z") != value:
+                raise ValueError("AML_PY_BUNDLE_TIME_INVALID")
+            return parsed
+        except (ValueError, OverflowError) as error:
+            raise ValueError("AML_PY_BUNDLE_TIME_INVALID") from error
+
+    attested = canonical_utc_millis(attestation.get("issued_at"))
+    created = canonical_utc_millis(bundle.get("created_at"))
+    if attested < parse_time(challenge["issued_at"]) or created < attested or \
+            created > parse_time(challenge["expires_at"]):
+        return False, "AML_PY_BUNDLE_TIME_ORDER_INVALID"
+    if created > now:
+        return False, "AML_PY_BUNDLE_NOT_YET_CREATED"
+
     return True, "AML_PY_WITNESS_BUNDLE_VALID"
 
 

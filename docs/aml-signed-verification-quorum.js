@@ -28,7 +28,7 @@ function canonicalReportTime(value) {
   return Number.isFinite(time) && new Date(time).toISOString() === value ? time : null;
 }
 
-function conflictingWitnessClaims(report, witness, bundle) {
+function conflictingWitnessClaims(report, witness, bundle, replayNow) {
   const conflicts = [];
   if (report.session_key_fingerprint != null &&
       report.session_key_fingerprint !== witness.session_key_fingerprint) {
@@ -45,7 +45,8 @@ function conflictingWitnessClaims(report, witness, bundle) {
     const attested = canonicalReportTime(bundle.attestation.issued_at);
     const expires = Date.parse(witness.challenge_expires_at);
     if (checked === null || assembled === null || attested === null ||
-        checked < Math.max(issued, assembled, attested) || checked > expires) {
+        checked < Math.max(issued, assembled, attested) ||
+        checked > expires || checked > replayNow) {
       conflicts.push('checked_at');
     }
   }
@@ -427,7 +428,7 @@ export async function verifySignedVerificationQuorum(quorum, {
           if (envelope?.report?.valid !== true ||
               !(await verifySignedVerificationReport(envelope)).valid) continue;
           positiveSignedReports += 1;
-          const fields = conflictingWitnessClaims(envelope.report, witness, witnessBundle);
+          const fields = conflictingWitnessClaims(envelope.report, witness, witnessBundle, replayNow);
           if (fields.length) conflicts.push({ report_index: index, fields });
         }
       }

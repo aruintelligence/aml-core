@@ -142,6 +142,48 @@ test('expired challenge fails detached verification', async () => {
   assert.equal(check.reason, 'AML_CHALLENGE_EXPIRED');
 });
 
+test('a resealed witness must have a coherent creation timeline', async () => {
+  const { bundle, challenge, attestation } = await createFixture();
+  const now = Math.max(Date.now(), Date.parse(bundle.created_at));
+  const check = async (name, change, reason, replayNow = now) => {
+    const altered = structuredClone(bundle);
+    change(altered);
+    altered.integrity.value = await sha256Browser(witnessBundlePayload(altered));
+    const result = await verifyWitnessBundle(altered, {
+      now: replayNow, expectedChallenge: altered.challenge
+    });
+    assert.equal(result.valid, false, name);
+    assert.equal(result.reason, reason, name);
+    assert.equal(result.checks.session_signature, true, name);
+  };
+  await check('invalid-calendar-date', copy => {
+    copy.created_at = '2030-02-30T00:00:00.000Z';
+  }, 'AML_WITNESS_BUNDLE_TIME_INVALID');
+  await check('before-attestation', copy => {
+    copy.created_at = new Date(Date.parse(attestation.issued_at) - 1).toISOString();
+  }, 'AML_WITNESS_BUNDLE_TIME_ORDER_INVALID');
+  await check('after-expiry', copy => {
+    copy.created_at = new Date(Date.parse(challenge.expires_at) + 1).toISOString();
+  }, 'AML_WITNESS_BUNDLE_TIME_ORDER_INVALID');
+  await check('future-creation-inside-challenge', copy => {
+    copy.created_at = new Date(now + 30000).toISOString();
+  }, 'AML_WITNESS_BUNDLE_NOT_YET_CREATED');
+  await check('attestation-before-challenge', copy => {
+    copy.challenge.issued_at = new Date(Date.parse(attestation.issued_at) + 1).toISOString();
+  }, 'AML_WITNESS_BUNDLE_TIME_ORDER_INVALID',
+  Math.max(now, Date.parse(attestation.issued_at) + 1));
+});
+
+test('bundle creation refuses an attestation dated before challenge issue', async () => {
+  const { evidence, challenge, attestation } = await createFixture();
+  challenge.issued_at = new Date(Date.parse(attestation.issued_at) + 1).toISOString();
+  // The session signature covers nonce and expiry, not the challenge issue.
+  // Let the new issue time pass so only the bundle chronology rejects it.
+  await new Promise(resolve => setTimeout(resolve, 10));
+  await assert.rejects(createWitnessBundle({ evidence, challenge, attestation }),
+    /AML_WITNESS_BUNDLE_TIME_ORDER_INVALID/);
+});
+
 test('signed witness cannot pass before its challenge issue time', async () => {
   const { bundle, challenge } = await createFixture();
   const beforeIssue = Date.parse(challenge.issued_at) - 1;

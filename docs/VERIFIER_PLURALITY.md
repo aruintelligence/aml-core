@@ -418,11 +418,14 @@ reference checks for bundle and receipt integrity, evidence integrity,
 challenge freshness and binding, and session signature. An explicit
 `checked_at` must be a canonical UTC millisecond timestamp within the
 challenge's inclusive issue-to-expiry interval, and cannot precede the
-bundle's or attestation's canonical creation time. A malformed, premature, or
-late claimed check time is a reported conflict. These times are artifact and
-signer assertions. The comparison cannot prove the signer actually performed
-the check at that time; a trusted time
-source would require separate evidence. The result includes
+bundle's or attestation's canonical creation time or exceed the single local
+replay instant. The underlying bundle replay also rejects malformed UTC
+millisecond creation times, an attestation before challenge issue, a bundle
+before attestation or after challenge expiry, and a bundle created after the
+replay instant. A malformed, premature, or future claimed check time is a
+reported conflict. These times are artifact and signer assertions. The
+comparison cannot prove the signer actually performed the check at that time;
+a trusted time source would require separate evidence. The result includes
 report indexes and conflicting field names. The CLI also requires this result
 for exit `0` when the bundle and challenge are supplied. Omitted optional
 fields and unknown check names make no claim that this comparison can test.

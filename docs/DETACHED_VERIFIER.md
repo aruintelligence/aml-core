@@ -98,6 +98,14 @@ already-parsed JavaScript object has lost that source-byte ambiguity. This
 command is in the current preview checkout, not the pinned `v1.3.0` stable
 package.
 
+After the signature and hashes pass, witness replay also checks the claimed
+timeline: the attestation issue time and bundle creation time must use exact
+UTC milliseconds; the attestation cannot predate the challenge issue, and
+bundle creation must follow the attestation, precede challenge expiry, and
+have occurred by the verifier's replay clock. These fields are supplied
+claims, not trusted timestamps. A resealed bundle with an impossible
+creation time is rejected even when its signature remains valid.
+
 ## Claim boundary
 
 A valid result shows that the project-defined cryptographic checks passed for the exact supplied artifact and challenge.

@@ -539,7 +539,7 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(Object.hasOwn(nonJSON, 'input_fingerprints'), false);
 
   const otherBundle = structuredClone(bundle);
-  otherBundle.created_at = '2030-01-01T00:00:00.000Z';
+  otherBundle.created_at = new Date(Date.parse(bundle.created_at) + 1).toISOString();
   otherBundle.integrity.value = await sha256Browser(witnessBundlePayload(otherBundle));
   const other = await verifySignedVerificationQuorum(quorum, {
     witnessBundle: otherBundle, expectedChallenge: challenge
@@ -548,6 +548,41 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(other.witness_evaluation.local_bundle_valid, true);
   assert.equal(other.witness_evaluation.artifact_matches, false);
   assert.equal(other.witness_met, false);
+
+  // A producer can reseal a future creation time and sign reports over its
+  // new hash. Internal quorum and held policy still pass; replay must refuse
+  // the impossible witness timeline as a separate condition.
+  const futureBundle = structuredClone(bundle);
+  futureBundle.created_at = new Date(Date.now() + 30000).toISOString();
+  futureBundle.integrity.value = await sha256Browser(witnessBundlePayload(futureBundle));
+  const futureA = await signVerificationReport(
+    witnessVerificationReport(futureBundle, check, { verifier: 'future-a' }),
+    await createVerifierKeyPair());
+  const futureB = await signVerificationReport(
+    witnessVerificationReport(futureBundle, check, { verifier: 'future-b' }),
+    await createVerifierKeyPair());
+  const futureQuorum = await createSignedVerificationQuorum([futureA, futureB], { threshold: 2 });
+  const futurePolicy = {
+    schema: 'aml-signed-quorum-held-policy/1', prototype: true,
+    artifact_type: futureQuorum.artifact_type, artifact_hash: futureQuorum.artifact_hash,
+    trusted_key_fingerprints: [futureA.verifier_key_fingerprint, futureB.verifier_key_fingerprint],
+    threshold: 2
+  };
+  const futureResult = await verifySignedVerificationQuorum(futureQuorum, {
+    policy: futurePolicy, witnessBundle: futureBundle, expectedChallenge: challenge
+  });
+  assert.equal(futureResult.valid, true);
+  assert.equal(futureResult.threshold_met, true);
+  assert.equal(futureResult.policy_met, true);
+  assert.equal(futureResult.witness_evaluation.artifact_matches, true);
+  assert.equal(futureResult.witness_evaluation.reason, 'AML_WITNESS_BUNDLE_NOT_YET_CREATED');
+  assert.equal(futureResult.witness_met, false);
+  const futureCli = run(write('future-quorum.json', futureQuorum),
+    '--policy', write('future-policy.json', futurePolicy),
+    '--bundle', write('future-bundle.json', futureBundle), '--challenge', challengePath);
+  assert.equal(futureCli.status, 2, futureCli.stderr);
+  assert.equal(JSON.parse(futureCli.stdout).witness_evaluation.reason,
+    'AML_WITNESS_BUNDLE_NOT_YET_CREATED');
 
   await assert.rejects(
     () => verifySignedVerificationQuorum(quorum, { witnessBundle: bundle }),
@@ -577,6 +612,9 @@ test('signed quorum rechecks the named witness against a separately held challen
     ['checked_at-before-bundle', (report) => { report.checked_at = attestation.issued_at; }],
     ['checked_at-after-expiry', (report) => {
       report.checked_at = new Date(Date.parse(challenge.expires_at) + 1).toISOString();
+    }],
+    ['checked_at-after-replay', (report) => {
+      report.checked_at = new Date(Date.now() + 30000).toISOString();
     }],
     ['checked_at-invalid-calendar-date', (report) => {
       report.checked_at = '2030-02-30T00:00:00.000Z';
