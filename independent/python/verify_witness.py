@@ -286,7 +286,10 @@ def _verify_bundle(bundle, now, expected_challenge):
 
     attested = canonical_utc_millis(attestation.get("issued_at"))
     created = canonical_utc_millis(bundle.get("created_at"))
-    if attested < parse_time(challenge["issued_at"]) or created < attested or \
+    evidenced = canonical_utc_millis(evidence.get("generated_at"))
+    receipted = canonical_utc_millis(receipt["generated_at"]) if "generated_at" in receipt else None
+    if (receipted is not None and receipted > evidenced) or evidenced > attested or \
+            attested < parse_time(challenge["issued_at"]) or created < attested or \
             created > parse_time(challenge["expires_at"]):
         return False, "AML_PY_BUNDLE_TIME_ORDER_INVALID"
     if created > now:

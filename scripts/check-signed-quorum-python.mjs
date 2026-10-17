@@ -6,7 +6,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { webcrypto } from 'node:crypto';
 import { canonicalJSONStringifyBrowser, sealBrowserReceipt, sha256Browser } from '../docs/aml-browser-integrity.js';
-import { createBrowserEvidence } from '../docs/aml-browser-evidence.js';
+import { browserEvidencePayload, createBrowserEvidence } from '../docs/aml-browser-evidence.js';
 import { createVerificationChallenge } from '../docs/aml-verification-challenge.js';
 import { createSessionAttestation } from '../docs/aml-session-attestation.js';
 import { createWitnessBundle, verifyWitnessBundle, witnessBundlePayload } from '../docs/aml-witness-bundle.js';
@@ -638,6 +638,53 @@ try {
     assert.equal(jsResult.reason, jsReason, name);
   }
 
+  // Sign altered evidence afresh so both runtimes reach the chronology check
+  // after all hashes and the session signature pass.
+  for (const [name, receiptTime, evidenceTime, jsReason, pyReason] of [
+    ['receipt-after-evidence', 'future', 'current',
+      'AML_WITNESS_BUNDLE_TIME_ORDER_INVALID', 'AML_PY_BUNDLE_TIME_ORDER_INVALID'],
+    ['evidence-after-attestation', 'past', 'future',
+      'AML_WITNESS_BUNDLE_TIME_ORDER_INVALID', 'AML_PY_BUNDLE_TIME_ORDER_INVALID'],
+    ['malformed-receipt-time', 'malformed', 'current',
+      'AML_WITNESS_BUNDLE_TIME_INVALID', 'AML_PY_BUNDLE_TIME_INVALID'],
+    ['missing-evidence-time', 'past', 'missing',
+      'AML_WITNESS_BUNDLE_TIME_INVALID', 'AML_PY_BUNDLE_TIME_INVALID']
+  ]) {
+    const receipt = await sealBrowserReceipt({ schema: 'aml-dom-receipt/1', decisions: [],
+      generated_at: receiptTime === 'future' ? new Date(Date.now() + 30000).toISOString() :
+        receiptTime === 'malformed' ? '2030-02-30T00:00:00.000Z' :
+          new Date(Date.now() - 1000).toISOString() });
+    const candidateEvidence = await createBrowserEvidence(receipt, { url: 'https://example.test/' });
+    if (evidenceTime === 'future') {
+      candidateEvidence.generated_at = new Date(Date.now() + 30000).toISOString();
+    } else if (evidenceTime === 'missing') {
+      delete candidateEvidence.generated_at;
+    }
+    candidateEvidence.integrity.value = await sha256Browser(browserEvidencePayload(candidateEvidence));
+    const candidateChallenge = createVerificationChallenge({ ttl_ms: 120000 });
+    const candidateAttestation = await createSessionAttestation({
+      evidence: candidateEvidence, challenge: candidateChallenge
+    });
+    const candidateBundle = {
+      schema: 'aml-witness-bundle/1', prototype: true, created_at: new Date().toISOString(),
+      evidence: candidateEvidence, challenge: candidateChallenge, attestation: candidateAttestation
+    };
+    candidateBundle.integrity = { schema: 'aml-integrity/1', algorithm: 'SHA-256',
+      canonicalization: 'sorted-json-v1',
+      value: await sha256Browser(witnessBundlePayload(candidateBundle)) };
+    const jsResult = await verifyWitnessBundle(candidateBundle, {
+      expectedChallenge: candidateChallenge
+    });
+    assert.equal(jsResult.reason, jsReason, name);
+    assert.equal(jsResult.checks.session_signature, true, name);
+    const pyRun = spawnSync('python3', [witnessPython,
+      save(`${name}-bundle.json`, candidateBundle), '--challenge',
+      save(`${name}-challenge.json`, candidateChallenge)],
+    { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+    assert.equal(pyRun.status, 1, `${name}: ${pyRun.stderr}`);
+    assert.equal(JSON.parse(pyRun.stdout).reason, pyReason, name);
+  }
+
   console.log(JSON.stringify({
     protocol: 'aml-signed-quorum-python-cross-runtime/1',
     passed: true, cases: checks,
@@ -652,6 +699,8 @@ try {
       'fixed_vector_bundle_calendar', 'fixed_vector_bundle_before_attestation',
       'fixed_vector_bundle_after_expiry', 'fixed_vector_bundle_after_replay',
       'fixed_vector_attestation_before_challenge',
+      'signed_receipt_after_evidence', 'signed_evidence_after_attestation',
+      'signed_malformed_receipt_time', 'signed_missing_evidence_time',
       'null_input_expectations_rejected', 'null_held_policy_rejected'],
     claim_boundary: 'Project-authored Python and JavaScript implementations agree on these saved quorum, held-policy, and live witness-replay cases. This is not an external witness, signer identity, or independent certification.'
   }, null, 2));

@@ -420,9 +420,11 @@ challenge freshness and binding, and session signature. An explicit
 challenge's inclusive issue-to-expiry interval, and cannot precede the
 bundle's or attestation's canonical creation time or exceed the single local
 replay instant. The underlying bundle replay also rejects malformed UTC
-millisecond creation times, an attestation before challenge issue, a bundle
-before attestation or after challenge expiry, and a bundle created after the
-replay instant. A malformed, premature, or future claimed check time is a
+millisecond evidence, attestation, or bundle times; an optional receipt time
+with malformed spelling; a receipt after its evidence; evidence after
+attestation; an attestation before challenge issue; a bundle before
+attestation or after challenge expiry; and a bundle created after the replay
+instant. A malformed, premature, or future claimed check time is a
 reported conflict. These times are artifact and signer assertions. The
 comparison cannot prove the signer actually performed the check at that time;
 a trusted time source would require separate evidence. The result includes
