@@ -277,6 +277,27 @@ try {
   };
   const replay = { bundle, challenge };
   await compare('replayed-signed-witness', witnessQuorum, witnessPolicy, true, replay);
+  const timeAliasBundle = structuredClone(bundle);
+  timeAliasBundle.challenge.issued_at =
+    new Date(Date.parse(challenge.issued_at) + 3600000).toISOString().replace('Z', '+01:00');
+  assert.equal(Date.parse(timeAliasBundle.challenge.issued_at), Date.parse(challenge.issued_at));
+  timeAliasBundle.integrity.value = await sha256Browser(witnessBundlePayload(timeAliasBundle));
+  const timeAliasReports = await Promise.all([witnessKeyA, witnessKeyB].map((key, index) =>
+    signVerificationReport(witnessVerificationReport(timeAliasBundle, witness,
+      { verifier: `time-alias-${index}` }), key)));
+  const timeAliasQuorum = await createSignedVerificationQuorum(timeAliasReports, { threshold: 2 });
+  const timeAliasPolicy = { ...witnessPolicy, artifact_hash: timeAliasBundle.integrity.value };
+  const timeAliasDecision = await verifySignedVerificationQuorum(timeAliasQuorum, {
+    policy: timeAliasPolicy, witnessBundle: timeAliasBundle,
+    expectedChallenge: timeAliasBundle.challenge
+  });
+  assert.equal(timeAliasDecision.valid, true);
+  assert.equal(timeAliasDecision.threshold_met, true);
+  assert.equal(timeAliasDecision.policy_met, true);
+  assert.equal(timeAliasDecision.witness_met, false);
+  assert.equal(timeAliasDecision.witness_evaluation.reason, 'AML_CHALLENGE_TIME_INVALID');
+  await compare('signed-challenge-time-alias-rejected', timeAliasQuorum,
+    timeAliasPolicy, false, { bundle: timeAliasBundle, challenge: timeAliasBundle.challenge });
   const alphabetWitness = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
   const alternateWitness = value => value.slice(0, -1) +
     alphabetWitness[alphabetWitness.indexOf(value.at(-1)) ^ 1];
@@ -587,6 +608,33 @@ try {
     { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
   assert.equal(heldRun.status, 0, heldRun.stderr);
   assert.equal(JSON.parse(heldRun.stdout).valid, true);
+  assert.equal((await verifyWitnessBundle(golden, {
+    expectedChallenge: golden.challenge, now: Date.parse(fixedTime)
+  })).valid, true);
+  // The old JS parser normalized November 31 to December 1. The signed
+  // session and bundle remain intact when only the unsigned challenge issue
+  // spelling changes, so this used to yield a different decision in Python.
+  for (const [name, field, value] of [
+    ['challenge-calendar-rollover', 'issued_at', '2029-11-31T00:00:02.000Z'],
+    ['challenge-offset-alias', 'issued_at', '2030-01-01T01:00:02.000+01:00'],
+    ['challenge-submillisecond', 'issued_at', '2030-01-01T00:00:02.0001Z'],
+    ['challenge-missing-milliseconds', 'expires_at', '2030-01-01T00:10:02Z']
+  ]) {
+    const altered = structuredClone(golden);
+    altered.challenge[field] = value;
+    altered.integrity.value = await sha256Browser(witnessBundlePayload(altered));
+    const held = save(`${name}-challenge.json`, altered.challenge);
+    const pathToBundle = save(`${name}-bundle.json`, altered);
+    const jsResult = await verifyWitnessBundle(altered, {
+      expectedChallenge: altered.challenge, now: Date.parse(fixedTime)
+    });
+    assert.equal(jsResult.reason, 'AML_CHALLENGE_TIME_INVALID', name);
+    const pyRun = spawnSync('python3', [witnessPython, pathToBundle,
+      '--challenge', held, '--now', fixedTime],
+    { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+    assert.equal(pyRun.status, 1, `${name}: ${pyRun.stderr}`);
+    assert.equal(JSON.parse(pyRun.stdout).reason, 'AML_PY_CHALLENGE_TIME_INVALID', name);
+  }
   const changedHeld = { ...golden.challenge,
     issued_at: '2030-01-01T00:00:01.000Z' };
   const mismatchedHeld = spawnSync('python3', [witnessPython, goldenBundle, '--now', fixedTime,
@@ -752,6 +800,8 @@ try {
       'malformed_witness_signature', 'malformed_witness_attestation',
       'witness_unused_signature_bits', 'witness_padded_signature',
       'witness_alternate_key_coordinate',
+      'challenge_calendar_rollover', 'challenge_offset_alias',
+      'challenge_submillisecond', 'challenge_missing_milliseconds',
       'before_challenge_issue', 'after_challenge_expiry',
       'fixed_vector_bundle_calendar', 'fixed_vector_bundle_before_attestation',
       'fixed_vector_bundle_after_expiry', 'fixed_vector_bundle_after_replay',

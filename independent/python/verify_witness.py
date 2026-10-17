@@ -164,6 +164,16 @@ def parse_time(value):
     return parsed
 
 
+def canonical_challenge_time(value):
+    if not isinstance(value, str) or not re.fullmatch(
+            r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z", value):
+        raise ValueError("AML_PY_CHALLENGE_TIME_INVALID")
+    parsed = parse_time(value)
+    if parsed.isoformat(timespec="milliseconds").replace("+00:00", "Z") != value:
+        raise ValueError("AML_PY_CHALLENGE_TIME_INVALID")
+    return parsed
+
+
 def verify_challenge(challenge, now):
     if not isinstance(challenge, dict) or challenge.get("schema") != "aml-verification-challenge/1":
         return False, "AML_PY_CHALLENGE_INVALID"
@@ -171,7 +181,8 @@ def verify_challenge(challenge, now):
     if not isinstance(nonce, str) or len(nonce) < 32:
         return False, "AML_PY_CHALLENGE_NONCE_INVALID"
     try:
-        issued, expires = parse_time(challenge.get("issued_at")), parse_time(challenge.get("expires_at"))
+        issued = canonical_challenge_time(challenge.get("issued_at"))
+        expires = canonical_challenge_time(challenge.get("expires_at"))
         if expires <= issued or now.tzinfo is None:
             return False, "AML_PY_CHALLENGE_TIME_INVALID"
     except (ValueError, TypeError, OverflowError):

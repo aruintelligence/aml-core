@@ -10,6 +10,17 @@ function bytesToBase64Url(bytes) {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
+// The challenge producer emits exact UTC milliseconds. Requiring that form
+// prevents Date.parse calendar rollover and submillisecond truncation from
+// giving another verifier a different freshness decision.
+function canonicalChallengeTime(value) {
+  if (typeof value !== 'string' ||
+      !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z$/.test(value)) return NaN;
+  const time = Date.parse(value);
+  return Number.isFinite(time) && new Date(time).toISOString() === value &&
+    !value.startsWith('0000-') ? time : NaN;
+}
+
 export function createVerificationChallenge({ ttl_ms = 120000 } = {}) {
   if (!Number.isSafeInteger(ttl_ms) || ttl_ms <= 0) {
     throw new Error('AML_CHALLENGE_TTL_INVALID');
@@ -40,8 +51,8 @@ export function verifyVerificationChallenge(challenge, { now = Date.now() } = {}
     if (typeof challenge.nonce !== 'string' || challenge.nonce.length < 32) {
       return { valid: false, reason: 'AML_CHALLENGE_NONCE_INVALID' };
     }
-    const issued = typeof challenge.issued_at === 'string' ? Date.parse(challenge.issued_at) : NaN;
-    const expires = typeof challenge.expires_at === 'string' ? Date.parse(challenge.expires_at) : NaN;
+    const issued = canonicalChallengeTime(challenge.issued_at);
+    const expires = canonicalChallengeTime(challenge.expires_at);
     if (typeof now !== 'number' || !Number.isFinite(now) ||
         !Number.isFinite(issued) || !Number.isFinite(expires) || expires <= issued) {
       return { valid: false, reason: 'AML_CHALLENGE_TIME_INVALID' };
