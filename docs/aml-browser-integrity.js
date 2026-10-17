@@ -36,6 +36,14 @@ export function canonicalJSONStringifyBrowser(value) {
   return JSON.stringify(canonicalizeBrowser(value));
 }
 
+// Async signing and replay must operate on the same JSON bytes from start to
+// finish. A caller can otherwise mutate an object while Web Crypto yields,
+// changing a verdict or returned fingerprint after its signature was checked.
+export function snapshotBrowserJSON(value) {
+  assertBrowserJSON(value);
+  return JSON.parse(canonicalJSONStringifyBrowser(value));
+}
+
 export async function sha256Browser(value) {
   if (!globalThis.crypto?.subtle) throw new Error('AML_BROWSER_CRYPTO_UNAVAILABLE');
   const bytes = new TextEncoder().encode(

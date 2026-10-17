@@ -2,7 +2,8 @@
 // Binds one aml-verification-report/1 to a P-256 verifier key.
 // Key possession does not prove verifier identity, independence, certification authority, or correctness.
 
-import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser } from './aml-browser-integrity.js';
+import { canonicalJSONStringifyBrowser, sha256Browser,
+  snapshotBrowserJSON } from './aml-browser-integrity.js';
 
 function bytesToBase64Url(bytes) {
   let binary = '';
@@ -60,16 +61,18 @@ export async function createVerifierKeyPair() {
 }
 
 export async function signVerificationReport(report, keyPair) {
-  assertBrowserJSON(report);
+  report = snapshotBrowserJSON(report);
   if (!report || report.schema !== 'aml-verification-report/1') throw new Error('AML_SIGNED_REPORT_INVALID_REPORT');
   if (!keyPair?.privateKey || !keyPair?.publicKey) throw new Error('AML_SIGNED_REPORT_KEYPAIR_REQUIRED');
 
-  const publicJwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
+  const { privateKey, publicKey } = keyPair;
+
+  const publicJwk = await crypto.subtle.exportKey('jwk', publicKey);
   const fingerprint = await sha256Browser(publicJwk);
   const bytes = new TextEncoder().encode(canonicalJSONStringifyBrowser(report));
   const signature = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
-    keyPair.privateKey,
+    privateKey,
     bytes
   );
 
@@ -86,7 +89,7 @@ export async function signVerificationReport(report, keyPair) {
 
 export async function verifySignedVerificationReport(envelope) {
   try {
-    assertBrowserJSON(envelope);
+    envelope = snapshotBrowserJSON(envelope);
     if (!envelope || envelope.schema !== 'aml-signed-verification-report/1') {
       return { valid: false, reason: 'AML_SIGNED_REPORT_INVALID' };
     }
