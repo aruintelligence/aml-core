@@ -86,6 +86,7 @@ holding the inputs can generate a new output, and witness freshness is checked
 at the time of replay. A matching fingerprint establishes content identity
 under this canonicalization, not custody, signer identity, approval, or the
 truth of a report.
+
 The CLI requires strict UTF-8 and rejects duplicate JSON object names in every
 input file, including escaped spellings of the same name and duplicates nested
 in signed reports. A malformed byte sequence or duplicate name is a usage
@@ -301,6 +302,59 @@ independence. Choose this rule before accepting a quorum if any supplied
 trusted negative report should block approval. Policies 1–4 keep their
 existing behavior, where signed dissent is counted and displayed but does
 not by itself veto a positive threshold.
+
+### Make held input fingerprints an acceptance condition
+
+Before receiving a quorum, fingerprint the policy and challenge you retained
+through your own channel. The preview CLI hashes strict JSON under the same
+canonicalization used by `input_fingerprints`:
+
+```bash
+aml fingerprint-json held-policy.json
+aml fingerprint-json held-challenge.json
+```
+
+Each command prints `canonicalization` and `sha256`. Record those SHA-256
+values in a separate expectations file you control, for example:
+
+```json
+{
+  "schema": "aml-signed-quorum-input-expectations/1",
+  "prototype": true,
+  "canonicalization": "sorted-json-v1",
+  "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "held_challenge_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+}
+```
+
+Replace the example values with the command output for your independently
+retained files. Then require those pins when evaluating the supplied quorum:
+
+```bash
+aml verify-signed-quorum saved-quorum.json --policy held-policy.json \
+  --bundle witness.json --challenge held-challenge.json \
+  --expect-inputs held-inputs.json
+```
+
+`inputs_met` is a separate result. It is true only when **every field listed
+in your expectations file** matches the corresponding supplied canonical JSON
+input. `input_evaluation` lists checked fields, mismatches, unavailable fields,
+and the SHA-256 of the expectations file's canonical JSON. You may also pin
+`quorum_sha256` and `witness_bundle_sha256` after obtaining those documents
+through a channel you trust. Omitted pins are not checked. An expectations
+file with no pins, unknown fields, invalid hashes, or a pin for an input you
+did not supply is a usage error (exit `1`). A mismatch returns exit `2` even
+when the saved quorum is `valid`, its `threshold_met` is true, and the policy
+is `policy_met`. When expectations are supplied, exit `0` additionally
+requires `inputs_met`.
+
+The same check is available through
+`verifySignedVerificationQuorum(quorum, { policy, witnessBundle,
+expectedChallenge, expectedInputFingerprints })` and the Python verifier's
+`--expect-inputs` option. Keep the expectations file independent of the
+untrusted quorum; copying fingerprints from a first untrusted evaluation
+would only preserve that evaluation's input choices. Neither the file nor the
+result authenticates who chose those inputs or when they were retained.
 
 For cross-runtime checking of the saved quorum and held policy, use the
 [project-authored Python verifier](../independent/python/verify_signed_quorum.py):

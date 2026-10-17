@@ -32,6 +32,9 @@ REPLAYABLE_WITNESS_CHECKS = (
     "challenge_freshness", "challenge_binding", "session_signature",
 )
 REQUIRED_WITNESS_CHECKS = REPLAYABLE_WITNESS_CHECKS + ("verifier_held_challenge",)
+INPUT_HASH_FIELDS = (
+    "quorum_sha256", "policy_sha256", "witness_bundle_sha256", "held_challenge_sha256",
+)
 REPORT_TIME = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$")
 
 
@@ -180,6 +183,25 @@ def validate_policy(policy):
             raise ValueError("AML_SIGNED_QUORUM_POLICY_GROUP_THRESHOLD_INVALID")
 
 
+def validate_input_expectations(expectations, policy=None, with_witness=False):
+    if (not isinstance(expectations, dict) or
+            expectations.get("schema") != "aml-signed-quorum-input-expectations/1" or
+            expectations.get("prototype") is not True or
+            expectations.get("canonicalization") != "sorted-json-v1" or
+            set(expectations) - {"schema", "prototype", "canonicalization", *INPUT_HASH_FIELDS}):
+        raise ValueError("AML_SIGNED_QUORUM_INPUT_EXPECTATIONS_INVALID")
+    check_json(expectations)
+    pinned = [field for field in INPUT_HASH_FIELDS if field in expectations]
+    if (not pinned or any(not isinstance(expectations[field], str) or
+                          not HEX64.fullmatch(expectations[field]) for field in pinned)):
+        raise ValueError("AML_SIGNED_QUORUM_INPUT_EXPECTATIONS_INVALID")
+    if ((policy is None and "policy_sha256" in pinned) or
+            (not with_witness and any(field in pinned for field in
+                                      ("witness_bundle_sha256", "held_challenge_sha256")))):
+        raise ValueError("AML_SIGNED_QUORUM_INPUT_EXPECTATIONS_MISSING_INPUT")
+    return pinned
+
+
 def canonical_report_time(value):
     if not isinstance(value, str) or not REPORT_TIME.fullmatch(value):
         raise ValueError("invalid_report_time")
@@ -228,17 +250,22 @@ def unsatisfied_witness_claims(report):
     return fields
 
 
-def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=None):
+def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=None,
+                  expected_input_fingerprints=None):
     if (policy is not None and policy["schema"] in ("aml-signed-quorum-held-policy/4",
                                                     "aml-signed-quorum-held-policy/5") and
             expected_challenge is None):
         raise ValueError("AML_SIGNED_QUORUM_POLICY_WITNESS_REQUIRED")
     with_witness = expected_challenge is not None
+    pinned_inputs = (validate_input_expectations(expected_input_fingerprints, policy, with_witness)
+                     if expected_input_fingerprints is not None else [])
     rejected = {"valid": False, "threshold_met": False}
     if policy is not None:
         rejected["policy_met"] = False
     if with_witness:
         rejected.update(witness_met=False, replayable_claims_consistent=False)
+    if expected_input_fingerprints is not None:
+        rejected["inputs_met"] = False
     try:
         canonical(quorum)
         if not isinstance(quorum, dict) or quorum.get("schema") != "aml-signed-verification-quorum/1":
@@ -407,6 +434,16 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
             result["input_fingerprints"] = fingerprints
         except (UnsupportedJSON, UnicodeError, RecursionError):
             pass
+        if expected_input_fingerprints is not None:
+            observed = result.get("input_fingerprints", {})
+            unavailable = [field for field in pinned_inputs if field not in observed]
+            mismatched = [field for field in pinned_inputs if field in observed and
+                          expected_input_fingerprints[field] != observed[field]]
+            result["inputs_met"] = not unavailable and not mismatched
+            result["input_evaluation"] = {
+                "expectations_sha256": digest(expected_input_fingerprints),
+                "checked": pinned_inputs, "mismatched": mismatched, "unavailable": unavailable,
+            }
         return result
     except (ValueError, TypeError, KeyError, UnicodeError, RecursionError) as error:
         return {**rejected, "reason": str(error) or "AML_PY_SIGNED_QUORUM_INVALID"}
@@ -432,13 +469,14 @@ def main():
     parser.add_argument("--policy", help="Separately retained artifact and verifier key expectations")
     parser.add_argument("--bundle", help="Saved witness bundle named by the signed quorum")
     parser.add_argument("--challenge", help="Separately retained verifier challenge; requires --bundle")
+    parser.add_argument("--expect-inputs", help="Held canonical SHA-256 pins for supplied inputs")
     args = parser.parse_args()
     try:
         if bool(args.bundle) != bool(args.challenge):
             raise ValueError("AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED")
         quorum = load_json(args.quorum)
         policy = load_json(args.policy) if args.policy else None
-        if policy is not None:
+        if args.policy:
             validate_policy(policy)
             if policy["schema"] in ("aml-signed-quorum-held-policy/4",
                                      "aml-signed-quorum-held-policy/5") and not args.bundle:
@@ -447,13 +485,17 @@ def main():
         expected_challenge = load_json(args.challenge) if args.challenge else None
         if args.challenge and not isinstance(expected_challenge, dict):
             raise ValueError("AML_SIGNED_QUORUM_HELD_CHALLENGE_INVALID")
+        expected_inputs = load_json(args.expect_inputs) if args.expect_inputs else None
+        if args.expect_inputs:
+            validate_input_expectations(expected_inputs, policy, bool(args.bundle))
     except (OSError, ValueError) as error:
         print(json.dumps({"valid": False, "reason": str(error)}))
         return 1
-    result = verify_quorum(quorum, policy, witness_bundle, expected_challenge)
+    result = verify_quorum(quorum, policy, witness_bundle, expected_challenge, expected_inputs)
     print(json.dumps(result, indent=2))
     return 0 if (result["valid"] and result["threshold_met"] and result.get("policy_met", True) and
-                 result.get("witness_met", True) and result.get("replayable_claims_consistent", True)) else 2
+                 result.get("witness_met", True) and result.get("replayable_claims_consistent", True) and
+                 result.get("inputs_met", True)) else 2
 
 
 if __name__ == "__main__":

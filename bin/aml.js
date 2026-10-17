@@ -30,6 +30,7 @@ import { signBrandAuthorization, verifyBrandAuthorization } from "../runtime/bra
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
 import { evaluatePolicyCanary } from "../runtime/policyCanary.js";
 import { verifyWitnessBundle } from "../docs/aml-witness-bundle.js";
+import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser } from "../docs/aml-browser-integrity.js";
 import { fingerprintVerifierPublicKey, verifySignedVerificationQuorum } from "../docs/aml-signed-verification-quorum.js";
 import { parseJsonWithoutDuplicateKeys } from "../runtime/strictJson.js";
 
@@ -51,7 +52,8 @@ Usage:
   aml verify-receipt <receipt.json>
   aml verify-witness <bundle.json> <verifier-held-challenge.json>
   aml fingerprint-verifier-key <public-jwk.json>
-  aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json]
+  aml fingerprint-json <input.json>
+  aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json]
   aml replay-receipt <receipt.json>
   aml sign-receipt <receipt.json> <private-key.pem> [signed-receipt.json]
   aml verify-signed-receipt <signed-receipt.json>
@@ -85,7 +87,8 @@ Commands:
   verify-receipt              Verify receipt hash, audit stream, and attention-ledger integrity
   verify-witness              Verify a browser witness bundle against your retained challenge
   fingerprint-verifier-key    Derive full-JWK and P-256 material fingerprints from a public key
-  verify-signed-quorum        Recheck a signed quorum, held policy, and witness report claims
+  fingerprint-json            Hash a strict JSON input under sorted-json-v1
+  verify-signed-quorum        Recheck a signed quorum, held policy, witness claims, and held input pins
   replay-receipt              Re-execute declared receipt inputs with the installed engine
   sign-receipt                Add an Ed25519 attestation to a valid execution receipt
   verify-signed-receipt       Verify receipt integrity, signature, and public-key fingerprint
@@ -269,14 +272,23 @@ try {
     console.log(JSON.stringify(fingerprints, null, 2));
     process.exit(0);
   }
+  if (command === "fingerprint-json") {
+    if (args.length !== 2 || !args[1]) throw new Error("Usage: aml fingerprint-json <input.json>");
+    if (!globalThis.crypto?.subtle) globalThis.crypto = webcrypto;
+    const value = readUnambiguousJSON(args[1]);
+    assertBrowserJSON(value);
+    console.log(JSON.stringify({ canonicalization: 'sorted-json-v1',
+      sha256: await sha256Browser(canonicalJSONStringifyBrowser(value)) }, null, 2));
+    process.exit(0);
+  }
   if (command === "verify-signed-quorum") {
-    const usage = "Usage: aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json]";
+    const usage = "Usage: aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json]";
     if (!args[1] || args.length % 2 !== 0) throw new Error(usage);
     const options = new Map();
     for (let index = 2; index < args.length; index += 2) {
       const flag = args[index];
       const value = args[index + 1];
-      if (!['--policy', '--bundle', '--challenge'].includes(flag) || !value ||
+      if (!['--policy', '--bundle', '--challenge', '--expect-inputs'].includes(flag) || !value ||
           value.startsWith('--') || options.has(flag)) throw new Error(usage);
       options.set(flag, value);
     }
@@ -285,8 +297,10 @@ try {
     const policy = options.has('--policy') ? readUnambiguousJSON(options.get('--policy')) : undefined;
     const witnessBundle = options.has('--bundle') ? readUnambiguousJSON(options.get('--bundle')) : undefined;
     const expectedChallenge = options.has('--challenge') ? readUnambiguousJSON(options.get('--challenge')) : undefined;
+    const expectedInputFingerprints = options.has('--expect-inputs')
+      ? readUnambiguousJSON(options.get('--expect-inputs')) : undefined;
     const result = await verifySignedVerificationQuorum(readUnambiguousJSON(args[1]), {
-      policy, witnessBundle, expectedChallenge
+      policy, witnessBundle, expectedChallenge, expectedInputFingerprints
     });
     // A saved quorum can produce more JSON than a pipe can buffer. Wait for
     // stdout to finish writing before exiting with the verification status.
@@ -296,7 +310,8 @@ try {
     });
     process.exit(result.valid && result.threshold_met &&
       (!options.has('--policy') || result.policy_met) &&
-      (!options.has('--bundle') || (result.witness_met && result.replayable_claims_consistent)) ? 0 : 2);
+      (!options.has('--bundle') || (result.witness_met && result.replayable_claims_consistent)) &&
+      (!options.has('--expect-inputs') || result.inputs_met) ? 0 : 2);
   }
   if (command === "replay-receipt") {
     const result = replayExecutionReceipt(JSON.parse(readSource(inputPath)));

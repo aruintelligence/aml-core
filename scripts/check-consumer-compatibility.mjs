@@ -221,6 +221,37 @@ try {
       witnessBound.input_fingerprints.held_challenge_sha256 !== fingerprint(challenge)) {
     throw new Error('Installed-package signed quorum CLI did not bind the evaluated inputs');
   }
+  const printedFingerprint = JSON.parse(runNpm(['exec', '--', 'aml', 'fingerprint-json',
+    'held-policy.json'], tempRoot));
+  if (printedFingerprint.canonicalization !== 'sorted-json-v1' ||
+      printedFingerprint.sha256 !== fingerprint(heldPolicy)) {
+    throw new Error('Installed-package JSON fingerprint command differed from the held policy');
+  }
+  const expectedInputs = {
+    schema: 'aml-signed-quorum-input-expectations/1', prototype: true,
+    canonicalization: 'sorted-json-v1', policy_sha256: printedFingerprint.sha256,
+    held_challenge_sha256: fingerprint(challenge)
+  };
+  fs.writeFileSync(path.join(tempRoot, 'expected-inputs.json'), `${JSON.stringify(expectedInputs)}\n`);
+  const inputBound = JSON.parse(runNpm(['exec', '--', 'aml', 'verify-signed-quorum',
+    'signed-quorum.json', '--policy', 'held-policy.json', '--bundle', 'witness.json',
+    '--challenge', 'held-challenge.json', '--expect-inputs', 'expected-inputs.json'], tempRoot));
+  if (!inputBound.valid || !inputBound.policy_met || !inputBound.witness_met ||
+      !inputBound.inputs_met || inputBound.input_evaluation.checked.length !== 2) {
+    throw new Error('Installed-package signed quorum CLI did not enforce held input pins');
+  }
+  fs.writeFileSync(path.join(tempRoot, 'wrong-expected-inputs.json'),
+    `${JSON.stringify({ ...expectedInputs, policy_sha256: '0'.repeat(64) })}\n`);
+  const wrongInputRun = spawnSync(process.execPath, [path.join(installedRoot, 'bin', 'aml.js'),
+    'verify-signed-quorum', 'signed-quorum.json', '--policy', 'held-policy.json',
+    '--bundle', 'witness.json', '--challenge', 'held-challenge.json',
+    '--expect-inputs', 'wrong-expected-inputs.json'], { cwd: tempRoot, encoding: 'utf8' });
+  const wrongInput = JSON.parse(wrongInputRun.stdout);
+  if (wrongInputRun.status !== 2 || !wrongInput.valid || !wrongInput.policy_met ||
+      wrongInput.inputs_met !== false ||
+      wrongInput.input_evaluation.mismatched[0] !== 'policy_sha256') {
+    throw new Error('Installed-package signed quorum CLI accepted wrong held input pin');
+  }
   const completePolicy = { ...materialPolicy, schema: 'aml-signed-quorum-held-policy/4',
     require_complete_witness_claims: true };
   fs.writeFileSync(path.join(tempRoot, 'complete-policy.json'),
@@ -361,6 +392,8 @@ try {
       signed_quorum_cli_rejects_one_trust_group: true,
       signed_quorum_cli_rejects_untrusted_key: true,
       signed_quorum_cli_held_witness_valid: true,
+      signed_quorum_cli_held_input_pins_valid: true,
+      signed_quorum_cli_rejects_wrong_held_input_pin: true,
       signed_quorum_cli_complete_claims_valid: true,
       signed_quorum_cli_trusted_dissent_veto_valid: true,
       signed_quorum_cli_rejects_omitted_signed_checks: true,
