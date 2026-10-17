@@ -62,6 +62,12 @@ The session signature covers the challenge nonce and expiration, not its
 generated and call `verifyWitnessBundle(bundle, { expectedChallenge })` to
 compare the entire challenge against its own copy.
 
+The raw P-256 signature and public-key coordinates use unique unpadded
+base64url encodings. The verifier rejects padding, whitespace, truncation,
+and altered unused encoding bits, even if a permissive decoder would produce
+the original bytes. This keeps witness verification consistent across the
+JavaScript and project-authored Python implementations.
+
 ## Try it
 
 - Detached verifier: https://aruintelligence.github.io/aml-core/detached-verifier.html

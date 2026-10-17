@@ -277,6 +277,29 @@ try {
   };
   const replay = { bundle, challenge };
   await compare('replayed-signed-witness', witnessQuorum, witnessPolicy, true, replay);
+  const alphabetWitness = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const alternateWitness = value => value.slice(0, -1) +
+    alphabetWitness[alphabetWitness.indexOf(value.at(-1)) ^ 1];
+  const aliasedBundle = structuredClone(bundle);
+  aliasedBundle.attestation.signature = alternateWitness(bundle.attestation.signature);
+  assert.deepEqual(Buffer.from(aliasedBundle.attestation.signature, 'base64url'),
+    Buffer.from(bundle.attestation.signature, 'base64url'));
+  aliasedBundle.integrity.value = await sha256Browser(witnessBundlePayload(aliasedBundle));
+  const aliasedReports = await Promise.all([witnessKeyA, witnessKeyB].map((key, index) =>
+    signVerificationReport(witnessVerificationReport(aliasedBundle, witness,
+      { verifier: `aliased-witness-${index}` }), key)));
+  const aliasedQuorum = await createSignedVerificationQuorum(aliasedReports, { threshold: 2 });
+  const aliasedPolicy = { ...witnessPolicy, artifact_hash: aliasedBundle.integrity.value };
+  const aliasedDecision = await verifySignedVerificationQuorum(aliasedQuorum, {
+    policy: aliasedPolicy, witnessBundle: aliasedBundle, expectedChallenge: challenge
+  });
+  assert.equal(aliasedDecision.valid, true);
+  assert.equal(aliasedDecision.threshold_met, true);
+  assert.equal(aliasedDecision.policy_met, true);
+  assert.equal(aliasedDecision.witness_met, false);
+  assert.equal(aliasedDecision.witness_evaluation.reason, 'AML_SESSION_SIGNATURE_ENCODING_INVALID');
+  await compare('signed-witness-alternate-signature-rejected', aliasedQuorum, aliasedPolicy,
+    false, { bundle: aliasedBundle, challenge });
   const futureBundle = structuredClone(bundle);
   futureBundle.created_at = new Date(Date.now() + 30000).toISOString();
   futureBundle.integrity.value = await sha256Browser(witnessBundlePayload(futureBundle));
@@ -588,6 +611,38 @@ try {
     { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
   assert.equal(brokenSignatureRun.status, 1, brokenSignatureRun.stderr);
   assert.equal(JSON.parse(brokenSignatureRun.stdout).valid, false);
+  // Preserve the signed bytes while changing only their textual spelling.
+  // A permissive base64 decoder must not make JS accept what Python rejects.
+  for (const [name, change, jsReason, pyReason] of [
+    ['unused-signature-bits', value => {
+      const signature = value.attestation.signature;
+      value.attestation.signature = alternateWitness(signature);
+      assert.deepEqual(Buffer.from(value.attestation.signature, 'base64url'),
+        Buffer.from(signature, 'base64url'));
+    }, 'AML_SESSION_SIGNATURE_ENCODING_INVALID', 'AML_PY_SIGNATURE_ENCODING_UNSUPPORTED'],
+    ['padded-signature', value => {
+      value.attestation.signature += '==';
+    }, 'AML_SESSION_SIGNATURE_ENCODING_INVALID', 'AML_PY_SIGNATURE_ENCODING_UNSUPPORTED'],
+    ['alternate-key-coordinate', value => {
+      const jwk = value.attestation.session_public_key_jwk;
+      const x = jwk.x;
+      jwk.x = alternateWitness(x);
+      assert.deepEqual(Buffer.from(jwk.x, 'base64url'), Buffer.from(x, 'base64url'));
+    }, 'AML_SESSION_KEY_ENCODING_INVALID', 'AML_PY_KEY_FINGERPRINT_MISMATCH']
+  ]) {
+    const altered = structuredClone(golden);
+    change(altered);
+    altered.integrity.value = await sha256Browser(witnessBundlePayload(altered));
+    const jsResult = await verifyWitnessBundle(altered, {
+      expectedChallenge: golden.challenge, now: Date.parse(fixedTime)
+    });
+    assert.equal(jsResult.reason, jsReason, name);
+    const pyRun = spawnSync('python3', [witnessPython,
+      save(`${name}-bundle.json`, altered), '--challenge', heldChallenge, '--now', fixedTime],
+    { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+    assert.equal(pyRun.status, 1, `${name}: ${pyRun.stderr}`);
+    assert.equal(JSON.parse(pyRun.stdout).reason, pyReason, name);
+  }
   const brokenAttestation = structuredClone(golden);
   brokenAttestation.attestation = [];
   brokenAttestation.integrity.value = await sha256Browser(witnessBundlePayload(brokenAttestation));
@@ -695,6 +750,8 @@ try {
       'missing_held_challenge',
       'matching_held_challenge', 'mismatched_held_challenge', 'duplicate_witness_key',
       'malformed_witness_signature', 'malformed_witness_attestation',
+      'witness_unused_signature_bits', 'witness_padded_signature',
+      'witness_alternate_key_coordinate',
       'before_challenge_issue', 'after_challenge_expiry',
       'fixed_vector_bundle_calendar', 'fixed_vector_bundle_before_attestation',
       'fixed_vector_bundle_after_expiry', 'fixed_vector_bundle_after_replay',

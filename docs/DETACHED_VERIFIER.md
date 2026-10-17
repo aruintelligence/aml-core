@@ -39,6 +39,14 @@ expired challenge -> FAIL
 - ECDSA P-256 / SHA-256 signature;
 - whole `aml-witness-bundle/1` integrity.
 
+The session signature must be exactly 64 raw bytes encoded as 86 unpadded
+base64url characters. Each public-key coordinate must be exactly 32 bytes
+encoded as 43 unpadded base64url characters. Verification decodes and
+re-encodes them to reject alternate spellings (including changed unused bits)
+of the same bytes. The historical JSON schema remains a broad, frozen
+contract; these verifiers enforce the narrower canonical encoding profile.
+JavaScript and the project-authored Python verifier apply the same rule.
+
 Challenge, attestation, and witness-bundle verification reject live JavaScript
 values that cannot be faithfully represented as JSON (including hidden and
 symbol fields, accessors, and sparse arrays). The bundle verifier also checks

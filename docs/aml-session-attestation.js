@@ -24,6 +24,16 @@ function base64UrlToBytes(value) {
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
+// Web Crypto verifies decoded bytes. Require their unique unpadded base64url
+// spelling so another runtime cannot reject the same purported witness.
+function canonicalBytes(value, length, encodedLength, reason) {
+  if (typeof value !== 'string' || value.length !== encodedLength ||
+      !/^[A-Za-z0-9_-]+$/.test(value)) throw new Error(reason);
+  const bytes = base64UrlToBytes(value);
+  if (bytes.length !== length || bytesToBase64Url(bytes) !== value) throw new Error(reason);
+  return bytes;
+}
+
 async function ensureSessionKey() {
   if (sessionKeyPair) return;
   if (!globalThis.crypto?.subtle) throw new Error('AML_SESSION_CRYPTO_UNAVAILABLE');
@@ -114,6 +124,12 @@ export async function verifySessionAttestation({ evidence, challenge, attestatio
       return fail('AML_SESSION_CHALLENGE_MISMATCH');
     }
     checks.challenge_binding = true;
+    const jwk = attestation.session_public_key_jwk;
+    if (!jwk || jwk.kty !== 'EC' || jwk.crv !== 'P-256') {
+      return fail('AML_SESSION_KEY_ENCODING_INVALID');
+    }
+    canonicalBytes(jwk.x, 32, 43, 'AML_SESSION_KEY_ENCODING_INVALID');
+    canonicalBytes(jwk.y, 32, 43, 'AML_SESSION_KEY_ENCODING_INVALID');
     const expectedFingerprint = await sha256Browser(attestation.session_public_key_jwk);
     if (expectedFingerprint !== attestation.session_key_fingerprint) {
       return fail('AML_SESSION_KEY_FINGERPRINT_MISMATCH');
@@ -126,10 +142,12 @@ export async function verifySessionAttestation({ evidence, challenge, attestatio
       ['verify']
     );
     const bytes = new TextEncoder().encode(canonicalJSONStringifyBrowser(sessionAttestationPayload(attestation)));
+    const signature = canonicalBytes(attestation.signature, 64, 86,
+      'AML_SESSION_SIGNATURE_ENCODING_INVALID');
     const valid = await crypto.subtle.verify(
       { name: 'ECDSA', hash: 'SHA-256' },
       key,
-      base64UrlToBytes(attestation.signature),
+      signature,
       bytes
     );
     checks.session_signature = valid;
