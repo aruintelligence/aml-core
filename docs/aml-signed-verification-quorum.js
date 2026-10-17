@@ -2,7 +2,8 @@
 // Requires valid signed reports over one exact artifact and counts distinct P-256 public keys.
 // Distinct keys do not prove distinct people, organizations, independence, or correctness.
 
-import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser } from './aml-browser-integrity.js';
+import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser,
+  snapshotBrowserJSON } from './aml-browser-integrity.js';
 import { assertCanonicalVerifierPublicKey, verifySignedVerificationReport } from './aml-signed-verification-report.js';
 import { verifyWitnessBundle } from './aml-witness-bundle.js';
 
@@ -105,7 +106,7 @@ async function verifierKeyMaterialFingerprint(jwk) {
 // channel. This calculates identifiers; it does not identify or authorize its
 // holder. The full-document fingerprint includes optional JWK metadata.
 export async function fingerprintVerifierPublicKey(jwk) {
-  assertBrowserJSON(jwk);
+  jwk = snapshotBrowserJSON(jwk);
   if (!jwk || typeof jwk !== 'object' || Array.isArray(jwk) || Object.hasOwn(jwk, 'd')) {
     throw new Error('AML_SIGNED_QUORUM_PUBLIC_KEY_INVALID');
   }
@@ -123,7 +124,7 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
   if (!Array.isArray(signedReports) || signedReports.length === 0) throw new Error('AML_SIGNED_QUORUM_REPORTS_REQUIRED');
   if (signedReports.length > 64) throw new Error('AML_SIGNED_QUORUM_TOO_MANY_REPORTS');
   if (!Number.isInteger(threshold) || threshold < 1) throw new Error('AML_SIGNED_QUORUM_THRESHOLD_INVALID');
-  assertBrowserJSON(signedReports);
+  signedReports = snapshotBrowserJSON(signedReports);
 
   const checks = [];
   for (const envelope of signedReports) {
@@ -294,7 +295,10 @@ export async function verifySignedVerificationQuorum(quorum, {
 } = {}) {
   // A verifier-held policy is configuration, not part of the untrusted quorum.
   // Reject malformed configuration as a usage error before checking the quorum.
-  if (policy !== undefined) validateSignedVerificationQuorumPolicy(policy);
+  if (policy !== undefined) {
+    validateSignedVerificationQuorumPolicy(policy);
+    policy = snapshotBrowserJSON(policy);
+  }
   if ((witnessBundle === undefined) !== (expectedChallenge === undefined)) {
     throw new Error('AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED');
   }
@@ -304,6 +308,9 @@ export async function verifySignedVerificationQuorum(quorum, {
   }
   const pinnedInputs = expectedInputFingerprints === undefined ? [] :
     validateInputExpectations(expectedInputFingerprints, { policy, witnessBundle });
+  if (expectedInputFingerprints !== undefined) {
+    expectedInputFingerprints = snapshotBrowserJSON(expectedInputFingerprints);
+  }
   const reject = (reason) => ({
     valid: false, reason, threshold_met: false,
     ...(policy === undefined ? {} : { policy_met: false }),
@@ -311,7 +318,28 @@ export async function verifySignedVerificationQuorum(quorum, {
     ...(expectedInputFingerprints === undefined ? {} : { inputs_met: false })
   });
   try {
-    assertBrowserJSON(quorum);
+    // Snapshot all ordinary JSON inputs before the first asynchronous signature
+    // check. The returned decision and its fingerprints then describe one
+    // coherent set of bytes even if a caller edits its objects while we yield.
+    quorum = snapshotBrowserJSON(quorum);
+    let hashable = true;
+    let witnessInputError = null;
+    if (witnessBundle !== undefined) {
+      try {
+        witnessBundle = snapshotBrowserJSON(witnessBundle);
+      } catch (error) {
+        if (!(error instanceof TypeError)) throw error;
+        hashable = false;
+        witnessInputError = error?.message || 'AML_SIGNED_QUORUM_WITNESS_INPUT_INVALID';
+      }
+      try {
+        expectedChallenge = snapshotBrowserJSON(expectedChallenge);
+      } catch (error) {
+        if (!(error instanceof TypeError)) throw error;
+        hashable = false;
+        witnessInputError ??= error?.message || 'AML_SIGNED_QUORUM_WITNESS_INPUT_INVALID';
+      }
+    }
     if (!quorum || quorum.schema !== 'aml-signed-verification-quorum/1') {
       return reject('AML_SIGNED_QUORUM_INVALID');
     }
@@ -403,8 +431,10 @@ export async function verifySignedVerificationQuorum(quorum, {
       // Snapshot the local clock once for the freshness decision. The timestamp
       // describes this replay, not when a signer checked or a trusted time source.
       const replayNow = Date.now();
-      const witness = await verifyWitnessBundle(witnessBundle, { expectedChallenge, now: replayNow });
-      const artifactMatches = rebuilt.artifact_type === 'aml-witness-bundle/1' &&
+      const witness = witnessInputError
+        ? { valid: false, reason: witnessInputError, checks: {} }
+        : await verifyWitnessBundle(witnessBundle, { expectedChallenge, now: replayNow });
+      const artifactMatches = !witnessInputError && rebuilt.artifact_type === 'aml-witness-bundle/1' &&
         rebuilt.artifact_hash === witnessBundle?.integrity?.value;
       result.witness_met = valid && witness.valid &&
         witness.checks?.verifier_held_challenge === true && artifactMatches;
@@ -465,16 +495,6 @@ export async function verifySignedVerificationQuorum(quorum, {
     // JSON text explicitly: sha256Browser treats a string as raw bytes.
     // A live non-JSON witness input can still be rejected by the replay without
     // changing the quorum's independent validity result; it has no fingerprint.
-    let hashable = true;
-    if (witnessBundle !== undefined) {
-      try {
-        assertBrowserJSON(witnessBundle);
-        assertBrowserJSON(expectedChallenge);
-      } catch (error) {
-        if (!(error instanceof TypeError)) throw error;
-        hashable = false;
-      }
-    }
     if (hashable) {
       result.input_fingerprints = {
         canonicalization: 'sorted-json-v1',

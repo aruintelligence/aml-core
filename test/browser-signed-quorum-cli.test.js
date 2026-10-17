@@ -305,6 +305,20 @@ test('signed quorum rechecks the named witness against a separately held challen
     canonicalization: 'sorted-json-v1', quorum_sha256: inputHash(quorum),
     witness_bundle_sha256: inputHash(bundle), held_challenge_sha256: inputHash(challenge)
   });
+
+  const liveBundle = structuredClone(bundle);
+  const liveChallenge = structuredClone(challenge);
+  const replayingLiveInputs = verifySignedVerificationQuorum(quorum, {
+    witnessBundle: liveBundle, expectedChallenge: liveChallenge
+  });
+  liveBundle.evidence.receipt.decisions.push({ unbound: true });
+  liveChallenge.nonce = 'changed-after-call';
+  const stableReplay = await replayingLiveInputs;
+  assert.equal(stableReplay.valid, true);
+  assert.equal(stableReplay.witness_met, true);
+  assert.equal(stableReplay.replayable_claims_consistent, true);
+  assert.deepEqual(stableReplay.input_fingerprints, replayed.input_fingerprints);
+
   const accepted = run(quorumPath, '--bundle', bundlePath, '--challenge', challengePath);
   assert.equal(accepted.status, 0, accepted.stderr);
   assert.equal(JSON.parse(accepted.stdout).witness_met, true);
@@ -537,6 +551,20 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(nonJSON.threshold_met, true);
   assert.equal(nonJSON.witness_met, false);
   assert.equal(Object.hasOwn(nonJSON, 'input_fingerprints'), false);
+
+  const temporarilyHidden = structuredClone(bundle);
+  Object.defineProperty(temporarilyHidden, 'unbound', {
+    value: 'hidden', configurable: true
+  });
+  const rejectedAtCall = verifySignedVerificationQuorum(quorum, {
+    witnessBundle: temporarilyHidden, expectedChallenge: challenge
+  });
+  delete temporarilyHidden.unbound;
+  const stillRejected = await rejectedAtCall;
+  assert.equal(stillRejected.valid, true);
+  assert.equal(stillRejected.witness_met, false);
+  assert.equal(stillRejected.witness_evaluation.reason, 'AML_CANONICAL_JSON_NON_JSON_OBJECT');
+  assert.equal(Object.hasOwn(stillRejected, 'input_fingerprints'), false);
 
   const otherBundle = structuredClone(bundle);
   otherBundle.created_at = new Date(Date.parse(bundle.created_at) + 1).toISOString();

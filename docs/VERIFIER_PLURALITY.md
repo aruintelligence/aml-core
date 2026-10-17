@@ -48,6 +48,15 @@ keys endorsed a valid report. The check establishes internal consistency of
 the supplied reports; it cannot establish verifier independence or whether
 their underlying verdicts were correct.
 
+For live JavaScript objects, signing and quorum creation copy the ordinary
+JSON input before the first asynchronous cryptographic step. Replay likewise
+copies the quorum, held policy, witness bundle, retained challenge, and input
+expectations before checking signatures. Its verdict and input fingerprints
+therefore refer to one call-time snapshot even if the caller later edits its
+objects. A later edit requires a new verification call. The CLI reads saved
+files; this behavior does not authenticate who supplied them or prevent a
+file from changing before it is read.
+
 From a checkout or installed preview package, the offline command is:
 
 ```bash

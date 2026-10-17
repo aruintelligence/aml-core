@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { webcrypto } from 'node:crypto';
-import { sha256Browser } from '../docs/aml-browser-integrity.js';
+import { canonicalJSONStringifyBrowser, sha256Browser } from '../docs/aml-browser-integrity.js';
 
 if (!globalThis.crypto) globalThis.crypto = webcrypto;
 if (!globalThis.btoa) globalThis.btoa = (value) => Buffer.from(value, 'binary').toString('base64');
@@ -48,6 +48,23 @@ test('signed verification report detects report mutation', async () => {
   assert.equal(check.reason, 'AML_SIGNED_REPORT_SIGNATURE_INVALID');
 });
 
+test('signing and signature checks use the JSON supplied at call time', async () => {
+  const keys = await createVerifierKeyPair();
+  const source = report('original-verifier');
+  const signing = signVerificationReport(source, keys);
+  source.verifier = 'changed-during-signing';
+  const envelope = await signing;
+  assert.equal(envelope.report.verifier, 'original-verifier');
+  assert.equal((await verifySignedVerificationReport(envelope)).valid, true);
+
+  const checking = verifySignedVerificationReport(envelope);
+  envelope.report.verifier = 'changed-during-verification';
+  const result = await checking;
+  assert.equal(result.valid, true);
+  assert.equal(result.verifier, 'original-verifier');
+  assert.equal((await verifySignedVerificationReport(envelope)).valid, false);
+});
+
 test('rejects alternate base64url spellings of the same P-256 public point', async () => {
   const envelope = await signVerificationReport(report('canonical-key'), await createVerifierKeyPair());
   const altered = structuredClone(envelope);
@@ -61,6 +78,17 @@ test('rejects alternate base64url spellings of the same P-256 public point', asy
   assert.deepEqual(verdict, { valid: false, reason: 'AML_SIGNED_REPORT_KEY_ENCODING_INVALID' });
   await assert.rejects(() => fingerprintVerifierPublicKey(altered.verifier_public_key_jwk),
     /AML_SIGNED_REPORT_KEY_ENCODING_INVALID/);
+});
+
+test('public-key fingerprints identify the key document supplied at call time', async () => {
+  const envelope = await signVerificationReport(report('key-owner'), await createVerifierKeyPair());
+  const jwk = structuredClone(envelope.verifier_public_key_jwk);
+  const fingerprinting = fingerprintVerifierPublicKey(jwk);
+  jwk.kid = 'added-after-call';
+  const fingerprints = await fingerprinting;
+  assert.equal(fingerprints.verifier_key_fingerprint, envelope.verifier_key_fingerprint);
+  assert.notEqual((await fingerprintVerifierPublicKey(jwk)).verifier_key_fingerprint,
+    fingerprints.verifier_key_fingerprint);
 });
 
 test('rejects alternate text spellings of a valid P-256 report signature', async () => {
@@ -117,6 +145,22 @@ test('signed verification quorum requires distinct valid key fingerprints', asyn
   assert.equal(quorum.summary.unanimous, true);
 });
 
+test('quorum creation counts the signed report snapshot despite live mutations', async () => {
+  const a = await signVerificationReport(report('a'), await createVerifierKeyPair());
+  const b = await signVerificationReport(report('b'), await createVerifierKeyPair());
+  const submitted = [a, b];
+  const creating = createSignedVerificationQuorum(submitted, { threshold: 2 });
+  a.report.valid = false;
+  b.report.artifact_hash = 'b'.repeat(64);
+  submitted.push({ bogus: true });
+  const quorum = await creating;
+  assert.equal(quorum.signed_reports.length, 2);
+  assert.equal(quorum.signed_reports[0].report.valid, true);
+  assert.equal(quorum.signed_reports[1].report.artifact_hash, 'a'.repeat(64));
+  assert.equal(quorum.summary.threshold_met, true);
+  assert.equal((await verifySignedVerificationQuorum(quorum)).valid, true);
+});
+
 test('saved signed quorum recomputes signatures, summary, threshold, and claim boundary', async () => {
   const envelopeA = await signVerificationReport(report('verifier-a'), await createVerifierKeyPair());
   const envelopeB = await signVerificationReport(report('verifier-b'), await createVerifierKeyPair());
@@ -145,6 +189,30 @@ test('saved signed quorum recomputes signatures, summary, threshold, and claim b
   const hiddenClaim = structuredClone(saved);
   Object.defineProperty(hiddenClaim, 'approval', { value: 'unbound' });
   assert.equal((await verifySignedVerificationQuorum(hiddenClaim)).reason, 'AML_CANONICAL_JSON_NON_JSON_OBJECT');
+});
+
+test('held policy and saved quorum remain one coherent replay snapshot', async () => {
+  const a = await signVerificationReport(report('a'), await createVerifierKeyPair());
+  const b = await signVerificationReport(report('b'), await createVerifierKeyPair());
+  const quorum = await createSignedVerificationQuorum([a, b], { threshold: 2 });
+  const policy = {
+    schema: 'aml-signed-quorum-held-policy/1', prototype: true,
+    artifact_type: quorum.artifact_type, artifact_hash: quorum.artifact_hash,
+    trusted_key_fingerprints: [a.verifier_key_fingerprint, b.verifier_key_fingerprint],
+    threshold: 2
+  };
+  const original = structuredClone({ quorum, policy });
+  const replaying = verifySignedVerificationQuorum(quorum, { policy });
+  quorum.summary.distinct_keys = 99;
+  policy.artifact_hash = 'b'.repeat(64);
+  const result = await replaying;
+  assert.equal(result.valid, true);
+  assert.equal(result.threshold_met, true);
+  assert.equal(result.policy_met, true);
+  assert.equal(result.input_fingerprints.quorum_sha256,
+    await sha256Browser(canonicalJSONStringifyBrowser(original.quorum)));
+  assert.equal(result.input_fingerprints.policy_sha256,
+    await sha256Browser(canonicalJSONStringifyBrowser(original.policy)));
 });
 
 test('reusing one verifier key cannot satisfy a two-key threshold', async () => {
