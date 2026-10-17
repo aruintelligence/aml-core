@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { canonicalJSONStringifyBrowser, sealBrowserReceipt,
   sha256Browser } from '../docs/aml-browser-integrity.js';
-import { createBrowserEvidence } from '../docs/aml-browser-evidence.js';
+import { browserEvidencePayload, createBrowserEvidence } from '../docs/aml-browser-evidence.js';
 import { createVerificationChallenge, verifyVerificationChallenge } from '../docs/aml-verification-challenge.js';
 import {
   createSessionAttestation,
@@ -182,6 +182,44 @@ test('bundle creation refuses an attestation dated before challenge issue', asyn
   await new Promise(resolve => setTimeout(resolve, 10));
   await assert.rejects(createWitnessBundle({ evidence, challenge, attestation }),
     /AML_WITNESS_BUNDLE_TIME_ORDER_INVALID/);
+});
+
+test('receipt and evidence time claims cannot postdate their signed attestation', async () => {
+  for (const [name, mutateReceipt, mutateEvidence, reason] of [
+    ['receipt-after-evidence', receipt => {
+      receipt.generated_at = new Date(Date.now() + 30000).toISOString();
+    }, () => {}, 'AML_WITNESS_BUNDLE_TIME_ORDER_INVALID'],
+    ['evidence-after-attestation', () => {}, evidence => {
+      evidence.generated_at = new Date(Date.now() + 30000).toISOString();
+    }, 'AML_WITNESS_BUNDLE_TIME_ORDER_INVALID'],
+    ['invalid-receipt-date', receipt => {
+      receipt.generated_at = '2030-02-30T00:00:00.000Z';
+    }, () => {}, 'AML_WITNESS_BUNDLE_TIME_INVALID'],
+    ['missing-evidence-time', () => {}, evidence => {
+      delete evidence.generated_at;
+    }, 'AML_WITNESS_BUNDLE_TIME_INVALID']
+  ]) {
+    const source = await createFixture();
+    const receipt = structuredClone(source.receipt);
+    mutateReceipt(receipt);
+    await sealBrowserReceipt(receipt);
+    const evidence = await createBrowserEvidence(receipt, { url: 'https://example.test/' });
+    mutateEvidence(evidence);
+    evidence.integrity.value = await sha256Browser(browserEvidencePayload(evidence));
+    const challenge = createVerificationChallenge({ ttl_ms: 120000 });
+    const attestation = await createSessionAttestation({ evidence, challenge });
+    await assert.rejects(createWitnessBundle({ evidence, challenge, attestation }),
+      new RegExp(reason), name);
+    const bundle = {
+      schema: 'aml-witness-bundle/1', prototype: true, created_at: new Date().toISOString(),
+      evidence, challenge, attestation
+    };
+    bundle.integrity = { schema: 'aml-integrity/1', algorithm: 'SHA-256',
+      canonicalization: 'sorted-json-v1', value: await sha256Browser(witnessBundlePayload(bundle)) };
+    const result = await verifyWitnessBundle(bundle, { expectedChallenge: challenge });
+    assert.equal(result.reason, reason, name);
+    assert.equal(result.checks.session_signature, true, name);
+  }
 });
 
 test('signed witness cannot pass before its challenge issue time', async () => {

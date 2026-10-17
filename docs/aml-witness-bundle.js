@@ -25,7 +25,14 @@ function canonicalTime(value) {
 function bundleTimeFailure(bundle, now) {
   const attested = canonicalTime(bundle.attestation.issued_at);
   const created = canonicalTime(bundle.created_at);
-  if (attested === null || created === null) return 'AML_WITNESS_BUNDLE_TIME_INVALID';
+  const evidenced = canonicalTime(bundle.evidence.generated_at);
+  const hasReceiptTime = Object.hasOwn(bundle.evidence.receipt, 'generated_at');
+  const receipted = hasReceiptTime ? canonicalTime(bundle.evidence.receipt.generated_at) : null;
+  if (attested === null || created === null || evidenced === null ||
+      (hasReceiptTime && receipted === null)) return 'AML_WITNESS_BUNDLE_TIME_INVALID';
+  if ((hasReceiptTime && receipted > evidenced) || evidenced > attested) {
+    return 'AML_WITNESS_BUNDLE_TIME_ORDER_INVALID';
+  }
   if (attested < Date.parse(bundle.challenge.issued_at) || created < attested ||
       created > Date.parse(bundle.challenge.expires_at)) {
     return 'AML_WITNESS_BUNDLE_TIME_ORDER_INVALID';

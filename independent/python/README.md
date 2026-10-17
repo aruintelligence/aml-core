@@ -152,8 +152,9 @@ test fixtures only; a historical override is not a live freshness check.
 - challenge schema, nonce, issue time and expiry;
 - equality with a separately retained, fresh challenge when supplied;
 - challenge/evidence equality inside the session attestation;
-- canonical UTC millisecond attestation/bundle times and their claimed order
-  from challenge issue through local replay and challenge expiry;
+- canonical UTC millisecond evidence, attestation, and bundle times (and a
+  receipt time if present), with claimed order from receipt through evidence,
+  attestation, bundle creation, and the local replay clock;
 - P-256 public key is on curve;
 - public-JWK SHA-256 fingerprint;
 - raw 64-byte P-256 ECDSA signature over the canonical attestation payload.

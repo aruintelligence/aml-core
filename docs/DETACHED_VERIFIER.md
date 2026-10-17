@@ -99,12 +99,14 @@ command is in the current preview checkout, not the pinned `v1.3.0` stable
 package.
 
 After the signature and hashes pass, witness replay also checks the claimed
-timeline: the attestation issue time and bundle creation time must use exact
-UTC milliseconds; the attestation cannot predate the challenge issue, and
-bundle creation must follow the attestation, precede challenge expiry, and
-have occurred by the verifier's replay clock. These fields are supplied
-claims, not trusted timestamps. A resealed bundle with an impossible
-creation time is rejected even when its signature remains valid.
+timeline: evidence generation, attestation issue, and bundle creation must
+use exact UTC milliseconds. A receipt's generation time must also use that
+spelling when present. The receipt cannot postdate its evidence; evidence
+cannot postdate its signed attestation; the attestation cannot predate the
+challenge issue; and bundle creation must follow the attestation, precede
+challenge expiry, and have occurred by the verifier's replay clock. These
+fields are supplied claims, not trusted timestamps. A resealed bundle with
+an impossible timeline is rejected even when its signature remains valid.
 
 ## Claim boundary
 
