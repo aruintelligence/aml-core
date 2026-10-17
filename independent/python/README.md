@@ -89,6 +89,19 @@ input binding. The output is unsigned and replay time affects witness freshness;
 retain the inputs and evaluate the decision again when needed. These hashes
 identify evaluated content, not an independent certification.
 
+To turn independently retained fingerprints into an acceptance gate, pass a
+strict `aml-signed-quorum-input-expectations/1` JSON file with one or more
+canonical SHA-256 fields to `--expect-inputs held-inputs.json`. Use
+`aml fingerprint-json held-policy.json` and the same command for your retained
+challenge to derive their `policy_sha256` and `held_challenge_sha256` values
+before receiving the quorum. The optional `quorum_sha256` and
+`witness_bundle_sha256` fields can pin those documents too. `inputs_met`
+checks only the fields present in this separately controlled file; the
+`input_evaluation` lists mismatches. A valid quorum and satisfied policy can
+still fail this additional condition with exit `2`. Invalid expectations or
+a pin for an absent input produce usage exit `1`. The Python verifier uses its
+documented narrower portable JSON subset.
+
 Exit `0` requires internal validity, the saved threshold, and every held
 condition supplied. Exit `2` means a verification condition failed; exit `1`
 means unreadable JSON, missing paired inputs, or invalid held configuration. Run

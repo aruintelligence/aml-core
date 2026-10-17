@@ -100,6 +100,85 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
     canonicalization: 'sorted-json-v1', quorum_sha256: inputHash(quorum),
     policy_sha256: inputHash(policy)
   });
+  const fingerprint = spawnSync(process.execPath, ['bin/aml.js', 'fingerprint-json', policyFile],
+    { encoding: 'utf8' });
+  assert.equal(fingerprint.status, 0, fingerprint.stderr);
+  assert.deepEqual(JSON.parse(fingerprint.stdout), {
+    canonicalization: 'sorted-json-v1', sha256: inputHash(policy)
+  });
+  const textFingerprint = spawnSync(process.execPath, ['bin/aml.js', 'fingerprint-json',
+    write('text.json', 'hello')], { encoding: 'utf8' });
+  assert.equal(JSON.parse(textFingerprint.stdout).sha256, inputHash('hello'));
+  const duplicateFingerprintPath = path.join(directory, 'duplicate-fingerprint.json');
+  fs.writeFileSync(duplicateFingerprintPath, '{"a":1,"\\u0061":2}');
+  const ambiguousFingerprint = spawnSync(process.execPath,
+    ['bin/aml.js', 'fingerprint-json', duplicateFingerprintPath], { encoding: 'utf8' });
+  assert.equal(ambiguousFingerprint.status, 1);
+  assert.match(ambiguousFingerprint.stderr, /duplicate JSON object key/);
+  const expectedInputs = {
+    schema: 'aml-signed-quorum-input-expectations/1', prototype: true,
+    canonicalization: 'sorted-json-v1', quorum_sha256: inputHash(quorum),
+    policy_sha256: inputHash(policy)
+  };
+  const expectedFile = write('expected-inputs.json', expectedInputs);
+  const bound = run(write('bound-quorum.json', quorum), '--policy', policyFile,
+    '--expect-inputs', expectedFile);
+  assert.equal(bound.status, 0, bound.stderr);
+  assert.equal(JSON.parse(bound.stdout).inputs_met, true);
+  assert.deepEqual(JSON.parse(bound.stdout).input_evaluation, {
+    expectations_sha256: inputHash(expectedInputs),
+    checked: ['quorum_sha256', 'policy_sha256'], mismatched: [], unavailable: []
+  });
+
+  // Both the saved threshold and held key policy still pass when their
+  // contents change; the separately pinned input digest blocks substitution.
+  const swappedQuorum = await createSignedVerificationQuorum([b, a], { threshold: 2 });
+  const swapped = run(write('swapped-quorum.json', swappedQuorum), '--policy', policyFile,
+    '--expect-inputs', expectedFile);
+  assert.equal(swapped.status, 2, swapped.stderr);
+  assert.equal(JSON.parse(swapped.stdout).valid, true);
+  assert.equal(JSON.parse(swapped.stdout).threshold_met, true);
+  assert.equal(JSON.parse(swapped.stdout).policy_met, true);
+  assert.equal(JSON.parse(swapped.stdout).inputs_met, false);
+  assert.deepEqual(JSON.parse(swapped.stdout).input_evaluation.mismatched, ['quorum_sha256']);
+  const reorderedPolicy = { ...policy,
+    trusted_key_fingerprints: [...policy.trusted_key_fingerprints].reverse() };
+  const changedPolicy = run(write('same-quorum.json', quorum), '--policy',
+    write('reordered-policy.json', reorderedPolicy), '--expect-inputs', expectedFile);
+  assert.equal(changedPolicy.status, 2, changedPolicy.stderr);
+  assert.equal(JSON.parse(changedPolicy.stdout).policy_met, true);
+  assert.equal(JSON.parse(changedPolicy.stdout).inputs_met, false);
+  assert.deepEqual(JSON.parse(changedPolicy.stdout).input_evaluation.mismatched, ['policy_sha256']);
+  const missingPinnedInput = run(write('unpaired-quorum.json', quorum),
+    '--expect-inputs', expectedFile);
+  assert.equal(missingPinnedInput.status, 1);
+  assert.match(missingPinnedInput.stderr, /AML_SIGNED_QUORUM_INPUT_EXPECTATIONS_MISSING_INPUT/);
+  const nullInputsPath = path.join(directory, 'null-inputs.json');
+  fs.writeFileSync(nullInputsPath, 'null');
+  const nullInputs = run(write('null-inputs-quorum.json', quorum),
+    '--expect-inputs', nullInputsPath);
+  assert.equal(nullInputs.status, 1);
+  assert.match(nullInputs.stderr, /AML_SIGNED_QUORUM_INPUT_EXPECTATIONS_INVALID/);
+  const nullPolicy = run(write('null-policy-quorum.json', quorum), '--policy', nullInputsPath);
+  assert.equal(nullPolicy.status, 1);
+  assert.match(nullPolicy.stderr, /AML_SIGNED_QUORUM_POLICY_INVALID/);
+  const ambiguousInputsPath = path.join(directory, 'duplicate-inputs.json');
+  fs.writeFileSync(ambiguousInputsPath, JSON.stringify(expectedInputs).replace(
+    '"prototype":true', String.raw`"prot\u006ftype":false,"prototype":true`));
+  const ambiguousInputs = run(write('duplicate-inputs-quorum.json', quorum),
+    '--policy', policyFile, '--expect-inputs', ambiguousInputsPath);
+  assert.equal(ambiguousInputs.status, 1);
+  assert.match(ambiguousInputs.stderr, /duplicate JSON object key/);
+  for (const malformed of [
+    { ...expectedInputs, policy_sha256: inputHash(policy).toUpperCase() },
+    { ...expectedInputs, certified: true },
+    { schema: expectedInputs.schema, prototype: true, canonicalization: 'sorted-json-v1' }
+  ]) {
+    const invalid = run(write('malformed-inputs.json', quorum), '--policy', policyFile,
+      '--expect-inputs', write('bad-inputs.json', malformed));
+    assert.equal(invalid.status, 1);
+    assert.match(invalid.stderr, /AML_SIGNED_QUORUM_INPUT_EXPECTATIONS_INVALID/);
+  }
 
   // Each ambiguous file would have passed the old last-key-wins JSON.parse
   // path. A nested escaped alias must fail just like a duplicate top-level key.
@@ -244,6 +323,16 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.deepEqual(JSON.parse(complete.stdout).input_fingerprints, {
     ...replayed.input_fingerprints, policy_sha256: inputHash(completePolicy)
   });
+  const heldInputs = {
+    schema: 'aml-signed-quorum-input-expectations/1', prototype: true,
+    canonicalization: 'sorted-json-v1', policy_sha256: inputHash(completePolicy),
+    held_challenge_sha256: inputHash(challenge)
+  };
+  const heldInputsPath = write('held-inputs.json', heldInputs);
+  const pinnedReplay = run(quorumPath, '--policy', completePolicyPath,
+    '--bundle', bundlePath, '--challenge', challengePath, '--expect-inputs', heldInputsPath);
+  assert.equal(pinnedReplay.status, 0, pinnedReplay.stderr);
+  assert.equal(JSON.parse(pinnedReplay.stdout).inputs_met, true);
 
   const vetoPolicy = { ...completePolicy, schema: 'aml-signed-quorum-held-policy/5',
     reject_trusted_dissent: true };
@@ -389,6 +478,14 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(rejection.input_fingerprints.held_challenge_sha256, inputHash(differentChallenge));
   assert.notEqual(rejection.input_fingerprints.held_challenge_sha256,
     replayed.input_fingerprints.held_challenge_sha256);
+  const pinnedWrongChallenge = run(quorumPath, '--policy', completePolicyPath,
+    '--bundle', bundlePath, '--challenge', write('pinned-other-challenge.json', differentChallenge),
+    '--expect-inputs', heldInputsPath);
+  assert.equal(pinnedWrongChallenge.status, 2, pinnedWrongChallenge.stderr);
+  assert.equal(JSON.parse(pinnedWrongChallenge.stdout).valid, true);
+  assert.equal(JSON.parse(pinnedWrongChallenge.stdout).inputs_met, false);
+  assert.deepEqual(JSON.parse(pinnedWrongChallenge.stdout).input_evaluation.mismatched,
+    ['held_challenge_sha256']);
 
   const tampered = structuredClone(bundle);
   tampered.created_at = '2030-01-01T00:00:00.000Z';

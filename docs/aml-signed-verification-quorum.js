@@ -14,6 +14,9 @@ const replayableWitnessChecks = [
   'challenge_freshness', 'challenge_binding', 'session_signature'
 ];
 const requiredWitnessChecks = [...replayableWitnessChecks, 'verifier_held_challenge'];
+const inputHashFields = [
+  'quorum_sha256', 'policy_sha256', 'witness_bundle_sha256', 'held_challenge_sha256'
+];
 
 // The reference report generator emits canonical UTC milliseconds. This
 // narrow profile has the same exact interpretation in JS and Python, and
@@ -262,8 +265,31 @@ export function validateSignedVerificationQuorumPolicy(policy) {
   return policy;
 }
 
+function validateInputExpectations(expectations, { policy, witnessBundle }) {
+  assertBrowserJSON(expectations);
+  if (!expectations || typeof expectations !== 'object' || Array.isArray(expectations) ||
+      expectations.schema !== 'aml-signed-quorum-input-expectations/1' ||
+      expectations.prototype !== true || expectations.canonicalization !== 'sorted-json-v1' ||
+      Object.keys(expectations).some(key => ![
+        'schema', 'prototype', 'canonicalization', ...inputHashFields
+      ].includes(key))) {
+    throw new Error('AML_SIGNED_QUORUM_INPUT_EXPECTATIONS_INVALID');
+  }
+  const pinned = inputHashFields.filter(field => Object.hasOwn(expectations, field));
+  if (!pinned.length || pinned.some(field => typeof expectations[field] !== 'string' ||
+      !/^[a-f0-9]{64}$/.test(expectations[field]))) {
+    throw new Error('AML_SIGNED_QUORUM_INPUT_EXPECTATIONS_INVALID');
+  }
+  if ((policy === undefined && pinned.includes('policy_sha256')) ||
+      (witnessBundle === undefined && pinned.some(field =>
+        ['witness_bundle_sha256', 'held_challenge_sha256'].includes(field)))) {
+    throw new Error('AML_SIGNED_QUORUM_INPUT_EXPECTATIONS_MISSING_INPUT');
+  }
+  return pinned;
+}
+
 export async function verifySignedVerificationQuorum(quorum, {
-  policy, witnessBundle, expectedChallenge
+  policy, witnessBundle, expectedChallenge, expectedInputFingerprints
 } = {}) {
   // A verifier-held policy is configuration, not part of the untrusted quorum.
   // Reject malformed configuration as a usage error before checking the quorum.
@@ -275,10 +301,13 @@ export async function verifySignedVerificationQuorum(quorum, {
     .includes(policy?.schema) && witnessBundle === undefined) {
     throw new Error('AML_SIGNED_QUORUM_POLICY_WITNESS_REQUIRED');
   }
+  const pinnedInputs = expectedInputFingerprints === undefined ? [] :
+    validateInputExpectations(expectedInputFingerprints, { policy, witnessBundle });
   const reject = (reason) => ({
     valid: false, reason, threshold_met: false,
     ...(policy === undefined ? {} : { policy_met: false }),
-    ...(witnessBundle === undefined ? {} : { witness_met: false, replayable_claims_consistent: false })
+    ...(witnessBundle === undefined ? {} : { witness_met: false, replayable_claims_consistent: false }),
+    ...(expectedInputFingerprints === undefined ? {} : { inputs_met: false })
   });
   try {
     assertBrowserJSON(quorum);
@@ -451,6 +480,18 @@ export async function verifySignedVerificationQuorum(quorum, {
           witness_bundle_sha256: await sha256Browser(canonicalJSONStringifyBrowser(witnessBundle)),
           held_challenge_sha256: await sha256Browser(canonicalJSONStringifyBrowser(expectedChallenge))
         })
+      };
+    }
+    if (expectedInputFingerprints !== undefined) {
+      const unavailable = pinnedInputs.filter(field =>
+        !Object.hasOwn(result.input_fingerprints ?? {}, field));
+      const mismatched = pinnedInputs.filter(field =>
+        !unavailable.includes(field) &&
+        expectedInputFingerprints[field] !== result.input_fingerprints[field]);
+      result.inputs_met = unavailable.length === 0 && mismatched.length === 0;
+      result.input_evaluation = {
+        expectations_sha256: await sha256Browser(canonicalJSONStringifyBrowser(expectedInputFingerprints)),
+        checked: pinnedInputs, mismatched, unavailable
       };
     }
     return result;

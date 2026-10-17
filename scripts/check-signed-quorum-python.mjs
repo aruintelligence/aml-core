@@ -32,11 +32,12 @@ const report = (verifier, valid = true) => ({
   checked_at: '2030-01-01T00:05:00.000Z', checks: { bundle_integrity: valid }, notes: []
 });
 
-async function compare(name, quorum, policy, expected, { bundle, challenge } = {}) {
+async function compare(name, quorum, policy, expected, { bundle, challenge, expectedInputs } = {}) {
   const args = [python, save(`${name}-quorum.json`, quorum)];
   if (policy) args.push('--policy', save(`${name}-policy.json`, policy));
   if (bundle && challenge) args.push('--bundle', save(`${name}-bundle.json`, bundle),
     '--challenge', save(`${name}-challenge.json`, challenge));
+  if (expectedInputs) args.push('--expect-inputs', save(`${name}-expected-inputs.json`, expectedInputs));
   const run = spawnSync('python3', args, {
     encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' }
   });
@@ -44,10 +45,12 @@ async function compare(name, quorum, policy, expected, { bundle, challenge } = {
   assert.ok(run.stdout, `${name}: ${run.stderr}`);
   const py = JSON.parse(run.stdout);
   const js = await verifySignedVerificationQuorum(quorum, {
-    policy, ...(bundle ? { witnessBundle: bundle, expectedChallenge: challenge } : {})
+    policy, expectedInputFingerprints: expectedInputs,
+    ...(bundle ? { witnessBundle: bundle, expectedChallenge: challenge } : {})
   });
   for (const field of ['valid', 'threshold_met', ...(policy ? ['policy_met'] : []),
-    ...(bundle ? ['witness_met', 'replayable_claims_consistent'] : [])]) {
+    ...(bundle ? ['witness_met', 'replayable_claims_consistent'] : []),
+    ...(expectedInputs ? ['inputs_met'] : [])]) {
     assert.equal(py[field], js[field], `${name}: ${field}: ${run.stderr} ${run.stdout}`);
   }
   if (bundle) {
@@ -56,6 +59,7 @@ async function compare(name, quorum, policy, expected, { bundle, challenge } = {
     assert.deepEqual(py.replayable_claims_evaluation, js.replayable_claims_evaluation, name);
   }
   if (policy && js.valid) assert.deepEqual(py.policy_evaluation, js.policy_evaluation, name);
+  if (expectedInputs && js.valid) assert.deepEqual(py.input_evaluation, js.input_evaluation, name);
   assert.deepEqual(py.input_fingerprints, js.input_fingerprints,
     `${name}: independently computed input fingerprints`);
   if (py.input_fingerprints) {
@@ -63,13 +67,15 @@ async function compare(name, quorum, policy, expected, { bundle, challenge } = {
       await sha256Browser(canonicalJSONStringifyBrowser(quorum)), name);
   }
   assert.equal(py.valid && py.threshold_met && (!policy || py.policy_met) &&
-    (!bundle || (py.witness_met && py.replayable_claims_consistent)), expected, name);
+    (!bundle || (py.witness_met && py.replayable_claims_consistent)) &&
+    (!expectedInputs || py.inputs_met), expected, name);
   assert.equal(run.status, expected ? 0 : 2, `${name}: ${run.stderr} ${run.stdout}`);
   if (js.valid) assert.deepEqual(py.summary, js.quorum.summary, name);
   checks.push({ case: name, valid: py.valid, threshold_met: py.threshold_met,
     ...(policy ? { policy_met: py.policy_met } : {}),
     ...(bundle ? { witness_met: py.witness_met,
       replayable_claims_consistent: py.replayable_claims_consistent } : {}),
+    ...(expectedInputs ? { inputs_met: py.inputs_met } : {}),
     python_matches_js: true });
   return py.input_fingerprints;
 }
@@ -100,6 +106,40 @@ try {
   };
   const quorum = await createSignedVerificationQuorum([a, b], { threshold: 2 });
   await compare('two-distinct-keys', quorum, policy, true);
+  const inputExpectations = {
+    schema: 'aml-signed-quorum-input-expectations/1', prototype: true,
+    canonicalization: 'sorted-json-v1',
+    quorum_sha256: await sha256Browser(canonicalJSONStringifyBrowser(quorum)),
+    policy_sha256: await sha256Browser(canonicalJSONStringifyBrowser(policy))
+  };
+  await compare('held-input-pins-match', quorum, policy, true,
+    { expectedInputs: inputExpectations });
+  await compare('held-input-policy-substitution', quorum, {
+    ...policy, trusted_key_fingerprints: [...policy.trusted_key_fingerprints].reverse()
+  }, false, { expectedInputs: inputExpectations });
+  await compare('held-input-quorum-substitution',
+    await createSignedVerificationQuorum([b, a], { threshold: 2 }), policy, false,
+    { expectedInputs: inputExpectations });
+  const missingInputRun = spawnSync('python3', [python,
+    save('held-input-missing-policy-quorum.json', quorum), '--expect-inputs',
+    save('held-input-missing-policy-pins.json', inputExpectations)],
+  { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  assert.equal(missingInputRun.status, 1, missingInputRun.stderr);
+  assert.equal(JSON.parse(missingInputRun.stdout).reason,
+    'AML_SIGNED_QUORUM_INPUT_EXPECTATIONS_MISSING_INPUT');
+  for (const [flag, error] of [
+    ['--expect-inputs', 'AML_SIGNED_QUORUM_INPUT_EXPECTATIONS_INVALID'],
+    ['--policy', 'AML_SIGNED_QUORUM_POLICY_INVALID']
+  ]) {
+    const nullRun = spawnSync('python3', [python, save(`${flag}-null-quorum.json`, quorum),
+      flag, save(`${flag}-null.json`, 'null')],
+    { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+    assert.equal(nullRun.status, 1, `${flag}: ${nullRun.stderr}`);
+    assert.equal(JSON.parse(nullRun.stdout).reason, error, flag);
+  }
+  await assert.rejects(() => verifySignedVerificationQuorum(quorum, {
+    expectedInputFingerprints: inputExpectations
+  }), /AML_SIGNED_QUORUM_INPUT_EXPECTATIONS_MISSING_INPUT/);
   const keyC = await createVerifierKeyPair();
   const c = await signVerificationReport(report('c'), keyC);
   const groupedPolicy = {
@@ -249,6 +289,17 @@ try {
       { ...await fingerprintVerifierPublicKey(witnessB.verifier_public_key_jwk), trust_group: 'lab-b' }
     ]
   };
+  const replayPins = {
+    schema: 'aml-signed-quorum-input-expectations/1', prototype: true,
+    canonicalization: 'sorted-json-v1',
+    policy_sha256: await sha256Browser(canonicalJSONStringifyBrowser(completePolicy)),
+    held_challenge_sha256: await sha256Browser(canonicalJSONStringifyBrowser(challenge))
+  };
+  await compare('held-policy-and-challenge-pins-match', witnessQuorum, completePolicy,
+    true, { ...replay, expectedInputs: replayPins });
+  await compare('held-challenge-pin-mismatch', witnessQuorum, completePolicy,
+    false, { ...replay, expectedInputs: { ...replayPins,
+      held_challenge_sha256: '0'.repeat(64) } });
   const completeInputs = await compare('complete-signed-witness-claims',
     witnessQuorum, completePolicy, true, replay);
   const vetoPolicy = { ...completePolicy, schema: 'aml-signed-quorum-held-policy/5',
@@ -529,7 +580,8 @@ try {
       'missing_held_challenge',
       'matching_held_challenge', 'mismatched_held_challenge', 'duplicate_witness_key',
       'malformed_witness_signature', 'malformed_witness_attestation',
-      'before_challenge_issue', 'after_challenge_expiry'],
+      'before_challenge_issue', 'after_challenge_expiry',
+      'null_input_expectations_rejected', 'null_held_policy_rejected'],
     claim_boundary: 'Project-authored Python and JavaScript implementations agree on these saved quorum, held-policy, and live witness-replay cases. This is not an external witness, signer identity, or independent certification.'
   }, null, 2));
 } finally {
