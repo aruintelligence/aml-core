@@ -123,7 +123,7 @@ export async function fingerprintVerifierPublicKey(jwk) {
 export async function createSignedVerificationQuorum(signedReports, { threshold = 2 } = {}) {
   if (!Array.isArray(signedReports) || signedReports.length === 0) throw new Error('AML_SIGNED_QUORUM_REPORTS_REQUIRED');
   if (signedReports.length > 64) throw new Error('AML_SIGNED_QUORUM_TOO_MANY_REPORTS');
-  if (!Number.isInteger(threshold) || threshold < 1) throw new Error('AML_SIGNED_QUORUM_THRESHOLD_INVALID');
+  if (!Number.isSafeInteger(threshold) || threshold < 1) throw new Error('AML_SIGNED_QUORUM_THRESHOLD_INVALID');
   signedReports = snapshotBrowserJSON(signedReports);
 
   const checks = [];

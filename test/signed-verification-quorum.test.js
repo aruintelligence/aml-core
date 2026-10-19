@@ -173,6 +173,23 @@ test('signed verification quorum requires distinct valid key fingerprints', asyn
   assert.equal(quorum.summary.unanimous, true);
 });
 
+test('saved signed thresholds stay within the portable safe-integer range', async () => {
+  const signed = await signVerificationReport(report('safe-threshold'), await createVerifierKeyPair());
+  const boundary = await createSignedVerificationQuorum([signed], {
+    threshold: Number.MAX_SAFE_INTEGER
+  });
+  const checked = await verifySignedVerificationQuorum(boundary);
+  assert.equal(checked.valid, true);
+  assert.equal(checked.threshold_met, false);
+  await assert.rejects(() => createSignedVerificationQuorum([signed], {
+    threshold: Number.MAX_SAFE_INTEGER + 1
+  }), /AML_SIGNED_QUORUM_THRESHOLD_INVALID/);
+  const unsafe = { ...boundary, threshold: Number.MAX_SAFE_INTEGER + 1 };
+  const rejected = await verifySignedVerificationQuorum(unsafe);
+  assert.equal(rejected.valid, false);
+  assert.equal(rejected.threshold_met, false);
+});
+
 test('quorum creation counts the signed report snapshot despite live mutations', async () => {
   const a = await signVerificationReport(report('a'), await createVerifierKeyPair());
   const b = await signVerificationReport(report('b'), await createVerifierKeyPair());
