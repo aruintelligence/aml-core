@@ -248,7 +248,9 @@ function claimReconciliation(directory) {
           operation.protocol !== "aml-file-authority-operation/1" ||
           operation.operation_sha256 !== grant.operation_sha256 ||
           operation.grant_id !== grantId ||
-          operation.binding_sha256 !== claim.binding_sha256)) {
+          operation.binding_sha256 !== claim.binding_sha256 ||
+          operation.issuer_sha256 !== grant.issuer_sha256 ||
+          operation.epoch !== grant.epoch)) {
         issues.push({ grant_id: grantId, problem: "operation_missing_or_mismatch" });
       }
     }
@@ -258,8 +260,8 @@ function claimReconciliation(directory) {
       if (!outcome || outcome.protocol !== "aml-file-authority-outcome/1" ||
           outcome.grant_id !== grantId ||
           outcome.binding_sha256 !== claim.binding_sha256 ||
-          !["returned", "outcome_unknown"].includes(outcome.status) ||
-          typeof outcome.reason !== "string") {
+          !((outcome.status === "returned" && outcome.reason === "callback_returned") ||
+            (outcome.status === "outcome_unknown" && outcome.reason === "callback_error"))) {
         issues.push({ grant_id: grantId, problem: "outcome_invalid_or_mismatch" });
         continue;
       }
