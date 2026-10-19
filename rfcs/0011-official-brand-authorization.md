@@ -48,6 +48,8 @@ All issue, expiry, trust-root, and as-of timestamps in this verifier use a delib
 
 For an exact-use claim, the buyer can separately pin the canonical SHA-256 of the trust registry and the revocation registry head in an `aml-brand-claim-policy/1` record. `verifyBrandClaim` checks the pinned snapshots at its local clock and requires an exact grantee, mark, and permitted use. `claim_verified` refers to the supplied, pinned snapshots only; it is not a freshness guarantee. A hash chain without a buyer-held head can be rolled back to a valid prefix. The buyer must obtain and refresh both pins independently of the credential presenter.
 
+At a JSON byte boundary, reject duplicate object names before parsing any credential, trust root, revocation registry, or buyer policy; escaped aliases count as the same name. A parsed object no longer carries evidence of discarded names. The official CLI and browser verifier enforce this for their respective JSON inputs.
+
 ## Legal boundary
 
 A valid cryptographic credential proves that the holder possesses a credential signed by the represented key and that the credential has not been modified. It does not independently prove:

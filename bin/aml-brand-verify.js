@@ -3,6 +3,13 @@
 import fs from "node:fs";
 import { verifyOfficialBrandAuthorization } from "../runtime/brandTrust.js";
 import { verifyBrandClaim } from "../runtime/brandClaim.js";
+import { parseJsonWithoutDuplicateKeys } from "../runtime/strictJson.js";
+
+function readUnambiguousJson(filePath) {
+  const source = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true })
+    .decode(fs.readFileSync(filePath));
+  return parseJsonWithoutDuplicateKeys(source);
+}
 
 const credentialPath = process.argv[2];
 const trustRootsPath = process.argv[3] || "BRAND_TRUST_ROOTS.json";
@@ -15,11 +22,11 @@ if (!credentialPath) {
 }
 
 try {
-  const credential = JSON.parse(fs.readFileSync(credentialPath, "utf8"));
-  const trustRoots = JSON.parse(fs.readFileSync(trustRootsPath, "utf8"));
-  const revocationRegistry = revocationPath ? JSON.parse(fs.readFileSync(revocationPath, "utf8")) : null;
+  const credential = readUnambiguousJson(credentialPath);
+  const trustRoots = readUnambiguousJson(trustRootsPath);
+  const revocationRegistry = revocationPath ? readUnambiguousJson(revocationPath) : null;
   const result = claimPolicyPath
-    ? verifyBrandClaim(credential, trustRoots, revocationRegistry, JSON.parse(fs.readFileSync(claimPolicyPath, "utf8")))
+    ? verifyBrandClaim(credential, trustRoots, revocationRegistry, readUnambiguousJson(claimPolicyPath))
     : verifyOfficialBrandAuthorization(credential, trustRoots, { revocation_registry: revocationRegistry });
   console.log(JSON.stringify(result, null, 2));
   process.exit(claimPolicyPath ? (result.claim_verified ? 0 : 1) : (result.valid && result.official ? 0 : 1));

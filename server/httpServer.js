@@ -6,6 +6,7 @@ import { createRequestAuthenticator } from "./requestAuth.js";
 import { createInflightLimit } from "./inflightLimit.js";
 import { executeAccountableIntent, signExecutionReceipt, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { verifyOfficialBrandAuthorization } from "../runtime/brandTrust.js";
+import { parseJsonWithoutDuplicateKeys } from "../runtime/strictJson.js";
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
 import { evaluateInterfaceBatch } from "../runtime/batchInterfaceFirewall.js";
 import { evaluatePolicyCanary } from "../runtime/policyCanary.js";
@@ -26,7 +27,9 @@ function send(res, status, body, headers = {}) {
 
 function loadJson(relativePath, fallback) {
   try {
-    return JSON.parse(fs.readFileSync(new URL(relativePath, import.meta.url), "utf8"));
+    const source = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true })
+      .decode(fs.readFileSync(new URL(relativePath, import.meta.url)));
+    return parseJsonWithoutDuplicateKeys(source);
   } catch {
     return fallback;
   }
