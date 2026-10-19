@@ -109,10 +109,11 @@ function freezeDeep(value) {
   return value;
 }
 
-export function createFileRevocationHandoff({ directory, now = () => Date.now() } = {}) {
+export function createFileRevocationHandoff({ directory, now = () => Date.now(), claimOnce = null } = {}) {
   if (typeof directory !== "string" || !path.isAbsolute(directory) ||
-      directory !== path.resolve(directory) || typeof now !== "function") {
-    throw new TypeError("A trusted absolute directory and host clock are required");
+      directory !== path.resolve(directory) || typeof now !== "function" ||
+      (claimOnce !== null && typeof claimOnce !== "function")) {
+    throw new TypeError("A trusted absolute directory, host clock, and optional atomic claim are required");
   }
   privateDirectory(directory, true);
   const epochs = path.join(directory, "epochs");
@@ -298,10 +299,44 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now() 
             createExclusive(claimFile, { protocol: "aml-file-authority-claim/1",
               grant_id, binding_sha256: bound.sha256,
               idempotency_key_sha256: idempotencyKey }, claimed);
-            try {
-              invoked = true;
-              response = execute(freezeDeep(JSON.parse(bound.request.bytes)), { idempotencyKey });
-            } catch { callbackThrew = true; }
+            if (claimOnce) {
+              // Keep the local lock across an optional asynchronous CAS. The
+              // host anchor must commit before returning exactly true; a
+              // restored local snapshot cannot erase that separate claim.
+              try {
+                const result = await claimOnce(Object.freeze({
+                  protocol: "aml-file-authority-external-claim/1",
+                  // An operation-backed grant keeps the same host intent key
+                  // even if a restored local snapshot mints a different grant.
+                  claim_key_sha256: record.operation_sha256 ?? idempotencyKey,
+                  binding_sha256: bound.sha256
+                }));
+                if (result === false) decision = denied("blocked", "external_claim_spent");
+                else if (result !== true) decision = denied("indeterminate", "external_claim_unavailable");
+              } catch { decision = denied("indeterminate", "external_claim_unavailable"); }
+              if (!decision) {
+                // An awaited host claim can outlive the grant or allow an
+                // authority path replacement. Recheck immediately before the
+                // callback, still under the lock and with the claim spent.
+                checkDirectories();
+                if (record.operation_sha256 && !operationMatches(record)) {
+                  decision = denied("indeterminate", "operation_record_unavailable");
+                } else {
+                  const postClaimTime = hostTime();
+                  if (postClaimTime < record.issued_at_ms || postClaimTime >= record.expires_at_ms) {
+                    decision = denied("blocked", "grant_expired_or_clock_invalid");
+                  } else if (currentEpoch(record.issuer_sha256) !== record.epoch) {
+                    decision = denied("blocked", "issuer_revoked");
+                  }
+                }
+              }
+            }
+            if (!decision) {
+              try {
+                invoked = true;
+                response = execute(freezeDeep(JSON.parse(bound.request.bytes)), { idempotencyKey });
+              } catch { callbackThrew = true; }
+            }
           }
         }
       }
