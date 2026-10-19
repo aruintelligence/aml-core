@@ -2,33 +2,10 @@
 // The host must authenticate approval and own all inputs and the callback.
 // No await occurs between the final epoch check, the one-use claim, and
 // invoking the callback. This is not a cross-process or provider-side lock.
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { canonicalJSONStringify } from "../../protocol/canonicalJson.js";
-
-const digest = bytes => createHash("sha256").update(bytes, "utf8").digest("hex");
-const identity = value => typeof value === "string" && value.trim() && value.length <= 256;
-const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
-
-function freeze(value) {
-  if (!object(value)) throw new TypeError("A JSON object is required");
-  const bytes = canonicalJSONStringify(value);
-  if (Buffer.byteLength(bytes, "utf8") > 65_536) throw new TypeError("Prepared request or policy is too large");
-  return { bytes, sha256: digest(bytes) };
-}
-
-function binding(input) {
-  const context = {};
-  for (const name of ["tenant", "issuer", "actor", "audience", "tool"]) {
-    const value = input?.[name];
-    if (!identity(value)) throw new TypeError(`Invalid ${name}`);
-    context[name] = value;
-  }
-  const request = freeze(input.preparedRequest);
-  const policy = freeze(input.policy);
-  return { context, request, policy, sha256: digest(canonicalJSONStringify({
-    ...context, prepared_request_sha256: request.sha256, policy_sha256: policy.sha256
-  })) };
-}
+import { hashHandoffBytes as digest, validHandoffIdentity as identity,
+  snapshotHandoffBinding as binding } from "./handoff-binding.mjs";
 
 const issuerKey = (tenant, issuer) => JSON.stringify([tenant, issuer]);
 
