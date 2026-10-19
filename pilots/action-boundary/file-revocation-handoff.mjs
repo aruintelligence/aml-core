@@ -169,6 +169,89 @@ function checkpointRecord(value) {
         "head_sha256|protocol|sequence|state_sha256|store_id");
 }
 
+function claimReconciliation(directory) {
+  const claimed = path.join(directory, "claimed");
+  const outcomes = path.join(directory, "outcomes");
+  const names = fs.readdirSync(claimed).sort();
+  const outcomeNames = fs.readdirSync(outcomes).sort();
+  const pattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\.json$/;
+  const candidates = [], issues = [];
+  const counts = { claims: names.length, outcomes: outcomeNames.length,
+    returned: 0, missing_outcome: 0, unknown_outcome: 0 };
+  const claimNames = new Set(names);
+  const outcomeNamesSet = new Set(outcomeNames);
+  for (const name of names) {
+    if (!pattern.test(name)) {
+      issues.push({ collection: "claimed", problem: "unexpected_filename" });
+      continue;
+    }
+    const grantId = name.slice(0, -5);
+    let claim, grant, outcome, grantUnreadable = false;
+    try { claim = readRecord(path.join(claimed, name)); }
+    catch { issues.push({ grant_id: grantId, problem: "claim_unreadable" }); continue; }
+    if (claim?.protocol !== "aml-file-authority-claim/1" ||
+        claim.grant_id !== grantId || !DIGEST.test(claim.binding_sha256) ||
+        !DIGEST.test(claim.idempotency_key_sha256)) {
+      issues.push({ grant_id: grantId, problem: "claim_invalid" });
+      continue;
+    }
+    try { grant = readRecord(path.join(directory, "grants", name)); }
+    catch { issues.push({ grant_id: grantId, problem: "grant_unreadable" });
+      grantUnreadable = true; }
+    if (!grantUnreadable && (!grant || grant.protocol !== "aml-file-authority-grant/1" ||
+        grant.grant_id !== grantId || grant.binding_sha256 !== claim.binding_sha256 ||
+        (grant.operation_sha256 !== undefined && !DIGEST.test(grant.operation_sha256)))) {
+      issues.push({ grant_id: grantId, problem: "grant_missing_or_mismatch" });
+    }
+    if (grant?.operation_sha256 && DIGEST.test(grant.operation_sha256)) {
+      let operation, operationUnreadable = false;
+      try { operation = readRecord(path.join(directory, "operations",
+        `${grant.operation_sha256}.json`)); }
+      catch { issues.push({ grant_id: grantId, problem: "operation_unreadable" });
+        operationUnreadable = true; }
+      if (!operationUnreadable && (!operation ||
+          operation.protocol !== "aml-file-authority-operation/1" ||
+          operation.operation_sha256 !== grant.operation_sha256 ||
+          operation.grant_id !== grantId ||
+          operation.binding_sha256 !== claim.binding_sha256)) {
+        issues.push({ grant_id: grantId, problem: "operation_missing_or_mismatch" });
+      }
+    }
+    if (outcomeNamesSet.has(name)) {
+      try { outcome = readRecord(path.join(outcomes, name)); }
+      catch { issues.push({ grant_id: grantId, problem: "outcome_unreadable" }); continue; }
+      if (!outcome || outcome.protocol !== "aml-file-authority-outcome/1" ||
+          outcome.grant_id !== grantId ||
+          outcome.binding_sha256 !== claim.binding_sha256 ||
+          !["returned", "outcome_unknown"].includes(outcome.status) ||
+          typeof outcome.reason !== "string") {
+        issues.push({ grant_id: grantId, problem: "outcome_invalid_or_mismatch" });
+        continue;
+      }
+    }
+    if (!outcome) counts.missing_outcome++;
+    else if (outcome.status === "outcome_unknown") counts.unknown_outcome++;
+    else counts.returned++;
+    if (!outcome || outcome.status === "outcome_unknown") {
+      candidates.push({ grant_id: grantId,
+        operation_sha256: DIGEST.test(grant?.operation_sha256) ?
+          grant.operation_sha256 : null,
+        idempotency_key_sha256: claim.idempotency_key_sha256,
+        local_outcome: outcome?.status ?? "missing" });
+    }
+  }
+  for (const name of outcomeNames) {
+    if (!pattern.test(name)) {
+      issues.push({ collection: "outcomes", problem: "unexpected_filename" });
+    } else if (!claimNames.has(name)) {
+      issues.push({ grant_id: name.slice(0, -5), problem: "outcome_without_claim" });
+    }
+  }
+  return { status: issues.length ? "invalid_records" : candidates.length ?
+    "provider_review_needed" : "no_unresolved_local_claims",
+  counts, candidates, issues };
+}
+
 // One-machine example of the host's independent monotonic checkpoint store.
 // Keep this directory under a separate backup/retention domain. Restoring
 // both directories together can still replay an older authority snapshot.
@@ -312,6 +395,12 @@ export function inspectFileRevocationHandoff({ directory, anchor = null } = {}) 
       if (committedState === "mismatch") reasons.push("committed_state_mismatch");
     }
   } catch { reasons.push("committed_state_unreadable"); }
+  let reconciliation = null;
+  try {
+    reconciliation = claimReconciliation(directory);
+    if (reconciliation.issues.length) reasons.push("reconciliation_records_invalid");
+    if (reconciliation.candidates.length) reasons.push("claims_need_provider_review");
+  } catch { reasons.push("reconciliation_unavailable"); }
   // A genuinely fresh directory and an older empty store with a deleted mode
   // are indistinguishable from a read-only scan. Neither is verified state.
   if (modeStatus === "missing") reasons.push("authority_mode_missing");
@@ -358,6 +447,7 @@ export function inspectFileRevocationHandoff({ directory, anchor = null } = {}) 
       (localRead || !localReadable || anchor ? "unknown" : "unanchored"),
     authority_mode: { status: modeStatus, record: modeRecord },
     checkpoints: { local, external, comparison },
+    reconciliation,
     committed_state: { comparison: committedState, observed_sha256: observedDigest,
       includes_authority_mode: local?.protocol === "aml-file-authority-checkpoint/3", counts }
   };

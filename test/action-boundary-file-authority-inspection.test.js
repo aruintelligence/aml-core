@@ -59,8 +59,85 @@ test("inspection and its CLI report consistent protocol-3 state without writes",
     } });
     assert.deepEqual(report.committed_state.counts,
       { epochs: 1, grants: 1, operations: 1, claimed: 1 });
+    assert.deepEqual(report.reconciliation, {
+      status: "no_unresolved_local_claims",
+      counts: { claims: 1, outcomes: 1, returned: 1,
+        missing_outcome: 0, unknown_outcome: 0 }, candidates: [], issues: []
+    });
     assert.deepEqual(command, report);
     assert.deepEqual(snapshot(parent), before);
+  }));
+
+test("a spent claim without an outcome is listed even when the lock is gone", () => {
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), "aml-inspection-claim-"));
+  return (async () => {
+    try {
+      const directory = path.join(parent, "authority");
+      const host = createFileRevocationHandoff({ directory, claimOnce: () => false });
+      const grant = host.issue(input(), { operationId: "host-intent-review-001" });
+      const result = await host.dispatch({ ...input(), grant_id: grant.grant_id,
+        execute: () => { throw Error("unexpected callback"); } });
+      assert.deepEqual([result.status, result.reason], ["blocked", "external_claim_spent"]);
+      const before = snapshot(parent);
+      const report = inspectFileRevocationHandoff({ directory });
+      assert.equal(report.lock, "absent");
+      assert.equal(report.committed_state.comparison, "not_committed");
+      assert.equal(report.status, "needs_reconciliation");
+      assert.ok(report.reasons.includes("claims_need_provider_review"));
+      assert.equal(report.reconciliation.status, "provider_review_needed");
+      assert.deepEqual(report.reconciliation.counts,
+        { claims: 1, outcomes: 0, returned: 0, missing_outcome: 1,
+          unknown_outcome: 0 });
+      assert.deepEqual(report.reconciliation.candidates, [{ grant_id: grant.grant_id,
+        operation_sha256: JSON.parse(fs.readFileSync(path.join(directory, "grants",
+          `${grant.grant_id}.json`))).operation_sha256,
+        idempotency_key_sha256: JSON.parse(fs.readFileSync(path.join(directory, "claimed",
+          `${grant.grant_id}.json`))).idempotency_key_sha256,
+        local_outcome: "missing" }]);
+      assert.equal(JSON.stringify(report).includes("team@example.test"), false);
+      assert.deepEqual(snapshot(parent), before);
+    } finally { fs.rmSync(parent, { recursive: true, force: true }); }
+  })();
+});
+
+test("unknown callback outcome and mismatched outcome are not called resolved", () =>
+  fixture(async ({ parent, directory, anchor, host }) => {
+    const grant = host.issue(input());
+    const result = await host.dispatch({ ...input(), grant_id: grant.grant_id,
+      execute: async () => { throw Error("provider timeout"); } });
+    assert.equal(result.status, "outcome_unknown");
+    const before = snapshot(parent);
+    const report = inspectFileRevocationHandoff({ directory, anchor });
+    assert.equal(report.checkpoints.comparison, "match");
+    assert.equal(report.committed_state.comparison, "match");
+    assert.equal(report.reconciliation.candidates[0].local_outcome, "outcome_unknown");
+    assert.ok(report.reasons.includes("claims_need_provider_review"));
+    assert.deepEqual(snapshot(parent), before);
+    fs.writeFileSync(path.join(directory, "outcomes", `${grant.grant_id}.json`),
+      JSON.stringify({ protocol: "aml-file-authority-outcome/1",
+        grant_id: grant.grant_id, binding_sha256: "a".repeat(64),
+        status: "returned", reason: "callback_returned" }) + "\n");
+    const mismatched = inspectFileRevocationHandoff({ directory, anchor });
+    assert.equal(mismatched.committed_state.comparison, "match");
+    assert.equal(mismatched.reconciliation.status, "invalid_records");
+    assert.ok(mismatched.reconciliation.issues.some(item =>
+      item.problem === "outcome_invalid_or_mismatch"));
+  }));
+
+test("an outcome with no spent claim is reported as an invalid local link", () =>
+  fixture(async ({ directory, anchor, host }) => {
+    const grant = host.issue(input());
+    fs.writeFileSync(path.join(directory, "outcomes", `${grant.grant_id}.json`),
+      JSON.stringify({ protocol: "aml-file-authority-outcome/1",
+        grant_id: grant.grant_id, binding_sha256: grant.binding_sha256,
+        status: "returned", reason: "callback_returned" }) + "\n");
+    const report = inspectFileRevocationHandoff({ directory, anchor });
+    assert.equal(report.checkpoints.comparison, "match");
+    assert.equal(report.committed_state.comparison, "match");
+    assert.equal(report.reconciliation.status, "invalid_records");
+    assert.deepEqual(report.reconciliation.issues,
+      [{ grant_id: grant.grant_id, problem: "outcome_without_claim" }]);
+    assert.ok(report.reasons.includes("reconciliation_records_invalid"));
   }));
 
 test("a file anchor lock is visible even when both checkpoint records agree", () =>
