@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createFileAuthorityAnchor, createFileRevocationHandoff } from
@@ -44,6 +45,8 @@ async function fixture(run) {
 test("an independent checkpoint advances for issue, claim, and revocation", () =>
   fixture(async ({ directory, anchor, host }) => {
     assert.equal(anchor.read().sequence, 0);
+    assert.equal(anchor.read().protocol, "aml-file-authority-checkpoint/2");
+    assert.match(anchor.read().state_sha256, /^[0-9a-f]{64}$/);
     const grant = host.issue(input(), { operationId: "host-intent-anchored-001" });
     assert.equal(anchor.read().sequence, 1);
     let callbacks = 0;
@@ -59,6 +62,72 @@ test("an independent checkpoint advances for issue, claim, and revocation", () =
     assert.equal(replay.dispatch_count, 0);
     assert.equal(callbacks, 1);
     assert.throws(() => createFileRevocationHandoff({ directory }), /authority_anchor_required/);
+  }));
+
+test("selectively restoring an epoch file cannot revive an unspent grant", () =>
+  fixture(async ({ directory, anchorDirectory, anchor, host }) => {
+    const grant = host.issue(input(), { operationId: "host-intent-selective-epoch" });
+    assert.equal(host.revokeIssuer(input()).epoch, 1);
+    const epochFile = path.join(directory, "epochs", fs.readdirSync(path.join(directory, "epochs"))[0]);
+    fs.rmSync(epochFile); // Restore only the pre-revocation epoch (zero).
+    assert.equal(anchor.read().sequence, 2); // Both checkpoint copies still agree.
+    assert.throws(() => createFileRevocationHandoff({ directory, anchor }),
+      /authority_state_mismatch/);
+    const child = JSON.parse((await exec(process.execPath,
+      [worker, directory, anchorDirectory, grant.grant_id])).stdout);
+    assert.deepEqual([child.reason, child.dispatch_count], ["authority_state_mismatch", 0]);
+    assert.equal(fs.existsSync(path.join(anchorDirectory, "effects.log")), false);
+  }));
+
+test("selectively deleting a spent marker cannot replay its callback", () =>
+  fixture(async ({ directory, anchorDirectory, anchor, host }) => {
+    const grant = host.issue(input());
+    const first = JSON.parse((await exec(process.execPath,
+      [worker, directory, anchorDirectory, grant.grant_id])).stdout);
+    assert.equal(first.dispatch_count, 1);
+    fs.rmSync(path.join(directory, "claimed", `${grant.grant_id}.json`));
+    assert.equal(anchor.read().sequence, 2);
+    const second = JSON.parse((await exec(process.execPath,
+      [worker, directory, anchorDirectory, grant.grant_id])).stdout);
+    assert.deepEqual([second.reason, second.dispatch_count], ["authority_state_mismatch", 0]);
+    assert.equal(fs.readFileSync(path.join(anchorDirectory, "effects.log"), "utf8"), "callback\n");
+  }));
+
+test("selective grant edits and operation loss disagree with the checkpoint", () =>
+  fixture(async ({ directory, anchor, host }) => {
+    const grant = host.issue(input(), { operationId: "host-intent-selective-grant" });
+    const grantFile = path.join(directory, "grants", `${grant.grant_id}.json`);
+    const original = fs.readFileSync(grantFile);
+    const changed = JSON.parse(original);
+    changed.expires_at_ms++;
+    fs.writeFileSync(grantFile, JSON.stringify(changed) + "\n");
+    assert.throws(() => createFileRevocationHandoff({ directory, anchor }),
+      /authority_state_mismatch/);
+    fs.writeFileSync(grantFile, original);
+    assert.equal(createFileRevocationHandoff({ directory, anchor }).observeIssuer(input()).epoch, 0);
+    const operationFile = path.join(directory, "operations",
+      fs.readdirSync(path.join(directory, "operations"))[0]);
+    fs.rmSync(operationFile);
+    assert.throws(() => createFileRevocationHandoff({ directory, anchor }),
+      /authority_state_mismatch/);
+  }));
+
+test("a protocol-1 checkpoint remains readable without an automatic upgrade", () =>
+  fixture(async ({ parent }) => {
+    const directory = path.join(parent, "legacy-authority");
+    const anchor = createFileAuthorityAnchor({ directory: path.join(parent, "legacy-anchor") });
+    createFileRevocationHandoff({ directory }); // Create an otherwise empty authority.
+    const initial = { protocol: "aml-file-authority-checkpoint/1", store_id: randomUUID(),
+      sequence: 0, head_sha256: "a".repeat(64) };
+    assert.equal(anchor.compareAndSwap(null, initial), true);
+    fs.writeFileSync(path.join(directory, "checkpoint.json"), JSON.stringify(initial) + "\n",
+      { mode: 0o600 });
+    const legacy = createFileRevocationHandoff({ directory, anchor });
+    const grant = legacy.issue(input());
+    assert.equal((await legacy.dispatch({ ...input(), grant_id: grant.grant_id,
+      execute: () => true })).status, "returned");
+    assert.equal(anchor.read().protocol, "aml-file-authority-checkpoint/1");
+    assert.equal(Object.hasOwn(anchor.read(), "state_sha256"), false);
   }));
 
 test("a separate anchored worker dispatches once and its replay is blocked", () =>
