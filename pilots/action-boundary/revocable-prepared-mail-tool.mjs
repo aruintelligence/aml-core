@@ -9,10 +9,11 @@ import { mailTargetResource } from "./mail-target-manifest.mjs";
 const snapshot = value => JSON.parse(canonicalJSONStringify(value));
 
 export function createRevocablePreparedMailToolExecute({ authority, tenant, issuer,
-  actor, audience, purpose, getPolicy, prepare, requestApproval, execute,
+  actor, audience, purpose, operationIdFor, getPolicy, prepare, requestApproval, execute,
   ttlMs = 60_000 } = {}) {
   if (![tenant, issuer, actor, audience, purpose].every(validHandoffIdentity) ||
-      typeof getPolicy !== "function" || typeof prepare !== "function" ||
+      typeof operationIdFor !== "function" || typeof getPolicy !== "function" ||
+      typeof prepare !== "function" ||
       typeof requestApproval !== "function" || typeof execute !== "function" ||
       !authority || typeof authority.observeIssuer !== "function" ||
       typeof authority.issue !== "function" ||
@@ -23,6 +24,10 @@ export function createRevocablePreparedMailToolExecute({ authority, tenant, issu
 
   const identity = Object.freeze({ tenant, issuer, actor, audience, tool: "send_message" });
   return async function revocablePreparedMailExecute(args, context) {
+    // Host operation identity must survive process retries. Never derive it
+    // from the model's request or from its proposal digest.
+    const operationId = operationIdFor(context);
+    if (!validHandoffIdentity(operationId)) throw new TypeError("invalid_host_operation_id");
     // Validate the untrusted input before preparation, then bind the complete
     // provider request (including BCC and content) after host preparation.
     const source = snapshot(args);
@@ -70,10 +75,11 @@ export function createRevocablePreparedMailToolExecute({ authority, tenant, issu
       // Conditional issuance checks the SAME epoch observed before approval.
       // Revocation during the wait blocks even if a new grant could otherwise
       // be issued at the newer epoch.
-      grant = authority.issue(binding, { ttlMs, expectedEpoch: observed.epoch });
+      grant = authority.issue(binding, { ttlMs, expectedEpoch: observed.epoch, operationId });
     } catch (error) {
-      return blocked(error?.message === "issuer_revoked" ? "issuer_revoked" :
-        "authority_issue_unavailable");
+      const reason = ["issuer_revoked", "operation_already_claimed", "operation_payload_mismatch"]
+        .includes(error?.message) ? error.message : "authority_issue_unavailable";
+      return blocked(reason);
     }
 
     // There is no await between the final policy read, conditional issuance,
