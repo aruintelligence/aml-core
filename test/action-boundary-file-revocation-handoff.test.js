@@ -6,6 +6,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createFileRevocationHandoff } from "../pilots/action-boundary/file-revocation-handoff.mjs";
+import { createTestingClaimOnce } from "../pilots/action-boundary/testing-claim-anchor.mjs";
 
 const exec = promisify(execFile);
 const worker = new URL("../pilots/action-boundary/file-revocation-worker.mjs", import.meta.url).pathname;
@@ -243,4 +244,133 @@ test("a world-writable nonsticky parent cannot host the authority", () =>
         directory: path.join(parent, "authority")
       }), /trusted_authority_path_required/);
     } finally { fs.chmodSync(parent, 0o700); }
+  }));
+
+test("a separately held atomic claim blocks replay after store rollback and process restart", () =>
+  withAsyncDirectory(async parent => {
+    const directory = path.join(parent, "authority");
+    const anchor = path.join(parent, "held-claims");
+    fs.mkdirSync(anchor, { mode: 0o700 });
+    const host = createFileRevocationHandoff({ directory,
+      claimOnce: createTestingClaimOnce(anchor) });
+    const grant = host.issue(context());
+    const snapshot = path.join(parent, "snapshot");
+    fs.cpSync(directory, snapshot, { recursive: true });
+    fs.chmodSync(snapshot, 0o700);
+    for (const child of ["epochs", "grants", "claimed", "outcomes"]) {
+      fs.chmodSync(path.join(snapshot, child), 0o700);
+    }
+    fs.chmodSync(path.join(snapshot, "clock.json"), 0o600);
+    fs.chmodSync(path.join(snapshot, "grants", `${grant.grant_id}.json`), 0o600);
+    let calls = 0;
+    const first = await host.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; return "sent"; } });
+    assert.equal(first.status, "returned");
+    assert.equal(fs.readdirSync(anchor).length, 1);
+    fs.renameSync(directory, path.join(parent, "spent"));
+    fs.renameSync(snapshot, directory);
+
+    const restarted = await exec(process.execPath,
+      [worker, directory, grant.grant_id, "anchored", anchor]);
+    const result = JSON.parse(restarted.stdout);
+    assert.deepEqual([result.status, result.reason, result.dispatch_count],
+      ["blocked", "external_claim_spent", 0]);
+    assert.equal(calls, 1);
+    assert.equal(fs.existsSync(path.join(directory, "effects.log")), false);
+    fs.rmSync(path.join(parent, "spent"), { recursive: true, force: true });
+  }));
+
+test("an uncertain or rejected external claim spends locally and never calls the provider", () =>
+  withAsyncDirectory(async parent => {
+    let calls = 0;
+    const outcomes = [
+      [() => false, "blocked", "external_claim_spent"],
+      [() => { throw Error("anchor offline"); }, "indeterminate", "external_claim_unavailable"],
+      [async () => { throw Error("anchor offline"); }, "indeterminate", "external_claim_unavailable"],
+      [() => ({ accepted: true }), "indeterminate", "external_claim_unavailable"]
+    ];
+    for (const [claimOnce, status, reason] of outcomes) {
+      const directory = fs.mkdtempSync(path.join(parent, "authority-"));
+      const host = createFileRevocationHandoff({ directory, claimOnce });
+      const grant = host.issue(context());
+      const result = await host.dispatch({ ...context(), grant_id: grant.grant_id,
+        execute: () => { calls++; } });
+      assert.deepEqual([result.status, result.reason, result.dispatch_count], [status, reason, 0]);
+      assert.equal(fs.existsSync(path.join(directory, "claimed", `${grant.grant_id}.json`)), true);
+      const retry = await host.dispatch({ ...context(), grant_id: grant.grant_id,
+        execute: () => { calls++; } });
+      assert.equal(retry.reason, "grant_spent_or_uncertain");
+    }
+    assert.equal(calls, 0);
+  }));
+
+test("async external claim holds the local lock until the provider handoff", () =>
+  withAsyncDirectory(async directory => {
+    let allowClaim;
+    const pending = new Promise(resolve => { allowClaim = resolve; });
+    let entered;
+    const waiting = new Promise(resolve => { entered = resolve; });
+    let calls = 0;
+    const host = createFileRevocationHandoff({ directory, claimOnce: async record => {
+      assert.equal(Object.isFrozen(record), true);
+      assert.match(record.claim_key_sha256, /^[0-9a-f]{64}$/);
+      entered();
+      return pending;
+    } });
+    const grant = host.issue(context());
+    const action = host.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; return "sent"; } });
+    await waiting;
+    assert.equal(calls, 0);
+    assert.throws(() => createFileRevocationHandoff({ directory }).revokeIssuer({
+      tenant: "tenant-a", issuer: "host-a"
+    }), /authority_busy_or_crashed/);
+    allowClaim(true);
+    const result = await action;
+    assert.deepEqual([result.status, result.dispatch_count, calls], ["returned", 1, 1]);
+    assert.equal(createFileRevocationHandoff({ directory }).revokeIssuer({
+      tenant: "tenant-a", issuer: "host-a"
+    }).epoch, 1);
+  }));
+
+test("grant expiry during an awaited external claim blocks the provider callback", () =>
+  withAsyncDirectory(async directory => {
+    let time = 1_700_000_000_000;
+    let resolveClaim;
+    let entered;
+    const waiting = new Promise(resolve => { entered = resolve; });
+    const host = createFileRevocationHandoff({ directory, now: () => time,
+      claimOnce: () => { entered(); return new Promise(resolve => { resolveClaim = resolve; }); } });
+    const grant = host.issue(context(), { ttlMs: 10 });
+    let calls = 0;
+    const action = host.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; } });
+    await waiting;
+    time += 10;
+    resolveClaim(true);
+    const result = await action;
+    assert.deepEqual([result.status, result.reason, result.dispatch_count, calls],
+      ["blocked", "grant_expired_or_clock_invalid", 0, 0]);
+    assert.equal(fs.existsSync(path.join(directory, "claimed", `${grant.grant_id}.json`)), true);
+  }));
+
+test("an authority path replaced during an awaited claim cannot invoke the callback", () =>
+  withAsyncDirectory(async parent => {
+    const directory = path.join(parent, "authority");
+    let resolveClaim;
+    let entered;
+    const waiting = new Promise(resolve => { entered = resolve; });
+    const host = createFileRevocationHandoff({ directory,
+      claimOnce: () => { entered(); return new Promise(resolve => { resolveClaim = resolve; }); } });
+    const grant = host.issue(context());
+    let calls = 0;
+    const action = host.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; } });
+    await waiting;
+    fs.renameSync(directory, path.join(parent, "moved-authority"));
+    fs.mkdirSync(directory, { mode: 0o700 });
+    resolveClaim(true);
+    const result = await action;
+    assert.deepEqual([result.status, result.dispatch_count, calls], ["indeterminate", 0, 0]);
+    assert.equal(fs.existsSync(path.join(parent, "moved-authority", "authority.lock")), true);
   }));

@@ -76,9 +76,9 @@ export function createRevocablePreparedMailToolExecute({ authority, tenant, issu
         "authority_issue_unavailable");
     }
 
-    // There is no await between the final policy read, conditional issuance,
-    // and the authority's synchronous locked claim + callback invocation.
-    // The callback must begin the provider handoff synchronously.
+    // Conditional issuance and dispatch start without another await. An
+    // optional external claim may await while the authority lock is held;
+    // the callback must begin the provider handoff as soon as that claim wins.
     let outcome;
     try {
       outcome = await authority.dispatch({ ...binding, grant_id: grant.grant_id,
