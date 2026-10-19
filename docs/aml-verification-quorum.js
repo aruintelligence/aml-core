@@ -2,9 +2,15 @@
 // Aggregates multiple aml-verification-report/1 objects over one exact artifact hash.
 // Distinct verifier IDs are only declared identifiers. This module does not prove institutional independence.
 
+import { canonicalJSONStringifyBrowser, snapshotBrowserJSON } from './aml-browser-integrity.js';
+
 export function createVerificationQuorum(reports, { threshold = 2 } = {}) {
   if (!Array.isArray(reports) || reports.length === 0) throw new Error('AML_QUORUM_REPORTS_REQUIRED');
-  if (!Number.isInteger(threshold) || threshold < 1) throw new Error('AML_QUORUM_THRESHOLD_INVALID');
+  if (reports.length > 64) throw new Error('AML_QUORUM_TOO_MANY_REPORTS');
+  if (!Number.isSafeInteger(threshold) || threshold < 1) throw new Error('AML_QUORUM_THRESHOLD_INVALID');
+  // Keep the saved quorum independent of later edits to the caller's reports.
+  // Ordinary JSON is also required so the saved object cannot omit live fields.
+  reports = snapshotBrowserJSON(reports);
 
   const normalized = reports.map((report) => {
     if (!report || report.schema !== 'aml-verification-report/1' || report.prototype !== true) {
@@ -56,14 +62,27 @@ export function createVerificationQuorum(reports, { threshold = 2 } = {}) {
 
 export function verifyVerificationQuorum(quorum) {
   try {
-    if (!quorum || quorum.schema !== 'aml-verification-quorum/1') return { valid: false, reason: 'AML_QUORUM_INVALID' };
+    if (!quorum) return { valid: false, reason: 'AML_QUORUM_INVALID', threshold_met: false };
+    quorum = snapshotBrowserJSON(quorum);
+    if (!quorum || quorum.schema !== 'aml-verification-quorum/1') {
+      return { valid: false, reason: 'AML_QUORUM_INVALID', threshold_met: false };
+    }
     const rebuilt = createVerificationQuorum(quorum.reports, { threshold: quorum.threshold });
-    const valid =
-      rebuilt.artifact_type === quorum.artifact_type &&
-      rebuilt.artifact_hash === quorum.artifact_hash &&
-      JSON.stringify(rebuilt.summary) === JSON.stringify(quorum.summary);
-    return { valid, reason: valid ? 'AML_QUORUM_VALID' : 'AML_QUORUM_SUMMARY_MISMATCH', quorum: rebuilt };
+    // Recheck the complete envelope, including prototype, claim boundary, and
+    // every summary field. This is structural consistency, not authentication
+    // of the reports: an unsigned producer can always rebuild a new quorum.
+    const valid = canonicalJSONStringifyBrowser(quorum) === canonicalJSONStringifyBrowser(rebuilt);
+    const summaryMatches = quorum.summary !== undefined &&
+      canonicalJSONStringifyBrowser(quorum.summary) ===
+      canonicalJSONStringifyBrowser(rebuilt.summary);
+    return {
+      valid,
+      reason: valid ? 'AML_QUORUM_VALID' : summaryMatches ?
+        'AML_QUORUM_MISMATCH' : 'AML_QUORUM_SUMMARY_MISMATCH',
+      threshold_met: valid && rebuilt.summary.threshold_met,
+      quorum: rebuilt
+    };
   } catch (error) {
-    return { valid: false, reason: error?.message || 'AML_QUORUM_VERIFY_ERROR' };
+    return { valid: false, reason: error?.message || 'AML_QUORUM_VERIFY_ERROR', threshold_met: false };
   }
 }
