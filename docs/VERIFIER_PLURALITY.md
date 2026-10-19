@@ -152,6 +152,32 @@ A matching fingerprint establishes content identity under this
 canonicalization, not custody, signer identity, approval, or the truth of a
 report.
 
+For routine automation or logs, add `--decision-only` to either the JavaScript
+or Python CLI. The default output still contains the entire reconstructed
+quorum, including signed report notes. The compact
+[`aml-signed-quorum-decision/1`](../protocol/aml-signed-quorum-decision.schema.json)
+JSON contains only the separate checked booleans, the requested-condition
+gate, computed input fingerprints when available, and the SHA-256 of the
+expectations file when supplied. A witness replay also records its local
+evaluation instant and `local_system` clock source. It omits supplied reports,
+signatures, verifier names, artifact labels, report notes, and error strings:
+
+```bash
+aml verify-signed-quorum saved-quorum.json --policy held-policy.json \
+  --expect-inputs held-inputs.json --decision-only
+```
+
+Exit `0`, `1`, and `2` keep their normal meanings. For example, a compact
+result may say `valid: true` and `threshold_met: true` while `policy_met` or
+`inputs_met` is false and the exit status is `2`. A malformed quorum may not
+have input fingerprints. File reads, JSON parsing, and held-input validation
+errors emit a fixed diagnostic in this mode so they cannot quote source text
+or paths; command-line syntax errors retain the CLI's normal behavior.
+For diagnostics, rerun without `--decision-only`
+in a place where the full reports can be handled appropriately. The compact
+record is unsigned, and its hashes do not make low-entropy inputs secret or
+establish who held the policy or when the verification occurred.
+
 The CLI requires strict UTF-8 and rejects duplicate JSON object names in every
 input file, including escaped spellings of the same name and duplicates nested
 in signed reports. A malformed byte sequence or duplicate name is a usage

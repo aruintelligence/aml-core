@@ -29,6 +29,7 @@ const required = new Set([
   'package.json',
   'LICENSE',
   'README.md',
+  'protocol/aml-signed-quorum-decision.schema.json',
   ...Object.values(pkg.bin || {})
 ].map((p) => String(p).replace(/^\.\//, '')));
 

@@ -127,6 +127,13 @@ means unreadable JSON, missing paired inputs, or invalid held configuration. Run
 `node scripts/check-signed-quorum-python.mjs` to compare its results against
 JavaScript on signed fixtures, including dissent, tampering, key metadata
 aliases, untrusted keys, live witness replay, and contradictory signed claims.
+Use `--decision-only` with either CLI to print the small, unsigned
+`aml-signed-quorum-decision/1` projection instead of report bodies, notes,
+signatures, or raw error strings. It retains the checked booleans, input
+fingerprints when available, expectations-file hash when supplied, and the
+local witness evaluation instant when replayed. Exit codes are unchanged;
+the full result remains available without the flag. Input hashes do not hide
+low-entropy input values or establish custody.
 
 The Python quorum verifier accepts only the stated cross-language safe
 canonicalization domain: safe integers, no floating-point values, BMP

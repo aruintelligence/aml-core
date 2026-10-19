@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/aml-signed-quorum-decision.schema.json",
+  "title": "AML Signed Quorum Decision Projection",
+  "description": "Unsigned compact CLI output. Each checked condition remains separate; input digests bind supplied JSON content but do not authenticate who held it.",
+  "type": "object",
+  "required": ["schema", "prototype", "valid", "threshold_met", "requested_conditions_met", "requested_conditions"],
+  "properties": {
+    "schema": { "const": "aml-signed-quorum-decision/1" },
+    "prototype": { "const": true },
+    "valid": { "type": "boolean" },
+    "threshold_met": { "type": "boolean" },
+    "portable_met": { "type": "boolean" },
+    "policy_met": { "type": "boolean" },
+    "witness_met": { "type": "boolean" },
+    "replayable_claims_consistent": { "type": "boolean" },
+    "inputs_met": { "type": "boolean" },
+    "requested_conditions_met": { "type": "boolean" },
+    "requested_conditions": {
+      "type": "object",
+      "required": ["checked", "unmet"],
+      "properties": {
+        "checked": {
+          "type": "array", "minItems": 2, "uniqueItems": true,
+          "items": { "$ref": "#/$defs/condition" },
+          "allOf": [
+            { "contains": { "const": "valid" } },
+            { "contains": { "const": "threshold_met" } }
+          ]
+        },
+        "unmet": {
+          "type": "array", "uniqueItems": true,
+          "items": { "$ref": "#/$defs/condition" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "input_fingerprints": {
+      "type": "object",
+      "required": ["canonicalization", "quorum_sha256"],
+      "properties": {
+        "canonicalization": { "const": "sorted-json-v1" },
+        "quorum_sha256": { "$ref": "#/$defs/hash" },
+        "policy_sha256": { "$ref": "#/$defs/hash" },
+        "witness_bundle_sha256": { "$ref": "#/$defs/hash" },
+        "held_challenge_sha256": { "$ref": "#/$defs/hash" }
+      },
+      "additionalProperties": false
+    },
+    "expectations_sha256": { "$ref": "#/$defs/hash" },
+    "witness_evaluated_at": {
+      "type": "string", "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "witness_clock_source": { "const": "local_system" }
+  },
+  "dependentRequired": {
+    "witness_evaluated_at": ["witness_clock_source"],
+    "witness_clock_source": ["witness_evaluated_at"],
+    "expectations_sha256": ["inputs_met"]
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "condition": {
+      "enum": ["valid", "threshold_met", "portable_met", "policy_met", "witness_met",
+        "replayable_claims_consistent", "inputs_met"]
+    }
+  },
+  "additionalProperties": false
+}

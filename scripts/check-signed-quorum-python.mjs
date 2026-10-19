@@ -93,6 +93,38 @@ async function compare(name, quorum, policy, expected, { bundle, challenge, expe
   return py.input_fingerprints;
 }
 
+function compareDecisionOnly(name, quorum, policy, expected, { bundle, challenge, expectedInputs } = {}) {
+  const quorumPath = save(`${name}-decision-quorum.json`, quorum);
+  const options = [];
+  if (policy) options.push('--policy', save(`${name}-decision-policy.json`, policy));
+  if (bundle && challenge) options.push('--bundle', save(`${name}-decision-bundle.json`, bundle),
+    '--challenge', save(`${name}-decision-challenge.json`, challenge));
+  if (expectedInputs) options.push('--expect-inputs',
+    save(`${name}-decision-expectations.json`, expectedInputs));
+  options.push('--decision-only');
+  const pyRun = spawnSync('python3', [python, quorumPath, ...options],
+    { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  const jsRun = spawnSync(process.execPath,
+    ['bin/aml.js', 'verify-signed-quorum', quorumPath, ...options], { encoding: 'utf8' });
+  assert.equal(pyRun.status, expected ? 0 : 2, `${name}: ${pyRun.stderr} ${pyRun.stdout}`);
+  assert.equal(jsRun.status, pyRun.status, `${name}: ${jsRun.stderr} ${jsRun.stdout}`);
+  const py = JSON.parse(pyRun.stdout);
+  const js = JSON.parse(jsRun.stdout);
+  assert.equal(py.schema, 'aml-signed-quorum-decision/1');
+  assert.doesNotMatch(pyRun.stdout + jsRun.stdout, /"signed_reports"|"notes"|"summary"/);
+  if (bundle) {
+    for (const decision of [py, js]) {
+      assert.equal(decision.witness_clock_source, 'local_system');
+      assert.match(decision.witness_evaluated_at,
+        /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/);
+    }
+  }
+  const { witness_evaluated_at: pyTime, ...pyComparable } = py;
+  const { witness_evaluated_at: jsTime, ...jsComparable } = js;
+  assert.deepEqual(jsComparable, pyComparable, name);
+  if (!bundle) assert.equal(pyTime, jsTime);
+}
+
 try {
   const fixedQuorum = JSON.parse(fs.readFileSync('independent/python/signed-quorum-vector.json', 'utf8'));
   const fixedPolicy = JSON.parse(fs.readFileSync(
@@ -150,6 +182,17 @@ print(json.dumps({'valid_policy_met': verify_quorum(quorum, policy=policy)['requ
   assert.equal(nullBundleRun.status, 1, nullBundleRun.stderr);
   assert.equal(JSON.parse(nullBundleRun.stdout).reason, 'AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED');
   await compare('published-synthetic-vector', fixedQuorum, fixedPolicy, true);
+  compareDecisionOnly('published-synthetic-vector', fixedQuorum, fixedPolicy, true);
+  const confidentialPath = save('confidential-marker-invalid-json.json', 'private-report-note: bad JSON');
+  for (const [binary, args] of [
+    ['python3', [python, confidentialPath, '--decision-only']],
+    [process.execPath, ['bin/aml.js', 'verify-signed-quorum', confidentialPath, '--decision-only']]
+  ]) {
+    const run = spawnSync(binary, args, { encoding: 'utf8' });
+    assert.equal(run.status, 1);
+    assert.doesNotMatch(run.stdout + run.stderr, /private-report-note|confidential-marker/);
+    assert.match(run.stdout + run.stderr, /AML_SIGNED_QUORUM_INPUT_OR_USAGE_ERROR/);
+  }
   const fixedGroupPolicy = JSON.parse(fs.readFileSync(
     'independent/python/signed-quorum-held-group-policy-vector.json', 'utf8'
   ));
@@ -204,7 +247,12 @@ print(json.dumps({'valid_policy_met': verify_quorum(quorum, policy=policy)['requ
   };
   await compare('held-input-pins-match', quorum, policy, true,
     { expectedInputs: inputExpectations });
+  compareDecisionOnly('held-input-pins-match', quorum, policy, true,
+    { expectedInputs: inputExpectations });
   await compare('held-input-policy-substitution', quorum, {
+    ...policy, trusted_key_fingerprints: [...policy.trusted_key_fingerprints].reverse()
+  }, false, { expectedInputs: inputExpectations });
+  compareDecisionOnly('held-input-policy-substitution', quorum, {
     ...policy, trusted_key_fingerprints: [...policy.trusted_key_fingerprints].reverse()
   }, false, { expectedInputs: inputExpectations });
   await compare('held-input-quorum-substitution',
@@ -499,6 +547,8 @@ print(json.dumps({'valid_policy_met': verify_quorum(quorum, policy=policy)['requ
   };
   await compare('held-policy-and-challenge-pins-match', witnessQuorum, completePolicy,
     true, { ...replay, expectedInputs: replayPins });
+  compareDecisionOnly('held-policy-and-challenge-pins-match', witnessQuorum, completePolicy,
+    true, { ...replay, expectedInputs: replayPins });
   await compare('held-challenge-pin-mismatch', witnessQuorum, completePolicy,
     false, { ...replay, expectedInputs: { ...replayPins,
       held_challenge_sha256: '0'.repeat(64) } });
@@ -520,6 +570,7 @@ print(json.dumps({'valid_policy_met': verify_quorum(quorum, policy=policy)['requ
     required_key_material_fingerprints: [requiredMaterial.key_material_fingerprint]
   };
   await compare('required-participant-withheld', witnessQuorum, presencePolicy, false, replay);
+  compareDecisionOnly('required-participant-withheld', witnessQuorum, presencePolicy, false, replay);
   const withRequired = await createSignedVerificationQuorum(
     [witnessA, witnessB, requiredReport], { threshold: 2 });
   await compare('required-participant-present', withRequired, presencePolicy, true, replay);

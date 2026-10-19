@@ -531,6 +531,50 @@ def load_json(filename):
                          parse_constant=lambda _: (_ for _ in ()).throw(ValueError("non_json_number")))
 
 
+def decision_only(result):
+    """Project an unsigned decision without copying untrusted report content."""
+    names = {"valid", "threshold_met", "portable_met", "policy_met", "witness_met",
+             "replayable_claims_consistent", "inputs_met"}
+    checked = result["requested_conditions"]["checked"]
+    if not isinstance(checked, list) or any(
+            name not in names or type(result.get(name)) is not bool for name in checked):
+        raise ValueError("AML_SIGNED_QUORUM_DECISION_INVALID")
+    unmet = [name for name in checked if not result[name]]
+    if result["requested_conditions_met"] != (not unmet):
+        raise ValueError("AML_SIGNED_QUORUM_DECISION_INVALID")
+    decision = {
+        "schema": "aml-signed-quorum-decision/1", "prototype": True,
+        **{name: result[name] for name in checked},
+        "requested_conditions_met": not unmet,
+        "requested_conditions": {"checked": checked, "unmet": unmet},
+    }
+    if "input_fingerprints" in result:
+        source = result["input_fingerprints"]
+        if source.get("canonicalization") != "sorted-json-v1":
+            raise ValueError("AML_SIGNED_QUORUM_DECISION_INVALID")
+        fingerprints = {"canonicalization": "sorted-json-v1"}
+        for name in INPUT_HASH_FIELDS:
+            if name in source:
+                if not isinstance(source[name], str) or not HEX64.fullmatch(source[name]):
+                    raise ValueError("AML_SIGNED_QUORUM_DECISION_INVALID")
+                fingerprints[name] = source[name]
+        decision["input_fingerprints"] = fingerprints
+    if "input_evaluation" in result:
+        fingerprint = result["input_evaluation"]["expectations_sha256"]
+        if not isinstance(fingerprint, str) or not HEX64.fullmatch(fingerprint):
+            raise ValueError("AML_SIGNED_QUORUM_DECISION_INVALID")
+        decision["expectations_sha256"] = fingerprint
+    if "witness_evaluation" in result:
+        evaluation = result["witness_evaluation"]
+        instant = evaluation["evaluated_at"]
+        if (not isinstance(instant, str) or not REPORT_TIME.fullmatch(instant) or
+                evaluation["clock_source"] != "local_system"):
+            raise ValueError("AML_SIGNED_QUORUM_DECISION_INVALID")
+        decision["witness_evaluated_at"] = instant
+        decision["witness_clock_source"] = "local_system"
+    return decision
+
+
 def main():
     parser = argparse.ArgumentParser(description="Verify a saved AML signed quorum using Python")
     parser.add_argument("quorum")
@@ -538,6 +582,7 @@ def main():
     parser.add_argument("--bundle", help="Saved witness bundle named by the signed quorum")
     parser.add_argument("--challenge", help="Separately retained verifier challenge; requires --bundle")
     parser.add_argument("--expect-inputs", help="Held canonical SHA-256 pins for supplied inputs")
+    parser.add_argument("--decision-only", action="store_true", help="Print a compact decision without supplied report contents")
     args = parser.parse_args()
     try:
         if bool(args.bundle) != bool(args.challenge):
@@ -558,10 +603,14 @@ def main():
         if args.expect_inputs:
             validate_input_expectations(expected_inputs, policy, bool(args.bundle))
         result = verify_quorum(quorum, policy, witness_bundle, expected_challenge, expected_inputs)
+        output = decision_only(result) if args.decision_only else result
     except (OSError, ValueError) as error:
-        print(json.dumps({"valid": False, "reason": str(error)}))
+        # Malformed source text and paths can surface in parser or OS errors.
+        # Compact mode emits a fixed usage diagnostic on this path as well.
+        reason = "AML_SIGNED_QUORUM_INPUT_OR_USAGE_ERROR" if args.decision_only else str(error)
+        print(json.dumps({"valid": False, "reason": reason}))
         return 1
-    print(json.dumps(result, indent=2))
+    print(json.dumps(output, indent=2))
     return 0 if result["requested_conditions_met"] else 2
 
 
