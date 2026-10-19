@@ -383,6 +383,10 @@ test("an external issuer epoch rejects unspent grants after local rollback and r
     fs.renameSync(directory, path.join(parent, "revoked-local"));
     fs.renameSync(snapshot, directory);
 
+    const downgraded = await exec(process.execPath,
+      [worker, directory, grant.grant_id, "normal"]);
+    assert.deepEqual([JSON.parse(downgraded.stdout).reason,
+      JSON.parse(downgraded.stdout).dispatch_count], ["authority_mode_mismatch", 0]);
     const restarted = await exec(process.execPath,
       [worker, directory, grant.grant_id, "epoch-anchored", anchorDirectory]);
     const result = JSON.parse(restarted.stdout);
@@ -439,6 +443,107 @@ test("an epoch-aware claim dispatches once in each current issuer epoch", () =>
     assert.equal((await host.dispatch({ ...context(), grant_id: second.grant_id,
       execute: () => { calls++; return "sent"; } })).status, "returned");
     assert.deepEqual([seenEpochs, calls], [[0, 1], 2]);
+  }));
+
+test("a grant issued with an epoch anchor rejects downgraded workers", () =>
+  withAsyncDirectory(async parent => {
+    const directory = path.join(parent, "authority");
+    const anchorDirectory = path.join(parent, "epoch-anchor");
+    fs.mkdirSync(anchorDirectory, { mode: 0o700 });
+    const host = createFileRevocationHandoff({ directory,
+      epochAnchor: createTestingEpochAnchor(anchorDirectory) });
+    const grant = host.issue(context());
+    const saved = JSON.parse(fs.readFileSync(path.join(directory, "grants",
+      `${grant.grant_id}.json`), "utf8"));
+    assert.equal(saved.required_claim_protocol, "aml-file-authority-external-claim/2");
+    assert.equal(JSON.parse(fs.readFileSync(path.join(directory,
+      "authority-mode.json"), "utf8")).mode, "epoch-anchored");
+    assert.throws(() => createFileRevocationHandoff({ directory }).issue(context()),
+      /authority_mode_mismatch/);
+    assert.throws(() => createFileRevocationHandoff({ directory }).revokeIssuer(context()),
+      /authority_mode_mismatch/);
+    for (const mode of ["normal", "anchored"]) {
+      const attempted = await exec(process.execPath,
+        [worker, directory, grant.grant_id, mode, anchorDirectory]);
+      const result = JSON.parse(attempted.stdout);
+      assert.deepEqual([result.status, result.reason, result.dispatch_count],
+        ["indeterminate", "authority_mode_mismatch", 0]);
+    }
+    assert.equal(fs.existsSync(path.join(directory, "effects.log")), false);
+    assert.equal(fs.readdirSync(path.join(directory, "claimed")).length, 0);
+    const correct = await exec(process.execPath,
+      [worker, directory, grant.grant_id, "epoch-anchored", anchorDirectory]);
+    assert.equal(JSON.parse(correct.stdout).dispatch_count, 1);
+    assert.equal(fs.readFileSync(path.join(directory, "effects.log"), "utf8"), "callback\n");
+  }));
+
+test("a spent-only anchored grant rejects an unanchored worker and invalid mode data", () =>
+  withAsyncDirectory(async parent => {
+    const directory = path.join(parent, "authority");
+    const anchorDirectory = path.join(parent, "held-claims");
+    fs.mkdirSync(anchorDirectory, { mode: 0o700 });
+    const host = createFileRevocationHandoff({ directory,
+      claimOnce: createTestingClaimOnce(anchorDirectory) });
+    const grant = host.issue(context());
+    const unanchored = await exec(process.execPath,
+      [worker, directory, grant.grant_id, "normal"]);
+    assert.deepEqual([JSON.parse(unanchored.stdout).reason,
+      JSON.parse(unanchored.stdout).dispatch_count], ["authority_mode_mismatch", 0]);
+    const file = path.join(directory, "grants", `${grant.grant_id}.json`);
+    const saved = JSON.parse(fs.readFileSync(file, "utf8"));
+    fs.writeFileSync(file, JSON.stringify({ ...saved, required_claim_protocol: "unknown" }) + "\n");
+    let calls = 0;
+    const invalid = await host.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; } });
+    assert.deepEqual([invalid.status, invalid.reason, invalid.dispatch_count, calls],
+      ["indeterminate", "invalid_grant_record", 0, 0]);
+  }));
+
+test("a missing mode closes an existing store, and a grant retains its anchor requirement", () =>
+  withAsyncDirectory(async parent => {
+    const directory = path.join(parent, "authority");
+    const anchorDirectory = path.join(parent, "epoch-anchor");
+    fs.mkdirSync(anchorDirectory, { mode: 0o700 });
+    const host = createFileRevocationHandoff({ directory,
+      epochAnchor: createTestingEpochAnchor(anchorDirectory) });
+    const grant = host.issue(context());
+    const copy = path.join(parent, "copy-without-mode");
+    fs.cpSync(directory, copy, { recursive: true });
+    fs.chmodSync(copy, 0o700);
+    for (const child of ["epochs", "grants", "operations", "claimed", "outcomes"]) {
+      fs.chmodSync(path.join(copy, child), 0o700);
+    }
+    fs.chmodSync(path.join(copy, "clock.json"), 0o600);
+    fs.chmodSync(path.join(copy, "grants", `${grant.grant_id}.json`), 0o600);
+    fs.rmSync(path.join(copy, "authority-mode.json"));
+    const downgraded = await exec(process.execPath,
+      [worker, copy, grant.grant_id, "normal"]);
+    assert.deepEqual([JSON.parse(downgraded.stdout).reason,
+      JSON.parse(downgraded.stdout).dispatch_count], ["authority_store_unavailable", 0]);
+    assert.throws(() => createFileRevocationHandoff({ directory: copy }).issue(context()),
+      /authority_mode_unavailable/);
+    assert.equal(fs.existsSync(path.join(copy, "effects.log")), false);
+    assert.equal(fs.readdirSync(path.join(copy, "claimed")).length, 0);
+
+    // The grant still guards dispatch if the local mode is replaced with a
+    // syntactically valid weaker mode. The local record is not tamper proof.
+    const weaker = path.join(parent, "copy-with-weaker-mode");
+    fs.cpSync(directory, weaker, { recursive: true });
+    fs.chmodSync(weaker, 0o700);
+    for (const child of ["epochs", "grants", "operations", "claimed", "outcomes"]) {
+      fs.chmodSync(path.join(weaker, child), 0o700);
+    }
+    fs.chmodSync(path.join(weaker, "clock.json"), 0o600);
+    fs.chmodSync(path.join(weaker, "grants", `${grant.grant_id}.json`), 0o600);
+    fs.writeFileSync(path.join(weaker, "authority-mode.json"), JSON.stringify({
+      protocol: "aml-file-authority-mode/1", mode: "local"
+    }) + "\n", { mode: 0o600 });
+    const pinned = await exec(process.execPath,
+      [worker, weaker, grant.grant_id, "normal"]);
+    assert.deepEqual([JSON.parse(pinned.stdout).reason,
+      JSON.parse(pinned.stdout).dispatch_count], ["required_anchor_unavailable", 0]);
+    assert.equal(fs.existsSync(path.join(weaker, "effects.log")), false);
+    assert.equal(fs.readdirSync(path.join(weaker, "claimed")).length, 0);
   }));
 
 test("an uncertain external epoch advance strands the local lock", () =>
@@ -568,7 +673,7 @@ test("async external claim holds the local lock until the provider handoff", () 
     allowClaim(true);
     const result = await action;
     assert.deepEqual([result.status, result.dispatch_count, calls], ["returned", 1, 1]);
-    assert.equal(createFileRevocationHandoff({ directory }).revokeIssuer({
+    assert.equal(createFileRevocationHandoff({ directory, claimOnce: () => true }).revokeIssuer({
       tenant: "tenant-a", issuer: "host-a"
     }).epoch, 1);
   }));
@@ -612,6 +717,25 @@ test("a lost operation marker during an awaited claim blocks the callback", () =
     const result = await action;
     assert.deepEqual([result.status, result.reason, result.dispatch_count, calls],
       ["indeterminate", "operation_record_unavailable", 0, 0]);
+  }));
+
+test("a lost authority mode during an awaited claim blocks the callback", () =>
+  withAsyncDirectory(async directory => {
+    let resolveClaim, entered;
+    const waiting = new Promise(resolve => { entered = resolve; });
+    const host = createFileRevocationHandoff({ directory,
+      claimOnce: () => { entered(); return new Promise(resolve => { resolveClaim = resolve; }); } });
+    const grant = host.issue(context());
+    let calls = 0;
+    const action = host.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; } });
+    await waiting;
+    fs.rmSync(path.join(directory, "authority-mode.json"));
+    resolveClaim(true);
+    const result = await action;
+    assert.deepEqual([result.status, result.reason, result.dispatch_count, calls],
+      ["indeterminate", "authority_store_unavailable", 0, 0]);
+    assert.equal(fs.existsSync(path.join(directory, "claimed", `${grant.grant_id}.json`)), true);
   }));
 
 test("an authority path replaced during an awaited claim cannot invoke the callback", () =>
