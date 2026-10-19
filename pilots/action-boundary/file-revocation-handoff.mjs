@@ -11,6 +11,8 @@ import { hashHandoffBytes as hash, validHandoffIdentity as identity,
 
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DIGEST = /^[0-9a-f]{64}$/;
+const CLAIM_V1 = "aml-file-authority-external-claim/1";
+const CLAIM_V2 = "aml-file-authority-external-claim/2";
 
 // A private leaf is insufficient if a parent can be switched to an older
 // authority snapshot. /tmp-style sticky directories protect an owned child;
@@ -173,6 +175,7 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
   }
   const externalClaim = epochAnchor ? epochAnchor.claimOnce.bind(epochAnchor) : claimOnce;
   const externalAdvance = epochAnchor?.advanceEpoch.bind(epochAnchor);
+  const claimProtocol = epochAnchor ? CLAIM_V2 : claimOnce ? CLAIM_V1 : null;
   privateDirectory(directory, true);
   const epochs = path.join(directory, "epochs");
   const grants = path.join(directory, "grants");
@@ -181,7 +184,11 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
   const outcomes = path.join(directory, "outcomes");
   const lock = path.join(directory, "authority.lock");
   const clockFile = path.join(directory, "clock.json");
+  const modeFile = path.join(directory, "authority-mode.json");
   const checkpointFile = path.join(directory, "checkpoint.json");
+  const authorityMode = epochAnchor ? "epoch-anchored" : anchor ?
+    claimOnce ? "checkpoint-claim-anchored" : "checkpoint-anchored" :
+    claimOnce ? "claim-anchored" : "local";
   for (const child of [epochs, grants, operations, claimed, outcomes]) privateDirectory(child, true);
   const pinned = new Map();
   for (const child of [directory, epochs, grants, operations, claimed, outcomes]) {
@@ -222,6 +229,28 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
   function checkDirectories() {
     for (const child of [directory, epochs, grants, operations, claimed, outcomes]) {
       privateDirectory(child, false, pinned);
+    }
+  }
+
+  function checkMode({ initialize = true } = {}) {
+    const record = readRecord(modeFile);
+    if (!record) {
+      // A missing mode in an existing store may be a rollback or lost mode
+      // record. Never infer a weaker mode from the current worker's config.
+      if (!initialize || fs.existsSync(clockFile) || fs.existsSync(checkpointFile) ||
+          [epochs, grants, operations, claimed, outcomes]
+            .some(child => fs.readdirSync(child).length !== 0)) {
+        throw Error("authority_mode_unavailable");
+      }
+      createExclusive(modeFile, {
+        protocol: "aml-file-authority-mode/1", mode: authorityMode
+      }, directory);
+    } else if (record.protocol !== "aml-file-authority-mode/1" ||
+        !["local", "claim-anchored", "epoch-anchored", "checkpoint-anchored",
+          "checkpoint-claim-anchored"].includes(record.mode)) {
+      throw Error("invalid_authority_mode");
+    } else if (record.mode !== authorityMode) {
+      throw Error("authority_mode_mismatch");
     }
   }
 
@@ -269,6 +298,7 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
       throw error;
     }
     try {
+      checkMode();
       if (readRecord(checkpointFile)) checkCheckpoint();
       else {
         if (externalState() !== null || fs.existsSync(clockFile) ||
@@ -320,10 +350,13 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
       throw error;
     }
     syncDirectory(directory); // If this fails, leave the lock to fail closed.
-    // A different worker might have committed between the earlier read and
-    // lock acquisition. A mismatch now leaves no usable authority lock.
-    try { checkCheckpoint(); }
-    catch (error) { fs.rmdirSync(lock); syncDirectory(directory); throw error; }
+    try { checkCheckpoint(); checkMode(); }
+    catch (error) {
+      // A mismatched worker must not strand the legitimate workers' lock.
+      // A failed release still fails closed for everyone.
+      release();
+      throw error;
+    }
   }
 
   function release() {
@@ -408,6 +441,7 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
       if (result === false) throw Error("external_epoch_mismatch");
       if (result !== true) throw Error("external_epoch_unavailable");
       checkDirectories();
+      checkMode({ initialize: false });
       if (currentEpoch(key) !== expected) throw Error("authority_epoch_changed");
       replaceAtomic(path.join(epochs, `${key}.json`), {
         protocol: "aml-file-authority-epoch/1", issuer_sha256: key, epoch: next
@@ -468,6 +502,7 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
         issuer_sha256: issuer,
         binding_sha256: bound.sha256, epoch, issued_at_ms: issuedAt,
         expires_at_ms: issuedAt + ttlMs,
+        ...(claimProtocol ? { required_claim_protocol: claimProtocol } : {}),
         ...(operationHash ? { operation_sha256: operationHash } : {})
       };
       anchoredWrite("issue", grantId, { operation: operationRecord, grant: grantRecord }, () => {
@@ -503,6 +538,9 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
       else if (record.protocol !== "aml-file-authority-grant/1" || record.grant_id !== grant_id ||
           !DIGEST.test(record.binding_sha256) || !DIGEST.test(record.issuer_sha256) ||
           (record.operation_sha256 !== undefined && !DIGEST.test(record.operation_sha256)) ||
+          (record.required_claim_protocol !== undefined &&
+            record.required_claim_protocol !== CLAIM_V1 &&
+            record.required_claim_protocol !== CLAIM_V2) ||
           !Number.isSafeInteger(record.epoch) || record.epoch < 0 ||
           !Number.isSafeInteger(record.issued_at_ms) || !Number.isSafeInteger(record.expires_at_ms) ||
           record.issued_at_ms >= record.expires_at_ms) {
@@ -510,6 +548,8 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
       } else if (record.binding_sha256 !== bound.sha256 ||
           record.issuer_sha256 !== issuerHash(bound.context.tenant, bound.context.issuer)) {
         decision = denied("blocked", "binding_mismatch");
+      } else if (record.required_claim_protocol && record.required_claim_protocol !== claimProtocol) {
+        decision = denied("indeterminate", "required_anchor_unavailable");
       } else if (record.operation_sha256 && !operationMatches(record)) {
         decision = denied("indeterminate", "operation_record_unavailable");
       } else {
@@ -536,8 +576,7 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
               // restored local snapshot cannot erase that separate claim.
               try {
                 const result = await externalClaim(Object.freeze({
-                  protocol: epochAnchor ? "aml-file-authority-external-claim/2" :
-                    "aml-file-authority-external-claim/1",
+                  protocol: claimProtocol,
                   // An operation-backed grant keeps the same host intent key
                   // even if a restored local snapshot mints a different grant.
                   claim_key_sha256: record.operation_sha256 ?? idempotencyKey,
@@ -554,6 +593,7 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
                 // authority path replacement. Recheck immediately before the
                 // callback, still under the lock and with the claim spent.
                 checkDirectories();
+                checkMode({ initialize: false });
                 checkCheckpoint();
                 if (record.operation_sha256 && !operationMatches(record)) {
                   decision = denied("indeterminate", "operation_record_unavailable");
@@ -578,7 +618,7 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
       }
     } catch (error) {
       decision = invoked ? { status: "outcome_unknown", reason: "authority_or_callback_error", dispatch_count: 1 } :
-        denied("indeterminate", error.message === "authority_busy_or_crashed" ? error.message :
+        denied("indeterminate", ["authority_busy_or_crashed", "authority_mode_mismatch"].includes(error.message) ? error.message :
           "authority_store_unavailable");
     } finally {
       if (held) {
