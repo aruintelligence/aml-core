@@ -136,11 +136,15 @@ export function createFileAuthorityAnchor({ directory } = {}) {
     try {
       const prior = read();
       if (canonicalJSONStringify(prior) !== canonicalJSONStringify(expected)) return false;
-      if (!next || next.protocol !== "aml-file-authority-checkpoint/1" ||
+      if (!next || !["aml-file-authority-checkpoint/1",
+        "aml-file-authority-checkpoint/2"].includes(next.protocol) ||
           !ID.test(next.store_id) || !Number.isSafeInteger(next.sequence) ||
           !DIGEST.test(next.head_sha256) ||
+          (next.protocol === "aml-file-authority-checkpoint/2" &&
+            !DIGEST.test(next.state_sha256)) ||
           next.sequence !== (prior ? prior.sequence + 1 : 0) ||
-          (prior && next.store_id !== prior.store_id)) throw Error("invalid_anchor_transition");
+          (prior && (next.store_id !== prior.store_id ||
+            next.protocol !== prior.protocol))) throw Error("invalid_anchor_transition");
       if (prior) replaceAtomic(file, next, directory);
       else createExclusive(file, next, directory);
       return true;
@@ -184,6 +188,37 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
     verifyAuthorityPath(child, { record: pinned });
   }
 
+  // Checkpoint/2 commits to every durable authority decision file. The clock
+  // and outcomes are written on a separate lifecycle and are not in this set.
+  const stateCollections = [
+    ["epochs", epochs, /^[0-9a-f]{64}\.json$/],
+    ["grants", grants, /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\.json$/],
+    ["operations", operations, /^[0-9a-f]{64}\.json$/],
+    ["claimed", claimed, /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\.json$/]
+  ];
+
+  function stateDigest(overrides = []) {
+    const replacements = new Map(overrides.map(({ collection, name, record }) =>
+      [`${collection}/${name}`, record]));
+    const entries = [];
+    for (const [collection, child, pattern] of stateCollections) {
+      const names = fs.readdirSync(child);
+      if (names.some(name => !pattern.test(name))) throw Error("unexpected_authority_state_entry");
+      for (const key of replacements.keys()) {
+        if (key.startsWith(`${collection}/`)) names.push(key.slice(collection.length + 1));
+      }
+      for (const name of [...new Set(names)].sort()) {
+        if (!pattern.test(name)) throw Error("unexpected_authority_state_entry");
+        const key = `${collection}/${name}`;
+        const record = replacements.has(key) ? replacements.get(key) :
+          readRecord(path.join(child, name));
+        if (!record) throw Error("authority_state_record_unavailable");
+        entries.push([key, hash(canonicalJSONStringify(record))]);
+      }
+    }
+    return hash(canonicalJSONStringify(entries));
+  }
+
   function checkDirectories() {
     for (const child of [directory, epochs, grants, operations, claimed, outcomes]) {
       privateDirectory(child, false, pinned);
@@ -191,10 +226,15 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
   }
 
   function checkpointRecord(value) {
-    return value && value.protocol === "aml-file-authority-checkpoint/1" &&
+    const v1 = value?.protocol === "aml-file-authority-checkpoint/1";
+    const v2 = value?.protocol === "aml-file-authority-checkpoint/2";
+    return (v1 || v2) &&
       ID.test(value.store_id) && Number.isSafeInteger(value.sequence) && value.sequence >= 0 &&
       DIGEST.test(value.head_sha256) &&
-      Object.keys(value).sort().join("|") === "head_sha256|protocol|sequence|store_id";
+      (v1 ? Object.keys(value).sort().join("|") === "head_sha256|protocol|sequence|store_id" :
+        DIGEST.test(value.state_sha256) &&
+        Object.keys(value).sort().join("|") ===
+          "head_sha256|protocol|sequence|state_sha256|store_id");
   }
 
   function externalState() {
@@ -214,6 +254,8 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
         canonicalJSONStringify(externalState()) !== canonicalJSONStringify(local)) {
       throw Error("authority_anchor_mismatch");
     }
+    if (local.protocol === "aml-file-authority-checkpoint/2" &&
+        stateDigest() !== local.state_sha256) throw Error("authority_state_mismatch");
     return local;
   }
 
@@ -233,8 +275,9 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
             [epochs, grants, operations, claimed, outcomes].some(child =>
               fs.readdirSync(child).length !== 0)) throw Error("anchor_requires_empty_authority");
         const store_id = randomUUID();
-        const initial = { protocol: "aml-file-authority-checkpoint/1", store_id,
-          sequence: 0, head_sha256: hash(canonicalJSONStringify(["genesis", store_id])) };
+        const initial = { protocol: "aml-file-authority-checkpoint/2", store_id,
+          sequence: 0, head_sha256: hash(canonicalJSONStringify(["genesis", store_id])),
+          state_sha256: stateDigest() };
         if (anchor.compareAndSwap(null, Object.freeze(initial)) !== true ||
             canonicalJSONStringify(externalState()) !== canonicalJSONStringify(initial)) {
           throw Error("authority_anchor_unavailable");
@@ -246,19 +289,24 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
     throw Error("authority_anchor_required");
   }
 
-  function anchoredWrite(kind, key, record, write) {
+  function anchoredWrite(kind, key, record, write, overrides = []) {
     if (!anchor) return write();
     const previous = checkCheckpoint();
     if (!Number.isSafeInteger(previous.sequence + 1)) throw Error("anchor_sequence_exhausted");
     const next = { protocol: previous.protocol, store_id: previous.store_id,
       sequence: previous.sequence + 1,
       head_sha256: hash(canonicalJSONStringify([previous.head_sha256, kind, key,
-        hash(canonicalJSONStringify(record))])) };
+        hash(canonicalJSONStringify(record))])),
+      ...(previous.protocol === "aml-file-authority-checkpoint/2" ?
+        { state_sha256: stateDigest(overrides) } : {}) };
     if (anchor.compareAndSwap(Object.freeze({ ...previous }), Object.freeze({ ...next })) !== true ||
         canonicalJSONStringify(externalState()) !== canonicalJSONStringify(next)) {
       throw Error("authority_anchor_unavailable");
     }
     const result = write();
+    if (next.state_sha256 && stateDigest() !== next.state_sha256) {
+      throw Error("authority_state_mismatch");
+    }
     replaceAtomic(checkpointFile, next, directory);
     return result;
   }
@@ -329,7 +377,8 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
         protocol: "aml-file-authority-epoch/1", issuer_sha256: key, epoch: next
       };
       anchoredWrite("revoke", key, record, () =>
-        replaceAtomic(path.join(epochs, `${key}.json`), record, epochs));
+        replaceAtomic(path.join(epochs, `${key}.json`), record, epochs),
+      [{ collection: "epochs", name: `${key}.json`, record }]);
       return { tenant, issuer, epoch: next };
     });
   }
@@ -429,7 +478,9 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
             operationRecord, operations);
         }
         createExclusive(path.join(grants, `${grantId}.json`), grantRecord, grants);
-      });
+      }, [...(operationHash ? [{ collection: "operations", name: `${operationHash}.json`,
+        record: operationRecord }] : []),
+      { collection: "grants", name: `${grantId}.json`, record: grantRecord }]);
       return { grant_id: grantId, binding_sha256: bound.sha256,
         prepared_request_sha256: bound.request.sha256, policy_sha256: bound.policy.sha256 };
     });
@@ -477,7 +528,8 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
               grant_id, binding_sha256: bound.sha256,
               idempotency_key_sha256: idempotencyKey };
             anchoredWrite("claim", grant_id, claimRecord, () =>
-              createExclusive(claimFile, claimRecord, claimed));
+              createExclusive(claimFile, claimRecord, claimed),
+            [{ collection: "claimed", name: `${grant_id}.json`, record: claimRecord }]);
             if (externalClaim) {
               // Keep the local lock across an optional asynchronous CAS. The
               // host anchor must commit before returning exactly true; a
