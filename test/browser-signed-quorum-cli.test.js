@@ -58,6 +58,7 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   const valid = run(write('quorum.json', quorum));
   assert.equal(valid.status, 0, valid.stderr);
   assert.equal(JSON.parse(valid.stdout).threshold_met, true);
+  assert.equal(JSON.parse(valid.stdout).requested_conditions_met, true);
   assert.deepEqual(JSON.parse(valid.stdout).input_fingerprints, {
     canonicalization: 'sorted-json-v1', quorum_sha256: inputHash(quorum)
   });
@@ -83,6 +84,7 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   assert.equal(paddedRun.status, 2, paddedRun.stderr);
   assert.equal(JSON.parse(paddedRun.stdout).valid, true);
   assert.equal(JSON.parse(paddedRun.stdout).threshold_met, false);
+  assert.deepEqual(JSON.parse(paddedRun.stdout).requested_conditions.unmet, ['threshold_met']);
   assert.deepEqual(JSON.parse(paddedRun.stdout).quorum.summary.disagreement_reasons,
     ['AML_SIGNED_REPORT_SIGNATURE_ENCODING_INVALID']);
 
@@ -140,6 +142,8 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   assert.equal(JSON.parse(swapped.stdout).threshold_met, true);
   assert.equal(JSON.parse(swapped.stdout).policy_met, true);
   assert.equal(JSON.parse(swapped.stdout).inputs_met, false);
+  assert.equal(JSON.parse(swapped.stdout).requested_conditions_met, false);
+  assert.deepEqual(JSON.parse(swapped.stdout).requested_conditions.unmet, ['inputs_met']);
   assert.deepEqual(JSON.parse(swapped.stdout).input_evaluation.mismatched, ['quorum_sha256']);
   const reorderedPolicy = { ...policy,
     trusted_key_fingerprints: [...policy.trusted_key_fingerprints].reverse() };
@@ -376,6 +380,10 @@ test('signed quorum rechecks the named witness against a separately held challen
     '--bundle', bundlePath, '--challenge', challengePath, '--expect-inputs', heldInputsPath);
   assert.equal(pinnedReplay.status, 0, pinnedReplay.stderr);
   assert.equal(JSON.parse(pinnedReplay.stdout).inputs_met, true);
+  assert.deepEqual(JSON.parse(pinnedReplay.stdout).requested_conditions, {
+    checked: ['valid', 'threshold_met', 'policy_met', 'witness_met',
+      'replayable_claims_consistent', 'inputs_met'], unmet: []
+  });
 
   const vetoPolicy = { ...completePolicy, schema: 'aml-signed-quorum-held-policy/5',
     reject_trusted_dissent: true };

@@ -260,6 +260,20 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
     with_witness = expected_challenge is not None
     pinned_inputs = (validate_input_expectations(expected_input_fingerprints, policy, with_witness)
                      if expected_input_fingerprints is not None else [])
+    checked_conditions = ["valid", "threshold_met"]
+    if policy is not None:
+        checked_conditions.append("policy_met")
+    if with_witness:
+        checked_conditions.extend(("witness_met", "replayable_claims_consistent"))
+    if expected_input_fingerprints is not None:
+        checked_conditions.append("inputs_met")
+
+    def with_requested_conditions(result):
+        unmet = [name for name in checked_conditions if result.get(name) is not True]
+        result["requested_conditions_met"] = not unmet
+        result["requested_conditions"] = {"checked": checked_conditions, "unmet": unmet}
+        return result
+
     rejected = {"valid": False, "threshold_met": False}
     if policy is not None:
         rejected["policy_met"] = False
@@ -452,9 +466,10 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
                 "expectations_sha256": digest(expected_input_fingerprints),
                 "checked": pinned_inputs, "mismatched": mismatched, "unavailable": unavailable,
             }
-        return result
+        return with_requested_conditions(result)
     except (ValueError, TypeError, KeyError, UnicodeError, RecursionError) as error:
-        return {**rejected, "reason": str(error) or "AML_PY_SIGNED_QUORUM_INVALID"}
+        return with_requested_conditions({**rejected,
+                                          "reason": str(error) or "AML_PY_SIGNED_QUORUM_INVALID"})
 
 
 def load_json(filename):
@@ -501,9 +516,7 @@ def main():
         return 1
     result = verify_quorum(quorum, policy, witness_bundle, expected_challenge, expected_inputs)
     print(json.dumps(result, indent=2))
-    return 0 if (result["valid"] and result["threshold_met"] and result.get("policy_met", True) and
-                 result.get("witness_met", True) and result.get("replayable_claims_consistent", True) and
-                 result.get("inputs_met", True)) else 2
+    return 0 if result["requested_conditions_met"] else 2
 
 
 if __name__ == "__main__":

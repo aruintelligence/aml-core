@@ -52,9 +52,11 @@ async function compare(name, quorum, policy, expected, { bundle, challenge, expe
   const replayFinished = Date.now();
   for (const field of ['valid', 'threshold_met', ...(policy ? ['policy_met'] : []),
     ...(bundle ? ['witness_met', 'replayable_claims_consistent'] : []),
-    ...(expectedInputs ? ['inputs_met'] : [])]) {
+    ...(expectedInputs ? ['inputs_met'] : []), 'requested_conditions_met']) {
     assert.equal(py[field], js[field], `${name}: ${field}: ${run.stderr} ${run.stdout}`);
   }
+  assert.deepEqual(py.requested_conditions, js.requested_conditions, `${name}: requested conditions`);
+  assert.equal(js.requested_conditions_met, expected, `${name}: JavaScript decision gate`);
   if (bundle) {
     for (const result of [py, js]) {
       assert.equal(result.witness_evaluation.clock_source, 'local_system', name);

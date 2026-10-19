@@ -311,7 +311,21 @@ export async function verifySignedVerificationQuorum(quorum, {
   if (expectedInputFingerprints !== undefined) {
     expectedInputFingerprints = snapshotBrowserJSON(expectedInputFingerprints);
   }
-  const reject = (reason) => ({
+  // This gate has exactly the same conditions as the offline CLI. It covers
+  // only inputs the caller supplied; it does not imply independent trust.
+  const checkedConditions = ['valid', 'threshold_met',
+    ...(policy === undefined ? [] : ['policy_met']),
+    ...(witnessBundle === undefined ? [] : ['witness_met', 'replayable_claims_consistent']),
+    ...(expectedInputFingerprints === undefined ? [] : ['inputs_met'])];
+  const withRequestedConditions = result => {
+    const unmet = checkedConditions.filter(name => result[name] !== true);
+    return {
+      ...result,
+      requested_conditions_met: unmet.length === 0,
+      requested_conditions: { checked: checkedConditions, unmet }
+    };
+  };
+  const reject = (reason) => withRequestedConditions({
     valid: false, reason, threshold_met: false,
     ...(policy === undefined ? {} : { policy_met: false }),
     ...(witnessBundle === undefined ? {} : { witness_met: false, replayable_claims_consistent: false }),
@@ -520,7 +534,7 @@ export async function verifySignedVerificationQuorum(quorum, {
         checked: pinnedInputs, mismatched, unavailable
       };
     }
-    return result;
+    return withRequestedConditions(result);
   } catch (error) {
     return reject(error?.message || 'AML_SIGNED_QUORUM_VERIFY_ERROR');
   }
