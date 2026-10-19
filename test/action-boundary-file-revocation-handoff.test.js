@@ -69,6 +69,53 @@ test("conditional issuance rejects an epoch observed before cross-process revoca
     assert.throws(() => host.issue(context(), { expectedEpoch: -1 }), /Invalid expected issuer epoch/);
   }));
 
+test("one host operation cannot mint a second grant, but a new intent can", () =>
+  withAsyncDirectory(async directory => {
+    const host = createFileRevocationHandoff({ directory });
+    const first = host.issue(context(), { operationId: "host-intent-001" });
+    assert.ok(first.grant_id);
+    assert.throws(() => host.issue(context(), { operationId: "host-intent-001" }),
+      /operation_already_claimed/);
+    assert.throws(() => host.issue({ ...context(), preparedRequest: {
+      ...context().preparedRequest, body: "changed"
+    } }, { operationId: "host-intent-001" }), /operation_payload_mismatch/);
+    const second = host.issue(context(), { operationId: "host-intent-002" });
+    assert.notEqual(second.grant_id, first.grant_id);
+    assert.equal(fs.readdirSync(path.join(directory, "operations")).length, 2);
+    const anotherTenant = host.issue({ ...context(), tenant: "tenant-b" },
+      { operationId: "host-intent-001" });
+    assert.ok(anotherTenant.grant_id);
+    assert.throws(() => host.issue(context(), { operationId: "host-intent-001 " }),
+      /Invalid host operation ID/);
+  }));
+
+test("an operation marker survives a missing grant and suppresses a fresh instance", () =>
+  withAsyncDirectory(async directory => {
+    const original = createFileRevocationHandoff({ directory });
+    const grant = original.issue(context(), { operationId: "host-intent-orphan-004" });
+    fs.rmSync(path.join(directory, "grants", `${grant.grant_id}.json`));
+    const restarted = createFileRevocationHandoff({ directory });
+    assert.throws(() => restarted.issue(context(), { operationId: "host-intent-orphan-004" }),
+      /operation_already_claimed/);
+    let calls = 0;
+    const outcome = await restarted.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; } });
+    assert.deepEqual([outcome.status, outcome.dispatch_count, calls], ["blocked", 0, 0]);
+  }));
+
+test("an unavailable operation record suppresses a grant before callback", () =>
+  withAsyncDirectory(async directory => {
+    const host = createFileRevocationHandoff({ directory });
+    const grant = host.issue(context(), { operationId: "host-intent-003" });
+    fs.rmSync(path.join(directory, "operations", fs.readdirSync(path.join(directory,
+      "operations"))[0]));
+    let calls = 0;
+    const result = await host.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; } });
+    assert.deepEqual([result.status, result.reason, result.dispatch_count, calls],
+      ["indeterminate", "operation_record_unavailable", 0, 0]);
+  }));
+
 test("one changed BCC, tenant, or policy cannot reuse the approved request", () =>
   withAsyncDirectory(async directory => {
     const host = createFileRevocationHandoff({ directory });
@@ -210,7 +257,7 @@ test("a replaced private root cannot replay a spent grant in the same authority"
     const snapshot = path.join(parent, "snapshot");
     fs.cpSync(directory, snapshot, { recursive: true });
     fs.chmodSync(snapshot, 0o700);
-    for (const child of ["epochs", "grants", "claimed", "outcomes"]) {
+    for (const child of ["epochs", "grants", "operations", "claimed", "outcomes"]) {
       fs.chmodSync(path.join(snapshot, child), 0o700);
     }
     fs.chmodSync(path.join(snapshot, "clock.json"), 0o600);
@@ -257,7 +304,7 @@ test("a separately held atomic claim blocks replay after store rollback and proc
     const snapshot = path.join(parent, "snapshot");
     fs.cpSync(directory, snapshot, { recursive: true });
     fs.chmodSync(snapshot, 0o700);
-    for (const child of ["epochs", "grants", "claimed", "outcomes"]) {
+    for (const child of ["epochs", "grants", "operations", "claimed", "outcomes"]) {
       fs.chmodSync(path.join(snapshot, child), 0o700);
     }
     fs.chmodSync(path.join(snapshot, "clock.json"), 0o600);
@@ -277,6 +324,39 @@ test("a separately held atomic claim blocks replay after store rollback and proc
       ["blocked", "external_claim_spent", 0]);
     assert.equal(calls, 1);
     assert.equal(fs.existsSync(path.join(directory, "effects.log")), false);
+    fs.rmSync(path.join(parent, "spent"), { recursive: true, force: true });
+  }));
+
+test("a host operation claim survives rollback and a newly minted grant", () =>
+  withAsyncDirectory(async parent => {
+    const directory = path.join(parent, "authority");
+    const anchor = path.join(parent, "held-claims");
+    fs.mkdirSync(anchor, { mode: 0o700 });
+    const firstHost = createFileRevocationHandoff({ directory,
+      claimOnce: createTestingClaimOnce(anchor) });
+    const snapshot = path.join(parent, "snapshot");
+    fs.cpSync(directory, snapshot, { recursive: true });
+    fs.chmodSync(snapshot, 0o700);
+    for (const child of ["epochs", "grants", "operations", "claimed", "outcomes"]) {
+      fs.chmodSync(path.join(snapshot, child), 0o700);
+    }
+    const firstGrant = firstHost.issue(context(), { operationId: "host-intent-rollback-001" });
+    let calls = 0;
+    const first = await firstHost.dispatch({ ...context(), grant_id: firstGrant.grant_id,
+      execute: () => { calls++; return "sent"; } });
+    assert.equal(first.status, "returned");
+    fs.renameSync(directory, path.join(parent, "spent"));
+    fs.renameSync(snapshot, directory);
+
+    const restarted = createFileRevocationHandoff({ directory,
+      claimOnce: createTestingClaimOnce(anchor) });
+    const newGrant = restarted.issue(context(), { operationId: "host-intent-rollback-001" });
+    assert.notEqual(newGrant.grant_id, firstGrant.grant_id);
+    const replay = await restarted.dispatch({ ...context(), grant_id: newGrant.grant_id,
+      execute: () => { calls++; return "replayed"; } });
+    assert.deepEqual([replay.status, replay.reason, replay.dispatch_count, calls],
+      ["blocked", "external_claim_spent", 0, 1]);
+    assert.equal(fs.readdirSync(anchor).length, 1);
     fs.rmSync(path.join(parent, "spent"), { recursive: true, force: true });
   }));
 
@@ -352,6 +432,26 @@ test("grant expiry during an awaited external claim blocks the provider callback
     assert.deepEqual([result.status, result.reason, result.dispatch_count, calls],
       ["blocked", "grant_expired_or_clock_invalid", 0, 0]);
     assert.equal(fs.existsSync(path.join(directory, "claimed", `${grant.grant_id}.json`)), true);
+  }));
+
+test("a lost operation marker during an awaited claim blocks the callback", () =>
+  withAsyncDirectory(async directory => {
+    let resolveClaim;
+    let entered;
+    const waiting = new Promise(resolve => { entered = resolve; });
+    const host = createFileRevocationHandoff({ directory,
+      claimOnce: () => { entered(); return new Promise(resolve => { resolveClaim = resolve; }); } });
+    const grant = host.issue(context(), { operationId: "host-intent-await-001" });
+    let calls = 0;
+    const action = host.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; } });
+    await waiting;
+    fs.rmSync(path.join(directory, "operations", fs.readdirSync(path.join(directory,
+      "operations"))[0]));
+    resolveClaim(true);
+    const result = await action;
+    assert.deepEqual([result.status, result.reason, result.dispatch_count, calls],
+      ["indeterminate", "operation_record_unavailable", 0, 0]);
   }));
 
 test("an authority path replaced during an awaited claim cannot invoke the callback", () =>

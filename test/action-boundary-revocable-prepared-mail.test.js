@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
+import { promisify } from "node:util";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -9,6 +10,8 @@ import { createRevocablePreparedMailToolExecute } from "../pilots/action-boundar
 import { mailTargetResource } from "../pilots/action-boundary/mail-target-manifest.mjs";
 
 const worker = new URL("../pilots/action-boundary/file-revocation-worker.mjs", import.meta.url).pathname;
+const sendWorker = new URL("../pilots/action-boundary/revocable-mail-worker.mjs", import.meta.url).pathname;
+const exec = promisify(execFile);
 const input = () => ({ to: "team@example.test", subject: "Release", body: "Approved text" });
 const policyFor = request => ({ protocol: "aml-action-policy/1", rules: [{
   tool: "send_message", effect: "send", resource: mailTargetResource(request).resource,
@@ -18,7 +21,8 @@ const approved = async ({ proposal_sha256 }) => ({ approved: true, proposal_sha2
 const make = (authority, options = {}) => createRevocablePreparedMailToolExecute({
   authority, tenant: "tenant-a", issuer: "host-a", actor: "reviewer-a",
   audience: "mail-service", purpose: "Send release", getPolicy: () => policyFor(input()),
-  prepare: async request => request, requestApproval: approved, execute: () => true,
+  operationIdFor: () => "host-intent-mail-001", prepare: async request => request,
+  requestApproval: approved, execute: () => true,
   ...options
 });
 async function withDirectory(run) {
@@ -43,6 +47,37 @@ test("approved prepared request reaches one callback with a stable key and froze
     assert.equal(observed.request.modelContext, undefined);
     assert.equal(observed.frozen, true);
     assert.match(observed.idempotencyKey, /^[a-f0-9]{64}$/);
+  }));
+
+test("one approval response cannot send the same host operation twice", () =>
+  withDirectory(async (directory, authority) => {
+    let sends = 0, operationId = "host-intent-mail-004";
+    const send = make(authority, { operationIdFor: () => operationId,
+      execute: () => { sends++; return { simulated: true }; } });
+    assert.equal((await send(input())).receipt.execution_status, "dispatched");
+    const repeated = await send(input());
+    assert.deepEqual([repeated.receipt.reason, repeated.dispatch_count, sends],
+      ["operation_already_claimed", 0, 1]);
+    const changed = await send({ ...input(), body: "different text" });
+    assert.deepEqual([changed.receipt.reason, changed.dispatch_count, sends],
+      ["operation_payload_mismatch", 0, 1]);
+    operationId = "host-intent-mail-005";
+    assert.equal((await send(input())).receipt.execution_status, "dispatched");
+    assert.equal(sends, 2);
+    assert.equal(fs.readdirSync(path.join(directory, "operations")).length, 2);
+  }));
+
+test("two real workers competing for one intent produce at most one send", () =>
+  withDirectory(async directory => {
+    const results = await Promise.all([0, 1].map(() => exec(process.execPath,
+      [sendWorker, directory, "host-intent-shared-006"])));
+    const rows = results.map(result => JSON.parse(result.stdout));
+    assert.equal(rows.filter(row => row.dispatch_count === 1).length, 1);
+    assert.equal(rows.filter(row => row.dispatch_count === 0).length, 1);
+    assert.equal(fs.readFileSync(path.join(directory, "effects.log"), "utf8"), "send\n");
+    const again = JSON.parse((await exec(process.execPath,
+      [sendWorker, directory, "host-intent-shared-006"])).stdout);
+    assert.deepEqual([again.reason, again.dispatch_count], ["operation_already_claimed", 0]);
   }));
 
 test("host-added BCC without an exact rule cannot be approved or sent", () =>
@@ -139,10 +174,14 @@ test("expiry, denial, invalid preparation, and callback uncertainty fail closed"
       execute: () => { sends++; } });
     await assert.rejects(invalid(input()), /unsupported_mail_arguments/);
     time = 1011;
-    const uncertain = make(authority, { execute: () => { sends++; throw Error("timeout"); } });
+    const uncertain = make(authority, { operationIdFor: () => "host-intent-uncertain-002",
+      execute: () => { sends++; throw Error("timeout"); } });
     const outcome = await uncertain(input());
     assert.deepEqual([outcome.receipt.execution_status, outcome.dispatch_count, sends],
       ["unknown", 1, 1]);
+    const retry = await uncertain(input());
+    assert.deepEqual([retry.receipt.reason, retry.dispatch_count, sends],
+      ["operation_already_claimed", 0, 1]);
   }));
 
 test("a malformed authority observation or outcome cannot report a successful send", () =>

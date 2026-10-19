@@ -118,18 +118,21 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
   privateDirectory(directory, true);
   const epochs = path.join(directory, "epochs");
   const grants = path.join(directory, "grants");
+  const operations = path.join(directory, "operations");
   const claimed = path.join(directory, "claimed");
   const outcomes = path.join(directory, "outcomes");
   const lock = path.join(directory, "authority.lock");
   const clockFile = path.join(directory, "clock.json");
-  for (const child of [epochs, grants, claimed, outcomes]) privateDirectory(child, true);
+  for (const child of [epochs, grants, operations, claimed, outcomes]) privateDirectory(child, true);
   const pinned = new Map();
-  for (const child of [directory, epochs, grants, claimed, outcomes]) {
+  for (const child of [directory, epochs, grants, operations, claimed, outcomes]) {
     verifyAuthorityPath(child, { record: pinned });
   }
 
   function checkDirectories() {
-    for (const child of [directory, epochs, grants, claimed, outcomes]) privateDirectory(child, false, pinned);
+    for (const child of [directory, epochs, grants, operations, claimed, outcomes]) {
+      privateDirectory(child, false, pinned);
+    }
   }
 
   function acquire() {
@@ -202,25 +205,53 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
     return locked(() => ({ epoch: currentEpoch(issuerHash(tenant, issuer)) }));
   }
 
-  function issue(input, { ttlMs = 60_000, expectedEpoch } = {}) {
+  function issue(input, { ttlMs = 60_000, expectedEpoch, operationId } = {}) {
     if (!Number.isSafeInteger(ttlMs) || ttlMs <= 0 || ttlMs > 300_000) {
       throw new TypeError("TTL must be between 1 ms and five minutes");
     }
     if (expectedEpoch !== undefined && (!Number.isSafeInteger(expectedEpoch) || expectedEpoch < 0)) {
       throw new TypeError("Invalid expected issuer epoch");
     }
+    if (operationId !== undefined && !identity(operationId)) {
+      throw new TypeError("Invalid host operation ID");
+    }
     const bound = binding(input);
     return locked(() => {
-      const epoch = currentEpoch(issuerHash(bound.context.tenant, bound.context.issuer));
+      const issuer = issuerHash(bound.context.tenant, bound.context.issuer);
+      const epoch = currentEpoch(issuer);
       if (expectedEpoch !== undefined && epoch !== expectedEpoch) throw Error("issuer_revoked");
       const issuedAt = hostTime();
       if (!Number.isSafeInteger(issuedAt + ttlMs)) throw Error("host_clock_unavailable");
+      const operationHash = operationId === undefined ? null : hash(canonicalJSONStringify([
+        bound.context.tenant, bound.context.issuer, operationId
+      ]));
+      if (operationHash) {
+        const previous = readRecord(path.join(operations, `${operationHash}.json`));
+        if (previous) {
+          if (previous.protocol === "aml-file-authority-operation/1" &&
+              previous.operation_sha256 === operationHash &&
+              DIGEST.test(previous.binding_sha256) && previous.binding_sha256 !== bound.sha256) {
+            throw Error("operation_payload_mismatch");
+          }
+          throw Error("operation_already_claimed");
+        }
+      }
       const grantId = randomUUID();
+      if (operationHash) {
+        // Spend the host intent before the grant. A crash here can lose an
+        // action, but it cannot send the same operation twice on this store.
+        createExclusive(path.join(operations, `${operationHash}.json`), {
+          protocol: "aml-file-authority-operation/1", operation_sha256: operationHash,
+          grant_id: grantId, issuer_sha256: issuer, binding_sha256: bound.sha256,
+          epoch
+        }, operations);
+      }
       createExclusive(path.join(grants, `${grantId}.json`), {
         protocol: "aml-file-authority-grant/1", grant_id: grantId,
-        issuer_sha256: issuerHash(bound.context.tenant, bound.context.issuer),
+        issuer_sha256: issuer,
         binding_sha256: bound.sha256, epoch, issued_at_ms: issuedAt,
-        expires_at_ms: issuedAt + ttlMs
+        expires_at_ms: issuedAt + ttlMs,
+        ...(operationHash ? { operation_sha256: operationHash } : {})
       }, grants);
       return { grant_id: grantId, binding_sha256: bound.sha256,
         prepared_request_sha256: bound.request.sha256, policy_sha256: bound.policy.sha256 };
@@ -243,6 +274,7 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
       if (!record) decision = denied("blocked", "grant_missing");
       else if (record.protocol !== "aml-file-authority-grant/1" || record.grant_id !== grant_id ||
           !DIGEST.test(record.binding_sha256) || !DIGEST.test(record.issuer_sha256) ||
+          (record.operation_sha256 !== undefined && !DIGEST.test(record.operation_sha256)) ||
           !Number.isSafeInteger(record.epoch) || record.epoch < 0 ||
           !Number.isSafeInteger(record.issued_at_ms) || !Number.isSafeInteger(record.expires_at_ms) ||
           record.issued_at_ms >= record.expires_at_ms) {
@@ -250,6 +282,8 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
       } else if (record.binding_sha256 !== bound.sha256 ||
           record.issuer_sha256 !== issuerHash(bound.context.tenant, bound.context.issuer)) {
         decision = denied("blocked", "binding_mismatch");
+      } else if (record.operation_sha256 && !operationMatches(record)) {
+        decision = denied("indeterminate", "operation_record_unavailable");
       } else {
         const claimFile = path.join(claimed, `${grant_id}.json`);
         if (fs.existsSync(claimFile)) decision = denied("blocked", "grant_spent_or_uncertain");
@@ -272,7 +306,9 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
               try {
                 const result = await claimOnce(Object.freeze({
                   protocol: "aml-file-authority-external-claim/1",
-                  claim_key_sha256: idempotencyKey,
+                  // An operation-backed grant keeps the same host intent key
+                  // even if a restored local snapshot mints a different grant.
+                  claim_key_sha256: record.operation_sha256 ?? idempotencyKey,
                   binding_sha256: bound.sha256
                 }));
                 if (result === false) decision = denied("blocked", "external_claim_spent");
@@ -283,11 +319,15 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
                 // authority path replacement. Recheck immediately before the
                 // callback, still under the lock and with the claim spent.
                 checkDirectories();
-                const postClaimTime = hostTime();
-                if (postClaimTime < record.issued_at_ms || postClaimTime >= record.expires_at_ms) {
-                  decision = denied("blocked", "grant_expired_or_clock_invalid");
-                } else if (currentEpoch(record.issuer_sha256) !== record.epoch) {
-                  decision = denied("blocked", "issuer_revoked");
+                if (record.operation_sha256 && !operationMatches(record)) {
+                  decision = denied("indeterminate", "operation_record_unavailable");
+                } else {
+                  const postClaimTime = hostTime();
+                  if (postClaimTime < record.issued_at_ms || postClaimTime >= record.expires_at_ms) {
+                    decision = denied("blocked", "grant_expired_or_clock_invalid");
+                  } else if (currentEpoch(record.issuer_sha256) !== record.epoch) {
+                    decision = denied("blocked", "issuer_revoked");
+                  }
                 }
               }
             }
@@ -330,6 +370,14 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
       return { status: "outcome_unknown", reason: "outcome_record_unavailable", dispatch_count: 1 };
     }
     return outcome;
+  }
+
+  function operationMatches(record) {
+    const saved = readRecord(path.join(operations, `${record.operation_sha256}.json`));
+    return saved && saved.protocol === "aml-file-authority-operation/1" &&
+      saved.operation_sha256 === record.operation_sha256 && saved.grant_id === record.grant_id &&
+      saved.issuer_sha256 === record.issuer_sha256 &&
+      saved.binding_sha256 === record.binding_sha256 && saved.epoch === record.epoch;
   }
 
   return { observeIssuer, issue, revokeIssuer, dispatch };
