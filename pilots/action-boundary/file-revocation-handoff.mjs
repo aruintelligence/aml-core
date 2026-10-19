@@ -109,12 +109,18 @@ function freezeDeep(value) {
   return value;
 }
 
-export function createFileRevocationHandoff({ directory, now = () => Date.now(), claimOnce = null } = {}) {
+export function createFileRevocationHandoff({ directory, now = () => Date.now(),
+  claimOnce = null, epochAnchor = null } = {}) {
   if (typeof directory !== "string" || !path.isAbsolute(directory) ||
       directory !== path.resolve(directory) || typeof now !== "function" ||
-      (claimOnce !== null && typeof claimOnce !== "function")) {
-    throw new TypeError("A trusted absolute directory, host clock, and optional atomic claim are required");
+      (claimOnce !== null && typeof claimOnce !== "function") ||
+      (epochAnchor !== null && (typeof epochAnchor !== "object" ||
+        typeof epochAnchor.claimOnce !== "function" ||
+        typeof epochAnchor.advanceEpoch !== "function" || claimOnce !== null))) {
+    throw new TypeError("A trusted directory, clock, and optional atomic host anchor are required");
   }
+  const externalClaim = epochAnchor ? epochAnchor.claimOnce.bind(epochAnchor) : claimOnce;
+  const externalAdvance = epochAnchor?.advanceEpoch.bind(epochAnchor);
   privateDirectory(directory, true);
   const epochs = path.join(directory, "epochs");
   const grants = path.join(directory, "grants");
@@ -186,6 +192,7 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
   }
 
   function revokeIssuer({ tenant, issuer } = {}) {
+    if (epochAnchor) throw Error("anchored_revocation_required");
     if (!identity(tenant) || !identity(issuer)) throw new TypeError("Invalid tenant or issuer");
     return locked(() => {
       const key = issuerHash(tenant, issuer);
@@ -196,6 +203,42 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
       }, epochs);
       return { tenant, issuer, epoch: next };
     });
+  }
+
+  // The external epoch CAS and claim CAS must share one linearizable host
+  // store. Keep the local lock stranded on any uncertain or partial advance;
+  // an operator must reconcile it before this local state can be reused.
+  async function revokeIssuerAnchored({ tenant, issuer } = {}) {
+    if (!epochAnchor) throw Error("epoch_anchor_required");
+    if (!identity(tenant) || !identity(issuer)) throw new TypeError("Invalid tenant or issuer");
+    let held = false, retainLock = false;
+    try {
+      acquire();
+      held = true;
+      retainLock = true;
+      const key = issuerHash(tenant, issuer);
+      const expected = currentEpoch(key);
+      const next = expected + 1;
+      if (!Number.isSafeInteger(next)) throw Error("revocation_epoch_exhausted");
+      let result;
+      try {
+        result = await externalAdvance(Object.freeze({
+          protocol: "aml-file-authority-external-epoch/1",
+          issuer_sha256: key, expected_epoch: expected, next_epoch: next
+        }));
+      } catch { throw Error("external_epoch_unavailable"); }
+      if (result === false) throw Error("external_epoch_mismatch");
+      if (result !== true) throw Error("external_epoch_unavailable");
+      checkDirectories();
+      if (currentEpoch(key) !== expected) throw Error("authority_epoch_changed");
+      replaceAtomic(path.join(epochs, `${key}.json`), {
+        protocol: "aml-file-authority-epoch/1", issuer_sha256: key, epoch: next
+      }, epochs);
+      retainLock = false;
+      return { tenant, issuer, epoch: next };
+    } finally {
+      if (held && !retainLock) release();
+    }
   }
 
   // Observe under the same lock used for revoke and issue. A host can await
@@ -299,19 +342,23 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
             createExclusive(claimFile, { protocol: "aml-file-authority-claim/1",
               grant_id, binding_sha256: bound.sha256,
               idempotency_key_sha256: idempotencyKey }, claimed);
-            if (claimOnce) {
+            if (externalClaim) {
               // Keep the local lock across an optional asynchronous CAS. The
               // host anchor must commit before returning exactly true; a
               // restored local snapshot cannot erase that separate claim.
               try {
-                const result = await claimOnce(Object.freeze({
-                  protocol: "aml-file-authority-external-claim/1",
+                const result = await externalClaim(Object.freeze({
+                  protocol: epochAnchor ? "aml-file-authority-external-claim/2" :
+                    "aml-file-authority-external-claim/1",
                   // An operation-backed grant keeps the same host intent key
                   // even if a restored local snapshot mints a different grant.
                   claim_key_sha256: record.operation_sha256 ?? idempotencyKey,
-                  binding_sha256: bound.sha256
+                  binding_sha256: bound.sha256,
+                  ...(epochAnchor ? { issuer_sha256: record.issuer_sha256,
+                    epoch: record.epoch } : {})
                 }));
-                if (result === false) decision = denied("blocked", "external_claim_spent");
+                if (result === false) decision = denied("blocked", epochAnchor ?
+                  "external_claim_or_epoch_rejected" : "external_claim_spent");
                 else if (result !== true) decision = denied("indeterminate", "external_claim_unavailable");
               } catch { decision = denied("indeterminate", "external_claim_unavailable"); }
               if (!decision) {
@@ -380,5 +427,5 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
       saved.binding_sha256 === record.binding_sha256 && saved.epoch === record.epoch;
   }
 
-  return { observeIssuer, issue, revokeIssuer, dispatch };
+  return { observeIssuer, issue, revokeIssuer, revokeIssuerAnchored, dispatch };
 }
