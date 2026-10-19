@@ -308,10 +308,7 @@ try {
       process.stdout.write(`${JSON.stringify(result, null, 2)}\n`, error =>
         error ? reject(error) : resolve());
     });
-    process.exit(result.valid && result.threshold_met &&
-      (!options.has('--policy') || result.policy_met) &&
-      (!options.has('--bundle') || (result.witness_met && result.replayable_claims_consistent)) &&
-      (!options.has('--expect-inputs') || result.inputs_met) ? 0 : 2);
+    process.exit(result.requested_conditions_met ? 0 : 2);
   }
   if (command === "replay-receipt") {
     const result = replayExecutionReceipt(JSON.parse(readSource(inputPath)));

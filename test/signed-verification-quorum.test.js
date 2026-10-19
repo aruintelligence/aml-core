@@ -169,10 +169,17 @@ test('saved signed quorum recomputes signatures, summary, threshold, and claim b
   const verified = await verifySignedVerificationQuorum(saved);
   assert.equal(verified.valid, true);
   assert.equal(verified.threshold_met, true);
+  assert.equal(verified.requested_conditions_met, true);
+  assert.deepEqual(verified.requested_conditions, {
+    checked: ['valid', 'threshold_met'], unmet: []
+  });
 
   const wrongSchema = await verifySignedVerificationQuorum({ schema: 'other-quorum/1' });
   assert.equal(wrongSchema.valid, false);
   assert.equal(wrongSchema.threshold_met, false);
+  assert.deepEqual(wrongSchema.requested_conditions, {
+    checked: ['valid', 'threshold_met'], unmet: ['valid', 'threshold_met']
+  });
 
   const inflated = structuredClone(saved);
   inflated.summary.distinct_keys = 3;
@@ -226,6 +233,8 @@ test('reusing one verifier key cannot satisfy a two-key threshold', async () => 
   const verified = await verifySignedVerificationQuorum(JSON.parse(JSON.stringify(quorum)));
   assert.equal(verified.valid, true);
   assert.equal(verified.threshold_met, false);
+  assert.equal(verified.requested_conditions_met, false);
+  assert.deepEqual(verified.requested_conditions.unmet, ['threshold_met']);
 });
 
 test('verifier-held policy binds the artifact and an independently retained key allowlist', async () => {
@@ -254,6 +263,10 @@ test('verifier-held policy binds the artifact and an independently retained key 
   assert.equal(selfSelected.valid, true);
   assert.equal(selfSelected.threshold_met, true);
   assert.equal(selfSelected.policy_met, false);
+  assert.equal(selfSelected.requested_conditions_met, false);
+  assert.deepEqual(selfSelected.requested_conditions, {
+    checked: ['valid', 'threshold_met', 'policy_met'], unmet: ['policy_met']
+  });
   assert.equal(selfSelected.policy_evaluation.distinct_trusted_keys, 1);
 
   const wrongArtifact = await verifySignedVerificationQuorum(supported.quorum, {

@@ -189,6 +189,19 @@ own threshold using only allowlisted keys with valid signatures and positive
 reports. With a policy, exit `0` requires all three. Exit `2` means a quorum
 or policy condition failed; malformed verifier-held policy is a usage error
 (exit `1`). The policy must be kept separately from the untrusted quorum.
+
+Both the JavaScript and Python verifier results include
+`requested_conditions_met`, the exact exit `0` gate for the options supplied.
+`requested_conditions.checked` lists `valid` and `threshold_met`, then the
+applicable `policy_met`, `witness_met`, `replayable_claims_consistent`, and
+`inputs_met` checks; `requested_conditions.unmet` names each failing check.
+For example, a valid quorum with a met saved threshold but an unmatched held
+policy lists only `policy_met` as unmet. Without a held policy, this gate only
+checks the supplied quorum and its self-declared threshold; a true value does
+not authenticate a key owner, establish independent verification, or certify
+the underlying artifact. Preserve the individual fields when presenting why
+a decision passed or failed.
+
 Allowlisting keys does not establish the operators' independence or the truth
 of their reports. The policy lists envelope fingerprints so that the checker
 can recognize pinned public-key documents; key distinctness is still measured
