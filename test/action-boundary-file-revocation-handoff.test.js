@@ -75,6 +75,20 @@ test("one changed BCC, tenant, or policy cannot reuse the approved request", () 
     assert.equal(calls, 1);
   }));
 
+test("ambiguous tenant or issuer spellings are rejected before namespace lookup", () =>
+  withAsyncDirectory(async directory => {
+    const host = createFileRevocationHandoff({ directory });
+    assert.throws(() => host.issue({ ...context(), tenant: "tenant-a " }), /Invalid tenant/);
+    assert.throws(() => host.revokeIssuer({ tenant: "tenant-a", issuer: "host-a\n" }),
+      /Invalid tenant or issuer/);
+    const grant = host.issue(context());
+    let calls = 0;
+    const denied = await host.dispatch({ ...context(), tenant: "tenant-a ",
+      grant_id: grant.grant_id, execute: () => { calls++; } });
+    assert.deepEqual([denied.status, denied.dispatch_count], ["blocked", 0]);
+    assert.equal(calls, 0);
+  }));
+
 test("persistent clock rejects expiry and rollback across processes; caller time is ignored", () =>
   withAsyncDirectory(async directory => {
     let time = 1000;

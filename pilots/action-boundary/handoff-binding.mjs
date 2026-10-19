@@ -4,7 +4,9 @@ import { canonicalJSONStringify } from "../../protocol/canonicalJson.js";
 
 export const hashHandoffBytes = bytes => createHash("sha256").update(bytes, "utf8").digest("hex");
 export const validHandoffIdentity = value =>
-  typeof value === "string" && !!value.trim() && value.length <= 256;
+  typeof value === "string" && !!value.trim() && value === value.trim() &&
+  value === value.normalize("NFC") && value.length <= 256 &&
+  !/[\u0000-\u001f\u007f]/.test(value);
 
 function snapshotObject(value) {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
