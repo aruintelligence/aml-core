@@ -69,14 +69,36 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   // The command must finish writing even when its result exceeds pipe buffers
   // on Linux and macOS; an immediate process.exit can truncate valid JSON.
   const verbose = report('verbose');
-  verbose.notes = ['x'.repeat(128 * 1024)];
+  verbose.notes = ['private-report-note:', 'x'.repeat(128 * 1024)];
   const largeQuorum = await createSignedVerificationQuorum([
     await signVerificationReport(verbose, await createVerifierKeyPair())
   ], { threshold: 1 });
-  const large = run(write('large-quorum.json', largeQuorum));
+  const largePath = write('large-quorum.json', largeQuorum);
+  const large = run(largePath);
   assert.equal(large.status, 0, large.stderr);
   assert.ok(large.stdout.length > 128 * 1024);
   assert.equal(JSON.parse(large.stdout).input_fingerprints.quorum_sha256, inputHash(largeQuorum));
+  const small = run(largePath, '--decision-only');
+  assert.equal(small.status, large.status, small.stderr);
+  assert.ok(small.stdout.length < 1000);
+  assert.doesNotMatch(small.stdout, /private-report-note|verbose|signed_reports|notes/);
+  assert.deepEqual(JSON.parse(small.stdout), {
+    schema: 'aml-signed-quorum-decision/1', prototype: true,
+    valid: true, threshold_met: true, requested_conditions_met: true,
+    requested_conditions: { checked: ['valid', 'threshold_met'], unmet: [] },
+    input_fingerprints: { canonicalization: 'sorted-json-v1',
+      quorum_sha256: inputHash(largeQuorum) }
+  });
+  const duplicateDecisionFlag = run(largePath, '--decision-only', '--decision-only');
+  assert.equal(duplicateDecisionFlag.status, 1);
+  assert.match(duplicateDecisionFlag.stderr, /AML_SIGNED_QUORUM_INPUT_OR_USAGE_ERROR/);
+  const malformedPath = path.join(directory, 'sensitive-json-input.json');
+  fs.writeFileSync(malformedPath, 'private-report-note: malformed JSON');
+  const malformedCompact = run(malformedPath, '--decision-only');
+  assert.equal(malformedCompact.status, 1);
+  assert.equal(malformedCompact.stdout, '');
+  assert.match(malformedCompact.stderr, /AML_SIGNED_QUORUM_INPUT_OR_USAGE_ERROR/);
+  assert.doesNotMatch(malformedCompact.stderr, /private-report-note|sensitive-json-input/);
 
   const padded = { ...b, signature: `${b.signature}==` };
   const paddedQuorum = await createSignedVerificationQuorum([a, padded], { threshold: 2 });
@@ -87,6 +109,12 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   assert.deepEqual(JSON.parse(paddedRun.stdout).requested_conditions.unmet, ['threshold_met']);
   assert.deepEqual(JSON.parse(paddedRun.stdout).quorum.summary.disagreement_reasons,
     ['AML_SIGNED_REPORT_SIGNATURE_ENCODING_INVALID']);
+  const paddedDecision = run(write('padded-decision-quorum.json', paddedQuorum), '--decision-only');
+  assert.equal(paddedDecision.status, paddedRun.status);
+  assert.equal(JSON.parse(paddedDecision.stdout).valid, true);
+  assert.equal(JSON.parse(paddedDecision.stdout).threshold_met, false);
+  assert.deepEqual(JSON.parse(paddedDecision.stdout).requested_conditions.unmet, ['threshold_met']);
+  assert.doesNotMatch(paddedDecision.stdout, /signature|verifier|disagreement_reasons/);
 
   const policy = {
     schema: 'aml-signed-quorum-held-policy/1', prototype: true,
@@ -131,6 +159,14 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
     expectations_sha256: inputHash(expectedInputs),
     checked: ['quorum_sha256', 'policy_sha256'], mismatched: [], unavailable: []
   });
+  const boundDecision = run(write('bound-decision-quorum.json', quorum), '--policy', policyFile,
+    '--expect-inputs', expectedFile, '--decision-only');
+  assert.equal(boundDecision.status, bound.status);
+  assert.equal(JSON.parse(boundDecision.stdout).inputs_met, true);
+  assert.equal(JSON.parse(boundDecision.stdout).policy_met, true);
+  assert.deepEqual(JSON.parse(boundDecision.stdout).input_fingerprints,
+    JSON.parse(bound.stdout).input_fingerprints);
+  assert.equal(JSON.parse(boundDecision.stdout).expectations_sha256, inputHash(expectedInputs));
 
   // Both the saved threshold and held key policy still pass when their
   // contents change; the separately pinned input digest blocks substitution.
@@ -248,6 +284,19 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   assert.equal(JSON.parse(rejected.stdout).reason, 'AML_SIGNED_QUORUM_MISMATCH');
   assert.equal(JSON.parse(rejected.stdout).input_fingerprints.quorum_sha256, inputHash(inflated));
   assert.notEqual(inputHash(inflated), inputHash(quorum));
+  const rejectedCompact = run(write('inflated-compact.json', inflated), '--decision-only');
+  assert.equal(rejectedCompact.status, rejected.status);
+  assert.equal(JSON.parse(rejectedCompact.stdout).valid, false);
+  assert.equal(JSON.parse(rejectedCompact.stdout).threshold_met, false);
+  assert.equal(JSON.parse(rejectedCompact.stdout).input_fingerprints.quorum_sha256,
+    inputHash(inflated));
+  assert.equal(Object.hasOwn(JSON.parse(rejectedCompact.stdout), 'quorum'), false);
+  const malformedQuorum = run(write('missing-reports.json', {
+    ...quorum, signed_reports: null
+  }), '--decision-only');
+  assert.equal(malformedQuorum.status, 2);
+  assert.equal(JSON.parse(malformedQuorum.stdout).valid, false);
+  assert.equal(Object.hasOwn(JSON.parse(malformedQuorum.stdout), 'input_fingerprints'), false);
 
   const unmet = await createSignedVerificationQuorum([a], { threshold: 2 });
   const belowThreshold = run(write('unmet.json', unmet));
@@ -438,6 +487,20 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(completePortable.status, 0, completePortable.stderr);
   assert.equal(JSON.parse(completePortable.stdout).portable_met, true);
   assert.equal(JSON.parse(completePortable.stdout).requested_conditions_met, true);
+  const compactPortable = run(quorumPath, '--portable', '--policy', completePolicyPath,
+    '--bundle', bundlePath, '--challenge', challengePath, '--decision-only');
+  assert.equal(compactPortable.status, completePortable.status, compactPortable.stderr);
+  const compact = JSON.parse(compactPortable.stdout);
+  for (const name of ['valid', 'threshold_met', 'portable_met', 'policy_met',
+    'witness_met', 'replayable_claims_consistent', 'requested_conditions_met']) {
+    assert.equal(compact[name], JSON.parse(completePortable.stdout)[name], name);
+  }
+  assert.equal(compact.schema, 'aml-signed-quorum-decision/1');
+  assert.equal(compact.witness_clock_source, 'local_system');
+  assert.ok(Date.parse(compact.witness_evaluated_at) <= Date.now());
+  assert.deepEqual(compact.input_fingerprints, JSON.parse(completePortable.stdout).input_fingerprints);
+  assert.equal(Object.hasOwn(compact, 'quorum'), false);
+  assert.equal(Object.hasOwn(compact, 'witness_evaluation'), false);
   assert.deepEqual(JSON.parse(complete.stdout).input_fingerprints, {
     ...replayed.input_fingerprints, policy_sha256: inputHash(completePolicy)
   });
@@ -451,6 +514,12 @@ test('signed quorum rechecks the named witness against a separately held challen
     '--bundle', bundlePath, '--challenge', challengePath, '--expect-inputs', heldInputsPath);
   assert.equal(pinnedReplay.status, 0, pinnedReplay.stderr);
   assert.equal(JSON.parse(pinnedReplay.stdout).inputs_met, true);
+  const compactPinned = run(quorumPath, '--policy', completePolicyPath,
+    '--bundle', bundlePath, '--challenge', challengePath,
+    '--expect-inputs', heldInputsPath, '--decision-only');
+  assert.equal(compactPinned.status, pinnedReplay.status, compactPinned.stderr);
+  assert.equal(JSON.parse(compactPinned.stdout).expectations_sha256, inputHash(heldInputs));
+  assert.equal(JSON.parse(compactPinned.stdout).inputs_met, true);
   assert.deepEqual(JSON.parse(pinnedReplay.stdout).requested_conditions, {
     checked: ['valid', 'threshold_met', 'policy_met', 'witness_met',
       'replayable_claims_consistent', 'inputs_met'], unmet: []
@@ -545,6 +614,15 @@ test('signed quorum rechecks the named witness against a separately held challen
     '--policy', presencePath, '--bundle', bundlePath, '--challenge', challengePath);
   assert.equal(dissentPresence.status, 2, dissentPresence.stderr);
   assert.equal(JSON.parse(dissentPresence.stdout).policy_met, false);
+  const compactDissent = run(write('required-dissent-decision.json', withRequiredDissent),
+    '--policy', presencePath, '--bundle', bundlePath, '--challenge', challengePath,
+    '--decision-only');
+  assert.equal(compactDissent.status, dissentPresence.status, compactDissent.stderr);
+  const dissentDecision = JSON.parse(compactDissent.stdout);
+  assert.equal(dissentDecision.valid, true);
+  assert.equal(dissentDecision.threshold_met, true);
+  assert.equal(dissentDecision.policy_met, false);
+  assert.deepEqual(dissentDecision.requested_conditions.unmet, ['policy_met']);
   assert.deepEqual(JSON.parse(dissentPresence.stdout)
     .policy_evaluation.missing_required_key_material_fingerprints, []);
   assert.equal(JSON.parse(dissentPresence.stdout).policy_evaluation.trusted_dissent.length, 1);

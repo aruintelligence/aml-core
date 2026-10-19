@@ -53,7 +53,7 @@ Usage:
   aml verify-witness <bundle.json> <verifier-held-challenge.json>
   aml fingerprint-verifier-key <public-jwk.json>
   aml fingerprint-json <input.json>
-  aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json] [--portable]
+  aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json] [--portable] [--decision-only]
   aml replay-receipt <receipt.json>
   aml sign-receipt <receipt.json> <private-key.pem> [signed-receipt.json]
   aml verify-signed-receipt <signed-receipt.json>
@@ -88,7 +88,7 @@ Commands:
   verify-witness              Verify a browser witness bundle against your retained challenge
   fingerprint-verifier-key    Derive full-JWK and P-256 material fingerprints from a public key
   fingerprint-json            Hash a strict JSON input under sorted-json-v1
-  verify-signed-quorum        Recheck a signed quorum, held policy, witness claims, input pins, and optional portable profile
+  verify-signed-quorum        Recheck a signed quorum; --decision-only omits supplied report contents
   replay-receipt              Re-execute declared receipt inputs with the installed engine
   sign-receipt                Add an Ed25519 attestation to a valid execution receipt
   verify-signed-receipt       Verify receipt integrity, signature, and public-key fingerprint
@@ -144,6 +144,52 @@ function readUnambiguousJSON(filePath, options) {
   const source = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true })
     .decode(fs.readFileSync(filePath));
   return parseJsonWithoutDuplicateKeys(source, options);
+}
+
+// A small, unsigned log record derived only from verifier-computed booleans,
+// input hashes, and the local replay instant. Never copy a supplied report,
+// artifact label, signer name, note, or error string into this projection.
+function signedQuorumDecisionOnly(result) {
+  const names = new Set(['valid', 'threshold_met', 'portable_met', 'policy_met',
+    'witness_met', 'replayable_claims_consistent', 'inputs_met']);
+  const checked = result.requested_conditions.checked;
+  if (!Array.isArray(checked) || checked.some(name => !names.has(name) ||
+      typeof result[name] !== 'boolean')) throw new Error('AML_SIGNED_QUORUM_DECISION_INVALID');
+  const unmet = checked.filter(name => result[name] !== true);
+  if (result.requested_conditions_met !== (unmet.length === 0)) {
+    throw new Error('AML_SIGNED_QUORUM_DECISION_INVALID');
+  }
+  const decision = {
+    schema: 'aml-signed-quorum-decision/1', prototype: true,
+    ...Object.fromEntries(checked.map(name => [name, result[name]])),
+    requested_conditions_met: unmet.length === 0,
+    requested_conditions: { checked, unmet }
+  };
+  if (result.input_fingerprints) {
+    const input = result.input_fingerprints;
+    if (input.canonicalization !== 'sorted-json-v1') throw new Error('AML_SIGNED_QUORUM_DECISION_INVALID');
+    decision.input_fingerprints = { canonicalization: 'sorted-json-v1' };
+    for (const name of ['quorum_sha256', 'policy_sha256', 'witness_bundle_sha256',
+      'held_challenge_sha256']) {
+      if (Object.hasOwn(input, name)) {
+        if (!/^[a-f0-9]{64}$/.test(input[name])) throw new Error('AML_SIGNED_QUORUM_DECISION_INVALID');
+        decision.input_fingerprints[name] = input[name];
+      }
+    }
+  }
+  if (result.input_evaluation) {
+    const hash = result.input_evaluation.expectations_sha256;
+    if (!/^[a-f0-9]{64}$/.test(hash)) throw new Error('AML_SIGNED_QUORUM_DECISION_INVALID');
+    decision.expectations_sha256 = hash;
+  }
+  if (result.witness_evaluation) {
+    const { evaluated_at, clock_source } = result.witness_evaluation;
+    if (typeof evaluated_at !== 'string' || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(evaluated_at) ||
+        clock_source !== 'local_system') throw new Error('AML_SIGNED_QUORUM_DECISION_INVALID');
+    decision.witness_evaluated_at = evaluated_at;
+    decision.witness_clock_source = clock_source;
+  }
+  return decision;
 }
 
 function writeOrPrint(value, outputPath, label = "WROTE") {
@@ -282,15 +328,22 @@ try {
     process.exit(0);
   }
   if (command === "verify-signed-quorum") {
-    const usage = "Usage: aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json] [--portable]";
+    const usage = "Usage: aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json] [--portable] [--decision-only]";
     if (!args[1] || args[1].startsWith('--')) throw new Error(usage);
     const options = new Map();
     let portable = false;
+    let decisionOnly = false;
     for (let index = 2; index < args.length;) {
       const flag = args[index];
       if (flag === '--portable') {
         if (portable) throw new Error(usage);
         portable = true;
+        index += 1;
+        continue;
+      }
+      if (flag === '--decision-only') {
+        if (decisionOnly) throw new Error(usage);
+        decisionOnly = true;
         index += 1;
         continue;
       }
@@ -314,7 +367,7 @@ try {
     // A saved quorum can produce more JSON than a pipe can buffer. Wait for
     // stdout to finish writing before exiting with the verification status.
     await new Promise((resolve, reject) => {
-      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`, error =>
+      process.stdout.write(`${JSON.stringify(decisionOnly ? signedQuorumDecisionOnly(result) : result, null, 2)}\n`, error =>
         error ? reject(error) : resolve());
     });
     process.exit(result.requested_conditions_met ? 0 : 2);
@@ -458,6 +511,9 @@ try {
   process.exit(1);
 } catch (error) {
   console.error("ĀML command failed.");
-  console.error(error.message);
+  // Parser and filesystem errors can quote source text or paths. Compact
+  // quorum mode must keep those off stderr as well as stdout.
+  console.error(command === "verify-signed-quorum" && args.includes("--decision-only")
+    ? "AML_SIGNED_QUORUM_INPUT_OR_USAGE_ERROR" : error.message);
   process.exit(1);
 }

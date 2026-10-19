@@ -53,6 +53,7 @@ const required = [
   ['protocol/aml-verification-quorum.schema.json', ['"aml-verification-quorum/1"', '"threshold_met"', '"unanimous"']],
   ['protocol/aml-signed-verification-report.schema.json', ['"aml-signed-verification-report/1"', '"verifier_key_fingerprint"', '"ECDSA-P256-SHA256"']],
   ['protocol/aml-signed-verification-quorum.schema.json', ['"aml-signed-verification-quorum/1"', '"distinct_keys"', '"threshold_met"']],
+  ['protocol/aml-signed-quorum-decision.schema.json', ['"aml-signed-quorum-decision/1"', '"requested_conditions_met"', '"input_fingerprints"']],
   ['protocol/aml-witness-record.schema.json', ['"aml-witness-record/1"', '"external_to_aml_core"', '"source_url"']],
   ['protocol/verifier-registry.json', ['"external_verifier_count": 0', '"WITNESSES.json"']],
   ['WITNESSES.json', ['"external_witness_count": 0', '"records": []', '"negative_results_allowed": true']],

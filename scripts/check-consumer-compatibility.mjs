@@ -251,6 +251,21 @@ try {
       !inputBound.inputs_met || inputBound.input_evaluation.checked.length !== 2) {
     throw new Error('Installed-package signed quorum CLI did not enforce held input pins');
   }
+  const compactOutput = runNpm(['exec', '--', 'aml', 'verify-signed-quorum',
+    'signed-quorum.json', '--policy', 'held-policy.json', '--bundle', 'witness.json',
+    '--challenge', 'held-challenge.json', '--expect-inputs', 'expected-inputs.json',
+    '--decision-only'], tempRoot);
+  const compact = JSON.parse(compactOutput);
+  if (compact.schema !== 'aml-signed-quorum-decision/1' ||
+      !compact.valid || !compact.threshold_met || !compact.policy_met ||
+      !compact.witness_met || !compact.inputs_met || !compact.requested_conditions_met ||
+      compact.input_fingerprints.quorum_sha256 !== fingerprint(signedQuorum) ||
+      compact.expectations_sha256 !== fingerprint(expectedInputs) ||
+      compact.witness_clock_source !== 'local_system' ||
+      compactOutput.includes('signed_reports') || compactOutput.includes('compat-a') ||
+      compactOutput.includes('signature')) {
+    throw new Error('Installed-package compact quorum output leaked reports or changed the decision');
+  }
   fs.writeFileSync(path.join(tempRoot, 'wrong-expected-inputs.json'),
     `${JSON.stringify({ ...expectedInputs, policy_sha256: '0'.repeat(64) })}\n`);
   const wrongInputRun = spawnSync(process.execPath, [path.join(installedRoot, 'bin', 'aml.js'),
