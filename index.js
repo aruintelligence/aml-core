@@ -55,6 +55,7 @@ export { signBrandAuthorization, verifyBrandAuthorization } from "./runtime/bran
 export { verifyBrandTrustRegistry, verifyOfficialBrandAuthorization } from "./runtime/brandTrust.js";
 export { verifyBrandClaim } from "./runtime/brandClaim.js";
 export { canonicalize, canonicalJSONStringify } from "./protocol/canonicalJson.js";
+export { parseJsonWithoutDuplicateKeys } from "./runtime/strictJson.js";
 export { createWireEnvelope, validateWireEnvelope, negotiateWireSession } from "./protocol/wireProtocol.js";
 export { createReplayGuard, acceptWireEnvelope } from "./protocol/replayGuard.js";
 export { createGovernanceStreamSession, AML_GOVERNANCE_STREAM_OPEN, AML_GOVERNANCE_STREAM_NODE, AML_GOVERNANCE_STREAM_DECISION, AML_GOVERNANCE_STREAM_POLICY_UPDATE, AML_GOVERNANCE_STREAM_POLICY_APPLIED, AML_GOVERNANCE_STREAM_FINALIZE, AML_GOVERNANCE_STREAM_RESULT, AML_GOVERNANCE_STREAM_ERROR } from "./protocol/governanceStream.js";

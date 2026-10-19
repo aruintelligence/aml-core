@@ -893,6 +893,10 @@ export interface BrandClaimVerification {
 export function verifyBrandClaim(credential: unknown, trustRegistry: unknown,
   revocationRegistry: unknown, policy: BrandClaimPolicy): BrandClaimVerification;
 
+/** Parse JSON while rejecting duplicate object names, including escaped aliases, at every depth. */
+export function parseJsonWithoutDuplicateKeys(source: string,
+  options?: { integerNumbersOnly?: boolean }): unknown;
+
 export const AML_AGENT_UI_ENVELOPE: "aml-agent-ui-envelope/1";
 export const AML_AGENT_UI_RESULT: "aml-agent-ui-governance-result/1";
 export const AML_GOVERNANCE_STREAM_OPEN: "aml-governance-stream-open/1";

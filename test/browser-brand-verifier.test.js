@@ -38,21 +38,29 @@ test("public browser verifier rejects expired, future, and inactive-root credent
     status: "active",
     active_keys: [{ public_key_sha256: current.public_key_sha256 }], revoked_keys: []
   };
+  let trustWire = JSON.stringify(registry);
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-  const browserParse = await new AsyncFunction("crypto", "document", "fetch", "atob", "TextEncoder", `${script}\nreturn parseBrandTime;`)(
+  const browser = await new AsyncFunction("crypto", "document", "fetch", "atob", "TextEncoder", "TextDecoder",
+    `${script}\nreturn { parseBrandTime, parseJsonWithoutDuplicateKeys, loadRegistry };`)(
     crypto.webcrypto,
     { getElementById: element },
-    async () => ({ ok: true, json: async () => registry }),
+    async () => ({ ok: true, arrayBuffer: async () => new TextEncoder().encode(trustWire).buffer }),
     globalThis.atob,
-    TextEncoder
+    TextEncoder,
+    TextDecoder
   );
   for (const value of [...acceptedBrandTimes, ...rejectedBrandTimes]) {
-    assert.equal(browserParse(value), parseBrandTime(value), `browser and library disagree on ${value}`);
+    assert.equal(browser.parseBrandTime(value), parseBrandTime(value), `browser and library disagree on ${value}`);
   }
-  const click = async (credential) => {
-    element("credential").value = JSON.stringify(credential);
+  const clickRaw = async (wire) => {
+    element("credential").value = wire;
     await element("verify").click();
     return JSON.parse(element("details").textContent);
+  };
+  const click = (credential) => clickRaw(JSON.stringify(credential));
+  const reloadRegistry = async () => {
+    trustWire = JSON.stringify(registry);
+    await browser.loadRegistry();
   };
 
   const expired = await click(issue({ issued_at: "2000-01-01T00:00:00Z", expires_at: "2001-01-01T00:00:00Z" }));
@@ -69,25 +77,51 @@ test("public browser verifier rejects expired, future, and inactive-root credent
   assert.equal(timezoneFree.official, false);
 
   registry.active_keys[0].not_after = "2001-01-01T00:00:00Z";
+  await reloadRegistry();
   const expiredRoot = await click(current);
   assert.equal(expiredRoot.trust_reason, "signing_key_expired");
   assert.equal(expiredRoot.official, false);
   delete registry.active_keys[0].not_after;
   registry.active_keys[0].not_before = "2100-01-01T00:00:00Z";
+  await reloadRegistry();
   assert.equal((await click(current)).trust_reason, "signing_key_not_yet_valid");
   registry.active_keys[0].not_before = "invalid";
+  await reloadRegistry();
   assert.equal((await click(current)).trust_reason, "invalid_trust_registry");
   registry.active_keys[0].not_before = impossibleBrandTime;
+  await reloadRegistry();
   assert.equal((await click(current)).trust_reason, "invalid_trust_registry");
   delete registry.active_keys[0].not_before;
   registry.active_keys.push({ public_key_sha256: "other", not_before: "invalid" });
+  await reloadRegistry();
   assert.equal((await click(current)).trust_reason, "invalid_trust_registry");
   registry.active_keys.pop();
   registry.status = "suspended";
+  await reloadRegistry();
   assert.equal((await click(current)).trust_reason, "trust_registry_inactive");
   registry.status = "active";
+  await reloadRegistry();
   const active = await click(current);
   assert.equal(active.official, true);
   assert.equal(active.clock_source, "local_system");
   assert.equal(active.credential_revocation_checked, false);
+
+  const ambiguousCredential = JSON.stringify(current).replace('"grantee":"Example Integrator LLC"',
+    String.raw`"gr\u0061ntee":"Other Integrator","grantee":"Example Integrator LLC"`);
+  assert.deepEqual(JSON.parse(ambiguousCredential), current, "ordinary parsing previously accepted the signed last value");
+  assert.throws(() => browser.parseJsonWithoutDuplicateKeys(ambiguousCredential), /duplicate JSON object key/);
+  element("credential").value = ambiguousCredential;
+  await element("verify").click();
+  assert.equal(element("integrity").textContent, "INVALID");
+  assert.equal(element("official").textContent, "NOT OFFICIAL");
+  assert.match(element("details").textContent, /duplicate JSON object key/);
+
+  trustWire = JSON.stringify(registry).replace('"status":"active"', '"status":"suspended","status":"active"');
+  assert.deepEqual(JSON.parse(trustWire), registry, "ordinary parsing previously accepted the last root status");
+  await browser.loadRegistry();
+  assert.equal(element("registry").textContent, "Unavailable");
+  assert.match(element("details").textContent, /duplicate JSON object key/);
+  const unavailable = await clickRaw(JSON.stringify(current));
+  assert.equal(unavailable.official, false);
+  assert.equal(unavailable.trust_reason, "trust_registry_unavailable");
 });

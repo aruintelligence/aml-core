@@ -67,6 +67,38 @@ function canonicalize(value) {
   return value;
 }
 function canonicalJSONStringify(value) { return JSON.stringify(canonicalize(value)); }
+// Keep this static-page parser aligned with runtime/strictJson.js. Parsing
+// before this scan validates syntax, then each decoded object name is unique.
+function parseJsonWithoutDuplicateKeys(source) {
+  const parsed = JSON.parse(source);
+  const frames = [];
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index];
+    if (char === '"') {
+      const start = index;
+      for (index += 1; index < source.length; index += 1) {
+        if (source[index] === "\\") index += 1;
+        else if (source[index] === '"') break;
+      }
+      const frame = frames[frames.length - 1];
+      if (frame?.kind === "object" && frame.nextIsKey) {
+        const key = JSON.parse(source.slice(start, index + 1));
+        if (frame.keys.has(key)) throw new SyntaxError("duplicate JSON object key");
+        frame.keys.add(key);
+        frame.nextIsKey = false;
+      }
+    } else if (char === "{") {
+      frames.push({ kind: "object", keys: new Set(), nextIsKey: true });
+    } else if (char === "[") {
+      frames.push({ kind: "array" });
+    } else if (char === "}" || char === "]") {
+      frames.pop();
+    } else if (char === "," && frames[frames.length - 1]?.kind === "object") {
+      frames[frames.length - 1].nextIsKey = true;
+    }
+  }
+  return parsed;
+}
 function hex(buffer) { return [...new Uint8Array(buffer)].map((b) => b.toString(16).padStart(2,"0")).join(""); }
 async function sha256Bytes(bytes) { return crypto.subtle.digest("SHA-256", bytes); }
 async function sha256Text(text) { return hex(await sha256Bytes(new TextEncoder().encode(text))); }
@@ -113,10 +145,13 @@ function validRegistry(registry) {
 }
 
 async function loadRegistry() {
+  trustRegistry = null;
   try {
     const res = await fetch(TRUST_URL, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    trustRegistry = await res.json();
+    const source = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true })
+      .decode(await res.arrayBuffer());
+    trustRegistry = parseJsonWithoutDuplicateKeys(source);
     const active = Array.isArray(trustRegistry.active_keys) ? trustRegistry.active_keys.length : 0;
     setState("registry", `${trustRegistry.status || "unknown"} · ${active} active key${active === 1 ? "" : "s"}`, active ? "good" : "warn");
   } catch (error) {
@@ -164,7 +199,7 @@ byId("support").textContent = crypto?.subtle ? "Browser cryptography available" 
 byId("verify").addEventListener("click", async () => {
   setState("integrity", "Checking…", "muted"); setState("trust", "Checking…", "muted"); setState("official", "Checking…", "muted");
   try {
-    const credential = JSON.parse(byId("credential").value);
+    const credential = parseJsonWithoutDuplicateKeys(byId("credential").value);
     const evaluatedAt = new Date().toISOString();
     const now = Date.parse(evaluatedAt);
     const verification = await verifyCredential(credential, now);

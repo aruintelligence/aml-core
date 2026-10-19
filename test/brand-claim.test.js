@@ -107,3 +107,51 @@ test("buyer policy CLI exits successfully only for the exact pinned claim", () =
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("brand CLI rejects duplicate keys in every evidence file before a positive claim", () => {
+  const { credential, roots, revocations, policy } = fixture();
+  const values = [credential, roots, revocations, policy];
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-brand-ambiguous-"));
+  try {
+    const paths = ["credential.json", "roots.json", "revocations.json", "policy.json"]
+      .map((name) => path.join(directory, name));
+    const cwd = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+    const run = (files = paths) => spawnSync(process.execPath, ["bin/aml-brand-verify.js", ...files],
+      { cwd, encoding: "utf8" });
+    values.forEach((value, index) => fs.writeFileSync(paths[index], JSON.stringify(value)));
+    assert.equal(run().status, 0, "the unambiguous claim should be accepted");
+
+    const firstUse = '"permitted_use":"resale","permitted_use":"official-compatible-badge"';
+    const ambiguous = [
+      [0, JSON.stringify(credential).replace('"grantee":"Example Integrator LLC"',
+        '"grantee":"Wrong Integrator","grantee":"Example Integrator LLC"')],
+      [1, JSON.stringify(roots).replace('"status":"active"',
+        '"status":"suspended","status":"active"')],
+      [2, JSON.stringify(revocations).replace('"head":null',
+        `"head":"${"0".repeat(64)}","head":null`)],
+      [3, JSON.stringify(policy).replace('"permitted_use":"official-compatible-badge"', firstUse)],
+      [3, JSON.stringify(policy).replace('"permitted_use":"official-compatible-badge"',
+        String.raw`"permitted_\u0075se":"resale","permitted_use":"official-compatible-badge"`)]
+    ];
+    for (const [index, wire] of ambiguous) {
+      assert.deepEqual(JSON.parse(wire), values[index], `ordinary JSON.parse hides the duplicate in ${paths[index]}`);
+      fs.writeFileSync(paths[index], wire);
+      const result = run();
+      assert.equal(result.status, 1, result.stderr || result.stdout);
+      assert.equal(result.stdout, "");
+      assert.match(result.stderr, /duplicate JSON object key/);
+      if (index <= 1) {
+        const official = run(paths.slice(0, 2));
+        assert.equal(official.status, 1, "the two-file official check must also reject ambiguous input");
+      }
+      fs.writeFileSync(paths[index], JSON.stringify(values[index]));
+    }
+
+    fs.writeFileSync(paths[3], Buffer.from([0x7b, 0x22, 0x78, 0x22, 0x3a, 0x22, 0xff, 0x22, 0x7d]));
+    const invalidUtf8 = run();
+    assert.equal(invalidUtf8.status, 1);
+    assert.equal(invalidUtf8.stdout, "");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});

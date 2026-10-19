@@ -29,10 +29,13 @@ The policy format is:
 ```js
 import crypto from "node:crypto";
 import fs from "node:fs";
-import { canonicalJSONStringify, verifyBrandTrustRegistry, verifyRevocationRegistry } from "aml-core";
+import { canonicalJSONStringify, parseJsonWithoutDuplicateKeys, verifyBrandTrustRegistry, verifyRevocationRegistry } from "aml-core";
 
-const roots = JSON.parse(fs.readFileSync("brand-trust-roots.json", "utf8"));
-const revocations = JSON.parse(fs.readFileSync("revocations.json", "utf8"));
+const read = (file) => parseJsonWithoutDuplicateKeys(
+  new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(fs.readFileSync(file))
+);
+const roots = read("brand-trust-roots.json");
+const revocations = read("revocations.json");
 if (!verifyBrandTrustRegistry(roots).valid || !verifyRevocationRegistry(revocations).valid) {
   throw new Error("Invalid source snapshot");
 }
@@ -50,5 +53,7 @@ aml-brand-verify credential.json brand-trust-roots.json revocations.json buyer-p
 ```
 
 With the fourth file, the command exits zero only for `claim_verified: true`; otherwise it exits one with a reason. Without it, the older official-signer check retains its existing behavior. The library call is `verifyBrandClaim(credential, roots, revocations, policy)`.
+
+Read all four source files with duplicate-key rejection before calling the object-based library API. Once ordinary `JSON.parse` has silently discarded a duplicate, the library cannot recover the original bytes. The CLI rejects duplicate object names (including escaped aliases at any depth) and malformed UTF-8 in every input. The public browser signer check also rejects ambiguous pasted credentials and fetched trust roots; it does not perform the buyer-pinned exact-use check above.
 
 A positive result is limited to the **buyer-pinned snapshots at the verifier's local time**. Refresh the pins after any trusted registry update and before relying on the result for a new transaction. Even a positive result cannot establish that no newer revocation exists, authenticate an untrusted policy, grant trademark rights, or replace review of the written agreement.
