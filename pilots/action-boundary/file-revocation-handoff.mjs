@@ -268,6 +268,23 @@ function claimReconciliation(directory) {
       issues.push({ grant_id: name.slice(0, -5), problem: "outcome_without_claim" });
     }
   }
+  const epochPattern = /^[0-9a-f]{64}\.json$/;
+  for (const name of fs.readdirSync(path.join(directory, "epochs")).sort()) {
+    if (!epochPattern.test(name)) {
+      issues.push({ collection: "epochs", problem: "unexpected_filename" });
+      continue;
+    }
+    const issuerHash = name.slice(0, -5);
+    let epoch;
+    try { epoch = readRecord(path.join(directory, "epochs", name)); }
+    catch { issues.push({ issuer_sha256: issuerHash, problem: "epoch_unreadable" });
+      continue; }
+    if (!epoch || epoch.protocol !== "aml-file-authority-epoch/1" ||
+        epoch.issuer_sha256 !== issuerHash ||
+        !Number.isSafeInteger(epoch.epoch) || epoch.epoch <= 0) {
+      issues.push({ issuer_sha256: issuerHash, problem: "epoch_invalid" });
+    }
+  }
   // Claims cover only spent grants. Inspect both sides of every operation link:
   // an orphan marker can block a host intent, while an unspent grant whose
   // marker disappeared cannot be dispatched safely. Neither has a claim yet.
@@ -486,6 +503,16 @@ export function inspectFileRevocationHandoff({ directory, anchor = null } = {}) 
       if (committedState === "mismatch") reasons.push("committed_state_mismatch");
     }
   } catch { reasons.push("committed_state_unreadable"); }
+  if (hasUncertainTemp(directory, "clock.json")) reasons.push("uncertain_clock_update");
+  try {
+    const clock = readRecord(path.join(directory, "clock.json"));
+    if (!clock && counts && (counts.grants || counts.operations || counts.claimed)) {
+      reasons.push("authority_clock_missing");
+    } else if (clock && (clock.protocol !== "aml-file-authority-clock/1" ||
+        !Number.isSafeInteger(clock.time_ms))) {
+      reasons.push("authority_clock_invalid");
+    }
+  } catch { reasons.push("authority_clock_unreadable"); }
   let reconciliation = null;
   try {
     reconciliation = claimReconciliation(directory);
