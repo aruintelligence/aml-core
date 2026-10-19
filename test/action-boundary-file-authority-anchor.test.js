@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createFileAuthorityAnchor, createFileRevocationHandoff } from
@@ -48,7 +48,7 @@ async function fixture(run, { withClaim = false } = {}) {
 test("an independent checkpoint advances for issue, claim, and revocation", () =>
   fixture(async ({ directory, anchor, host }) => {
     assert.equal(anchor.read().sequence, 0);
-    assert.equal(anchor.read().protocol, "aml-file-authority-checkpoint/2");
+    assert.equal(anchor.read().protocol, "aml-file-authority-checkpoint/3");
     assert.match(anchor.read().state_sha256, /^[0-9a-f]{64}$/);
     const grant = host.issue(input(), { operationId: "host-intent-anchored-001" });
     assert.equal(anchor.read().sequence, 1);
@@ -86,6 +86,31 @@ test("checkpoint authority rejects a different claim mode and a lost mode record
     assert.deepEqual([result.status, result.dispatch_count, calls], ["indeterminate", 0, 0]);
     assert.equal(anchor.read().sequence, 1);
   }));
+
+test("an external checkpoint detects a valid local mode downgrade before issuance or callback", () =>
+  fixture(async ({ directory, anchor, host }) => {
+    const grant = host.issue(input());
+    const modeFile = path.join(directory, "authority-mode.json");
+    const original = fs.readFileSync(modeFile);
+    fs.writeFileSync(modeFile, JSON.stringify({
+      protocol: "aml-file-authority-mode/1", mode: "checkpoint-anchored"
+    }) + "\n");
+    assert.equal(anchor.read().sequence, 1); // The independent anchor remains current.
+    assert.throws(() => createFileRevocationHandoff({ directory, anchor }),
+      /authority_state_mismatch/);
+    assert.throws(() => host.issue(input()), /authority_state_mismatch/);
+    let calls = 0;
+    const blocked = await host.dispatch({ ...input(), grant_id: grant.grant_id,
+      execute: () => { calls++; } });
+    assert.deepEqual([blocked.status, blocked.dispatch_count, calls], ["indeterminate", 0, 0]);
+    assert.equal(fs.readdirSync(path.join(directory, "claimed")).length, 0);
+    fs.writeFileSync(modeFile, original);
+    const correct = createFileRevocationHandoff({ directory, anchor,
+      claimOnce: createTestingClaimOnce(path.join(path.dirname(directory), "independent-claims")) });
+    const result = await correct.dispatch({ ...input(), grant_id: grant.grant_id,
+      execute: () => { calls++; return true; } });
+    assert.deepEqual([result.status, result.dispatch_count, calls], ["returned", 1, 1]);
+  }, { withClaim: true }));
 
 test("selectively restoring an epoch file cannot revive an unspent grant", () =>
   fixture(async ({ directory, anchorDirectory, anchor, host }) => {
@@ -155,6 +180,41 @@ test("a protocol-1 checkpoint with a mode pin remains readable without an upgrad
     assert.equal(anchor.read().protocol, "aml-file-authority-checkpoint/1");
     assert.equal(Object.hasOwn(anchor.read(), "state_sha256"), false);
   }));
+
+test("a protocol-2 checkpoint stays readable but does not commit its mode", () =>
+  fixture(async ({ parent, claimDirectory }) => {
+    const directory = path.join(parent, "legacy-v2-authority");
+    const anchor = createFileAuthorityAnchor({ directory: path.join(parent, "legacy-v2-anchor") });
+    createFileRevocationHandoff({ directory });
+    fs.writeFileSync(path.join(directory, "authority-mode.json"), JSON.stringify({
+      protocol: "aml-file-authority-mode/1", mode: "checkpoint-claim-anchored"
+    }) + "\n", { mode: 0o600 });
+    const initial = { protocol: "aml-file-authority-checkpoint/2", store_id: randomUUID(),
+      sequence: 0, head_sha256: "b".repeat(64),
+      state_sha256: createHash("sha256").update("[]").digest("hex") };
+    assert.equal(anchor.compareAndSwap(null, initial), true);
+    fs.writeFileSync(path.join(directory, "checkpoint.json"), JSON.stringify(initial) + "\n",
+      { mode: 0o600 });
+    const legacy = createFileRevocationHandoff({ directory, anchor,
+      claimOnce: createTestingClaimOnce(claimDirectory) });
+    const grant = legacy.issue(input());
+    assert.equal((await legacy.dispatch({ ...input(), grant_id: grant.grant_id,
+      execute: () => true })).status, "returned");
+    assert.equal(anchor.read().protocol, "aml-file-authority-checkpoint/2");
+    assert.equal(createFileRevocationHandoff({ directory, anchor,
+      claimOnce: createTestingClaimOnce(claimDirectory) }).observeIssuer(input()).epoch, 0);
+
+    // Version 2 binds decision files but not the valid mode record. Version 3
+    // closes this local selective-change gap when the outside anchor persists.
+    fs.writeFileSync(path.join(directory, "authority-mode.json"), JSON.stringify({
+      protocol: "aml-file-authority-mode/1", mode: "checkpoint-anchored"
+    }) + "\n");
+    const downgraded = createFileRevocationHandoff({ directory, anchor });
+    const next = downgraded.issue(input());
+    assert.equal(Object.hasOwn(JSON.parse(fs.readFileSync(path.join(directory,
+      "grants", `${next.grant_id}.json`), "utf8")), "required_claim_protocol"), false);
+    assert.equal(anchor.read().protocol, "aml-file-authority-checkpoint/2");
+  }, { withClaim: true }));
 
 test("a separate anchored worker dispatches once and its replay is blocked", () =>
   fixture(async ({ directory, anchorDirectory, anchor, host }) => {
@@ -235,6 +295,25 @@ test("a checkpoint mismatch during an awaited external claim stops the callback"
     const result = await combined.dispatch({ ...input(), grant_id: grant.grant_id,
       execute: () => { calls++; } });
     assert.deepEqual([result.status, result.dispatch_count, calls], ["indeterminate", 0, 0]);
+    assert.equal(anchor.read().sequence, 2);
+  }, { withClaim: true }));
+
+test("a mode edit during an awaited claim stops the callback after spending the grant", () =>
+  fixture(async ({ directory, anchor, host }) => {
+    const grant = host.issue(input());
+    const modeFile = path.join(directory, "authority-mode.json");
+    const combined = createFileRevocationHandoff({ directory, anchor,
+      claimOnce: async () => {
+        await Promise.resolve();
+        const mode = JSON.parse(fs.readFileSync(modeFile, "utf8"));
+        fs.writeFileSync(modeFile, JSON.stringify({ ...mode, changed: true }) + "\n");
+        return true;
+      } });
+    let calls = 0;
+    const result = await combined.dispatch({ ...input(), grant_id: grant.grant_id,
+      execute: () => { calls++; } });
+    assert.deepEqual([result.status, result.dispatch_count, calls], ["indeterminate", 0, 0]);
+    assert.equal(fs.existsSync(path.join(directory, "claimed", `${grant.grant_id}.json`)), true);
     assert.equal(anchor.read().sequence, 2);
   }, { withClaim: true }));
 
