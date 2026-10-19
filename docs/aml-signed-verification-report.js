@@ -93,6 +93,13 @@ export async function verifySignedVerificationReport(envelope) {
     if (!envelope || envelope.schema !== 'aml-signed-verification-report/1') {
       return { valid: false, reason: 'AML_SIGNED_REPORT_INVALID' };
     }
+    // Only the report is signed. Reject unsigned envelope claims and changes
+    // to its protocol marker instead of presenting them as a valid report.
+    if (Array.isArray(envelope) || envelope.prototype !== true ||
+        Object.keys(envelope).sort().join('|') !==
+          'algorithm|prototype|report|schema|signature|verifier_key_fingerprint|verifier_public_key_jwk') {
+      return { valid: false, reason: 'AML_SIGNED_REPORT_ENVELOPE_INVALID' };
+    }
     if (envelope.algorithm !== 'ECDSA-P256-SHA256') {
       return { valid: false, reason: 'AML_SIGNED_REPORT_ALGORITHM_UNSUPPORTED' };
     }

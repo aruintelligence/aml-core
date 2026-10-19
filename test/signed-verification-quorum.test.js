@@ -48,6 +48,34 @@ test('signed verification report detects report mutation', async () => {
   assert.equal(check.reason, 'AML_SIGNED_REPORT_SIGNATURE_INVALID');
 });
 
+test('unsigned envelope changes cannot retain a signed endorsement', async () => {
+  const a = await signVerificationReport(report('envelope-a'), await createVerifierKeyPair());
+  const b = await signVerificationReport(report('envelope-b'), await createVerifierKeyPair());
+  const saved = await createSignedVerificationQuorum([a, b], { threshold: 2 });
+
+  for (const change of [
+    envelope => { envelope.prototype = false; },
+    envelope => { delete envelope.prototype; },
+    envelope => { envelope.certified_by = 'unsigned external authority'; }
+  ]) {
+    const altered = structuredClone(saved);
+    change(altered.signed_reports[1]);
+    assert.deepEqual(await verifySignedVerificationReport(altered.signed_reports[1]), {
+      valid: false, reason: 'AML_SIGNED_REPORT_ENVELOPE_INVALID'
+    });
+    const stale = await verifySignedVerificationQuorum(altered);
+    assert.equal(stale.valid, false);
+    assert.equal(stale.threshold_met, false);
+
+    const rebuilt = await createSignedVerificationQuorum(altered.signed_reports, { threshold: 2 });
+    const checked = await verifySignedVerificationQuorum(rebuilt);
+    assert.equal(checked.valid, true);
+    assert.equal(checked.threshold_met, false);
+    assert.equal(checked.quorum.summary.valid_signatures, 1);
+    assert.equal(checked.requested_conditions_met, false);
+  }
+});
+
 test('signing and signature checks use the JSON supplied at call time', async () => {
   const keys = await createVerifierKeyPair();
   const source = report('original-verifier');

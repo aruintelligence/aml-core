@@ -30,6 +30,12 @@ over the report bytes, not that the report's claims are true.
 Signed report verification also rejects live JavaScript fields that are hidden,
 symbol-keyed, or otherwise omitted from signed JSON. Exchange ordinary JSON
 reports so a visible claim cannot sit outside the signed bytes.
+The signature covers the report, not the surrounding envelope. Both verifiers
+require the envelope's exact published fields and `prototype: true`; changing
+that marker or adding an unsigned claim such as `certified_by` makes the report
+invalid for counting. A saved quorum with a stale summary then fails internal
+consistency. Rebuilding its summary can restore internal consistency, but the
+altered report still cannot count toward the threshold.
 
 The unsigned quorum reports:
 
