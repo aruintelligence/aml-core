@@ -139,10 +139,11 @@ export function createFileAuthorityAnchor({ directory } = {}) {
       const prior = read();
       if (canonicalJSONStringify(prior) !== canonicalJSONStringify(expected)) return false;
       if (!next || !["aml-file-authority-checkpoint/1",
-        "aml-file-authority-checkpoint/2"].includes(next.protocol) ||
+        "aml-file-authority-checkpoint/2",
+        "aml-file-authority-checkpoint/3"].includes(next.protocol) ||
           !ID.test(next.store_id) || !Number.isSafeInteger(next.sequence) ||
           !DIGEST.test(next.head_sha256) ||
-          (next.protocol === "aml-file-authority-checkpoint/2" &&
+          (next.protocol !== "aml-file-authority-checkpoint/1" &&
             !DIGEST.test(next.state_sha256)) ||
           next.sequence !== (prior ? prior.sequence + 1 : 0) ||
           (prior && (next.store_id !== prior.store_id ||
@@ -195,8 +196,9 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
     verifyAuthorityPath(child, { record: pinned });
   }
 
-  // Checkpoint/2 commits to every durable authority decision file. The clock
-  // and outcomes are written on a separate lifecycle and are not in this set.
+  // Checkpoints 2 and 3 commit to durable authority decisions; version 3
+  // additionally binds the configured mode. Clock and outcomes have a
+  // separate lifecycle and are outside this commitment.
   const stateCollections = [
     ["epochs", epochs, /^[0-9a-f]{64}\.json$/],
     ["grants", grants, /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\.json$/],
@@ -204,7 +206,7 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
     ["claimed", claimed, /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\.json$/]
   ];
 
-  function stateDigest(overrides = []) {
+  function stateDigest(overrides = [], includeMode = false) {
     const replacements = new Map(overrides.map(({ collection, name, record }) =>
       [`${collection}/${name}`, record]));
     const entries = [];
@@ -222,6 +224,11 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
         if (!record) throw Error("authority_state_record_unavailable");
         entries.push([key, hash(canonicalJSONStringify(record))]);
       }
+    }
+    if (includeMode) {
+      const mode = readRecord(modeFile);
+      if (!mode) throw Error("authority_mode_unavailable");
+      entries.push(["authority-mode.json", hash(canonicalJSONStringify(mode))]);
     }
     return hash(canonicalJSONStringify(entries));
   }
@@ -257,7 +264,8 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
   function checkpointRecord(value) {
     const v1 = value?.protocol === "aml-file-authority-checkpoint/1";
     const v2 = value?.protocol === "aml-file-authority-checkpoint/2";
-    return (v1 || v2) &&
+    const v3 = value?.protocol === "aml-file-authority-checkpoint/3";
+    return (v1 || v2 || v3) &&
       ID.test(value.store_id) && Number.isSafeInteger(value.sequence) && value.sequence >= 0 &&
       DIGEST.test(value.head_sha256) &&
       (v1 ? Object.keys(value).sort().join("|") === "head_sha256|protocol|sequence|store_id" :
@@ -283,8 +291,9 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
         canonicalJSONStringify(externalState()) !== canonicalJSONStringify(local)) {
       throw Error("authority_anchor_mismatch");
     }
-    if (local.protocol === "aml-file-authority-checkpoint/2" &&
-        stateDigest() !== local.state_sha256) throw Error("authority_state_mismatch");
+    if (local.protocol !== "aml-file-authority-checkpoint/1" &&
+        stateDigest([], local.protocol === "aml-file-authority-checkpoint/3") !==
+          local.state_sha256) throw Error("authority_state_mismatch");
     return local;
   }
 
@@ -305,9 +314,9 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
             [epochs, grants, operations, claimed, outcomes].some(child =>
               fs.readdirSync(child).length !== 0)) throw Error("anchor_requires_empty_authority");
         const store_id = randomUUID();
-        const initial = { protocol: "aml-file-authority-checkpoint/2", store_id,
+        const initial = { protocol: "aml-file-authority-checkpoint/3", store_id,
           sequence: 0, head_sha256: hash(canonicalJSONStringify(["genesis", store_id])),
-          state_sha256: stateDigest() };
+          state_sha256: stateDigest([], true) };
         if (anchor.compareAndSwap(null, Object.freeze(initial)) !== true ||
             canonicalJSONStringify(externalState()) !== canonicalJSONStringify(initial)) {
           throw Error("authority_anchor_unavailable");
@@ -327,14 +336,17 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
       sequence: previous.sequence + 1,
       head_sha256: hash(canonicalJSONStringify([previous.head_sha256, kind, key,
         hash(canonicalJSONStringify(record))])),
-      ...(previous.protocol === "aml-file-authority-checkpoint/2" ?
-        { state_sha256: stateDigest(overrides) } : {}) };
+      ...(previous.protocol !== "aml-file-authority-checkpoint/1" ?
+        { state_sha256: stateDigest(overrides,
+          previous.protocol === "aml-file-authority-checkpoint/3") } : {}) };
     if (anchor.compareAndSwap(Object.freeze({ ...previous }), Object.freeze({ ...next })) !== true ||
         canonicalJSONStringify(externalState()) !== canonicalJSONStringify(next)) {
       throw Error("authority_anchor_unavailable");
     }
     const result = write();
-    if (next.state_sha256 && stateDigest() !== next.state_sha256) {
+    if (next.state_sha256 &&
+        stateDigest([], next.protocol === "aml-file-authority-checkpoint/3") !==
+          next.state_sha256) {
       throw Error("authority_state_mismatch");
     }
     replaceAtomic(checkpointFile, next, directory);
