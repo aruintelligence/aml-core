@@ -136,7 +136,8 @@ def verify_report(envelope):
 def validate_policy(policy):
     if not isinstance(policy, dict):
         raise ValueError("AML_SIGNED_QUORUM_POLICY_INVALID")
-    veto_dissent = policy.get("schema") == "aml-signed-quorum-held-policy/5"
+    required_participants = policy.get("schema") == "aml-signed-quorum-held-policy/6"
+    veto_dissent = required_participants or policy.get("schema") == "aml-signed-quorum-held-policy/5"
     complete_claims = veto_dissent or policy.get("schema") == "aml-signed-quorum-held-policy/4"
     material_pinned = complete_claims or policy.get("schema") == "aml-signed-quorum-held-policy/3"
     grouped = material_pinned or policy.get("schema") == "aml-signed-quorum-held-policy/2"
@@ -146,10 +147,12 @@ def validate_policy(policy):
         fields.add("require_complete_witness_claims")
     if veto_dissent:
         fields.add("reject_trusted_dissent")
+    if required_participants:
+        fields.add("required_key_material_fingerprints")
     if (set(policy) != fields or
             policy.get("schema") not in ("aml-signed-quorum-held-policy/1", "aml-signed-quorum-held-policy/2",
                                          "aml-signed-quorum-held-policy/3", "aml-signed-quorum-held-policy/4",
-                                         "aml-signed-quorum-held-policy/5") or
+                                         "aml-signed-quorum-held-policy/5", "aml-signed-quorum-held-policy/6") or
             policy.get("prototype") is not True or
             (complete_claims and (policy.get("require_complete_witness_claims") is not True or
                                   policy.get("artifact_type") != "aml-witness-bundle/1")) or
@@ -183,6 +186,12 @@ def validate_policy(policy):
         if (any(not isinstance(value, str) or not HEX64.fullmatch(value) for value in materials) or
                 len(set(materials)) != len(materials)):
             raise ValueError("AML_SIGNED_QUORUM_POLICY_MATERIAL_INVALID")
+        if required_participants:
+            required = policy["required_key_material_fingerprints"]
+            if (not isinstance(required, list) or not required or
+                    any(not isinstance(value, str) or value not in materials for value in required) or
+                    len(set(required)) != len(required)):
+                raise ValueError("AML_SIGNED_QUORUM_POLICY_REQUIRED_KEYS_INVALID")
     if type(policy["threshold"]) is not int or not 1 <= policy["threshold"] <= len(keys):
         raise ValueError("AML_SIGNED_QUORUM_POLICY_THRESHOLD_INVALID")
     if grouped:
@@ -270,7 +279,8 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
     if expected_challenge is not None and not isinstance(expected_challenge, dict):
         raise ValueError("AML_SIGNED_QUORUM_HELD_CHALLENGE_INVALID")
     if (policy is not None and policy["schema"] in ("aml-signed-quorum-held-policy/4",
-                                                    "aml-signed-quorum-held-policy/5") and
+                                                    "aml-signed-quorum-held-policy/5",
+                                                    "aml-signed-quorum-held-policy/6") and
             expected_challenge is None):
         raise ValueError("AML_SIGNED_QUORUM_POLICY_WITNESS_REQUIRED")
     with_witness = expected_challenge is not None
@@ -329,8 +339,10 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
         reasons = []
         material_pinned = policy is not None and policy["schema"] in (
             "aml-signed-quorum-held-policy/3", "aml-signed-quorum-held-policy/4",
-            "aml-signed-quorum-held-policy/5")
-        veto_dissent = policy is not None and policy["schema"] == "aml-signed-quorum-held-policy/5"
+            "aml-signed-quorum-held-policy/5", "aml-signed-quorum-held-policy/6")
+        required_participants = policy is not None and policy["schema"] == "aml-signed-quorum-held-policy/6"
+        veto_dissent = required_participants or (policy is not None and
+                                                 policy["schema"] == "aml-signed-quorum-held-policy/5")
         grouped = material_pinned or (policy is not None and policy["schema"] == "aml-signed-quorum-held-policy/2")
         assignments = ({entry["verifier_key_fingerprint"]: entry
                         for entry in policy["trusted_keys"]} if grouped else {})
@@ -340,12 +352,16 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
         conflicting_materials = []
         mismatched_pins = []
         trusted_dissent = []
+        present_required = set()
+        required_materials = set(policy["required_key_material_fingerprints"]) if required_participants else set()
         pinned_materials = ({entry["key_material_fingerprint"] for entry in policy["trusted_keys"]}
                             if veto_dissent else set())
         artifact_matches = (policy is not None and
                             artifact_type == policy["artifact_type"] and
                             artifact_hash == policy["artifact_hash"])
         for index, (envelope, (ok, reason, key_material)) in enumerate(zip(reports, signed)):
+            if artifact_matches and required_participants and ok and key_material in required_materials:
+                present_required.add(key_material)
             if not ok:
                 if reason not in reasons:
                     reasons.append(reason)
@@ -395,11 +411,13 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
         if policy is not None:
             distinct_groups = len({group for material, group in material_groups.items()
                                    if material not in conflicting_materials})
+            missing_required = ([material for material in policy["required_key_material_fingerprints"]
+                                 if material not in present_required] if required_participants else [])
             result["policy_met"] = (valid and artifact_matches and len(trusted) >= policy["threshold"] and
                                     (not grouped or (distinct_groups >= policy["group_threshold"] and
                                                      not conflicting_materials)) and
                                     (not material_pinned or not mismatched_pins) and
-                                    (not veto_dissent or not trusted_dissent))
+                                    (not veto_dissent or not trusted_dissent) and not missing_required)
             result["policy_evaluation"] = {
                 "artifact_matches": artifact_matches, "distinct_trusted_keys": len(trusted),
                 "threshold": policy["threshold"],
@@ -407,6 +425,8 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
                     "conflicting_key_material_fingerprints": conflicting_materials} if grouped else {}),
                 **({"mismatched_key_fingerprints": mismatched_pins} if material_pinned else {}),
                 **({"trusted_dissent": trusted_dissent} if veto_dissent else {}),
+                **({"missing_required_key_material_fingerprints": missing_required}
+                   if required_participants else {}),
             }
         if with_witness:
             # Use a single millisecond snapshot for freshness and its reported
@@ -444,13 +464,17 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
                 "conflicts": conflicts,
             }
         if (policy is not None and policy["schema"] in ("aml-signed-quorum-held-policy/4",
-                                                       "aml-signed-quorum-held-policy/5") and valid):
+                                                       "aml-signed-quorum-held-policy/5",
+                                                       "aml-signed-quorum-held-policy/6") and valid):
             unsatisfied = []
             if result["witness_met"]:
                 for index, (envelope, (ok, _, key_material)) in enumerate(zip(reports, signed)):
-                    if (not ok or envelope["report"]["valid"] is not True or
-                            envelope["verifier_key_fingerprint"] not in assignments or
-                            key_material != assignments[envelope["verifier_key_fingerprint"]]["key_material_fingerprint"]):
+                    if not ok or envelope["report"]["valid"] is not True:
+                        continue
+                    assigned_material = assignments.get(envelope["verifier_key_fingerprint"], {}).get(
+                        "key_material_fingerprint")
+                    if (key_material != assigned_material and
+                            not (required_participants and key_material in required_materials)):
                         continue
                     fields = unsatisfied_witness_claims(envelope["report"])
                     if fields:
@@ -518,7 +542,8 @@ def main():
         if args.policy:
             validate_policy(policy)
             if policy["schema"] in ("aml-signed-quorum-held-policy/4",
-                                     "aml-signed-quorum-held-policy/5") and not args.bundle:
+                                     "aml-signed-quorum-held-policy/5",
+                                     "aml-signed-quorum-held-policy/6") and not args.bundle:
                 raise ValueError("AML_SIGNED_QUORUM_POLICY_WITNESS_REQUIRED")
         witness_bundle = load_json(args.bundle) if args.bundle else None
         expected_challenge = load_json(args.challenge) if args.challenge else None

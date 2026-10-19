@@ -510,6 +510,67 @@ print(json.dumps({'valid_policy_met': verify_quorum(quorum, policy=policy)['requ
     witnessQuorum, vetoPolicy, true, replay);
   assert.notEqual(vetoInputs.policy_sha256, completeInputs.policy_sha256);
   assert.equal(vetoInputs.quorum_sha256, completeInputs.quorum_sha256);
+  const requiredKey = await createVerifierKeyPair();
+  const requiredReport = await signVerificationReport(
+    witnessVerificationReport(bundle, witness, { verifier: 'required-lab-c' }), requiredKey);
+  const requiredMaterial = await fingerprintVerifierPublicKey(requiredReport.verifier_public_key_jwk);
+  const presencePolicy = {
+    ...vetoPolicy, schema: 'aml-signed-quorum-held-policy/6',
+    trusted_keys: [...vetoPolicy.trusted_keys, { ...requiredMaterial, trust_group: 'lab-c' }],
+    required_key_material_fingerprints: [requiredMaterial.key_material_fingerprint]
+  };
+  await compare('required-participant-withheld', witnessQuorum, presencePolicy, false, replay);
+  const withRequired = await createSignedVerificationQuorum(
+    [witnessA, witnessB, requiredReport], { threshold: 2 });
+  await compare('required-participant-present', withRequired, presencePolicy, true, replay);
+  const requiredAlias = structuredClone(requiredReport);
+  requiredAlias.verifier_public_key_jwk.kid = 'required-key-metadata-alias';
+  requiredAlias.verifier_key_fingerprint = await sha256Browser(requiredAlias.verifier_public_key_jwk);
+  await compare('required-participant-metadata-alias',
+    await createSignedVerificationQuorum([witnessA, witnessB, requiredAlias], { threshold: 2 }),
+    presencePolicy, true, replay);
+  const sparseRequired = witnessVerificationReport(bundle, witness, { verifier: 'sparse-required' });
+  sparseRequired.checks = {};
+  const sparseRequiredAlias = await signVerificationReport(sparseRequired, requiredKey);
+  sparseRequiredAlias.verifier_public_key_jwk.kid = 'sparse-required-key-alias';
+  sparseRequiredAlias.verifier_key_fingerprint = await sha256Browser(
+    sparseRequiredAlias.verifier_public_key_jwk);
+  const sparseRequiredQuorum = await createSignedVerificationQuorum(
+    [witnessA, witnessB, sparseRequiredAlias], { threshold: 2 });
+  await compare('sparse-required-alias-older-policy', sparseRequiredQuorum, vetoPolicy, true, replay);
+  await compare('sparse-required-alias-rejected', sparseRequiredQuorum, presencePolicy, false, replay);
+  const unsignedRequired = { ...requiredReport,
+    report: { ...requiredReport.report, reason: 'changed-after-signing' } };
+  await compare('required-participant-invalid-signature',
+    await createSignedVerificationQuorum([witnessA, witnessB, unsignedRequired], { threshold: 2 }),
+    presencePolicy, false, replay);
+  const requiredNegative = { ...witnessVerificationReport(bundle, witness,
+    { verifier: 'required-lab-c-dissent' }), valid: false, reason: 'AML_TEST_SIGNED_DISSENT' };
+  await compare('required-participant-dissent-veto',
+    await createSignedVerificationQuorum([witnessA, witnessB,
+      await signVerificationReport(requiredNegative, requiredKey)], { threshold: 2 }),
+    presencePolicy, false, replay);
+  for (const invalidRequired of [[], [requiredMaterial.key_material_fingerprint,
+    requiredMaterial.key_material_fingerprint], ['0'.repeat(64)]]) {
+    assert.throws(() => validateSignedVerificationQuorumPolicy({
+      ...presencePolicy, required_key_material_fingerprints: invalidRequired
+    }), /AML_SIGNED_QUORUM_POLICY_REQUIRED_KEYS_INVALID/);
+    const invalidRun = spawnSync('python3', [python,
+      save('invalid-required-quorum.json', withRequired), '--policy',
+      save('invalid-required-policy.json', {
+        ...presencePolicy, required_key_material_fingerprints: invalidRequired
+      })], { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+    assert.equal(invalidRun.status, 1, invalidRun.stderr);
+    assert.equal(JSON.parse(invalidRun.stdout).reason,
+      'AML_SIGNED_QUORUM_POLICY_REQUIRED_KEYS_INVALID');
+  }
+  const noRequiredWitness = spawnSync('python3', [python,
+    save('presence-without-bundle.json', withRequired), '--policy',
+    save('presence-without-bundle-policy.json', presencePolicy)],
+  { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  assert.equal(noRequiredWitness.status, 1, noRequiredWitness.stderr);
+  assert.equal(JSON.parse(noRequiredWitness.stdout).reason,
+    'AML_SIGNED_QUORUM_POLICY_WITNESS_REQUIRED');
   const negative = witnessVerificationReport(bundle, witness, { verifier: 'witness-b-dissent' });
   negative.valid = false;
   negative.reason = 'AML_TEST_SIGNED_DISSENT';

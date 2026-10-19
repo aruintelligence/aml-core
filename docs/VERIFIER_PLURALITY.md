@@ -375,6 +375,54 @@ trusted negative report should block approval. Policies 1–4 keep their
 existing behavior, where signed dissent is counted and displayed but does
 not by itself veto a positive threshold.
 
+### Require a named trusted participant
+
+Version 6 extends version 5 when a buyer expects a specific rostered key to
+participate, even if the ordinary key and group thresholds can be met without
+it. Add one or more of the roster's **key material** fingerprints to
+`required_key_material_fingerprints` and change the policy schema to
+`aml-signed-quorum-held-policy/6`:
+
+```json
+{
+  "schema": "aml-signed-quorum-held-policy/6",
+  "prototype": true,
+  "artifact_type": "aml-witness-bundle/1",
+  "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "trusted_keys": [
+    { "verifier_key_fingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "key_material_fingerprint": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "trust_group": "lab-a" },
+    { "verifier_key_fingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "key_material_fingerprint": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "trust_group": "lab-b" },
+    { "verifier_key_fingerprint": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "key_material_fingerprint": "1111111111111111111111111111111111111111111111111111111111111111", "trust_group": "lab-c" }
+  ],
+  "threshold": 2,
+  "group_threshold": 2,
+  "require_complete_witness_claims": true,
+  "reject_trusted_dissent": true,
+  "required_key_material_fingerprints": ["1111111111111111111111111111111111111111111111111111111111111111"]
+}
+```
+
+The required list must be nonempty, unique, and drawn from `trusted_keys`.
+Keep this policy independently of the quorum. The verifier checks whether
+each required public point supplied a correctly signed report on the pinned
+artifact, under any JWK metadata label. A positive or negative authenticated
+report establishes presence; version 5's inherited dissent veto still blocks
+a negative report. A positive metadata alias establishes presence but does not
+count toward the held endorsement threshold unless its complete JWK fingerprint
+is in the roster; its signed claims must still be complete and consistent.
+An invalid signature does not establish presence. Missing
+points appear in `policy_evaluation.missing_required_key_material_fingerprints`
+and make `policy_met` false even if `valid` and `threshold_met` are true. The
+same `--policy`, `--bundle`, and `--challenge` inputs work in both CLIs.
+
+This rule detects an absent report from a key named in the buyer's held
+policy. It cannot tell whether that key abstained or the producer withheld its
+report, and it cannot detect another report from a key whose participation is
+already shown. It does not prove ownership or independence of the keys, the
+truth of a report, or a trusted signing time. Require all rostered points if
+the decision needs every roster member to appear; leave other keys optional
+when a threshold plus selected mandatory participants is the intended rule.
+
 ### Make held input fingerprints an acceptance condition
 
 Before receiving a quorum, fingerprint the policy and challenge you retained

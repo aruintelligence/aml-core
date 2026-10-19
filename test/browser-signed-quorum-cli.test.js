@@ -395,6 +395,52 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(JSON.parse(cleanVeto.stdout).input_fingerprints.policy_sha256, inputHash(vetoPolicy));
   assert.notEqual(inputHash(vetoPolicy), inputHash(completePolicy));
 
+  const requiredKey = await createVerifierKeyPair();
+  const requiredReport = await signVerificationReport(
+    witnessVerificationReport(bundle, check, { verifier: 'required-lab-c' }), requiredKey);
+  const requiredMaterial = await fingerprintVerifierPublicKey(requiredReport.verifier_public_key_jwk);
+  const presencePolicy = {
+    ...vetoPolicy, schema: 'aml-signed-quorum-held-policy/6',
+    trusted_keys: [...vetoPolicy.trusted_keys, { ...requiredMaterial, trust_group: 'lab-c' }],
+    required_key_material_fingerprints: [requiredMaterial.key_material_fingerprint]
+  };
+  const presencePath = write('required-participant-policy.json', presencePolicy);
+  const omitted = run(quorumPath, '--policy', presencePath,
+    '--bundle', bundlePath, '--challenge', challengePath);
+  assert.equal(omitted.status, 2, omitted.stderr);
+  const omittedResult = JSON.parse(omitted.stdout);
+  assert.equal(omittedResult.valid, true);
+  assert.equal(omittedResult.threshold_met, true);
+  assert.equal(omittedResult.witness_met, true);
+  assert.equal(omittedResult.policy_met, false);
+  assert.deepEqual(omittedResult.policy_evaluation.missing_required_key_material_fingerprints,
+    [requiredMaterial.key_material_fingerprint]);
+  const withRequired = await createSignedVerificationQuorum([a, b, requiredReport], { threshold: 2 });
+  const present = run(write('required-participant-quorum.json', withRequired), '--policy', presencePath,
+    '--bundle', bundlePath, '--challenge', challengePath);
+  assert.equal(present.status, 0, present.stderr);
+  assert.deepEqual(JSON.parse(present.stdout).policy_evaluation.missing_required_key_material_fingerprints, []);
+  const requiredDissent = witnessVerificationReport(bundle, check, { verifier: 'required-lab-c-dissent' });
+  requiredDissent.valid = false;
+  requiredDissent.reason = 'AML_TEST_SIGNED_DISSENT';
+  const withRequiredDissent = await createSignedVerificationQuorum([a, b,
+    await signVerificationReport(requiredDissent, requiredKey)], { threshold: 2 });
+  const dissentPresence = run(write('required-dissent-quorum.json', withRequiredDissent),
+    '--policy', presencePath, '--bundle', bundlePath, '--challenge', challengePath);
+  assert.equal(dissentPresence.status, 2, dissentPresence.stderr);
+  assert.equal(JSON.parse(dissentPresence.stdout).policy_met, false);
+  assert.deepEqual(JSON.parse(dissentPresence.stdout)
+    .policy_evaluation.missing_required_key_material_fingerprints, []);
+  assert.equal(JSON.parse(dissentPresence.stdout).policy_evaluation.trusted_dissent.length, 1);
+  for (const invalidRequired of [[], [requiredMaterial.key_material_fingerprint,
+    requiredMaterial.key_material_fingerprint], ['0'.repeat(64)]]) {
+    const invalid = run(quorumPath, '--policy', write('bad-required-participant-policy.json', {
+      ...presencePolicy, required_key_material_fingerprints: invalidRequired
+    }), '--bundle', bundlePath, '--challenge', challengePath);
+    assert.equal(invalid.status, 1);
+    assert.match(invalid.stderr, /AML_SIGNED_QUORUM_POLICY_REQUIRED_KEYS_INVALID/);
+  }
+
   const negative = witnessVerificationReport(bundle, check, { verifier: 'b-dissent' });
   negative.valid = false;
   negative.reason = 'AML_TEST_SIGNED_DISSENT';
