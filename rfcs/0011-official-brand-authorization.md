@@ -44,6 +44,8 @@ A verifier MUST:
 
 An official signer check also requires a trusted active root whose validity window contains the same verification instant. An explicit caller-supplied time is a historical as-of check and does not establish the current state of a credential or trust root. Key-level revocation and per-credential revocation are distinct checks.
 
+For an exact-use claim, the buyer can separately pin the canonical SHA-256 of the trust registry and the revocation registry head in an `aml-brand-claim-policy/1` record. `verifyBrandClaim` checks the pinned snapshots at its local clock and requires an exact grantee, mark, and permitted use. `claim_verified` refers to the supplied, pinned snapshots only; it is not a freshness guarantee. A hash chain without a buyer-held head can be rolled back to a valid prefix. The buyer must obtain and refresh both pins independently of the credential presenter.
+
 ## Legal boundary
 
 A valid cryptographic credential proves that the holder possesses a credential signed by the represented key and that the credential has not been modified. It does not independently prove:
