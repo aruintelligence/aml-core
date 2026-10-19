@@ -40,3 +40,5 @@ node scripts/build-prepared-mail-report.mjs --check
 ```
 
 The eight-case visual page reads that checked-in report. Both provider callbacks append only to memory. Its fixed digest is a simulated approval comparison, never evidence of human consent. This is a host-side opt-in adapter, not a provider integration or independent security validation.
+
+For a separate opt-in path that also checks a file-backed issuer revocation epoch before provider callback invocation, see [revocable prepared mail](REVOCABLE_PREPARED_MAIL.md). The host still owns authenticated approval and the actual sender.
