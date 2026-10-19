@@ -169,6 +169,32 @@ test("persistent clock rejects expiry and rollback across processes; caller time
     assert.equal(calls, 0);
   }));
 
+test("a stored grant longer than five minutes cannot reach the callback", () =>
+  withAsyncDirectory(async directory => {
+    let time = 1000;
+    const host = createFileRevocationHandoff({ directory, now: () => time });
+    const grant = host.issue(context(), { ttlMs: 20 });
+    const file = path.join(directory, "grants", `${grant.grant_id}.json`);
+    const record = JSON.parse(fs.readFileSync(file, "utf8"));
+    fs.writeFileSync(file, JSON.stringify({ ...record,
+      expires_at_ms: record.issued_at_ms + 300_001 }) + "\n");
+    time = 1030; // The original grant is expired; the altered one appears usable.
+    let calls = 0;
+    const result = await host.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; } });
+    assert.deepEqual([result.status, result.reason, result.dispatch_count, calls],
+      ["indeterminate", "invalid_grant_record", 0, 0]);
+    const report = inspectFileRevocationHandoff({ directory });
+    assert.equal(report.status, "needs_reconciliation");
+    assert.ok(report.reconciliation.issues.some(item =>
+      item.grant_id === grant.grant_id && item.problem === "grant_invalid"));
+    const maximum = host.issue(context(), { ttlMs: 300_000 });
+    time = 301_029;
+    assert.equal((await host.dispatch({ ...context(), grant_id: maximum.grant_id,
+      execute: () => { calls++; } })).status, "returned");
+    assert.equal(calls, 1);
+  }));
+
 test("crash after claim strands the lock and cannot silently retry", () =>
   withAsyncDirectory(async directory => {
     const host = createFileRevocationHandoff({ directory });

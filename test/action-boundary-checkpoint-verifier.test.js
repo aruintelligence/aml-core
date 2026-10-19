@@ -91,6 +91,20 @@ test("verifier rejects a jointly rehashed operation with no grant backlink", () 
       [1, "inconsistent", "operation_grant_mismatch"]);
   }));
 
+test("verifier rejects a jointly rehashed grant exceeding the issuance TTL", () =>
+  fixture(async ({ directory, anchorDirectory, host }) => {
+    const grant = host.issue(input(), { ttlMs: 300_000 });
+    assert.equal(verify(directory, anchorDirectory).output.status, "consistent");
+    const file = path.join(directory, "grants", `${grant.grant_id}.json`);
+    const saved = JSON.parse(fs.readFileSync(file, "utf8"));
+    fs.writeFileSync(file, JSON.stringify({ ...saved,
+      expires_at_ms: saved.issued_at_ms + 300_001 }) + "\n");
+    rehashJointSnapshot(directory, anchorDirectory);
+    const result = verify(directory, anchorDirectory);
+    assert.deepEqual([result.code, result.output.status, result.output.reason],
+      [1, "inconsistent", "invalid_grant_record"]);
+  }));
+
 test("verifier rejects a restored local checkpoint and selective decision changes", () =>
   fixture(async ({ directory, anchorDirectory, host }) => {
     const old = fs.readFileSync(path.join(directory, "checkpoint.json"));
