@@ -129,11 +129,16 @@ JavaScript on signed fixtures, including dissent, tampering, key metadata
 aliases, untrusted keys, live witness replay, and contradictory signed claims.
 
 The Python quorum verifier accepts only the stated cross-language safe
-canonicalization domain: safe integers, no floating-point values, and BMP
-object keys. Public JWK coordinates and signatures must use canonical
-unpadded base64url. It rejects duplicate JSON keys. A rejection outside this subset
-does not imply the JavaScript verifier rejects the same object. The same
-cross-language domain applies to Python witness replay. Unknown report check
+canonicalization domain: safe integers, no floating-point values, BMP
+object keys except JavaScript array-index keys, and strings without unpaired
+surrogates. Public JWK coordinates and signatures must use canonical
+unpadded base64url. It rejects duplicate JSON keys. A rejection outside this
+subset does not imply the default JavaScript verifier rejects the same object.
+Use `aml verify-signed-quorum saved-quorum.json --portable` or the JavaScript
+API's `portable: true` option to require the narrower profile as a separate
+acceptance condition. The CLI also rejects fractional numeric spellings such
+as `1.0` before JavaScript parsing; the API cannot recover source spelling.
+The same cross-language domain applies to Python witness replay. Unknown report check
 names and signer process claims such as `verifier_held_challenge` are not
 inferred from a local replay.
 

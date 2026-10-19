@@ -44,6 +44,8 @@ class UnsupportedJSON(ValueError):
 
 
 def check_json(value):
+    if type(value) is str and any(0xD800 <= ord(c) <= 0xDFFF for c in value):
+        raise UnsupportedJSON("unsupported_canonical_value")
     if value is None or type(value) in (str, bool):
         return
     if type(value) is int and -(2 ** 53 - 1) <= value <= 2 ** 53 - 1:
@@ -54,7 +56,10 @@ def check_json(value):
         return
     if type(value) is dict:
         for key, item in value.items():
-            if not isinstance(key, str) or any(ord(c) > 0xFFFF or 0xD800 <= ord(c) <= 0xDFFF for c in key):
+            if (not isinstance(key, str) or
+                    any(ord(c) > 0xFFFF or 0xD800 <= ord(c) <= 0xDFFF for c in key) or
+                    (len(key) <= 10 and key.isascii() and key.isdecimal() and str(int(key)) == key and
+                     int(key) < 2 ** 32 - 1)):
                 raise UnsupportedJSON("unsupported_object_key")
             check_json(item)
         return

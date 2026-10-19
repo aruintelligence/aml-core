@@ -34,6 +34,8 @@ BASE64URL = re.compile(r"[A-Za-z0-9_-]+\Z")
 
 def safe_json(value):
     """Fail closed where Python and JS sorted-json-v1 bytes are not portable."""
+    if type(value) is str and any(0xD800 <= ord(c) <= 0xDFFF for c in value):
+        raise ValueError("unsupported_canonical_value")
     if value is None or type(value) in (str, bool):
         return
     if type(value) is int and -(2 ** 53 - 1) <= value <= 2 ** 53 - 1:
@@ -45,7 +47,9 @@ def safe_json(value):
     if type(value) is dict:
         for key, item in value.items():
             if (not isinstance(key, str) or
-                    any(ord(c) > 0xFFFF or 0xD800 <= ord(c) <= 0xDFFF for c in key)):
+                    any(ord(c) > 0xFFFF or 0xD800 <= ord(c) <= 0xDFFF for c in key) or
+                    (len(key) <= 10 and key.isascii() and key.isdecimal() and str(int(key)) == key and
+                     int(key) < 2 ** 32 - 1)):
                 raise ValueError("unsupported_object_key")
             safe_json(item)
         return

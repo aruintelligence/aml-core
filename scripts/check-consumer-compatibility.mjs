@@ -106,6 +106,12 @@ try {
   if (!quorumValid.valid || !quorumValid.threshold_met) {
     throw new Error('Installed-package signed quorum CLI did not verify the saved threshold');
   }
+  const portableQuorum = JSON.parse(runNpm(['exec', '--', 'aml', 'verify-signed-quorum',
+    'signed-quorum.json', '--portable'], tempRoot));
+  if (!portableQuorum.valid || !portableQuorum.threshold_met || !portableQuorum.portable_met ||
+      !portableQuorum.requested_conditions_met) {
+    throw new Error('Installed-package portable signed quorum gate did not accept the shared JSON domain');
+  }
   const paddedSigned = { ...signedB, signature: `${signedB.signature}==` };
   const paddedQuorum = await createSignedVerificationQuorum([signedA, paddedSigned], { threshold: 2 });
   fs.writeFileSync(path.join(tempRoot, 'padded-quorum.json'), `${JSON.stringify(paddedQuorum)}\n`);
@@ -387,6 +393,7 @@ try {
       browser_witness_cli_valid: true,
       browser_witness_cli_rejects_other_challenge: true,
       signed_quorum_cli_valid: true,
+      signed_quorum_cli_portable_valid: true,
       signed_quorum_cli_rejects_noncanonical_signature: true,
       signed_quorum_cli_rejects_inflation: true,
       signed_quorum_cli_held_policy_valid: true,

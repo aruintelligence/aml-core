@@ -750,11 +750,48 @@ print(json.dumps({'valid_policy_met': verify_quorum(quorum, policy=policy)['requ
   const fractional = await signVerificationReport({ ...report('fractional'), score: 0.5 }, keyA);
   const fractionalQuorum = await createSignedVerificationQuorum([fractional], { threshold: 1 });
   assert.equal((await verifySignedVerificationQuorum(fractionalQuorum)).valid, true);
+  const portableFixed = await verifySignedVerificationQuorum(fixedQuorum, { portable: true });
+  assert.equal(portableFixed.requested_conditions_met, true);
+  assert.equal(portableFixed.portable_met, true);
+  const fractionalPortable = await verifySignedVerificationQuorum(fractionalQuorum, { portable: true });
+  assert.equal(fractionalPortable.valid, true);
+  assert.equal(fractionalPortable.portable_met, false);
+  assert.equal(fractionalPortable.requested_conditions_met, false);
+  const portableEdge = await signVerificationReport({ ...report('portable-edge'),
+    score: Number.MAX_SAFE_INTEGER,
+    notes: [{ '01': 'leading zero', '4294967295': 'outside array-index range',
+      '\uE000': 'BMP key', message: 'emoji 😀 and escaped newline\n' }]
+  }, keyA);
+  const portableEdgeQuorum = await createSignedVerificationQuorum([portableEdge], { threshold: 1 });
+  await compare('portable-edge-json', portableEdgeQuorum, undefined, true);
+  assert.equal((await verifySignedVerificationQuorum(portableEdgeQuorum, { portable: true }))
+    .requested_conditions_met, true);
   const unsupported = spawnSync('python3',
     [python, save('fractional.json', fractionalQuorum)], { encoding: 'utf8',
       env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
   assert.equal(unsupported.status, 2, unsupported.stderr);
   assert.equal(JSON.parse(unsupported.stdout).reason, 'unsupported_canonical_value');
+
+  for (const [name, extra, reason] of [
+    ['integer-index-key', { metrics: { 2: 'two', 10: 'ten' } }, 'unsupported_object_key'],
+    ['astral-object-key', { metrics: { '😀': 'note' } }, 'unsupported_object_key'],
+    ['unpaired-value', { notes: ['\uD800'] }, 'unsupported_canonical_value']
+  ]) {
+    const envelope = await signVerificationReport({ ...report(name), ...extra }, keyA);
+    const candidate = await createSignedVerificationQuorum([envelope], { threshold: 1 });
+    assert.equal((await verifySignedVerificationQuorum(candidate)).requested_conditions_met,
+      true, name);
+    const gated = await verifySignedVerificationQuorum(candidate, { portable: true });
+    assert.equal(gated.valid, true, name);
+    assert.equal(gated.threshold_met, true, name);
+    assert.equal(gated.portable_met, false, name);
+    assert.equal(gated.requested_conditions_met, false, name);
+    const pythonRun = spawnSync('python3', [python, save(`${name}.json`, candidate)], {
+      encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' }
+    });
+    assert.equal(pythonRun.status, 2, `${name}: ${pythonRun.stderr}`);
+    assert.equal(JSON.parse(pythonRun.stdout).reason, reason, name);
+  }
 
   const malformedSignature = structuredClone(quorum);
   malformedSignature.signed_reports[0].signature = 'A';
@@ -979,6 +1016,7 @@ print(json.dumps({'valid_policy_met': verify_quorum(quorum, policy=policy)['requ
     protocol: 'aml-signed-quorum-python-cross-runtime/1',
     passed: true, cases: checks,
     additional_checks: ['duplicate_json_key', 'fractional_canonical_value',
+      'portable_json_gate', 'array_index_key', 'astral_object_key', 'unpaired_surrogate',
       'malformed_signature', 'invalid_held_policy', 'invalid_trust_group_policy',
       'dormant_key_material_alias', 'complete_claims_without_witness',
       'veto_policy_without_witness', 'invalid_veto_policy',

@@ -6,6 +6,7 @@ import { assertBrowserJSON, canonicalJSONStringifyBrowser, sha256Browser,
   snapshotBrowserJSON } from './aml-browser-integrity.js';
 import { assertCanonicalVerifierPublicKey, verifySignedVerificationReport } from './aml-signed-verification-report.js';
 import { verifyWitnessBundle } from './aml-witness-bundle.js';
+import { signedQuorumPortabilityIssue } from './aml-signed-quorum-portability.js';
 
 // These fields describe properties the local witness replay can check. The
 // verifier_held_challenge flag describes what the signer did independently;
@@ -302,13 +303,17 @@ function validateInputExpectations(expectations, { policy, witnessBundle }) {
 }
 
 export async function verifySignedVerificationQuorum(quorum, {
-  policy, witnessBundle, expectedChallenge, expectedInputFingerprints
+  policy, witnessBundle, expectedChallenge, expectedInputFingerprints, portable = false
 } = {}) {
+  if (typeof portable !== 'boolean') throw new Error('AML_SIGNED_QUORUM_PORTABLE_OPTION_INVALID');
   // A verifier-held policy is configuration, not part of the untrusted quorum.
   // Reject malformed configuration as a usage error before checking the quorum.
   if (policy !== undefined) {
     validateSignedVerificationQuorumPolicy(policy);
     policy = snapshotBrowserJSON(policy);
+    if (portable && signedQuorumPortabilityIssue(policy)) {
+      throw new Error('AML_SIGNED_QUORUM_NON_PORTABLE_HELD_INPUT');
+    }
   }
   if ((witnessBundle === undefined) !== (expectedChallenge === undefined)) {
     throw new Error('AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED');
@@ -322,10 +327,14 @@ export async function verifySignedVerificationQuorum(quorum, {
     validateInputExpectations(expectedInputFingerprints, { policy, witnessBundle });
   if (expectedInputFingerprints !== undefined) {
     expectedInputFingerprints = snapshotBrowserJSON(expectedInputFingerprints);
+    if (portable && signedQuorumPortabilityIssue(expectedInputFingerprints)) {
+      throw new Error('AML_SIGNED_QUORUM_NON_PORTABLE_HELD_INPUT');
+    }
   }
   // This gate has exactly the same conditions as the offline CLI. It covers
   // only inputs the caller supplied; it does not imply independent trust.
   const checkedConditions = ['valid', 'threshold_met',
+    ...(portable ? ['portable_met'] : []),
     ...(policy === undefined ? [] : ['policy_met']),
     ...(witnessBundle === undefined ? [] : ['witness_met', 'replayable_claims_consistent']),
     ...(expectedInputFingerprints === undefined ? [] : ['inputs_met'])];
@@ -337,8 +346,12 @@ export async function verifySignedVerificationQuorum(quorum, {
       requested_conditions: { checked: checkedConditions, unmet }
     };
   };
+  let portabilityChecked = false;
+  let portableIssue = null;
   const reject = (reason) => withRequestedConditions({
     valid: false, reason, threshold_met: false,
+    ...(portable ? { portable_met: portabilityChecked && !portableIssue,
+      portable_evaluation: { checked: portabilityChecked, issue: portableIssue } } : {}),
     ...(policy === undefined ? {} : { policy_met: false }),
     ...(witnessBundle === undefined ? {} : { witness_met: false, replayable_claims_consistent: false }),
     ...(expectedInputFingerprints === undefined ? {} : { inputs_met: false })
@@ -348,22 +361,45 @@ export async function verifySignedVerificationQuorum(quorum, {
     // check. The returned decision and its fingerprints then describe one
     // coherent set of bytes even if a caller edits its objects while we yield.
     quorum = snapshotBrowserJSON(quorum);
+    if (portable) {
+      portabilityChecked = true;
+      const issue = signedQuorumPortabilityIssue(quorum);
+      if (issue) {
+        portableIssue = { input: 'quorum', ...issue };
+      }
+    }
     let hashable = true;
     let witnessInputError = null;
     if (witnessBundle !== undefined) {
       try {
         witnessBundle = snapshotBrowserJSON(witnessBundle);
+        if (portable) {
+          const issue = signedQuorumPortabilityIssue(witnessBundle);
+          if (issue) portableIssue = { input: 'witness_bundle', ...issue };
+        }
       } catch (error) {
         if (!(error instanceof TypeError)) throw error;
         hashable = false;
         witnessInputError = error?.message || 'AML_SIGNED_QUORUM_WITNESS_INPUT_INVALID';
+        if (portable) portableIssue = { input: 'witness_bundle', path: '', reason: 'unsupported_json_value' };
       }
       try {
         expectedChallenge = snapshotBrowserJSON(expectedChallenge);
+        if (portable && !portableIssue) {
+          const issue = signedQuorumPortabilityIssue(expectedChallenge);
+          if (issue) portableIssue = { input: 'held_challenge', ...issue };
+        }
       } catch (error) {
         if (!(error instanceof TypeError)) throw error;
         hashable = false;
         witnessInputError ??= error?.message || 'AML_SIGNED_QUORUM_WITNESS_INPUT_INVALID';
+        if (portable && !portableIssue) {
+          portableIssue = { input: 'held_challenge', path: '', reason: 'unsupported_json_value' };
+        }
+      }
+      if (portableIssue) {
+        hashable = false;
+        witnessInputError ??= 'AML_SIGNED_QUORUM_NON_PORTABLE_JSON';
       }
     }
     if (!quorum || quorum.schema !== 'aml-signed-verification-quorum/1') {
@@ -375,6 +411,8 @@ export async function verifySignedVerificationQuorum(quorum, {
       valid,
       reason: valid ? 'AML_SIGNED_QUORUM_VALID' : 'AML_SIGNED_QUORUM_MISMATCH',
       threshold_met: valid && rebuilt.summary.threshold_met,
+      ...(portable ? { portable_met: !portableIssue,
+        portable_evaluation: { checked: true, issue: portableIssue } } : {}),
       quorum: rebuilt
     };
     if (policy !== undefined) {

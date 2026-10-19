@@ -53,7 +53,7 @@ Usage:
   aml verify-witness <bundle.json> <verifier-held-challenge.json>
   aml fingerprint-verifier-key <public-jwk.json>
   aml fingerprint-json <input.json>
-  aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json]
+  aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json] [--portable]
   aml replay-receipt <receipt.json>
   aml sign-receipt <receipt.json> <private-key.pem> [signed-receipt.json]
   aml verify-signed-receipt <signed-receipt.json>
@@ -88,7 +88,7 @@ Commands:
   verify-witness              Verify a browser witness bundle against your retained challenge
   fingerprint-verifier-key    Derive full-JWK and P-256 material fingerprints from a public key
   fingerprint-json            Hash a strict JSON input under sorted-json-v1
-  verify-signed-quorum        Recheck a signed quorum, held policy, witness claims, and held input pins
+  verify-signed-quorum        Recheck a signed quorum, held policy, witness claims, input pins, and optional portable profile
   replay-receipt              Re-execute declared receipt inputs with the installed engine
   sign-receipt                Add an Ed25519 attestation to a valid execution receipt
   verify-signed-receipt       Verify receipt integrity, signature, and public-key fingerprint
@@ -140,10 +140,10 @@ function readSource(filePath) {
   return fs.readFileSync(filePath, "utf8");
 }
 
-function readUnambiguousJSON(filePath) {
+function readUnambiguousJSON(filePath, options) {
   const source = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true })
     .decode(fs.readFileSync(filePath));
-  return parseJsonWithoutDuplicateKeys(source);
+  return parseJsonWithoutDuplicateKeys(source, options);
 }
 
 function writeOrPrint(value, outputPath, label = "WROTE") {
@@ -282,25 +282,34 @@ try {
     process.exit(0);
   }
   if (command === "verify-signed-quorum") {
-    const usage = "Usage: aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json]";
-    if (!args[1] || args.length % 2 !== 0) throw new Error(usage);
+    const usage = "Usage: aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json] [--portable]";
+    if (!args[1] || args[1].startsWith('--')) throw new Error(usage);
     const options = new Map();
-    for (let index = 2; index < args.length; index += 2) {
+    let portable = false;
+    for (let index = 2; index < args.length;) {
       const flag = args[index];
+      if (flag === '--portable') {
+        if (portable) throw new Error(usage);
+        portable = true;
+        index += 1;
+        continue;
+      }
       const value = args[index + 1];
       if (!['--policy', '--bundle', '--challenge', '--expect-inputs'].includes(flag) || !value ||
           value.startsWith('--') || options.has(flag)) throw new Error(usage);
       options.set(flag, value);
+      index += 2;
     }
     if (options.has('--bundle') !== options.has('--challenge')) throw new Error(usage);
     if (!globalThis.crypto?.subtle) globalThis.crypto = webcrypto;
-    const policy = options.has('--policy') ? readUnambiguousJSON(options.get('--policy')) : undefined;
-    const witnessBundle = options.has('--bundle') ? readUnambiguousJSON(options.get('--bundle')) : undefined;
-    const expectedChallenge = options.has('--challenge') ? readUnambiguousJSON(options.get('--challenge')) : undefined;
+    const parseOptions = { integerNumbersOnly: portable };
+    const policy = options.has('--policy') ? readUnambiguousJSON(options.get('--policy'), parseOptions) : undefined;
+    const witnessBundle = options.has('--bundle') ? readUnambiguousJSON(options.get('--bundle'), parseOptions) : undefined;
+    const expectedChallenge = options.has('--challenge') ? readUnambiguousJSON(options.get('--challenge'), parseOptions) : undefined;
     const expectedInputFingerprints = options.has('--expect-inputs')
-      ? readUnambiguousJSON(options.get('--expect-inputs')) : undefined;
-    const result = await verifySignedVerificationQuorum(readUnambiguousJSON(args[1]), {
-      policy, witnessBundle, expectedChallenge, expectedInputFingerprints
+      ? readUnambiguousJSON(options.get('--expect-inputs'), parseOptions) : undefined;
+    const result = await verifySignedVerificationQuorum(readUnambiguousJSON(args[1], parseOptions), {
+      policy, witnessBundle, expectedChallenge, expectedInputFingerprints, portable
     });
     // A saved quorum can produce more JSON than a pipe can buffer. Wait for
     // stdout to finish writing before exiting with the verification status.
