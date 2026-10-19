@@ -121,7 +121,7 @@ export async function fingerprintVerifierPublicKey(jwk) {
   };
 }
 
-export async function createSignedVerificationQuorum(signedReports, { threshold = 2 } = {}) {
+async function buildSignedVerificationQuorum(signedReports, { threshold = 2 } = {}) {
   if (!Array.isArray(signedReports) || signedReports.length === 0) throw new Error('AML_SIGNED_QUORUM_REPORTS_REQUIRED');
   if (signedReports.length > 64) throw new Error('AML_SIGNED_QUORUM_TOO_MANY_REPORTS');
   if (!Number.isSafeInteger(threshold) || threshold < 1) throw new Error('AML_SIGNED_QUORUM_THRESHOLD_INVALID');
@@ -165,6 +165,13 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
     if (envelope.report.artifact_hash !== artifactHash) throw new Error('AML_SIGNED_QUORUM_ARTIFACT_HASH_MISMATCH');
   }
 
+  // Keep the signature verdict and public-point identity attached to this
+  // detached report snapshot. Policy and replay use this same authentication
+  // result instead of repeating ECDSA verification for each condition.
+  for (const check of signed) {
+    check.material = await verifierKeyMaterialFingerprint(check.envelope.verifier_public_key_jwk);
+  }
+
   // Only keys that signed a valid verdict count toward the endorsement quorum.
   // A correctly signed INVALID report is authenticated dissent, not support.
   const validEndorserKeys = new Set();
@@ -172,7 +179,7 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
   let invalidReports = 0;
   const reasons = new Set();
 
-  for (const { envelope, signature } of checks) {
+  for (const { envelope, signature, material } of checks) {
     if (!signature.valid) {
       invalidReports += 1;
       reasons.add(signature.reason);
@@ -181,14 +188,14 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
 
     if (envelope.report.valid) {
       validReports += 1;
-      validEndorserKeys.add(await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk));
+      validEndorserKeys.add(material);
     } else {
       invalidReports += 1;
       reasons.add(envelope.report.reason);
     }
   }
 
-  return {
+  return { quorum: {
     schema: 'aml-signed-verification-quorum/1',
     prototype: true,
     artifact_type: artifactType,
@@ -205,7 +212,11 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
       disagreement_reasons: [...reasons]
     },
     claim_boundary: 'Threshold agreement means enough supplied reports were validly signed by distinct public-key fingerprints over the same exact artifact and reported valid. Correctly signed invalid reports are authenticated dissent and never count toward the endorsement quorum. Distinct keys do not prove distinct people, organizations, independence, authorization, certification, or correctness.'
-  };
+  }, checks };
+}
+
+export async function createSignedVerificationQuorum(signedReports, options = {}) {
+  return (await buildSignedVerificationQuorum(signedReports, options)).quorum;
 }
 
 export function validateSignedVerificationQuorumPolicy(policy) {
@@ -405,7 +416,8 @@ export async function verifySignedVerificationQuorum(quorum, {
     if (!quorum || quorum.schema !== 'aml-signed-verification-quorum/1') {
       return reject('AML_SIGNED_QUORUM_INVALID');
     }
-    const rebuilt = await createSignedVerificationQuorum(quorum.signed_reports, { threshold: quorum.threshold });
+    const { quorum: rebuilt, checks } = await buildSignedVerificationQuorum(
+      quorum.signed_reports, { threshold: quorum.threshold });
     const valid = canonicalJSONStringifyBrowser(quorum) === canonicalJSONStringifyBrowser(rebuilt);
     const result = {
       valid,
@@ -437,10 +449,9 @@ export async function verifySignedVerificationQuorum(quorum, {
         const mismatchedPins = new Set();
         const trustedDissent = [];
         if (artifactMatches) {
-          for (const envelope of rebuilt.signed_reports) {
+          for (const { envelope, signature, material } of checks) {
             if (envelope?.report?.valid !== true || !allowed.has(envelope.verifier_key_fingerprint)) continue;
-            if ((await verifySignedVerificationReport(envelope)).valid) {
-              const material = await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk);
+            if (signature.valid) {
               if (materialPinned && assignments.get(envelope.verifier_key_fingerprint)
                 .key_material_fingerprint !== material) {
                 mismatchedPins.add(envelope.verifier_key_fingerprint);
@@ -464,10 +475,8 @@ export async function verifySignedVerificationQuorum(quorum, {
         if (artifactMatches && vetoDissent) {
           const pinnedMaterials = new Set(policy.trusted_keys.map(entry =>
             entry.key_material_fingerprint));
-          for (const [index, envelope] of rebuilt.signed_reports.entries()) {
-            if (envelope?.report?.valid !== false ||
-                !(await verifySignedVerificationReport(envelope)).valid) continue;
-            const material = await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk);
+          for (const [index, { envelope, signature, material }] of checks.entries()) {
+            if (envelope?.report?.valid !== false || !signature.valid) continue;
             if (pinnedMaterials.has(material)) {
               trustedDissent.push({ report_index: index, key_material_fingerprint: material });
             }
@@ -480,9 +489,8 @@ export async function verifySignedVerificationQuorum(quorum, {
         const presentRequired = new Set();
         if (artifactMatches && requiredParticipants) {
           const required = new Set(policy.required_key_material_fingerprints);
-          for (const envelope of rebuilt.signed_reports) {
-            if (!(await verifySignedVerificationReport(envelope)).valid) continue;
-            const material = await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk);
+          for (const { signature, material } of checks) {
+            if (!signature.valid) continue;
             if (required.has(material)) presentRequired.add(material);
           }
         }
@@ -536,9 +544,8 @@ export async function verifySignedVerificationQuorum(quorum, {
       const conflicts = [];
       let positiveSignedReports = 0;
       if (result.witness_met) {
-        for (const [index, envelope] of rebuilt.signed_reports.entries()) {
-          if (envelope?.report?.valid !== true ||
-              !(await verifySignedVerificationReport(envelope)).valid) continue;
+        for (const [index, { envelope, signature }] of checks.entries()) {
+          if (envelope?.report?.valid !== true || !signature.valid) continue;
           positiveSignedReports += 1;
           const fields = conflictingWitnessClaims(envelope.report, witness, witnessBundle, replayNow);
           if (fields.length) conflicts.push({ report_index: index, fields });
@@ -560,10 +567,8 @@ export async function verifySignedVerificationQuorum(quorum, {
           [entry.verifier_key_fingerprint, entry.key_material_fingerprint]));
         const required = policy.schema === 'aml-signed-quorum-held-policy/6' ?
           new Set(policy.required_key_material_fingerprints) : new Set();
-        for (const [index, envelope] of rebuilt.signed_reports.entries()) {
-          if (envelope?.report?.valid !== true ||
-              !(await verifySignedVerificationReport(envelope)).valid) continue;
-          const material = await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk);
+        for (const [index, { envelope, signature, material }] of checks.entries()) {
+          if (envelope?.report?.valid !== true || !signature.valid) continue;
           if (material !== assignments.get(envelope.verifier_key_fingerprint) &&
               !required.has(material)) continue;
           const fields = unsatisfiedWitnessClaims(envelope.report);

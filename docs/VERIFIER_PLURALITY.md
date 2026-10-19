@@ -72,6 +72,12 @@ keys endorsed a valid report. The check establishes internal consistency of
 the supplied reports; it cannot establish verifier independence or whether
 their underlying verdicts were correct.
 
+On each replay, the JavaScript verifier authenticates each supplied report
+once against its call-time snapshot and reuses that verdict and public-point
+fingerprint for threshold, held policy, dissent, required participation, and
+witness-claim evaluation. Reusing the result does not make a signed claim true;
+it keeps all of these decisions tied to the same authenticated report bytes.
+
 For live JavaScript objects, signing and quorum creation copy the ordinary
 JSON input before the first asynchronous cryptographic step. Replay likewise
 copies the quorum, held policy, witness bundle, retained challenge, and input
