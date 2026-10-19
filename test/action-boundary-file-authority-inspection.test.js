@@ -157,6 +157,49 @@ test("unknown callback outcome and mismatched outcome are not called resolved", 
       item.problem === "outcome_invalid_or_mismatch"));
   }));
 
+test("an outcome cannot claim return while recording a callback error", () =>
+  fixture(async ({ directory, anchor, host }) => {
+    const grant = host.issue(input());
+    assert.equal((await host.dispatch({ ...input(), grant_id: grant.grant_id,
+      execute: () => "local-effect" })).status, "returned");
+    const file = path.join(directory, "outcomes", `${grant.grant_id}.json`);
+    const outcome = JSON.parse(fs.readFileSync(file, "utf8"));
+    fs.writeFileSync(file, JSON.stringify({ ...outcome, reason: "callback_error" }) + "\n");
+    const report = inspectFileRevocationHandoff({ directory, anchor });
+    assert.equal(report.committed_state.comparison, "match");
+    assert.equal(report.status, "needs_reconciliation");
+    assert.ok(report.reconciliation.issues.some(item =>
+      item.grant_id === grant.grant_id && item.problem === "outcome_invalid_or_mismatch"));
+  }));
+
+test("unanchored inspection checks the spent operation epoch and issuer link", () => {
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), "aml-inspection-operation-"));
+  return (async () => {
+    try {
+      const directory = path.join(parent, "authority");
+      const host = createFileRevocationHandoff({ directory });
+      const grant = host.issue(input(), { operationId: "host-intent-operation-link" });
+      assert.equal((await host.dispatch({ ...input(), grant_id: grant.grant_id,
+        execute: () => "local-effect" })).status, "returned");
+      const grantRecord = JSON.parse(fs.readFileSync(path.join(directory, "grants",
+        `${grant.grant_id}.json`), "utf8"));
+      const file = path.join(directory, "operations", `${grantRecord.operation_sha256}.json`);
+      const operation = JSON.parse(fs.readFileSync(file, "utf8"));
+      for (const altered of [{ ...operation, epoch: operation.epoch + 1 },
+        { ...operation, issuer_sha256: "f".repeat(64) }]) {
+        fs.writeFileSync(file, JSON.stringify(altered) + "\n");
+        const report = inspectFileRevocationHandoff({ directory });
+        assert.equal(report.committed_state.comparison, "not_committed");
+        assert.equal(report.status, "needs_reconciliation");
+        assert.ok(report.reconciliation.issues.some(item =>
+          item.grant_id === grant.grant_id && item.problem === "operation_missing_or_mismatch"));
+      }
+      fs.writeFileSync(file, JSON.stringify(operation) + "\n");
+      assert.equal(inspectFileRevocationHandoff({ directory }).status, "observed_consistent");
+    } finally { fs.rmSync(parent, { recursive: true, force: true }); }
+  })();
+});
+
 test("an outcome with no spent claim is reported as an invalid local link", () =>
   fixture(async ({ directory, anchor, host }) => {
     const grant = host.issue(input());
