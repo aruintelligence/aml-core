@@ -7,6 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { createFileRevocationHandoff } from "../pilots/action-boundary/file-revocation-handoff.mjs";
 import { createTestingClaimOnce } from "../pilots/action-boundary/testing-claim-anchor.mjs";
+import { createTestingEpochAnchor } from "../pilots/action-boundary/testing-epoch-anchor.mjs";
 
 const exec = promisify(execFile);
 const worker = new URL("../pilots/action-boundary/file-revocation-worker.mjs", import.meta.url).pathname;
@@ -358,6 +359,165 @@ test("a host operation claim survives rollback and a newly minted grant", () =>
       ["blocked", "external_claim_spent", 0, 1]);
     assert.equal(fs.readdirSync(anchor).length, 1);
     fs.rmSync(path.join(parent, "spent"), { recursive: true, force: true });
+  }));
+
+test("an external issuer epoch rejects unspent grants after local rollback and restart", () =>
+  withAsyncDirectory(async parent => {
+    const directory = path.join(parent, "authority");
+    const anchorDirectory = path.join(parent, "epoch-anchor");
+    fs.mkdirSync(anchorDirectory, { mode: 0o700 });
+    const host = createFileRevocationHandoff({ directory,
+      epochAnchor: createTestingEpochAnchor(anchorDirectory) });
+    const grant = host.issue(context());
+    const snapshot = path.join(parent, "before-revocation");
+    fs.cpSync(directory, snapshot, { recursive: true });
+    fs.chmodSync(snapshot, 0o700);
+    for (const child of ["epochs", "grants", "operations", "claimed", "outcomes"]) {
+      fs.chmodSync(path.join(snapshot, child), 0o700);
+    }
+    fs.chmodSync(path.join(snapshot, "clock.json"), 0o600);
+    fs.chmodSync(path.join(snapshot, "grants", `${grant.grant_id}.json`), 0o600);
+
+    assert.throws(() => host.revokeIssuer(context()), /anchored_revocation_required/);
+    assert.equal((await host.revokeIssuerAnchored(context())).epoch, 1);
+    fs.renameSync(directory, path.join(parent, "revoked-local"));
+    fs.renameSync(snapshot, directory);
+
+    const restarted = await exec(process.execPath,
+      [worker, directory, grant.grant_id, "epoch-anchored", anchorDirectory]);
+    const result = JSON.parse(restarted.stdout);
+    assert.deepEqual([result.status, result.reason, result.dispatch_count],
+      ["blocked", "external_claim_or_epoch_rejected", 0]);
+    assert.equal(fs.existsSync(path.join(directory, "effects.log")), false);
+    const afterRollback = createFileRevocationHandoff({ directory,
+      epochAnchor: createTestingEpochAnchor(anchorDirectory) });
+    const newGrant = afterRollback.issue(context());
+    let calls = 0;
+    const stale = await afterRollback.dispatch({ ...context(), grant_id: newGrant.grant_id,
+      execute: () => { calls++; } });
+    assert.deepEqual([stale.status, stale.reason, calls],
+      ["blocked", "external_claim_or_epoch_rejected", 0]);
+    await assert.rejects(afterRollback.revokeIssuerAnchored(context()), /external_epoch_mismatch/);
+    assert.equal(fs.existsSync(path.join(directory, "authority.lock")), true);
+    fs.rmSync(path.join(parent, "revoked-local"), { recursive: true, force: true });
+  }));
+
+test("an epoch anchor requires both atomic operations and excludes the spent-only hook", () =>
+  withAsyncDirectory(async directory => {
+    assert.throws(() => createFileRevocationHandoff({ directory,
+      epochAnchor: { claimOnce: () => true } }), /optional atomic host anchor/);
+    assert.throws(() => createFileRevocationHandoff({ directory,
+      epochAnchor: { claimOnce: () => true, advanceEpoch: () => true },
+      claimOnce: () => true }), /optional atomic host anchor/);
+  }));
+
+test("an epoch-aware claim dispatches once in each current issuer epoch", () =>
+  withAsyncDirectory(async parent => {
+    const directory = path.join(parent, "authority");
+    const anchorDirectory = path.join(parent, "epoch-anchor");
+    fs.mkdirSync(anchorDirectory, { mode: 0o700 });
+    const fixture = createTestingEpochAnchor(anchorDirectory);
+    const seenEpochs = [];
+    const host = createFileRevocationHandoff({ directory, epochAnchor: {
+      advanceEpoch: record => {
+        assert.equal(Object.isFrozen(record), true);
+        return fixture.advanceEpoch(record);
+      },
+      claimOnce: record => {
+        assert.equal(Object.isFrozen(record), true);
+        assert.equal(record.protocol, "aml-file-authority-external-claim/2");
+        seenEpochs.push(record.epoch);
+        return fixture.claimOnce(record);
+      }
+    } });
+    let calls = 0;
+    const first = host.issue(context(), { operationId: "host-intent-epoch-0" });
+    assert.equal((await host.dispatch({ ...context(), grant_id: first.grant_id,
+      execute: () => { calls++; return "sent"; } })).status, "returned");
+    assert.equal((await host.revokeIssuerAnchored(context())).epoch, 1);
+    const second = host.issue(context(), { operationId: "host-intent-epoch-1" });
+    assert.equal((await host.dispatch({ ...context(), grant_id: second.grant_id,
+      execute: () => { calls++; return "sent"; } })).status, "returned");
+    assert.deepEqual([seenEpochs, calls], [[0, 1], 2]);
+  }));
+
+test("an uncertain external epoch advance strands the local lock", () =>
+  withAsyncDirectory(async directory => {
+    const host = createFileRevocationHandoff({ directory, epochAnchor: {
+      claimOnce: () => true,
+      advanceEpoch: async () => { throw Error("external service unavailable"); }
+    } });
+    const grant = host.issue(context());
+    await assert.rejects(host.revokeIssuerAnchored(context()), /external_epoch_unavailable/);
+    assert.equal(fs.existsSync(path.join(directory, "authority.lock")), true);
+    let calls = 0;
+    const result = await host.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; } });
+    assert.deepEqual([result.status, result.reason, result.dispatch_count, calls],
+      ["indeterminate", "authority_busy_or_crashed", 0, 0]);
+  }));
+
+test("a committed external epoch with a lost response still rejects restored grants", () =>
+  withAsyncDirectory(async parent => {
+    const directory = path.join(parent, "authority");
+    const anchorDirectory = path.join(parent, "epoch-anchor");
+    fs.mkdirSync(anchorDirectory, { mode: 0o700 });
+    const fixture = createTestingEpochAnchor(anchorDirectory);
+    const host = createFileRevocationHandoff({ directory, epochAnchor: {
+      claimOnce: record => fixture.claimOnce(record),
+      advanceEpoch: record => {
+        assert.equal(fixture.advanceEpoch(record), true);
+        throw Error("reply lost after commit");
+      }
+    } });
+    const grant = host.issue(context());
+    const snapshot = path.join(parent, "before-revocation");
+    fs.cpSync(directory, snapshot, { recursive: true });
+    fs.chmodSync(snapshot, 0o700);
+    for (const child of ["epochs", "grants", "operations", "claimed", "outcomes"]) {
+      fs.chmodSync(path.join(snapshot, child), 0o700);
+    }
+    fs.chmodSync(path.join(snapshot, "clock.json"), 0o600);
+    fs.chmodSync(path.join(snapshot, "grants", `${grant.grant_id}.json`), 0o600);
+    await assert.rejects(host.revokeIssuerAnchored(context()), /external_epoch_unavailable/);
+    assert.equal(fs.existsSync(path.join(directory, "authority.lock")), true);
+    fs.renameSync(directory, path.join(parent, "stranded"));
+    fs.renameSync(snapshot, directory);
+
+    const restarted = await exec(process.execPath,
+      [worker, directory, grant.grant_id, "epoch-anchored", anchorDirectory]);
+    const result = JSON.parse(restarted.stdout);
+    assert.deepEqual([result.status, result.reason, result.dispatch_count],
+      ["blocked", "external_claim_or_epoch_rejected", 0]);
+    assert.equal(fs.existsSync(path.join(directory, "effects.log")), false);
+    fs.rmSync(path.join(parent, "stranded"), { recursive: true, force: true });
+  }));
+
+test("an awaited external revocation blocks local dispatch until its epoch is durable", () =>
+  withAsyncDirectory(async parent => {
+    const directory = path.join(parent, "authority");
+    const anchorDirectory = path.join(parent, "epoch-anchor");
+    fs.mkdirSync(anchorDirectory, { mode: 0o700 });
+    const fixture = createTestingEpochAnchor(anchorDirectory);
+    let continueAdvance, entered;
+    const pending = new Promise(resolve => { continueAdvance = resolve; });
+    const waiting = new Promise(resolve => { entered = resolve; });
+    const host = createFileRevocationHandoff({ directory, epochAnchor: {
+      claimOnce: record => fixture.claimOnce(record),
+      advanceEpoch: async record => { entered(); await pending; return fixture.advanceEpoch(record); }
+    } });
+    const grant = host.issue(context());
+    const revocation = host.revokeIssuerAnchored(context());
+    await waiting;
+    let calls = 0;
+    const busy = await host.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; } });
+    assert.deepEqual([busy.reason, busy.dispatch_count, calls], ["authority_busy_or_crashed", 0, 0]);
+    continueAdvance();
+    assert.equal((await revocation).epoch, 1);
+    const blocked = await host.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; } });
+    assert.deepEqual([blocked.reason, blocked.dispatch_count, calls], ["issuer_revoked", 0, 0]);
   }));
 
 test("an uncertain or rejected external claim spends locally and never calls the provider", () =>

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createFileRevocationHandoff } from "./file-revocation-handoff.mjs";
 import { createTestingClaimOnce } from "./testing-claim-anchor.mjs";
+import { createTestingEpochAnchor } from "./testing-epoch-anchor.mjs";
 
 const [directory, grant_id, mode = "normal", anchorDirectory] = process.argv.slice(2);
 const input = {
@@ -10,7 +11,8 @@ const input = {
   preparedRequest: { to: ["team@example.test"], bcc: [], subject: "Update", body: "Approved" }
 };
 const host = createFileRevocationHandoff({ directory,
-  ...(mode === "anchored" ? { claimOnce: createTestingClaimOnce(anchorDirectory) } : {}) });
+  ...(mode === "anchored" ? { claimOnce: createTestingClaimOnce(anchorDirectory) } : {}),
+  ...(mode === "epoch-anchored" ? { epochAnchor: createTestingEpochAnchor(anchorDirectory) } : {}) });
 if (mode === "revoke") {
   console.log(JSON.stringify(host.revokeIssuer({ tenant: input.tenant, issuer: input.issuer })));
   process.exit(0);
