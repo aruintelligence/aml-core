@@ -18,8 +18,11 @@ A quorum aggregates `aml-verification-report/1` objects only when they agree on:
 - exact artifact hash;
 - distinct declared verifier IDs.
 
-The unsigned quorum accepts at most 64 reports and a positive safe-integer
-threshold, matching its published schema's report bound.
+The unsigned and signed quorums accept at most 64 reports and a positive
+safe-integer threshold (at most 9,007,199,254,740,991), matching their
+published schemas. A threshold can exceed the number of supplied reports;
+that quorum is internally checkable but its threshold is unmet. An unsafe
+integer threshold cannot be reproduced faithfully by the Python verifier.
 
 The quorum requires each report's verdict to be a boolean and its artifact
 type and hash to be nonempty strings. The signed-key quorum applies the same

@@ -170,6 +170,15 @@ print(json.dumps({'valid_policy_met': verify_quorum(quorum, policy=policy)['requ
   };
   const quorum = await createSignedVerificationQuorum([a, b], { threshold: 2 });
   await compare('two-distinct-keys', quorum, policy, true);
+  await compare('maximum-safe-saved-threshold',
+    await createSignedVerificationQuorum([a, b], { threshold: Number.MAX_SAFE_INTEGER }),
+    policy, false);
+  await assert.rejects(() => createSignedVerificationQuorum([a, b], {
+    threshold: Number.MAX_SAFE_INTEGER + 1
+  }), /AML_SIGNED_QUORUM_THRESHOLD_INVALID/);
+  await compare('unsafe-saved-threshold', {
+    ...quorum, threshold: Number.MAX_SAFE_INTEGER + 1
+  }, policy, false);
   for (const [name, change] of [
     ['false-envelope-prototype', envelope => { envelope.prototype = false; }],
     ['missing-envelope-prototype', envelope => { delete envelope.prototype; }],
