@@ -238,22 +238,6 @@ function claimReconciliation(directory) {
         (grant.operation_sha256 !== undefined && !DIGEST.test(grant.operation_sha256)))) {
       issues.push({ grant_id: grantId, problem: "grant_missing_or_mismatch" });
     }
-    if (grant?.operation_sha256 && DIGEST.test(grant.operation_sha256)) {
-      let operation, operationUnreadable = false;
-      try { operation = readRecord(path.join(directory, "operations",
-        `${grant.operation_sha256}.json`)); }
-      catch { issues.push({ grant_id: grantId, problem: "operation_unreadable" });
-        operationUnreadable = true; }
-      if (!operationUnreadable && (!operation ||
-          operation.protocol !== "aml-file-authority-operation/1" ||
-          operation.operation_sha256 !== grant.operation_sha256 ||
-          operation.grant_id !== grantId ||
-          operation.binding_sha256 !== claim.binding_sha256 ||
-          operation.issuer_sha256 !== grant.issuer_sha256 ||
-          operation.epoch !== grant.epoch)) {
-        issues.push({ grant_id: grantId, problem: "operation_missing_or_mismatch" });
-      }
-    }
     if (outcomeNamesSet.has(name)) {
       try { outcome = readRecord(path.join(outcomes, name)); }
       catch { issues.push({ grant_id: grantId, problem: "outcome_unreadable" }); continue; }
@@ -282,6 +266,76 @@ function claimReconciliation(directory) {
       issues.push({ collection: "outcomes", problem: "unexpected_filename" });
     } else if (!claimNames.has(name)) {
       issues.push({ grant_id: name.slice(0, -5), problem: "outcome_without_claim" });
+    }
+  }
+  // Claims cover only spent grants. Inspect both sides of every operation link:
+  // an orphan marker can block a host intent, while an unspent grant whose
+  // marker disappeared cannot be dispatched safely. Neither has a claim yet.
+  const grants = new Map(), operations = new Map();
+  for (const name of fs.readdirSync(path.join(directory, "grants")).sort()) {
+    if (!pattern.test(name)) {
+      issues.push({ collection: "grants", problem: "unexpected_filename" });
+      continue;
+    }
+    const grantId = name.slice(0, -5);
+    let grant;
+    try { grant = readRecord(path.join(directory, "grants", name)); }
+    catch { issues.push({ grant_id: grantId, problem: "grant_unreadable" }); continue; }
+    if (!grant || grant.protocol !== "aml-file-authority-grant/1" ||
+        grant.grant_id !== grantId || !DIGEST.test(grant.issuer_sha256) ||
+        !DIGEST.test(grant.binding_sha256) ||
+        !Number.isSafeInteger(grant.epoch) || grant.epoch < 0 ||
+        !Number.isSafeInteger(grant.issued_at_ms) ||
+        !Number.isSafeInteger(grant.expires_at_ms) ||
+        grant.expires_at_ms <= grant.issued_at_ms ||
+        (grant.operation_sha256 !== undefined &&
+          !DIGEST.test(grant.operation_sha256)) ||
+        (grant.required_claim_protocol !== undefined &&
+          grant.required_claim_protocol !== CLAIM_V1 &&
+          grant.required_claim_protocol !== CLAIM_V2)) {
+      issues.push({ grant_id: grantId, problem: "grant_invalid" });
+      continue;
+    }
+    grants.set(grantId, grant);
+  }
+  const operationPattern = /^[0-9a-f]{64}\.json$/;
+  for (const name of fs.readdirSync(path.join(directory, "operations")).sort()) {
+    if (!operationPattern.test(name)) {
+      issues.push({ collection: "operations", problem: "unexpected_filename" });
+      continue;
+    }
+    const operationHash = name.slice(0, -5);
+    let operation;
+    try { operation = readRecord(path.join(directory, "operations", name)); }
+    catch { issues.push({ operation_sha256: operationHash,
+      problem: "operation_unreadable" }); continue; }
+    if (!operation || operation.protocol !== "aml-file-authority-operation/1" ||
+        operation.operation_sha256 !== operationHash ||
+        typeof operation.grant_id !== "string" || !ID.test(operation.grant_id) ||
+        !DIGEST.test(operation.issuer_sha256) ||
+        !DIGEST.test(operation.binding_sha256) ||
+        !Number.isSafeInteger(operation.epoch) || operation.epoch < 0) {
+      issues.push({ operation_sha256: operationHash, problem: "operation_invalid" });
+      continue;
+    }
+    operations.set(operationHash, operation);
+  }
+  const matchingLink = (grant, operation) => grant && operation &&
+    grant.grant_id === operation.grant_id &&
+    grant.operation_sha256 === operation.operation_sha256 &&
+    grant.binding_sha256 === operation.binding_sha256 &&
+    grant.issuer_sha256 === operation.issuer_sha256 && grant.epoch === operation.epoch;
+  for (const [grantId, grant] of grants) {
+    if (grant.operation_sha256 &&
+        !matchingLink(grant, operations.get(grant.operation_sha256))) {
+      issues.push({ grant_id: grantId, problem: "operation_missing_or_mismatch" });
+    }
+  }
+  for (const operation of operations.values()) {
+    if (!matchingLink(grants.get(operation.grant_id), operation)) {
+      issues.push({ grant_id: operation.grant_id,
+        operation_sha256: operation.operation_sha256,
+        problem: "operation_without_matching_grant" });
     }
   }
   return { status: issues.length ? "invalid_records" : candidates.length ?
