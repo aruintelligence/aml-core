@@ -13,6 +13,8 @@ const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DIGEST = /^[0-9a-f]{64}$/;
 const CLAIM_V1 = "aml-file-authority-external-claim/1";
 const CLAIM_V2 = "aml-file-authority-external-claim/2";
+const AUTHORITY_MODES = ["local", "claim-anchored", "epoch-anchored",
+  "checkpoint-anchored", "checkpoint-claim-anchored"];
 
 // A private leaf is insufficient if a parent can be switched to an older
 // authority snapshot. /tmp-style sticky directories protect an owned child;
@@ -111,13 +113,71 @@ function freezeDeep(value) {
   return value;
 }
 
+const DECISION_COLLECTIONS = [
+  ["epochs", /^[0-9a-f]{64}\.json$/],
+  ["grants", /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\.json$/],
+  ["operations", /^[0-9a-f]{64}\.json$/],
+  ["claimed", /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\.json$/]
+];
+
+function decisionState(directory, overrides = [], includeMode = false) {
+  const replacements = new Map(overrides.map(({ collection, name, record }) =>
+    [`${collection}/${name}`, record]));
+  const entries = [], counts = {};
+  for (const [collection, pattern] of DECISION_COLLECTIONS) {
+    const child = path.join(directory, collection);
+    const names = fs.readdirSync(child);
+    if (names.some(name => !pattern.test(name))) throw Error("unexpected_authority_state_entry");
+    for (const key of replacements.keys()) {
+      if (key.startsWith(`${collection}/`)) names.push(key.slice(collection.length + 1));
+    }
+    const unique = [...new Set(names)].sort();
+    counts[collection] = unique.length;
+    for (const name of unique) {
+      if (!pattern.test(name)) throw Error("unexpected_authority_state_entry");
+      const key = `${collection}/${name}`;
+      const record = replacements.has(key) ? replacements.get(key) :
+        readRecord(path.join(child, name));
+      if (!record) throw Error("authority_state_record_unavailable");
+      entries.push([key, hash(canonicalJSONStringify(record))]);
+    }
+  }
+  if (includeMode) {
+    const mode = readRecord(path.join(directory, "authority-mode.json"));
+    if (!mode) throw Error("authority_mode_unavailable");
+    entries.push(["authority-mode.json", hash(canonicalJSONStringify(mode))]);
+  }
+  return { digest: hash(canonicalJSONStringify(entries)), counts };
+}
+
+function nestedDirectories(first, second) {
+  const relative = path.relative(first, second);
+  return relative === "" || (relative !== ".." && !relative.startsWith(`..${path.sep}`) &&
+    !path.isAbsolute(relative));
+}
+
+function checkpointRecord(value) {
+  const v1 = value?.protocol === "aml-file-authority-checkpoint/1";
+  const v2 = value?.protocol === "aml-file-authority-checkpoint/2";
+  const v3 = value?.protocol === "aml-file-authority-checkpoint/3";
+  return (v1 || v2 || v3) &&
+    ID.test(value.store_id) && Number.isSafeInteger(value.sequence) && value.sequence >= 0 &&
+    DIGEST.test(value.head_sha256) &&
+    (v1 ? Object.keys(value).sort().join("|") === "head_sha256|protocol|sequence|store_id" :
+      DIGEST.test(value.state_sha256) &&
+      Object.keys(value).sort().join("|") ===
+        "head_sha256|protocol|sequence|state_sha256|store_id");
+}
+
 // One-machine example of the host's independent monotonic checkpoint store.
 // Keep this directory under a separate backup/retention domain. Restoring
 // both directories together can still replay an older authority snapshot.
-export function createFileAuthorityAnchor({ directory } = {}) {
+export function createFileAuthorityAnchor({ directory, create = true } = {}) {
   if (typeof directory !== "string" || !path.isAbsolute(directory) ||
-      directory !== path.resolve(directory)) throw new TypeError("trusted_anchor_path_required");
-  privateDirectory(directory, true);
+      directory !== path.resolve(directory) || typeof create !== "boolean") {
+    throw new TypeError("trusted_anchor_path_required");
+  }
+  privateDirectory(directory, create);
   const file = path.join(directory, "checkpoint.json");
   const lock = path.join(directory, "anchor.lock");
   const pinned = new Map();
@@ -156,6 +216,153 @@ export function createFileAuthorityAnchor({ directory } = {}) {
   return { directory, read, compareAndSwap };
 }
 
+// A non-atomic, read-only operator observation. It never takes/removes the
+// authority lock or changes a checkpoint; live workers may change the view.
+export function inspectFileRevocationHandoff({ directory, anchor = null } = {}) {
+  if (typeof directory !== "string" || !path.isAbsolute(directory) ||
+      directory !== path.resolve(directory) ||
+      (anchor !== null && typeof anchor.read !== "function")) {
+    throw new TypeError("A trusted absolute directory and optional readable anchor are required");
+  }
+  privateDirectory(directory);
+  const children = [directory, ...[...DECISION_COLLECTIONS.map(([name]) => name),
+    "outcomes"].map(name => path.join(directory, name))];
+  const pinned = new Map();
+  for (const child of children) {
+    privateDirectory(child);
+    verifyAuthorityPath(child, { record: pinned });
+  }
+  const reasons = [];
+  const lock = path.join(directory, "authority.lock");
+  const observeLock = () => {
+    try { fs.lstatSync(lock); privateDirectory(lock); return "present"; }
+    catch (error) { return error.code === "ENOENT" ? "absent" : "invalid"; }
+  };
+  const lockStatus = observeLock();
+  if (lockStatus !== "absent") reasons.push(lockStatus === "present" ?
+    "authority_lock_present" : "invalid_authority_lock");
+  let anchorLock = "not_applicable";
+  let observeAnchorLock = null;
+  if (typeof anchor?.directory === "string" && path.isAbsolute(anchor.directory)) {
+    const anchorLockFile = path.join(anchor.directory, "anchor.lock");
+    observeAnchorLock = () => {
+      try { fs.lstatSync(anchorLockFile); privateDirectory(anchorLockFile);
+        return "present"; }
+      catch (error) { return error.code === "ENOENT" ? "absent" : "invalid"; }
+    };
+    anchorLock = observeAnchorLock();
+    if (anchorLock !== "absent") reasons.push(anchorLock === "present" ?
+      "external_anchor_lock_present" : "invalid_external_anchor_lock");
+  }
+
+  let local = null, localRead = null, external = null, counts = null, observedDigest = null;
+  let localReadable = true, externalReadable = true;
+  const modeFile = path.join(directory, "authority-mode.json");
+  let modeRead = null, modeRecord = null, modeStatus = "missing", modeReadable = true;
+  if (hasUncertainTemp(directory, "authority-mode.json")) reasons.push("uncertain_authority_mode");
+  try { modeRead = readRecord(modeFile); modeRecord = modeRead; }
+  catch { reasons.push("authority_mode_unreadable"); modeReadable = false;
+    modeStatus = "unreadable"; }
+  if (modeRecord) {
+    if (modeRecord.protocol !== "aml-file-authority-mode/1" ||
+        !AUTHORITY_MODES.includes(modeRecord.mode)) {
+      reasons.push("authority_mode_invalid");
+      modeRecord = null;
+      modeStatus = "invalid";
+    } else modeStatus = "valid";
+  }
+  const checkpointFile = path.join(directory, "checkpoint.json");
+  if (hasUncertainTemp(directory, "checkpoint.json")) reasons.push("uncertain_authority_checkpoint");
+  try { localRead = readRecord(checkpointFile); local = localRead; }
+  catch { reasons.push("local_checkpoint_unreadable"); localReadable = false; }
+  if (local && !checkpointRecord(local)) {
+    reasons.push("local_checkpoint_invalid");
+    local = null;
+  }
+  if (anchor) {
+    if (anchor.directory && (nestedDirectories(directory, anchor.directory) ||
+        nestedDirectories(anchor.directory, directory))) reasons.push("anchor_not_independent");
+    try {
+      external = anchor.read();
+      if (external?.then) throw Error("synchronous_authority_anchor_required");
+    } catch { reasons.push("external_checkpoint_unavailable"); external = null;
+      externalReadable = false; }
+    if (external && !checkpointRecord(external)) {
+      reasons.push("external_checkpoint_invalid");
+      external = null;
+      externalReadable = false;
+    }
+    if (!localRead && localReadable) reasons.push("local_checkpoint_missing");
+    if (!external && externalReadable) reasons.push("external_checkpoint_missing");
+  } else if (local) reasons.push("authority_anchor_not_supplied");
+
+  let comparison = anchor ? "unavailable" : "not_configured";
+  if (local && external) {
+    comparison = canonicalJSONStringify(local) === canonicalJSONStringify(external) ?
+      "match" : "mismatch";
+    if (comparison === "mismatch") reasons.push("checkpoint_mismatch");
+  }
+  let committedState = local && local.protocol !== "aml-file-authority-checkpoint/1" ?
+    "unavailable" : "not_committed";
+  try {
+    ({ counts, digest: observedDigest } = decisionState(directory, [],
+      local?.protocol === "aml-file-authority-checkpoint/3"));
+    if (local && local.protocol !== "aml-file-authority-checkpoint/1") {
+      committedState = observedDigest === local.state_sha256 ? "match" : "mismatch";
+      if (committedState === "mismatch") reasons.push("committed_state_mismatch");
+    }
+  } catch { reasons.push("committed_state_unreadable"); }
+  // A genuinely fresh directory and an older empty store with a deleted mode
+  // are indistinguishable from a read-only scan. Neither is verified state.
+  if (modeStatus === "missing") reasons.push("authority_mode_missing");
+  if (modeRecord && ((modeRecord.mode.startsWith("checkpoint-") && !local) ||
+      (!modeRecord.mode.startsWith("checkpoint-") && local) ||
+      (anchor && !modeRecord.mode.startsWith("checkpoint-")))) {
+    reasons.push("authority_mode_checkpoint_mismatch");
+  }
+
+  // A changed checkpoint during the scan makes the snapshot unsuitable for
+  // reassurance, even if the first two reads happened to match.
+  if (localReadable) {
+    try {
+      if (canonicalJSONStringify(readRecord(checkpointFile)) !== canonicalJSONStringify(localRead)) {
+        reasons.push("local_checkpoint_changed_during_inspection");
+      }
+    } catch { reasons.push("local_checkpoint_changed_during_inspection"); }
+  }
+  if (anchor && externalReadable) {
+    try {
+      const again = anchor.read();
+      if (again?.then || canonicalJSONStringify(again) !== canonicalJSONStringify(external)) {
+        reasons.push("external_checkpoint_changed_during_inspection");
+      }
+    } catch { reasons.push("external_checkpoint_changed_during_inspection"); }
+  }
+  if (modeReadable) {
+    try {
+      if (canonicalJSONStringify(readRecord(modeFile)) !== canonicalJSONStringify(modeRead)) {
+        reasons.push("authority_mode_changed_during_inspection");
+      }
+    } catch { reasons.push("authority_mode_changed_during_inspection"); }
+  }
+  try { for (const child of children) privateDirectory(child, false, pinned); }
+  catch { reasons.push("authority_path_changed_during_inspection"); }
+  if (observeLock() !== lockStatus) reasons.push("authority_lock_changed_during_inspection");
+  if (observeAnchorLock && observeAnchorLock() !== anchorLock) {
+    reasons.push("external_anchor_lock_changed_during_inspection");
+  }
+  return {
+    protocol: "aml-file-authority-inspection/1",
+    status: reasons.length ? "needs_reconciliation" : "observed_consistent",
+    reasons, lock: lockStatus, anchor_lock: anchorLock, mode: local?.protocol ??
+      (localRead || !localReadable || anchor ? "unknown" : "unanchored"),
+    authority_mode: { status: modeStatus, record: modeRecord },
+    checkpoints: { local, external, comparison },
+    committed_state: { comparison: committedState, observed_sha256: observedDigest,
+      includes_authority_mode: local?.protocol === "aml-file-authority-checkpoint/3", counts }
+  };
+}
+
 export function createFileRevocationHandoff({ directory, now = () => Date.now(), anchor,
   claimOnce = null, epochAnchor = null } = {}) {
   if (typeof directory !== "string" || !path.isAbsolute(directory) ||
@@ -169,9 +376,8 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
         anchor !== undefined))) {
     throw new TypeError("A trusted directory, clock, and optional atomic host anchor are required; incompatible anchor options");
   }
-  if (anchor?.directory && (anchor.directory === directory ||
-      !path.relative(directory, anchor.directory).startsWith("..") &&
-      !path.isAbsolute(path.relative(directory, anchor.directory)))) {
+  if (anchor?.directory && (nestedDirectories(directory, anchor.directory) ||
+      nestedDirectories(anchor.directory, directory))) {
     throw new TypeError("independent_anchor_directory_required");
   }
   const externalClaim = epochAnchor ? epochAnchor.claimOnce.bind(epochAnchor) : claimOnce;
@@ -196,42 +402,10 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
     verifyAuthorityPath(child, { record: pinned });
   }
 
-  // Checkpoints 2 and 3 commit to durable authority decisions; version 3
-  // additionally binds the configured mode. Clock and outcomes have a
-  // separate lifecycle and are outside this commitment.
-  const stateCollections = [
-    ["epochs", epochs, /^[0-9a-f]{64}\.json$/],
-    ["grants", grants, /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\.json$/],
-    ["operations", operations, /^[0-9a-f]{64}\.json$/],
-    ["claimed", claimed, /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\.json$/]
-  ];
-
-  function stateDigest(overrides = [], includeMode = false) {
-    const replacements = new Map(overrides.map(({ collection, name, record }) =>
-      [`${collection}/${name}`, record]));
-    const entries = [];
-    for (const [collection, child, pattern] of stateCollections) {
-      const names = fs.readdirSync(child);
-      if (names.some(name => !pattern.test(name))) throw Error("unexpected_authority_state_entry");
-      for (const key of replacements.keys()) {
-        if (key.startsWith(`${collection}/`)) names.push(key.slice(collection.length + 1));
-      }
-      for (const name of [...new Set(names)].sort()) {
-        if (!pattern.test(name)) throw Error("unexpected_authority_state_entry");
-        const key = `${collection}/${name}`;
-        const record = replacements.has(key) ? replacements.get(key) :
-          readRecord(path.join(child, name));
-        if (!record) throw Error("authority_state_record_unavailable");
-        entries.push([key, hash(canonicalJSONStringify(record))]);
-      }
-    }
-    if (includeMode) {
-      const mode = readRecord(modeFile);
-      if (!mode) throw Error("authority_mode_unavailable");
-      entries.push(["authority-mode.json", hash(canonicalJSONStringify(mode))]);
-    }
-    return hash(canonicalJSONStringify(entries));
-  }
+  // Checkpoints 2 and 3 commit to durable decision files; version 3 binds
+  // the mode too. The host clock and outcomes have a separate lifecycle.
+  const stateDigest = (overrides = [], includeMode = false) =>
+    decisionState(directory, overrides, includeMode).digest;
 
   function checkDirectories() {
     for (const child of [directory, epochs, grants, operations, claimed, outcomes]) {
@@ -253,25 +427,11 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
         protocol: "aml-file-authority-mode/1", mode: authorityMode
       }, directory);
     } else if (record.protocol !== "aml-file-authority-mode/1" ||
-        !["local", "claim-anchored", "epoch-anchored", "checkpoint-anchored",
-          "checkpoint-claim-anchored"].includes(record.mode)) {
+        !AUTHORITY_MODES.includes(record.mode)) {
       throw Error("invalid_authority_mode");
     } else if (record.mode !== authorityMode) {
       throw Error("authority_mode_mismatch");
     }
-  }
-
-  function checkpointRecord(value) {
-    const v1 = value?.protocol === "aml-file-authority-checkpoint/1";
-    const v2 = value?.protocol === "aml-file-authority-checkpoint/2";
-    const v3 = value?.protocol === "aml-file-authority-checkpoint/3";
-    return (v1 || v2 || v3) &&
-      ID.test(value.store_id) && Number.isSafeInteger(value.sequence) && value.sequence >= 0 &&
-      DIGEST.test(value.head_sha256) &&
-      (v1 ? Object.keys(value).sort().join("|") === "head_sha256|protocol|sequence|store_id" :
-        DIGEST.test(value.state_sha256) &&
-        Object.keys(value).sort().join("|") ===
-          "head_sha256|protocol|sequence|state_sha256|store_id");
   }
 
   function externalState() {
