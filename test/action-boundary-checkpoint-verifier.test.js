@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 import { createFileAuthorityAnchor, createFileRevocationHandoff } from
   "../pilots/action-boundary/file-revocation-handoff.mjs";
 
@@ -19,6 +21,25 @@ function verify(directory, anchorDirectory) {
     { encoding: "utf8" });
   assert.equal(result.error, undefined);
   return { code: result.status, output: JSON.parse(result.stdout), stderr: result.stderr };
+}
+
+function rehashJointSnapshot(directory, anchorDirectory) {
+  const sha256 = value => createHash("sha256").update(value).digest("hex");
+  const entries = [];
+  for (const kind of ["epochs", "grants", "operations", "claimed"]) {
+    for (const name of fs.readdirSync(path.join(directory, kind)).sort()) {
+      const record = JSON.parse(fs.readFileSync(path.join(directory, kind, name), "utf8"));
+      entries.push([`${kind}/${name}`, sha256(canonicalJSONStringify(record))]);
+    }
+  }
+  const mode = JSON.parse(fs.readFileSync(path.join(directory, "authority-mode.json"), "utf8"));
+  entries.push(["authority-mode.json", sha256(canonicalJSONStringify(mode))]);
+  const state_sha256 = sha256(JSON.stringify(entries));
+  for (const root of [directory, anchorDirectory]) {
+    const file = path.join(root, "checkpoint.json");
+    const checkpoint = JSON.parse(fs.readFileSync(file, "utf8"));
+    fs.writeFileSync(file, JSON.stringify({ ...checkpoint, state_sha256 }) + "\n");
+  }
 }
 
 async function fixture(run) {
@@ -51,6 +72,23 @@ test("Python verifier recomputes genesis, issue, claim and revoke without writin
     assert.deepEqual(fs.readFileSync(path.join(directory, "checkpoint.json")), local);
     assert.deepEqual(fs.readFileSync(path.join(anchorDirectory, "checkpoint.json")), external);
     assert.equal(fs.existsSync(path.join(directory, "authority.lock")), false);
+  }));
+
+test("verifier rejects a jointly rehashed operation with no grant backlink", () =>
+  fixture(async ({ directory, anchorDirectory, host }) => {
+    const grant = host.issue(input());
+    const saved = JSON.parse(fs.readFileSync(path.join(directory, "grants",
+      `${grant.grant_id}.json`), "utf8"));
+    const operationHash = "a".repeat(64);
+    fs.writeFileSync(path.join(directory, "operations", `${operationHash}.json`),
+      JSON.stringify({ protocol: "aml-file-authority-operation/1",
+        operation_sha256: operationHash, grant_id: grant.grant_id,
+        issuer_sha256: saved.issuer_sha256, binding_sha256: saved.binding_sha256,
+        epoch: saved.epoch }) + "\n", { mode: 0o600 });
+    rehashJointSnapshot(directory, anchorDirectory);
+    const result = verify(directory, anchorDirectory);
+    assert.deepEqual([result.code, result.output.status, result.output.reason],
+      [1, "inconsistent", "operation_grant_mismatch"]);
   }));
 
 test("verifier rejects a restored local checkpoint and selective decision changes", () =>
