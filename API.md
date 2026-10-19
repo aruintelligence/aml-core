@@ -319,6 +319,8 @@ Open-source software rights and official brand rights are separate.
 
 These verify credential integrity, signature, and the `issued_at`/`expires_at` window using the local clock by default. `options.now` is an explicit as-of time for historical replay or tests; a positive result with `clock_source: "caller_supplied"` is not a current-time decision. A successful result includes `evaluated_at`, `clock_source`, and `credential_revocation_checked`. Credential revocation is checked only when `options.revocation_registry` is supplied from a trusted source.
 
+Brand issue, expiry, trust-root, and explicit as-of times use one restricted timestamp profile: four-digit years 0001–9999, valid Gregorian calendar dates, uppercase `T` and `Z`, an explicit `Z` or numeric offset, seconds 00–59, and at most three fractional digits. Verifiers reject timezone-free or normalized impossible dates instead of depending on `Date.parse` leniency or local timezone. Leap-second notation is outside this millisecond-based profile.
+
 ### Official trust APIs
 
 - `verifyBrandTrustRegistry(registry)`

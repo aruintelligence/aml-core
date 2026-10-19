@@ -44,6 +44,8 @@ A verifier MUST:
 
 An official signer check also requires a trusted active root whose validity window contains the same verification instant. An explicit caller-supplied time is a historical as-of check and does not establish the current state of a credential or trust root. Key-level revocation and per-credential revocation are distinct checks.
 
+All issue, expiry, trust-root, and as-of timestamps in this verifier use a deliberately restricted [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html)-style profile: valid Gregorian dates in years 0001–9999, uppercase `T`/`Z`, a required `Z` or numeric offset, seconds 00–59, and zero to three fractional digits. Calendar validity is checked before conversion to an instant. Timezone-free strings, impossible dates, and leap-second notation fail closed. This profile is narrower than the general RFC 3339 grammar so the browser and Node verifier share millisecond semantics.
+
 For an exact-use claim, the buyer can separately pin the canonical SHA-256 of the trust registry and the revocation registry head in an `aml-brand-claim-policy/1` record. `verifyBrandClaim` checks the pinned snapshots at its local clock and requires an exact grantee, mark, and permitted use. `claim_verified` refers to the supplied, pinned snapshots only; it is not a freshness guarantee. A hash chain without a buyer-held head can be rolled back to a valid prefix. The buyer must obtain and refresh both pins independently of the credential presenter.
 
 ## Legal boundary

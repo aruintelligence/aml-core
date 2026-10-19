@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import { signBrandAuthorization } from "../runtime/brandAuthorization.js";
+import { parseBrandTime } from "../runtime/brandTime.js";
+import { acceptedBrandTimes, rejectedBrandTimes, impossibleBrandTime, timezoneFreeBrandTime } from "./fixtures/brand-times.js";
+import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 
 test("public browser verifier rejects expired, future, and inactive-root credentials", async () => {
   const page = fs.readFileSync(new URL("../docs/official-verify.html", import.meta.url), "utf8");
@@ -20,19 +23,32 @@ test("public browser verifier rejects expired, future, and inactive-root credent
     grantee: "Example Integrator LLC", marks: ["ĀML™"], ...times
   }, pem);
   const current = issue();
+  const signedWithDate = (field, value) => {
+    const { credential_hash, algorithm, public_key_pem, public_key_sha256, signature_base64, ...body } = current;
+    const changed = { ...body, [field]: value };
+    const canonical = canonicalJSONStringify(changed);
+    return {
+      ...changed, algorithm, public_key_pem, public_key_sha256,
+      credential_hash: crypto.createHash("sha256").update(canonical).digest("hex"),
+      signature_base64: crypto.sign(null, Buffer.from(canonical), privateKey).toString("base64")
+    };
+  };
   const registry = {
     type: "aml-brand-trust-roots/1", owner: "ĀRU Intelligence Inc.",
     status: "active",
     active_keys: [{ public_key_sha256: current.public_key_sha256 }], revoked_keys: []
   };
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-  await new AsyncFunction("crypto", "document", "fetch", "atob", "TextEncoder", script)(
+  const browserParse = await new AsyncFunction("crypto", "document", "fetch", "atob", "TextEncoder", `${script}\nreturn parseBrandTime;`)(
     crypto.webcrypto,
     { getElementById: element },
     async () => ({ ok: true, json: async () => registry }),
     globalThis.atob,
     TextEncoder
   );
+  for (const value of [...acceptedBrandTimes, ...rejectedBrandTimes]) {
+    assert.equal(browserParse(value), parseBrandTime(value), `browser and library disagree on ${value}`);
+  }
   const click = async (credential) => {
     element("credential").value = JSON.stringify(credential);
     await element("verify").click();
@@ -45,6 +61,12 @@ test("public browser verifier rejects expired, future, and inactive-root credent
   const future = await click(issue({ issued_at: "2100-01-01T00:00:00Z" }));
   assert.equal(future.credential_reason, "not_yet_issued");
   assert.equal(future.official, false);
+  const impossible = await click(signedWithDate("issued_at", impossibleBrandTime));
+  assert.equal(impossible.credential_reason, "invalid_credential_time_window");
+  assert.equal(impossible.official, false);
+  const timezoneFree = await click(signedWithDate("expires_at", timezoneFreeBrandTime));
+  assert.equal(timezoneFree.credential_reason, "invalid_credential_time_window");
+  assert.equal(timezoneFree.official, false);
 
   registry.active_keys[0].not_after = "2001-01-01T00:00:00Z";
   const expiredRoot = await click(current);
@@ -54,6 +76,8 @@ test("public browser verifier rejects expired, future, and inactive-root credent
   registry.active_keys[0].not_before = "2100-01-01T00:00:00Z";
   assert.equal((await click(current)).trust_reason, "signing_key_not_yet_valid");
   registry.active_keys[0].not_before = "invalid";
+  assert.equal((await click(current)).trust_reason, "invalid_trust_registry");
+  registry.active_keys[0].not_before = impossibleBrandTime;
   assert.equal((await click(current)).trust_reason, "invalid_trust_registry");
   delete registry.active_keys[0].not_before;
   registry.active_keys.push({ public_key_sha256: "other", not_before: "invalid" });
