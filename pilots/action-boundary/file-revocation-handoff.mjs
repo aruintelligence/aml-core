@@ -12,9 +12,41 @@ import { hashHandoffBytes as hash, validHandoffIdentity as identity,
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DIGEST = /^[0-9a-f]{64}$/;
 
-function privateDirectory(directory, create = false) {
-  if (create) fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
-  const stat = fs.lstatSync(directory);
+// A private leaf is insufficient if a parent can be switched to an older
+// authority snapshot. /tmp-style sticky directories protect an owned child;
+// ordinary group/world-writable ancestors do not.
+function verifyAuthorityPath(target, { allowMissing = false, pinned = null, record = null } = {}) {
+  const root = path.parse(target).root;
+  const components = path.relative(root, target).split(path.sep).filter(Boolean);
+  let current = root;
+  let stat;
+  for (const component of [null, ...components]) {
+    if (component !== null) current = path.join(current, component);
+    try { stat = fs.lstatSync(current); }
+    catch (error) {
+      if (allowMissing && error.code === "ENOENT") return null;
+      throw error;
+    }
+    if (!stat.isDirectory() || typeof process.getuid !== "function" ||
+        (stat.uid !== 0 && stat.uid !== process.getuid()) ||
+        ((stat.mode & 0o022) !== 0 && !(stat.mode & 0o1000))) {
+      throw Error("trusted_authority_path_required");
+    }
+    if (pinned?.has(current) &&
+        (pinned.get(current).dev !== stat.dev || pinned.get(current).ino !== stat.ino)) {
+      throw Error("authority_path_changed");
+    }
+    record?.set(current, { dev: stat.dev, ino: stat.ino });
+  }
+  return stat;
+}
+
+function privateDirectory(directory, create = false, pinned = null) {
+  if (create) {
+    verifyAuthorityPath(path.dirname(directory), { allowMissing: true });
+    fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+  }
+  const stat = verifyAuthorityPath(directory, { pinned });
   if (!stat.isDirectory() || (stat.mode & 0o077) !== 0 ||
       typeof process.getuid !== "function" || stat.uid !== process.getuid()) {
     throw Error("private_authority_directory_required");
@@ -78,7 +110,8 @@ function freezeDeep(value) {
 }
 
 export function createFileRevocationHandoff({ directory, now = () => Date.now() } = {}) {
-  if (typeof directory !== "string" || !path.isAbsolute(directory) || typeof now !== "function") {
+  if (typeof directory !== "string" || !path.isAbsolute(directory) ||
+      directory !== path.resolve(directory) || typeof now !== "function") {
     throw new TypeError("A trusted absolute directory and host clock are required");
   }
   privateDirectory(directory, true);
@@ -89,9 +122,13 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now() 
   const lock = path.join(directory, "authority.lock");
   const clockFile = path.join(directory, "clock.json");
   for (const child of [epochs, grants, claimed, outcomes]) privateDirectory(child, true);
+  const pinned = new Map();
+  for (const child of [directory, epochs, grants, claimed, outcomes]) {
+    verifyAuthorityPath(child, { record: pinned });
+  }
 
   function checkDirectories() {
-    for (const child of [directory, epochs, grants, claimed, outcomes]) privateDirectory(child);
+    for (const child of [directory, epochs, grants, claimed, outcomes]) privateDirectory(child, false, pinned);
   }
 
   function acquire() {
@@ -105,6 +142,7 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now() 
   }
 
   function release() {
+    checkDirectories();
     fs.rmdirSync(lock);
     syncDirectory(directory);
   }
