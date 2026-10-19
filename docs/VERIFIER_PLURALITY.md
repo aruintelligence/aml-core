@@ -430,6 +430,11 @@ It recomputes report signatures and the saved summary with Python's standard
 library, including the distinct P-256 key count. It has a narrower documented
 canonical JSON domain. It can also replay the named witness and retained
 challenge using the same `--bundle` and `--challenge` options shown below.
+
+Direct callers of its `verify_quorum` function receive the same held-policy
+validation and paired bundle/challenge requirement as CLI users. Invalid
+held configuration raises `ValueError` before a quorum decision is returned.
+
 Agreement between two implementations maintained in this repository is useful
 interoperability evidence, not an independent institutional witness.
 

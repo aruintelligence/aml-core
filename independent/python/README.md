@@ -80,6 +80,12 @@ does not authenticate when the signer performed the check. All five
 are separate results; a valid quorum can fail any later condition. Supplying
 only a bundle or only a challenge is a usage error.
 
+The imported `verify_signed_quorum.verify_quorum(...)` function applies the
+same held-policy validation and paired-input requirement. It raises
+`ValueError` for invalid verifier-held configuration before evaluating a
+quorum. A zero-threshold policy or an unpaired witness bundle cannot produce
+a passing result through the direct Python API.
+
 The quorum result includes `input_fingerprints` for the canonical JSON quorum
 and each supplied held policy, bundle, and challenge. These are SHA-256 hashes
 of complete `sorted-json-v1` JSON values, not hashes of the source file bytes.

@@ -253,6 +253,15 @@ def unsatisfied_witness_claims(report):
 
 def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=None,
                   expected_input_fingerprints=None):
+    # Direct Python callers need the same held-input validation as the CLI.
+    # Otherwise an invalid zero-threshold policy can pass, or a supplied
+    # witness bundle can be silently ignored without its retained challenge.
+    if policy is not None:
+        validate_policy(policy)
+    if (witness_bundle is None) != (expected_challenge is None):
+        raise ValueError("AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED")
+    if expected_challenge is not None and not isinstance(expected_challenge, dict):
+        raise ValueError("AML_SIGNED_QUORUM_HELD_CHALLENGE_INVALID")
     if (policy is not None and policy["schema"] in ("aml-signed-quorum-held-policy/4",
                                                     "aml-signed-quorum-held-policy/5") and
             expected_challenge is None):
@@ -511,10 +520,10 @@ def main():
         expected_inputs = load_json(args.expect_inputs) if args.expect_inputs else None
         if args.expect_inputs:
             validate_input_expectations(expected_inputs, policy, bool(args.bundle))
+        result = verify_quorum(quorum, policy, witness_bundle, expected_challenge, expected_inputs)
     except (OSError, ValueError) as error:
         print(json.dumps({"valid": False, "reason": str(error)}))
         return 1
-    result = verify_quorum(quorum, policy, witness_bundle, expected_challenge, expected_inputs)
     print(json.dumps(result, indent=2))
     return 0 if result["requested_conditions_met"] else 2
 
