@@ -48,6 +48,8 @@
 
 **Detect a restored authority:** An [opt-in external checkpoint](pilots/action-boundary/AUTHORITY_CHECKPOINT.md) advances before grant, revocation, and claim records become usable. New protocol-3 stores commit to their decision files and authority mode, so a fresh worker refuses an older directory, a selectively restored revocation or spent marker, or a substituted mode while the separate anchor remains current. The included file anchor is still one-machine; restoring both copies together defeats this check.
 
+**Inspect a blocked authority:** The [read-only inspection command](pilots/action-boundary/AUTHORITY_CHECKPOINT.md#inspect-before-reconciliation) reports a present lock, checkpoint mismatch, or altered decision files without changing the store. Its result supports operator investigation; it does not resolve an uncertain provider action.
+
 **Design your own boundary:** [Open the Action Boundary Studio](https://aruintelligence.github.io/aml-core/action-boundary-studio.html). Edit the proposed action **and** the host policy, inspect the live plan and canonical digest, then download a JSON calculation bundle. `node scripts/verify-action-studio-bundle.mjs examples/action-studio/changed-destination.json` rechecks a published example against the policy included in that bundle; the [guide](pilots/action-boundary/ACTION_STUDIO.md) explains the limits. The verifier checks consistency, not policy ownership or a real approval.
 
 [![Action Boundary Studio: editable proposal and policy produce a visible exact-rule decision and portable calculation bundle.](docs/action-studio-preview.svg)](https://aruintelligence.github.io/aml-core/action-boundary-studio.html)

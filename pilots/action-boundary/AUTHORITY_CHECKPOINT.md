@@ -33,8 +33,22 @@ If the anchor refuses an advance, the local mutation and callback do not run. If
 
 The protocol-3 check detects a **whole-directory rollback or selective change to committed decisions or mode** while its independent anchor remains current. It does not help if both copies are restored together, if the same actor can rewrite both stores, if clock or outcome records are changed, or if a tool bypasses this authority. The local file anchor shares the process's OS identity and is neither a multi-machine consensus system nor a trusted external witness. Its hashes authenticate neither the provider nor the approving person. A successful callback result still does not prove delivery. Production needs an anchor with an independently controlled retention and restore boundary plus a reviewed recovery procedure.
 
+## Inspect before reconciliation
+
+The read-only inspection command reports the pinned authority mode, observed authority lock and file-anchor lock, local and external checkpoint records, their agreement, and the protocol-2 or protocol-3 committed-state digest and decision-file counts:
+
+```sh
+node pilots/action-boundary/inspect-file-authority.mjs \
+  /absolute/private/authority /absolute/independent/anchor
+```
+
+The optional second argument is the file anchor directory. The command opens it with `create: false`; it never creates a missing anchor or authority directory. It exits zero for `observed_consistent` and 2 for a lock, mismatch, unreadable state, or other `needs_reconciliation` result. A present authority or anchor lock might belong to a live worker or a crashed one. `checkpoints.comparison` distinguishes a local/external mismatch; `committed_state.comparison` distinguishes a protocol-2 or protocol-3 state mismatch while the checkpoints still agree. `committed_state.includes_authority_mode` is true only for protocol 3. Protocol 1 reports `not_committed`, not a successful state verification. Omit the anchor only to inspect an unanchored store; an anchored local checkpoint without its anchor reports `authority_anchor_not_supplied`.
+
+The command performs no unlock, mode initialization, checkpoint advance, grant issue, clock update, provider call, or recovery. A missing mode reports `authority_mode_missing`, including in an empty directory: a never initialized store cannot be distinguished from one whose mode was deleted. Its scan is not an atomic snapshot of live workers, and `observed_consistent` cannot establish provider delivery, an independently protected anchor or external claim backend, or permission to resume an uncertain operation. Preserve the records and reconcile the provider's operation and idempotency history before any operator-controlled recovery. `inspectFileRevocationHandoff({ directory, anchor })` exposes the same observation to a host without invoking the CLI.
+
 Run the project-authored child-process and failure tests:
 
 ```sh
-node --test test/action-boundary-file-authority-anchor.test.js
+node --test test/action-boundary-file-authority-anchor.test.js \
+  test/action-boundary-file-authority-inspection.test.js
 ```
