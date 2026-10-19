@@ -190,3 +190,57 @@ test("corrupt clock record and a symlinked grant fail closed", () =>
     assert.equal(badGrant.status, "indeterminate");
     assert.equal(calls, 0);
   }));
+
+test("an ancestor symlink cannot switch the authority to an earlier grant snapshot", () =>
+  withAsyncDirectory(async parent => {
+    const actual = path.join(parent, "actual");
+    fs.mkdirSync(actual, { mode: 0o700 });
+    fs.symlinkSync(actual, path.join(parent, "alias"));
+    assert.throws(() => createFileRevocationHandoff({
+      directory: path.join(parent, "alias", "authority")
+    }), /trusted_authority_path_required/);
+  }));
+
+test("a replaced private root cannot replay a spent grant in the same authority", () =>
+  withAsyncDirectory(async parent => {
+    const directory = path.join(parent, "authority");
+    const host = createFileRevocationHandoff({ directory });
+    const grant = host.issue(context());
+    const snapshot = path.join(parent, "snapshot");
+    fs.cpSync(directory, snapshot, { recursive: true });
+    fs.chmodSync(snapshot, 0o700);
+    for (const child of ["epochs", "grants", "claimed", "outcomes"]) {
+      fs.chmodSync(path.join(snapshot, child), 0o700);
+    }
+    fs.chmodSync(path.join(snapshot, "clock.json"), 0o600);
+    fs.chmodSync(path.join(snapshot, "grants", `${grant.grant_id}.json`), 0o600);
+    let calls = 0;
+    const first = await host.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; return "sent"; } });
+    assert.equal(first.status, "returned");
+    fs.renameSync(directory, path.join(parent, "spent"));
+    fs.renameSync(snapshot, directory);
+    const replay = await host.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; return "sent again"; } });
+    assert.deepEqual([replay.status, replay.dispatch_count], ["indeterminate", 0]);
+    assert.equal(calls, 1);
+
+    // The old inode pin is in memory. A fresh instance cannot distinguish a
+    // host-restored old copy; deployments need an anchor outside this store.
+    const restarted = createFileRevocationHandoff({ directory });
+    const unanchored = await restarted.dispatch({ ...context(), grant_id: grant.grant_id,
+      execute: () => { calls++; return "replayed after restart"; } });
+    assert.equal(unanchored.status, "returned");
+    assert.equal(calls, 2);
+    fs.rmSync(path.join(parent, "spent"), { recursive: true, force: true });
+  }));
+
+test("a world-writable nonsticky parent cannot host the authority", () =>
+  withAsyncDirectory(async parent => {
+    fs.chmodSync(parent, 0o777);
+    try {
+      assert.throws(() => createFileRevocationHandoff({
+        directory: path.join(parent, "authority")
+      }), /trusted_authority_path_required/);
+    } finally { fs.chmodSync(parent, 0o700); }
+  }));
