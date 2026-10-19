@@ -18,6 +18,9 @@ A quorum aggregates `aml-verification-report/1` objects only when they agree on:
 - exact artifact hash;
 - distinct declared verifier IDs.
 
+The unsigned quorum accepts at most 64 reports and a positive safe-integer
+threshold, matching its published schema's report bound.
+
 The quorum requires each report's verdict to be a boolean and its artifact
 type and hash to be nonempty strings. The signed-key quorum applies the same
 checks to **every** report with a valid signature before counting it; a valid
@@ -36,6 +39,18 @@ The unsigned quorum reports:
 - whether a configured threshold was met;
 - whether all supplied reports were unanimous;
 - disagreement reasons.
+
+`createVerificationQuorum` copies the supplied reports as ordinary JSON so
+later edits to the caller's objects do not silently change the saved quorum.
+`verifyVerificationQuorum(savedQuorum)` rebuilds and compares the entire
+quorum envelope, including the summary and claim boundary. Its `valid` result
+means the supplied unsigned object is internally consistent; its separate
+`threshold_met` result says whether the declared threshold was reached. A
+missing or altered envelope field outside the reports fails the structural
+check. An unsigned report can still be replaced and a new, internally
+consistent quorum built from it. This path does not authenticate a report or
+establish custody of an earlier version. Use the signed quorum and
+independently retained key policy below when the source of reports matters.
 
 ## Recheck an exported signed quorum
 
