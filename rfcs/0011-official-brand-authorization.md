@@ -39,8 +39,10 @@ A verifier MUST:
 2. recompute the SHA-256 credential hash;
 3. verify the Ed25519 signature;
 4. verify the public-key fingerprint;
-5. reject expired credentials when a verification time is supplied;
-6. reject credentials whose hash appears in an authoritative revocation registry when such a registry is supplied.
+5. capture a verification instant from the local clock when no explicit as-of time is supplied; reject credentials before `issued_at` and at or after `expires_at` (the end is exclusive);
+6. reject credentials whose hash appears in an authoritative revocation registry when such a registry is supplied; report when no credential revocation source was checked.
+
+An official signer check also requires a trusted active root whose validity window contains the same verification instant. An explicit caller-supplied time is a historical as-of check and does not establish the current state of a credential or trust root. Key-level revocation and per-credential revocation are distinct checks.
 
 ## Legal boundary
 

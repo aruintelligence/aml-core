@@ -84,6 +84,7 @@ export function createAmlHttpServer(options = {}) {
   const defaultProfile = options.default_profile ?? "human_first";
   const allowedOrigin = options.allowed_origin ?? null;
   const trustRoots = options.brand_trust_roots ?? loadBrandTrustRoots();
+  const brandRevocationRegistry = options.brand_revocation_registry ?? null;
   const lockedPolicy = createLockedHttpPolicy(options.locked_policy, defaultProfile);
   const receiptSigner = createReceiptSigner(options.receipt_signing, lockedPolicy);
   const maxBatchItems = options.max_batch_items ?? 100;
@@ -301,10 +302,10 @@ export function createAmlHttpServer(options = {}) {
       try {
         const body = await readJson(req, maxBodyBytes, bodyTimeoutMs);
         if (!body.credential) return send(res, 400, { error: "credential_required" }, headers);
+        if (Object.hasOwn(body, "now")) return send(res, 400, { error: "caller_time_not_allowed" }, headers);
+        if (Object.hasOwn(body, "revocation_registry")) return send(res, 400, { error: "caller_revocation_registry_not_allowed" }, headers);
         const result = verifyOfficialBrandAuthorization(body.credential, trustRoots, {
-          now: body.now ?? null,
-          revocation_registry: body.revocation_registry ?? null,
-          expected_issuer: trustRoots.owner ?? "ĀRU Intelligence Inc."
+          revocation_registry: brandRevocationRegistry
         });
         return send(res, result.valid && result.official ? 200 : 422, result, headers);
       } catch (error) {

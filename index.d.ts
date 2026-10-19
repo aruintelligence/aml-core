@@ -743,6 +743,8 @@ export interface AmlHttpServerOptions {
   max_batch_items?: number;
   max_inflight_requests?: number;
   brand_trust_roots?: unknown;
+  /** Operator-supplied credential revocation source; requests cannot override it. */
+  brand_revocation_registry?: unknown;
   request_auth?: RequestAuthenticator;
   auth_timeout_ms?: number;
   locked_policy?: LockedHttpPolicy;

@@ -52,6 +52,30 @@ test("expired authorization fails verification", () => {
   const verified = verifyBrandAuthorization(credential, { now: "2026-09-08T00:00:00.000Z" });
   assert.equal(verified.valid, false);
   assert.equal(verified.reason, "expired");
+  assert.equal(verifyBrandAuthorization(credential).reason, "expired");
+  assert.equal(verifyBrandAuthorization(credential, { now: null }).reason, "expired");
+  const historical = verifyBrandAuthorization(credential, { now: "2000-01-01T00:00:00.000Z" });
+  assert.equal(historical.valid, true);
+  assert.equal(historical.clock_source, "caller_supplied");
+  assert.equal(historical.credential_revocation_checked, false);
+});
+
+test("brand authorization starts at issued_at and expires exactly at expires_at", () => {
+  const { privateKey } = keys();
+  const credential = signBrandAuthorization({
+    grantee: "Example Integrator LLC",
+    marks: ["ĀML™"],
+    issued_at: "2100-01-01T00:00:00.000Z",
+    expires_at: "2101-01-01T00:00:00.000Z"
+  }, privateKey.export({ type: "pkcs8", format: "pem" }));
+
+  assert.equal(verifyBrandAuthorization(credential).reason, "not_yet_issued");
+  assert.equal(verifyBrandAuthorization(credential, { now: "2099-12-31T23:59:59.999Z" }).reason, "not_yet_issued");
+  const firstInstant = verifyBrandAuthorization(credential, { now: credential.issued_at });
+  assert.equal(firstInstant.valid, true);
+  assert.equal(firstInstant.evaluated_at, credential.issued_at);
+  assert.equal(verifyBrandAuthorization(credential, { now: "2100-12-31T23:59:59.999Z" }).valid, true);
+  assert.equal(verifyBrandAuthorization(credential, { now: credential.expires_at }).reason, "expired");
 });
 
 test("brand authorization signer rejects malformed or inverted time windows", () => {
@@ -99,4 +123,8 @@ test("revoked authorization fails verification", () => {
   const verified = verifyBrandAuthorization(credential, { revocation_registry: registry });
   assert.equal(verified.valid, false);
   assert.equal(verified.reason, "revoked");
+  assert.equal(verifyBrandAuthorization(credential, { revocation_registry: "" }).reason, "invalid_revocation_registry");
+  const checked = verifyBrandAuthorization(credential, { revocation_registry: createRevocationRegistry() });
+  assert.equal(checked.valid, true);
+  assert.equal(checked.credential_revocation_checked, true);
 });

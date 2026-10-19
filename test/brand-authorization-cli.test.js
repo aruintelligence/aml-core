@@ -5,6 +5,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { signBrandAuthorization } from "../runtime/brandAuthorization.js";
 
 function run(args, options = {}) {
   return spawnSync(process.execPath, ["bin/aml.js", ...args], {
@@ -43,4 +44,26 @@ test("CLI signs and verifies an AML brand authorization credential", () => {
   const result = JSON.parse(verified.stdout);
   assert.equal(result.valid, true);
   assert.equal(result.grantee, "Example Integrator LLC");
+  assert.equal(result.clock_source, "caller_supplied");
+});
+
+test("generic CLI defaults to current time and labels historical replay", () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "aml-brand-cli-time-"));
+  const { privateKey } = crypto.generateKeyPairSync("ed25519");
+  const credential = signBrandAuthorization({
+    grantee: "Example Integrator LLC", marks: ["ĀML™"],
+    issued_at: "2000-01-01T00:00:00Z", expires_at: "2001-01-01T00:00:00Z"
+  }, privateKey.export({ type: "pkcs8", format: "pem" }));
+  const credentialPath = path.join(temp, "credential.json");
+  fs.writeFileSync(credentialPath, JSON.stringify(credential));
+  const current = run(["verify-brand-authorization", credentialPath], {
+    env: { ...process.env, AML_VERIFY_AT: "" }
+  });
+  assert.equal(current.status, 1);
+  assert.equal(JSON.parse(current.stdout).reason, "expired");
+  const replay = run(["verify-brand-authorization", credentialPath], {
+    env: { ...process.env, AML_VERIFY_AT: "2000-06-01T00:00:00Z" }
+  });
+  assert.equal(replay.status, 0);
+  assert.equal(JSON.parse(replay.stdout).clock_source, "caller_supplied");
 });

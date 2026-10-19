@@ -317,14 +317,16 @@ Open-source software rights and official brand rights are separate.
 - `signBrandAuthorization(request, privateKeyPem, options?)`
 - `verifyBrandAuthorization(credential, options?)`
 
-These verify credential integrity/signature/expiry and optional revocation.
+These verify credential integrity, signature, and the `issued_at`/`expires_at` window using the local clock by default. `options.now` is an explicit as-of time for historical replay or tests; a positive result with `clock_source: "caller_supplied"` is not a current-time decision. A successful result includes `evaluated_at`, `clock_source`, and `credential_revocation_checked`. Credential revocation is checked only when `options.revocation_registry` is supplied from a trusted source.
 
 ### Official trust APIs
 
 - `verifyBrandTrustRegistry(registry)`
 - `verifyOfficialBrandAuthorization(credential, trustRegistry, options?)`
 
-`verifyOfficialBrandAuthorization` adds the critical second step: the signer fingerprint must be present in the canonical active ĀRU trust-root registry and must not be revoked.
+`verifyOfficialBrandAuthorization` adds signer fingerprint membership in the supplied active trust-root registry, key revocation, and its `not_before`/`not_after` window, checked at the same instant as the credential. The credential's issuer must match the registry owner; `options.expected_issuer` cannot override that binding. Registries marked `suspended` or `unprovisioned` cannot confer official status. The caller must provision an authentic trust registry; supplying a custom registry is not proof of ĀRU authority. A positive `official` result reports cryptographic and configured-root checks. When `credential_revocation_checked` is false, it does not establish current per-credential revocation status or the validity of an underlying agreement.
+
+`aml-brand-verify` and `POST /v1/verify-brand-authorization` use their local server clock for current verification. The HTTP route accepts only `{ "credential": ... }`; it rejects request-supplied `now` and `revocation_registry`. Operators can configure `createAmlHttpServer({ brand_revocation_registry })` with a trusted AML revocation registry. Without it, positive HTTP responses include `credential_revocation_checked: false`. The generic `aml verify-brand-authorization` command accepts `AML_VERIFY_AT` for explicit as-of checks and labels such results `caller_supplied`.
 
 A self-signed credential can be cryptographically valid while still **not** being an official ĀRU authorization.
 
