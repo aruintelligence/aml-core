@@ -101,6 +101,13 @@ def public_point(jwk):
 def verify_report(envelope):
     if not isinstance(envelope, dict) or envelope.get("schema") != "aml-signed-verification-report/1":
         return False, "AML_SIGNED_REPORT_INVALID", None
+    # The report is signed, but the envelope's other fields are not. Enforce
+    # the published shape so unsigned claims cannot ride along as verified.
+    if (envelope.get("prototype") is not True or set(envelope) != {
+        "schema", "prototype", "algorithm", "report", "verifier_public_key_jwk",
+        "verifier_key_fingerprint", "signature",
+    }):
+        return False, "AML_SIGNED_REPORT_ENVELOPE_INVALID", None
     if envelope.get("algorithm") != "ECDSA-P256-SHA256":
         return False, "AML_SIGNED_REPORT_ALGORITHM_UNSUPPORTED", None
     report = envelope.get("report")

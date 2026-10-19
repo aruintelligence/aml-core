@@ -11,7 +11,8 @@ import { createVerificationChallenge } from '../docs/aml-verification-challenge.
 import { createSessionAttestation } from '../docs/aml-session-attestation.js';
 import { createWitnessBundle, verifyWitnessBundle, witnessBundlePayload } from '../docs/aml-witness-bundle.js';
 import { witnessVerificationReport } from '../docs/aml-verification-report.js';
-import { createVerifierKeyPair, signVerificationReport } from '../docs/aml-signed-verification-report.js';
+import { createVerifierKeyPair, signVerificationReport,
+  verifySignedVerificationReport } from '../docs/aml-signed-verification-report.js';
 import { createSignedVerificationQuorum, fingerprintVerifierPublicKey,
   validateSignedVerificationQuorumPolicy, verifySignedVerificationQuorum
 } from '../docs/aml-signed-verification-quorum.js';
@@ -169,6 +170,23 @@ print(json.dumps({'valid_policy_met': verify_quorum(quorum, policy=policy)['requ
   };
   const quorum = await createSignedVerificationQuorum([a, b], { threshold: 2 });
   await compare('two-distinct-keys', quorum, policy, true);
+  for (const [name, change] of [
+    ['false-envelope-prototype', envelope => { envelope.prototype = false; }],
+    ['missing-envelope-prototype', envelope => { delete envelope.prototype; }],
+    ['unsigned-envelope-claim', envelope => {
+      envelope.certified_by = 'unsigned external authority';
+    }]
+  ]) {
+    const altered = structuredClone(quorum);
+    change(altered.signed_reports[1]);
+    assert.deepEqual(await verifySignedVerificationReport(altered.signed_reports[1]), {
+      valid: false, reason: 'AML_SIGNED_REPORT_ENVELOPE_INVALID'
+    });
+    await compare(`${name}-stale-summary`, altered, policy, false);
+    const rebuilt = await createSignedVerificationQuorum(altered.signed_reports, { threshold: 2 });
+    assert.equal(rebuilt.summary.valid_signatures, 1);
+    await compare(`${name}-recalculated-summary`, rebuilt, policy, false);
+  }
   const inputExpectations = {
     schema: 'aml-signed-quorum-input-expectations/1', prototype: true,
     canonicalization: 'sorted-json-v1',
