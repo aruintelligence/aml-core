@@ -209,7 +209,8 @@ export async function createSignedVerificationQuorum(signedReports, { threshold 
 
 export function validateSignedVerificationQuorumPolicy(policy) {
   assertBrowserJSON(policy);
-  const vetoDissent = policy?.schema === 'aml-signed-quorum-held-policy/5';
+  const requiredParticipants = policy?.schema === 'aml-signed-quorum-held-policy/6';
+  const vetoDissent = requiredParticipants || policy?.schema === 'aml-signed-quorum-held-policy/5';
   const completeClaims = vetoDissent || policy?.schema === 'aml-signed-quorum-held-policy/4';
   const materialPinned = completeClaims || policy?.schema === 'aml-signed-quorum-held-policy/3';
   const grouped = materialPinned || policy?.schema === 'aml-signed-quorum-held-policy/2';
@@ -218,10 +219,11 @@ export function validateSignedVerificationQuorumPolicy(policy) {
     : ['artifact_hash', 'artifact_type', 'prototype', 'schema', 'threshold', 'trusted_key_fingerprints'];
   if (completeClaims) fields.push('require_complete_witness_claims');
   if (vetoDissent) fields.push('reject_trusted_dissent');
+  if (requiredParticipants) fields.push('required_key_material_fingerprints');
   if (!policy || Array.isArray(policy) || Object.keys(policy).sort().join('|') !== fields.sort().join('|') ||
       !['aml-signed-quorum-held-policy/1', 'aml-signed-quorum-held-policy/2',
         'aml-signed-quorum-held-policy/3', 'aml-signed-quorum-held-policy/4',
-        'aml-signed-quorum-held-policy/5'].includes(policy.schema) ||
+        'aml-signed-quorum-held-policy/5', 'aml-signed-quorum-held-policy/6'].includes(policy.schema) ||
       policy.prototype !== true || (completeClaims &&
         (policy.require_complete_witness_claims !== true || policy.artifact_type !== 'aml-witness-bundle/1')) ||
       (vetoDissent && policy.reject_trusted_dissent !== true)) {
@@ -252,6 +254,15 @@ export function validateSignedVerificationQuorumPolicy(policy) {
     if (materials.some(value => typeof value !== 'string' || !/^[a-f0-9]{64}$/.test(value)) ||
         new Set(materials).size !== materials.length) {
       throw new Error('AML_SIGNED_QUORUM_POLICY_MATERIAL_INVALID');
+    }
+    if (requiredParticipants &&
+        (!Array.isArray(policy.required_key_material_fingerprints) ||
+         policy.required_key_material_fingerprints.length === 0 ||
+         new Set(policy.required_key_material_fingerprints).size !==
+           policy.required_key_material_fingerprints.length ||
+         policy.required_key_material_fingerprints.some(value =>
+           typeof value !== 'string' || !materials.includes(value)))) {
+      throw new Error('AML_SIGNED_QUORUM_POLICY_REQUIRED_KEYS_INVALID');
     }
   }
   if (!Number.isInteger(policy.threshold) || policy.threshold < 1 || policy.threshold > keys.length) {
@@ -302,7 +313,8 @@ export async function verifySignedVerificationQuorum(quorum, {
   if ((witnessBundle === undefined) !== (expectedChallenge === undefined)) {
     throw new Error('AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED');
   }
-  if (['aml-signed-quorum-held-policy/4', 'aml-signed-quorum-held-policy/5']
+  if (['aml-signed-quorum-held-policy/4', 'aml-signed-quorum-held-policy/5',
+    'aml-signed-quorum-held-policy/6']
     .includes(policy?.schema) && witnessBundle === undefined) {
     throw new Error('AML_SIGNED_QUORUM_POLICY_WITNESS_REQUIRED');
   }
@@ -372,9 +384,11 @@ export async function verifySignedVerificationQuorum(quorum, {
         const artifactMatches = rebuilt.artifact_type === policy.artifact_type &&
           rebuilt.artifact_hash === policy.artifact_hash;
         const materialPinned = ['aml-signed-quorum-held-policy/3',
-          'aml-signed-quorum-held-policy/4', 'aml-signed-quorum-held-policy/5']
+          'aml-signed-quorum-held-policy/4', 'aml-signed-quorum-held-policy/5',
+          'aml-signed-quorum-held-policy/6']
           .includes(policy.schema);
-        const vetoDissent = policy.schema === 'aml-signed-quorum-held-policy/5';
+        const requiredParticipants = policy.schema === 'aml-signed-quorum-held-policy/6';
+        const vetoDissent = requiredParticipants || policy.schema === 'aml-signed-quorum-held-policy/5';
         const grouped = materialPinned || policy.schema === 'aml-signed-quorum-held-policy/2';
         const assignments = grouped ? new Map(policy.trusted_keys.map(entry =>
           [entry.verifier_key_fingerprint, entry])) : null;
@@ -421,12 +435,27 @@ export async function verifySignedVerificationQuorum(quorum, {
             }
           }
         }
+        // A buyer may require evidence from specific rostered key material.
+        // A correctly signed negative report counts as present but the separate
+        // dissent veto still rejects it. Absence says nothing about why the
+        // report is missing or whether other reports were withheld.
+        const presentRequired = new Set();
+        if (artifactMatches && requiredParticipants) {
+          const required = new Set(policy.required_key_material_fingerprints);
+          for (const envelope of rebuilt.signed_reports) {
+            if (!(await verifySignedVerificationReport(envelope)).valid) continue;
+            const material = await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk);
+            if (required.has(material)) presentRequired.add(material);
+          }
+        }
+        const missingRequired = requiredParticipants ?
+          policy.required_key_material_fingerprints.filter(material => !presentRequired.has(material)) : [];
         const distinctGroups = grouped ? new Set([...materialGroups].filter(([material]) =>
           !conflictingMaterials.has(material)).map(([, group]) => group)).size : 0;
         result.policy_met = artifactMatches && trusted.size >= policy.threshold &&
           (!grouped || (distinctGroups >= policy.group_threshold && conflictingMaterials.size === 0)) &&
           (!materialPinned || mismatchedPins.size === 0) &&
-          (!vetoDissent || trustedDissent.length === 0);
+          (!vetoDissent || trustedDissent.length === 0) && missingRequired.length === 0;
         result.policy_evaluation = {
           artifact_matches: artifactMatches,
           distinct_trusted_keys: trusted.size,
@@ -437,7 +466,8 @@ export async function verifySignedVerificationQuorum(quorum, {
             conflicting_key_material_fingerprints: [...conflictingMaterials]
           } : {}),
           ...(materialPinned ? { mismatched_key_fingerprints: [...mismatchedPins] } : {}),
-          ...(vetoDissent ? { trusted_dissent: trustedDissent } : {})
+          ...(vetoDissent ? { trusted_dissent: trustedDissent } : {}),
+          ...(requiredParticipants ? { missing_required_key_material_fingerprints: missingRequired } : {})
         };
       }
     }
@@ -483,18 +513,21 @@ export async function verifySignedVerificationQuorum(quorum, {
         conflicts
       };
     }
-    if (['aml-signed-quorum-held-policy/4', 'aml-signed-quorum-held-policy/5']
+    if (['aml-signed-quorum-held-policy/4', 'aml-signed-quorum-held-policy/5',
+      'aml-signed-quorum-held-policy/6']
       .includes(policy?.schema) && valid) {
       const unsatisfied = [];
       if (result.witness_met) {
         const assignments = new Map(policy.trusted_keys.map(entry =>
           [entry.verifier_key_fingerprint, entry.key_material_fingerprint]));
+        const required = policy.schema === 'aml-signed-quorum-held-policy/6' ?
+          new Set(policy.required_key_material_fingerprints) : new Set();
         for (const [index, envelope] of rebuilt.signed_reports.entries()) {
           if (envelope?.report?.valid !== true ||
-              !(await verifySignedVerificationReport(envelope)).valid ||
-              !assignments.has(envelope.verifier_key_fingerprint)) continue;
-          if (await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk) !==
-              assignments.get(envelope.verifier_key_fingerprint)) continue;
+              !(await verifySignedVerificationReport(envelope)).valid) continue;
+          const material = await verifierKeyMaterialFingerprint(envelope.verifier_public_key_jwk);
+          if (material !== assignments.get(envelope.verifier_key_fingerprint) &&
+              !required.has(material)) continue;
           const fields = unsatisfiedWitnessClaims(envelope.report);
           if (fields.length) unsatisfied.push({ report_index: index, fields });
         }

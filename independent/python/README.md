@@ -80,6 +80,14 @@ does not authenticate when the signer performed the check. All five
 are separate results; a valid quorum can fail any later condition. Supplying
 only a bundle or only a challenge is a usage error.
 
+Held policy version 6 adds `required_key_material_fingerprints`, a nonempty
+subset of the pinned roster. Each must appear in an authenticated supplied
+report over the expected artifact; an invalid signature cannot establish
+presence, and a negative report still triggers the inherited version 5 veto.
+The policy evaluation lists missing required material. This detects omission
+of a named participant from the supplied quorum, not why it is missing or
+whether other reports from a present key were withheld.
+
 The imported `verify_signed_quorum.verify_quorum(...)` function applies the
 same held-policy validation and paired-input requirement. It raises
 `ValueError` for invalid verifier-held configuration before evaluating a
