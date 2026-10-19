@@ -330,7 +330,10 @@ paths:
       summary: Verify whether an AML brand authorization is officially trusted by the configured AML trust roots
       description: >-
         A valid embedded signature is insufficient for official status. The signer fingerprint must also
-        appear in the configured active brand trust roots and must not be revoked.
+        appear in the configured active brand trust roots and must not be revoked. The server's local
+        clock checks both credential and root validity windows. Caller-supplied time and revocation
+        registries are rejected. Per-credential revocation is checked only when the server operator
+        configures brand_revocation_registry; otherwise credential_revocation_checked is false.
       requestBody:
         required: true
         content:
@@ -341,13 +344,13 @@ paths:
               properties:
                 credential:
                   type: object
-                now:
-                  type: string
-                revocation_registry:
-                  type: object
+              not:
+                anyOf:
+                  - required: [now]
+                  - required: [revocation_registry]
       responses:
         '200':
-          description: Credential is cryptographically valid and officially trusted by the configured AML trust root
+          description: Credential passes signature, time, and configured trust-root checks; inspect credential_revocation_checked before asserting current authorization
         '422':
           description: Credential is not officially trusted, is invalid, expired, revoked, or signed by an untrusted key
         '400':

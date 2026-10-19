@@ -23,6 +23,10 @@ An authorization should be treated as **officially authorized by ĀRU Intelligen
 7. the credential scope matches the use being claimed;
 8. the underlying written agreement is valid for the represented use.
 
+The library, official CLI, HTTP service, and public browser view check the local clock against credential issue/expiration and trust-root validity windows. Explicit `now` in the library and `AML_VERIFY_AT` in the generic credential CLI support historical as-of inspection, which is labeled `caller_supplied` and must not be presented as a current decision. The official CLI and HTTP route always use their local clock; the service rejects caller-provided time.
+
+The public browser view has no authoritative per-credential revocation source. The library and official CLI check one only when supplied by the operator; the HTTP service checks one only when configured as `brand_revocation_registry`. A successful cryptographic/trust-root decision with `credential_revocation_checked: false` leaves condition 4 unproven. Verify the applicable revocation source and written agreement before representing an authorization as currently effective. The verifier depends on its clock and the authenticity and freshness of the trust registry and revocation source.
+
 ## Current production trust root
 
 The first production AML brand-signing trust root is active.

@@ -7,6 +7,7 @@ import { once } from "node:events";
 import { createAmlHttpServer } from "../server/httpServer.js";
 import { verifyExecutionReceipt, verifySignedExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { signBrandAuthorization } from "../runtime/brandAuthorization.js";
+import { createRevocationRegistry, revokeArtifact } from "../runtime/revocationRegistry.js";
 
 function intent() {
   return {
@@ -514,7 +515,7 @@ test("AML HTTP official brand verification fails closed for untrusted signer", a
     assert.equal(response.status, 422);
     const result = await response.json();
     assert.equal(result.official, false);
-    assert.equal(result.reason, "untrusted_signing_key");
+    assert.equal(result.reason, "trust_registry_inactive");
   }, {
     brand_trust_roots: {
       type: "aml-brand-trust-roots/1",
@@ -545,6 +546,8 @@ test("AML HTTP official brand verification succeeds only for configured trusted 
     assert.equal(result.valid, true);
     assert.equal(result.official, true);
     assert.equal(result.trust_root.key_id, "http-test-root");
+    assert.equal(result.clock_source, "local_system");
+    assert.equal(result.credential_revocation_checked, false);
   }, {
     brand_trust_roots: {
       type: "aml-brand-trust-roots/1",
@@ -557,6 +560,63 @@ test("AML HTTP official brand verification succeeds only for configured trusted 
       }],
       revoked_keys: []
     }
+  });
+});
+
+test("AML HTTP brand verification uses server time and rejects caller time overrides", async () => {
+  const { privateKey } = crypto.generateKeyPairSync("ed25519");
+  const pem = privateKey.export({ type: "pkcs8", format: "pem" });
+  const credential = signBrandAuthorization({
+    grantee: "Example Integrator LLC", marks: ["ĀML™"],
+    issued_at: "2000-01-01T00:00:00Z", expires_at: "2001-01-01T00:00:00Z"
+  }, pem);
+  const futureCredential = signBrandAuthorization({
+    grantee: "Example Integrator LLC", marks: ["ĀML™"], issued_at: "2100-01-01T00:00:00Z"
+  }, pem);
+  const post = (base, body) => fetch(`${base}/v1/verify-brand-authorization`, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body)
+  });
+  await withServer(async (base) => {
+    const expired = await post(base, { credential });
+    assert.equal(expired.status, 422);
+    assert.equal((await expired.json()).reason, "expired");
+    const future = await post(base, { credential: futureCredential });
+    assert.equal(future.status, 422);
+    assert.equal((await future.json()).reason, "not_yet_issued");
+    const backdated = await post(base, { credential, now: "2000-06-01T00:00:00Z" });
+    assert.equal(backdated.status, 400);
+    assert.equal((await backdated.json()).error, "caller_time_not_allowed");
+    assert.equal((await post(base, { credential, now: null })).status, 400);
+  }, { brand_trust_roots: {
+    type: "aml-brand-trust-roots/1", owner: "ĀRU Intelligence Inc.",
+    status: "active",
+    active_keys: [{ public_key_sha256: credential.public_key_sha256 }], revoked_keys: []
+  } });
+});
+
+test("AML HTTP brand verification uses a server-held credential revocation registry", async () => {
+  const { privateKey } = crypto.generateKeyPairSync("ed25519");
+  const credential = signBrandAuthorization({
+    grantee: "Example Integrator LLC", marks: ["ĀML™"]
+  }, privateKey.export({ type: "pkcs8", format: "pem" }));
+  const revoked = revokeArtifact(createRevocationRegistry(), credential.credential_hash);
+  const post = (base, body) => fetch(`${base}/v1/verify-brand-authorization`, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body)
+  });
+  await withServer(async (base) => {
+    const result = await post(base, { credential });
+    assert.equal(result.status, 422);
+    assert.equal((await result.json()).reason, "revoked");
+    const injected = await post(base, { credential, revocation_registry: createRevocationRegistry() });
+    assert.equal(injected.status, 400);
+    assert.equal((await injected.json()).error, "caller_revocation_registry_not_allowed");
+  }, {
+    brand_trust_roots: {
+      type: "aml-brand-trust-roots/1", owner: "ĀRU Intelligence Inc.",
+      status: "active",
+      active_keys: [{ public_key_sha256: credential.public_key_sha256 }], revoked_keys: []
+    },
+    brand_revocation_registry: revoked
   });
 });
 

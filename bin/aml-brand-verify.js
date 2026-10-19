@@ -17,9 +17,7 @@ try {
   const trustRoots = JSON.parse(fs.readFileSync(trustRootsPath, "utf8"));
   const revocationRegistry = revocationPath ? JSON.parse(fs.readFileSync(revocationPath, "utf8")) : null;
   const result = verifyOfficialBrandAuthorization(credential, trustRoots, {
-    now: process.env.AML_VERIFY_AT || null,
-    revocation_registry: revocationRegistry,
-    expected_issuer: process.env.AML_EXPECTED_BRAND_ISSUER || trustRoots.owner || "ĀRU Intelligence Inc."
+    revocation_registry: revocationRegistry
   });
   console.log(JSON.stringify(result, null, 2));
   process.exit(result.valid && result.official ? 0 : 1);

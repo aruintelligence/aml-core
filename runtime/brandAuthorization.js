@@ -56,6 +56,8 @@ export function signBrandAuthorization({ grantee, marks = [], uses = [], issued_
 }
 
 export function verifyBrandAuthorization(credential, { now = null, revocation_registry = null, expected_issuer = null } = {}) {
+  const evaluatedAt = now == null ? new Date().toISOString() : now;
+  const clockSource = now == null ? "local_system" : "caller_supplied";
   if (!credential || credential.type !== "aml-brand-authorization/1") return { valid: false, reason: "invalid_type" };
   const {
     credential_hash,
@@ -71,8 +73,13 @@ export function verifyBrandAuthorization(credential, { now = null, revocation_re
 
   const timeError = validateTimes(credential);
   if (timeError) return { valid: false, reason: timeError };
-  if (now !== null && !validTimestamp(now)) return { valid: false, reason: "invalid_now" };
-  if (now && credential.expires_at && Date.parse(now) >= Date.parse(credential.expires_at)) return { valid: false, reason: "expired" };
+  if (!validTimestamp(evaluatedAt)) return { valid: false, reason: "invalid_now" };
+  if (credential.issued_at && Date.parse(evaluatedAt) < Date.parse(credential.issued_at)) {
+    return { valid: false, reason: "not_yet_issued" };
+  }
+  if (credential.expires_at && Date.parse(evaluatedAt) >= Date.parse(credential.expires_at)) {
+    return { valid: false, reason: "expired" };
+  }
 
   const canonical = canonicalJSONStringify(body);
   if (sha256(canonical) !== credential_hash) return { valid: false, reason: "hash_mismatch" };
@@ -87,7 +94,7 @@ export function verifyBrandAuthorization(credential, { now = null, revocation_re
     return { valid: false, reason: "invalid_key_or_signature" };
   }
 
-  if (revocation_registry) {
+  if (revocation_registry != null) {
     const revocation = isRevoked(revocation_registry, credential_hash);
     if (!revocation.registry_valid) return { valid: false, reason: "invalid_revocation_registry" };
     if (revocation.revoked) return { valid: false, reason: "revoked", revocation: revocation.entry };
@@ -100,6 +107,9 @@ export function verifyBrandAuthorization(credential, { now = null, revocation_re
     grantee: credential.grantee,
     marks: credential.marks,
     permitted_uses: credential.permitted_uses,
-    credential_hash
+    credential_hash,
+    evaluated_at: evaluatedAt,
+    clock_source: clockSource,
+    credential_revocation_checked: revocation_registry != null
   };
 }
