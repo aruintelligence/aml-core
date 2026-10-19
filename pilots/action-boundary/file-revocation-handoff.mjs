@@ -156,15 +156,26 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now() 
     });
   }
 
-  function issue(input, { ttlMs = 60_000 } = {}) {
+  // Observe under the same lock used for revoke and issue. A host can await
+  // authenticated approval, then condition issuance on this observed epoch.
+  function observeIssuer({ tenant, issuer } = {}) {
+    if (!identity(tenant) || !identity(issuer)) throw new TypeError("Invalid tenant or issuer");
+    return locked(() => ({ epoch: currentEpoch(issuerHash(tenant, issuer)) }));
+  }
+
+  function issue(input, { ttlMs = 60_000, expectedEpoch } = {}) {
     if (!Number.isSafeInteger(ttlMs) || ttlMs <= 0 || ttlMs > 300_000) {
       throw new TypeError("TTL must be between 1 ms and five minutes");
     }
+    if (expectedEpoch !== undefined && (!Number.isSafeInteger(expectedEpoch) || expectedEpoch < 0)) {
+      throw new TypeError("Invalid expected issuer epoch");
+    }
     const bound = binding(input);
     return locked(() => {
+      const epoch = currentEpoch(issuerHash(bound.context.tenant, bound.context.issuer));
+      if (expectedEpoch !== undefined && epoch !== expectedEpoch) throw Error("issuer_revoked");
       const issuedAt = hostTime();
       if (!Number.isSafeInteger(issuedAt + ttlMs)) throw Error("host_clock_unavailable");
-      const epoch = currentEpoch(issuerHash(bound.context.tenant, bound.context.issuer));
       const grantId = randomUUID();
       createExclusive(path.join(grants, `${grantId}.json`), {
         protocol: "aml-file-authority-grant/1", grant_id: grantId,
@@ -254,5 +265,5 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now() 
     return outcome;
   }
 
-  return { issue, revokeIssuer, dispatch };
+  return { observeIssuer, issue, revokeIssuer, dispatch };
 }
