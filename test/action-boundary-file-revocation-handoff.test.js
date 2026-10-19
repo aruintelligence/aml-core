@@ -54,6 +54,20 @@ test("revocation in a separate process blocks before callback", () =>
     assert.equal(calls, 1);
   }));
 
+test("conditional issuance rejects an epoch observed before cross-process revocation", () =>
+  withAsyncDirectory(async directory => {
+    const host = createFileRevocationHandoff({ directory });
+    const observed = host.observeIssuer(context());
+    assert.deepEqual(observed, { epoch: 0 });
+    await exec(process.execPath, [worker, directory, "unused", "revoke"]);
+    assert.throws(() => host.issue(context(), { expectedEpoch: observed.epoch }), /issuer_revoked/);
+    assert.equal(fs.readdirSync(path.join(directory, "grants")).length, 0);
+    const next = host.observeIssuer(context());
+    assert.deepEqual(next, { epoch: 1 });
+    assert.ok(host.issue(context(), { expectedEpoch: next.epoch }).grant_id);
+    assert.throws(() => host.issue(context(), { expectedEpoch: -1 }), /Invalid expected issuer epoch/);
+  }));
+
 test("one changed BCC, tenant, or policy cannot reuse the approved request", () =>
   withAsyncDirectory(async directory => {
     const host = createFileRevocationHandoff({ directory });
