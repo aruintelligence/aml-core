@@ -97,6 +97,57 @@ try {
   const fixedPolicy = JSON.parse(fs.readFileSync(
     'independent/python/signed-quorum-held-policy-vector.json', 'utf8'
   ));
+  // Exercise the callable Python verifier, not just its CLI. The CLI already
+  // validated held inputs, so these bypasses were invisible to file-only tests.
+  const directPython = String.raw`
+import json, sys
+sys.path.insert(0, sys.argv[3])
+from verify_signed_quorum import verify_quorum
+with open(sys.argv[1], encoding='utf-8') as source:
+    quorum = json.load(source)
+with open(sys.argv[2], encoding='utf-8') as source:
+    policy = json.load(source)
+zero_policy = {**policy, 'trusted_key_fingerprints': [], 'threshold': 0}
+cases = {}
+for name, kwargs in (
+    ('zero-trust-policy', {'policy': zero_policy}),
+    ('bundle-without-challenge', {'witness_bundle': {'untrusted': True}}),
+    ('challenge-without-bundle', {'expected_challenge': {'untrusted': True}}),
+):
+    try:
+        verify_quorum(quorum, **kwargs)
+        cases[name] = 'ACCEPTED'
+    except ValueError as error:
+        cases[name] = str(error)
+print(json.dumps({'valid_policy_met': verify_quorum(quorum, policy=policy)['requested_conditions_met'],
+                  'rejections': cases}))`;
+  const directRun = spawnSync('python3', ['-c', directPython,
+    save('direct-api-quorum.json', fixedQuorum), save('direct-api-policy.json', fixedPolicy),
+    path.resolve('independent/python')], {
+    encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' }
+  });
+  assert.equal(directRun.status, 0, directRun.stderr);
+  assert.deepEqual(JSON.parse(directRun.stdout), {
+    valid_policy_met: true,
+    rejections: {
+      'zero-trust-policy': 'AML_SIGNED_QUORUM_POLICY_KEYS_INVALID',
+      'bundle-without-challenge': 'AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED',
+      'challenge-without-bundle': 'AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED'
+    }
+  });
+  await assert.rejects(() => verifySignedVerificationQuorum(fixedQuorum, {
+    policy: { ...fixedPolicy, trusted_key_fingerprints: [], threshold: 0 }
+  }), /AML_SIGNED_QUORUM_POLICY_KEYS_INVALID/);
+  await assert.rejects(() => verifySignedVerificationQuorum(fixedQuorum, {
+    witnessBundle: { untrusted: true }
+  }), /AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED/);
+  const nullBundleRun = spawnSync('python3', [python, save('null-bundle-quorum.json', fixedQuorum),
+    '--bundle', save('null-bundle.json', 'null'),
+    '--challenge', save('null-bundle-challenge.json', { untrusted: true })], {
+    encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' }
+  });
+  assert.equal(nullBundleRun.status, 1, nullBundleRun.stderr);
+  assert.equal(JSON.parse(nullBundleRun.stdout).reason, 'AML_SIGNED_QUORUM_WITNESS_INPUTS_REQUIRED');
   await compare('published-synthetic-vector', fixedQuorum, fixedPolicy, true);
   const fixedGroupPolicy = JSON.parse(fs.readFileSync(
     'independent/python/signed-quorum-held-group-policy-vector.json', 'utf8'
@@ -857,7 +908,9 @@ try {
       'fixed_vector_attestation_before_challenge',
       'signed_receipt_after_evidence', 'signed_evidence_after_attestation',
       'signed_malformed_receipt_time', 'signed_missing_evidence_time',
-      'null_input_expectations_rejected', 'null_held_policy_rejected'],
+      'null_input_expectations_rejected', 'null_held_policy_rejected',
+      'direct_api_rejects_zero_trust_policy', 'direct_api_requires_paired_witness_inputs',
+      'cli_rejects_null_bundle_without_traceback'],
     claim_boundary: 'Project-authored Python and JavaScript implementations agree on these saved quorum, held-policy, and live witness-replay cases. This is not an external witness, signer identity, or independent certification.'
   }, null, 2));
 } finally {
