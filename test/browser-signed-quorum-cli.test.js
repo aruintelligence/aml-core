@@ -260,6 +260,72 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   assert.match(missing.stderr, /Usage: aml verify-signed-quorum/);
 });
 
+test('portable quorum gate rejects JSON that the Python verifier cannot reproduce', async (t) => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-portable-quorum-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const write = (name, value) => {
+    const file = path.join(directory, name);
+    fs.writeFileSync(file, typeof value === 'string' ? value : JSON.stringify(value));
+    return file;
+  };
+  const run = (...args) => spawnSync(process.execPath,
+    ['bin/aml.js', 'verify-signed-quorum', ...args], { encoding: 'utf8' });
+  const signed = await signVerificationReport(report('portable'), await createVerifierKeyPair());
+  const quorum = await createSignedVerificationQuorum([signed], { threshold: 1 });
+  const portable = run(write('portable.json', quorum), '--portable');
+  assert.equal(portable.status, 0, portable.stderr);
+  assert.equal(JSON.parse(portable.stdout).portable_met, true);
+  assert.deepEqual(JSON.parse(portable.stdout).requested_conditions.checked,
+    ['valid', 'threshold_met', 'portable_met']);
+
+  for (const [name, extra, reason] of [
+    ['fraction', { score: 0.5 }, 'unsafe_or_fractional_number'],
+    ['unsafe-integer', { score: Number.MAX_SAFE_INTEGER + 1 }, 'unsafe_or_fractional_number'],
+    ['array-index-key', { measurements: { 2: 'two', 10: 'ten' } }, 'nonportable_object_key'],
+    ['astral-key', { notes: { '😀': 'claim' } }, 'nonportable_object_key'],
+    ['unpaired-surrogate', { notes: ['\uD800'] }, 'unpaired_surrogate']
+  ]) {
+    const envelope = await signVerificationReport({ ...report(name), ...extra },
+      await createVerifierKeyPair());
+    const candidate = await createSignedVerificationQuorum([envelope], { threshold: 1 });
+    const file = write(`${name}.json`, candidate);
+    assert.equal(JSON.parse(run(file).stdout).requested_conditions_met, true, name);
+    const result = await verifySignedVerificationQuorum(candidate, { portable: true });
+    assert.equal(result.portable_met, false, name);
+    assert.equal(result.portable_evaluation.issue.input, 'quorum', name);
+    assert.equal(result.portable_evaluation.issue.reason, reason, name);
+    assert.equal(result.valid, true, name);
+    assert.equal(result.threshold_met, true, name);
+    assert.equal(result.requested_conditions_met, false, name);
+    const rejected = run(file, '--portable');
+    if (reason === 'unsafe_or_fractional_number') {
+      assert.equal(rejected.status, 1, `${name}: ${rejected.stderr}`);
+      assert.match(rejected.stderr, /nonportable JSON number/, name);
+    } else {
+      assert.equal(rejected.status, 2, `${name}: ${rejected.stderr}`);
+      const output = JSON.parse(rejected.stdout);
+      assert.deepEqual(output.portable_evaluation, result.portable_evaluation);
+      assert.equal(output.valid, true, name);
+      assert.equal(output.threshold_met, true, name);
+    }
+  }
+
+  // A parsed JS number cannot reveal whether the file used 1, 1.0, or 1e0.
+  // The CLI therefore checks source number tokens when portability is required.
+  for (const number of ['1.0', '1e0', '9007199254740992']) {
+    const source = JSON.stringify(quorum).replace('"threshold":1', `"threshold":${number}`);
+    const file = write(`number-${number}.json`, source);
+    const rejected = run(file, '--portable');
+    assert.equal(rejected.status, 1, `${number}: ${rejected.stderr}`);
+    assert.match(rejected.stderr, /nonportable JSON number/, number);
+  }
+  const duplicateFlag = run(write('duplicate-flag.json', quorum), '--portable', '--portable');
+  assert.equal(duplicateFlag.status, 1);
+  assert.match(duplicateFlag.stderr, /Usage: aml verify-signed-quorum/);
+  await assert.rejects(() => verifySignedVerificationQuorum(quorum, { portable: 'true' }),
+    /AML_SIGNED_QUORUM_PORTABLE_OPTION_INVALID/);
+});
+
 test('signed quorum rechecks the named witness against a separately held challenge', async (t) => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-quorum-witness-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
@@ -367,6 +433,11 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.equal(complete.status, 0, complete.stderr);
   assert.equal(JSON.parse(complete.stdout).policy_met, true);
   assert.deepEqual(JSON.parse(complete.stdout).policy_evaluation.unsatisfied_claims, []);
+  const completePortable = run(quorumPath, '--portable', '--policy', completePolicyPath,
+    '--bundle', bundlePath, '--challenge', challengePath);
+  assert.equal(completePortable.status, 0, completePortable.stderr);
+  assert.equal(JSON.parse(completePortable.stdout).portable_met, true);
+  assert.equal(JSON.parse(completePortable.stdout).requested_conditions_met, true);
   assert.deepEqual(JSON.parse(complete.stdout).input_fingerprints, {
     ...replayed.input_fingerprints, policy_sha256: inputHash(completePolicy)
   });

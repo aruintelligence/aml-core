@@ -152,6 +152,37 @@ in signed reports. A malformed byte sequence or duplicate name is a usage
 error (exit `1`), even when lossy decoding or last-key-wins parsing would
 produce a valid quorum. The browser API accepts already-parsed objects and
 cannot recover source-byte errors or duplicate names from them.
+
+For a decision intended to reproduce in the project-authored Python verifier,
+add `--portable` to the offline command (or `portable: true` to the JavaScript
+API options). The result then includes separate `portable_met` and
+`portable_evaluation` fields, and `requested_conditions_met` and CLI exit `0`
+require the portable condition too. The profile accepts only safe integers,
+BMP object keys that are not JavaScript array-index keys, and strings without
+unpaired UTF-16 surrogates. It rejects fractional and unsafe numbers anywhere
+in the supplied quorum. An internally valid quorum can still have
+`portable_met: false` and fail the requested decision; `valid` and
+`threshold_met` keep their separate meanings. Python rejects an out-of-domain
+quorum before reconstruction, so its `valid` may differ; both decisions fail
+the overall acceptance gate. A nonportable held witness input leaves the
+quorum's internal validity separate and fails `portable_met` and witness
+replay. A nonportable held policy or input expectation is a configuration
+error.
+
+```bash
+aml verify-signed-quorum saved-quorum.json --portable \
+  --policy held-policy.json --bundle witness.json --challenge held-challenge.json
+```
+
+The CLI also checks raw JSON number tokens before parsing. In portable mode,
+`1.0`, `1e0`, and unsafe integer tokens cause input exit `1`, since JavaScript
+would otherwise parse some of them into indistinguishable or rounded numbers.
+The direct JavaScript API sees only parsed objects and cannot recover an
+earlier numeric spelling or malformed source bytes. Parse file inputs with
+the CLI when source-token portability is required. This gate checks whether
+the two project-maintained implementations can use the same JSON domain; it
+does not make either implementation independent or certify a report.
+
 It derives distinctness from the P-256 public point. Two JWK envelopes for the
 same key with different optional metadata still count as one key, even if the
 envelope fingerprints differ. The signed-report checker requires canonical
