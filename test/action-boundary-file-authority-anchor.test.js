@@ -160,6 +160,36 @@ test("selective grant edits and operation loss disagree with the checkpoint", ()
       /authority_state_mismatch/);
   }));
 
+test("an ambiguous grant key cannot pass its unchanged checkpoint or reach the callback", () =>
+  fixture(async ({ directory, anchor, host }) => {
+    const grant = host.issue(input());
+    const grantFile = path.join(directory, "grants", `${grant.grant_id}.json`);
+    const original = fs.readFileSync(grantFile, "utf8");
+    const injected = `{"\\u0062inding_sha256":"${"0".repeat(64)}",${original.slice(1)}`;
+    assert.deepEqual(JSON.parse(injected), JSON.parse(original));
+    fs.writeFileSync(grantFile, injected);
+    assert.equal(anchor.read().sequence, 1);
+    assert.throws(() => createFileRevocationHandoff({ directory, anchor }),
+      /duplicate_authority_record_key/);
+    let callbacks = 0;
+    const result = await host.dispatch({ ...input(), grant_id: grant.grant_id,
+      execute: () => { callbacks++; } });
+    assert.deepEqual([result.status, result.dispatch_count, callbacks], ["indeterminate", 0, 0]);
+    assert.equal(fs.readdirSync(path.join(directory, "claimed")).length, 0);
+  }));
+
+test("an ambiguous local checkpoint cannot authorize a later grant", () =>
+  fixture(async ({ directory, anchor, host }) => {
+    const file = path.join(directory, "checkpoint.json");
+    const original = fs.readFileSync(file, "utf8");
+    const injected = `{"\\u0070rotocol":"aml-file-authority-checkpoint/3",${original.slice(1)}`;
+    assert.deepEqual(JSON.parse(injected), JSON.parse(original));
+    fs.writeFileSync(file, injected);
+    assert.throws(() => host.issue(input()), /duplicate_authority_record_key/);
+    assert.equal(anchor.read().sequence, 0);
+    assert.equal(fs.readdirSync(path.join(directory, "grants")).length, 0);
+  }));
+
 test("a protocol-1 checkpoint with a mode pin remains readable without an upgrade", () =>
   fixture(async ({ parent }) => {
     const directory = path.join(parent, "legacy-authority");
