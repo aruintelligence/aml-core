@@ -48,9 +48,23 @@ The optional second argument is the file anchor directory. The command opens it 
 
 The command performs no unlock, mode initialization, checkpoint advance, grant issue, clock update, provider call, or recovery. A missing mode reports `authority_mode_missing`, including in an empty directory: a never initialized store cannot be distinguished from one whose mode was deleted. Its scan is not an atomic snapshot of live workers, and `observed_consistent` cannot establish provider delivery, an independently protected anchor or external claim backend, or permission to resume an uncertain operation. Preserve the records and reconcile the provider's operation and idempotency history before any operator-controlled recovery. `inspectFileRevocationHandoff({ directory, anchor })` exposes the same observation to a host without invoking the CLI.
 
+## Cross-check a stopped protocol-3 store in Python
+
+For a separate implementation of the commitment check, take **quiescent copies** of the local authority and its separately retained file anchor, preserving ownership and owner-only permissions. Then run the project-authored Python verifier:
+
+```sh
+python3 pilots/action-boundary/verify_authority_checkpoint.py \
+  /path/to/authority-copy /path/to/anchor-copy
+```
+
+It exits 0 and prints JSON with `status: "consistent"`, the store ID, sequence, state digest, and counts only if the two checkpoint records agree and the four decision-file collections plus mode recompute to that digest. It also checks the generated record shapes, grant/operation/claim links, private file permissions, uncertain temporary entries, and authority locks. A nonzero exit prints `status: "inconsistent"` and a reason such as `anchor_mismatch`, `state_mismatch`, or `unexpected_state_entry`. It rejects protocol 1 and 2 explicitly: their commitments do not cover the same state. The verifier does not create an authority, advance a checkpoint, or call a provider.
+
+This check assumes no writer is active while the copies are taken. Its result covers the current committed records, not the historical chain leading to the checkpoint head or the outcome files. `consistent` does not clear a claim listed in the JavaScript inspector's `reconciliation` report; review provider history for those candidates. A matching but jointly restored or jointly rewritten authority and anchor can pass. This is a second, project-authored implementation of the protocol-3 snapshot check, not an independent witness, audit of the host, or proof of a provider effect. Keep the original stores and provider records for reconciliation after any failure; do not repair by copying one checkpoint over the other.
+
 Run the project-authored child-process and failure tests:
 
 ```sh
 node --test test/action-boundary-file-authority-anchor.test.js \
-  test/action-boundary-file-authority-inspection.test.js
+  test/action-boundary-file-authority-inspection.test.js \
+  test/action-boundary-checkpoint-verifier.test.js
 ```
