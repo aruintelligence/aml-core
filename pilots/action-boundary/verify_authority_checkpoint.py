@@ -216,8 +216,11 @@ def inspect(authority, anchor):
                     "operation_grant_mismatch")
         require(("required_claim_protocol" in grant) ==
                 (mode["mode"] == "checkpoint-claim-anchored"), "grant_mode_mismatch")
-    require(all(op["grant_id"] in grants for op in operations.values()),
-            "orphan_operation")
+    for op_id, op in operations.items():
+        grant = grants.get(op["grant_id"])
+        require(grant is not None, "orphan_operation")
+        require(grant.get("operation_sha256") == op_id,
+                "operation_grant_mismatch")
     require(all(grant_id in grants and claim["binding_sha256"] ==
                 grants[grant_id]["binding_sha256"] for grant_id, claim in claims.items()),
             "claim_grant_mismatch")
