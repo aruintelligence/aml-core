@@ -491,6 +491,51 @@ test('signed quorum rechecks the named witness against a separately held challen
     '--bundle', bundlePath, '--challenge', challengePath);
   assert.equal(present.status, 0, present.stderr);
   assert.deepEqual(JSON.parse(present.stdout).policy_evaluation.missing_required_key_material_fingerprints, []);
+
+  // All five decision paths use the same call-time signature result: summary,
+  // held endorsements, dissent, required presence, and witness claims. Count
+  // actual Web Crypto verifications, including a validly signed negative and
+  // a canonical-length signature that fails authentication.
+  const signedNegative = witnessVerificationReport(bundle, check, { verifier: 'counted-dissent' });
+  signedNegative.valid = false;
+  signedNegative.reason = 'AML_TEST_SIGNED_DISSENT';
+  const negativeEnvelope = await signVerificationReport(signedNegative, requiredKey);
+  const invalidEnvelope = await signVerificationReport(
+    witnessVerificationReport(bundle, check, { verifier: 'counted-invalid-signature' }),
+    await createVerifierKeyPair());
+  invalidEnvelope.signature = `${invalidEnvelope.signature[0] === 'A' ? 'B' : 'A'}${invalidEnvelope.signature.slice(1)}`;
+  const countedQuorum = await createSignedVerificationQuorum(
+    [a, b, requiredReport, negativeEnvelope, invalidEnvelope], { threshold: 2 });
+  const counts = new Map(countedQuorum.signed_reports.map(envelope =>
+    [canonicalJSONStringifyBrowser(envelope.report), 0]));
+  assert.equal(counts.size, countedQuorum.signed_reports.length);
+  const subtle = globalThis.crypto.subtle;
+  const originalVerify = subtle.verify;
+  const originalDescriptor = Object.getOwnPropertyDescriptor(subtle, 'verify');
+  subtle.verify = function (...args) {
+    const signedBytes = Buffer.from(args[3]).toString('utf8');
+    if (counts.has(signedBytes)) counts.set(signedBytes, counts.get(signedBytes) + 1);
+    return Reflect.apply(originalVerify, this, args);
+  };
+  let mixedResult;
+  try {
+    mixedResult = await verifySignedVerificationQuorum(countedQuorum, {
+      policy: presencePolicy, witnessBundle: bundle, expectedChallenge: challenge,
+      portable: true
+    });
+  } finally {
+    if (originalDescriptor) Object.defineProperty(subtle, 'verify', originalDescriptor);
+    else delete subtle.verify;
+  }
+  assert.deepEqual([...counts.values()], [1, 1, 1, 1, 1]);
+  assert.equal(mixedResult.valid, true);
+  assert.equal(mixedResult.threshold_met, true);
+  assert.equal(mixedResult.portable_met, true);
+  assert.equal(mixedResult.witness_met, true);
+  assert.equal(mixedResult.policy_met, false);
+  assert.equal(mixedResult.policy_evaluation.trusted_dissent.length, 1);
+  assert.equal(mixedResult.quorum.summary.valid_signatures, 4);
+
   const requiredDissent = witnessVerificationReport(bundle, check, { verifier: 'required-lab-c-dissent' });
   requiredDissent.valid = false;
   requiredDissent.reason = 'AML_TEST_SIGNED_DISSENT';
