@@ -12,6 +12,7 @@ import { hashHandoffBytes as hash, validHandoffIdentity as identity,
 
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DIGEST = /^[0-9a-f]{64}$/;
+const MAX_GRANT_TTL_MS = 300_000;
 const CLAIM_V1 = "aml-file-authority-external-claim/1";
 const CLAIM_V2 = "aml-file-authority-external-claim/2";
 const AUTHORITY_MODES = ["local", "claim-anchored", "epoch-anchored",
@@ -305,6 +306,7 @@ function claimReconciliation(directory) {
         !Number.isSafeInteger(grant.issued_at_ms) ||
         !Number.isSafeInteger(grant.expires_at_ms) ||
         grant.expires_at_ms <= grant.issued_at_ms ||
+        grant.expires_at_ms - grant.issued_at_ms > MAX_GRANT_TTL_MS ||
         (grant.operation_sha256 !== undefined &&
           !DIGEST.test(grant.operation_sha256)) ||
         (grant.required_claim_protocol !== undefined &&
@@ -841,7 +843,7 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
   }
 
   function issue(input, { ttlMs = 60_000, expectedEpoch, operationId } = {}) {
-    if (!Number.isSafeInteger(ttlMs) || ttlMs <= 0 || ttlMs > 300_000) {
+    if (!Number.isSafeInteger(ttlMs) || ttlMs <= 0 || ttlMs > MAX_GRANT_TTL_MS) {
       throw new TypeError("TTL must be between 1 ms and five minutes");
     }
     if (expectedEpoch !== undefined && (!Number.isSafeInteger(expectedEpoch) || expectedEpoch < 0)) {
@@ -923,7 +925,8 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
             record.required_claim_protocol !== CLAIM_V2) ||
           !Number.isSafeInteger(record.epoch) || record.epoch < 0 ||
           !Number.isSafeInteger(record.issued_at_ms) || !Number.isSafeInteger(record.expires_at_ms) ||
-          record.issued_at_ms >= record.expires_at_ms) {
+          record.issued_at_ms >= record.expires_at_ms ||
+          record.expires_at_ms - record.issued_at_ms > MAX_GRANT_TTL_MS) {
         decision = denied("indeterminate", "invalid_grant_record");
       } else if (record.binding_sha256 !== bound.sha256 ||
           record.issuer_sha256 !== issuerHash(bound.context.tenant, bound.context.issuer)) {

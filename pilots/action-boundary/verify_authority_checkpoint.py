@@ -17,6 +17,7 @@ import sys
 HEX = re.compile(r"[0-9a-f]{64}\Z")
 UUID = re.compile(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\Z", re.I)
 MAX_SAFE = 2**53 - 1
+MAX_GRANT_TTL_MS = 300_000
 PROTOCOL = "aml-file-authority-checkpoint/3"
 COLLECTIONS = ("epochs", "grants", "operations", "claimed")
 NAMES = {"epochs": re.compile(r"[0-9a-f]{64}\.json\Z"),
@@ -145,7 +146,7 @@ def validate_record(kind, name, record):
                 and number(record["epoch"])
                 and number(record["issued_at_ms"], -MAX_SAFE)
                 and number(record["expires_at_ms"], -MAX_SAFE)
-                and record["expires_at_ms"] > record["issued_at_ms"]
+                and 0 < record["expires_at_ms"] - record["issued_at_ms"] <= MAX_GRANT_TTL_MS
                 and ("operation_sha256" not in record or
                      string(record["operation_sha256"], HEX))
                 and ("required_claim_protocol" not in record or
