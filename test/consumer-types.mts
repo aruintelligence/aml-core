@@ -23,9 +23,11 @@ import {
   signExecutionReceipt,
   simulatePolicies,
   verifyExecutionReceipt,
+  verifyBrandClaim,
   verifySignedExecutionReceipt,
   viewMeaning,
-  type AmlIntent
+  type AmlIntent,
+  type BrandClaimPolicy
 } from "aml-core";
 
 const intent: AmlIntent = {
@@ -89,6 +91,13 @@ createAmlHttpServer({ request_auth: async (_req, { signal }) => !signal.aborted 
 // Keep expected type errors in the compiler's view without executing invalid
 // calls when newer Node versions discover this .mts fixture under --test.
 if (false) {
+  const brandPolicy: BrandClaimPolicy = {
+    type: "aml-brand-claim-policy/1", grantee: "Example Integrator LLC",
+    mark: "ĀML Compatible™", permitted_use: "official-compatible-badge",
+    trust_registry_sha256: "a".repeat(64), revocation_head: null
+  };
+  const claimVerified: boolean = verifyBrandClaim({}, {}, {}, brandPolicy).claim_verified;
+  void claimVerified;
   const fingerprints: string[] = ["a".repeat(64)];
   evaluateLockedHttpAndRender({ url: "https://example.test/v1/deployment/evaluate", token: "secret",
     intent, profile: "human_first", context: {}, trustedReceiptFingerprints: fingerprints,

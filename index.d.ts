@@ -864,6 +864,35 @@ export function createAgentUiGateway(options?: AgentUiGatewayOptions): AmlHttpSe
 export function createGovernanceStreamGateway(options?: GovernanceStreamGatewayOptions): AmlHttpServer;
 export function runAmlDoctor(options?: Record<string, unknown>): AmlDoctorReport;
 
+/** Buyer-held exact-use policy. Obtain and pin source snapshots independently of the credential presenter. */
+export interface BrandClaimPolicy {
+  type: "aml-brand-claim-policy/1";
+  grantee: string;
+  mark: string;
+  permitted_use: string;
+  trust_registry_sha256: string;
+  revocation_head: string | null;
+}
+
+export interface BrandClaimVerification {
+  valid: boolean;
+  official: boolean;
+  claim_verified: boolean;
+  reason: string | null;
+  evaluated_at?: string;
+  clock_source?: "local_system";
+  credential_revocation_checked?: boolean;
+  claim_scope?: { grantee: string; mark: string; permitted_use: string };
+  trust_registry_sha256?: string;
+  revocation_head?: string | null;
+  evidence_scope?: "buyer_pinned_snapshots";
+  [key: string]: unknown;
+}
+
+/** Verifies one exact use against pinned snapshots at the local clock; it cannot prove snapshot freshness or contract status. */
+export function verifyBrandClaim(credential: unknown, trustRegistry: unknown,
+  revocationRegistry: unknown, policy: BrandClaimPolicy): BrandClaimVerification;
+
 export const AML_AGENT_UI_ENVELOPE: "aml-agent-ui-envelope/1";
 export const AML_AGENT_UI_RESULT: "aml-agent-ui-governance-result/1";
 export const AML_GOVERNANCE_STREAM_OPEN: "aml-governance-stream-open/1";

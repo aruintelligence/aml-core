@@ -323,12 +323,15 @@ These verify credential integrity, signature, and the `issued_at`/`expires_at` w
 
 - `verifyBrandTrustRegistry(registry)`
 - `verifyOfficialBrandAuthorization(credential, trustRegistry, options?)`
+- `verifyBrandClaim(credential, trustRegistry, revocationRegistry, buyerPolicy)`
 
 `verifyOfficialBrandAuthorization` adds signer fingerprint membership in the supplied active trust-root registry, key revocation, and its `not_before`/`not_after` window, checked at the same instant as the credential. The credential's issuer must match the registry owner; `options.expected_issuer` cannot override that binding. Registries marked `suspended` or `unprovisioned` cannot confer official status. The caller must provision an authentic trust registry; supplying a custom registry is not proof of ĀRU authority. A positive `official` result reports cryptographic and configured-root checks. When `credential_revocation_checked` is false, it does not establish current per-credential revocation status or the validity of an underlying agreement.
 
 `aml-brand-verify` and `POST /v1/verify-brand-authorization` use their local server clock for current verification. The HTTP route accepts only `{ "credential": ... }`; it rejects request-supplied `now` and `revocation_registry`. Operators can configure `createAmlHttpServer({ brand_revocation_registry })` with a trusted AML revocation registry. Without it, positive HTTP responses include `credential_revocation_checked: false`. The generic `aml verify-brand-authorization` command accepts `AML_VERIFY_AT` for explicit as-of checks and labels such results `caller_supplied`.
 
 A self-signed credential can be cryptographically valid while still **not** being an official ĀRU authorization.
+
+`verifyBrandClaim` adds a narrower decision for one exact grantee, mark, and permitted use. Its buyer-held `aml-brand-claim-policy/1` pins the canonical SHA-256 of the entire trust registry and the head of a separately obtained revocation registry. It fails closed when either source is missing, malformed, or differs from the buyer's pins. It uses the local clock and does not accept a caller-supplied historical time. A positive `claim_verified` means that this exact use passed the signature, time, root, revocation, scope, and pinned-snapshot checks. **It cannot prove who originally supplied the policy/snapshots, that a newer revocation does not exist, or that a written agreement is legally effective.** See [buyer-held claim verification](docs/BRAND_CLAIM_VERIFICATION.md) for the file format and CLI workflow.
 
 The public trust registry is `BRAND_TRUST_ROOTS.json`. Production private key material is intentionally not stored in GitHub.
 

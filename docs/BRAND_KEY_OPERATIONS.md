@@ -27,6 +27,8 @@ The library, official CLI, HTTP service, and public browser view check the local
 
 The public browser view has no authoritative per-credential revocation source. The library and official CLI check one only when supplied by the operator; the HTTP service checks one only when configured as `brand_revocation_registry`. A successful cryptographic/trust-root decision with `credential_revocation_checked: false` leaves condition 4 unproven. Verify the applicable revocation source and written agreement before representing an authorization as currently effective. The verifier depends on its clock and the authenticity and freshness of the trust registry and revocation source.
 
+For a specific partner's proposed use, `verifyBrandClaim` accepts a separate buyer-held policy with the exact grantee, mark, and use plus pins for the entire trust registry and revocation head. Its `claim_verified` field fails closed if a presenter replaces or rolls back either snapshot, or if the signed scope differs. See [buyer-held claim verification](BRAND_CLAIM_VERIFICATION.md). The buyer must obtain and update those pins through a trusted process; this check cannot discover newer snapshots or prove the agreement remains in force.
+
 ## Current production trust root
 
 The first production AML brand-signing trust root is active.
