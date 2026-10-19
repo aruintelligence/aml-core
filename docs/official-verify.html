@@ -75,10 +75,24 @@ function pemDer(pem) {
   const b64 = pem.replace(/-----BEGIN PUBLIC KEY-----/g, "").replace(/-----END PUBLIC KEY-----/g, "").replace(/\s+/g, "");
   return b64Bytes(b64);
 }
-function validTime(value) { return typeof value === "string" && Number.isFinite(Date.parse(value)); }
+function parseBrandTime(value) {
+  if (typeof value !== "string") return null;
+  const parts = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?(Z|[+-](\d{2}):(\d{2}))$/.exec(value);
+  if (!parts) return null;
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText, , offset, offsetHourText, offsetMinuteText] = parts;
+  const year = Number(yearText), month = Number(monthText), day = Number(dayText);
+  const hour = Number(hourText), minute = Number(minuteText), second = Number(secondText);
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (year < 1 || month < 1 || month > 12 || day < 1 || day > days[month - 1] ||
+      hour > 23 || minute > 59 || second > 59 ||
+      (offset !== "Z" && (Number(offsetHourText) > 23 || Number(offsetMinuteText) > 59))) return null;
+  const instant = Date.parse(value);
+  return Number.isFinite(instant) ? instant : null;
+}
 function validWindow(start, end) {
-  return (start == null || validTime(start)) && (end == null || validTime(end)) &&
-    (start == null || end == null || Date.parse(start) < Date.parse(end));
+  return (start == null || parseBrandTime(start) !== null) && (end == null || parseBrandTime(end) !== null) &&
+    (start == null || end == null || parseBrandTime(start) < parseBrandTime(end));
 }
 function validRegistry(registry) {
   if (registry?.type !== "aml-brand-trust-roots/1" || typeof registry.owner !== "string" || !registry.owner.trim() ||
@@ -127,8 +141,8 @@ async function verifyCredential(credential, now) {
   const signatureValid = await crypto.subtle.verify({ name:"Ed25519" }, key, b64Bytes(signature_base64), new TextEncoder().encode(canonical));
   if (!signatureValid) return { valid:false, reason:"signature_invalid", fingerprint };
   if (!validWindow(credential.issued_at, credential.expires_at)) return { valid:false, reason:"invalid_credential_time_window", fingerprint };
-  if (credential.issued_at && now < Date.parse(credential.issued_at)) return { valid:false, reason:"not_yet_issued", fingerprint };
-  if (credential.expires_at && now >= Date.parse(credential.expires_at)) return { valid:false, reason:"expired", fingerprint };
+  if (credential.issued_at && now < parseBrandTime(credential.issued_at)) return { valid:false, reason:"not_yet_issued", fingerprint };
+  if (credential.expires_at && now >= parseBrandTime(credential.expires_at)) return { valid:false, reason:"expired", fingerprint };
   return { valid:true, reason:null, fingerprint };
 }
 
@@ -141,8 +155,8 @@ function trustResult(credential, verification, now) {
   if (revoked) return { trusted:false, reason:"signing_key_revoked" };
   const active = (trustRegistry.active_keys || []).find((k) => k.public_key_sha256 === credential.public_key_sha256);
   if (!active) return { trusted:false, reason:"signing_key_not_in_active_trust_roots" };
-  if (active.not_before && now < Date.parse(active.not_before)) return { trusted:false, reason:"signing_key_not_yet_valid" };
-  if (active.not_after && now >= Date.parse(active.not_after)) return { trusted:false, reason:"signing_key_expired" };
+  if (active.not_before && now < parseBrandTime(active.not_before)) return { trusted:false, reason:"signing_key_not_yet_valid" };
+  if (active.not_after && now >= parseBrandTime(active.not_after)) return { trusted:false, reason:"signing_key_expired" };
   return { trusted:true, reason:null, key:active };
 }
 

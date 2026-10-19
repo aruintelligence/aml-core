@@ -1,19 +1,20 @@
 import crypto from "node:crypto";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 import { isRevoked } from "./revocationRegistry.js";
+import { parseBrandTime } from "./brandTime.js";
 
 function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
 function validTimestamp(value) {
-  return typeof value === "string" && Number.isFinite(Date.parse(value));
+  return parseBrandTime(value) !== null;
 }
 
 function validateTimes({ issued_at = null, expires_at = null } = {}) {
   if (issued_at !== null && !validTimestamp(issued_at)) return "invalid_issued_at";
   if (expires_at !== null && !validTimestamp(expires_at)) return "invalid_expires_at";
-  if (issued_at !== null && expires_at !== null && Date.parse(expires_at) <= Date.parse(issued_at)) {
+  if (issued_at !== null && expires_at !== null && parseBrandTime(expires_at) <= parseBrandTime(issued_at)) {
     return "invalid_time_window";
   }
   return null;
@@ -74,10 +75,10 @@ export function verifyBrandAuthorization(credential, { now = null, revocation_re
   const timeError = validateTimes(credential);
   if (timeError) return { valid: false, reason: timeError };
   if (!validTimestamp(evaluatedAt)) return { valid: false, reason: "invalid_now" };
-  if (credential.issued_at && Date.parse(evaluatedAt) < Date.parse(credential.issued_at)) {
+  if (credential.issued_at && parseBrandTime(evaluatedAt) < parseBrandTime(credential.issued_at)) {
     return { valid: false, reason: "not_yet_issued" };
   }
-  if (credential.expires_at && Date.parse(evaluatedAt) >= Date.parse(credential.expires_at)) {
+  if (credential.expires_at && parseBrandTime(evaluatedAt) >= parseBrandTime(credential.expires_at)) {
     return { valid: false, reason: "expired" };
   }
 

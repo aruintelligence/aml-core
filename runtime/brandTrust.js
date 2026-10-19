@@ -1,9 +1,10 @@
 import { verifyBrandAuthorization } from "./brandAuthorization.js";
+import { parseBrandTime } from "./brandTime.js";
 
 function validWindow(start, end) {
-  return (start == null || (typeof start === "string" && Number.isFinite(Date.parse(start)))) &&
-    (end == null || (typeof end === "string" && Number.isFinite(Date.parse(end)))) &&
-    (start == null || end == null || Date.parse(start) < Date.parse(end));
+  return (start == null || parseBrandTime(start) !== null) &&
+    (end == null || parseBrandTime(end) !== null) &&
+    (start == null || end == null || parseBrandTime(start) < parseBrandTime(end));
 }
 
 export function verifyBrandTrustRegistry(registry) {
@@ -76,10 +77,10 @@ export function verifyOfficialBrandAuthorization(credential, trustRegistry, opti
   const trusted = trustRegistry.active_keys.find((entry) => entry.public_key_sha256 === credential.public_key_sha256) ?? null;
   if (!trusted) return { valid: false, official: false, reason: "untrusted_signing_key" };
 
-  if (trusted.not_before && Date.parse(now) < Date.parse(trusted.not_before)) {
+  if (trusted.not_before && parseBrandTime(now) < parseBrandTime(trusted.not_before)) {
     return { valid: false, official: false, reason: "signing_key_not_yet_valid" };
   }
-  if (trusted.not_after && Date.parse(now) >= Date.parse(trusted.not_after)) {
+  if (trusted.not_after && parseBrandTime(now) >= parseBrandTime(trusted.not_after)) {
     return { valid: false, official: false, reason: "signing_key_expired" };
   }
 
