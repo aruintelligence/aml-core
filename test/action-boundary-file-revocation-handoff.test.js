@@ -5,7 +5,8 @@ import { promisify } from "node:util";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { createFileRevocationHandoff } from "../pilots/action-boundary/file-revocation-handoff.mjs";
+import { createFileRevocationHandoff,
+  inspectFileRevocationHandoff } from "../pilots/action-boundary/file-revocation-handoff.mjs";
 import { createTestingClaimOnce } from "../pilots/action-boundary/testing-claim-anchor.mjs";
 import { createTestingEpochAnchor } from "../pilots/action-boundary/testing-epoch-anchor.mjs";
 
@@ -175,6 +176,11 @@ test("crash after claim strands the lock and cannot silently retry", () =>
     await assert.rejects(() => exec(process.execPath, [worker, directory, grant.grant_id, "crash"]),
       error => error.code === 48);
     assert.equal(fs.readdirSync(path.join(directory, "claimed")).length, 1);
+    const report = inspectFileRevocationHandoff({ directory });
+    assert.equal(report.lock, "present");
+    assert.equal(report.reconciliation.candidates[0].grant_id, grant.grant_id);
+    assert.equal(report.reconciliation.candidates[0].local_outcome, "missing");
+    assert.ok(report.reasons.includes("claims_need_provider_review"));
     let calls = 0;
     const result = await host.dispatch({ ...context(), grant_id: grant.grant_id,
       execute: () => { calls++; } });
