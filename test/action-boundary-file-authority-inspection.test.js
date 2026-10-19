@@ -257,6 +257,58 @@ test("unanchored inspection requires the grant to point back to its operation", 
   } finally { fs.rmSync(parent, { recursive: true, force: true }); }
 });
 
+test("unanchored inspection rejects a malformed issuer epoch", () => {
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), "aml-inspection-epoch-"));
+  try {
+    const directory = path.join(parent, "authority");
+    const host = createFileRevocationHandoff({ directory });
+    host.revokeIssuer(input());
+    const epochFile = path.join(directory, "epochs",
+      fs.readdirSync(path.join(directory, "epochs"))[0]);
+    const epoch = JSON.parse(fs.readFileSync(epochFile, "utf8"));
+    fs.writeFileSync(epochFile, JSON.stringify({ ...epoch, issuer_sha256: "a".repeat(64) }) + "\n");
+    const before = snapshot(parent);
+    const report = inspectFileRevocationHandoff({ directory });
+    assert.equal(report.committed_state.comparison, "not_committed");
+    assert.equal(report.status, "needs_reconciliation");
+    assert.ok(report.reconciliation.issues.some(item =>
+      item.problem === "epoch_invalid"));
+    assert.deepEqual(snapshot(parent), before);
+  } finally { fs.rmSync(parent, { recursive: true, force: true }); }
+});
+
+test("unanchored inspection reports a corrupt authority clock", () => {
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), "aml-inspection-clock-"));
+  try {
+    const directory = path.join(parent, "authority");
+    const host = createFileRevocationHandoff({ directory });
+    host.issue(input());
+    fs.writeFileSync(path.join(directory, "clock.json"), JSON.stringify({
+      protocol: "aml-file-authority-clock/1", time_ms: "not-a-time"
+    }) + "\n");
+    const before = snapshot(parent);
+    const report = inspectFileRevocationHandoff({ directory });
+    assert.equal(report.status, "needs_reconciliation");
+    assert.ok(report.reasons.includes("authority_clock_invalid"));
+    assert.deepEqual(snapshot(parent), before);
+  } finally { fs.rmSync(parent, { recursive: true, force: true }); }
+});
+
+test("unanchored inspection reports a missing clock after issuance", () => {
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), "aml-inspection-clock-loss-"));
+  try {
+    const directory = path.join(parent, "authority");
+    const host = createFileRevocationHandoff({ directory });
+    host.issue(input());
+    fs.rmSync(path.join(directory, "clock.json"));
+    const before = snapshot(parent);
+    const report = inspectFileRevocationHandoff({ directory });
+    assert.equal(report.status, "needs_reconciliation");
+    assert.ok(report.reasons.includes("authority_clock_missing"));
+    assert.deepEqual(snapshot(parent), before);
+  } finally { fs.rmSync(parent, { recursive: true, force: true }); }
+});
+
 test("an outcome with no spent claim is reported as an invalid local link", () =>
   fixture(async ({ directory, anchor, host }) => {
     const grant = host.issue(input());
