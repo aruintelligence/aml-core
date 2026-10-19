@@ -200,6 +200,63 @@ test("unanchored inspection checks the spent operation epoch and issuer link", (
   })();
 });
 
+test("unanchored inspection reports an orphan operation marker before any claim", () => {
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), "aml-inspection-orphan-"));
+  try {
+    const directory = path.join(parent, "authority");
+    const host = createFileRevocationHandoff({ directory });
+    const grant = host.issue(input(), { operationId: "host-intent-inspect-orphan" });
+    fs.rmSync(path.join(directory, "grants", `${grant.grant_id}.json`));
+    const before = snapshot(parent);
+    const report = inspectFileRevocationHandoff({ directory });
+    assert.equal(report.committed_state.comparison, "not_committed");
+    assert.equal(report.status, "needs_reconciliation");
+    assert.ok(report.reasons.includes("reconciliation_records_invalid"));
+    assert.ok(report.reconciliation.issues.some(item =>
+      item.grant_id === grant.grant_id &&
+      item.problem === "operation_without_matching_grant"));
+    assert.equal(JSON.stringify(report).includes("team@example.test"), false);
+    assert.deepEqual(snapshot(parent), before);
+  } finally { fs.rmSync(parent, { recursive: true, force: true }); }
+});
+
+test("unanchored inspection reports an unspent grant with a missing operation", () => {
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), "aml-inspection-unspent-"));
+  try {
+    const directory = path.join(parent, "authority");
+    const host = createFileRevocationHandoff({ directory });
+    const grant = host.issue(input(), { operationId: "host-intent-inspect-unspent" });
+    const operationName = fs.readdirSync(path.join(directory, "operations"))[0];
+    fs.rmSync(path.join(directory, "operations", operationName));
+    const before = snapshot(parent);
+    const report = inspectFileRevocationHandoff({ directory });
+    assert.equal(report.reconciliation.counts.claims, 0);
+    assert.equal(report.status, "needs_reconciliation");
+    assert.ok(report.reconciliation.issues.some(item =>
+      item.grant_id === grant.grant_id &&
+      item.problem === "operation_missing_or_mismatch"));
+    assert.deepEqual(snapshot(parent), before);
+  } finally { fs.rmSync(parent, { recursive: true, force: true }); }
+});
+
+test("unanchored inspection requires the grant to point back to its operation", () => {
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), "aml-inspection-backlink-"));
+  try {
+    const directory = path.join(parent, "authority");
+    const host = createFileRevocationHandoff({ directory });
+    const grant = host.issue(input(), { operationId: "host-intent-inspect-backlink" });
+    const grantFile = path.join(directory, "grants", `${grant.grant_id}.json`);
+    const record = JSON.parse(fs.readFileSync(grantFile, "utf8"));
+    delete record.operation_sha256;
+    fs.writeFileSync(grantFile, JSON.stringify(record) + "\n");
+    const report = inspectFileRevocationHandoff({ directory });
+    assert.equal(report.status, "needs_reconciliation");
+    assert.ok(report.reconciliation.issues.some(item =>
+      item.grant_id === grant.grant_id &&
+      item.problem === "operation_without_matching_grant"));
+  } finally { fs.rmSync(parent, { recursive: true, force: true }); }
+});
+
 test("an outcome with no spent claim is reported as an invalid local link", () =>
   fixture(async ({ directory, anchor, host }) => {
     const grant = host.issue(input());
