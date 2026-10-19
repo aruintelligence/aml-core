@@ -68,6 +68,39 @@ test("inspection and its CLI report consistent protocol-3 state without writes",
     assert.deepEqual(snapshot(parent), before);
   }));
 
+test("inspection cannot call an outcome resolved when a nested JSON key is ambiguous", () =>
+  fixture(async ({ directory, anchor, host }) => {
+    const grant = host.issue(input());
+    assert.equal((await host.dispatch({ ...input(), grant_id: grant.grant_id,
+      execute: () => "local-effect" })).status, "returned");
+    const file = path.join(directory, "outcomes", `${grant.grant_id}.json`);
+    const original = fs.readFileSync(file, "utf8");
+    fs.writeFileSync(file, `{"metadata":{"\\u006bey":"first","key":"second"},${original.slice(1)}`);
+    const report = inspectFileRevocationHandoff({ directory, anchor });
+    assert.equal(report.committed_state.comparison, "match");
+    assert.equal(report.status, "needs_reconciliation");
+    assert.ok(report.reconciliation.issues.some(item =>
+      item.grant_id === grant.grant_id && item.problem === "outcome_unreadable"));
+  }));
+
+test("inspection refuses outcome bytes that are not valid UTF-8", () =>
+  fixture(async ({ directory, anchor, host }) => {
+    const grant = host.issue(input());
+    assert.equal((await host.dispatch({ ...input(), grant_id: grant.grant_id,
+      execute: () => "local-effect" })).status, "returned");
+    const file = path.join(directory, "outcomes", `${grant.grant_id}.json`);
+    const original = fs.readFileSync(file, "utf8");
+    fs.writeFileSync(file, Buffer.concat([
+      Buffer.from('{"metadata":"'), Buffer.from([0xc3, 0x28]),
+      Buffer.from(`",${original.slice(1)}`)
+    ]));
+    const report = inspectFileRevocationHandoff({ directory, anchor });
+    assert.equal(report.committed_state.comparison, "match");
+    assert.equal(report.status, "needs_reconciliation");
+    assert.ok(report.reconciliation.issues.some(item =>
+      item.grant_id === grant.grant_id && item.problem === "outcome_unreadable"));
+  }));
+
 test("a spent claim without an outcome is listed even when the lock is gone", () => {
   const parent = fs.mkdtempSync(path.join(os.tmpdir(), "aml-inspection-claim-"));
   return (async () => {

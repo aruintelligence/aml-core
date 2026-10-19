@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { TextDecoder } from "node:util";
 import { canonicalJSONStringify } from "../../protocol/canonicalJson.js";
 import { hashHandoffBytes as hash, validHandoffIdentity as identity,
   snapshotHandoffBinding as binding } from "./handoff-binding.mjs";
@@ -62,6 +63,39 @@ function syncDirectory(directory) {
   try { fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
 }
 
+function parseAuthorityRecord(source) {
+  const record = JSON.parse(source);
+  if (!record || typeof record !== "object" || Array.isArray(record)) {
+    throw Error("invalid_authority_record");
+  }
+  // JSON.parse keeps the last occurrence of a key. A duplicate can therefore
+  // leave the canonical checkpoint digest unchanged while a different parser
+  // assigns another meaning to the same on-disk record. Scan decoded keys in
+  // each object, including nested objects and escaped spellings of a key.
+  const stack = [];
+  for (let i = 0; i < source.length; i++) {
+    const char = source[i];
+    if (char === '"') {
+      const start = i;
+      for (i++; i < source.length; i++) {
+        if (source[i] === "\\") i++;
+        else if (source[i] === '"') break;
+      }
+      const frame = stack.at(-1);
+      if (frame?.keys && frame.expectKey) {
+        const key = JSON.parse(source.slice(start, i + 1));
+        if (frame.keys.has(key)) throw Error("duplicate_authority_record_key");
+        frame.keys.add(key);
+        frame.expectKey = false;
+      }
+    } else if (char === "{") stack.push({ keys: new Set(), expectKey: true });
+    else if (char === "[") stack.push({ keys: null, expectKey: false });
+    else if (char === "}" || char === "]") stack.pop();
+    else if (char === "," && stack.at(-1)?.keys) stack.at(-1).expectKey = true;
+  }
+  return record;
+}
+
 function readRecord(file) {
   let fd;
   try { fd = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW); }
@@ -73,11 +107,12 @@ function readRecord(file) {
     const stat = fs.fstatSync(fd);
     if (!stat.isFile() || (stat.mode & 0o077) !== 0 || stat.uid !== process.getuid() ||
         stat.size < 2 || stat.size > 2048) throw Error("invalid_authority_record");
-    const record = JSON.parse(fs.readFileSync(fd, "utf8"));
-    if (!record || typeof record !== "object" || Array.isArray(record)) {
-      throw Error("invalid_authority_record");
-    }
-    return record;
+    // Buffer.toString("utf8") silently substitutes U+FFFD for invalid bytes.
+    // A strict decoder keeps the file's interpreted JSON unambiguous across
+    // runtimes. Keep a leading BOM visible so JSON.parse rejects it too.
+    const source = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true })
+      .decode(fs.readFileSync(fd));
+    return parseAuthorityRecord(source);
   } finally { fs.closeSync(fd); }
 }
 
