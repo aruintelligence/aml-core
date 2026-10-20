@@ -1,0 +1,17 @@
+{
+  "protocol": "aml-controlled-site-pilots/1",
+  "contact_href": "https://github.com/aruintelligence/aml-core/issues/new",
+  "claim_boundary": "Project-authored controlled pages on the project's public GitHub Pages site. The duplicate classification is a declared fixture, not user research or an independent review.",
+  "sites": [
+    { "id": "01", "slug": "support-hours", "title": "Support hours", "context": "Find the documentation and reach the project maintainers.", "action": "Contact the maintainers", "placement": "banner", "accent": "#48d9c4" },
+    { "id": "02", "slug": "documentation-help", "title": "Documentation help", "context": "Ask a question about a reproducible example or a missing instruction.", "action": "Ask a documentation question", "placement": "sidebar", "accent": "#facf71" },
+    { "id": "03", "slug": "example-request", "title": "Example request", "context": "Suggest a focused example for a future release.", "action": "Request an example", "placement": "card", "accent": "#9aabff" },
+    { "id": "04", "slug": "compatibility-report", "title": "Compatibility report", "context": "Report an unexpected browser or runtime difference with a small fixture.", "action": "Report compatibility", "placement": "strip", "accent": "#ffae82" },
+    { "id": "05", "slug": "accessibility-feedback", "title": "Accessibility feedback", "context": "Describe an accessibility issue and how to reproduce it.", "action": "Share accessibility feedback", "placement": "float", "accent": "#f3a4da" },
+    { "id": "06", "slug": "verifier-question", "title": "Verifier question", "context": "Bring a receipt verification question to the maintainers.", "action": "Ask about verification", "placement": "footer", "accent": "#76cffa" },
+    { "id": "07", "slug": "schema-proposal", "title": "Schema proposal", "context": "Suggest a narrowly scoped schema improvement with an example.", "action": "Propose a schema change", "placement": "inline", "accent": "#b8df80" },
+    { "id": "08", "slug": "release-feedback", "title": "Release feedback", "context": "Share a specific regression or documentation gap from a release.", "action": "Share release feedback", "placement": "sticky", "accent": "#f6b58c" },
+    { "id": "09", "slug": "security-contact", "title": "Security contact path", "context": "Use the repository's public issue channel for non-sensitive questions only; do not post secrets.", "action": "Open a public project issue", "placement": "nav", "accent": "#86d9eb" },
+    { "id": "10", "slug": "integration-help", "title": "Integration help", "context": "Discuss how to wire a host-owned gate into an application.", "action": "Ask an integration question", "placement": "badge", "accent": "#d4b3ff" }
+  ]
+}
