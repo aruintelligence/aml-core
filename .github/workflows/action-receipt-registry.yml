@@ -1,0 +1,40 @@
+name: Action receipt registry
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "registry/**"
+      - "scripts/verify-action-receipt-registry.mjs"
+      - "conformance/action-boundary-expanded-receipts.jsonl"
+      - "docs/evidence/aml-action-browser-100.json"
+      - "docs/action-pilots/dispatch-receipts.jsonl"
+      - "docs/action-pilots/evidence/browser-receipts.jsonl"
+      - ".github/workflows/action-receipt-registry.yml"
+  pull_request:
+    paths:
+      - "registry/**"
+      - "scripts/verify-action-receipt-registry.mjs"
+      - "conformance/action-boundary-expanded-receipts.jsonl"
+      - "docs/evidence/aml-action-browser-100.json"
+      - "docs/action-pilots/dispatch-receipts.jsonl"
+      - "docs/action-pilots/evidence/browser-receipts.jsonl"
+      - ".github/workflows/action-receipt-registry.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: node scripts/verify-action-receipt-registry.mjs --check --append-only-base HEAD^
