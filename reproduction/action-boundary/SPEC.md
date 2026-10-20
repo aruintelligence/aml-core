@@ -64,7 +64,7 @@ record; the digest alone cannot reveal it.
 
 The [100 challenge cases](../../conformance/action-boundary-expanded-cases.json)
 specify exact inputs and outcomes. The [five-runtime matrix](../../docs/action-five-runtime-report.json)
-reports 100/100 agreement in each project-maintained binding. The observed
+reports 100/100 agreement in each project-maintained binding. The simulated
 [375-case stress cohort](../../conformance/action-stress-375-cases.json)
 specifies 25 profiles across five tool families and 15 mutation classes, with
 full [evidence receipts](../../conformance/action-stress-375-receipts.jsonl)

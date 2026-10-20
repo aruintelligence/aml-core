@@ -8,7 +8,7 @@
   "properties": {
     "protocol": { "const": "aml-action-boundary-evidence-receipt/1" },
     "case_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
-    "provenance": { "const": "project-authored deterministic simulated-host fixture" },
+    "provenance": { "enum": ["project-authored deterministic simulated-host fixture", "project-authored stress fixture with simulated host callback"] },
     "proposal": { "type": "object" },
     "host_policy": { "type": "object" },
     "host_fixture": { "type": "object" },
