@@ -1,0 +1,18 @@
+{
+  "protocol": "aml-action-browser-observation/1",
+  "source_commit": "c3d9fc70489ba1d57d30450817a7a8c3d820cb05",
+  "public_url": "https://aruintelligence.github.io/aml-core/action-browser-matrix.html",
+  "observed_at": "2026-10-20T04:01:50.070Z",
+  "screenshot_file": "aml-action-browser-100.jpg",
+  "screenshot_sha256": "fd7c7a80854eb937671404b65e047bd5bcbce59081565caf80b009bb9576dd00",
+  "result": {
+    "protocol": "aml-action-browser-challenge-result/1",
+    "case_count": 100,
+    "passed": 100,
+    "failed_fields": [],
+    "cases_sha256": "465da861d50e19dfca89875e845faa9347511f85e5c61e390edad3b2ab771429",
+    "implementation": "project-maintained browser WebCrypto",
+    "browser": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36"
+  },
+  "receipt_sha256": "b3dd1eb49bbd9e501269226fbf2760686c1ec9a85c3f22b43931cb3474b2c48a"
+}
