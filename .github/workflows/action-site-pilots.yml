@@ -1,0 +1,33 @@
+name: Controlled site action pilots
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pilots/action-boundary/controlled-sites.json"
+      - "scripts/build-controlled-pilot-pages.mjs"
+      - "docs/action-pilots/**"
+      - ".github/workflows/action-site-pilots.yml"
+  pull_request:
+    paths:
+      - "pilots/action-boundary/controlled-sites.json"
+      - "scripts/build-controlled-pilot-pages.mjs"
+      - "docs/action-pilots/**"
+      - ".github/workflows/action-site-pilots.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/build-controlled-pilot-pages.mjs --check-before
+      - run: |
+          if test -f docs/action-pilots/after/01-support-hours.html; then
+            node scripts/build-controlled-pilot-pages.mjs --check-after
+          fi
