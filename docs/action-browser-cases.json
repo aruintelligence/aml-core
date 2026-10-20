@@ -1,0 +1,5800 @@
+{
+  "protocol": "aml-action-expanded-challenge/1",
+  "existing_case_count": 13,
+  "project_authored": true,
+  "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json",
+  "cases": [
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-baseline",
+      "intent": "Exact rule and frozen payload reach the simulated callback.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "send_message",
+          "effect": "send",
+          "resource": "team@example.test",
+          "purpose": "Challenge mail",
+          "arguments": {
+            "to": "team@example.test",
+            "cc": [],
+            "subject": "Update",
+            "body": "The build passed.",
+            "metadata": {
+              "z": 2,
+              "a": [
+                "é",
+                true,
+                null
+              ]
+            }
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-reordered-keys",
+      "intent": "Key order changes neither digest nor decision.",
+      "proposal": {
+        "arguments": {
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          },
+          "body": "The build passed.",
+          "subject": "Update",
+          "cc": [],
+          "to": "team@example.test"
+        },
+        "purpose": "Challenge mail",
+        "resource": "team@example.test",
+        "effect": "send",
+        "tool": "send_message",
+        "protocol": "aml-proposed-action/1"
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "metadata": {
+              "z": 2,
+              "a": [
+                "é",
+                true,
+                null
+              ]
+            },
+            "body": "The build passed.",
+            "subject": "Update",
+            "cc": [],
+            "to": "team@example.test"
+          },
+          "purpose": "Challenge mail",
+          "resource": "team@example.test",
+          "effect": "send",
+          "tool": "send_message",
+          "protocol": "aml-proposed-action/1"
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-changed-payload",
+      "intent": "Changed payload with an old grant blocks an approval-required action; an allow rule has no grant to mismatch.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          },
+          "note": "Payload changed after the original digest"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "fixed",
+        "approval_digest_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "1d20ff1ca14392ebbca7569da95a31adfd6ad77436ef6c4ac671ae2620683e1f",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "1d20ff1ca14392ebbca7569da95a31adfd6ad77436ef6c4ac671ae2620683e1f",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-changed-resource",
+      "intent": "Changed declared resource has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "other:mail",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a4205b175a25c0db12c5c43f48a2171e7b5b09ab889e4ab3b880f016cc578b3e",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a4205b175a25c0db12c5c43f48a2171e7b5b09ab889e4ab3b880f016cc578b3e",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-changed-tool",
+      "intent": "Changed tool has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "other_send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "730fd3a8c7eee16fadf8a6280a52801f7b822d3e6ec953a195fc81caea0f8f20",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "730fd3a8c7eee16fadf8a6280a52801f7b822d3e6ec953a195fc81caea0f8f20",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-changed-effect",
+      "intent": "Changed effect has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "read",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "1454e431181bd8602a151dff573028df98d558c862cd8f938afa7ec2b79d8e4f",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "1454e431181bd8602a151dff573028df98d558c862cd8f938afa7ec2b79d8e4f",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-callback-throws",
+      "intent": "A throwing callback has uncertain external outcome and exactly one invocation.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "throw"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "policy_decision": "requires_approval",
+          "execution_status": "unknown",
+          "reason": "host_dispatch_error"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "send_message",
+          "effect": "send",
+          "resource": "team@example.test",
+          "purpose": "Challenge mail",
+          "arguments": {
+            "to": "team@example.test",
+            "cc": [],
+            "subject": "Update",
+            "body": "The build passed.",
+            "metadata": {
+              "z": 2,
+              "a": [
+                "é",
+                true,
+                null
+              ]
+            }
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-duplicate-policy",
+      "intent": "Ambiguous exact rules fail closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          },
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "ambiguous_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-extra-proposal-field",
+      "intent": "Unexpected proposal field fails closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        },
+        "undeclared": true
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_proposal"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-invalid-policy-protocol",
+      "intent": "An invalid host policy fails closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        }
+      },
+      "policy": {
+        "protocol": "other-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-different-policy-resource",
+      "intent": "A valid rule for a different resource cannot authorize this proposal.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "different:mail",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-missing-approval",
+      "intent": "Missing host approval hook blocks execution.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_unavailable"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-approval-error",
+      "intent": "Throwing approval hook blocks execution.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "throw",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_error"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-policy-revoked",
+      "intent": "Rule removed during approval blocks at policy recheck.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return",
+        "remove_policy_rule": true
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "policy_changed"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-changed-metadata",
+      "intent": "Adding a metadata field changes the digest and invalidates the old grant.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "tracking": "added after digest"
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "fixed",
+        "approval_digest_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "595a8d9905fa4545b8e292b1eef15ce392d33fdac74cc9b12fcfacea107fc5ce",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "595a8d9905fa4545b8e292b1eef15ce392d33fdac74cc9b12fcfacea107fc5ce",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "read-baseline",
+      "intent": "Exact rule and frozen payload reach the simulated callback.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "fetch_record",
+        "effect": "read",
+        "resource": "record:42",
+        "purpose": "Challenge read",
+        "arguments": {
+          "path": "record:42",
+          "fields": [
+            "owner",
+            "summary"
+          ],
+          "functionCallId": "read-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "fetch_record",
+            "effect": "read",
+            "resource": "record:42",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "fetch_record",
+          "effect": "read",
+          "resource": "record:42",
+          "purpose": "Challenge read",
+          "arguments": {
+            "path": "record:42",
+            "fields": [
+              "owner",
+              "summary"
+            ],
+            "functionCallId": "read-042"
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "read-reordered-keys",
+      "intent": "Key order changes neither digest nor decision.",
+      "proposal": {
+        "arguments": {
+          "functionCallId": "read-042",
+          "fields": [
+            "owner",
+            "summary"
+          ],
+          "path": "record:42"
+        },
+        "purpose": "Challenge read",
+        "resource": "record:42",
+        "effect": "read",
+        "tool": "fetch_record",
+        "protocol": "aml-proposed-action/1"
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "fetch_record",
+            "effect": "read",
+            "resource": "record:42",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "functionCallId": "read-042",
+            "fields": [
+              "owner",
+              "summary"
+            ],
+            "path": "record:42"
+          },
+          "purpose": "Challenge read",
+          "resource": "record:42",
+          "effect": "read",
+          "tool": "fetch_record",
+          "protocol": "aml-proposed-action/1"
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "read-changed-payload",
+      "intent": "Changed payload with an old grant blocks an approval-required action; an allow rule has no grant to mismatch.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "fetch_record",
+        "effect": "read",
+        "resource": "record:42",
+        "purpose": "Challenge read",
+        "arguments": {
+          "path": "record:42",
+          "fields": [
+            "owner",
+            "summary"
+          ],
+          "functionCallId": "read-042",
+          "note": "Payload changed after the original digest"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "fetch_record",
+            "effect": "read",
+            "resource": "record:42",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "881aed2e8223db3b9949c8abcb72530d460f3f4a52d0a9ffd5c45c8294f470f9",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "881aed2e8223db3b9949c8abcb72530d460f3f4a52d0a9ffd5c45c8294f470f9",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "fetch_record",
+          "effect": "read",
+          "resource": "record:42",
+          "purpose": "Challenge read",
+          "arguments": {
+            "path": "record:42",
+            "fields": [
+              "owner",
+              "summary"
+            ],
+            "functionCallId": "read-042",
+            "note": "Payload changed after the original digest"
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "read-changed-resource",
+      "intent": "Changed declared resource has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "fetch_record",
+        "effect": "read",
+        "resource": "other:read",
+        "purpose": "Challenge read",
+        "arguments": {
+          "path": "record:42",
+          "fields": [
+            "owner",
+            "summary"
+          ],
+          "functionCallId": "read-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "fetch_record",
+            "effect": "read",
+            "resource": "record:42",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "d81a655612da2f6bee2fe7963ac3f84b4c1112f773ad32136b6a8b813030ad67",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "d81a655612da2f6bee2fe7963ac3f84b4c1112f773ad32136b6a8b813030ad67",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "read-changed-tool",
+      "intent": "Changed tool has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "other_fetch_record",
+        "effect": "read",
+        "resource": "record:42",
+        "purpose": "Challenge read",
+        "arguments": {
+          "path": "record:42",
+          "fields": [
+            "owner",
+            "summary"
+          ],
+          "functionCallId": "read-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "fetch_record",
+            "effect": "read",
+            "resource": "record:42",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "fa0efc46a374cb079c08aa593d377c2f28a6582685ca3a749340efe90f35ac71",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "fa0efc46a374cb079c08aa593d377c2f28a6582685ca3a749340efe90f35ac71",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "read-changed-effect",
+      "intent": "Changed effect has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "fetch_record",
+        "effect": "write",
+        "resource": "record:42",
+        "purpose": "Challenge read",
+        "arguments": {
+          "path": "record:42",
+          "fields": [
+            "owner",
+            "summary"
+          ],
+          "functionCallId": "read-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "fetch_record",
+            "effect": "read",
+            "resource": "record:42",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "5c814102454780ffef3500ce5a2f94008b9e35a89d97dd9beb0bcc1da50b0f57",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "5c814102454780ffef3500ce5a2f94008b9e35a89d97dd9beb0bcc1da50b0f57",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "read-callback-throws",
+      "intent": "A throwing callback has uncertain external outcome and exactly one invocation.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "fetch_record",
+        "effect": "read",
+        "resource": "record:42",
+        "purpose": "Challenge read",
+        "arguments": {
+          "path": "record:42",
+          "fields": [
+            "owner",
+            "summary"
+          ],
+          "functionCallId": "read-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "fetch_record",
+            "effect": "read",
+            "resource": "record:42",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "throw"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "policy_decision": "allow",
+          "execution_status": "unknown",
+          "reason": "host_dispatch_error"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "fetch_record",
+          "effect": "read",
+          "resource": "record:42",
+          "purpose": "Challenge read",
+          "arguments": {
+            "path": "record:42",
+            "fields": [
+              "owner",
+              "summary"
+            ],
+            "functionCallId": "read-042"
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "read-duplicate-policy",
+      "intent": "Ambiguous exact rules fail closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "fetch_record",
+        "effect": "read",
+        "resource": "record:42",
+        "purpose": "Challenge read",
+        "arguments": {
+          "path": "record:42",
+          "fields": [
+            "owner",
+            "summary"
+          ],
+          "functionCallId": "read-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "fetch_record",
+            "effect": "read",
+            "resource": "record:42",
+            "requires_approval": false
+          },
+          {
+            "tool": "fetch_record",
+            "effect": "read",
+            "resource": "record:42",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "ambiguous_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "read-extra-proposal-field",
+      "intent": "Unexpected proposal field fails closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "fetch_record",
+        "effect": "read",
+        "resource": "record:42",
+        "purpose": "Challenge read",
+        "arguments": {
+          "path": "record:42",
+          "fields": [
+            "owner",
+            "summary"
+          ],
+          "functionCallId": "read-042"
+        },
+        "undeclared": true
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "fetch_record",
+            "effect": "read",
+            "resource": "record:42",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_proposal"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "read-invalid-policy-protocol",
+      "intent": "An invalid host policy fails closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "fetch_record",
+        "effect": "read",
+        "resource": "record:42",
+        "purpose": "Challenge read",
+        "arguments": {
+          "path": "record:42",
+          "fields": [
+            "owner",
+            "summary"
+          ],
+          "functionCallId": "read-042"
+        }
+      },
+      "policy": {
+        "protocol": "other-policy/1",
+        "rules": [
+          {
+            "tool": "fetch_record",
+            "effect": "read",
+            "resource": "record:42",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "read-different-policy-resource",
+      "intent": "A valid rule for a different resource cannot authorize this proposal.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "fetch_record",
+        "effect": "read",
+        "resource": "record:42",
+        "purpose": "Challenge read",
+        "arguments": {
+          "path": "record:42",
+          "fields": [
+            "owner",
+            "summary"
+          ],
+          "functionCallId": "read-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "fetch_record",
+            "effect": "read",
+            "resource": "different:read",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-baseline",
+      "intent": "Exact rule and frozen payload reach the simulated callback.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "write_record",
+        "effect": "write",
+        "resource": "record:42",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "write_record",
+          "effect": "write",
+          "resource": "record:42",
+          "purpose": "Challenge write",
+          "arguments": {
+            "path": "record:42",
+            "value": {
+              "owner": "Ada",
+              "status": "draft"
+            },
+            "functionCallId": "write-042"
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-reordered-keys",
+      "intent": "Key order changes neither digest nor decision.",
+      "proposal": {
+        "arguments": {
+          "functionCallId": "write-042",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "path": "record:42"
+        },
+        "purpose": "Challenge write",
+        "resource": "record:42",
+        "effect": "write",
+        "tool": "write_record",
+        "protocol": "aml-proposed-action/1"
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "functionCallId": "write-042",
+            "value": {
+              "owner": "Ada",
+              "status": "draft"
+            },
+            "path": "record:42"
+          },
+          "purpose": "Challenge write",
+          "resource": "record:42",
+          "effect": "write",
+          "tool": "write_record",
+          "protocol": "aml-proposed-action/1"
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-changed-payload",
+      "intent": "Changed payload with an old grant blocks an approval-required action; an allow rule has no grant to mismatch.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "write_record",
+        "effect": "write",
+        "resource": "record:42",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-042",
+          "note": "Payload changed after the original digest"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "fixed",
+        "approval_digest_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "5f177a78b63b6a9a8512ed12a12e5bf78e8609c1c3d1a17beb686d805c77ad46",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "5f177a78b63b6a9a8512ed12a12e5bf78e8609c1c3d1a17beb686d805c77ad46",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-changed-resource",
+      "intent": "Changed declared resource has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "write_record",
+        "effect": "write",
+        "resource": "other:write",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "e6c92d690bd7ca5700e6bbeacab5db71595c4062560567f8893f79e0463c83c2",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "e6c92d690bd7ca5700e6bbeacab5db71595c4062560567f8893f79e0463c83c2",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-changed-tool",
+      "intent": "Changed tool has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "other_write_record",
+        "effect": "write",
+        "resource": "record:42",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "7cb8817f429af803e3280f37573beef6f8edc6590095ab14642a85bfa445990c",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "7cb8817f429af803e3280f37573beef6f8edc6590095ab14642a85bfa445990c",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-changed-effect",
+      "intent": "Changed effect has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "write_record",
+        "effect": "read",
+        "resource": "record:42",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "2f7f5a6979e815a5b7f9566aaea3277cecfd9cf5de962040acb86bc66eb4c66d",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "2f7f5a6979e815a5b7f9566aaea3277cecfd9cf5de962040acb86bc66eb4c66d",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-callback-throws",
+      "intent": "A throwing callback has uncertain external outcome and exactly one invocation.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "write_record",
+        "effect": "write",
+        "resource": "record:42",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "throw"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "policy_decision": "requires_approval",
+          "execution_status": "unknown",
+          "reason": "host_dispatch_error"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "write_record",
+          "effect": "write",
+          "resource": "record:42",
+          "purpose": "Challenge write",
+          "arguments": {
+            "path": "record:42",
+            "value": {
+              "owner": "Ada",
+              "status": "draft"
+            },
+            "functionCallId": "write-042"
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-duplicate-policy",
+      "intent": "Ambiguous exact rules fail closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "write_record",
+        "effect": "write",
+        "resource": "record:42",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          },
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "ambiguous_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-extra-proposal-field",
+      "intent": "Unexpected proposal field fails closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "write_record",
+        "effect": "write",
+        "resource": "record:42",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-042"
+        },
+        "undeclared": true
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_proposal"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-invalid-policy-protocol",
+      "intent": "An invalid host policy fails closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "write_record",
+        "effect": "write",
+        "resource": "record:42",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-042"
+        }
+      },
+      "policy": {
+        "protocol": "other-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-different-policy-resource",
+      "intent": "A valid rule for a different resource cannot authorize this proposal.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "write_record",
+        "effect": "write",
+        "resource": "record:42",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "different:write",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-missing-approval",
+      "intent": "Missing host approval hook blocks execution.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "write_record",
+        "effect": "write",
+        "resource": "record:42",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_unavailable"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-approval-error",
+      "intent": "Throwing approval hook blocks execution.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "write_record",
+        "effect": "write",
+        "resource": "record:42",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "throw",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_error"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-policy-revoked",
+      "intent": "Rule removed during approval blocks at policy recheck.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "write_record",
+        "effect": "write",
+        "resource": "record:42",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return",
+        "remove_policy_rule": true
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "policy_changed"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-changed-metadata",
+      "intent": "Adding a metadata field changes the digest and invalidates the old grant.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "write_record",
+        "effect": "write",
+        "resource": "record:42",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-042",
+          "metadata": {
+            "tracking": "added after digest"
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "fixed",
+        "approval_digest_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "9865b1f4d7ef6bb0a9a0a8b30622725e9fc718e8406e8ff90af6245e228a9c79",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "9865b1f4d7ef6bb0a9a0a8b30622725e9fc718e8406e8ff90af6245e228a9c79",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "pay-baseline",
+      "intent": "Exact rule and frozen payload reach the simulated callback.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "request_payment",
+        "effect": "pay",
+        "resource": "invoice:42",
+        "purpose": "Challenge pay",
+        "arguments": {
+          "account": "invoice:42",
+          "amount_cents": 4200,
+          "currency": "USD",
+          "functionCallId": "pay-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "invoice:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "request_payment",
+          "effect": "pay",
+          "resource": "invoice:42",
+          "purpose": "Challenge pay",
+          "arguments": {
+            "account": "invoice:42",
+            "amount_cents": 4200,
+            "currency": "USD",
+            "functionCallId": "pay-042"
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "pay-reordered-keys",
+      "intent": "Key order changes neither digest nor decision.",
+      "proposal": {
+        "arguments": {
+          "functionCallId": "pay-042",
+          "currency": "USD",
+          "amount_cents": 4200,
+          "account": "invoice:42"
+        },
+        "purpose": "Challenge pay",
+        "resource": "invoice:42",
+        "effect": "pay",
+        "tool": "request_payment",
+        "protocol": "aml-proposed-action/1"
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "invoice:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "functionCallId": "pay-042",
+            "currency": "USD",
+            "amount_cents": 4200,
+            "account": "invoice:42"
+          },
+          "purpose": "Challenge pay",
+          "resource": "invoice:42",
+          "effect": "pay",
+          "tool": "request_payment",
+          "protocol": "aml-proposed-action/1"
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "pay-changed-payload",
+      "intent": "Changed payload with an old grant blocks an approval-required action; an allow rule has no grant to mismatch.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "request_payment",
+        "effect": "pay",
+        "resource": "invoice:42",
+        "purpose": "Challenge pay",
+        "arguments": {
+          "account": "invoice:42",
+          "amount_cents": 4200,
+          "currency": "USD",
+          "functionCallId": "pay-042",
+          "note": "Payload changed after the original digest"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "invoice:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "fixed",
+        "approval_digest_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "b4a2b17134035fcb8155bd7d767b4a5de55fc30b000cd34c7d4ce273dcd2ef24",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b4a2b17134035fcb8155bd7d767b4a5de55fc30b000cd34c7d4ce273dcd2ef24",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "pay-changed-resource",
+      "intent": "Changed declared resource has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "request_payment",
+        "effect": "pay",
+        "resource": "other:pay",
+        "purpose": "Challenge pay",
+        "arguments": {
+          "account": "invoice:42",
+          "amount_cents": 4200,
+          "currency": "USD",
+          "functionCallId": "pay-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "invoice:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "5b21ba7d03d9c2e702441d54c4c23f3fd0e6ec1547d1340a1277ccd696f03213",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "5b21ba7d03d9c2e702441d54c4c23f3fd0e6ec1547d1340a1277ccd696f03213",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "pay-changed-tool",
+      "intent": "Changed tool has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "other_request_payment",
+        "effect": "pay",
+        "resource": "invoice:42",
+        "purpose": "Challenge pay",
+        "arguments": {
+          "account": "invoice:42",
+          "amount_cents": 4200,
+          "currency": "USD",
+          "functionCallId": "pay-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "invoice:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "207854f49d5f41c8d26c42d60ae0c50e2a6ed45ab9b93d54a065d68cd99ecfd4",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "207854f49d5f41c8d26c42d60ae0c50e2a6ed45ab9b93d54a065d68cd99ecfd4",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "pay-changed-effect",
+      "intent": "Changed effect has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "request_payment",
+        "effect": "read",
+        "resource": "invoice:42",
+        "purpose": "Challenge pay",
+        "arguments": {
+          "account": "invoice:42",
+          "amount_cents": 4200,
+          "currency": "USD",
+          "functionCallId": "pay-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "invoice:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "2b8a57b864d21c5687c6aa26cc43feda17e87e291fe0241c29b1b170cd86bdf4",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "2b8a57b864d21c5687c6aa26cc43feda17e87e291fe0241c29b1b170cd86bdf4",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "pay-callback-throws",
+      "intent": "A throwing callback has uncertain external outcome and exactly one invocation.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "request_payment",
+        "effect": "pay",
+        "resource": "invoice:42",
+        "purpose": "Challenge pay",
+        "arguments": {
+          "account": "invoice:42",
+          "amount_cents": 4200,
+          "currency": "USD",
+          "functionCallId": "pay-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "invoice:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "throw"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "policy_decision": "requires_approval",
+          "execution_status": "unknown",
+          "reason": "host_dispatch_error"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "request_payment",
+          "effect": "pay",
+          "resource": "invoice:42",
+          "purpose": "Challenge pay",
+          "arguments": {
+            "account": "invoice:42",
+            "amount_cents": 4200,
+            "currency": "USD",
+            "functionCallId": "pay-042"
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "pay-duplicate-policy",
+      "intent": "Ambiguous exact rules fail closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "request_payment",
+        "effect": "pay",
+        "resource": "invoice:42",
+        "purpose": "Challenge pay",
+        "arguments": {
+          "account": "invoice:42",
+          "amount_cents": 4200,
+          "currency": "USD",
+          "functionCallId": "pay-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "invoice:42",
+            "requires_approval": true
+          },
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "invoice:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "ambiguous_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "pay-extra-proposal-field",
+      "intent": "Unexpected proposal field fails closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "request_payment",
+        "effect": "pay",
+        "resource": "invoice:42",
+        "purpose": "Challenge pay",
+        "arguments": {
+          "account": "invoice:42",
+          "amount_cents": 4200,
+          "currency": "USD",
+          "functionCallId": "pay-042"
+        },
+        "undeclared": true
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "invoice:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_proposal"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "pay-invalid-policy-protocol",
+      "intent": "An invalid host policy fails closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "request_payment",
+        "effect": "pay",
+        "resource": "invoice:42",
+        "purpose": "Challenge pay",
+        "arguments": {
+          "account": "invoice:42",
+          "amount_cents": 4200,
+          "currency": "USD",
+          "functionCallId": "pay-042"
+        }
+      },
+      "policy": {
+        "protocol": "other-policy/1",
+        "rules": [
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "invoice:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "pay-different-policy-resource",
+      "intent": "A valid rule for a different resource cannot authorize this proposal.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "request_payment",
+        "effect": "pay",
+        "resource": "invoice:42",
+        "purpose": "Challenge pay",
+        "arguments": {
+          "account": "invoice:42",
+          "amount_cents": 4200,
+          "currency": "USD",
+          "functionCallId": "pay-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "different:pay",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "pay-missing-approval",
+      "intent": "Missing host approval hook blocks execution.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "request_payment",
+        "effect": "pay",
+        "resource": "invoice:42",
+        "purpose": "Challenge pay",
+        "arguments": {
+          "account": "invoice:42",
+          "amount_cents": 4200,
+          "currency": "USD",
+          "functionCallId": "pay-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "invoice:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_unavailable"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "pay-approval-error",
+      "intent": "Throwing approval hook blocks execution.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "request_payment",
+        "effect": "pay",
+        "resource": "invoice:42",
+        "purpose": "Challenge pay",
+        "arguments": {
+          "account": "invoice:42",
+          "amount_cents": 4200,
+          "currency": "USD",
+          "functionCallId": "pay-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "invoice:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "throw",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_error"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "pay-policy-revoked",
+      "intent": "Rule removed during approval blocks at policy recheck.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "request_payment",
+        "effect": "pay",
+        "resource": "invoice:42",
+        "purpose": "Challenge pay",
+        "arguments": {
+          "account": "invoice:42",
+          "amount_cents": 4200,
+          "currency": "USD",
+          "functionCallId": "pay-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "invoice:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return",
+        "remove_policy_rule": true
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "policy_changed"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "pay-changed-metadata",
+      "intent": "Adding a metadata field changes the digest and invalidates the old grant.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "request_payment",
+        "effect": "pay",
+        "resource": "invoice:42",
+        "purpose": "Challenge pay",
+        "arguments": {
+          "account": "invoice:42",
+          "amount_cents": 4200,
+          "currency": "USD",
+          "functionCallId": "pay-042",
+          "metadata": {
+            "tracking": "added after digest"
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "request_payment",
+            "effect": "pay",
+            "resource": "invoice:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "fixed",
+        "approval_digest_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "a2a5893acf429d09d9d861d379d485be0629c200461a65b00391ebf4d729782e",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "a2a5893acf429d09d9d861d379d485be0629c200461a65b00391ebf4d729782e",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "delete-baseline",
+      "intent": "Exact rule and frozen payload reach the simulated callback.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "delete_record",
+        "effect": "delete",
+        "resource": "record:42",
+        "purpose": "Challenge delete",
+        "arguments": {
+          "path": "record:42",
+          "reason": "Duplicate draft",
+          "functionCallId": "delete-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "delete_record",
+          "effect": "delete",
+          "resource": "record:42",
+          "purpose": "Challenge delete",
+          "arguments": {
+            "path": "record:42",
+            "reason": "Duplicate draft",
+            "functionCallId": "delete-042"
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "delete-reordered-keys",
+      "intent": "Key order changes neither digest nor decision.",
+      "proposal": {
+        "arguments": {
+          "functionCallId": "delete-042",
+          "reason": "Duplicate draft",
+          "path": "record:42"
+        },
+        "purpose": "Challenge delete",
+        "resource": "record:42",
+        "effect": "delete",
+        "tool": "delete_record",
+        "protocol": "aml-proposed-action/1"
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "functionCallId": "delete-042",
+            "reason": "Duplicate draft",
+            "path": "record:42"
+          },
+          "purpose": "Challenge delete",
+          "resource": "record:42",
+          "effect": "delete",
+          "tool": "delete_record",
+          "protocol": "aml-proposed-action/1"
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "delete-changed-payload",
+      "intent": "Changed payload with an old grant blocks an approval-required action; an allow rule has no grant to mismatch.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "delete_record",
+        "effect": "delete",
+        "resource": "record:42",
+        "purpose": "Challenge delete",
+        "arguments": {
+          "path": "record:42",
+          "reason": "Duplicate draft",
+          "functionCallId": "delete-042",
+          "note": "Payload changed after the original digest"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "fixed",
+        "approval_digest_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "8dd8faf5530da61143ba8ca68c9a2399d56f0fa1eedde7450018c1b154514ce8",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "8dd8faf5530da61143ba8ca68c9a2399d56f0fa1eedde7450018c1b154514ce8",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "delete-changed-resource",
+      "intent": "Changed declared resource has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "delete_record",
+        "effect": "delete",
+        "resource": "other:delete",
+        "purpose": "Challenge delete",
+        "arguments": {
+          "path": "record:42",
+          "reason": "Duplicate draft",
+          "functionCallId": "delete-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "1930494c4b67c976fe01752cc9c63971f9d81f4995a7cc6f3ed7b7d7ab39a122",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "1930494c4b67c976fe01752cc9c63971f9d81f4995a7cc6f3ed7b7d7ab39a122",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "delete-changed-tool",
+      "intent": "Changed tool has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "other_delete_record",
+        "effect": "delete",
+        "resource": "record:42",
+        "purpose": "Challenge delete",
+        "arguments": {
+          "path": "record:42",
+          "reason": "Duplicate draft",
+          "functionCallId": "delete-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "c541cb70a28d0cff204dd73b874a4bd1abbd043099bcb0768d40d0d41a5496d7",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "c541cb70a28d0cff204dd73b874a4bd1abbd043099bcb0768d40d0d41a5496d7",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "delete-changed-effect",
+      "intent": "Changed effect has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "delete_record",
+        "effect": "read",
+        "resource": "record:42",
+        "purpose": "Challenge delete",
+        "arguments": {
+          "path": "record:42",
+          "reason": "Duplicate draft",
+          "functionCallId": "delete-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "e2f749a45e55a43a0d91db999c8b8160274ae892c1c80a312162891e6c4ec630",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "e2f749a45e55a43a0d91db999c8b8160274ae892c1c80a312162891e6c4ec630",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "delete-callback-throws",
+      "intent": "A throwing callback has uncertain external outcome and exactly one invocation.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "delete_record",
+        "effect": "delete",
+        "resource": "record:42",
+        "purpose": "Challenge delete",
+        "arguments": {
+          "path": "record:42",
+          "reason": "Duplicate draft",
+          "functionCallId": "delete-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "throw"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "policy_decision": "requires_approval",
+          "execution_status": "unknown",
+          "reason": "host_dispatch_error"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "delete_record",
+          "effect": "delete",
+          "resource": "record:42",
+          "purpose": "Challenge delete",
+          "arguments": {
+            "path": "record:42",
+            "reason": "Duplicate draft",
+            "functionCallId": "delete-042"
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "delete-duplicate-policy",
+      "intent": "Ambiguous exact rules fail closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "delete_record",
+        "effect": "delete",
+        "resource": "record:42",
+        "purpose": "Challenge delete",
+        "arguments": {
+          "path": "record:42",
+          "reason": "Duplicate draft",
+          "functionCallId": "delete-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "record:42",
+            "requires_approval": true
+          },
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "ambiguous_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "delete-extra-proposal-field",
+      "intent": "Unexpected proposal field fails closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "delete_record",
+        "effect": "delete",
+        "resource": "record:42",
+        "purpose": "Challenge delete",
+        "arguments": {
+          "path": "record:42",
+          "reason": "Duplicate draft",
+          "functionCallId": "delete-042"
+        },
+        "undeclared": true
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_proposal"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "delete-invalid-policy-protocol",
+      "intent": "An invalid host policy fails closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "delete_record",
+        "effect": "delete",
+        "resource": "record:42",
+        "purpose": "Challenge delete",
+        "arguments": {
+          "path": "record:42",
+          "reason": "Duplicate draft",
+          "functionCallId": "delete-042"
+        }
+      },
+      "policy": {
+        "protocol": "other-policy/1",
+        "rules": [
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "delete-different-policy-resource",
+      "intent": "A valid rule for a different resource cannot authorize this proposal.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "delete_record",
+        "effect": "delete",
+        "resource": "record:42",
+        "purpose": "Challenge delete",
+        "arguments": {
+          "path": "record:42",
+          "reason": "Duplicate draft",
+          "functionCallId": "delete-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "different:delete",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "delete-missing-approval",
+      "intent": "Missing host approval hook blocks execution.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "delete_record",
+        "effect": "delete",
+        "resource": "record:42",
+        "purpose": "Challenge delete",
+        "arguments": {
+          "path": "record:42",
+          "reason": "Duplicate draft",
+          "functionCallId": "delete-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_unavailable"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "delete-approval-error",
+      "intent": "Throwing approval hook blocks execution.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "delete_record",
+        "effect": "delete",
+        "resource": "record:42",
+        "purpose": "Challenge delete",
+        "arguments": {
+          "path": "record:42",
+          "reason": "Duplicate draft",
+          "functionCallId": "delete-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "throw",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_error"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "delete-policy-revoked",
+      "intent": "Rule removed during approval blocks at policy recheck.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "delete_record",
+        "effect": "delete",
+        "resource": "record:42",
+        "purpose": "Challenge delete",
+        "arguments": {
+          "path": "record:42",
+          "reason": "Duplicate draft",
+          "functionCallId": "delete-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return",
+        "remove_policy_rule": true
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "policy_changed"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "delete-changed-metadata",
+      "intent": "Adding a metadata field changes the digest and invalidates the old grant.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "delete_record",
+        "effect": "delete",
+        "resource": "record:42",
+        "purpose": "Challenge delete",
+        "arguments": {
+          "path": "record:42",
+          "reason": "Duplicate draft",
+          "functionCallId": "delete-042",
+          "metadata": {
+            "tracking": "added after digest"
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "delete_record",
+            "effect": "delete",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "fixed",
+        "approval_digest_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "49b1e314187996860461f398da2f34104a395227c1a0401624c2c33fd3f18d7e",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "49b1e314187996860461f398da2f34104a395227c1a0401624c2c33fd3f18d7e",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "http-baseline",
+      "intent": "Exact rule and frozen payload reach the simulated callback.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "http_request",
+        "effect": "read",
+        "resource": "https://api.example.test/v1/status",
+        "purpose": "Challenge http",
+        "arguments": {
+          "url": "https://api.example.test/v1/status",
+          "method": "GET",
+          "headers": {
+            "Accept": "application/json"
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "http_request",
+            "effect": "read",
+            "resource": "https://api.example.test/v1/status",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "http_request",
+          "effect": "read",
+          "resource": "https://api.example.test/v1/status",
+          "purpose": "Challenge http",
+          "arguments": {
+            "url": "https://api.example.test/v1/status",
+            "method": "GET",
+            "headers": {
+              "Accept": "application/json"
+            }
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "http-reordered-keys",
+      "intent": "Key order changes neither digest nor decision.",
+      "proposal": {
+        "arguments": {
+          "headers": {
+            "Accept": "application/json"
+          },
+          "method": "GET",
+          "url": "https://api.example.test/v1/status"
+        },
+        "purpose": "Challenge http",
+        "resource": "https://api.example.test/v1/status",
+        "effect": "read",
+        "tool": "http_request",
+        "protocol": "aml-proposed-action/1"
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "http_request",
+            "effect": "read",
+            "resource": "https://api.example.test/v1/status",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "headers": {
+              "Accept": "application/json"
+            },
+            "method": "GET",
+            "url": "https://api.example.test/v1/status"
+          },
+          "purpose": "Challenge http",
+          "resource": "https://api.example.test/v1/status",
+          "effect": "read",
+          "tool": "http_request",
+          "protocol": "aml-proposed-action/1"
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "http-changed-payload",
+      "intent": "Changed payload with an old grant blocks an approval-required action; an allow rule has no grant to mismatch.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "http_request",
+        "effect": "read",
+        "resource": "https://api.example.test/v1/status",
+        "purpose": "Challenge http",
+        "arguments": {
+          "url": "https://api.example.test/v1/status",
+          "method": "GET",
+          "headers": {
+            "Accept": "application/json"
+          },
+          "note": "Payload changed after the original digest"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "http_request",
+            "effect": "read",
+            "resource": "https://api.example.test/v1/status",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "4c46ebc3843a4c3ce37e217b1287d0adbfbc8bd258d38970d1ea34a9866c1fff",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "4c46ebc3843a4c3ce37e217b1287d0adbfbc8bd258d38970d1ea34a9866c1fff",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "http_request",
+          "effect": "read",
+          "resource": "https://api.example.test/v1/status",
+          "purpose": "Challenge http",
+          "arguments": {
+            "url": "https://api.example.test/v1/status",
+            "method": "GET",
+            "headers": {
+              "Accept": "application/json"
+            },
+            "note": "Payload changed after the original digest"
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "http-changed-resource",
+      "intent": "Changed declared resource has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "http_request",
+        "effect": "read",
+        "resource": "other:http",
+        "purpose": "Challenge http",
+        "arguments": {
+          "url": "https://api.example.test/v1/status",
+          "method": "GET",
+          "headers": {
+            "Accept": "application/json"
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "http_request",
+            "effect": "read",
+            "resource": "https://api.example.test/v1/status",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "5f2e18ce60dc2b5f521c4c9d1edb1e54ec21ac3ec5fca7d6a75a0c62a00e0c87",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "5f2e18ce60dc2b5f521c4c9d1edb1e54ec21ac3ec5fca7d6a75a0c62a00e0c87",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "http-changed-tool",
+      "intent": "Changed tool has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "other_http_request",
+        "effect": "read",
+        "resource": "https://api.example.test/v1/status",
+        "purpose": "Challenge http",
+        "arguments": {
+          "url": "https://api.example.test/v1/status",
+          "method": "GET",
+          "headers": {
+            "Accept": "application/json"
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "http_request",
+            "effect": "read",
+            "resource": "https://api.example.test/v1/status",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "bf1820dbaec58810fb019a8c2ee2dcce78a89729de85e12f46b6e85270af2bbb",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "bf1820dbaec58810fb019a8c2ee2dcce78a89729de85e12f46b6e85270af2bbb",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "http-changed-effect",
+      "intent": "Changed effect has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "http_request",
+        "effect": "write",
+        "resource": "https://api.example.test/v1/status",
+        "purpose": "Challenge http",
+        "arguments": {
+          "url": "https://api.example.test/v1/status",
+          "method": "GET",
+          "headers": {
+            "Accept": "application/json"
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "http_request",
+            "effect": "read",
+            "resource": "https://api.example.test/v1/status",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "47927fa8fd51833e1605d52c9bf2dc55e48a49e52824c54de1cfa04b0c2119ac",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "47927fa8fd51833e1605d52c9bf2dc55e48a49e52824c54de1cfa04b0c2119ac",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "http-callback-throws",
+      "intent": "A throwing callback has uncertain external outcome and exactly one invocation.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "http_request",
+        "effect": "read",
+        "resource": "https://api.example.test/v1/status",
+        "purpose": "Challenge http",
+        "arguments": {
+          "url": "https://api.example.test/v1/status",
+          "method": "GET",
+          "headers": {
+            "Accept": "application/json"
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "http_request",
+            "effect": "read",
+            "resource": "https://api.example.test/v1/status",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "throw"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "policy_decision": "allow",
+          "execution_status": "unknown",
+          "reason": "host_dispatch_error"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "http_request",
+          "effect": "read",
+          "resource": "https://api.example.test/v1/status",
+          "purpose": "Challenge http",
+          "arguments": {
+            "url": "https://api.example.test/v1/status",
+            "method": "GET",
+            "headers": {
+              "Accept": "application/json"
+            }
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "http-duplicate-policy",
+      "intent": "Ambiguous exact rules fail closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "http_request",
+        "effect": "read",
+        "resource": "https://api.example.test/v1/status",
+        "purpose": "Challenge http",
+        "arguments": {
+          "url": "https://api.example.test/v1/status",
+          "method": "GET",
+          "headers": {
+            "Accept": "application/json"
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "http_request",
+            "effect": "read",
+            "resource": "https://api.example.test/v1/status",
+            "requires_approval": false
+          },
+          {
+            "tool": "http_request",
+            "effect": "read",
+            "resource": "https://api.example.test/v1/status",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "ambiguous_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "http-extra-proposal-field",
+      "intent": "Unexpected proposal field fails closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "http_request",
+        "effect": "read",
+        "resource": "https://api.example.test/v1/status",
+        "purpose": "Challenge http",
+        "arguments": {
+          "url": "https://api.example.test/v1/status",
+          "method": "GET",
+          "headers": {
+            "Accept": "application/json"
+          }
+        },
+        "undeclared": true
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "http_request",
+            "effect": "read",
+            "resource": "https://api.example.test/v1/status",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_proposal"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "http-invalid-policy-protocol",
+      "intent": "An invalid host policy fails closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "http_request",
+        "effect": "read",
+        "resource": "https://api.example.test/v1/status",
+        "purpose": "Challenge http",
+        "arguments": {
+          "url": "https://api.example.test/v1/status",
+          "method": "GET",
+          "headers": {
+            "Accept": "application/json"
+          }
+        }
+      },
+      "policy": {
+        "protocol": "other-policy/1",
+        "rules": [
+          {
+            "tool": "http_request",
+            "effect": "read",
+            "resource": "https://api.example.test/v1/status",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "http-different-policy-resource",
+      "intent": "A valid rule for a different resource cannot authorize this proposal.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "http_request",
+        "effect": "read",
+        "resource": "https://api.example.test/v1/status",
+        "purpose": "Challenge http",
+        "arguments": {
+          "url": "https://api.example.test/v1/status",
+          "method": "GET",
+          "headers": {
+            "Accept": "application/json"
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "http_request",
+            "effect": "read",
+            "resource": "different:http",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "ui-baseline",
+      "intent": "Exact rule and frozen payload reach the simulated callback.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "render_ui",
+        "effect": "write",
+        "resource": "screen:home",
+        "purpose": "Challenge ui",
+        "arguments": {
+          "root": "#app",
+          "html": "<p>Welcome</p>",
+          "functionCallId": "render-001"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "render_ui",
+            "effect": "write",
+            "resource": "screen:home",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "render_ui",
+          "effect": "write",
+          "resource": "screen:home",
+          "purpose": "Challenge ui",
+          "arguments": {
+            "root": "#app",
+            "html": "<p>Welcome</p>",
+            "functionCallId": "render-001"
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "ui-reordered-keys",
+      "intent": "Key order changes neither digest nor decision.",
+      "proposal": {
+        "arguments": {
+          "functionCallId": "render-001",
+          "html": "<p>Welcome</p>",
+          "root": "#app"
+        },
+        "purpose": "Challenge ui",
+        "resource": "screen:home",
+        "effect": "write",
+        "tool": "render_ui",
+        "protocol": "aml-proposed-action/1"
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "render_ui",
+            "effect": "write",
+            "resource": "screen:home",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "arguments": {
+            "functionCallId": "render-001",
+            "html": "<p>Welcome</p>",
+            "root": "#app"
+          },
+          "purpose": "Challenge ui",
+          "resource": "screen:home",
+          "effect": "write",
+          "tool": "render_ui",
+          "protocol": "aml-proposed-action/1"
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "ui-changed-payload",
+      "intent": "Changed payload with an old grant blocks an approval-required action; an allow rule has no grant to mismatch.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "render_ui",
+        "effect": "write",
+        "resource": "screen:home",
+        "purpose": "Challenge ui",
+        "arguments": {
+          "root": "#app",
+          "html": "<p>Welcome</p>",
+          "functionCallId": "render-001",
+          "note": "Payload changed after the original digest"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "render_ui",
+            "effect": "write",
+            "resource": "screen:home",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "d38667ae6dc0875de0f98b209045762a90da66dc4690c7ec20a297f0ae8178b5",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "d38667ae6dc0875de0f98b209045762a90da66dc4690c7ec20a297f0ae8178b5",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "render_ui",
+          "effect": "write",
+          "resource": "screen:home",
+          "purpose": "Challenge ui",
+          "arguments": {
+            "root": "#app",
+            "html": "<p>Welcome</p>",
+            "functionCallId": "render-001",
+            "note": "Payload changed after the original digest"
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "ui-changed-resource",
+      "intent": "Changed declared resource has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "render_ui",
+        "effect": "write",
+        "resource": "other:ui",
+        "purpose": "Challenge ui",
+        "arguments": {
+          "root": "#app",
+          "html": "<p>Welcome</p>",
+          "functionCallId": "render-001"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "render_ui",
+            "effect": "write",
+            "resource": "screen:home",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "0c1f4e31b75b3c25d757cd60ea49f2505306468ff73db8f4af3658c0e68c9f49",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "0c1f4e31b75b3c25d757cd60ea49f2505306468ff73db8f4af3658c0e68c9f49",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "ui-changed-tool",
+      "intent": "Changed tool has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "other_render_ui",
+        "effect": "write",
+        "resource": "screen:home",
+        "purpose": "Challenge ui",
+        "arguments": {
+          "root": "#app",
+          "html": "<p>Welcome</p>",
+          "functionCallId": "render-001"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "render_ui",
+            "effect": "write",
+            "resource": "screen:home",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "7c90aa85ccb153dbe881a27160efacba668b3a06051b3db544a61896f799e58a",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "7c90aa85ccb153dbe881a27160efacba668b3a06051b3db544a61896f799e58a",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "ui-changed-effect",
+      "intent": "Changed effect has no exact host rule.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "render_ui",
+        "effect": "read",
+        "resource": "screen:home",
+        "purpose": "Challenge ui",
+        "arguments": {
+          "root": "#app",
+          "html": "<p>Welcome</p>",
+          "functionCallId": "render-001"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "render_ui",
+            "effect": "write",
+            "resource": "screen:home",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "54e8df4894508fff87ac1d8ac8794fd9678e5ed2ff82d098f51cba27fde82485",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "54e8df4894508fff87ac1d8ac8794fd9678e5ed2ff82d098f51cba27fde82485",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "ui-callback-throws",
+      "intent": "A throwing callback has uncertain external outcome and exactly one invocation.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "render_ui",
+        "effect": "write",
+        "resource": "screen:home",
+        "purpose": "Challenge ui",
+        "arguments": {
+          "root": "#app",
+          "html": "<p>Welcome</p>",
+          "functionCallId": "render-001"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "render_ui",
+            "effect": "write",
+            "resource": "screen:home",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "throw"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "policy_decision": "allow",
+          "execution_status": "unknown",
+          "reason": "host_dispatch_error"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "render_ui",
+          "effect": "write",
+          "resource": "screen:home",
+          "purpose": "Challenge ui",
+          "arguments": {
+            "root": "#app",
+            "html": "<p>Welcome</p>",
+            "functionCallId": "render-001"
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "ui-duplicate-policy",
+      "intent": "Ambiguous exact rules fail closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "render_ui",
+        "effect": "write",
+        "resource": "screen:home",
+        "purpose": "Challenge ui",
+        "arguments": {
+          "root": "#app",
+          "html": "<p>Welcome</p>",
+          "functionCallId": "render-001"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "render_ui",
+            "effect": "write",
+            "resource": "screen:home",
+            "requires_approval": false
+          },
+          {
+            "tool": "render_ui",
+            "effect": "write",
+            "resource": "screen:home",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "ambiguous_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "ui-extra-proposal-field",
+      "intent": "Unexpected proposal field fails closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "render_ui",
+        "effect": "write",
+        "resource": "screen:home",
+        "purpose": "Challenge ui",
+        "arguments": {
+          "root": "#app",
+          "html": "<p>Welcome</p>",
+          "functionCallId": "render-001"
+        },
+        "undeclared": true
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "render_ui",
+            "effect": "write",
+            "resource": "screen:home",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_proposal"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "ui-invalid-policy-protocol",
+      "intent": "An invalid host policy fails closed with a null plan digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "render_ui",
+        "effect": "write",
+        "resource": "screen:home",
+        "purpose": "Challenge ui",
+        "arguments": {
+          "root": "#app",
+          "html": "<p>Welcome</p>",
+          "functionCallId": "render-001"
+        }
+      },
+      "policy": {
+        "protocol": "other-policy/1",
+        "rules": [
+          {
+            "tool": "render_ui",
+            "effect": "write",
+            "resource": "screen:home",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": null,
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "invalid_policy"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "ui-different-policy-resource",
+      "intent": "A valid rule for a different resource cannot authorize this proposal.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "render_ui",
+        "effect": "write",
+        "resource": "screen:home",
+        "purpose": "Challenge ui",
+        "arguments": {
+          "root": "#app",
+          "html": "<p>Welcome</p>",
+          "functionCallId": "render-001"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "render_ui",
+            "effect": "write",
+            "resource": "different:ui",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "deny",
+          "reason": "no_exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "policy_decision": "deny",
+          "execution_status": "blocked",
+          "reason": "no_exact_rule"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-injected-bcc-stale",
+      "intent": "BCC injection after a grant changes the digest and blocks dispatch.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          },
+          "bcc": [
+            "unapproved@example.test"
+          ]
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "fixed",
+        "approval_digest_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "06a4efd3a21269e47a23e32b1007f2dcdc02a3ac7315440134aceda7ca68d69c",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "06a4efd3a21269e47a23e32b1007f2dcdc02a3ac7315440134aceda7ca68d69c",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-injected-bcc-fresh",
+      "intent": "Counterexample: fresh approval of the changed proposal passes the generic boundary; a mail adapter must independently validate all recipients.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          },
+          "bcc": [
+            "unapproved@example.test"
+          ]
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "06a4efd3a21269e47a23e32b1007f2dcdc02a3ac7315440134aceda7ca68d69c",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "06a4efd3a21269e47a23e32b1007f2dcdc02a3ac7315440134aceda7ca68d69c",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "send_message",
+          "effect": "send",
+          "resource": "team@example.test",
+          "purpose": "Challenge mail",
+          "arguments": {
+            "to": "team@example.test",
+            "cc": [],
+            "subject": "Update",
+            "body": "The build passed.",
+            "metadata": {
+              "z": 2,
+              "a": [
+                "é",
+                true,
+                null
+              ]
+            },
+            "bcc": [
+              "unapproved@example.test"
+            ]
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "mail-caller-mutates-after-snapshot",
+      "intent": "Caller and approval copy mutate while awaiting; frozen original is dispatched.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_message",
+        "effect": "send",
+        "resource": "team@example.test",
+        "purpose": "Challenge mail",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "subject": "Update",
+          "body": "The build passed.",
+          "metadata": {
+            "z": 2,
+            "a": [
+              "é",
+              true,
+              null
+            ]
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_message",
+            "effect": "send",
+            "resource": "team@example.test",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return",
+        "mutate_proposal_body": "MUTATED"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "send_message",
+          "effect": "send",
+          "resource": "team@example.test",
+          "purpose": "Challenge mail",
+          "arguments": {
+            "to": "team@example.test",
+            "cc": [],
+            "subject": "Update",
+            "body": "The build passed.",
+            "metadata": {
+              "z": 2,
+              "a": [
+                "é",
+                true,
+                null
+              ]
+            }
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-changed-call-id-stale",
+      "intent": "A changed functionCallId mismatches the previous digest.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "write_record",
+        "effect": "write",
+        "resource": "record:42",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-replayed-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "fixed",
+        "approval_digest_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "86eed3ca238c540bf90c441e55b80ea8dd2a9fc1a3d2e864c90250112c146fda",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "86eed3ca238c540bf90c441e55b80ea8dd2a9fc1a3d2e864c90250112c146fda",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_missing_or_mismatched"
+        },
+        "tool_calls": 0,
+        "executed_proposal": null
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "write-exact-call-id-replay",
+      "intent": "Counterexample: generic boundary alone does not reject an exact replay with a fresh approval; use a one-shot host claim.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "write_record",
+        "effect": "write",
+        "resource": "record:42",
+        "purpose": "Challenge write",
+        "arguments": {
+          "path": "record:42",
+          "value": {
+            "owner": "Ada",
+            "status": "draft"
+          },
+          "functionCallId": "write-042"
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "write_record",
+            "effect": "write",
+            "resource": "record:42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "host": {
+        "approval": "matching",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "write_record",
+          "effect": "write",
+          "resource": "record:42",
+          "purpose": "Challenge write",
+          "arguments": {
+            "path": "record:42",
+            "value": {
+              "owner": "Ada",
+              "status": "draft"
+            },
+            "functionCallId": "write-042"
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "http-argument-target-mismatch",
+      "intent": "Counterexample: an allow rule on declared resource alone cannot validate the URL the HTTP tool uses; use a target resolver.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "http_request",
+        "effect": "read",
+        "resource": "https://api.example.test/v1/status",
+        "purpose": "Challenge http",
+        "arguments": {
+          "url": "https://other.example.test/v1/status",
+          "method": "GET",
+          "headers": {
+            "Accept": "application/json"
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "http_request",
+            "effect": "read",
+            "resource": "https://api.example.test/v1/status",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "5d2c104a875dbb3d2f3fedb45637174ba245665992be1bca28fc218264773bd6",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "5d2c104a875dbb3d2f3fedb45637174ba245665992be1bca28fc218264773bd6",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "http_request",
+          "effect": "read",
+          "resource": "https://api.example.test/v1/status",
+          "purpose": "Challenge http",
+          "arguments": {
+            "url": "https://other.example.test/v1/status",
+            "method": "GET",
+            "headers": {
+              "Accept": "application/json"
+            }
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    },
+    {
+      "protocol": "aml-action-expanded-case/1",
+      "id": "read-numeric-object-keys",
+      "intent": "Integer-looking keys follow JavaScript JSON property order in both implementations.",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "fetch_record",
+        "effect": "read",
+        "resource": "record:42",
+        "purpose": "Challenge read",
+        "arguments": {
+          "path": "record:42",
+          "fields": [
+            "owner",
+            "summary"
+          ],
+          "functionCallId": "read-042",
+          "index": {
+            "2": "two",
+            "12": "twelve",
+            "01": "zero-one",
+            "a": "alpha"
+          }
+        }
+      },
+      "policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "fetch_record",
+            "effect": "read",
+            "resource": "record:42",
+            "requires_approval": false
+          }
+        ]
+      },
+      "host": {
+        "approval": "missing",
+        "tool": "return"
+      },
+      "expected": {
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "66e0792f76fdea15da6d3b17fdacd1e528a90b0449012ba82e5c6253bb7bc10b",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "66e0792f76fdea15da6d3b17fdacd1e528a90b0449012ba82e5c6253bb7bc10b",
+          "policy_decision": "allow",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "tool_calls": 1,
+        "executed_proposal": {
+          "protocol": "aml-proposed-action/1",
+          "tool": "fetch_record",
+          "effect": "read",
+          "resource": "record:42",
+          "purpose": "Challenge read",
+          "arguments": {
+            "path": "record:42",
+            "fields": [
+              "owner",
+              "summary"
+            ],
+            "functionCallId": "read-042",
+            "index": {
+              "2": "two",
+              "12": "twelve",
+              "01": "zero-one",
+              "a": "alpha"
+            }
+          }
+        }
+      },
+      "receipt_schema": "protocol/action-boundary-evidence-receipt.schema.json"
+    }
+  ],
+  "claim_boundary": "Simulated host callbacks only. A hash detects changes to published fixture bytes; it does not authenticate a host, a human, an external effect, or arbitrary tool destinations."
+}
