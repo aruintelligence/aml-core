@@ -9,6 +9,8 @@ on:
       - "docs/action-receipt-adapters-report.json"
       - "scripts/build-action-revocation-report.mjs"
       - "docs/action-receipt-revocation-report.json"
+      - "scripts/build-action-epoch-report.mjs"
+      - "docs/action-receipt-policy-epoch-report.json"
       - "test/action-receipt-adapters.test.js"
       - ".github/workflows/action-receipt-adapters.yml"
   pull_request:
@@ -18,6 +20,8 @@ on:
       - "docs/action-receipt-adapters-report.json"
       - "scripts/build-action-revocation-report.mjs"
       - "docs/action-receipt-revocation-report.json"
+      - "scripts/build-action-epoch-report.mjs"
+      - "docs/action-receipt-policy-epoch-report.json"
       - "test/action-receipt-adapters.test.js"
       - ".github/workflows/action-receipt-adapters.yml"
 
@@ -34,4 +38,5 @@ jobs:
           node-version: "22"
       - run: node scripts/build-action-receipt-adapters-report.mjs --check
       - run: node scripts/build-action-revocation-report.mjs --check
+      - run: node scripts/build-action-epoch-report.mjs --check
       - run: node --test test/action-receipt-adapters.test.js

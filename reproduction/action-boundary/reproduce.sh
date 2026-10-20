@@ -13,6 +13,7 @@ node scripts/dispatch-controlled-pilot-pages.mjs --check
 node scripts/build-action-site-browser-receipts.mjs --check
 node scripts/build-action-receipt-adapters-report.mjs --check
 node scripts/build-action-revocation-report.mjs --check
+node scripts/build-action-epoch-report.mjs --check
 node scripts/build-action-stress-375.mjs --check
 python3 scripts/verify-action-stress-375.py
 node scripts/build-action-stress-matrix.mjs --check

@@ -49,15 +49,21 @@ export function uiResource(args) {
   return `ui:${args.root}`;
 }
 
-export function createReceiptBoundAdapter({ tool, effect, policy, secret, resolveTarget,
+export function createReceiptBoundAdapter({ tool, effect, policy, policyEpoch, secret, resolveTarget,
   authorize, execute, nonce = () => crypto.randomBytes(16).toString('hex') } = {}) {
   if (!nonempty(tool) || !nonempty(effect) || typeof policy !== 'function' ||
+      (policyEpoch !== undefined && typeof policyEpoch !== 'function') ||
       !Buffer.isBuffer(secret) || secret.length < 32 ||
       typeof resolveTarget !== 'function' || typeof execute !== 'function' ||
       typeof nonce !== 'function') throw TypeError('host adapter configuration required');
   const issued = new Map();
   const seenNonces = new Set();
   const mac = digest => crypto.createHmac('sha256', secret).update(digest).digest('hex');
+  const readEpoch = () => {
+    const value = policyEpoch();
+    if (!Number.isSafeInteger(value) || value < 0) throw TypeError('invalid_policy_epoch');
+    return value;
+  };
   const authenticate = receipt => {
     try {
       if (!receipt || typeof receipt !== 'object' || !/^[0-9a-f]{64}$/.test(receipt.receipt_sha256) ||
@@ -70,6 +76,7 @@ export function createReceiptBoundAdapter({ tool, effect, policy, secret, resolv
   };
   async function issue(proposal) {
     const frozen = copy(proposal);
+    const initialEpoch = policyEpoch === undefined ? undefined : readEpoch();
     const hostPolicy = copy(policy());
     const policySha = hash(hostPolicy);
     const plan = planAction(frozen, hostPolicy);
@@ -105,13 +112,22 @@ export function createReceiptBoundAdapter({ tool, effect, policy, secret, resolv
           decision = 'SUPPRESS'; reason = 'policy_changed';
         }
       }
+      if (decision === 'ALLOW' && policyEpoch !== undefined) {
+        let currentEpoch;
+        try { currentEpoch = readEpoch(); } catch { /* fail closed */ }
+        if (currentEpoch !== initialEpoch) {
+          decision = 'SUPPRESS'; reason = 'policy_epoch_changed';
+        }
+      }
     }
     const token = nonce();
     assert.ok(nonempty(token) && !seenNonces.has(token), 'nonce must be unique');
     seenNonces.add(token);
     const body = { protocol: 'aml-host-action-authorization/1', nonce: token,
       proposal: frozen, proposal_sha256: proposalSha, host_policy: hostPolicy,
-      policy_sha256: policySha, plan, resolved_target: target, decision, reason };
+      policy_sha256: policySha,
+      ...(policyEpoch === undefined ? {} : { policy_epoch: initialEpoch }),
+      plan, resolved_target: target, decision, reason };
     const receiptSha = hash(body);
     const receipt = { ...body, receipt_sha256: receiptSha, host_mac_sha256: mac(receiptSha) };
     if (decision === 'ALLOW') issued.set(token, { receiptSha, proposal: copy(frozen) });
@@ -141,6 +157,15 @@ export function createReceiptBoundAdapter({ tool, effect, policy, secret, resolv
         candidate.tool !== tool || candidate.effect !== effect) {
       issued.delete(receipt.nonce);
       return blocked('target_mismatch');
+    }
+    if (policyEpoch !== undefined) {
+      let currentEpoch;
+      try { currentEpoch = readEpoch(); }
+      catch { issued.delete(receipt.nonce); return blocked('policy_epoch_unavailable'); }
+      if (currentEpoch !== receipt.policy_epoch) {
+        issued.delete(receipt.nonce);
+        return blocked('policy_epoch_changed');
+      }
     }
     // Consume before calling the provider: a throw can follow a partial effect.
     issued.delete(receipt.nonce);

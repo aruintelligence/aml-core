@@ -1,0 +1,999 @@
+{
+  "protocol": "aml-receipt-policy-epoch-report/1",
+  "adapters": [
+    {
+      "protocol": "aml-receipt-policy-epoch-evidence/1",
+      "adapter": "email",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_email",
+        "effect": "send",
+        "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+        "purpose": "Policy epoch fixture for email",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "bcc": [],
+          "subject": "Update",
+          "body": "Ready"
+        }
+      },
+      "original_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_email",
+            "effect": "send",
+            "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+            "requires_approval": true
+          }
+        ]
+      },
+      "intervening_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": []
+      },
+      "without_epoch": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "email-without-epoch",
+          "proposal": {
+            "arguments": {
+              "bcc": [],
+              "body": "Ready",
+              "cc": [],
+              "subject": "Update",
+              "to": "team@example.test"
+            },
+            "effect": "send",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for email",
+            "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+            "tool": "send_email"
+          },
+          "proposal_sha256": "f4d62e8f2ca887b78b2803bc6e7a24a7a84bd01ff5baa2478ddfbc8f8de4f88c",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "send",
+                "requires_approval": true,
+                "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+                "tool": "send_email"
+              }
+            ]
+          },
+          "policy_sha256": "5de9aec024a11f0dc4a18f3a2e10ad8222754da658f2530614ce5adb185598e9",
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "f4d62e8f2ca887b78b2803bc6e7a24a7a84bd01ff5baa2478ddfbc8f8de4f88c",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "31b602b10850f838fe66a34a22b2db8169df8bdde177bb7799da7bf11d5c4e19",
+          "host_mac_sha256": "ccbcfa36ea4b290f4ecaf7fd1911e84ba6efcf88510eed128033f031fa6037ef"
+        },
+        "outcome": {
+          "decision": "ALLOW",
+          "status": "DISPATCHED",
+          "callback_count": 1,
+          "result": {
+            "accepted": true
+          }
+        },
+        "callback_count": 1
+      },
+      "with_epoch": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "email-epoch-bound",
+          "proposal": {
+            "arguments": {
+              "bcc": [],
+              "body": "Ready",
+              "cc": [],
+              "subject": "Update",
+              "to": "team@example.test"
+            },
+            "effect": "send",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for email",
+            "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+            "tool": "send_email"
+          },
+          "proposal_sha256": "f4d62e8f2ca887b78b2803bc6e7a24a7a84bd01ff5baa2478ddfbc8f8de4f88c",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "send",
+                "requires_approval": true,
+                "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+                "tool": "send_email"
+              }
+            ]
+          },
+          "policy_sha256": "5de9aec024a11f0dc4a18f3a2e10ad8222754da658f2530614ce5adb185598e9",
+          "policy_epoch": 1,
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "f4d62e8f2ca887b78b2803bc6e7a24a7a84bd01ff5baa2478ddfbc8f8de4f88c",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "213a1d31bdc5c1e33f179878698a263c35effbfe52a967ff05fed4eacba9c4a3",
+          "host_mac_sha256": "6ce99b9267a6bbb1181476d577b0600182305c3fabf76c6bd3ae71d1b0741764"
+        },
+        "outcome": {
+          "decision": "SUPPRESS",
+          "reason": "policy_epoch_changed",
+          "callback_count": 0
+        },
+        "replay": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_reused_or_unknown",
+          "callback_count": 0
+        },
+        "callback_count": 0
+      },
+      "change_during_approval": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "email-approval-aba",
+          "proposal": {
+            "arguments": {
+              "bcc": [],
+              "body": "Ready",
+              "cc": [],
+              "subject": "Update",
+              "to": "team@example.test"
+            },
+            "effect": "send",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for email",
+            "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+            "tool": "send_email"
+          },
+          "proposal_sha256": "f4d62e8f2ca887b78b2803bc6e7a24a7a84bd01ff5baa2478ddfbc8f8de4f88c",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "send",
+                "requires_approval": true,
+                "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+                "tool": "send_email"
+              }
+            ]
+          },
+          "policy_sha256": "5de9aec024a11f0dc4a18f3a2e10ad8222754da658f2530614ce5adb185598e9",
+          "policy_epoch": 1,
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "f4d62e8f2ca887b78b2803bc6e7a24a7a84bd01ff5baa2478ddfbc8f8de4f88c",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+          "decision": "SUPPRESS",
+          "reason": "policy_epoch_changed",
+          "receipt_sha256": "dac5623012083506647b2c7c4bc5d6338b43eeab9ebce511776cc640285a9e80",
+          "host_mac_sha256": "0766dcc6ec3b4da4752f974a5aaea4994b53d0c6f978f570060babfe9f167cb5"
+        },
+        "outcome": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_suppressed",
+          "callback_count": 0
+        },
+        "callback_count": 0
+      },
+      "unchanged_epoch_control": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "email-unchanged-control",
+          "proposal": {
+            "arguments": {
+              "bcc": [],
+              "body": "Ready",
+              "cc": [],
+              "subject": "Update",
+              "to": "team@example.test"
+            },
+            "effect": "send",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for email",
+            "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+            "tool": "send_email"
+          },
+          "proposal_sha256": "f4d62e8f2ca887b78b2803bc6e7a24a7a84bd01ff5baa2478ddfbc8f8de4f88c",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "send",
+                "requires_approval": true,
+                "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+                "tool": "send_email"
+              }
+            ]
+          },
+          "policy_sha256": "5de9aec024a11f0dc4a18f3a2e10ad8222754da658f2530614ce5adb185598e9",
+          "policy_epoch": 9,
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "f4d62e8f2ca887b78b2803bc6e7a24a7a84bd01ff5baa2478ddfbc8f8de4f88c",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "8763a496117bd2ce16b6e6650b0bd1e8fdfe909c685eed71ecaa89c68f081975",
+          "host_mac_sha256": "4198db5a83dbbdb66b9b58ded7e37c81f28f359b125e94320dd75e0c060dfab2"
+        },
+        "outcome": {
+          "decision": "ALLOW",
+          "status": "DISPATCHED",
+          "callback_count": 1,
+          "result": {
+            "accepted": true
+          }
+        },
+        "callback_count": 1
+      },
+      "claim_boundary": "Project-authored local callbacks and public fixture key; the host epoch is simulated, not a durable provider.",
+      "receipt_sha256": "2c4204ad0ed3493d531eec624066f8507b6623b87dc1f2577a8282af6032a586"
+    },
+    {
+      "protocol": "aml-receipt-policy-epoch-evidence/1",
+      "adapter": "http",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "http_request",
+        "effect": "write",
+        "resource": "https://api.example.test/v1/status",
+        "purpose": "Policy epoch fixture for http",
+        "arguments": {
+          "url": "https://api.example.test/v1/status",
+          "method": "POST",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": "{\"ready\":true}"
+        }
+      },
+      "original_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "http_request",
+            "effect": "write",
+            "resource": "https://api.example.test/v1/status",
+            "requires_approval": true
+          }
+        ]
+      },
+      "intervening_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": []
+      },
+      "without_epoch": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "http-without-epoch",
+          "proposal": {
+            "arguments": {
+              "body": "{\"ready\":true}",
+              "headers": {
+                "Content-Type": "application/json"
+              },
+              "method": "POST",
+              "url": "https://api.example.test/v1/status"
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for http",
+            "resource": "https://api.example.test/v1/status",
+            "tool": "http_request"
+          },
+          "proposal_sha256": "7e62423c4b27426e209e639122918eac96504edd2382c47a9400209b8b02a1e7",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "https://api.example.test/v1/status",
+                "tool": "http_request"
+              }
+            ]
+          },
+          "policy_sha256": "b33c4130ca3836294360269f6bbb066815fdbce5d2cb2b390a36119840ae2cf2",
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "7e62423c4b27426e209e639122918eac96504edd2382c47a9400209b8b02a1e7",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "https://api.example.test/v1/status",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "56436eecdb100c700d5ccac664ff2905da3bf9b56552cb4707fcf53dd7d73f8e",
+          "host_mac_sha256": "fd0c630d24b0e29122dd9ef2dc34e0b16b2b1d7dbeb3172d8072beccd28dc9df"
+        },
+        "outcome": {
+          "decision": "ALLOW",
+          "status": "DISPATCHED",
+          "callback_count": 1,
+          "result": {
+            "accepted": true
+          }
+        },
+        "callback_count": 1
+      },
+      "with_epoch": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "http-epoch-bound",
+          "proposal": {
+            "arguments": {
+              "body": "{\"ready\":true}",
+              "headers": {
+                "Content-Type": "application/json"
+              },
+              "method": "POST",
+              "url": "https://api.example.test/v1/status"
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for http",
+            "resource": "https://api.example.test/v1/status",
+            "tool": "http_request"
+          },
+          "proposal_sha256": "7e62423c4b27426e209e639122918eac96504edd2382c47a9400209b8b02a1e7",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "https://api.example.test/v1/status",
+                "tool": "http_request"
+              }
+            ]
+          },
+          "policy_sha256": "b33c4130ca3836294360269f6bbb066815fdbce5d2cb2b390a36119840ae2cf2",
+          "policy_epoch": 1,
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "7e62423c4b27426e209e639122918eac96504edd2382c47a9400209b8b02a1e7",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "https://api.example.test/v1/status",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "1dd83911e7e99badb416f9aa45d6e9d39c5696b95af11fa123fb68c9a9b708db",
+          "host_mac_sha256": "c93c05efcaa8508f0a011da97717c1e0909e7398fdf189511238f612c4d5272b"
+        },
+        "outcome": {
+          "decision": "SUPPRESS",
+          "reason": "policy_epoch_changed",
+          "callback_count": 0
+        },
+        "replay": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_reused_or_unknown",
+          "callback_count": 0
+        },
+        "callback_count": 0
+      },
+      "change_during_approval": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "http-approval-aba",
+          "proposal": {
+            "arguments": {
+              "body": "{\"ready\":true}",
+              "headers": {
+                "Content-Type": "application/json"
+              },
+              "method": "POST",
+              "url": "https://api.example.test/v1/status"
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for http",
+            "resource": "https://api.example.test/v1/status",
+            "tool": "http_request"
+          },
+          "proposal_sha256": "7e62423c4b27426e209e639122918eac96504edd2382c47a9400209b8b02a1e7",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "https://api.example.test/v1/status",
+                "tool": "http_request"
+              }
+            ]
+          },
+          "policy_sha256": "b33c4130ca3836294360269f6bbb066815fdbce5d2cb2b390a36119840ae2cf2",
+          "policy_epoch": 1,
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "7e62423c4b27426e209e639122918eac96504edd2382c47a9400209b8b02a1e7",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "https://api.example.test/v1/status",
+          "decision": "SUPPRESS",
+          "reason": "policy_epoch_changed",
+          "receipt_sha256": "f691a6c1bf656e57a06a0f66c179a7289360e08f5bf7eb3e62ad33dd77001cf1",
+          "host_mac_sha256": "0dc6338760eae38f61594db3ed13d86081c841fc254432fb1befb97c6dac26bd"
+        },
+        "outcome": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_suppressed",
+          "callback_count": 0
+        },
+        "callback_count": 0
+      },
+      "unchanged_epoch_control": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "http-unchanged-control",
+          "proposal": {
+            "arguments": {
+              "body": "{\"ready\":true}",
+              "headers": {
+                "Content-Type": "application/json"
+              },
+              "method": "POST",
+              "url": "https://api.example.test/v1/status"
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for http",
+            "resource": "https://api.example.test/v1/status",
+            "tool": "http_request"
+          },
+          "proposal_sha256": "7e62423c4b27426e209e639122918eac96504edd2382c47a9400209b8b02a1e7",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "https://api.example.test/v1/status",
+                "tool": "http_request"
+              }
+            ]
+          },
+          "policy_sha256": "b33c4130ca3836294360269f6bbb066815fdbce5d2cb2b390a36119840ae2cf2",
+          "policy_epoch": 9,
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "7e62423c4b27426e209e639122918eac96504edd2382c47a9400209b8b02a1e7",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "https://api.example.test/v1/status",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "d1d40eb673129080094727df4a83e69840be56c6cc7acf99c02ca676fd6ebd72",
+          "host_mac_sha256": "db7ecd4dc18790905398648f26dfb82e54597594628de44d912b59dba11018b0"
+        },
+        "outcome": {
+          "decision": "ALLOW",
+          "status": "DISPATCHED",
+          "callback_count": 1,
+          "result": {
+            "accepted": true
+          }
+        },
+        "callback_count": 1
+      },
+      "claim_boundary": "Project-authored local callbacks and public fixture key; the host epoch is simulated, not a durable provider.",
+      "receipt_sha256": "12913052ac0685e8e51601b62995a9ea4dd301fcdd918332d6c45c72a5cd71bf"
+    },
+    {
+      "protocol": "aml-receipt-policy-epoch-evidence/1",
+      "adapter": "database",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "database_write",
+        "effect": "write",
+        "resource": "db:records/r42",
+        "purpose": "Policy epoch fixture for database",
+        "arguments": {
+          "table": "records",
+          "key": "r42",
+          "value": {
+            "status": "ready"
+          }
+        }
+      },
+      "original_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "database_write",
+            "effect": "write",
+            "resource": "db:records/r42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "intervening_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": []
+      },
+      "without_epoch": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "database-without-epoch",
+          "proposal": {
+            "arguments": {
+              "key": "r42",
+              "table": "records",
+              "value": {
+                "status": "ready"
+              }
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for database",
+            "resource": "db:records/r42",
+            "tool": "database_write"
+          },
+          "proposal_sha256": "64621bf5bbc7d8c10e1c4a22c58fb38a59fa4a51f9bff8970e4c78361054c927",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "db:records/r42",
+                "tool": "database_write"
+              }
+            ]
+          },
+          "policy_sha256": "1c700e497bd6c20512d37619e3e8940cc997b8fd236ccb797fef326e45095ea6",
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "64621bf5bbc7d8c10e1c4a22c58fb38a59fa4a51f9bff8970e4c78361054c927",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "db:records/r42",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "20c7bef41cc8416948f9da445788e4a98974707f25c6e6ffd92a1de1a4acf9af",
+          "host_mac_sha256": "bc7c119abbd8e89438fab627d2e7736594e4bfd1ee2954ed828bd74df0e9c265"
+        },
+        "outcome": {
+          "decision": "ALLOW",
+          "status": "DISPATCHED",
+          "callback_count": 1,
+          "result": {
+            "accepted": true
+          }
+        },
+        "callback_count": 1
+      },
+      "with_epoch": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "database-epoch-bound",
+          "proposal": {
+            "arguments": {
+              "key": "r42",
+              "table": "records",
+              "value": {
+                "status": "ready"
+              }
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for database",
+            "resource": "db:records/r42",
+            "tool": "database_write"
+          },
+          "proposal_sha256": "64621bf5bbc7d8c10e1c4a22c58fb38a59fa4a51f9bff8970e4c78361054c927",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "db:records/r42",
+                "tool": "database_write"
+              }
+            ]
+          },
+          "policy_sha256": "1c700e497bd6c20512d37619e3e8940cc997b8fd236ccb797fef326e45095ea6",
+          "policy_epoch": 1,
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "64621bf5bbc7d8c10e1c4a22c58fb38a59fa4a51f9bff8970e4c78361054c927",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "db:records/r42",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "e8bae28726cf5fa881a0b3029d99dc7d38ccc578909f9c250f62533f7216f746",
+          "host_mac_sha256": "7c3021837f15b6cb4d249a978e90c9f8b40e841acb17189d7bc28c094e884a8a"
+        },
+        "outcome": {
+          "decision": "SUPPRESS",
+          "reason": "policy_epoch_changed",
+          "callback_count": 0
+        },
+        "replay": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_reused_or_unknown",
+          "callback_count": 0
+        },
+        "callback_count": 0
+      },
+      "change_during_approval": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "database-approval-aba",
+          "proposal": {
+            "arguments": {
+              "key": "r42",
+              "table": "records",
+              "value": {
+                "status": "ready"
+              }
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for database",
+            "resource": "db:records/r42",
+            "tool": "database_write"
+          },
+          "proposal_sha256": "64621bf5bbc7d8c10e1c4a22c58fb38a59fa4a51f9bff8970e4c78361054c927",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "db:records/r42",
+                "tool": "database_write"
+              }
+            ]
+          },
+          "policy_sha256": "1c700e497bd6c20512d37619e3e8940cc997b8fd236ccb797fef326e45095ea6",
+          "policy_epoch": 1,
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "64621bf5bbc7d8c10e1c4a22c58fb38a59fa4a51f9bff8970e4c78361054c927",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "db:records/r42",
+          "decision": "SUPPRESS",
+          "reason": "policy_epoch_changed",
+          "receipt_sha256": "f44921f72aeaeab5e5e059603b3f18c9abc3322aa91aa077d559500041051f5c",
+          "host_mac_sha256": "cc4220cf27933997fbaca3fca79bfe7858ad572983b84367a29de266ba47ffdc"
+        },
+        "outcome": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_suppressed",
+          "callback_count": 0
+        },
+        "callback_count": 0
+      },
+      "unchanged_epoch_control": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "database-unchanged-control",
+          "proposal": {
+            "arguments": {
+              "key": "r42",
+              "table": "records",
+              "value": {
+                "status": "ready"
+              }
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for database",
+            "resource": "db:records/r42",
+            "tool": "database_write"
+          },
+          "proposal_sha256": "64621bf5bbc7d8c10e1c4a22c58fb38a59fa4a51f9bff8970e4c78361054c927",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "db:records/r42",
+                "tool": "database_write"
+              }
+            ]
+          },
+          "policy_sha256": "1c700e497bd6c20512d37619e3e8940cc997b8fd236ccb797fef326e45095ea6",
+          "policy_epoch": 9,
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "64621bf5bbc7d8c10e1c4a22c58fb38a59fa4a51f9bff8970e4c78361054c927",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "db:records/r42",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "6d0e6d135003816f0cb4acb1c16da0e5983338b6813f40deae2ce15b4197aaf1",
+          "host_mac_sha256": "accb5559c777208aca1fc841812284d180abdb0be12d2c525a8fd5390734303f"
+        },
+        "outcome": {
+          "decision": "ALLOW",
+          "status": "DISPATCHED",
+          "callback_count": 1,
+          "result": {
+            "accepted": true
+          }
+        },
+        "callback_count": 1
+      },
+      "claim_boundary": "Project-authored local callbacks and public fixture key; the host epoch is simulated, not a durable provider.",
+      "receipt_sha256": "727f6940102f87315ac0110a6dbd5c8fb949efb7786b2aae4ce1dfdf9764a27a"
+    },
+    {
+      "protocol": "aml-receipt-policy-epoch-evidence/1",
+      "adapter": "ui",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "render_ui",
+        "effect": "write",
+        "resource": "ui:#status",
+        "purpose": "Policy epoch fixture for ui",
+        "arguments": {
+          "root": "#status",
+          "text": "Ready"
+        }
+      },
+      "original_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "render_ui",
+            "effect": "write",
+            "resource": "ui:#status",
+            "requires_approval": true
+          }
+        ]
+      },
+      "intervening_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": []
+      },
+      "without_epoch": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "ui-without-epoch",
+          "proposal": {
+            "arguments": {
+              "root": "#status",
+              "text": "Ready"
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for ui",
+            "resource": "ui:#status",
+            "tool": "render_ui"
+          },
+          "proposal_sha256": "8b80c62aaf56e3581699bb5eaaf21865b9a29d0321a76ca444f5f175b0e8fa12",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "ui:#status",
+                "tool": "render_ui"
+              }
+            ]
+          },
+          "policy_sha256": "a317e16fdca0d1aea78ab6d42dc5fa2e7daa4e4e5bdfa83fd2d4ce960faf0488",
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "8b80c62aaf56e3581699bb5eaaf21865b9a29d0321a76ca444f5f175b0e8fa12",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "ui:#status",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "b38d655d3d712fb0799bff55755f955e1a582945a3c7f6119550743cdceeb891",
+          "host_mac_sha256": "2e14b334fcc6758d8a76d2cc285359613cd44c639d4f06f341e01e45483d3a06"
+        },
+        "outcome": {
+          "decision": "ALLOW",
+          "status": "DISPATCHED",
+          "callback_count": 1,
+          "result": {
+            "accepted": true
+          }
+        },
+        "callback_count": 1
+      },
+      "with_epoch": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "ui-epoch-bound",
+          "proposal": {
+            "arguments": {
+              "root": "#status",
+              "text": "Ready"
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for ui",
+            "resource": "ui:#status",
+            "tool": "render_ui"
+          },
+          "proposal_sha256": "8b80c62aaf56e3581699bb5eaaf21865b9a29d0321a76ca444f5f175b0e8fa12",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "ui:#status",
+                "tool": "render_ui"
+              }
+            ]
+          },
+          "policy_sha256": "a317e16fdca0d1aea78ab6d42dc5fa2e7daa4e4e5bdfa83fd2d4ce960faf0488",
+          "policy_epoch": 1,
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "8b80c62aaf56e3581699bb5eaaf21865b9a29d0321a76ca444f5f175b0e8fa12",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "ui:#status",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "811d01df21d69324b8f9b8c2b8bcb7f52694fed355ef595a92d97d1d9592b3f5",
+          "host_mac_sha256": "0df08a956e62416515bdb8fad8f6c4a39a588f7f1b72e9f5ce24e8ffb85fddaf"
+        },
+        "outcome": {
+          "decision": "SUPPRESS",
+          "reason": "policy_epoch_changed",
+          "callback_count": 0
+        },
+        "replay": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_reused_or_unknown",
+          "callback_count": 0
+        },
+        "callback_count": 0
+      },
+      "change_during_approval": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "ui-approval-aba",
+          "proposal": {
+            "arguments": {
+              "root": "#status",
+              "text": "Ready"
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for ui",
+            "resource": "ui:#status",
+            "tool": "render_ui"
+          },
+          "proposal_sha256": "8b80c62aaf56e3581699bb5eaaf21865b9a29d0321a76ca444f5f175b0e8fa12",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "ui:#status",
+                "tool": "render_ui"
+              }
+            ]
+          },
+          "policy_sha256": "a317e16fdca0d1aea78ab6d42dc5fa2e7daa4e4e5bdfa83fd2d4ce960faf0488",
+          "policy_epoch": 1,
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "8b80c62aaf56e3581699bb5eaaf21865b9a29d0321a76ca444f5f175b0e8fa12",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "ui:#status",
+          "decision": "SUPPRESS",
+          "reason": "policy_epoch_changed",
+          "receipt_sha256": "40732a82a689ebc28b456f12f8bbf33ce7ee3485a0c612715d7a00342d4d037f",
+          "host_mac_sha256": "c99eb102784d1f676ea4eb3ab6ddb0f0cb846e0e2862918c10b694fa9af6fe9c"
+        },
+        "outcome": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_suppressed",
+          "callback_count": 0
+        },
+        "callback_count": 0
+      },
+      "unchanged_epoch_control": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "ui-unchanged-control",
+          "proposal": {
+            "arguments": {
+              "root": "#status",
+              "text": "Ready"
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Policy epoch fixture for ui",
+            "resource": "ui:#status",
+            "tool": "render_ui"
+          },
+          "proposal_sha256": "8b80c62aaf56e3581699bb5eaaf21865b9a29d0321a76ca444f5f175b0e8fa12",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "ui:#status",
+                "tool": "render_ui"
+              }
+            ]
+          },
+          "policy_sha256": "a317e16fdca0d1aea78ab6d42dc5fa2e7daa4e4e5bdfa83fd2d4ce960faf0488",
+          "policy_epoch": 9,
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "8b80c62aaf56e3581699bb5eaaf21865b9a29d0321a76ca444f5f175b0e8fa12",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "ui:#status",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "95a4667befc829efa65e340da6bd13bb535f5254480316e1b9b5f92c8fa9ea67",
+          "host_mac_sha256": "9d8b8578319e7ea0c204a2040556e3b049bdd57c4dfff0c06d147f201fde2015"
+        },
+        "outcome": {
+          "decision": "ALLOW",
+          "status": "DISPATCHED",
+          "callback_count": 1,
+          "result": {
+            "accepted": true
+          }
+        },
+        "callback_count": 1
+      },
+      "claim_boundary": "Project-authored local callbacks and public fixture key; the host epoch is simulated, not a durable provider.",
+      "receipt_sha256": "07fd548f15fdb7bdc41e3a6085fa594f4c41ecb83e7e49f2328ce77fd1c7952c"
+    }
+  ],
+  "totals": {
+    "adapter_count": 4,
+    "comparison_callbacks": 4,
+    "epoch_bound_attack_callbacks": 0,
+    "approval_crossing_callbacks": 0,
+    "unchanged_control_callbacks": 4
+  },
+  "claim_boundary": "An unobserved policy A→B→A is detected only if the host supplies a reliable monotonic epoch. No external effects or independent validation."
+}

@@ -7,7 +7,8 @@
     { "kind": "controlled_site_browser", "path": "docs/action-pilots/evidence/browser-receipts.jsonl", "count": 10 },
     { "kind": "integration_adapter", "path": "docs/action-receipt-adapters-report.json", "collection": "adapters", "count": 4 },
     { "kind": "simulated_stress", "path": "conformance/action-stress-375-receipts.jsonl", "count": 375 },
-    { "kind": "integration_revocation", "path": "docs/action-receipt-revocation-report.json", "collection": "adapters", "count": 4 }
+    { "kind": "integration_revocation", "path": "docs/action-receipt-revocation-report.json", "collection": "adapters", "count": 4 },
+    { "kind": "integration_policy_epoch", "path": "docs/action-receipt-policy-epoch-report.json", "collection": "adapters", "count": 4 }
   ],
   "claim_boundary": "A project-maintained hash-chain index over distinct receipts. The underlying verifiers check the proposal, host policy, outcomes and browser evidence. A Git commit and CI history expose later edits; a bare SHA-256 cannot authenticate the actor or prove an external side effect."
 }
