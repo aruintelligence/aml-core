@@ -186,6 +186,51 @@ test("an awaited host claim uses frozen arguments and an unavailable claim fails
   assert.equal(count, 0);
 });
 
+test("the A2UI schema validates the same snapshot sent to the callback", async () => {
+  const args = { to: destination };
+  let reads = 0, received;
+  Object.defineProperty(args, "body", { enumerable: true, get() {
+    return ++reads === 1 ? "Validated body" : "Unvalidated body";
+  } });
+  const gate = makeGate({
+    validateArgs: value => value.to === destination && value.body === "Validated body",
+    execute: async value => { received = value; return null; }
+  });
+  const output = await gate(call(args));
+  assert.equal(output.aml?.receipt.execution_status, "dispatched");
+  assert.deepEqual(received, { to: destination, body: "Validated body" });
+  assert.equal(reads, 1);
+});
+
+test("a schema validator cannot rewrite the arguments that are dispatched", async () => {
+  const args = { to: destination, body: "Original body" };
+  let received;
+  const gate = makeGate({
+    validateArgs: value => { value.body = "Injected by validator"; return true; },
+    execute: async value => { received = value; return null; }
+  });
+  const output = await gate(call(args));
+  assert.equal(output.aml?.receipt.execution_status, "dispatched");
+  assert.deepEqual(received, { to: destination, body: "Original body" });
+  assert.deepEqual(args, { to: destination, body: "Original body" });
+});
+
+test("the authorized A2UI function object supplies the captured arguments", async () => {
+  const envelope = call();
+  let reads = 0, received;
+  const first = { catalogId, call: "sendMessage",
+    args: { to: destination, body: "First function object" } };
+  Object.defineProperty(envelope.callRendererFunction, "callFunction", { enumerable: true, get() {
+    return ++reads === 1 ? first : { ...first,
+      args: { to: destination, body: "Later function object" } };
+  } });
+  const gate = makeGate({ execute: async value => { received = value; return null; } });
+  const output = await gate(envelope);
+  assert.equal(output.aml?.receipt.execution_status, "dispatched");
+  assert.deepEqual(received, first.args);
+  assert.equal(reads, 1);
+});
+
 test("a local claim store reaches a fail-closed capacity instead of evicting spent IDs", async () => {
   const store = createLocalA2UIInvocationClaims({
     sessionFor: ctx => ctx.sessionId, maxEntries: 1

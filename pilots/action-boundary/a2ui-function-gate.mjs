@@ -36,25 +36,23 @@ export function createA2UIFunctionGate({
     // Without a usable correlation ID, the renderer cannot safely return an
     // A2UI function response. The caller must reject the malformed envelope.
     if (!text(id) || id.length > 256) throw new TypeError("invalid A2UI functionCallId");
+    const functionCall = call?.callFunction;
     if (envelope.version !== "v1.0" || !isObject(call) ||
-        !isObject(call.callFunction) ||
-        call.callFunction.catalogId !== catalogId ||
-        call.callFunction.call !== functionName ||
+        !isObject(functionCall) ||
+        functionCall.catalogId !== catalogId ||
+        functionCall.call !== functionName ||
         !agentCallers.has(allowedCallers)) {
       return { response: errorResponse(id, "INVALID_FUNCTION_CALL",
         "Function is not available for agent invocation."), aml: null };
     }
 
-    const args = call.callFunction.args === undefined ? {} : call.callFunction.args;
-    let valid = false;
-    if (isObject(args)) {
-      try { valid = validateArgs(args, context) === true; } catch { /* deny */ }
-    }
-    if (!valid) return { response: errorResponse(id, "INVALID_FUNCTION_CALL",
+    const suppliedArgs = functionCall.args;
+    const args = suppliedArgs === undefined ? {} : suppliedArgs;
+    if (!isObject(args)) return { response: errorResponse(id, "INVALID_FUNCTION_CALL",
       "Function arguments did not match the host schema."), aml: null };
 
-    // Freeze input before awaiting the claim; the agent-facing object could be
-    // changed by other code while the host's shared store is being consulted.
+    // Freeze before validation and before awaiting the claim. A getter or a
+    // mutating validator must not change the bytes later sent to the boundary.
     let frozenArgs;
     try {
       const bytes = canonicalJSONStringify(args);
@@ -64,6 +62,11 @@ export function createA2UIFunctionGate({
       return { response: errorResponse(id, "INVALID_FUNCTION_CALL",
         "Function arguments are not supported JSON data."), aml: null };
     }
+    let valid = false;
+    try { valid = validateArgs(structuredClone(frozenArgs), context) === true; }
+    catch { /* deny */ }
+    if (!valid) return { response: errorResponse(id, "INVALID_FUNCTION_CALL",
+      "Function arguments did not match the host schema."), aml: null };
 
     let claimed;
     try {
