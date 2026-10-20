@@ -68,6 +68,30 @@ test("inspection and its CLI report consistent protocol-3 state without writes",
     assert.deepEqual(snapshot(parent), before);
   }));
 
+test("inspection and live startup reject an impossible checkpoint sequence", () =>
+  fixture(async ({ parent, directory, anchorDirectory, anchor, host }) => {
+    const grant = host.issue(input());
+    assert.equal((await host.dispatch({ ...input(), grant_id: grant.grant_id,
+      execute: () => "local-effect" })).status, "returned");
+    host.revokeIssuer(input());
+    host.revokeIssuer(input());
+    const checkpoint = anchor.read();
+    assert.equal(checkpoint.sequence, 4); // Issue + claim + two epoch advances.
+    const forged = { ...checkpoint, sequence: 3 };
+    for (const root of [directory, anchorDirectory]) {
+      fs.writeFileSync(path.join(root, "checkpoint.json"), JSON.stringify(forged) + "\n");
+    }
+    const before = snapshot(parent);
+    const report = inspectFileRevocationHandoff({ directory, anchor });
+    assert.equal(report.checkpoints.comparison, "match");
+    assert.equal(report.committed_state.comparison, "match");
+    assert.equal(report.status, "needs_reconciliation");
+    assert.ok(report.reasons.includes("checkpoint_sequence_shortfall"));
+    assert.deepEqual(snapshot(parent), before);
+    assert.throws(() => createFileRevocationHandoff({ directory, anchor }),
+      /authority_checkpoint_sequence_shortfall/);
+  }));
+
 test("inspection cannot call an outcome resolved when a nested JSON key is ambiguous", () =>
   fixture(async ({ directory, anchor, host }) => {
     const grant = host.issue(input());
