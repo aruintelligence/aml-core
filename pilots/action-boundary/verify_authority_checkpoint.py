@@ -190,6 +190,7 @@ def inspect(authority, anchor):
             ("checkpoint-anchored", "checkpoint-claim-anchored"), "invalid_authority_mode")
     entries = []
     counts = {}
+    epochs = {}
     grants = {}
     operations = {}
     claims = {}
@@ -202,13 +203,17 @@ def inspect(authority, anchor):
             record, _ = read_record(child / name)
             validate_record(kind, name, record)
             entries.append([f"{kind}/{name}", digest(canonical(record))])
-            if kind == "grants":
+            if kind == "epochs":
+                epochs[record["issuer_sha256"]] = record["epoch"]
+            elif kind == "grants":
                 grants[record["grant_id"]] = record
             elif kind == "operations":
                 operations[record["operation_sha256"]] = record
             elif kind == "claimed":
                 claims[record["grant_id"]] = record
     for grant_id, grant in grants.items():
+        require(grant["epoch"] <= epochs.get(grant["issuer_sha256"], 0),
+                "grant_epoch_ahead")
         op_id = grant.get("operation_sha256")
         if op_id:
             op = operations.get(op_id)
