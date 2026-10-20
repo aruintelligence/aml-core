@@ -74,6 +74,24 @@ test("Python verifier recomputes genesis, issue, claim and revoke without writin
     assert.equal(fs.existsSync(path.join(directory, "authority.lock")), false);
   }));
 
+test("verifier rejects a jointly lowered checkpoint sequence despite matching state", () =>
+  fixture(async ({ directory, anchorDirectory, anchor, host }) => {
+    const grant = host.issue(input());
+    assert.equal((await host.dispatch({ ...input(), grant_id: grant.grant_id,
+      execute: () => "local-effect" })).status, "returned");
+    host.revokeIssuer(input());
+    host.revokeIssuer(input());
+    const checkpoint = anchor.read();
+    assert.equal(checkpoint.sequence, 4);
+    for (const root of [directory, anchorDirectory]) {
+      fs.writeFileSync(path.join(root, "checkpoint.json"),
+        JSON.stringify({ ...checkpoint, sequence: 3 }) + "\n");
+    }
+    const result = verify(directory, anchorDirectory);
+    assert.deepEqual([result.code, result.output.status, result.output.reason],
+      [1, "inconsistent", "checkpoint_sequence_shortfall"]);
+  }));
+
 test("verifier rejects a jointly rehashed operation with no grant backlink", () =>
   fixture(async ({ directory, anchorDirectory, host }) => {
     const grant = host.issue(input());

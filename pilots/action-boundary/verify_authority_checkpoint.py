@@ -240,6 +240,8 @@ def inspect(authority, anchor):
     require(all(grant_id in grants and claim["binding_sha256"] ==
                 grants[grant_id]["binding_sha256"] for grant_id, claim in claims.items()),
             "claim_grant_mismatch")
+    require(local["sequence"] >= len(grants) + len(claims) + sum(epochs.values()),
+            "checkpoint_sequence_shortfall")
     entries.append(["authority-mode.json", digest(canonical(mode))])
     state = digest(json.dumps(entries, separators=(",", ":")).encode("ascii"))
     require(state == local["state_sha256"], "state_mismatch")

@@ -186,6 +186,24 @@ function decisionState(directory, overrides = [], includeMode = false) {
   return { digest: hash(canonicalJSONStringify(entries)), counts };
 }
 
+// Each retained grant and claim consumes one checkpoint transition. An issuer
+// at epoch N requires N revocations, even though only its latest epoch record
+// remains. This is a lower bound, not a reconstruction of the hash-chain head.
+function minimumCheckpointSequence(directory, counts) {
+  let minimum = BigInt(counts.grants) + BigInt(counts.claimed);
+  for (const name of fs.readdirSync(path.join(directory, "epochs"))) {
+    if (!/^[0-9a-f]{64}\.json$/.test(name)) throw Error("invalid_authority_epoch");
+    const record = readRecord(path.join(directory, "epochs", name));
+    if (!record || record.protocol !== "aml-file-authority-epoch/1" ||
+        record.issuer_sha256 !== name.slice(0, -5) ||
+        !Number.isSafeInteger(record.epoch) || record.epoch <= 0) {
+      throw Error("invalid_authority_epoch");
+    }
+    minimum += BigInt(record.epoch);
+  }
+  return minimum;
+}
+
 function nestedDirectories(first, second) {
   const relative = path.relative(first, second);
   return relative === "" || (relative !== ".." && !relative.startsWith(`..${path.sep}`) &&
@@ -510,6 +528,10 @@ export function inspectFileRevocationHandoff({ directory, anchor = null } = {}) 
     if (local && local.protocol !== "aml-file-authority-checkpoint/1") {
       committedState = observedDigest === local.state_sha256 ? "match" : "mismatch";
       if (committedState === "mismatch") reasons.push("committed_state_mismatch");
+      if (local.protocol === "aml-file-authority-checkpoint/3" &&
+          BigInt(local.sequence) < minimumCheckpointSequence(directory, counts)) {
+        reasons.push("checkpoint_sequence_shortfall");
+      }
     }
   } catch { reasons.push("committed_state_unreadable"); }
   let clockTime = null;
@@ -670,9 +692,15 @@ export function createFileRevocationHandoff({ directory, now = () => Date.now(),
         canonicalJSONStringify(externalState()) !== canonicalJSONStringify(local)) {
       throw Error("authority_anchor_mismatch");
     }
-    if (local.protocol !== "aml-file-authority-checkpoint/1" &&
-        stateDigest([], local.protocol === "aml-file-authority-checkpoint/3") !==
-          local.state_sha256) throw Error("authority_state_mismatch");
+    if (local.protocol !== "aml-file-authority-checkpoint/1") {
+      const state = decisionState(directory, [],
+        local.protocol === "aml-file-authority-checkpoint/3");
+      if (state.digest !== local.state_sha256) throw Error("authority_state_mismatch");
+      if (local.protocol === "aml-file-authority-checkpoint/3" &&
+          BigInt(local.sequence) < minimumCheckpointSequence(directory, state.counts)) {
+        throw Error("authority_checkpoint_sequence_shortfall");
+      }
+    }
     return local;
   }
 
