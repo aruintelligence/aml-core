@@ -6,6 +6,8 @@ The reference action rule matches `tool`, `effect`, and the proposal's declared 
 
 `dispatchTargetBoundAction` is an opt-in, host-owned adapter. It snapshots the proposal, asks a tool-specific `resolveTarget` callback to derive the actual destination from frozen arguments, and requires exact equality with `resource` before approval or dispatch. A missing callback, missing target, resolver error, or mismatch blocks. When it matches, the existing action boundary handles policy, digest-bound approval, final recheck, frozen dispatch, and uncertain callback outcomes.
 
+If the initial snapshot fails, the adapter returns a blocked receipt with `policy_decision: "deny"` and `proposal_sha256: null`. It does not retry the caller's object to manufacture a digest: a stateful getter might return different content on a second read. The regression test verifies one read and zero resolver, approval, and tool calls on that path.
+
 ```js
 import { dispatchTargetBoundAction } from "./target-boundary.mjs";
 

@@ -17,7 +17,11 @@ export async function dispatchTargetBoundAction(proposal, {
   // and dispatchAction receives the original frozen snapshot.
   let frozen;
   try { frozen = JSON.parse(canonicalJSONStringify(proposal)); }
-  catch { return blocked(planAction(proposal, policy), "invalid_proposal"); }
+  catch {
+    // The caller may have a changing getter or proxy. A second attempt could
+    // bind this blocked receipt to different bytes than the failed snapshot.
+    return blocked({ proposal_sha256: null, decision: "deny" }, "invalid_proposal");
+  }
   const plan = planAction(frozen, policy);
   if (plan.decision === "deny") return blocked(plan, plan.reason);
   if (typeof executeTool !== "function") return blocked(plan, "missing_host_dispatch");
