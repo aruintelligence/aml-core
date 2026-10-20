@@ -117,6 +117,29 @@ test("verifier rejects a jointly rehashed grant ahead of its issuer epoch", () =
       [1, "inconsistent", "grant_epoch_ahead"]);
   }));
 
+test("verifier rejects a jointly rehashed grant issued after the persisted clock", () =>
+  fixture(async ({ directory, anchorDirectory, host }) => {
+    const grant = host.issue(input());
+    const file = path.join(directory, "grants", `${grant.grant_id}.json`);
+    const saved = JSON.parse(fs.readFileSync(file, "utf8"));
+    fs.writeFileSync(file, JSON.stringify({ ...saved,
+      issued_at_ms: saved.issued_at_ms + 1,
+      expires_at_ms: saved.expires_at_ms + 1 }) + "\n");
+    rehashJointSnapshot(directory, anchorDirectory);
+    const result = verify(directory, anchorDirectory);
+    assert.deepEqual([result.code, result.output.status, result.output.reason],
+      [1, "inconsistent", "grant_issued_after_clock"]);
+  }));
+
+test("verifier rejects a missing clock after grant issuance", () =>
+  fixture(async ({ directory, anchorDirectory, host }) => {
+    host.issue(input());
+    fs.rmSync(path.join(directory, "clock.json"));
+    const result = verify(directory, anchorDirectory);
+    assert.deepEqual([result.code, result.output.status, result.output.reason],
+      [1, "inconsistent", "authority_clock_missing"]);
+  }));
+
 test("verifier rejects a restored local checkpoint and selective decision changes", () =>
   fixture(async ({ directory, anchorDirectory, host }) => {
     const old = fs.readFileSync(path.join(directory, "checkpoint.json"));
