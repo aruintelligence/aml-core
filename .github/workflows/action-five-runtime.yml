@@ -1,0 +1,43 @@
+name: Five-runtime action matrix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pilots/action-boundary/perl_boundary.pl"
+      - "pilots/action-boundary/openssl_python_boundary.py"
+      - "docs/action-webcrypto-boundary.js"
+      - "docs/action-browser-*"
+      - "docs/action-five-runtime-report.json"
+      - "scripts/build-action-five-runtime-report.mjs"
+      - "test/action-five-runtime.test.js"
+      - ".github/workflows/action-five-runtime.yml"
+  pull_request:
+    paths:
+      - "pilots/action-boundary/perl_boundary.pl"
+      - "pilots/action-boundary/openssl_python_boundary.py"
+      - "docs/action-webcrypto-boundary.js"
+      - "docs/action-browser-*"
+      - "docs/action-five-runtime-report.json"
+      - "scripts/build-action-five-runtime-report.mjs"
+      - "test/action-five-runtime.test.js"
+      - ".github/workflows/action-five-runtime.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Replay the full corpus in five runtimes
+        run: node scripts/build-action-five-runtime-report.mjs --check
+      - name: Verify provenance and browser fixture pin
+        run: node --test test/action-five-runtime.test.js

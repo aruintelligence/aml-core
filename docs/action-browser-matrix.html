@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ĀML action boundary · browser WebCrypto challenge</title>
+  <style>
+    :root{color-scheme:dark;font:16px/1.5 system-ui;background:#0b1225;color:#eef6ff}
+    body{max-width:940px;margin:0 auto;padding:36px 22px}
+    a{color:#9ee9f0}h1{font-size:clamp(2rem,5vw,3.7rem);line-height:1.1}
+    .card{padding:22px;border:1px solid #516484;border-radius:18px;background:#14213c;margin:22px 0}
+    button{border:0;border-radius:10px;padding:12px 18px;background:#9ee9f0;color:#071323;font:700 1rem system-ui;cursor:pointer}
+    button:focus-visible,a:focus-visible{outline:3px solid #f5d58d;outline-offset:3px}
+    pre{overflow:auto;white-space:pre-wrap;word-break:break-word;background:#0c1730;padding:16px;border-radius:9px}
+    .good{color:#a8f3c1}.bad{color:#ff9fb6}small{color:#b8c8e1}
+  </style>
+</head>
+<body>
+  <main>
+    <p><a href="https://github.com/aruintelligence/aml-core/blob/main/publications/ACTION_BOUNDARY_EXPANDED_CHALLENGE.md">Inspect the challenge source</a></p>
+    <h1>Run the action boundary challenge in your browser</h1>
+    <p>This project-maintained WebCrypto implementation processes all 100 published cases locally. It makes no mail, payment, database, or network request other than loading the same-origin fixture and module files.</p>
+    <section class="card" aria-live="polite">
+      <button id="run" type="button">Run 100 cases</button>
+      <h2 id="status">Ready</h2>
+      <p id="summary">The corpus SHA-256 is verified before any case runs.</p>
+      <pre id="results" aria-label="Machine-readable browser result">No result yet.</pre>
+    </section>
+    <p><small>A passing self-test proves compatibility with these simulated fixtures in this browser session. It does not authenticate a host policy, prevent bypass of an unwrapped tool, or establish independent verification.</small></p>
+  </main>
+  <script type="module">
+    import { runWebCryptoCase } from './action-webcrypto-boundary.js';
+    const EXPECTED_CASES_SHA256 = '465da861d50e19dfca89875e845faa9347511f85e5c61e390edad3b2ab771429';
+    const get = id => document.getElementById(id);
+    const hex = bytes => [...new Uint8Array(bytes)].map(n => n.toString(16).padStart(2, '0')).join('');
+    const normalize = value => {
+      if (Array.isArray(value)) return value.map(normalize);
+      if (value && typeof value === 'object') return Object.fromEntries(
+        Object.keys(value).sort().map(k => [k, normalize(value[k])]));
+      return value;
+    };
+    get('run').addEventListener('click', async () => {
+      get('run').disabled = true;
+      get('status').textContent = 'Running…';
+      try {
+        const response = await fetch('./action-browser-cases.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Fixture fetch returned HTTP ${response.status}`);
+        const bytes = await response.arrayBuffer();
+        const corpusHash = hex(await crypto.subtle.digest('SHA-256', bytes));
+        if (corpusHash !== EXPECTED_CASES_SHA256) throw new Error('Corpus SHA-256 mismatch');
+        const corpus = JSON.parse(new TextDecoder().decode(bytes));
+        if (corpus.cases.length !== 100) throw new Error('Unexpected case count');
+        const failures = [];
+        for (const row of corpus.cases) {
+          const observed = await runWebCryptoCase({ protocol: 'aml-action-challenge-case/1',
+            case_id: row.id, proposal: row.proposal, policy: row.policy, host: row.host });
+          for (const [key, expected] of Object.entries(row.expected)) {
+            if (JSON.stringify(normalize(observed[key])) !== JSON.stringify(normalize(expected)))
+              failures.push(`${row.id}: ${key}`);
+          }
+        }
+        const result = { protocol: 'aml-action-browser-challenge-result/1',
+          case_count: corpus.cases.length, passed: corpus.cases.length - new Set(failures.map(x => x.split(':')[0])).size,
+          failed_fields: failures, cases_sha256: corpusHash,
+          implementation: 'project-maintained browser WebCrypto',
+          browser: navigator.userAgent };
+        get('status').textContent = failures.length ? 'Mismatch detected' : '100 / 100 matched';
+        get('status').className = failures.length ? 'bad' : 'good';
+        get('summary').textContent = 'Proposal digests, decisions, dispatch receipts, callback counts, and frozen executed proposals were compared.';
+        get('results').textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        get('status').textContent = 'Run failed';
+        get('status').className = 'bad';
+        get('results').textContent = String(error);
+      } finally { get('run').disabled = false; }
+    });
+  </script>
+</body>
+</html>

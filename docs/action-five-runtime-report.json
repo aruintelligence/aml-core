@@ -1,0 +1,5023 @@
+{
+  "protocol": "aml-action-five-runtime-matrix/1",
+  "scope": "project-maintained simulated challenge implementations, not independent outside parties",
+  "browser_runtime_limit": "WebCrypto-compatible ES module executed under Node WebCrypto; browser execution is not claimed by this report.",
+  "cases_file_sha256": "465da861d50e19dfca89875e845faa9347511f85e5c61e390edad3b2ab771429",
+  "source_sha256": {
+    "javascript_node": "e0a16067f023a5281b22115f142f84c83fad29aeeec6327370cf0989aaecc11e",
+    "python_hashlib": "e8d741bf0f9d43e6bc30d3a64819e384218432d26ab7bfda454a845bba0f9d41",
+    "perl_digest_sha": "2d479b31cf0db2430fa807c5228796abc5ee99abd0949e7122b407334d1c85df",
+    "python_openssl": "055fd3471383902aabfb9ea37b61ee5d6455ad0c87817f9a2c60d394fb5ae39f",
+    "webcrypto_node_host": "a9ddd1961b9c09f28f7905f0485ae5d60198b24ca83f094da697ff04b6d9a747"
+  },
+  "case_count": 100,
+  "matches_by_runtime": {
+    "javascript_node": 100,
+    "python_hashlib": 100,
+    "perl_digest_sha": 100,
+    "python_openssl": 100,
+    "webcrypto_node_host": 100
+  },
+  "rows": [
+    {
+      "case_id": "mail-baseline",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "mail-reordered-keys",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "mail-changed-payload",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "1d20ff1ca14392ebbca7569da95a31adfd6ad77436ef6c4ac671ae2620683e1f",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "1d20ff1ca14392ebbca7569da95a31adfd6ad77436ef6c4ac671ae2620683e1f",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "1d20ff1ca14392ebbca7569da95a31adfd6ad77436ef6c4ac671ae2620683e1f",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "1d20ff1ca14392ebbca7569da95a31adfd6ad77436ef6c4ac671ae2620683e1f",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "1d20ff1ca14392ebbca7569da95a31adfd6ad77436ef6c4ac671ae2620683e1f",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "mail-changed-resource",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "a4205b175a25c0db12c5c43f48a2171e7b5b09ab889e4ab3b880f016cc578b3e",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "a4205b175a25c0db12c5c43f48a2171e7b5b09ab889e4ab3b880f016cc578b3e",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "a4205b175a25c0db12c5c43f48a2171e7b5b09ab889e4ab3b880f016cc578b3e",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "a4205b175a25c0db12c5c43f48a2171e7b5b09ab889e4ab3b880f016cc578b3e",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "a4205b175a25c0db12c5c43f48a2171e7b5b09ab889e4ab3b880f016cc578b3e",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "mail-changed-tool",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "730fd3a8c7eee16fadf8a6280a52801f7b822d3e6ec953a195fc81caea0f8f20",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "730fd3a8c7eee16fadf8a6280a52801f7b822d3e6ec953a195fc81caea0f8f20",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "730fd3a8c7eee16fadf8a6280a52801f7b822d3e6ec953a195fc81caea0f8f20",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "730fd3a8c7eee16fadf8a6280a52801f7b822d3e6ec953a195fc81caea0f8f20",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "730fd3a8c7eee16fadf8a6280a52801f7b822d3e6ec953a195fc81caea0f8f20",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "mail-changed-effect",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "1454e431181bd8602a151dff573028df98d558c862cd8f938afa7ec2b79d8e4f",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "1454e431181bd8602a151dff573028df98d558c862cd8f938afa7ec2b79d8e4f",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "1454e431181bd8602a151dff573028df98d558c862cd8f938afa7ec2b79d8e4f",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "1454e431181bd8602a151dff573028df98d558c862cd8f938afa7ec2b79d8e4f",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "1454e431181bd8602a151dff573028df98d558c862cd8f938afa7ec2b79d8e4f",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "mail-callback-throws",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "mail-duplicate-policy",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "mail-extra-proposal-field",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "mail-invalid-policy-protocol",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "mail-different-policy-resource",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "mail-missing-approval",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "mail-approval-error",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "mail-policy-revoked",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "mail-changed-metadata",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "595a8d9905fa4545b8e292b1eef15ce392d33fdac74cc9b12fcfacea107fc5ce",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "595a8d9905fa4545b8e292b1eef15ce392d33fdac74cc9b12fcfacea107fc5ce",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "595a8d9905fa4545b8e292b1eef15ce392d33fdac74cc9b12fcfacea107fc5ce",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "595a8d9905fa4545b8e292b1eef15ce392d33fdac74cc9b12fcfacea107fc5ce",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "595a8d9905fa4545b8e292b1eef15ce392d33fdac74cc9b12fcfacea107fc5ce",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "read-baseline",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "read-reordered-keys",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "read-changed-payload",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "881aed2e8223db3b9949c8abcb72530d460f3f4a52d0a9ffd5c45c8294f470f9",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "881aed2e8223db3b9949c8abcb72530d460f3f4a52d0a9ffd5c45c8294f470f9",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "881aed2e8223db3b9949c8abcb72530d460f3f4a52d0a9ffd5c45c8294f470f9",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "881aed2e8223db3b9949c8abcb72530d460f3f4a52d0a9ffd5c45c8294f470f9",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "881aed2e8223db3b9949c8abcb72530d460f3f4a52d0a9ffd5c45c8294f470f9",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "read-changed-resource",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "d81a655612da2f6bee2fe7963ac3f84b4c1112f773ad32136b6a8b813030ad67",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "d81a655612da2f6bee2fe7963ac3f84b4c1112f773ad32136b6a8b813030ad67",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "d81a655612da2f6bee2fe7963ac3f84b4c1112f773ad32136b6a8b813030ad67",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "d81a655612da2f6bee2fe7963ac3f84b4c1112f773ad32136b6a8b813030ad67",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "d81a655612da2f6bee2fe7963ac3f84b4c1112f773ad32136b6a8b813030ad67",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "read-changed-tool",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "fa0efc46a374cb079c08aa593d377c2f28a6582685ca3a749340efe90f35ac71",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "fa0efc46a374cb079c08aa593d377c2f28a6582685ca3a749340efe90f35ac71",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "fa0efc46a374cb079c08aa593d377c2f28a6582685ca3a749340efe90f35ac71",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "fa0efc46a374cb079c08aa593d377c2f28a6582685ca3a749340efe90f35ac71",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "fa0efc46a374cb079c08aa593d377c2f28a6582685ca3a749340efe90f35ac71",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "read-changed-effect",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "5c814102454780ffef3500ce5a2f94008b9e35a89d97dd9beb0bcc1da50b0f57",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "5c814102454780ffef3500ce5a2f94008b9e35a89d97dd9beb0bcc1da50b0f57",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "5c814102454780ffef3500ce5a2f94008b9e35a89d97dd9beb0bcc1da50b0f57",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "5c814102454780ffef3500ce5a2f94008b9e35a89d97dd9beb0bcc1da50b0f57",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "5c814102454780ffef3500ce5a2f94008b9e35a89d97dd9beb0bcc1da50b0f57",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "read-callback-throws",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "read-duplicate-policy",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "read-extra-proposal-field",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "read-invalid-policy-protocol",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "read-different-policy-resource",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "4c1e5e21c3db46232a0ca7d8ef979662f0fa280f5ef59b8c0e51969c80b58926",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "write-baseline",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "write-reordered-keys",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "write-changed-payload",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "5f177a78b63b6a9a8512ed12a12e5bf78e8609c1c3d1a17beb686d805c77ad46",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "5f177a78b63b6a9a8512ed12a12e5bf78e8609c1c3d1a17beb686d805c77ad46",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "5f177a78b63b6a9a8512ed12a12e5bf78e8609c1c3d1a17beb686d805c77ad46",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "5f177a78b63b6a9a8512ed12a12e5bf78e8609c1c3d1a17beb686d805c77ad46",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "5f177a78b63b6a9a8512ed12a12e5bf78e8609c1c3d1a17beb686d805c77ad46",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "write-changed-resource",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "e6c92d690bd7ca5700e6bbeacab5db71595c4062560567f8893f79e0463c83c2",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "e6c92d690bd7ca5700e6bbeacab5db71595c4062560567f8893f79e0463c83c2",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "e6c92d690bd7ca5700e6bbeacab5db71595c4062560567f8893f79e0463c83c2",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "e6c92d690bd7ca5700e6bbeacab5db71595c4062560567f8893f79e0463c83c2",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "e6c92d690bd7ca5700e6bbeacab5db71595c4062560567f8893f79e0463c83c2",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "write-changed-tool",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "7cb8817f429af803e3280f37573beef6f8edc6590095ab14642a85bfa445990c",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "7cb8817f429af803e3280f37573beef6f8edc6590095ab14642a85bfa445990c",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "7cb8817f429af803e3280f37573beef6f8edc6590095ab14642a85bfa445990c",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "7cb8817f429af803e3280f37573beef6f8edc6590095ab14642a85bfa445990c",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "7cb8817f429af803e3280f37573beef6f8edc6590095ab14642a85bfa445990c",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "write-changed-effect",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "2f7f5a6979e815a5b7f9566aaea3277cecfd9cf5de962040acb86bc66eb4c66d",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "2f7f5a6979e815a5b7f9566aaea3277cecfd9cf5de962040acb86bc66eb4c66d",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "2f7f5a6979e815a5b7f9566aaea3277cecfd9cf5de962040acb86bc66eb4c66d",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "2f7f5a6979e815a5b7f9566aaea3277cecfd9cf5de962040acb86bc66eb4c66d",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "2f7f5a6979e815a5b7f9566aaea3277cecfd9cf5de962040acb86bc66eb4c66d",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "write-callback-throws",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "write-duplicate-policy",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "write-extra-proposal-field",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "write-invalid-policy-protocol",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "write-different-policy-resource",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "write-missing-approval",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "write-approval-error",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "write-policy-revoked",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "write-changed-metadata",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "9865b1f4d7ef6bb0a9a0a8b30622725e9fc718e8406e8ff90af6245e228a9c79",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "9865b1f4d7ef6bb0a9a0a8b30622725e9fc718e8406e8ff90af6245e228a9c79",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "9865b1f4d7ef6bb0a9a0a8b30622725e9fc718e8406e8ff90af6245e228a9c79",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "9865b1f4d7ef6bb0a9a0a8b30622725e9fc718e8406e8ff90af6245e228a9c79",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "9865b1f4d7ef6bb0a9a0a8b30622725e9fc718e8406e8ff90af6245e228a9c79",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "pay-baseline",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "pay-reordered-keys",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "pay-changed-payload",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "b4a2b17134035fcb8155bd7d767b4a5de55fc30b000cd34c7d4ce273dcd2ef24",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "b4a2b17134035fcb8155bd7d767b4a5de55fc30b000cd34c7d4ce273dcd2ef24",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "b4a2b17134035fcb8155bd7d767b4a5de55fc30b000cd34c7d4ce273dcd2ef24",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "b4a2b17134035fcb8155bd7d767b4a5de55fc30b000cd34c7d4ce273dcd2ef24",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "b4a2b17134035fcb8155bd7d767b4a5de55fc30b000cd34c7d4ce273dcd2ef24",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "pay-changed-resource",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "5b21ba7d03d9c2e702441d54c4c23f3fd0e6ec1547d1340a1277ccd696f03213",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "5b21ba7d03d9c2e702441d54c4c23f3fd0e6ec1547d1340a1277ccd696f03213",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "5b21ba7d03d9c2e702441d54c4c23f3fd0e6ec1547d1340a1277ccd696f03213",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "5b21ba7d03d9c2e702441d54c4c23f3fd0e6ec1547d1340a1277ccd696f03213",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "5b21ba7d03d9c2e702441d54c4c23f3fd0e6ec1547d1340a1277ccd696f03213",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "pay-changed-tool",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "207854f49d5f41c8d26c42d60ae0c50e2a6ed45ab9b93d54a065d68cd99ecfd4",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "207854f49d5f41c8d26c42d60ae0c50e2a6ed45ab9b93d54a065d68cd99ecfd4",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "207854f49d5f41c8d26c42d60ae0c50e2a6ed45ab9b93d54a065d68cd99ecfd4",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "207854f49d5f41c8d26c42d60ae0c50e2a6ed45ab9b93d54a065d68cd99ecfd4",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "207854f49d5f41c8d26c42d60ae0c50e2a6ed45ab9b93d54a065d68cd99ecfd4",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "pay-changed-effect",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "2b8a57b864d21c5687c6aa26cc43feda17e87e291fe0241c29b1b170cd86bdf4",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "2b8a57b864d21c5687c6aa26cc43feda17e87e291fe0241c29b1b170cd86bdf4",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "2b8a57b864d21c5687c6aa26cc43feda17e87e291fe0241c29b1b170cd86bdf4",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "2b8a57b864d21c5687c6aa26cc43feda17e87e291fe0241c29b1b170cd86bdf4",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "2b8a57b864d21c5687c6aa26cc43feda17e87e291fe0241c29b1b170cd86bdf4",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "pay-callback-throws",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "pay-duplicate-policy",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "pay-extra-proposal-field",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "pay-invalid-policy-protocol",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "pay-different-policy-resource",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "pay-missing-approval",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "pay-approval-error",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "pay-policy-revoked",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "6793a10bf1f384e3fbd217bd10900584886ecef410fe6b1465b86128a4121990",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "pay-changed-metadata",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "a2a5893acf429d09d9d861d379d485be0629c200461a65b00391ebf4d729782e",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "a2a5893acf429d09d9d861d379d485be0629c200461a65b00391ebf4d729782e",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "a2a5893acf429d09d9d861d379d485be0629c200461a65b00391ebf4d729782e",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "a2a5893acf429d09d9d861d379d485be0629c200461a65b00391ebf4d729782e",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "a2a5893acf429d09d9d861d379d485be0629c200461a65b00391ebf4d729782e",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "delete-baseline",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "delete-reordered-keys",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "delete-changed-payload",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "8dd8faf5530da61143ba8ca68c9a2399d56f0fa1eedde7450018c1b154514ce8",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "8dd8faf5530da61143ba8ca68c9a2399d56f0fa1eedde7450018c1b154514ce8",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "8dd8faf5530da61143ba8ca68c9a2399d56f0fa1eedde7450018c1b154514ce8",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "8dd8faf5530da61143ba8ca68c9a2399d56f0fa1eedde7450018c1b154514ce8",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "8dd8faf5530da61143ba8ca68c9a2399d56f0fa1eedde7450018c1b154514ce8",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "delete-changed-resource",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "1930494c4b67c976fe01752cc9c63971f9d81f4995a7cc6f3ed7b7d7ab39a122",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "1930494c4b67c976fe01752cc9c63971f9d81f4995a7cc6f3ed7b7d7ab39a122",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "1930494c4b67c976fe01752cc9c63971f9d81f4995a7cc6f3ed7b7d7ab39a122",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "1930494c4b67c976fe01752cc9c63971f9d81f4995a7cc6f3ed7b7d7ab39a122",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "1930494c4b67c976fe01752cc9c63971f9d81f4995a7cc6f3ed7b7d7ab39a122",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "delete-changed-tool",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "c541cb70a28d0cff204dd73b874a4bd1abbd043099bcb0768d40d0d41a5496d7",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "c541cb70a28d0cff204dd73b874a4bd1abbd043099bcb0768d40d0d41a5496d7",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "c541cb70a28d0cff204dd73b874a4bd1abbd043099bcb0768d40d0d41a5496d7",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "c541cb70a28d0cff204dd73b874a4bd1abbd043099bcb0768d40d0d41a5496d7",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "c541cb70a28d0cff204dd73b874a4bd1abbd043099bcb0768d40d0d41a5496d7",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "delete-changed-effect",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "e2f749a45e55a43a0d91db999c8b8160274ae892c1c80a312162891e6c4ec630",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "e2f749a45e55a43a0d91db999c8b8160274ae892c1c80a312162891e6c4ec630",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "e2f749a45e55a43a0d91db999c8b8160274ae892c1c80a312162891e6c4ec630",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "e2f749a45e55a43a0d91db999c8b8160274ae892c1c80a312162891e6c4ec630",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "e2f749a45e55a43a0d91db999c8b8160274ae892c1c80a312162891e6c4ec630",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "delete-callback-throws",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "delete-duplicate-policy",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "delete-extra-proposal-field",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "delete-invalid-policy-protocol",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "delete-different-policy-resource",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "delete-missing-approval",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_unavailable",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "delete-approval-error",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_error",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "delete-policy-revoked",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "3a590cd3b6000a300fbe7d18a57326d98127e972681cb2ed6793e4794e0896fe",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "policy_changed",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "delete-changed-metadata",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "49b1e314187996860461f398da2f34104a395227c1a0401624c2c33fd3f18d7e",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "49b1e314187996860461f398da2f34104a395227c1a0401624c2c33fd3f18d7e",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "49b1e314187996860461f398da2f34104a395227c1a0401624c2c33fd3f18d7e",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "49b1e314187996860461f398da2f34104a395227c1a0401624c2c33fd3f18d7e",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "49b1e314187996860461f398da2f34104a395227c1a0401624c2c33fd3f18d7e",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "http-baseline",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "http-reordered-keys",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "http-changed-payload",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "4c46ebc3843a4c3ce37e217b1287d0adbfbc8bd258d38970d1ea34a9866c1fff",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "4c46ebc3843a4c3ce37e217b1287d0adbfbc8bd258d38970d1ea34a9866c1fff",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "4c46ebc3843a4c3ce37e217b1287d0adbfbc8bd258d38970d1ea34a9866c1fff",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "4c46ebc3843a4c3ce37e217b1287d0adbfbc8bd258d38970d1ea34a9866c1fff",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "4c46ebc3843a4c3ce37e217b1287d0adbfbc8bd258d38970d1ea34a9866c1fff",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "http-changed-resource",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "5f2e18ce60dc2b5f521c4c9d1edb1e54ec21ac3ec5fca7d6a75a0c62a00e0c87",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "5f2e18ce60dc2b5f521c4c9d1edb1e54ec21ac3ec5fca7d6a75a0c62a00e0c87",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "5f2e18ce60dc2b5f521c4c9d1edb1e54ec21ac3ec5fca7d6a75a0c62a00e0c87",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "5f2e18ce60dc2b5f521c4c9d1edb1e54ec21ac3ec5fca7d6a75a0c62a00e0c87",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "5f2e18ce60dc2b5f521c4c9d1edb1e54ec21ac3ec5fca7d6a75a0c62a00e0c87",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "http-changed-tool",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "bf1820dbaec58810fb019a8c2ee2dcce78a89729de85e12f46b6e85270af2bbb",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "bf1820dbaec58810fb019a8c2ee2dcce78a89729de85e12f46b6e85270af2bbb",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "bf1820dbaec58810fb019a8c2ee2dcce78a89729de85e12f46b6e85270af2bbb",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "bf1820dbaec58810fb019a8c2ee2dcce78a89729de85e12f46b6e85270af2bbb",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "bf1820dbaec58810fb019a8c2ee2dcce78a89729de85e12f46b6e85270af2bbb",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "http-changed-effect",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "47927fa8fd51833e1605d52c9bf2dc55e48a49e52824c54de1cfa04b0c2119ac",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "47927fa8fd51833e1605d52c9bf2dc55e48a49e52824c54de1cfa04b0c2119ac",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "47927fa8fd51833e1605d52c9bf2dc55e48a49e52824c54de1cfa04b0c2119ac",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "47927fa8fd51833e1605d52c9bf2dc55e48a49e52824c54de1cfa04b0c2119ac",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "47927fa8fd51833e1605d52c9bf2dc55e48a49e52824c54de1cfa04b0c2119ac",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "http-callback-throws",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "http-duplicate-policy",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "http-extra-proposal-field",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "http-invalid-policy-protocol",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "http-different-policy-resource",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "d429ddcb3288d338a8d3e69b538212f7570e7bd732d6051f4ac89f60ec5437f5",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "ui-baseline",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "ui-reordered-keys",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "ui-changed-payload",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "d38667ae6dc0875de0f98b209045762a90da66dc4690c7ec20a297f0ae8178b5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "d38667ae6dc0875de0f98b209045762a90da66dc4690c7ec20a297f0ae8178b5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "d38667ae6dc0875de0f98b209045762a90da66dc4690c7ec20a297f0ae8178b5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "d38667ae6dc0875de0f98b209045762a90da66dc4690c7ec20a297f0ae8178b5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "d38667ae6dc0875de0f98b209045762a90da66dc4690c7ec20a297f0ae8178b5",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "ui-changed-resource",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "0c1f4e31b75b3c25d757cd60ea49f2505306468ff73db8f4af3658c0e68c9f49",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "0c1f4e31b75b3c25d757cd60ea49f2505306468ff73db8f4af3658c0e68c9f49",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "0c1f4e31b75b3c25d757cd60ea49f2505306468ff73db8f4af3658c0e68c9f49",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "0c1f4e31b75b3c25d757cd60ea49f2505306468ff73db8f4af3658c0e68c9f49",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "0c1f4e31b75b3c25d757cd60ea49f2505306468ff73db8f4af3658c0e68c9f49",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "ui-changed-tool",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "7c90aa85ccb153dbe881a27160efacba668b3a06051b3db544a61896f799e58a",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "7c90aa85ccb153dbe881a27160efacba668b3a06051b3db544a61896f799e58a",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "7c90aa85ccb153dbe881a27160efacba668b3a06051b3db544a61896f799e58a",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "7c90aa85ccb153dbe881a27160efacba668b3a06051b3db544a61896f799e58a",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "7c90aa85ccb153dbe881a27160efacba668b3a06051b3db544a61896f799e58a",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "ui-changed-effect",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "54e8df4894508fff87ac1d8ac8794fd9678e5ed2ff82d098f51cba27fde82485",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "54e8df4894508fff87ac1d8ac8794fd9678e5ed2ff82d098f51cba27fde82485",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "54e8df4894508fff87ac1d8ac8794fd9678e5ed2ff82d098f51cba27fde82485",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "54e8df4894508fff87ac1d8ac8794fd9678e5ed2ff82d098f51cba27fde82485",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "54e8df4894508fff87ac1d8ac8794fd9678e5ed2ff82d098f51cba27fde82485",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "ui-callback-throws",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "unknown",
+          "receipt_reason": "host_dispatch_error",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "ui-duplicate-policy",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "ambiguous_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "ambiguous_policy",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "ui-extra-proposal-field",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_proposal",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_proposal",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "ui-invalid-policy-protocol",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": null,
+          "decision": "deny",
+          "reason": "invalid_policy",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "invalid_policy",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "ui-different-policy-resource",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "b2e76b9b4a34b7da369eb855f8e8548fec013b0494fc2253bd449b18a8274253",
+          "decision": "deny",
+          "reason": "no_exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "no_exact_rule",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "mail-injected-bcc-stale",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "06a4efd3a21269e47a23e32b1007f2dcdc02a3ac7315440134aceda7ca68d69c",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "06a4efd3a21269e47a23e32b1007f2dcdc02a3ac7315440134aceda7ca68d69c",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "06a4efd3a21269e47a23e32b1007f2dcdc02a3ac7315440134aceda7ca68d69c",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "06a4efd3a21269e47a23e32b1007f2dcdc02a3ac7315440134aceda7ca68d69c",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "06a4efd3a21269e47a23e32b1007f2dcdc02a3ac7315440134aceda7ca68d69c",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "mail-injected-bcc-fresh",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "06a4efd3a21269e47a23e32b1007f2dcdc02a3ac7315440134aceda7ca68d69c",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "06a4efd3a21269e47a23e32b1007f2dcdc02a3ac7315440134aceda7ca68d69c",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "06a4efd3a21269e47a23e32b1007f2dcdc02a3ac7315440134aceda7ca68d69c",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "06a4efd3a21269e47a23e32b1007f2dcdc02a3ac7315440134aceda7ca68d69c",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "06a4efd3a21269e47a23e32b1007f2dcdc02a3ac7315440134aceda7ca68d69c",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "mail-caller-mutates-after-snapshot",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "b13b64ef999061563b415bbc2ccfb727f471aaa7bb55cb938f282f7008792d52",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "write-changed-call-id-stale",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "86eed3ca238c540bf90c441e55b80ea8dd2a9fc1a3d2e864c90250112c146fda",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_hashlib": {
+          "proposal_sha256": "86eed3ca238c540bf90c441e55b80ea8dd2a9fc1a3d2e864c90250112c146fda",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "86eed3ca238c540bf90c441e55b80ea8dd2a9fc1a3d2e864c90250112c146fda",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "python_openssl": {
+          "proposal_sha256": "86eed3ca238c540bf90c441e55b80ea8dd2a9fc1a3d2e864c90250112c146fda",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "86eed3ca238c540bf90c441e55b80ea8dd2a9fc1a3d2e864c90250112c146fda",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "SUPPRESS",
+          "execution_status": "blocked",
+          "receipt_reason": "approval_missing_or_mismatched",
+          "tool_calls": 0
+        }
+      }
+    },
+    {
+      "case_id": "write-exact-call-id-replay",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "10146cd76484990420b0006fa0a2d05684df4da3f75c4a0267c5a05d1f212020",
+          "decision": "requires_approval",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "http-argument-target-mismatch",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "5d2c104a875dbb3d2f3fedb45637174ba245665992be1bca28fc218264773bd6",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "5d2c104a875dbb3d2f3fedb45637174ba245665992be1bca28fc218264773bd6",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "5d2c104a875dbb3d2f3fedb45637174ba245665992be1bca28fc218264773bd6",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "5d2c104a875dbb3d2f3fedb45637174ba245665992be1bca28fc218264773bd6",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "5d2c104a875dbb3d2f3fedb45637174ba245665992be1bca28fc218264773bd6",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    },
+    {
+      "case_id": "read-numeric-object-keys",
+      "outcomes": {
+        "javascript_node": {
+          "proposal_sha256": "66e0792f76fdea15da6d3b17fdacd1e528a90b0449012ba82e5c6253bb7bc10b",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_hashlib": {
+          "proposal_sha256": "66e0792f76fdea15da6d3b17fdacd1e528a90b0449012ba82e5c6253bb7bc10b",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "perl_digest_sha": {
+          "proposal_sha256": "66e0792f76fdea15da6d3b17fdacd1e528a90b0449012ba82e5c6253bb7bc10b",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "python_openssl": {
+          "proposal_sha256": "66e0792f76fdea15da6d3b17fdacd1e528a90b0449012ba82e5c6253bb7bc10b",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        },
+        "webcrypto_node_host": {
+          "proposal_sha256": "66e0792f76fdea15da6d3b17fdacd1e528a90b0449012ba82e5c6253bb7bc10b",
+          "decision": "allow",
+          "reason": "exact_rule",
+          "gate_outcome": "ALLOW",
+          "execution_status": "dispatched",
+          "receipt_reason": "host_dispatch_returned",
+          "tool_calls": 1
+        }
+      }
+    }
+  ]
+}
