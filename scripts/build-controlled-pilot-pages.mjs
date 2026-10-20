@@ -25,7 +25,7 @@ export function html(site, stage) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>${title} · controlled action pilot ${site.id} · ${stage}</title>
+  <title>${title} · controlled action pilot ${site.id}</title>
   <style>
     :root{font:16px/1.55 system-ui;color:#eff6ff;background:#091225;--accent:${site.accent}}
     *{box-sizing:border-box}body{margin:0;min-height:100vh}
@@ -48,7 +48,7 @@ export function html(site, stage) {
     @media(max-width:730px){.duplicate.float{position:static;margin:20px}.duplicate{display:block}.duplicate a{display:block}}
   </style>
 </head>
-<body data-pilot-id="${site.id}" data-stage="${stage}">
+<body data-pilot-id="${site.id}">
   <header><span class="brand">Action boundary lab</span><span class="eyebrow">Controlled public page ${site.id}/10</span></header>${['banner','strip','nav'].includes(site.placement) ? duplicate : ''}
   <main>
     <p class="eyebrow">Receipt binding · live-site pilot</p>
