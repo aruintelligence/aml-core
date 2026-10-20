@@ -1,0 +1,561 @@
+{
+  "protocol": "aml-receipt-revocation-report/1",
+  "adapters": [
+    {
+      "protocol": "aml-receipt-revocation-evidence/1",
+      "adapter": "email",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_email",
+        "effect": "send",
+        "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+        "purpose": "Revocation fixture for email",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [],
+          "bcc": [],
+          "subject": "Update",
+          "body": "Ready"
+        }
+      },
+      "original_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "send_email",
+            "effect": "send",
+            "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+            "requires_approval": true
+          }
+        ]
+      },
+      "revoked_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": []
+      },
+      "observed_revocation": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "email-observed-revocation",
+          "proposal": {
+            "arguments": {
+              "bcc": [],
+              "body": "Ready",
+              "cc": [],
+              "subject": "Update",
+              "to": "team@example.test"
+            },
+            "effect": "send",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Revocation fixture for email",
+            "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+            "tool": "send_email"
+          },
+          "proposal_sha256": "293e3bbe85fc5ee0aa45b3d51dde04dff4fcf4ec18dd26648412017a83df5b0c",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "send",
+                "requires_approval": true,
+                "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+                "tool": "send_email"
+              }
+            ]
+          },
+          "policy_sha256": "5de9aec024a11f0dc4a18f3a2e10ad8222754da658f2530614ce5adb185598e9",
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "293e3bbe85fc5ee0aa45b3d51dde04dff4fcf4ec18dd26648412017a83df5b0c",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "9792574903da941b226c0ec56cf283beb8c65f9927bce8a096dbc78902a600e8",
+          "host_mac_sha256": "bbc89991405491bcd7f9ddfe3461834d7ef409f4e34b3c93ad16b206e892d6d2"
+        },
+        "revoked": {
+          "decision": "SUPPRESS",
+          "reason": "policy_changed",
+          "callback_count": 0
+        },
+        "after_restoration": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_reused_or_unknown",
+          "callback_count": 0
+        }
+      },
+      "revocation_during_approval": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "email-approval-revoked",
+          "proposal": {
+            "arguments": {
+              "bcc": [],
+              "body": "Ready",
+              "cc": [],
+              "subject": "Update",
+              "to": "team@example.test"
+            },
+            "effect": "send",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Revocation fixture for email",
+            "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+            "tool": "send_email"
+          },
+          "proposal_sha256": "293e3bbe85fc5ee0aa45b3d51dde04dff4fcf4ec18dd26648412017a83df5b0c",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "send",
+                "requires_approval": true,
+                "resource": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+                "tool": "send_email"
+              }
+            ]
+          },
+          "policy_sha256": "5de9aec024a11f0dc4a18f3a2e10ad8222754da658f2530614ce5adb185598e9",
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "293e3bbe85fc5ee0aa45b3d51dde04dff4fcf4ec18dd26648412017a83df5b0c",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "mail:60a00ad5fc33ae881d59474cb6f6c637b41406f0334ab846679b816f9f6f74cb",
+          "decision": "SUPPRESS",
+          "reason": "policy_changed",
+          "receipt_sha256": "ffa3e0b0021ea4d4bc9654e96ad7923001646e96ec637f793c97cd1db2b2feb5",
+          "host_mac_sha256": "0a15e236600f681da7f30d6810769823facbf89098b8c4046884d0a60f780a47"
+        },
+        "after_restoration": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_suppressed",
+          "callback_count": 0
+        }
+      },
+      "callback_count": 0,
+      "claim_boundary": "Project-authored in-memory provider callbacks and a public test key; no external effect or independent validation.",
+      "receipt_sha256": "0b747ca851378be13badc59c98c3162dcdca7a647ff3d9893ee1149faf827f68"
+    },
+    {
+      "protocol": "aml-receipt-revocation-evidence/1",
+      "adapter": "http",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "http_request",
+        "effect": "write",
+        "resource": "https://api.example.test/v1/status",
+        "purpose": "Revocation fixture for http",
+        "arguments": {
+          "url": "https://api.example.test/v1/status",
+          "method": "POST",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": "{\"ready\":true}"
+        }
+      },
+      "original_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "http_request",
+            "effect": "write",
+            "resource": "https://api.example.test/v1/status",
+            "requires_approval": true
+          }
+        ]
+      },
+      "revoked_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": []
+      },
+      "observed_revocation": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "http-observed-revocation",
+          "proposal": {
+            "arguments": {
+              "body": "{\"ready\":true}",
+              "headers": {
+                "Content-Type": "application/json"
+              },
+              "method": "POST",
+              "url": "https://api.example.test/v1/status"
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Revocation fixture for http",
+            "resource": "https://api.example.test/v1/status",
+            "tool": "http_request"
+          },
+          "proposal_sha256": "dbd70f4df44edd1d027c13326e96d2c0337a70624471e98d7f706c6e1f692fae",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "https://api.example.test/v1/status",
+                "tool": "http_request"
+              }
+            ]
+          },
+          "policy_sha256": "b33c4130ca3836294360269f6bbb066815fdbce5d2cb2b390a36119840ae2cf2",
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "dbd70f4df44edd1d027c13326e96d2c0337a70624471e98d7f706c6e1f692fae",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "https://api.example.test/v1/status",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "79eeb185b6bcc294efc889140c6c42909fd24999ec7d7708ed46aa80933e5c8d",
+          "host_mac_sha256": "82f5a1ec5085c927f65231b637b818c755988244675bfa6e900f972b3f7e4d73"
+        },
+        "revoked": {
+          "decision": "SUPPRESS",
+          "reason": "policy_changed",
+          "callback_count": 0
+        },
+        "after_restoration": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_reused_or_unknown",
+          "callback_count": 0
+        }
+      },
+      "revocation_during_approval": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "http-approval-revoked",
+          "proposal": {
+            "arguments": {
+              "body": "{\"ready\":true}",
+              "headers": {
+                "Content-Type": "application/json"
+              },
+              "method": "POST",
+              "url": "https://api.example.test/v1/status"
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Revocation fixture for http",
+            "resource": "https://api.example.test/v1/status",
+            "tool": "http_request"
+          },
+          "proposal_sha256": "dbd70f4df44edd1d027c13326e96d2c0337a70624471e98d7f706c6e1f692fae",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "https://api.example.test/v1/status",
+                "tool": "http_request"
+              }
+            ]
+          },
+          "policy_sha256": "b33c4130ca3836294360269f6bbb066815fdbce5d2cb2b390a36119840ae2cf2",
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "dbd70f4df44edd1d027c13326e96d2c0337a70624471e98d7f706c6e1f692fae",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "https://api.example.test/v1/status",
+          "decision": "SUPPRESS",
+          "reason": "policy_changed",
+          "receipt_sha256": "d38df9f4a8846a1b130e1f75e42b09880a2c8e884ee92dc5729d527806c6676a",
+          "host_mac_sha256": "e3a9d757662c93784af56422825077ed47f167177c801b5c6dd25a4a1fbc32eb"
+        },
+        "after_restoration": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_suppressed",
+          "callback_count": 0
+        }
+      },
+      "callback_count": 0,
+      "claim_boundary": "Project-authored in-memory provider callbacks and a public test key; no external effect or independent validation.",
+      "receipt_sha256": "15f41bfddd8d85c5ee8e5cb133154a38ebdc5178f5f43d9bd2bd009841b7b774"
+    },
+    {
+      "protocol": "aml-receipt-revocation-evidence/1",
+      "adapter": "database",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "database_write",
+        "effect": "write",
+        "resource": "db:records/r42",
+        "purpose": "Revocation fixture for database",
+        "arguments": {
+          "table": "records",
+          "key": "r42",
+          "value": {
+            "status": "ready"
+          }
+        }
+      },
+      "original_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "database_write",
+            "effect": "write",
+            "resource": "db:records/r42",
+            "requires_approval": true
+          }
+        ]
+      },
+      "revoked_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": []
+      },
+      "observed_revocation": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "database-observed-revocation",
+          "proposal": {
+            "arguments": {
+              "key": "r42",
+              "table": "records",
+              "value": {
+                "status": "ready"
+              }
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Revocation fixture for database",
+            "resource": "db:records/r42",
+            "tool": "database_write"
+          },
+          "proposal_sha256": "2f0cfb39d57b4536dc64da826bd30296be2bef08df4f15a00b0790bc0252d19b",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "db:records/r42",
+                "tool": "database_write"
+              }
+            ]
+          },
+          "policy_sha256": "1c700e497bd6c20512d37619e3e8940cc997b8fd236ccb797fef326e45095ea6",
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "2f0cfb39d57b4536dc64da826bd30296be2bef08df4f15a00b0790bc0252d19b",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "db:records/r42",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "bc515e6b1844d6d294e08138d6b6bf3a5b3d971c626cb0b5d386145ab192e397",
+          "host_mac_sha256": "2519f68f264ec42dae8db65b7ed950bfa7e64d93d34534d269da0e4366e23a05"
+        },
+        "revoked": {
+          "decision": "SUPPRESS",
+          "reason": "policy_changed",
+          "callback_count": 0
+        },
+        "after_restoration": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_reused_or_unknown",
+          "callback_count": 0
+        }
+      },
+      "revocation_during_approval": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "database-approval-revoked",
+          "proposal": {
+            "arguments": {
+              "key": "r42",
+              "table": "records",
+              "value": {
+                "status": "ready"
+              }
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Revocation fixture for database",
+            "resource": "db:records/r42",
+            "tool": "database_write"
+          },
+          "proposal_sha256": "2f0cfb39d57b4536dc64da826bd30296be2bef08df4f15a00b0790bc0252d19b",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "db:records/r42",
+                "tool": "database_write"
+              }
+            ]
+          },
+          "policy_sha256": "1c700e497bd6c20512d37619e3e8940cc997b8fd236ccb797fef326e45095ea6",
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "2f0cfb39d57b4536dc64da826bd30296be2bef08df4f15a00b0790bc0252d19b",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "db:records/r42",
+          "decision": "SUPPRESS",
+          "reason": "policy_changed",
+          "receipt_sha256": "73803ce3c74ecd53645f6f7614177b98e960862197b1dfd7129f2318fc5a5411",
+          "host_mac_sha256": "37e5b3958b4b7e95a6f9cd60a31e53e6149f04c440b7050fd162ca9fb4f1c99e"
+        },
+        "after_restoration": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_suppressed",
+          "callback_count": 0
+        }
+      },
+      "callback_count": 0,
+      "claim_boundary": "Project-authored in-memory provider callbacks and a public test key; no external effect or independent validation.",
+      "receipt_sha256": "e676cded5b441beb5f7cbb9bce8476ecd07126dfad373d236c13b1dc58efb6ae"
+    },
+    {
+      "protocol": "aml-receipt-revocation-evidence/1",
+      "adapter": "ui",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "render_ui",
+        "effect": "write",
+        "resource": "ui:#status",
+        "purpose": "Revocation fixture for ui",
+        "arguments": {
+          "root": "#status",
+          "text": "Ready"
+        }
+      },
+      "original_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "tool": "render_ui",
+            "effect": "write",
+            "resource": "ui:#status",
+            "requires_approval": true
+          }
+        ]
+      },
+      "revoked_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": []
+      },
+      "observed_revocation": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "ui-observed-revocation",
+          "proposal": {
+            "arguments": {
+              "root": "#status",
+              "text": "Ready"
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Revocation fixture for ui",
+            "resource": "ui:#status",
+            "tool": "render_ui"
+          },
+          "proposal_sha256": "5e865aa6286cf8036f98794cf09a33036f02cc4e124d932b2c11a51f09ef6ce6",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "ui:#status",
+                "tool": "render_ui"
+              }
+            ]
+          },
+          "policy_sha256": "a317e16fdca0d1aea78ab6d42dc5fa2e7daa4e4e5bdfa83fd2d4ce960faf0488",
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "5e865aa6286cf8036f98794cf09a33036f02cc4e124d932b2c11a51f09ef6ce6",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "ui:#status",
+          "decision": "ALLOW",
+          "reason": "approved_exact_rule",
+          "receipt_sha256": "edd2a110987ac5a7bc75fa49933067951c97c0ded59f10860173cb2f3ad1021c",
+          "host_mac_sha256": "49fd3014be9aad353f654b4ced03f31988f62349102317d2136bd76e92557390"
+        },
+        "revoked": {
+          "decision": "SUPPRESS",
+          "reason": "policy_changed",
+          "callback_count": 0
+        },
+        "after_restoration": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_reused_or_unknown",
+          "callback_count": 0
+        }
+      },
+      "revocation_during_approval": {
+        "authorization_receipt": {
+          "protocol": "aml-host-action-authorization/1",
+          "nonce": "ui-approval-revoked",
+          "proposal": {
+            "arguments": {
+              "root": "#status",
+              "text": "Ready"
+            },
+            "effect": "write",
+            "protocol": "aml-proposed-action/1",
+            "purpose": "Revocation fixture for ui",
+            "resource": "ui:#status",
+            "tool": "render_ui"
+          },
+          "proposal_sha256": "5e865aa6286cf8036f98794cf09a33036f02cc4e124d932b2c11a51f09ef6ce6",
+          "host_policy": {
+            "protocol": "aml-action-policy/1",
+            "rules": [
+              {
+                "effect": "write",
+                "requires_approval": true,
+                "resource": "ui:#status",
+                "tool": "render_ui"
+              }
+            ]
+          },
+          "policy_sha256": "a317e16fdca0d1aea78ab6d42dc5fa2e7daa4e4e5bdfa83fd2d4ce960faf0488",
+          "plan": {
+            "protocol": "aml-action-plan/1",
+            "proposal_sha256": "5e865aa6286cf8036f98794cf09a33036f02cc4e124d932b2c11a51f09ef6ce6",
+            "decision": "requires_approval",
+            "reason": "exact_rule"
+          },
+          "resolved_target": "ui:#status",
+          "decision": "SUPPRESS",
+          "reason": "policy_changed",
+          "receipt_sha256": "8495f14346292840e7ae41d978a1915fdf75e0135bba2b4d253cbb017d447ba8",
+          "host_mac_sha256": "a0bf550754f1760ffb65a89e57891bf559fd275f7a53e70e342fe35d28e32ba0"
+        },
+        "after_restoration": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_suppressed",
+          "callback_count": 0
+        }
+      },
+      "callback_count": 0,
+      "claim_boundary": "Project-authored in-memory provider callbacks and a public test key; no external effect or independent validation.",
+      "receipt_sha256": "d4749755ae6d0b20c33301f7a78f2b85f00b20babe62e82949c242884845fe5f"
+    }
+  ],
+  "totals": {
+    "adapter_count": 4,
+    "blocked_paths": 16,
+    "callback_count": 0
+  },
+  "claim_boundary": "One observed policy change and one approval-time change per adapter, each followed by restoration. No claim about an unobserved policy ABA or external provider."
+}

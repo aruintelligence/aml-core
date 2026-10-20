@@ -44,3 +44,7 @@ completion, database durability, or an actual browser render. A production
 host must keep the key private, store one-use grants durably across processes,
 and remove every unwrapped route to the provider. A thrown callback yields
 `UNKNOWN` because the effect may have occurred; it is not retried automatically.
+
+The [revocation follow-up](ACTION_RECEIPT_REVOCATION.md) adds separate,
+append-only evidence for policy restoration and approval-time changes without
+rewriting this original eight-path report.

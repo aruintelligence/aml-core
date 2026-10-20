@@ -15,6 +15,8 @@ on:
       - "docs/action-pilots/dispatch-receipts.jsonl"
       - "docs/action-pilots/evidence/browser-receipts.jsonl"
       - "docs/action-receipt-adapters-report.json"
+      - "docs/action-receipt-revocation-report.json"
+      - "scripts/build-action-revocation-report.mjs"
       - ".github/workflows/action-receipt-registry.yml"
   pull_request:
     paths:
@@ -29,6 +31,8 @@ on:
       - "docs/action-pilots/dispatch-receipts.jsonl"
       - "docs/action-pilots/evidence/browser-receipts.jsonl"
       - "docs/action-receipt-adapters-report.json"
+      - "docs/action-receipt-revocation-report.json"
+      - "scripts/build-action-revocation-report.mjs"
       - ".github/workflows/action-receipt-registry.yml"
 
 permissions:

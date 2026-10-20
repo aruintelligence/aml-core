@@ -5,9 +5,10 @@ snapshot contained 100 project-authored simulated challenge receipts, one
 observed Chrome matrix receipt, ten controlled-site host dispatch receipts,
 and ten paired browser pilot receipts. Four local integration adapter receipts
 were then appended. A further 375 project-authored simulated stress receipts
-follow those 125 unchanged rows. These are **500 distinct machine-verifiable
-receipts**, with their categories visible in every row. The new cases are
-test fixtures, not 375 observed external effects.
+follow those 125 unchanged rows. Four local adapter revocation records were
+then appended, preserving all 500 prior rows. These are **504 distinct
+machine-verifiable receipts**, with their categories visible in every row.
+The new cases are test fixtures, not observed external effects.
 
 Each row follows the [entry schema](../protocol/action-receipt-registry-entry.schema.json)
 and binds its source file SHA-256, source record number, receipt SHA-256,
@@ -24,7 +25,8 @@ node scripts/verify-action-receipt-registry.mjs --check
 
 This recomputes the chain and every underlying receipt hash, replays the 100
 expanded cases and 375 stress cases in the maintained bindings, and checks the
-browser observation, ten paired pilot evidence packages, and four adapters.
+browser observation, ten paired pilot evidence packages, four adapters, and
+the four new revocation records.
 CI also compares the registry to the first
 parent commit, so a pull request cannot silently edit or remove earlier rows.
 To append a new source, add it to the end of the sources manifest and run
