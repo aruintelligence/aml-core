@@ -14,7 +14,7 @@
     "evidence_receipts": "c96ec0c7e2b30e01d7f5e6dedd2f984530c82a613cdba7aee757738fbf690328",
     "evidence_schema": "64d2751bab5500c60911186813ce79cea0114e4b66c406c7a537a76531649e41",
     "generator": "eb1a5adbb3ff0434197b722023263921164e65f2320d298a818a2087311891df",
-    "javascript_boundary": "e0a16067f023a5281b22115f142f84c83fad29aeeec6327370cf0989aaecc11e",
+    "javascript_boundary": "97cb500b86e73eeb38fdf526ab04a51b637dde9d8c15daf75b67bd870f15b26c",
     "python_boundary": "e8d741bf0f9d43e6bc30d3a64819e384218432d26ab7bfda454a845bba0f9d41"
   },
   "limits": "Project-authored simulated callbacks; no independent witness, live side effect, authenticated approver, or certified production boundary."

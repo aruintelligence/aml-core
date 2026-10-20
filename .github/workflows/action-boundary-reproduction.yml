@@ -1,0 +1,32 @@
+name: Action boundary reproduction package
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "reproduction/action-boundary/**"
+      - "scripts/build-action-release-manifest.mjs"
+      - ".github/workflows/action-boundary-reproduction.yml"
+  pull_request:
+    paths:
+      - "reproduction/action-boundary/**"
+      - "scripts/build-action-release-manifest.mjs"
+      - ".github/workflows/action-boundary-reproduction.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash reproduction/action-boundary/reproduce.sh
