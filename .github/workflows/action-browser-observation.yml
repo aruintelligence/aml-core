@@ -1,0 +1,32 @@
+name: Browser action observation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/evidence/aml-action-browser-100.*"
+      - "scripts/verify-action-browser-observation.mjs"
+      - "test/action-browser-observation.test.js"
+      - ".github/workflows/action-browser-observation.yml"
+  pull_request:
+    paths:
+      - "docs/evidence/aml-action-browser-100.*"
+      - "scripts/verify-action-browser-observation.mjs"
+      - "test/action-browser-observation.test.js"
+      - ".github/workflows/action-browser-observation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check browser observation and tamper rejection
+        run: |
+          node scripts/verify-action-browser-observation.mjs
+          node --test test/action-browser-observation.test.js
