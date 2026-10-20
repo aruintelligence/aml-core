@@ -41,13 +41,22 @@ export function createMCPCallToolGate({ client, serverKey, name, effect, purpose
     catch { return reject("host_mapping_or_policy_error"); }
     const status = outcome.receipt.execution_status;
     const result = outcome.result;
-    const mcp_result_status = status === "blocked" ? "not_called" :
-      status === "unknown" ? "unknown" :
-      !plain(result) ? "invalid_result" :
-      result.isError === true ? "tool_error" :
-      result.resultType === "input_required" ? "input_required" : "returned";
+    let mcp_result_status;
+    let readableResult = true;
+    try {
+      mcp_result_status = status === "blocked" ? "not_called" :
+        status === "unknown" ? "unknown" :
+        !plain(result) ? "invalid_result" :
+        result.isError === true ? "tool_error" :
+        result.resultType === "input_required" ? "input_required" : "returned";
+    } catch {
+      // The callback has already returned. Keep its dispatched receipt even if
+      // an untrusted result getter/proxy fails during local classification.
+      mcp_result_status = "invalid_result";
+      readableResult = false;
+    }
     return { protocol: "aml-mcp-call-tool-result/1", server_key: serverKey,
       tool_name: name, rejection: null, plan: outcome.plan, receipt: outcome.receipt,
-      mcp_result_status, ...(Object.hasOwn(outcome, "result") ? { result } : {}) };
+      mcp_result_status, ...(readableResult && Object.hasOwn(outcome, "result") ? { result } : {}) };
   };
 }
