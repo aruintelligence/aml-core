@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/aruintelligence/aml-core/blob/main/protocol/action-boundary-evidence-receipt.schema.json",
+  "title": "Project-authored simulated action-boundary evidence receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol", "case_id", "provenance", "proposal", "host_policy", "host_fixture", "expected_plan", "expected_dispatch_receipt", "expected_tool_calls", "expected_executed_proposal", "proposal_input_sha256", "initial_policy_sha256", "receipt_sha256"],
+  "properties": {
+    "protocol": { "const": "aml-action-boundary-evidence-receipt/1" },
+    "case_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "provenance": { "const": "project-authored deterministic simulated-host fixture" },
+    "proposal": { "type": "object" },
+    "host_policy": { "type": "object" },
+    "host_fixture": { "type": "object" },
+    "expected_plan": { "$ref": "#/$defs/plan" },
+    "expected_dispatch_receipt": { "$ref": "#/$defs/dispatch" },
+    "expected_tool_calls": { "type": "integer", "minimum": 0, "maximum": 1 },
+    "expected_executed_proposal": { "type": ["object", "null"] },
+    "proposal_input_sha256": { "$ref": "#/$defs/hash" },
+    "initial_policy_sha256": { "$ref": "#/$defs/hash" },
+    "receipt_sha256": { "$ref": "#/$defs/hash" }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "plan": {
+      "type": "object", "additionalProperties": false,
+      "required": ["protocol", "proposal_sha256", "decision", "reason"],
+      "properties": {
+        "protocol": { "const": "aml-action-plan/1" },
+        "proposal_sha256": { "oneOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }] },
+        "decision": { "enum": ["allow", "requires_approval", "deny"] },
+        "reason": { "enum": ["exact_rule", "no_exact_rule", "ambiguous_policy", "invalid_policy", "invalid_proposal"] }
+      }
+    },
+    "dispatch": {
+      "type": "object", "additionalProperties": false,
+      "required": ["protocol", "proposal_sha256", "policy_decision", "execution_status", "reason"],
+      "properties": {
+        "protocol": { "const": "aml-action-dispatch/1" },
+        "proposal_sha256": { "oneOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }] },
+        "policy_decision": { "enum": ["allow", "requires_approval", "deny"] },
+        "execution_status": { "enum": ["blocked", "dispatched", "unknown"] },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "description": "Hash the canonical JSON of all properties except receipt_sha256. The hash binds the declared inputs and expected simulated outputs but is not a signature, third-party witness, or proof of delivery."
+}

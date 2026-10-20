@@ -1,5 +1,7 @@
 # ĀML Action Boundary Challenge
 
+The [expanded 100-case challenge](ACTION_BOUNDARY_EXPANDED_CHALLENGE.md) publishes full proposal/policy fixtures, simulated evidence receipts, receipt hashes, and JavaScript/Python replay checks while preserving this original 13-case interoperability contract.
+
 **Status: project-authored challenge; outside implementations and witnesses are invited.**
 
 This challenge asks a narrow, reproducible question: can another implementation freeze a proposed tool call, match the exact host policy, bind approval to the proposal digest, and report the dispatch boundary accurately? It runs only simulated host callbacks and never supplies a live tool or a person's approval.
