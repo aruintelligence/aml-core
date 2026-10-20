@@ -17,5 +17,18 @@ node scripts/build-controlled-pilot-pages.mjs --check-before
 These pages are real public browser targets, but their content and duplicate
 labels are entirely project-authored. Ten URLs on one controlled site are ten
 page pilots, not ten unrelated organizations or independent validations. The
-before and after source checkpoints, browser screenshots and DOM hashes, and
-host boundary receipts are published in a subsequent evidence package.
+before source checkpoint is
+[`877a8f8`](https://github.com/aruintelligence/aml-core/commit/877a8f8d64adf2d44c27dda73f1efe9f88d60418).
+The after pages remove only `#redundant-contact`; the other HTML is byte for
+byte identical. The host-owned render gate validates that exact change, binds
+the before and after source hashes and the declared labels into the proposal,
+requires matching host approval, and writes the after files only through the
+frozen callback. Reproduce the ten dispatch receipts with:
+
+```sh
+node scripts/dispatch-controlled-pilot-pages.mjs --check
+```
+
+Browser screenshots and DOM hashes are captured from the deployed pages in a
+subsequent evidence package. The contact path is a public issue URL; these
+fixtures do not submit any issue.
