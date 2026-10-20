@@ -29,6 +29,7 @@ const files = [
   'docs/evidence/aml-action-browser-100.jpg',
   'docs/action-pilots/README.md', 'docs/action-pilots/dispatch-receipts.jsonl',
   'docs/action-receipt-adapters-report.json',
+  'docs/action-receipt-revocation-report.json',
   'registry/action-receipt-sources.json', 'registry/action-receipts.jsonl', 'registry/README.md',
   'scripts/build-action-boundary-expanded.mjs',
   'scripts/verify-action-boundary-expanded.mjs',
@@ -42,6 +43,7 @@ const files = [
   'scripts/dispatch-controlled-pilot-pages.mjs',
   'scripts/build-action-site-browser-receipts.mjs',
   'scripts/build-action-receipt-adapters-report.mjs',
+  'scripts/build-action-revocation-report.mjs',
   'scripts/verify-action-receipt-registry.mjs',
   'scripts/build-action-release-manifest.mjs',
   'test/action-boundary-expanded.test.js', 'test/action-five-runtime.test.js',
@@ -54,6 +56,7 @@ const files = [
   'publications/ACTION_BOUNDARY_CONTROLLED_PILOTS.md',
   'publications/ACTION_BOUNDARY_STRESS_375.md',
   'publications/ACTION_RECEIPT_ADAPTERS.md',
+  'publications/ACTION_RECEIPT_REVOCATION.md',
   'publications/ACTION_BOUNDARY_PROGRESS.md',
   'reproduction/action-boundary/SPEC.md',
   'reproduction/action-boundary/REPRODUCE.md',
@@ -71,7 +74,7 @@ const records = unique.map(relative => {
 const body = { protocol: 'aml-action-boundary-release-manifest/1',
   source: 'aruintelligence/aml-core', file_count: records.length,
   expected: { challenge_cases: 475, maintained_bindings: 5, controlled_pages: 10,
-    adapter_kinds: 4, registry_receipts: 500 },
+    adapter_kinds: 4, registry_receipts: 504 },
   files: records,
   claim_boundary: 'File hashes and Git source are reproducibility metadata, not a DOI or an independent witness.' };
 const output = JSON.stringify({ ...body, manifest_sha256: hash(canonicalJSONStringify(body)) }, null, 2) + '\n';

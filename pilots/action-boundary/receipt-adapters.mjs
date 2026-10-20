@@ -71,10 +71,11 @@ export function createReceiptBoundAdapter({ tool, effect, policy, secret, resolv
   async function issue(proposal) {
     const frozen = copy(proposal);
     const hostPolicy = copy(policy());
+    const policySha = hash(hostPolicy);
     const plan = planAction(frozen, hostPolicy);
     const proposalSha = hash(frozen);
     let target = null;
-    try { target = resolveTarget(frozen.arguments); } catch { /* fail closed */ }
+    try { target = resolveTarget(copy(frozen.arguments)); } catch { /* fail closed */ }
     let decision = 'SUPPRESS';
     let reason = target !== frozen.resource ? 'target_mismatch_or_invalid' : plan.reason;
     if (frozen.tool !== tool || frozen.effect !== effect) reason = 'wrong_adapter';
@@ -89,15 +90,31 @@ export function createReceiptBoundAdapter({ tool, effect, policy, secret, resolv
         decision = 'ALLOW'; reason = 'approved_exact_rule';
       } else reason = 'approval_missing_or_mismatched';
     }
+    if (decision === 'ALLOW') {
+      // An approval can outlive the rule or host destination mapping it saw.
+      // Recheck both immediately before minting a usable receipt.
+      let currentTarget;
+      try { currentTarget = resolveTarget(copy(frozen.arguments)); }
+      catch { currentTarget = null; }
+      if (currentTarget !== target || currentTarget !== frozen.resource) {
+        decision = 'SUPPRESS'; reason = 'target_changed';
+      } else {
+        let currentPolicy;
+        try { currentPolicy = copy(policy()); } catch { /* fail closed */ }
+        if (!currentPolicy || hash(currentPolicy) !== policySha) {
+          decision = 'SUPPRESS'; reason = 'policy_changed';
+        }
+      }
+    }
     const token = nonce();
     assert.ok(nonempty(token) && !seenNonces.has(token), 'nonce must be unique');
     seenNonces.add(token);
     const body = { protocol: 'aml-host-action-authorization/1', nonce: token,
       proposal: frozen, proposal_sha256: proposalSha, host_policy: hostPolicy,
-      policy_sha256: hash(hostPolicy), plan, resolved_target: target, decision, reason };
+      policy_sha256: policySha, plan, resolved_target: target, decision, reason };
     const receiptSha = hash(body);
     const receipt = { ...body, receipt_sha256: receiptSha, host_mac_sha256: mac(receiptSha) };
-    if (decision === 'ALLOW') issued.set(token, { receiptSha, proposal: frozen });
+    if (decision === 'ALLOW') issued.set(token, { receiptSha, proposal: copy(frozen) });
     return receipt;
   }
   async function dispatch(receipt, candidateProposal) {
@@ -110,14 +127,21 @@ export function createReceiptBoundAdapter({ tool, effect, policy, secret, resolv
     if (hash(candidate) !== receipt.proposal_sha256 ||
         hash(registered.proposal) !== receipt.proposal_sha256) return blocked('proposal_mismatch');
     let currentPolicy;
-    try { currentPolicy = copy(policy()); } catch { return blocked('policy_changed'); }
+    try { currentPolicy = copy(policy()); }
+    catch { issued.delete(receipt.nonce); return blocked('policy_changed'); }
     if (hash(currentPolicy) !== receipt.policy_sha256 ||
-        JSON.stringify(planAction(candidate, currentPolicy)) !== JSON.stringify(receipt.plan))
+        JSON.stringify(planAction(candidate, currentPolicy)) !== JSON.stringify(receipt.plan)) {
+      issued.delete(receipt.nonce);
       return blocked('policy_changed');
+    }
     let actualTarget;
-    try { actualTarget = resolveTarget(candidate.arguments); } catch { return blocked('target_mismatch'); }
+    try { actualTarget = resolveTarget(candidate.arguments); }
+    catch { issued.delete(receipt.nonce); return blocked('target_mismatch'); }
     if (actualTarget !== candidate.resource || actualTarget !== receipt.resolved_target ||
-        candidate.tool !== tool || candidate.effect !== effect) return blocked('target_mismatch');
+        candidate.tool !== tool || candidate.effect !== effect) {
+      issued.delete(receipt.nonce);
+      return blocked('target_mismatch');
+    }
     // Consume before calling the provider: a throw can follow a partial effect.
     issued.delete(receipt.nonce);
     try { return { decision: 'ALLOW', status: 'DISPATCHED', callback_count: 1,

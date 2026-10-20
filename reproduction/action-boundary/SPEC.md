@@ -52,6 +52,13 @@ current policy, resolved destination, and in-process one-use claim before
 calling the provider. The public fixtures use a known test key; production
 requires a private key and a durable grant store. See
 [`receipt-adapters.mjs`](../../pilots/action-boundary/receipt-adapters.mjs).
+The adapter rechecks the host policy and target after an awaited approval,
+before issuing `ALLOW`. An observed change to either at dispatch spends the
+grant, so restoring the earlier policy or target cannot revive it. The
+[revocation cohort](../../docs/action-receipt-revocation-report.json) records
+those transitions for four local provider shapes. An unobserved change that
+returns to identical policy bytes requires a host epoch or durable revocation
+record; the digest alone cannot reveal it.
 
 ## Published evidence and limits
 
