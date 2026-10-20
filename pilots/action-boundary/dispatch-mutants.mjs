@@ -76,8 +76,8 @@ export const mutations = Object.freeze([
   {
     id: "double_snapshot_receipt_split",
     change: "Read a changing caller proposal again after planning",
-    before: 'if (typeof executeTool !== "function") return { receipt: receipt("blocked", "missing_host_dispatch") };',
-    after: 'if (typeof executeTool !== "function") return { receipt: receipt("blocked", "missing_host_dispatch") };\n  frozen = snapshot(proposal);'
+    before: 'if (typeof executeTool !== "function") return { plan, receipt: receipt("blocked", "missing_host_dispatch") };',
+    after: 'if (typeof executeTool !== "function") return { plan, receipt: receipt("blocked", "missing_host_dispatch") };\n  frozen = snapshot(proposal);'
   }
 ]);
 

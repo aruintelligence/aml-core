@@ -1,7 +1,7 @@
 // Experimental host-side adapter for a single function tool's execute callback.
 // The host owns every option. Never construct policy, approval, or execute from
 // model output. This returns receipts, not evidence of external delivery.
-import { planAction, dispatchAction } from "./boundary.mjs";
+import { dispatchAction } from "./boundary.mjs";
 import { canonicalJSONStringify } from "../../protocol/canonicalJson.js";
 
 export function createGuardedToolExecute({
@@ -41,7 +41,6 @@ export function createGuardedToolExecute({
       protocol: "aml-proposed-action/1", tool, effect, resource, purpose,
       arguments: JSON.parse(argumentBytes)
     };
-    const plan = planAction(proposal, policy);
     const outcome = await dispatchAction(proposal, {
       policy,
       requestApproval: requestApproval && (input => requestApproval(input, context)),
@@ -50,7 +49,7 @@ export function createGuardedToolExecute({
     });
     return {
       protocol: "aml-guarded-tool-result/1",
-      plan,
+      plan: outcome.plan,
       receipt: outcome.receipt,
       ...(Object.hasOwn(outcome, "result") ? { result: outcome.result } : {})
     };
