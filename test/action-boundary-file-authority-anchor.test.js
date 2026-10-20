@@ -67,6 +67,18 @@ test("an independent checkpoint advances for issue, claim, and revocation", () =
     assert.throws(() => createFileRevocationHandoff({ directory }), /authority_anchor_required/);
   }));
 
+test("file anchor refuses a false protocol-3 genesis head", () =>
+  fixture(async ({ parent }) => {
+    const directory = path.join(parent, "new-anchor");
+    const anchor = createFileAuthorityAnchor({ directory });
+    assert.throws(() => anchor.compareAndSwap(null, {
+      protocol: "aml-file-authority-checkpoint/3", store_id: randomUUID(),
+      sequence: 0, head_sha256: "f".repeat(64), state_sha256: "0".repeat(64)
+    }), /invalid_anchor_transition/);
+    assert.equal(anchor.read(), null);
+    assert.deepEqual(fs.readdirSync(directory), []);
+  }));
+
 test("checkpoint authority rejects a different claim mode and a lost mode record", () =>
   fixture(async ({ parent, directory, anchor, host }) => {
     const claimDirectory = path.join(parent, "additional-claims");
