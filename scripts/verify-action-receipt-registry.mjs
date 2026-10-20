@@ -27,13 +27,15 @@ for (const source of sources.sources) {
   assert.ok(!source.path.startsWith('/') && !source.path.includes('..'));
   const bytes = fs.readFileSync(path.join(root, source.path));
   const records = source.path.endsWith('.jsonl') ? bytes.toString('utf8').trimEnd().split('\n').map(JSON.parse) :
-    [JSON.parse(bytes.toString('utf8'))];
+    source.collection ? JSON.parse(bytes.toString('utf8'))[source.collection] :
+      [JSON.parse(bytes.toString('utf8'))];
+  assert.ok(Array.isArray(records));
   assert.equal(records.length, source.count, source.path);
   const fileSha = sha(bytes);
   for (const [index, record] of records.entries()) {
     const { receipt_sha256, ...body } = record;
     assert.equal(receipt_sha256, hash(body), `${source.path}:${index + 1}`);
-    const identifier = record.case_id ?? record.pilot_id ?? record.protocol;
+    const identifier = record.case_id ?? record.pilot_id ?? record.adapter ?? record.protocol;
     const id = `${source.kind}:${identifier}`;
     assert.ok(!ids.has(id), `duplicate registry ID: ${id}`);
     ids.add(id);
@@ -72,7 +74,8 @@ if (mode === '--check') {
     ['python3', ['scripts/verify-action-boundary-expanded.py']],
     ['node', ['scripts/verify-action-browser-observation.mjs']],
     ['node', ['scripts/dispatch-controlled-pilot-pages.mjs', '--check']],
-    ['node', ['scripts/build-action-site-browser-receipts.mjs', '--check']]
+    ['node', ['scripts/build-action-site-browser-receipts.mjs', '--check']],
+    ['node', ['scripts/build-action-receipt-adapters-report.mjs', '--check']]
   ];
   for (const [program, args] of commands) {
     execFileSync(program, args, { cwd: root, stdio: 'pipe', maxBuffer: 4 * 1024 * 1024 });

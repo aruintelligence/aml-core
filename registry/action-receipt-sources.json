@@ -4,7 +4,8 @@
     { "kind": "simulated_challenge", "path": "conformance/action-boundary-expanded-receipts.jsonl", "count": 100 },
     { "kind": "browser_matrix_observation", "path": "docs/evidence/aml-action-browser-100.json", "count": 1 },
     { "kind": "controlled_site_dispatch", "path": "docs/action-pilots/dispatch-receipts.jsonl", "count": 10 },
-    { "kind": "controlled_site_browser", "path": "docs/action-pilots/evidence/browser-receipts.jsonl", "count": 10 }
+    { "kind": "controlled_site_browser", "path": "docs/action-pilots/evidence/browser-receipts.jsonl", "count": 10 },
+    { "kind": "integration_adapter", "path": "docs/action-receipt-adapters-report.json", "collection": "adapters", "count": 4 }
   ],
   "claim_boundary": "A project-maintained hash-chain index over distinct receipts. The underlying verifiers check the proposal, host policy, outcomes and browser evidence. A Git commit and CI history expose later edits; a bare SHA-256 cannot authenticate the actor or prove an external side effect."
 }

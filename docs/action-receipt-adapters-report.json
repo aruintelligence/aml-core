@@ -1,0 +1,526 @@
+{
+  "protocol": "aml-receipt-adapter-report/1",
+  "adapters": [
+    {
+      "protocol": "aml-receipt-adapter-evidence/1",
+      "adapter": "email",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "send_email",
+        "effect": "send",
+        "resource": "mail:03172590cfc19aaf50d1cfeeeea0eede7b280c6b49613372b7c0227b3873b998",
+        "purpose": "Controlled email adapter",
+        "arguments": {
+          "to": "team@example.test",
+          "cc": [
+            "review@example.test"
+          ],
+          "bcc": [],
+          "subject": "Report",
+          "body": "Build passed."
+        }
+      },
+      "host_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "effect": "send",
+            "requires_approval": true,
+            "resource": "mail:03172590cfc19aaf50d1cfeeeea0eede7b280c6b49613372b7c0227b3873b998",
+            "tool": "send_email"
+          }
+        ]
+      },
+      "authorization_receipt": {
+        "protocol": "aml-host-action-authorization/1",
+        "nonce": "email-1",
+        "proposal": {
+          "arguments": {
+            "bcc": [],
+            "body": "Build passed.",
+            "cc": [
+              "review@example.test"
+            ],
+            "subject": "Report",
+            "to": "team@example.test"
+          },
+          "effect": "send",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Controlled email adapter",
+          "resource": "mail:03172590cfc19aaf50d1cfeeeea0eede7b280c6b49613372b7c0227b3873b998",
+          "tool": "send_email"
+        },
+        "proposal_sha256": "3596dd482b221e10df2cd7265993aafa891608e8b1fbdcb74500c8d89e07e3d6",
+        "host_policy": {
+          "protocol": "aml-action-policy/1",
+          "rules": [
+            {
+              "effect": "send",
+              "requires_approval": true,
+              "resource": "mail:03172590cfc19aaf50d1cfeeeea0eede7b280c6b49613372b7c0227b3873b998",
+              "tool": "send_email"
+            }
+          ]
+        },
+        "policy_sha256": "d664e46d6ba10745b65bda175d20a2cb0f84f7c2249da42adc84c6e955792f6d",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "3596dd482b221e10df2cd7265993aafa891608e8b1fbdcb74500c8d89e07e3d6",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "resolved_target": "mail:03172590cfc19aaf50d1cfeeeea0eede7b280c6b49613372b7c0227b3873b998",
+        "decision": "ALLOW",
+        "reason": "approved_exact_rule",
+        "receipt_sha256": "13260b3b107cee11c921163451107f48d9296a654f5020cdf1c6fbc4ca5783f6",
+        "host_mac_sha256": "2b2ff381de3d3e2301185422bc5608dca28b87e9e44b589c3ee4a69a9c728128"
+      },
+      "observations": {
+        "no_receipt": {
+          "decision": "SUPPRESS",
+          "reason": "invalid_receipt",
+          "callback_count": 0
+        },
+        "changed_target": {
+          "decision": "SUPPRESS",
+          "reason": "proposal_mismatch",
+          "callback_count": 0
+        },
+        "changed_payload": {
+          "decision": "SUPPRESS",
+          "reason": "proposal_mismatch",
+          "callback_count": 0
+        },
+        "changed_receipt": {
+          "decision": "SUPPRESS",
+          "reason": "invalid_receipt",
+          "callback_count": 0
+        },
+        "declared_target_mismatch": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_suppressed",
+          "callback_count": 0
+        },
+        "valid": {
+          "decision": "ALLOW",
+          "status": "DISPATCHED",
+          "callback_count": 1,
+          "result": {
+            "accepted": true,
+            "args": [
+              {
+                "bcc": [],
+                "body": "Build passed.",
+                "cc": [
+                  "review@example.test"
+                ],
+                "subject": "Report",
+                "to": "team@example.test"
+              }
+            ]
+          }
+        },
+        "replay": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_reused_or_unknown",
+          "callback_count": 0
+        },
+        "policy_revoked": {
+          "decision": "SUPPRESS",
+          "reason": "policy_changed",
+          "callback_count": 0
+        }
+      },
+      "callback_count_before": 0,
+      "callback_count_after": 1,
+      "claim_boundary": "Project-maintained local callbacks and a public test signing key. No email, HTTP request, database, or browser UI side effect was sent to an external service.",
+      "receipt_sha256": "670ccb5414fd1972ed031eba02b2db0ee9007a128bdc9b546f3dd3862790dca2"
+    },
+    {
+      "protocol": "aml-receipt-adapter-evidence/1",
+      "adapter": "http",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "http_request",
+        "effect": "write",
+        "resource": "https://api.example.test/v1/status",
+        "purpose": "Controlled http adapter",
+        "arguments": {
+          "url": "https://api.example.test/v1/status",
+          "method": "POST",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": "{\"ready\":true}"
+        }
+      },
+      "host_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "effect": "write",
+            "requires_approval": false,
+            "resource": "https://api.example.test/v1/status",
+            "tool": "http_request"
+          }
+        ]
+      },
+      "authorization_receipt": {
+        "protocol": "aml-host-action-authorization/1",
+        "nonce": "http-1",
+        "proposal": {
+          "arguments": {
+            "body": "{\"ready\":true}",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "method": "POST",
+            "url": "https://api.example.test/v1/status"
+          },
+          "effect": "write",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Controlled http adapter",
+          "resource": "https://api.example.test/v1/status",
+          "tool": "http_request"
+        },
+        "proposal_sha256": "79a4b461c706f263df1345d61af88fadca8f3511d4b6d6ea615c794d7617033f",
+        "host_policy": {
+          "protocol": "aml-action-policy/1",
+          "rules": [
+            {
+              "effect": "write",
+              "requires_approval": false,
+              "resource": "https://api.example.test/v1/status",
+              "tool": "http_request"
+            }
+          ]
+        },
+        "policy_sha256": "89384c76b2b771ebb5424a563659591b43a0f1040c337ed9b6540121505232e7",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "79a4b461c706f263df1345d61af88fadca8f3511d4b6d6ea615c794d7617033f",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "resolved_target": "https://api.example.test/v1/status",
+        "decision": "ALLOW",
+        "reason": "exact_rule",
+        "receipt_sha256": "b5b6323cf3605d20922ff280cd2bd1be9637416e60b5bc0a005fb7f067b8c547",
+        "host_mac_sha256": "a5a4b8b1a1cbf486e73c57b1dbed9278d38bc35652a1ce338a70b07ee8bc671e"
+      },
+      "observations": {
+        "no_receipt": {
+          "decision": "SUPPRESS",
+          "reason": "invalid_receipt",
+          "callback_count": 0
+        },
+        "changed_target": {
+          "decision": "SUPPRESS",
+          "reason": "proposal_mismatch",
+          "callback_count": 0
+        },
+        "changed_payload": {
+          "decision": "SUPPRESS",
+          "reason": "proposal_mismatch",
+          "callback_count": 0
+        },
+        "changed_receipt": {
+          "decision": "SUPPRESS",
+          "reason": "invalid_receipt",
+          "callback_count": 0
+        },
+        "declared_target_mismatch": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_suppressed",
+          "callback_count": 0
+        },
+        "valid": {
+          "decision": "ALLOW",
+          "status": "DISPATCHED",
+          "callback_count": 1,
+          "result": {
+            "accepted": true,
+            "args": [
+              "https://api.example.test/v1/status",
+              {
+                "method": "POST",
+                "headers": {
+                  "Content-Type": "application/json"
+                },
+                "body": "{\"ready\":true}",
+                "redirect": "manual"
+              }
+            ]
+          }
+        },
+        "replay": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_reused_or_unknown",
+          "callback_count": 0
+        },
+        "policy_revoked": {
+          "decision": "SUPPRESS",
+          "reason": "policy_changed",
+          "callback_count": 0
+        }
+      },
+      "callback_count_before": 0,
+      "callback_count_after": 1,
+      "claim_boundary": "Project-maintained local callbacks and a public test signing key. No email, HTTP request, database, or browser UI side effect was sent to an external service.",
+      "receipt_sha256": "b0c239eae0567573617e2b0867c3a4835a6739d3bdf1009f852ccc4dd3d8e270"
+    },
+    {
+      "protocol": "aml-receipt-adapter-evidence/1",
+      "adapter": "database",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "database_write",
+        "effect": "write",
+        "resource": "db:records/r42",
+        "purpose": "Controlled database adapter",
+        "arguments": {
+          "table": "records",
+          "key": "r42",
+          "value": {
+            "status": "ready"
+          }
+        }
+      },
+      "host_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "effect": "write",
+            "requires_approval": false,
+            "resource": "db:records/r42",
+            "tool": "database_write"
+          }
+        ]
+      },
+      "authorization_receipt": {
+        "protocol": "aml-host-action-authorization/1",
+        "nonce": "database-1",
+        "proposal": {
+          "arguments": {
+            "key": "r42",
+            "table": "records",
+            "value": {
+              "status": "ready"
+            }
+          },
+          "effect": "write",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Controlled database adapter",
+          "resource": "db:records/r42",
+          "tool": "database_write"
+        },
+        "proposal_sha256": "b5ec26ec420c6f941a24136f0bde1af3eea0cb0cb1b0f2ca12c8bf5e3a72a3a6",
+        "host_policy": {
+          "protocol": "aml-action-policy/1",
+          "rules": [
+            {
+              "effect": "write",
+              "requires_approval": false,
+              "resource": "db:records/r42",
+              "tool": "database_write"
+            }
+          ]
+        },
+        "policy_sha256": "40c5d86651954e847878a0cce1b6d071fe56fa0ae3b9d4d36f6cabfcef678195",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "b5ec26ec420c6f941a24136f0bde1af3eea0cb0cb1b0f2ca12c8bf5e3a72a3a6",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "resolved_target": "db:records/r42",
+        "decision": "ALLOW",
+        "reason": "exact_rule",
+        "receipt_sha256": "95c392c23361d443a19ce213d7439ddddba2c8effffbad19a632b0b68e69437f",
+        "host_mac_sha256": "76014328d40a9ccc3780f13e1f4895d252ecc40dc0a115e344b7e99ba62ff92d"
+      },
+      "observations": {
+        "no_receipt": {
+          "decision": "SUPPRESS",
+          "reason": "invalid_receipt",
+          "callback_count": 0
+        },
+        "changed_target": {
+          "decision": "SUPPRESS",
+          "reason": "proposal_mismatch",
+          "callback_count": 0
+        },
+        "changed_payload": {
+          "decision": "SUPPRESS",
+          "reason": "proposal_mismatch",
+          "callback_count": 0
+        },
+        "changed_receipt": {
+          "decision": "SUPPRESS",
+          "reason": "invalid_receipt",
+          "callback_count": 0
+        },
+        "declared_target_mismatch": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_suppressed",
+          "callback_count": 0
+        },
+        "valid": {
+          "decision": "ALLOW",
+          "status": "DISPATCHED",
+          "callback_count": 1,
+          "result": {
+            "accepted": true,
+            "args": [
+              "records",
+              "r42",
+              {
+                "status": "ready"
+              }
+            ]
+          }
+        },
+        "replay": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_reused_or_unknown",
+          "callback_count": 0
+        },
+        "policy_revoked": {
+          "decision": "SUPPRESS",
+          "reason": "policy_changed",
+          "callback_count": 0
+        }
+      },
+      "callback_count_before": 0,
+      "callback_count_after": 1,
+      "claim_boundary": "Project-maintained local callbacks and a public test signing key. No email, HTTP request, database, or browser UI side effect was sent to an external service.",
+      "receipt_sha256": "154693820c64957a2f371a247f111d5a69bb7aa7c2f63f1f160a8a33429db52e"
+    },
+    {
+      "protocol": "aml-receipt-adapter-evidence/1",
+      "adapter": "ui",
+      "proposal": {
+        "protocol": "aml-proposed-action/1",
+        "tool": "render_ui",
+        "effect": "write",
+        "resource": "ui:#status",
+        "purpose": "Controlled ui adapter",
+        "arguments": {
+          "root": "#status",
+          "text": "Ready"
+        }
+      },
+      "host_policy": {
+        "protocol": "aml-action-policy/1",
+        "rules": [
+          {
+            "effect": "write",
+            "requires_approval": false,
+            "resource": "ui:#status",
+            "tool": "render_ui"
+          }
+        ]
+      },
+      "authorization_receipt": {
+        "protocol": "aml-host-action-authorization/1",
+        "nonce": "ui-1",
+        "proposal": {
+          "arguments": {
+            "root": "#status",
+            "text": "Ready"
+          },
+          "effect": "write",
+          "protocol": "aml-proposed-action/1",
+          "purpose": "Controlled ui adapter",
+          "resource": "ui:#status",
+          "tool": "render_ui"
+        },
+        "proposal_sha256": "f5a98de9851b90fe5eecdc65a955d47c688462f4e7996606b8d0ebeb8b6721cc",
+        "host_policy": {
+          "protocol": "aml-action-policy/1",
+          "rules": [
+            {
+              "effect": "write",
+              "requires_approval": false,
+              "resource": "ui:#status",
+              "tool": "render_ui"
+            }
+          ]
+        },
+        "policy_sha256": "9bf841b9b98f87942f8778ae889900623c9ab92f35e3c2da1b9a862ab65c2ce9",
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "f5a98de9851b90fe5eecdc65a955d47c688462f4e7996606b8d0ebeb8b6721cc",
+          "decision": "allow",
+          "reason": "exact_rule"
+        },
+        "resolved_target": "ui:#status",
+        "decision": "ALLOW",
+        "reason": "exact_rule",
+        "receipt_sha256": "3811e1379553b986ad6894351fb7151b528f36db2676b38418e1977fad1ef050",
+        "host_mac_sha256": "8042cb64a9f8a46622b67e5fc93f115487a3af8d09196838c9fedbb63019d2ff"
+      },
+      "observations": {
+        "no_receipt": {
+          "decision": "SUPPRESS",
+          "reason": "invalid_receipt",
+          "callback_count": 0
+        },
+        "changed_target": {
+          "decision": "SUPPRESS",
+          "reason": "proposal_mismatch",
+          "callback_count": 0
+        },
+        "changed_payload": {
+          "decision": "SUPPRESS",
+          "reason": "proposal_mismatch",
+          "callback_count": 0
+        },
+        "changed_receipt": {
+          "decision": "SUPPRESS",
+          "reason": "invalid_receipt",
+          "callback_count": 0
+        },
+        "declared_target_mismatch": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_suppressed",
+          "callback_count": 0
+        },
+        "valid": {
+          "decision": "ALLOW",
+          "status": "DISPATCHED",
+          "callback_count": 1,
+          "result": {
+            "accepted": true,
+            "args": [
+              "#status",
+              "Ready"
+            ]
+          }
+        },
+        "replay": {
+          "decision": "SUPPRESS",
+          "reason": "receipt_reused_or_unknown",
+          "callback_count": 0
+        },
+        "policy_revoked": {
+          "decision": "SUPPRESS",
+          "reason": "policy_changed",
+          "callback_count": 0
+        }
+      },
+      "callback_count_before": 0,
+      "callback_count_after": 1,
+      "claim_boundary": "Project-maintained local callbacks and a public test signing key. No email, HTTP request, database, or browser UI side effect was sent to an external service.",
+      "receipt_sha256": "7c48405d562ba6a0c030653631c020a0c9e399477c1dd30d1e45194afc72be5e"
+    }
+  ],
+  "totals": {
+    "adapter_count": 4,
+    "callbacks_before": 0,
+    "callbacks_after": 4,
+    "blocked_variants": 28,
+    "dispatched": 4
+  },
+  "claim_boundary": "These are deterministic local adapter fixtures, not independent field validation."
+}

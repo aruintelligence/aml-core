@@ -1,0 +1,32 @@
+name: Action receipt adapters
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pilots/action-boundary/receipt-adapters.mjs"
+      - "scripts/build-action-receipt-adapters-report.mjs"
+      - "docs/action-receipt-adapters-report.json"
+      - "test/action-receipt-adapters.test.js"
+      - ".github/workflows/action-receipt-adapters.yml"
+  pull_request:
+    paths:
+      - "pilots/action-boundary/receipt-adapters.mjs"
+      - "scripts/build-action-receipt-adapters-report.mjs"
+      - "docs/action-receipt-adapters-report.json"
+      - "test/action-receipt-adapters.test.js"
+      - ".github/workflows/action-receipt-adapters.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/build-action-receipt-adapters-report.mjs --check
+      - run: node --test test/action-receipt-adapters.test.js

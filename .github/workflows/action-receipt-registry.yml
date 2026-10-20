@@ -10,6 +10,7 @@ on:
       - "docs/evidence/aml-action-browser-100.json"
       - "docs/action-pilots/dispatch-receipts.jsonl"
       - "docs/action-pilots/evidence/browser-receipts.jsonl"
+      - "docs/action-receipt-adapters-report.json"
       - ".github/workflows/action-receipt-registry.yml"
   pull_request:
     paths:
@@ -19,6 +20,7 @@ on:
       - "docs/evidence/aml-action-browser-100.json"
       - "docs/action-pilots/dispatch-receipts.jsonl"
       - "docs/action-pilots/evidence/browser-receipts.jsonl"
+      - "docs/action-receipt-adapters-report.json"
       - ".github/workflows/action-receipt-registry.yml"
 
 permissions:
