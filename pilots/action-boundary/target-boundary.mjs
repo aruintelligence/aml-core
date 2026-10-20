@@ -5,7 +5,7 @@ import { canonicalJSONStringify } from "../../protocol/canonicalJson.js";
 import { planAction, dispatchAction } from "./boundary.mjs";
 
 function blocked(plan, reason) {
-  return { receipt: { protocol: "aml-action-dispatch/1",
+  return { plan, receipt: { protocol: "aml-action-dispatch/1",
     proposal_sha256: plan.proposal_sha256, policy_decision: plan.decision,
     execution_status: "blocked", reason } };
 }
@@ -20,7 +20,8 @@ export async function dispatchTargetBoundAction(proposal, {
   catch {
     // The caller may have a changing getter or proxy. A second attempt could
     // bind this blocked receipt to different bytes than the failed snapshot.
-    return blocked({ proposal_sha256: null, decision: "deny" }, "invalid_proposal");
+    return blocked({ protocol: "aml-action-plan/1", proposal_sha256: null,
+      decision: "deny", reason: "invalid_proposal" }, "invalid_proposal");
   }
   const plan = planAction(frozen, policy);
   if (plan.decision === "deny") return blocked(plan, plan.reason);

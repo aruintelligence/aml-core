@@ -2,7 +2,7 @@
   "protocol": "aml-action-snapshot-proof/1",
   "provenance": "project-authored stateful accessor and local callback fixtures",
   "limits": "Two local fixtures with a changing JavaScript getter. No human approval, provider effect, arbitrary object behavior, or production safety proof.",
-  "boundary_source_sha256": "e0a16067f023a5281b22115f142f84c83fad29aeeec6327370cf0989aaecc11e",
+  "boundary_source_sha256": "97cb500b86e73eeb38fdf526ab04a51b637dde9d8c15daf75b67bd870f15b26c",
   "rows": [
     {
       "mode": "allow",

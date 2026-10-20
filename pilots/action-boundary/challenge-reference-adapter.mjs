@@ -4,13 +4,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { planAction, dispatchAction } from "./boundary.mjs";
+import { dispatchAction } from "./boundary.mjs";
 
 export async function runReferenceCase(input) {
   if (input.protocol !== "aml-action-challenge-case/1") throw new Error("Unknown case protocol");
   const proposal = structuredClone(input.proposal);
   const policy = structuredClone(input.policy);
-  const plan = planAction(proposal, policy);
   let toolCalls = 0;
   let executedProposal = null;
   const host = input.host;
@@ -36,7 +35,7 @@ export async function runReferenceCase(input) {
   });
   return {
     protocol: "aml-action-boundary-result/1",
-    plan,
+    plan: outcome.plan,
     receipt: outcome.receipt,
     tool_calls: toolCalls,
     executed_proposal: executedProposal
