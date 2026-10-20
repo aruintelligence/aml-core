@@ -270,6 +270,7 @@ function claimReconciliation(directory) {
     }
   }
   const epochPattern = /^[0-9a-f]{64}\.json$/;
+  const epochValues = new Map();
   for (const name of fs.readdirSync(path.join(directory, "epochs")).sort()) {
     if (!epochPattern.test(name)) {
       issues.push({ collection: "epochs", problem: "unexpected_filename" });
@@ -284,7 +285,7 @@ function claimReconciliation(directory) {
         epoch.issuer_sha256 !== issuerHash ||
         !Number.isSafeInteger(epoch.epoch) || epoch.epoch <= 0) {
       issues.push({ issuer_sha256: issuerHash, problem: "epoch_invalid" });
-    }
+    } else epochValues.set(issuerHash, epoch.epoch);
   }
   // Claims cover only spent grants. Inspect both sides of every operation link:
   // an orphan marker can block a host intent, while an unspent grant whose
@@ -316,6 +317,9 @@ function claimReconciliation(directory) {
       continue;
     }
     grants.set(grantId, grant);
+    if (grant.epoch > (epochValues.get(grant.issuer_sha256) ?? 0)) {
+      issues.push({ grant_id: grantId, problem: "grant_epoch_ahead" });
+    }
   }
   const operationPattern = /^[0-9a-f]{64}\.json$/;
   for (const name of fs.readdirSync(path.join(directory, "operations")).sort()) {
