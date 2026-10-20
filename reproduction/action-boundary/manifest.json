@@ -572,8 +572,8 @@
     },
     {
       "path": "publications/ACTION_BOUNDARY_PROGRESS.md",
-      "bytes": 4463,
-      "sha256": "dfebf590417e6b6ba462e999f95ac7d143545b7a918be58b1ba5f15a02c2685d"
+      "bytes": 4886,
+      "sha256": "0c641908c5885376fdc87ade1e29b65818c691ae2d9bc6881b883c6021d0248b"
     },
     {
       "path": "publications/ACTION_BOUNDARY_STRESS_375.md",
@@ -727,5 +727,5 @@
     }
   ],
   "claim_boundary": "File hashes and Git source are reproducibility metadata, not a DOI or an independent witness.",
-  "manifest_sha256": "92f6f4bd490c9a06a142a012bcfdf41e495dbabcaa79ad10d019d71d7114df4e"
+  "manifest_sha256": "91950fd91f12c30f2f84c33d7739784e91962c08fc8d410d8a8b0201d0b93151"
 }
