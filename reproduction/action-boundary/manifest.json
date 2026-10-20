@@ -43,7 +43,7 @@
     {
       "path": "docs/action-boundary-expanded-report.json",
       "bytes": 1123,
-      "sha256": "1546139ef00845d7615cec6dc402d0f59a6286ef9d34fb970ec35d7dffd7dbf5"
+      "sha256": "cba2e4032e689bf930106488d53bd7049249a259fab64cfef7c4eabd270731f3"
     },
     {
       "path": "docs/action-browser-cases.json",
@@ -542,8 +542,8 @@
     },
     {
       "path": "protocol/action-boundary-evidence-receipt.schema.json",
-      "bytes": 2745,
-      "sha256": "64d2751bab5500c60911186813ce79cea0114e4b66c406c7a537a76531649e41"
+      "bytes": 2810,
+      "sha256": "01437369cd0c334f808f173eefe4025cda5dbd3735e591007dd39c3d3a39c41f"
     },
     {
       "path": "protocol/action-receipt-registry-entry.schema.json",
@@ -572,8 +572,8 @@
     },
     {
       "path": "publications/ACTION_BOUNDARY_PROGRESS.md",
-      "bytes": 3782,
-      "sha256": "cc358c9ff84b71e560bff489ec75a66893a0fce2425edcfb112d6fe9eeab4e4d"
+      "bytes": 4463,
+      "sha256": "dfebf590417e6b6ba462e999f95ac7d143545b7a918be58b1ba5f15a02c2685d"
     },
     {
       "path": "publications/ACTION_BOUNDARY_STRESS_375.md",
@@ -612,8 +612,8 @@
     },
     {
       "path": "reproduction/action-boundary/SPEC.md",
-      "bytes": 5345,
-      "sha256": "72b060d56a1f4acf3403a027988a1f7228e241d72339a6f80913ae2697715307"
+      "bytes": 5346,
+      "sha256": "b083465101b24f1794a1dffdc1178c7492bdf4d0dee987f4ad0892e2ef804d5e"
     },
     {
       "path": "reproduction/action-boundary/reproduce.sh",
@@ -727,5 +727,5 @@
     }
   ],
   "claim_boundary": "File hashes and Git source are reproducibility metadata, not a DOI or an independent witness.",
-  "manifest_sha256": "262f967147ba0c36837a4a081532ee85fe60c65b9e8d2688c82605cc1918f158"
+  "manifest_sha256": "92f6f4bd490c9a06a142a012bcfdf41e495dbabcaa79ad10d019d71d7114df4e"
 }
