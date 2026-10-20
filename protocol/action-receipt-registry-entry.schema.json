@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aruintelligence.github.io/aml-core/protocol/action-receipt-registry-entry.schema.json",
+  "title": "AML action receipt registry entry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol", "sequence", "id", "kind", "source_path", "source_record", "source_file_sha256", "receipt_sha256", "previous_entry_sha256", "entry_sha256"],
+  "properties": {
+    "protocol": { "const": "aml-action-receipt-registry-entry/1" },
+    "sequence": { "type": "integer", "minimum": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "kind": { "type": "string", "pattern": "^[a-z_]+$" },
+    "source_path": { "type": "string", "minLength": 1 },
+    "source_record": { "type": "integer", "minimum": 1 },
+    "source_file_sha256": { "$ref": "#/$defs/sha256" },
+    "receipt_sha256": { "$ref": "#/$defs/sha256" },
+    "previous_entry_sha256": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/sha256" }] },
+    "entry_sha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": { "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" } }
+}
