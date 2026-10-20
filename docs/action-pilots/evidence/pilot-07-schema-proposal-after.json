@@ -1,0 +1,19 @@
+{
+  "protocol": "aml-controlled-site-browser-state/1",
+  "pilot_id": "07",
+  "stage": "after",
+  "source_commit": "bb64ada9071307be762a295b6c482439a5bff21b",
+  "url": "https://aruintelligence.github.io/aml-core/action-pilots/after/07-schema-proposal.html",
+  "observed_at": "2026-10-20T04:19:08.868Z",
+  "title": "Schema proposal · controlled action pilot 07",
+  "dom_file": "pilot-07-schema-proposal-after.dom.html",
+  "dom_sha256": "2341e2e9ef9f068581254fd034a70960f8bc5e5bf93f1d1f2a143261c068fdca",
+  "target_selector": "#redundant-contact",
+  "target_outer_html": null,
+  "target_count": 0,
+  "contact_selector": "#contact-action",
+  "contact_outer_html": "<a id=\"contact-action\" href=\"https://github.com/aruintelligence/aml-core/issues/new\">Propose a schema change</a>",
+  "contact_count": 1,
+  "screenshot_file": "pilot-07-schema-proposal-after.jpg",
+  "screenshot_sha256": "cb2528d2057dcd00551c8f4a62182f2d239c344750004e8035f87f1e349706c0"
+}

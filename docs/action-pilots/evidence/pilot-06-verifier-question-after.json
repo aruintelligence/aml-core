@@ -1,0 +1,19 @@
+{
+  "protocol": "aml-controlled-site-browser-state/1",
+  "pilot_id": "06",
+  "stage": "after",
+  "source_commit": "bb64ada9071307be762a295b6c482439a5bff21b",
+  "url": "https://aruintelligence.github.io/aml-core/action-pilots/after/06-verifier-question.html",
+  "observed_at": "2026-10-20T04:19:08.696Z",
+  "title": "Verifier question · controlled action pilot 06",
+  "dom_file": "pilot-06-verifier-question-after.dom.html",
+  "dom_sha256": "6d27fdd09cda76f696c9c1b18b2806505fa93e9f6631941be93ec837cdb771f5",
+  "target_selector": "#redundant-contact",
+  "target_outer_html": null,
+  "target_count": 0,
+  "contact_selector": "#contact-action",
+  "contact_outer_html": "<a id=\"contact-action\" href=\"https://github.com/aruintelligence/aml-core/issues/new\">Ask about verification</a>",
+  "contact_count": 1,
+  "screenshot_file": "pilot-06-verifier-question-after.jpg",
+  "screenshot_sha256": "19de7fbe94d38c08f3cc85551122686596b214b12a7b507e6e3f282c58f70e18"
+}

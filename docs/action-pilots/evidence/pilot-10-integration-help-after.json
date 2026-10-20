@@ -1,0 +1,19 @@
+{
+  "protocol": "aml-controlled-site-browser-state/1",
+  "pilot_id": "10",
+  "stage": "after",
+  "source_commit": "bb64ada9071307be762a295b6c482439a5bff21b",
+  "url": "https://aruintelligence.github.io/aml-core/action-pilots/after/10-integration-help.html",
+  "observed_at": "2026-10-20T04:19:09.327Z",
+  "title": "Integration help · controlled action pilot 10",
+  "dom_file": "pilot-10-integration-help-after.dom.html",
+  "dom_sha256": "786e629f015dc959e0e60580fa0eec54bf971e898df03f9d0fe6ea60b8e1c6db",
+  "target_selector": "#redundant-contact",
+  "target_outer_html": null,
+  "target_count": 0,
+  "contact_selector": "#contact-action",
+  "contact_outer_html": "<a id=\"contact-action\" href=\"https://github.com/aruintelligence/aml-core/issues/new\">Ask an integration question</a>",
+  "contact_count": 1,
+  "screenshot_file": "pilot-10-integration-help-after.jpg",
+  "screenshot_sha256": "95970cc4f9470b884798f5bc06df54e7388ddda9ff6321cdff4634ac1f8dc9fa"
+}

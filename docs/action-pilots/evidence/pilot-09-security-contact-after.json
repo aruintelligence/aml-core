@@ -1,0 +1,19 @@
+{
+  "protocol": "aml-controlled-site-browser-state/1",
+  "pilot_id": "09",
+  "stage": "after",
+  "source_commit": "bb64ada9071307be762a295b6c482439a5bff21b",
+  "url": "https://aruintelligence.github.io/aml-core/action-pilots/after/09-security-contact.html",
+  "observed_at": "2026-10-20T04:19:09.181Z",
+  "title": "Security contact path · controlled action pilot 09",
+  "dom_file": "pilot-09-security-contact-after.dom.html",
+  "dom_sha256": "d8be566d798089fc40a5af4d328b9e6f2a9127c1f90bf27a9b9d785de618c6d0",
+  "target_selector": "#redundant-contact",
+  "target_outer_html": null,
+  "target_count": 0,
+  "contact_selector": "#contact-action",
+  "contact_outer_html": "<a id=\"contact-action\" href=\"https://github.com/aruintelligence/aml-core/issues/new\">Open a public project issue</a>",
+  "contact_count": 1,
+  "screenshot_file": "pilot-09-security-contact-after.jpg",
+  "screenshot_sha256": "d0b2de2c0e2b80646b3de0e71f35934572306361d1bfe99659ec167f7931ce65"
+}

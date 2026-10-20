@@ -1,0 +1,19 @@
+{
+  "protocol": "aml-controlled-site-browser-state/1",
+  "pilot_id": "03",
+  "stage": "after",
+  "source_commit": "bb64ada9071307be762a295b6c482439a5bff21b",
+  "url": "https://aruintelligence.github.io/aml-core/action-pilots/after/03-example-request.html",
+  "observed_at": "2026-10-20T04:19:08.228Z",
+  "title": "Example request · controlled action pilot 03",
+  "dom_file": "pilot-03-example-request-after.dom.html",
+  "dom_sha256": "694319f92f23729612f162c847910a31e4a4b8de9560002dad758cd3e39dba9b",
+  "target_selector": "#redundant-contact",
+  "target_outer_html": null,
+  "target_count": 0,
+  "contact_selector": "#contact-action",
+  "contact_outer_html": "<a id=\"contact-action\" href=\"https://github.com/aruintelligence/aml-core/issues/new\">Request an example</a>",
+  "contact_count": 1,
+  "screenshot_file": "pilot-03-example-request-after.jpg",
+  "screenshot_sha256": "dafa236782ea3792c41c918a3abf337b3f38126c5db3b7671ce8db9e00c79136"
+}

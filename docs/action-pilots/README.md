@@ -29,6 +29,7 @@ frozen callback. Reproduce the ten dispatch receipts with:
 node scripts/dispatch-controlled-pilot-pages.mjs --check
 ```
 
-Browser screenshots and DOM hashes are captured from the deployed pages in a
-subsequent evidence package. The contact path is a public issue URL; these
-fixtures do not submit any issue.
+The [observed pilot report](../../publications/ACTION_BOUNDARY_CONTROLLED_PILOTS.md)
+links ten before and after live page pairs, twenty browser screenshots, twenty
+serialized DOM files, the browser observations, and ten paired SHA-256 receipts.
+The contact path is a public issue URL; these fixtures do not submit any issue.

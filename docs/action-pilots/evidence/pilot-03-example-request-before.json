@@ -1,0 +1,19 @@
+{
+  "protocol": "aml-controlled-site-browser-state/1",
+  "pilot_id": "03",
+  "stage": "before",
+  "source_commit": "877a8f8d64adf2d44c27dda73f1efe9f88d60418",
+  "url": "https://aruintelligence.github.io/aml-core/action-pilots/before/03-example-request.html",
+  "observed_at": "2026-10-20T04:17:43.801Z",
+  "title": "Example request · controlled action pilot 03",
+  "dom_file": "pilot-03-example-request-before.dom.html",
+  "dom_sha256": "7f13133b8f3b151c32ee579dc995e1ac83f7bef2a7fefc608c680c1113f77942",
+  "target_selector": "#redundant-contact",
+  "target_outer_html": "<aside id=\"redundant-contact\" class=\"duplicate card\" data-pilot-target=\"redundant_duplicate\" aria-label=\"Repeated contact action\">\n      <span class=\"overline\">Repeated action · card</span>\n      <a href=\"https://github.com/aruintelligence/aml-core/issues/new\">Request an example</a>\n    </aside>",
+  "target_count": 1,
+  "contact_selector": "#contact-action",
+  "contact_outer_html": "<a id=\"contact-action\" href=\"https://github.com/aruintelligence/aml-core/issues/new\">Request an example</a>",
+  "contact_count": 1,
+  "screenshot_file": "pilot-03-example-request-before.jpg",
+  "screenshot_sha256": "de45120f08c2ab31b813f57aa40235b7026947de8e2545285fd036f0134f189e"
+}
