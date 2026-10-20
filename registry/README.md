@@ -4,8 +4,10 @@ This JSONL registry indexes the receipt-binding work, in order. The initial
 snapshot contained 100 project-authored simulated challenge receipts, one
 observed Chrome matrix receipt, ten controlled-site host dispatch receipts,
 and ten paired browser pilot receipts. Four local integration adapter receipts
-were then appended. These are 125 distinct machine-verifiable
-receipts, with their categories visible in every row.
+were then appended. A further 375 project-authored simulated stress receipts
+follow those 125 unchanged rows. These are **500 distinct machine-verifiable
+receipts**, with their categories visible in every row. The new cases are
+test fixtures, not 375 observed external effects.
 
 Each row follows the [entry schema](../protocol/action-receipt-registry-entry.schema.json)
 and binds its source file SHA-256, source record number, receipt SHA-256,
@@ -21,8 +23,9 @@ node scripts/verify-action-receipt-registry.mjs --check
 ```
 
 This recomputes the chain and every underlying receipt hash, replays the 100
-cases in JavaScript and Python, and checks the browser observation, ten
-paired pilot evidence packages, and four adapters. CI also compares the registry to the first
+expanded cases and 375 stress cases in the maintained bindings, and checks the
+browser observation, ten paired pilot evidence packages, and four adapters.
+CI also compares the registry to the first
 parent commit, so a pull request cannot silently edit or remove earlier rows.
 To append a new source, add it to the end of the sources manifest and run
 `node scripts/verify-action-receipt-registry.mjs --write`. The command rejects

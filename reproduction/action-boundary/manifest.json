@@ -1,13 +1,13 @@
 {
   "protocol": "aml-action-boundary-release-manifest/1",
   "source": "aruintelligence/aml-core",
-  "file_count": 133,
+  "file_count": 140,
   "expected": {
-    "challenge_cases": 100,
+    "challenge_cases": 475,
     "maintained_bindings": 5,
     "controlled_pages": 10,
     "adapter_kinds": 4,
-    "registry_receipts": 125
+    "registry_receipts": 500
   },
   "files": [
     {
@@ -29,6 +29,16 @@
       "path": "conformance/action-boundary-expanded-receipts.jsonl",
       "bytes": 142144,
       "sha256": "c96ec0c7e2b30e01d7f5e6dedd2f984530c82a613cdba7aee757738fbf690328"
+    },
+    {
+      "path": "conformance/action-stress-375-cases.json",
+      "bytes": 895149,
+      "sha256": "6d0d3679461643573d0fb9934bc739e03aeb78bb1835ec1a8bb0451714819d72"
+    },
+    {
+      "path": "conformance/action-stress-375-receipts.jsonl",
+      "bytes": 641384,
+      "sha256": "d3ace14330a9d8fdd3bb248dcb9bd63f661299516d95bf132e7c2ad823423c77"
     },
     {
       "path": "docs/action-boundary-expanded-report.json",
@@ -471,6 +481,11 @@
       "sha256": "1cbae8522048e94f55266e64b9e9d2808bdc011cbad155e74800e1c4385a68e8"
     },
     {
+      "path": "docs/action-stress-five-runtime-report.json",
+      "bytes": 247641,
+      "sha256": "40bc147a3a19df0f0aff3187475c8483d6c20819e86bb3753070b5749d051fe3"
+    },
+    {
       "path": "docs/action-webcrypto-boundary.js",
       "bytes": 4273,
       "sha256": "a9ddd1961b9c09f28f7905f0485ae5d60198b24ca83f094da697ff04b6d9a747"
@@ -552,8 +567,13 @@
     },
     {
       "path": "publications/ACTION_BOUNDARY_PROGRESS.md",
-      "bytes": 2936,
-      "sha256": "eae312d4c557536d91b9db2d8a81b3eed1e0b0d0d3a3c78a88d7ec5e6a5fb6a5"
+      "bytes": 3404,
+      "sha256": "da33d8e9384d8f92db576610aa834b76a13e748a26777dc5f11a3bc3a0a48c8e"
+    },
+    {
+      "path": "publications/ACTION_BOUNDARY_STRESS_375.md",
+      "bytes": 3493,
+      "sha256": "c0b5653b1beb2de35f57ad4ff74d58da8b795a10eba266999de79052dbee4fb9"
     },
     {
       "path": "publications/ACTION_RECEIPT_ADAPTERS.md",
@@ -562,33 +582,33 @@
     },
     {
       "path": "registry/README.md",
-      "bytes": 1730,
-      "sha256": "b7266ae224fa5d220118cc8bade0da94d15c3da7f87f5e8ac2a1f1cabc0e1f7c"
+      "bytes": 1924,
+      "sha256": "39dd10aaea904eb6521ca0f0e49c2c1b9ffa1a52c136a920207615784c90386b"
     },
     {
       "path": "registry/action-receipt-sources.json",
-      "bytes": 963,
-      "sha256": "5a4f1ea3a0c333dc7fb42c9e5dcdc5b8855715574219cb4c829a625411f7cd29"
+      "bytes": 1069,
+      "sha256": "f4f48ca1e06431a6dcdb890af6e2e9717fde2d4695534156782f93ec603194eb"
     },
     {
       "path": "registry/action-receipts.jsonl",
-      "bytes": 71450,
-      "sha256": "8aeae680448027e31e43ba2b2917966611f14ca59d6dfa312c7f9362c620f487"
+      "bytes": 286067,
+      "sha256": "76d62dfc21b044fb50a37f6eb67cd5358f953a56cdf52f7f19391c8803f8c111"
     },
     {
       "path": "reproduction/action-boundary/REPRODUCE.md",
-      "bytes": 1228,
-      "sha256": "b74a67f33d9d44bc3c83428040bd915be44f240a4084754bceccfc3a816b9941"
+      "bytes": 1301,
+      "sha256": "509917a56d8207c47c96f78cbcf8b32cdae4f72bce4c30a1797e12d20dc35d01"
     },
     {
       "path": "reproduction/action-boundary/SPEC.md",
-      "bytes": 4446,
-      "sha256": "82b9993a2012ceee6943a652b0fa6fd835825bceea4bebbe9b88348053f7a8ff"
+      "bytes": 4848,
+      "sha256": "933b5fc840c0bd99a2b149293b2c7b34eb1f132398f3aef66b6779e872ea05b4"
     },
     {
       "path": "reproduction/action-boundary/reproduce.sh",
-      "bytes": 904,
-      "sha256": "8541b392bde3bf3b6ffe2cf98f871faad3f86d9d4ee8c0aed089593ab0d79462"
+      "bytes": 1049,
+      "sha256": "29d1a9c1b1f4dbb749f0f8314ab390695d70d9f169fdad6fe10d25aded5d7a69"
     },
     {
       "path": "scripts/build-action-boundary-expanded.mjs",
@@ -607,13 +627,23 @@
     },
     {
       "path": "scripts/build-action-release-manifest.mjs",
-      "bytes": 4277,
-      "sha256": "1571bda934214c198f27fe15fce59dfc1fe92a5038f1bd8c4045c3276bcd8c00"
+      "bytes": 4596,
+      "sha256": "f638e1dc23cdb12d9e4807d8f7e9fcaa93c296be5dbc71fad4f8f7f4db5b391f"
     },
     {
       "path": "scripts/build-action-site-browser-receipts.mjs",
       "bytes": 6880,
       "sha256": "55d459d2dd465f565c84e3669aaee9036f8fc6312deb4b44b95015e952f3fe2f"
+    },
+    {
+      "path": "scripts/build-action-stress-375.mjs",
+      "bytes": 10517,
+      "sha256": "8a4c4f64264dd032a75043bb002a34cad0068cd7b6889ad1e02a6b6a0646c7ea"
+    },
+    {
+      "path": "scripts/build-action-stress-matrix.mjs",
+      "bytes": 5764,
+      "sha256": "9a7f97c56853ed1e45c05b1cf7e2e505e2bd709911d58b6e2840089cf711c94e"
     },
     {
       "path": "scripts/build-controlled-pilot-pages.mjs",
@@ -642,8 +672,13 @@
     },
     {
       "path": "scripts/verify-action-receipt-registry.mjs",
-      "bytes": 4411,
-      "sha256": "2b3dca6e1f4d10700304574aedf3d7d103329ec64a7d59291f75b44595aaea89"
+      "bytes": 4604,
+      "sha256": "e447302a9a900193350339c61e66210635f88e282a467899ad59ff2b00a13a53"
+    },
+    {
+      "path": "scripts/verify-action-stress-375.py",
+      "bytes": 3466,
+      "sha256": "837af50b13e583adb824b709ac2ea0dabfcdcc2c85824da880eb7588a91be79d"
     },
     {
       "path": "test/action-boundary-expanded.test.js",
@@ -677,5 +712,5 @@
     }
   ],
   "claim_boundary": "File hashes and Git source are reproducibility metadata, not a DOI or an independent witness.",
-  "manifest_sha256": "cd681c30fe466522f9dab8901b65b9966bacaacb15faabc8aa38397bf2e67876"
+  "manifest_sha256": "96a18e98d977bf98da98c8a95d77cb3be1c78a788ffba9eaf05b8f9eacd0b858"
 }
