@@ -30,4 +30,6 @@ jobs:
       - run: |
           if test -f docs/action-pilots/after/01-support-hours.html; then
             node scripts/build-controlled-pilot-pages.mjs --check-after
+            node scripts/dispatch-controlled-pilot-pages.mjs --check
+            node --test test/action-controlled-site-pilots.test.js
           fi

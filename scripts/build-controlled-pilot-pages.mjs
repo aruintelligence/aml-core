@@ -66,17 +66,19 @@ export function html(site, stage) {
 `;
 }
 
-const command = process.argv[2];
-if (!['--write-before', '--check-before', '--write-after', '--check-after'].includes(command)) {
-  throw new Error('Usage: node scripts/build-controlled-pilot-pages.mjs --write-before|--check-before|--write-after|--check-after');
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const command = process.argv[2];
+  if (!['--write-before', '--check-before', '--write-after', '--check-after'].includes(command)) {
+    throw new Error('Usage: node scripts/build-controlled-pilot-pages.mjs --write-before|--check-before|--write-after|--check-after');
+  }
+  const stage = command.endsWith('before') ? 'before' : 'after';
+  const dir = path.join(root, 'docs/action-pilots', stage);
+  if (command.startsWith('--write')) fs.mkdirSync(dir, { recursive: true });
+  for (const site of manifest.sites) {
+    const filename = path.join(dir, `${site.id}-${site.slug}.html`);
+    const expected = html(site, stage);
+    if (command.startsWith('--write')) fs.writeFileSync(filename, expected);
+    else assert.equal(fs.readFileSync(filename, 'utf8'), expected, filename);
+  }
+  console.log(JSON.stringify({ stage, pages: manifest.sites.length, mode: command }));
 }
-const stage = command.endsWith('before') ? 'before' : 'after';
-const dir = path.join(root, 'docs/action-pilots', stage);
-if (command.startsWith('--write')) fs.mkdirSync(dir, { recursive: true });
-for (const site of manifest.sites) {
-  const filename = path.join(dir, `${site.id}-${site.slug}.html`);
-  const expected = html(site, stage);
-  if (command.startsWith('--write')) fs.writeFileSync(filename, expected);
-  else assert.equal(fs.readFileSync(filename, 'utf8'), expected, filename);
-}
-console.log(JSON.stringify({ stage, pages: manifest.sites.length, mode: command }));
