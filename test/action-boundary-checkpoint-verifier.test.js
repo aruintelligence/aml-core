@@ -92,6 +92,27 @@ test("verifier rejects a jointly lowered checkpoint sequence despite matching st
       [1, "inconsistent", "checkpoint_sequence_shortfall"]);
   }));
 
+test("verifier reconstructs first issue and revoke heads from current records", async () => {
+  for (const transition of ["issue", "revoke"]) {
+    await fixture(async ({ directory, anchorDirectory, anchor, host }) => {
+      if (transition === "issue") host.issue(input(), { operationId: "first-intent" });
+      else host.revokeIssuer(input());
+      const checkpoint = anchor.read();
+      assert.equal(checkpoint.sequence, 1);
+      assert.equal(verify(directory, anchorDirectory).output.status, "consistent", transition);
+      const wrongHead = checkpoint.head_sha256 === "f".repeat(64) ?
+        "e".repeat(64) : "f".repeat(64);
+      for (const root of [directory, anchorDirectory]) {
+        fs.writeFileSync(path.join(root, "checkpoint.json"),
+          JSON.stringify({ ...checkpoint, head_sha256: wrongHead }) + "\n");
+      }
+      const result = verify(directory, anchorDirectory);
+      assert.deepEqual([result.code, result.output.status, result.output.reason],
+        [1, "inconsistent", "checkpoint_head_mismatch"], transition);
+    });
+  }
+});
+
 test("verifier rejects a jointly rehashed operation with no grant backlink", () =>
   fixture(async ({ directory, anchorDirectory, host }) => {
     const grant = host.issue(input());

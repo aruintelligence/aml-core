@@ -92,6 +92,34 @@ test("inspection and live startup reject an impossible checkpoint sequence", () 
       /authority_checkpoint_sequence_shortfall/);
   }));
 
+test("inspection and live startup reject false genesis and first-transition heads", async () => {
+  for (const transition of ["genesis", "issue", "revoke"]) {
+    await fixture(async ({ parent, directory, anchorDirectory, anchor, host }) => {
+      if (transition === "issue") host.issue(input());
+      if (transition === "revoke") host.revokeIssuer(input());
+      const checkpoint = anchor.read();
+      assert.equal(checkpoint.sequence, transition === "genesis" ? 0 : 1);
+      assert.equal(inspectFileRevocationHandoff({ directory, anchor }).status,
+        "observed_consistent", transition);
+      const wrongHead = checkpoint.head_sha256 === "f".repeat(64) ?
+        "e".repeat(64) : "f".repeat(64);
+      for (const root of [directory, anchorDirectory]) {
+        fs.writeFileSync(path.join(root, "checkpoint.json"),
+          JSON.stringify({ ...checkpoint, head_sha256: wrongHead }) + "\n");
+      }
+      const before = snapshot(parent);
+      const report = inspectFileRevocationHandoff({ directory, anchor });
+      assert.equal(report.checkpoints.comparison, "match");
+      assert.equal(report.committed_state.comparison, "match");
+      assert.equal(report.status, "needs_reconciliation", transition);
+      assert.ok(report.reasons.includes("checkpoint_head_mismatch"), transition);
+      assert.deepEqual(snapshot(parent), before);
+      assert.throws(() => createFileRevocationHandoff({ directory, anchor }),
+        /authority_checkpoint_head_mismatch/);
+    });
+  }
+});
+
 test("inspection cannot call an outcome resolved when a nested JSON key is ambiguous", () =>
   fixture(async ({ directory, anchor, host }) => {
     const grant = host.issue(input());

@@ -198,6 +198,7 @@ def inspect(authority, anchor):
     entries = []
     counts = {}
     epochs = {}
+    epoch_records = {}
     grants = {}
     operations = {}
     claims = {}
@@ -212,6 +213,7 @@ def inspect(authority, anchor):
             entries.append([f"{kind}/{name}", digest(canonical(record))])
             if kind == "epochs":
                 epochs[record["issuer_sha256"]] = record["epoch"]
+                epoch_records[record["issuer_sha256"]] = record
             elif kind == "grants":
                 grants[record["grant_id"]] = record
             elif kind == "operations":
@@ -242,6 +244,26 @@ def inspect(authority, anchor):
             "claim_grant_mismatch")
     require(local["sequence"] >= len(grants) + len(claims) + sum(epochs.values()),
             "checkpoint_sequence_shortfall")
+    if local["sequence"] == 1:
+        genesis = digest(json.dumps(["genesis", local["store_id"]],
+                                    separators=(",", ":")).encode("ascii"))
+        expected_head = None
+        if len(grants) == 1 and not epochs and not claims:
+            grant = next(iter(grants.values()))
+            event = {"grant": grant,
+                     "operation": operations.get(grant.get("operation_sha256"))}
+            event_hash = digest(json.dumps(event, sort_keys=True, separators=(",", ":"),
+                                           ensure_ascii=False).encode("utf-8"))
+            expected_head = digest(json.dumps([genesis, "issue", grant["grant_id"],
+                                               event_hash],
+                                              separators=(",", ":")).encode("ascii"))
+        elif len(epochs) == 1 and not grants and not claims:
+            issuer, epoch_record = next(iter(epoch_records.items()))
+            expected_head = digest(json.dumps([genesis, "revoke", issuer,
+                                               digest(canonical(epoch_record))],
+                                              separators=(",", ":")).encode("ascii"))
+        if expected_head is not None:
+            require(local["head_sha256"] == expected_head, "checkpoint_head_mismatch")
     entries.append(["authority-mode.json", digest(canonical(mode))])
     state = digest(json.dumps(entries, separators=(",", ":")).encode("ascii"))
     require(state == local["state_sha256"], "state_mismatch")
