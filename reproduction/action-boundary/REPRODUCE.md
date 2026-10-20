@@ -10,8 +10,8 @@ cd aml-core
 bash reproduction/action-boundary/reproduce.sh
 ```
 
-The command verifies the 100 exact challenge cases and receipts in JavaScript
-and Python; five maintained runtime matches; the actual Chrome observation;
+The command verifies 475 exact project-authored challenge cases and receipts,
+including 375 stress cases, in the maintained bindings; the actual Chrome observation;
 the ten paired controlled-site sources, DOM snapshots and screenshots; the
 four adapters and 28 blocked variants; and the append-only registry. It
 recomputes the [file manifest](manifest.json) and prints the receipt count,
@@ -19,7 +19,8 @@ registry chain root, and SHA-256 of the registry file. The full
 [specification](SPEC.md), raw artifacts and runnable implementations are in
 this repository at the same commit.
 
-Expected at this checkpoint: **125 indexed receipts**, **100/100 matches in
-each of five maintained bindings**, **ten paired browser pilots**, and
+Expected at this checkpoint: **500 indexed receipts** with the first 125 rows
+unchanged, **100/100 expanded and 375/375 stress matches in each of five
+maintained bindings**, **ten paired browser pilots**, and
 **four adapter callbacks with 28 blocked variants**. These are
 project-maintained reproductions; no independent party is counted.
