@@ -188,6 +188,13 @@ def inspect(authority, anchor):
     fields(mode, ("protocol", "mode"))
     require(mode["protocol"] == "aml-file-authority-mode/1" and mode["mode"] in
             ("checkpoint-anchored", "checkpoint-claim-anchored"), "invalid_authority_mode")
+    clock_path = authority / "clock.json"
+    clock = None
+    if os.path.lexists(clock_path):
+        clock, _ = read_record(clock_path)
+        fields(clock, ("protocol", "time_ms"))
+        require(clock["protocol"] == "aml-file-authority-clock/1"
+                and number(clock["time_ms"], -MAX_SAFE), "invalid_authority_clock")
     entries = []
     counts = {}
     epochs = {}
@@ -211,7 +218,10 @@ def inspect(authority, anchor):
                 operations[record["operation_sha256"]] = record
             elif kind == "claimed":
                 claims[record["grant_id"]] = record
+    require(clock is not None or not grants, "authority_clock_missing")
     for grant_id, grant in grants.items():
+        require(grant["issued_at_ms"] <= clock["time_ms"],
+                "grant_issued_after_clock")
         require(grant["epoch"] <= epochs.get(grant["issuer_sha256"], 0),
                 "grant_epoch_ahead")
         op_id = grant.get("operation_sha256")

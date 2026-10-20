@@ -205,7 +205,7 @@ function checkpointRecord(value) {
         "head_sha256|protocol|sequence|state_sha256|store_id");
 }
 
-function claimReconciliation(directory) {
+function claimReconciliation(directory, clockTime = null) {
   const claimed = path.join(directory, "claimed");
   const outcomes = path.join(directory, "outcomes");
   const names = fs.readdirSync(claimed).sort();
@@ -319,6 +319,9 @@ function claimReconciliation(directory) {
     grants.set(grantId, grant);
     if (grant.epoch > (epochValues.get(grant.issuer_sha256) ?? 0)) {
       issues.push({ grant_id: grantId, problem: "grant_epoch_ahead" });
+    }
+    if (clockTime !== null && grant.issued_at_ms > clockTime) {
+      issues.push({ grant_id: grantId, problem: "grant_issued_after_clock" });
     }
   }
   const operationPattern = /^[0-9a-f]{64}\.json$/;
@@ -509,19 +512,21 @@ export function inspectFileRevocationHandoff({ directory, anchor = null } = {}) 
       if (committedState === "mismatch") reasons.push("committed_state_mismatch");
     }
   } catch { reasons.push("committed_state_unreadable"); }
+  let clockTime = null;
   if (hasUncertainTemp(directory, "clock.json")) reasons.push("uncertain_clock_update");
   try {
     const clock = readRecord(path.join(directory, "clock.json"));
     if (!clock && counts && (counts.grants || counts.operations || counts.claimed)) {
       reasons.push("authority_clock_missing");
-    } else if (clock && (clock.protocol !== "aml-file-authority-clock/1" ||
-        !Number.isSafeInteger(clock.time_ms))) {
-      reasons.push("authority_clock_invalid");
+    } else if (clock) {
+      if (clock.protocol !== "aml-file-authority-clock/1" ||
+          !Number.isSafeInteger(clock.time_ms)) reasons.push("authority_clock_invalid");
+      else clockTime = clock.time_ms;
     }
   } catch { reasons.push("authority_clock_unreadable"); }
   let reconciliation = null;
   try {
-    reconciliation = claimReconciliation(directory);
+    reconciliation = claimReconciliation(directory, clockTime);
     if (reconciliation.issues.length) reasons.push("reconciliation_records_invalid");
     if (reconciliation.candidates.length) reasons.push("claims_need_provider_review");
   } catch { reasons.push("reconciliation_unavailable"); }

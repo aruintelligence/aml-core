@@ -301,6 +301,30 @@ test("unanchored inspection rejects a grant ahead of its issuer epoch", async ()
   } finally { fs.rmSync(parent, { recursive: true, force: true }); }
 });
 
+test("unanchored inspection rejects a grant issued after the persisted clock", async () => {
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), "aml-inspection-future-issue-"));
+  try {
+    const directory = path.join(parent, "authority");
+    const host = createFileRevocationHandoff({ directory, now: () => 1000 });
+    const grant = host.issue(input());
+    const file = path.join(directory, "grants", `${grant.grant_id}.json`);
+    const record = JSON.parse(fs.readFileSync(file, "utf8"));
+    fs.writeFileSync(file, JSON.stringify({ ...record,
+      issued_at_ms: 1001, expires_at_ms: 1001 + 60_000 }) + "\n");
+    const before = snapshot(parent);
+    const report = inspectFileRevocationHandoff({ directory });
+    assert.equal(report.status, "needs_reconciliation");
+    assert.ok(report.reconciliation.issues.some(item =>
+      item.grant_id === grant.grant_id && item.problem === "grant_issued_after_clock"));
+    assert.deepEqual(snapshot(parent), before);
+    let calls = 0;
+    const result = await host.dispatch({ ...input(), grant_id: grant.grant_id,
+      execute: () => { calls++; } });
+    assert.deepEqual([result.status, result.reason, result.dispatch_count, calls],
+      ["blocked", "grant_expired_or_clock_invalid", 0, 0]);
+  } finally { fs.rmSync(parent, { recursive: true, force: true }); }
+});
+
 test("unanchored inspection reports a corrupt authority clock", () => {
   const parent = fs.mkdtempSync(path.join(os.tmpdir(), "aml-inspection-clock-"));
   try {
