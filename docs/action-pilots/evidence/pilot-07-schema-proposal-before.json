@@ -1,0 +1,19 @@
+{
+  "protocol": "aml-controlled-site-browser-state/1",
+  "pilot_id": "07",
+  "stage": "before",
+  "source_commit": "877a8f8d64adf2d44c27dda73f1efe9f88d60418",
+  "url": "https://aruintelligence.github.io/aml-core/action-pilots/before/07-schema-proposal.html",
+  "observed_at": "2026-10-20T04:17:44.265Z",
+  "title": "Schema proposal · controlled action pilot 07",
+  "dom_file": "pilot-07-schema-proposal-before.dom.html",
+  "dom_sha256": "63ccda94c3a8053dd5d278624fb2086cfcab6d94d7240dcf15f96eaf92c0b21e",
+  "target_selector": "#redundant-contact",
+  "target_outer_html": "<aside id=\"redundant-contact\" class=\"duplicate inline\" data-pilot-target=\"redundant_duplicate\" aria-label=\"Repeated contact action\">\n      <span class=\"overline\">Repeated action · inline</span>\n      <a href=\"https://github.com/aruintelligence/aml-core/issues/new\">Propose a schema change</a>\n    </aside>",
+  "target_count": 1,
+  "contact_selector": "#contact-action",
+  "contact_outer_html": "<a id=\"contact-action\" href=\"https://github.com/aruintelligence/aml-core/issues/new\">Propose a schema change</a>",
+  "contact_count": 1,
+  "screenshot_file": "pilot-07-schema-proposal-before.jpg",
+  "screenshot_sha256": "d52dd6452846de3c49c19000290aa3c288a55b3738d2721faf20bb876f6a4f83"
+}

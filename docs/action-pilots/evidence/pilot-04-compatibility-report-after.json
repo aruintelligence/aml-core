@@ -1,0 +1,19 @@
+{
+  "protocol": "aml-controlled-site-browser-state/1",
+  "pilot_id": "04",
+  "stage": "after",
+  "source_commit": "bb64ada9071307be762a295b6c482439a5bff21b",
+  "url": "https://aruintelligence.github.io/aml-core/action-pilots/after/04-compatibility-report.html",
+  "observed_at": "2026-10-20T04:19:08.395Z",
+  "title": "Compatibility report · controlled action pilot 04",
+  "dom_file": "pilot-04-compatibility-report-after.dom.html",
+  "dom_sha256": "c8728eef5ee08ec8e1f6b26d83abd64e13e85318b170c2f89aea583c590212ad",
+  "target_selector": "#redundant-contact",
+  "target_outer_html": null,
+  "target_count": 0,
+  "contact_selector": "#contact-action",
+  "contact_outer_html": "<a id=\"contact-action\" href=\"https://github.com/aruintelligence/aml-core/issues/new\">Report compatibility</a>",
+  "contact_count": 1,
+  "screenshot_file": "pilot-04-compatibility-report-after.jpg",
+  "screenshot_sha256": "7646e392109123495b4d3f5c85e82898eb8daf1c76007eb5b05a08b327a983e7"
+}

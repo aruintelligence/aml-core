@@ -1,0 +1,19 @@
+{
+  "protocol": "aml-controlled-site-browser-state/1",
+  "pilot_id": "05",
+  "stage": "after",
+  "source_commit": "bb64ada9071307be762a295b6c482439a5bff21b",
+  "url": "https://aruintelligence.github.io/aml-core/action-pilots/after/05-accessibility-feedback.html",
+  "observed_at": "2026-10-20T04:19:08.562Z",
+  "title": "Accessibility feedback · controlled action pilot 05",
+  "dom_file": "pilot-05-accessibility-feedback-after.dom.html",
+  "dom_sha256": "4f37264ccf03bd039b5d010d9c30b2aec2fc0711d63da7fa1d1365c228654fbf",
+  "target_selector": "#redundant-contact",
+  "target_outer_html": null,
+  "target_count": 0,
+  "contact_selector": "#contact-action",
+  "contact_outer_html": "<a id=\"contact-action\" href=\"https://github.com/aruintelligence/aml-core/issues/new\">Share accessibility feedback</a>",
+  "contact_count": 1,
+  "screenshot_file": "pilot-05-accessibility-feedback-after.jpg",
+  "screenshot_sha256": "0fbf27ad8ad3a8872cac312a00d97cb0c5e5d16ba32a6b33e23dcf917c00df0b"
+}

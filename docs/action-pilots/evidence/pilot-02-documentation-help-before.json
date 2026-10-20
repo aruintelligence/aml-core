@@ -1,0 +1,19 @@
+{
+  "protocol": "aml-controlled-site-browser-state/1",
+  "pilot_id": "02",
+  "stage": "before",
+  "source_commit": "877a8f8d64adf2d44c27dda73f1efe9f88d60418",
+  "url": "https://aruintelligence.github.io/aml-core/action-pilots/before/02-documentation-help.html",
+  "observed_at": "2026-10-20T04:17:43.670Z",
+  "title": "Documentation help · controlled action pilot 02",
+  "dom_file": "pilot-02-documentation-help-before.dom.html",
+  "dom_sha256": "4ee88c5d4af2b1915df66bfb380078a20abc9dd8dfa161a7406c6d7be45bac91",
+  "target_selector": "#redundant-contact",
+  "target_outer_html": "<aside id=\"redundant-contact\" class=\"duplicate sidebar\" data-pilot-target=\"redundant_duplicate\" aria-label=\"Repeated contact action\">\n      <span class=\"overline\">Repeated action · sidebar</span>\n      <a href=\"https://github.com/aruintelligence/aml-core/issues/new\">Ask a documentation question</a>\n    </aside>",
+  "target_count": 1,
+  "contact_selector": "#contact-action",
+  "contact_outer_html": "<a id=\"contact-action\" href=\"https://github.com/aruintelligence/aml-core/issues/new\">Ask a documentation question</a>",
+  "contact_count": 1,
+  "screenshot_file": "pilot-02-documentation-help-before.jpg",
+  "screenshot_sha256": "fac42f663fe76d5e462494fde16fb52a0aa78c40e4ba40077e372309fbbcbd63"
+}

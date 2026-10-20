@@ -7,12 +7,16 @@ on:
       - "pilots/action-boundary/controlled-sites.json"
       - "scripts/build-controlled-pilot-pages.mjs"
       - "docs/action-pilots/**"
+      - "scripts/build-action-site-browser-receipts.mjs"
+      - "test/action-site-browser-evidence.test.js"
       - ".github/workflows/action-site-pilots.yml"
   pull_request:
     paths:
       - "pilots/action-boundary/controlled-sites.json"
       - "scripts/build-controlled-pilot-pages.mjs"
       - "docs/action-pilots/**"
+      - "scripts/build-action-site-browser-receipts.mjs"
+      - "test/action-site-browser-evidence.test.js"
       - ".github/workflows/action-site-pilots.yml"
 
 permissions:
@@ -23,6 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -32,4 +38,9 @@ jobs:
             node scripts/build-controlled-pilot-pages.mjs --check-after
             node scripts/dispatch-controlled-pilot-pages.mjs --check
             node --test test/action-controlled-site-pilots.test.js
+          fi
+      - run: |
+          if test -f docs/action-pilots/evidence/browser-receipts.jsonl; then
+            node scripts/build-action-site-browser-receipts.mjs --check
+            node --test test/action-site-browser-evidence.test.js
           fi

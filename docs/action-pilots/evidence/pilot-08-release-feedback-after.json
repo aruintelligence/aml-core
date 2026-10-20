@@ -1,0 +1,19 @@
+{
+  "protocol": "aml-controlled-site-browser-state/1",
+  "pilot_id": "08",
+  "stage": "after",
+  "source_commit": "bb64ada9071307be762a295b6c482439a5bff21b",
+  "url": "https://aruintelligence.github.io/aml-core/action-pilots/after/08-release-feedback.html",
+  "observed_at": "2026-10-20T04:19:09.012Z",
+  "title": "Release feedback · controlled action pilot 08",
+  "dom_file": "pilot-08-release-feedback-after.dom.html",
+  "dom_sha256": "33d30f09b1e1ef4daccfad3ddb48e9d7c9aa7429d3243ca29f62525fcb97be37",
+  "target_selector": "#redundant-contact",
+  "target_outer_html": null,
+  "target_count": 0,
+  "contact_selector": "#contact-action",
+  "contact_outer_html": "<a id=\"contact-action\" href=\"https://github.com/aruintelligence/aml-core/issues/new\">Share release feedback</a>",
+  "contact_count": 1,
+  "screenshot_file": "pilot-08-release-feedback-after.jpg",
+  "screenshot_sha256": "4fc8ba623ddcf901ac79b8be0172e27226536be70e0a679a721f21b760af6826"
+}

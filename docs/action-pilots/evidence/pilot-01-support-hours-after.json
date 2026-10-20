@@ -1,0 +1,19 @@
+{
+  "protocol": "aml-controlled-site-browser-state/1",
+  "pilot_id": "01",
+  "stage": "after",
+  "source_commit": "bb64ada9071307be762a295b6c482439a5bff21b",
+  "url": "https://aruintelligence.github.io/aml-core/action-pilots/after/01-support-hours.html",
+  "observed_at": "2026-10-20T04:19:07.918Z",
+  "title": "Support hours · controlled action pilot 01",
+  "dom_file": "pilot-01-support-hours-after.dom.html",
+  "dom_sha256": "708dd53f356b0d68482bff4ff1a18694658b1be75059a16be11064b364c6642e",
+  "target_selector": "#redundant-contact",
+  "target_outer_html": null,
+  "target_count": 0,
+  "contact_selector": "#contact-action",
+  "contact_outer_html": "<a id=\"contact-action\" href=\"https://github.com/aruintelligence/aml-core/issues/new\">Contact the maintainers</a>",
+  "contact_count": 1,
+  "screenshot_file": "pilot-01-support-hours-after.jpg",
+  "screenshot_sha256": "e2d1500e213bbcd50b32ea5014e5b5471ee707a77e0cf4c4e9391059a72cfa94"
+}

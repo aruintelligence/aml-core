@@ -1,0 +1,19 @@
+{
+  "protocol": "aml-controlled-site-browser-state/1",
+  "pilot_id": "10",
+  "stage": "before",
+  "source_commit": "877a8f8d64adf2d44c27dda73f1efe9f88d60418",
+  "url": "https://aruintelligence.github.io/aml-core/action-pilots/before/10-integration-help.html",
+  "observed_at": "2026-10-20T04:17:44.563Z",
+  "title": "Integration help · controlled action pilot 10",
+  "dom_file": "pilot-10-integration-help-before.dom.html",
+  "dom_sha256": "eefec722eac3ea3d3d601cf4cb1884a196266d8e6728e2aaccce127025d44748",
+  "target_selector": "#redundant-contact",
+  "target_outer_html": "<aside id=\"redundant-contact\" class=\"duplicate badge\" data-pilot-target=\"redundant_duplicate\" aria-label=\"Repeated contact action\">\n      <span class=\"overline\">Repeated action · badge</span>\n      <a href=\"https://github.com/aruintelligence/aml-core/issues/new\">Ask an integration question</a>\n    </aside>",
+  "target_count": 1,
+  "contact_selector": "#contact-action",
+  "contact_outer_html": "<a id=\"contact-action\" href=\"https://github.com/aruintelligence/aml-core/issues/new\">Ask an integration question</a>",
+  "contact_count": 1,
+  "screenshot_file": "pilot-10-integration-help-before.jpg",
+  "screenshot_sha256": "e7596ebd8a9bf2c6d9a999b05370f8034d2f35dad554d39c41129c92984ed6d4"
+}

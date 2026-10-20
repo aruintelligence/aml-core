@@ -1,0 +1,19 @@
+{
+  "protocol": "aml-controlled-site-browser-state/1",
+  "pilot_id": "02",
+  "stage": "after",
+  "source_commit": "bb64ada9071307be762a295b6c482439a5bff21b",
+  "url": "https://aruintelligence.github.io/aml-core/action-pilots/after/02-documentation-help.html",
+  "observed_at": "2026-10-20T04:19:08.065Z",
+  "title": "Documentation help · controlled action pilot 02",
+  "dom_file": "pilot-02-documentation-help-after.dom.html",
+  "dom_sha256": "39d9c3ed0c65525225df7fd66ac7ec5d4dcb430579425552a53c1c7c115e41d9",
+  "target_selector": "#redundant-contact",
+  "target_outer_html": null,
+  "target_count": 0,
+  "contact_selector": "#contact-action",
+  "contact_outer_html": "<a id=\"contact-action\" href=\"https://github.com/aruintelligence/aml-core/issues/new\">Ask a documentation question</a>",
+  "contact_count": 1,
+  "screenshot_file": "pilot-02-documentation-help-after.jpg",
+  "screenshot_sha256": "b87a0ef232407c9e0c203813f5bd30a481340fbac741312f251feaa277bda7b1"
+}
