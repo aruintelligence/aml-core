@@ -1,0 +1,45 @@
+name: Expanded action boundary evidence
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "conformance/action-boundary-expanded-*"
+      - "protocol/action-boundary-evidence-receipt.schema.json"
+      - "scripts/*action-boundary-expanded*"
+      - "test/action-boundary-expanded.test.js"
+      - "docs/action-boundary-expanded-report.json"
+      - "publications/ACTION_BOUNDARY_EXPANDED_CHALLENGE.md"
+      - "publications/ACTION_BOUNDARY_PROGRESS.md"
+      - ".github/workflows/action-boundary-expanded.yml"
+  pull_request:
+    paths:
+      - "conformance/action-boundary-expanded-*"
+      - "protocol/action-boundary-evidence-receipt.schema.json"
+      - "scripts/*action-boundary-expanded*"
+      - "test/action-boundary-expanded.test.js"
+      - "docs/action-boundary-expanded-report.json"
+      - "publications/ACTION_BOUNDARY_EXPANDED_CHALLENGE.md"
+      - "publications/ACTION_BOUNDARY_PROGRESS.md"
+      - ".github/workflows/action-boundary-expanded.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check deterministic corpus and evidence
+        run: node scripts/build-action-boundary-expanded.mjs --check
+      - name: Recompute every receipt and replay in JavaScript and Python
+        run: node scripts/verify-action-boundary-expanded.mjs --check
+      - name: Check adversarial rewrites and known boundary limits
+        run: node --test test/action-boundary-expanded.test.js
