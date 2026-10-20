@@ -20,6 +20,8 @@
 
 ## Start with one decision
 
+**Reproduce the host-owned action boundary:** [Run the full receipt-binding package](reproduction/action-boundary/REPRODUCE.md) to inspect 100 exact cases in five project-maintained bindings, ten paired public controlled-page pilots, four tool adapters, and the append-only registry of 125 distinct receipts. The [canonical specification](reproduction/action-boundary/SPEC.md) states what the hashes and callbacks prove and where the boundary stops.
+
 [**Enter the interactive first run →**](https://aruintelligence.github.io/aml-core/first-run.html) Change an agent's destination or a proposed interface value. The action path runs the project's browser planner, computes the canonical proposal SHA-256, and checks it against a published project vector. Then open the linked lab or reproduce locally. It never dispatches a tool.
 
 | Your goal | First useful result |

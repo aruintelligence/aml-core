@@ -1,0 +1,681 @@
+{
+  "protocol": "aml-action-boundary-release-manifest/1",
+  "source": "aruintelligence/aml-core",
+  "file_count": 133,
+  "expected": {
+    "challenge_cases": 100,
+    "maintained_bindings": 5,
+    "controlled_pages": 10,
+    "adapter_kinds": 4,
+    "registry_receipts": 125
+  },
+  "files": [
+    {
+      "path": "CITATION.cff",
+      "bytes": 1063,
+      "sha256": "76e0ab09d96bbfcc417e322452a637187ee453ed0f3cba42f4e9d4041bc8fc08"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 1082,
+      "sha256": "1560820fafd33f2b850885eb4394db98341d954a585ac13091b4ce21b38ec1d9"
+    },
+    {
+      "path": "conformance/action-boundary-expanded-cases.json",
+      "bytes": 177657,
+      "sha256": "465da861d50e19dfca89875e845faa9347511f85e5c61e390edad3b2ab771429"
+    },
+    {
+      "path": "conformance/action-boundary-expanded-receipts.jsonl",
+      "bytes": 142144,
+      "sha256": "c96ec0c7e2b30e01d7f5e6dedd2f984530c82a613cdba7aee757738fbf690328"
+    },
+    {
+      "path": "docs/action-boundary-expanded-report.json",
+      "bytes": 1123,
+      "sha256": "1546139ef00845d7615cec6dc402d0f59a6286ef9d34fb970ec35d7dffd7dbf5"
+    },
+    {
+      "path": "docs/action-browser-cases.json",
+      "bytes": 177657,
+      "sha256": "465da861d50e19dfca89875e845faa9347511f85e5c61e390edad3b2ab771429"
+    },
+    {
+      "path": "docs/action-browser-matrix.html",
+      "bytes": 4807,
+      "sha256": "e61f19492002e5f8e242cbe1fc89054fff7880b062eb395677f93a68eae611de"
+    },
+    {
+      "path": "docs/action-five-runtime-report.json",
+      "bytes": 184338,
+      "sha256": "ef8008022b83ca333053ccaba607567d38c0b019998b7a1f3dbeb06592164747"
+    },
+    {
+      "path": "docs/action-pilots/README.md",
+      "bytes": 1783,
+      "sha256": "9fc8476a740904828b7a3237172a68f9745bb8e32a9aa516094ed149850e37f7"
+    },
+    {
+      "path": "docs/action-pilots/after/01-support-hours.html",
+      "bytes": 2828,
+      "sha256": "45947a17c626639271a5d2e5d65f58a69443a8a84503ba5689a7a28ba049e6d6"
+    },
+    {
+      "path": "docs/action-pilots/after/02-documentation-help.html",
+      "bytes": 2855,
+      "sha256": "9d3dbba1233cae16195a05d53dba1e1fd09a18bfa22aea59d5e8636100328fb8"
+    },
+    {
+      "path": "docs/action-pilots/after/03-example-request.html",
+      "bytes": 2817,
+      "sha256": "45a076f5ba9a0f3dfd161d135f2b58fe0a5a30b6a20c5a32d93b66f5a6deff01"
+    },
+    {
+      "path": "docs/action-pilots/after/04-compatibility-report.html",
+      "bytes": 2854,
+      "sha256": "fb6489d20e3dfc7d13d28248e52292933cb79ec4545cb1e0999b97188eeac7fb"
+    },
+    {
+      "path": "docs/action-pilots/after/05-accessibility-feedback.html",
+      "bytes": 2850,
+      "sha256": "bec2dac2873cee4adf8c16970778ddfa4d85daa2a222b514efe37b604c8d2297"
+    },
+    {
+      "path": "docs/action-pilots/after/06-verifier-question.html",
+      "bytes": 2835,
+      "sha256": "cfbb79e36bee73c23b0913e3195b06d8cd7f1a6271a27a1235911ebdd7202a1f"
+    },
+    {
+      "path": "docs/action-pilots/after/07-schema-proposal.html",
+      "bytes": 2836,
+      "sha256": "b69453800ac08c9bda6f7ee3f6bf28f52229f2f63af7e21497f4d238b506eda3"
+    },
+    {
+      "path": "docs/action-pilots/after/08-release-feedback.html",
+      "bytes": 2840,
+      "sha256": "8c91ba33d9999fc28bd9642efcfbbdf19e14c4fb4d6719a68e5cf3b35d878d0e"
+    },
+    {
+      "path": "docs/action-pilots/after/09-security-contact.html",
+      "bytes": 2887,
+      "sha256": "77082a040597602d5d7c12daca8a0197c95b18167b080d573dbb0caffb153ef0"
+    },
+    {
+      "path": "docs/action-pilots/after/10-integration-help.html",
+      "bytes": 2839,
+      "sha256": "0cd752e60c7f89c91f41ceec79798f79e7bb3cadc49bf939bf826d1679144cb9"
+    },
+    {
+      "path": "docs/action-pilots/before/01-support-hours.html",
+      "bytes": 3139,
+      "sha256": "0d5f4a1a1f4f542b09802c7b7f23cc46d41f5b0f2092586da745464a13dd5461"
+    },
+    {
+      "path": "docs/action-pilots/before/02-documentation-help.html",
+      "bytes": 3173,
+      "sha256": "02fbb5da3f346ece82ecb6b098a721b9228c6261d944c6f499ef56efcc3fc5fc"
+    },
+    {
+      "path": "docs/action-pilots/before/03-example-request.html",
+      "bytes": 3119,
+      "sha256": "3bef7f71b0f2d811ce0d89103a948930c65e5a2d8eb9e2fd6cdd64cb61e246bb"
+    },
+    {
+      "path": "docs/action-pilots/before/04-compatibility-report.html",
+      "bytes": 3160,
+      "sha256": "b7b9b970e475e66a29e4943704a2c0962d4b1464fd33786fa00a6a0f9dc5a6cd"
+    },
+    {
+      "path": "docs/action-pilots/before/05-accessibility-feedback.html",
+      "bytes": 3164,
+      "sha256": "eaf0f6fda31d9ae18c35a7d916cfea723db65c594aa3d391d22ec7de6d91aa79"
+    },
+    {
+      "path": "docs/action-pilots/before/06-verifier-question.html",
+      "bytes": 3145,
+      "sha256": "203e7e1932caca9f61a2fe2160c7166fa9da5f451b246e92a85ca65c3087999b"
+    },
+    {
+      "path": "docs/action-pilots/before/07-schema-proposal.html",
+      "bytes": 3147,
+      "sha256": "28a271890cbecf73cbf0ba5452c027bfe8aa14ad9293c8a967833fd39fc00f9a"
+    },
+    {
+      "path": "docs/action-pilots/before/08-release-feedback.html",
+      "bytes": 3150,
+      "sha256": "c8329802fc0492650be0e575abab06e1b6015095df616598ddbc42834c8bf2dd"
+    },
+    {
+      "path": "docs/action-pilots/before/09-security-contact.html",
+      "bytes": 3196,
+      "sha256": "c1057dba9addea05990c32f35da59274cebf1bbd10c6dd45352853c22842eb71"
+    },
+    {
+      "path": "docs/action-pilots/before/10-integration-help.html",
+      "bytes": 3152,
+      "sha256": "062f8e03edcf38350ac2a1702ec2d412f9e521ceddeb334abf14023565f758ec"
+    },
+    {
+      "path": "docs/action-pilots/dispatch-receipts.jsonl",
+      "bytes": 22158,
+      "sha256": "2d9894722fb99e42f1f26efbc39179da739f88c129160b546f35dfc3e5832906"
+    },
+    {
+      "path": "docs/action-pilots/evidence/browser-receipts.jsonl",
+      "bytes": 45562,
+      "sha256": "49d28db34bbe794f5661b291145f0eac1f247c48bdd8f9d1ca0f7daeaf42b6ba"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-01-support-hours-after.dom.html",
+      "bytes": 10064,
+      "sha256": "708dd53f356b0d68482bff4ff1a18694658b1be75059a16be11064b364c6642e"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-01-support-hours-after.jpg",
+      "bytes": 52092,
+      "sha256": "e2d1500e213bbcd50b32ea5014e5b5471ee707a77e0cf4c4e9391059a72cfa94"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-01-support-hours-after.json",
+      "bytes": 946,
+      "sha256": "fddd35aea30d7418ceb81bdd48e994cb0559116f4513df7de7c43b2d86646111"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-01-support-hours-before.dom.html",
+      "bytes": 10375,
+      "sha256": "9a14c6b71e8fbacc3bfcfd96ed8741410435046118b722b129453640829aba76"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-01-support-hours-before.jpg",
+      "bytes": 57551,
+      "sha256": "156da7e3e879a7b557574fc93cdaf974248e1150ba68c837be9be52925c38ac2"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-01-support-hours-before.json",
+      "bytes": 1269,
+      "sha256": "54772059b04c985ff7fa34a79f7aa1b02ade4489d9a6254fe392a354f2c8400c"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-02-documentation-help-after.dom.html",
+      "bytes": 10091,
+      "sha256": "39d9c3ed0c65525225df7fd66ac7ec5d4dcb430579425552a53c1c7c115e41d9"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-02-documentation-help-after.jpg",
+      "bytes": 56818,
+      "sha256": "b87a0ef232407c9e0c203813f5bd30a481340fbac741312f251feaa277bda7b1"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-02-documentation-help-after.json",
+      "bytes": 971,
+      "sha256": "4b4868215159317d790f06ec5caccd35206bbeba92f95ab158dff5857ee59c72"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-02-documentation-help-before.dom.html",
+      "bytes": 10409,
+      "sha256": "4ee88c5d4af2b1915df66bfb380078a20abc9dd8dfa161a7406c6d7be45bac91"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-02-documentation-help-before.jpg",
+      "bytes": 65144,
+      "sha256": "fac42f663fe76d5e462494fde16fb52a0aa78c40e4ba40077e372309fbbcbd63"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-02-documentation-help-before.json",
+      "bytes": 1301,
+      "sha256": "75f66fbb24aab44c80710945581e28dfd4ab907cc593b41dca6fa591833cb2e3"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-03-example-request-after.dom.html",
+      "bytes": 10053,
+      "sha256": "694319f92f23729612f162c847910a31e4a4b8de9560002dad758cd3e39dba9b"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-03-example-request-after.jpg",
+      "bytes": 52546,
+      "sha256": "dafa236782ea3792c41c918a3abf337b3f38126c5db3b7671ce8db9e00c79136"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-03-example-request-after.json",
+      "bytes": 949,
+      "sha256": "32470e857cc8c9a4890db1dd967d3cd9267e50fccfca768d3b5b18ba2c7882ad"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-03-example-request-before.dom.html",
+      "bytes": 10355,
+      "sha256": "7f13133b8f3b151c32ee579dc995e1ac83f7bef2a7fefc608c680c1113f77942"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-03-example-request-before.jpg",
+      "bytes": 57236,
+      "sha256": "de45120f08c2ab31b813f57aa40235b7026947de8e2545285fd036f0134f189e"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-03-example-request-before.json",
+      "bytes": 1263,
+      "sha256": "294b0eae63659645f29597f1a6482e1f7016720692f0c48d10b8b0a0612497a6"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-04-compatibility-report-after.dom.html",
+      "bytes": 10090,
+      "sha256": "c8728eef5ee08ec8e1f6b26d83abd64e13e85318b170c2f89aea583c590212ad"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-04-compatibility-report-after.jpg",
+      "bytes": 56756,
+      "sha256": "7646e392109123495b4d3f5c85e82898eb8daf1c76007eb5b05a08b327a983e7"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-04-compatibility-report-after.json",
+      "bytes": 971,
+      "sha256": "83d86d514b54de81d75a695c7f3ab1967d38b433e4f56c0dccdfcabe05453b3f"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-04-compatibility-report-before.dom.html",
+      "bytes": 10396,
+      "sha256": "f4327f6d4b16d2a958ac400c176a218f665ad5dd511aa164af74c4f441de658d"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-04-compatibility-report-before.jpg",
+      "bytes": 63740,
+      "sha256": "2a22ae5e6b271215af8a4cc00e3497f95a54389c7fbe59442f6f52e1165ff5d0"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-04-compatibility-report-before.json",
+      "bytes": 1289,
+      "sha256": "40b2145b2ed5d2fb136100ea08e20e26b973b1a3902fe2f203ed7a5fdec94f88"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-05-accessibility-feedback-after.dom.html",
+      "bytes": 10086,
+      "sha256": "4f37264ccf03bd039b5d010d9c30b2aec2fc0711d63da7fa1d1365c228654fbf"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-05-accessibility-feedback-after.jpg",
+      "bytes": 58278,
+      "sha256": "0fbf27ad8ad3a8872cac312a00d97cb0c5e5d16ba32a6b33e23dcf917c00df0b"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-05-accessibility-feedback-after.json",
+      "bytes": 987,
+      "sha256": "29316e2a8720b2f58a67c9de96eecbdcb662aff81b5caea924c92190d332d67c"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-05-accessibility-feedback-before.dom.html",
+      "bytes": 10400,
+      "sha256": "75185ca26fe0a91a56c97572828bc464c943f73a53c000e3ec8a0ea51ebb3d7a"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-05-accessibility-feedback-before.jpg",
+      "bytes": 64240,
+      "sha256": "60ff8c1ee390f6a596c982a26ffa8be47aff7add4ff031e8389465c78aab5210"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-05-accessibility-feedback-before.json",
+      "bytes": 1313,
+      "sha256": "b776fa064abad41c3f63006e0a46db58cfcbdf58c56116732c3e33512deb6dee"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-06-verifier-question-after.dom.html",
+      "bytes": 10071,
+      "sha256": "6d27fdd09cda76f696c9c1b18b2806505fa93e9f6631941be93ec837cdb771f5"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-06-verifier-question-after.jpg",
+      "bytes": 53636,
+      "sha256": "19de7fbe94d38c08f3cc85551122686596b214b12a7b507e6e3f282c58f70e18"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-06-verifier-question-after.json",
+      "bytes": 961,
+      "sha256": "1a5e668635c07c981ad9bf887f868048a68effb811bb7af54e1c9e089d47003f"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-06-verifier-question-before.dom.html",
+      "bytes": 10381,
+      "sha256": "4c5d7d6fa77662e8ec00a9ec9ad016e7ef3ef03350e8c81b840a3aea290bf63a"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-06-verifier-question-before.jpg",
+      "bytes": 59826,
+      "sha256": "ee716d1dcc687acca2d2c8d47f8cdb8cb195ee498a1c216aa6163885773a7b98"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-06-verifier-question-before.json",
+      "bytes": 1283,
+      "sha256": "1bd0b1886eae9b30410c6358ad0ff82a095c56c3332a2e719ca6625a59e018e2"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-07-schema-proposal-after.dom.html",
+      "bytes": 10072,
+      "sha256": "2341e2e9ef9f068581254fd034a70960f8bc5e5bf93f1d1f2a143261c068fdca"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-07-schema-proposal-after.jpg",
+      "bytes": 54126,
+      "sha256": "cb2528d2057dcd00551c8f4a62182f2d239c344750004e8035f87f1e349706c0"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-07-schema-proposal-after.json",
+      "bytes": 954,
+      "sha256": "dd010449282d20cba06479c9919f066953f20656c8054b1867add6841418e06c"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-07-schema-proposal-before.dom.html",
+      "bytes": 10383,
+      "sha256": "63ccda94c3a8053dd5d278624fb2086cfcab6d94d7240dcf15f96eaf92c0b21e"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-07-schema-proposal-before.jpg",
+      "bytes": 61000,
+      "sha256": "d52dd6452846de3c49c19000290aa3c288a55b3738d2721faf20bb876f6a4f83"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-07-schema-proposal-before.json",
+      "bytes": 1277,
+      "sha256": "ea1bb96e17be77854a12dfbbf83307b1898cef82f7047edd6d3a3f70b26abb78"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-08-release-feedback-after.dom.html",
+      "bytes": 10076,
+      "sha256": "33d30f09b1e1ef4daccfad3ddb48e9d7c9aa7429d3243ca29f62525fcb97be37"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-08-release-feedback-after.jpg",
+      "bytes": 55104,
+      "sha256": "4fc8ba623ddcf901ac79b8be0172e27226536be70e0a679a721f21b760af6826"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-08-release-feedback-after.json",
+      "bytes": 957,
+      "sha256": "a2d4586ba322ac49f7adbf855080b99f5c2b5e9ba52e9f0ed533e44261bf7089"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-08-release-feedback-before.dom.html",
+      "bytes": 10386,
+      "sha256": "f60f3f3ec6fada55330b45f70fa0903bc3bdcf9dc0c9f52a17e5d82b47283ffd"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-08-release-feedback-before.jpg",
+      "bytes": 64299,
+      "sha256": "4111c744615c9b73b50d5d500e6d77ca223b4b5b68e4b740fd23fdab5c694f2e"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-08-release-feedback-before.json",
+      "bytes": 1279,
+      "sha256": "3b300ff9a490fd147a1f878c48fc59b30987270e7eaaeee20305008e14a1028d"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-09-security-contact-after.dom.html",
+      "bytes": 10123,
+      "sha256": "d8be566d798089fc40a5af4d328b9e6f2a9127c1f90bf27a9b9d785de618c6d0"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-09-security-contact-after.jpg",
+      "bytes": 59539,
+      "sha256": "d0b2de2c0e2b80646b3de0e71f35934572306361d1bfe99659ec167f7931ce65"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-09-security-contact-after.json",
+      "bytes": 967,
+      "sha256": "b78815e8b4148c77e66f6d9b2d74ab117fb859755dfe731035bee1c354f9dd9d"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-09-security-contact-before.dom.html",
+      "bytes": 10432,
+      "sha256": "6471bb4b2f5da969f0f89ebf5f8e2c1bf791a08580484be226e9eb59f5e062ba"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-09-security-contact-before.jpg",
+      "bytes": 68523,
+      "sha256": "64a00360c471755db9335c752874af928a699d0a4fa22fd6f9a598d21b8f96c2"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-09-security-contact-before.json",
+      "bytes": 1288,
+      "sha256": "bfcda6682ac00c356eb8b3a3b00c98550dc971691293713a86a43d8500f6b90d"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-10-integration-help-after.dom.html",
+      "bytes": 10075,
+      "sha256": "786e629f015dc959e0e60580fa0eec54bf971e898df03f9d0fe6ea60b8e1c6db"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-10-integration-help-after.jpg",
+      "bytes": 53911,
+      "sha256": "95970cc4f9470b884798f5bc06df54e7388ddda9ff6321cdff4634ac1f8dc9fa"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-10-integration-help-after.json",
+      "bytes": 962,
+      "sha256": "8a339085921233d8ff3e220b259a2b8da59d4dcaf249033b5ce252a81dc04c71"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-10-integration-help-before.dom.html",
+      "bytes": 10388,
+      "sha256": "eefec722eac3ea3d3d601cf4cb1884a196266d8e6728e2aaccce127025d44748"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-10-integration-help-before.jpg",
+      "bytes": 59366,
+      "sha256": "e7596ebd8a9bf2c6d9a999b05370f8034d2f35dad554d39c41129c92984ed6d4"
+    },
+    {
+      "path": "docs/action-pilots/evidence/pilot-10-integration-help-before.json",
+      "bytes": 1287,
+      "sha256": "896bb5d097efbe8a7c4efb87577c6127c6e776e4d70dd6705a360dde20c81081"
+    },
+    {
+      "path": "docs/action-receipt-adapters-report.json",
+      "bytes": 17107,
+      "sha256": "1cbae8522048e94f55266e64b9e9d2808bdc011cbad155e74800e1c4385a68e8"
+    },
+    {
+      "path": "docs/action-webcrypto-boundary.js",
+      "bytes": 4273,
+      "sha256": "a9ddd1961b9c09f28f7905f0485ae5d60198b24ca83f094da697ff04b6d9a747"
+    },
+    {
+      "path": "docs/evidence/aml-action-browser-100.jpg",
+      "bytes": 100289,
+      "sha256": "fd7c7a80854eb937671404b65e047bd5bcbce59081565caf80b009bb9576dd00"
+    },
+    {
+      "path": "docs/evidence/aml-action-browser-100.json",
+      "bytes": 892,
+      "sha256": "d47772635103ad1f962d8162123f913288d160ef81fc5c06834a62537bb8e6f6"
+    },
+    {
+      "path": "package.json",
+      "bytes": 5774,
+      "sha256": "8867501674ec92fc8b8ca479a400c9c9c655e67882045a3d81ca15cb4b25dfec"
+    },
+    {
+      "path": "pilots/action-boundary/boundary.mjs",
+      "bytes": 6346,
+      "sha256": "97cb500b86e73eeb38fdf526ab04a51b637dde9d8c15daf75b67bd870f15b26c"
+    },
+    {
+      "path": "pilots/action-boundary/challenge-python-adapter.py",
+      "bytes": 2414,
+      "sha256": "f7070856eb8232b96b26b1aa313b157d1d17e1038f4e7a3dff469b2d83ea77e3"
+    },
+    {
+      "path": "pilots/action-boundary/controlled-sites.json",
+      "bytes": 2727,
+      "sha256": "4477d58e297d3ed5209c3ce2e840c6aab317ce7fb8722c6d315bfd0ff3f59695"
+    },
+    {
+      "path": "pilots/action-boundary/openssl_python_boundary.py",
+      "bytes": 5309,
+      "sha256": "055fd3471383902aabfb9ea37b61ee5d6455ad0c87817f9a2c60d394fb5ae39f"
+    },
+    {
+      "path": "pilots/action-boundary/perl_boundary.pl",
+      "bytes": 5582,
+      "sha256": "2d479b31cf0db2430fa807c5228796abc5ee99abd0949e7122b407334d1c85df"
+    },
+    {
+      "path": "pilots/action-boundary/receipt-adapters.mjs",
+      "bytes": 8589,
+      "sha256": "edc0a32fc35ba9ea10ce22963bfa985409e9c8a26fb0ca7ccd0297b928fbeac9"
+    },
+    {
+      "path": "protocol/action-boundary-evidence-receipt.schema.json",
+      "bytes": 2745,
+      "sha256": "64d2751bab5500c60911186813ce79cea0114e4b66c406c7a537a76531649e41"
+    },
+    {
+      "path": "protocol/action-receipt-registry-entry.schema.json",
+      "bytes": 1130,
+      "sha256": "5bb6787e7a1d82e71718622621747a58974025c3650818f5508ffb083c24d018"
+    },
+    {
+      "path": "protocol/canonicalJson.js",
+      "bytes": 1182,
+      "sha256": "c8b5d7c187c614b9092deb95b1ad25239384cdd91c1e08019f145179657778d6"
+    },
+    {
+      "path": "publications/ACTION_BOUNDARY_CONTROLLED_PILOTS.md",
+      "bytes": 7353,
+      "sha256": "5b2ed85c91cc0ea01236f1181ef07d4005f136765d6de22cb4ceed38a5f84b44"
+    },
+    {
+      "path": "publications/ACTION_BOUNDARY_EXPANDED_CHALLENGE.md",
+      "bytes": 5621,
+      "sha256": "042a5b2f17fe3bcc540dc8e5f2cf7b5fe8a43a95d29f8aac829f0331467c1557"
+    },
+    {
+      "path": "publications/ACTION_BOUNDARY_FIVE_RUNTIME.md",
+      "bytes": 3242,
+      "sha256": "8e4a25a07d6f5c84940033f19f98eee82e42ad7684eb1901647f2e08ad3c96d0"
+    },
+    {
+      "path": "publications/ACTION_BOUNDARY_PROGRESS.md",
+      "bytes": 2936,
+      "sha256": "eae312d4c557536d91b9db2d8a81b3eed1e0b0d0d3a3c78a88d7ec5e6a5fb6a5"
+    },
+    {
+      "path": "publications/ACTION_RECEIPT_ADAPTERS.md",
+      "bytes": 2495,
+      "sha256": "9af51638fbce1977b44e032db1a95cdc0d48e59cdd18f76ac08d87138c14c23a"
+    },
+    {
+      "path": "registry/README.md",
+      "bytes": 1730,
+      "sha256": "b7266ae224fa5d220118cc8bade0da94d15c3da7f87f5e8ac2a1f1cabc0e1f7c"
+    },
+    {
+      "path": "registry/action-receipt-sources.json",
+      "bytes": 963,
+      "sha256": "5a4f1ea3a0c333dc7fb42c9e5dcdc5b8855715574219cb4c829a625411f7cd29"
+    },
+    {
+      "path": "registry/action-receipts.jsonl",
+      "bytes": 71450,
+      "sha256": "8aeae680448027e31e43ba2b2917966611f14ca59d6dfa312c7f9362c620f487"
+    },
+    {
+      "path": "reproduction/action-boundary/REPRODUCE.md",
+      "bytes": 1228,
+      "sha256": "b74a67f33d9d44bc3c83428040bd915be44f240a4084754bceccfc3a816b9941"
+    },
+    {
+      "path": "reproduction/action-boundary/SPEC.md",
+      "bytes": 4446,
+      "sha256": "82b9993a2012ceee6943a652b0fa6fd835825bceea4bebbe9b88348053f7a8ff"
+    },
+    {
+      "path": "reproduction/action-boundary/reproduce.sh",
+      "bytes": 904,
+      "sha256": "8541b392bde3bf3b6ffe2cf98f871faad3f86d9d4ee8c0aed089593ab0d79462"
+    },
+    {
+      "path": "scripts/build-action-boundary-expanded.mjs",
+      "bytes": 13125,
+      "sha256": "eb1a5adbb3ff0434197b722023263921164e65f2320d298a818a2087311891df"
+    },
+    {
+      "path": "scripts/build-action-five-runtime-report.mjs",
+      "bytes": 4240,
+      "sha256": "6ea3b14219df364109b885050730706008e9e813e97fea66c93724f705fdb1f1"
+    },
+    {
+      "path": "scripts/build-action-receipt-adapters-report.mjs",
+      "bytes": 6212,
+      "sha256": "063ba7d598c5b3e41e1ce4253d5c596266f9557991e2de0650f7d9c7b9efb64d"
+    },
+    {
+      "path": "scripts/build-action-release-manifest.mjs",
+      "bytes": 4277,
+      "sha256": "1571bda934214c198f27fe15fce59dfc1fe92a5038f1bd8c4045c3276bcd8c00"
+    },
+    {
+      "path": "scripts/build-action-site-browser-receipts.mjs",
+      "bytes": 6880,
+      "sha256": "55d459d2dd465f565c84e3669aaee9036f8fc6312deb4b44b95015e952f3fe2f"
+    },
+    {
+      "path": "scripts/build-controlled-pilot-pages.mjs",
+      "bytes": 5101,
+      "sha256": "8fd9f66c9be2893d105a9ecfdf10691f6ead8dcda77e93855fddeaa7a8ed7853"
+    },
+    {
+      "path": "scripts/dispatch-controlled-pilot-pages.mjs",
+      "bytes": 5914,
+      "sha256": "b0122f9e9f80f34184d64137d5d3b39d838a41760e950edafe88a88274bb7c6c"
+    },
+    {
+      "path": "scripts/verify-action-boundary-expanded.mjs",
+      "bytes": 5807,
+      "sha256": "5bdb143e4af7e9bbc1fe65f211d9bfaba711b3425cf824802fe00f28bc1b2373"
+    },
+    {
+      "path": "scripts/verify-action-boundary-expanded.py",
+      "bytes": 3691,
+      "sha256": "572db8f03c26877fb008cb7bda5ca9c4b3b74db8a70e362f622a8b85fb7ba024"
+    },
+    {
+      "path": "scripts/verify-action-browser-observation.mjs",
+      "bytes": 2428,
+      "sha256": "fd93ca1c4d876e01125e00e75f86f7a65c58ed02f6101e3729353f706be913ba"
+    },
+    {
+      "path": "scripts/verify-action-receipt-registry.mjs",
+      "bytes": 4411,
+      "sha256": "2b3dca6e1f4d10700304574aedf3d7d103329ec64a7d59291f75b44595aaea89"
+    },
+    {
+      "path": "test/action-boundary-expanded.test.js",
+      "bytes": 3018,
+      "sha256": "cfa954091b2c684533a20a63ec173e5c33c073a207ce3eabc965f3d7fca3ab15"
+    },
+    {
+      "path": "test/action-browser-observation.test.js",
+      "bytes": 1196,
+      "sha256": "79ae134da9fc2c22168f92a3d283e3944cd140ebd90d72173b7c55596d5183da"
+    },
+    {
+      "path": "test/action-controlled-site-pilots.test.js",
+      "bytes": 1323,
+      "sha256": "fd28551d4f3ab9705ba9861726e91929cdbdf2d1e21c6d14ddab1e6d5db55f31"
+    },
+    {
+      "path": "test/action-five-runtime.test.js",
+      "bytes": 2366,
+      "sha256": "3d39734a44f979572347bdf2993fd8f86af8e50f9382379beba91a90e7cdda17"
+    },
+    {
+      "path": "test/action-receipt-adapters.test.js",
+      "bytes": 2194,
+      "sha256": "55e45a784972ad26dce6fb8d5a0972f808a1440bc8880bc1b5e1322e00fb1e1e"
+    },
+    {
+      "path": "test/action-site-browser-evidence.test.js",
+      "bytes": 1468,
+      "sha256": "6dbb4f14237efd7cc92ec42be905bd60699176a755f7c9a14eb88eb1b8307dbb"
+    }
+  ],
+  "claim_boundary": "File hashes and Git source are reproducibility metadata, not a DOI or an independent witness.",
+  "manifest_sha256": "cd681c30fe466522f9dab8901b65b9966bacaacb15faabc8aa38397bf2e67876"
+}
