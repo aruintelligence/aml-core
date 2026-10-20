@@ -110,3 +110,75 @@ test('a grant observed under changed target mapping is spent before restoration'
   assert.equal(restored.callback_count, 0);
   assert.equal(calls, 0);
 });
+
+test('a host policy epoch detects an unobserved revoke and restore', async () => {
+  let calls = 0;
+  let currentPolicy = policy;
+  let epoch = 1;
+  const adapter = createUiAdapter({ renderer: { setText: () => { calls++; } },
+    policy: () => currentPolicy, policyEpoch: () => epoch, secret: Buffer.alloc(32, 13) });
+  const receipt = await adapter.issue(proposal);
+  currentPolicy = { protocol: 'aml-action-policy/1', rules: [] };
+  epoch = 2;
+  currentPolicy = policy;
+  epoch = 3;
+  const outcome = await adapter.dispatch(receipt, proposal);
+  assert.equal(outcome.reason, 'policy_epoch_changed');
+  assert.equal(outcome.callback_count, 0);
+  assert.equal((await adapter.dispatch(receipt, proposal)).reason, 'receipt_reused_or_unknown');
+  assert.equal(calls, 0);
+});
+
+test('a host epoch changed away and back during approval suppresses issuance', async () => {
+  let calls = 0;
+  let epoch = 1;
+  let currentPolicy = { protocol: 'aml-action-policy/1', rules: [
+    { tool: 'render_ui', effect: 'write', resource: proposal.resource, requires_approval: true }] };
+  const originalPolicy = currentPolicy;
+  const adapter = createUiAdapter({ renderer: { setText: () => { calls++; } },
+    policy: () => currentPolicy, policyEpoch: () => epoch, secret: Buffer.alloc(32, 14),
+    authorize: async ({ proposal_sha256 }) => {
+      currentPolicy = { protocol: 'aml-action-policy/1', rules: [] };
+      epoch = 2;
+      currentPolicy = originalPolicy;
+      epoch = 3;
+      return { approved: true, proposal_sha256 };
+    } });
+  const receipt = await adapter.issue(proposal);
+  assert.equal(receipt.decision, 'SUPPRESS');
+  assert.equal(receipt.reason, 'policy_epoch_changed');
+  assert.equal((await adapter.dispatch(receipt, proposal)).callback_count, 0);
+  assert.equal(calls, 0);
+});
+
+test('the policy epoch is signed and an unchanged epoch can dispatch', async () => {
+  let calls = 0;
+  const adapter = createUiAdapter({ renderer: { setText: () => { calls++; } },
+    policy: () => policy, policyEpoch: () => 7, secret: Buffer.alloc(32, 15) });
+  const receipt = await adapter.issue(proposal);
+  assert.equal(receipt.policy_epoch, 7);
+  const forged = { ...receipt, policy_epoch: 8 };
+  assert.equal((await adapter.dispatch(forged, proposal)).reason, 'invalid_receipt');
+  assert.equal((await adapter.dispatch(receipt, proposal)).status, 'DISPATCHED');
+  assert.equal(calls, 1);
+});
+
+test('an unavailable epoch spends the grant and a malformed initial epoch fails closed', async () => {
+  let calls = 0;
+  let unavailable = false;
+  const adapter = createUiAdapter({ renderer: { setText: () => { calls++; } },
+    policy: () => policy, policyEpoch: () => {
+      if (unavailable) throw Error('epoch store unavailable');
+      return 4;
+    }, secret: Buffer.alloc(32, 16) });
+  const receipt = await adapter.issue(proposal);
+  unavailable = true;
+  assert.equal((await adapter.dispatch(receipt, proposal)).reason, 'policy_epoch_unavailable');
+  unavailable = false;
+  assert.equal((await adapter.dispatch(receipt, proposal)).reason, 'receipt_reused_or_unknown');
+  assert.equal(calls, 0);
+  const bad = createUiAdapter({ renderer: { setText: () => { calls++; } },
+    policy: () => policy, policyEpoch: () => Number.NaN, secret: Buffer.alloc(32, 17) });
+  await assert.rejects(bad.issue(proposal), /invalid_policy_epoch/);
+  assert.equal(calls, 0);
+});

@@ -34,3 +34,5 @@ same bytes **without the adapter observing the change**, a digest check cannot
 detect that history. Production revocation needs a host-owned monotonic policy
 epoch or an explicit durable grant invalidation mechanism across processes.
 No external email, HTTP request, database write, or UI render is claimed.
+The [policy-epoch follow-up](ACTION_RECEIPT_POLICY_EPOCH.md) adds a host-supplied
+epoch and an A→B→A comparison without changing this original report.

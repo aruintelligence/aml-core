@@ -17,6 +17,8 @@ on:
       - "docs/action-receipt-adapters-report.json"
       - "docs/action-receipt-revocation-report.json"
       - "scripts/build-action-revocation-report.mjs"
+      - "docs/action-receipt-policy-epoch-report.json"
+      - "scripts/build-action-epoch-report.mjs"
       - ".github/workflows/action-receipt-registry.yml"
   pull_request:
     paths:
@@ -33,6 +35,8 @@ on:
       - "docs/action-receipt-adapters-report.json"
       - "docs/action-receipt-revocation-report.json"
       - "scripts/build-action-revocation-report.mjs"
+      - "docs/action-receipt-policy-epoch-report.json"
+      - "scripts/build-action-epoch-report.mjs"
       - ".github/workflows/action-receipt-registry.yml"
 
 permissions:

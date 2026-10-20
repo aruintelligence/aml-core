@@ -59,6 +59,14 @@ grant, so restoring the earlier policy or target cannot revive it. The
 those transitions for four local provider shapes. An unobserved change that
 returns to identical policy bytes requires a host epoch or durable revocation
 record; the digest alone cannot reveal it.
+With an optional host-owned `policyEpoch` callback, the authorization receipt
+also binds `policy_epoch` as a nonnegative safe integer. The host must advance
+it monotonically for policy and target-mapping changes. The adapter checks it
+after approval and immediately before dispatch; a mismatch or unavailable
+value blocks and spends the grant. The [epoch comparison](../../docs/action-receipt-policy-epoch-report.json)
+demonstrates an unobserved A→B→A sequence using in-memory host state. Without
+the option, existing receipt bytes remain unchanged. Durability and monotonic
+ordering across processes are host obligations, not verified by the adapter.
 
 ## Published evidence and limits
 
