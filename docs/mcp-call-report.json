@@ -338,6 +338,53 @@
           }
         }
       }
+    },
+    {
+      "id": "unreadable_result",
+      "title": "A returned result throws during inspection",
+      "model_proposed_call": {
+        "name": "send_notice",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "Build passed."
+        }
+      },
+      "advertised_read_only_hint": true,
+      "before": {
+        "tool_callbacks": 1,
+        "forwarded": {
+          "name": "send_notice",
+          "arguments": {
+            "to": "team@example.test",
+            "body": "Build passed."
+          }
+        }
+      },
+      "after": {
+        "tool_callbacks": 1,
+        "rejection": null,
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "c6bc186f28c1b2af65d5bbec3f5c40c6259b294668931b6e9fe41a4d1319924c",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "c6bc186f28c1b2af65d5bbec3f5c40c6259b294668931b6e9fe41a4d1319924c",
+          "policy_decision": "requires_approval",
+          "execution_status": "dispatched",
+          "reason": "host_dispatch_returned"
+        },
+        "mcp_result_status": "invalid_result",
+        "forwarded": {
+          "name": "send_notice",
+          "arguments": {
+            "body": "Build passed.",
+            "to": "team@example.test"
+          }
+        }
+      }
     }
   ],
   "limits": "No connected MCP server, transport, real approval, output validation, automatic SDK input-round interception, or proof of external effect. A host must bind the configured client to its actual server and validate the tool's final provider request."

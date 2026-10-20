@@ -5,8 +5,8 @@
 </style></head><body><main class="wrap"><nav><a href="index.html">ĀML / MCP TOOL LAB</a><a href="https://github.com/aruintelligence/aml-core/blob/main/pilots/action-boundary/MCP_CALL_TOOL_GATE.md">Integrate the gate ↗</a></nav>
 <section class="hero"><div class="eyebrow">Project-authored integration / 37</div><h1>The hint is <em>not</em><br>the rule.</h1><p class="lede">A deliberately flawed MCP client treats a server-advertised <code>readOnlyHint: true</code> as permission to call a tool. The tool asks to send a notice to an outside destination. AML binds the connected client, tool name, destination, and approval to a host rule before <code>callTool</code>.</p>
 <div class="signal" aria-label="Counterexample path"><div><b>SERVER LISTING</b><strong>readOnlyHint: true</strong></div><i>→</i><div class="warn"><b>HINT-TRUSTING HOST</b><strong>1 callback outside rule</strong></div><i>→</i><div class="safe"><b>ĀML HOST RULE</b><strong>0 callbacks</strong></div></div><p class="hero-note">The comparison host is intentionally unsafe. The MCP specification warns that annotations are untrusted unless the server is trusted. No connected MCP server or real send is used here.</p></section>
-<div class="stats"><span>8 executable cases</span><span>1 → 0 simulated callbacks on forged hint</span><span>0 live external effects</span></div>
-<section><h2>Run the call through the boundary.</h2><p class="intro">The cases distinguish policy denial, stale approval, schema rejection, a returned tool error, a transport exception, and an input-required response. Open each trace for the actual plan, receipt, and forwarded call.</p><div class="grid"><article class="case blocked" id="forged_read_only"><div class="case-head"><span>CASE 01</span><span>BLOCKED</span></div>
+<div class="stats"><span>9 executable cases</span><span>1 → 0 simulated callbacks on forged hint</span><span>0 live external effects</span></div>
+<section><h2>Run the call through the boundary.</h2><p class="intro">The cases distinguish policy denial, stale approval, schema rejection, a returned tool error, a transport exception, an input-required response, and an unreadable returned result. Open each trace for the actual plan, receipt, and forwarded call.</p><div class="grid"><article class="case blocked" id="forged_read_only"><div class="case-head"><span>CASE 01</span><span>BLOCKED</span></div>
 <h3>A forged read-only hint</h3><p class="proposal">send_notice({&quot;to&quot;:&quot;outside@example.test&quot;,&quot;body&quot;:&quot;Build passed.&quot;})</p>
 <div class="compare"><div><small>HINT-TRUSTING EXAMPLE</small><strong>1</strong><span>simulated callback</span></div><div><small>ĀML HOST GATE</small><strong>0</strong><span>simulated callbacks</span></div></div>
 <p class="reason">no_exact_rule · not_called</p><details><summary>Inspect plan, receipt, and forwarded call</summary><pre>{
@@ -183,6 +183,34 @@
       &quot;to&quot;: &quot;team@example.test&quot;
     }
   }
+}</pre></details></article>
+<article class="case caution" id="unreadable_result"><div class="case-head"><span>CASE 09</span><span>CAUTION</span></div>
+<h3>A returned result throws during inspection</h3><p class="proposal">send_notice({&quot;to&quot;:&quot;team@example.test&quot;,&quot;body&quot;:&quot;Build passed.&quot;})</p>
+<div class="compare"><div><small>HINT-TRUSTING EXAMPLE</small><strong>1</strong><span>simulated callback</span></div><div><small>ĀML HOST GATE</small><strong>1</strong><span>simulated callback</span></div></div>
+<p class="reason">host_dispatch_returned · invalid_result</p><details><summary>Inspect plan, receipt, and forwarded call</summary><pre>{
+  &quot;tool_callbacks&quot;: 1,
+  &quot;rejection&quot;: null,
+  &quot;plan&quot;: {
+    &quot;protocol&quot;: &quot;aml-action-plan/1&quot;,
+    &quot;proposal_sha256&quot;: &quot;c6bc186f28c1b2af65d5bbec3f5c40c6259b294668931b6e9fe41a4d1319924c&quot;,
+    &quot;decision&quot;: &quot;requires_approval&quot;,
+    &quot;reason&quot;: &quot;exact_rule&quot;
+  },
+  &quot;receipt&quot;: {
+    &quot;protocol&quot;: &quot;aml-action-dispatch/1&quot;,
+    &quot;proposal_sha256&quot;: &quot;c6bc186f28c1b2af65d5bbec3f5c40c6259b294668931b6e9fe41a4d1319924c&quot;,
+    &quot;policy_decision&quot;: &quot;requires_approval&quot;,
+    &quot;execution_status&quot;: &quot;dispatched&quot;,
+    &quot;reason&quot;: &quot;host_dispatch_returned&quot;
+  },
+  &quot;mcp_result_status&quot;: &quot;invalid_result&quot;,
+  &quot;forwarded&quot;: {
+    &quot;name&quot;: &quot;send_notice&quot;,
+    &quot;arguments&quot;: {
+      &quot;body&quot;: &quot;Build passed.&quot;,
+      &quot;to&quot;: &quot;team@example.test&quot;
+    }
+  }
 }</pre></details></article></div></section>
-<aside class="boundary"><strong>Scope.</strong> No connected MCP server, transport, real approval, output validation, automatic SDK input-round interception, or proof of external effect. A host must bind the configured client to its actual server and validate the tool&#39;s final provider request. A returned MCP tool error is not a successful effect; a thrown transport leaves an unknown outcome. The wrapper does not retry. The tool's annotations are informational and never an authority source in this example.</aside>
+<aside class="boundary"><strong>Scope.</strong> No connected MCP server, transport, real approval, output validation, automatic SDK input-round interception, or proof of external effect. A host must bind the configured client to its actual server and validate the tool&#39;s final provider request. A returned MCP tool error is not a successful effect; a thrown transport leaves an unknown outcome. An unreadable result retains the dispatched receipt without re-running the callback. The wrapper does not retry. The tool's annotations are informational and never an authority source in this example.</aside>
 <footer><a href="mcp-call-report.json">Machine report ↗</a> · <a href="https://modelcontextprotocol.io/specification/2026-07-28/server/tools">MCP tool specification ↗</a> · <a href="https://github.com/aruintelligence/aml-core/blob/main/pilots/action-boundary/mcp-call-tool-gate.mjs">Source ↗</a><p>ĀML™ · ĀRU Intelligence Inc. · Project-authored evidence, no outside witness.</p></footer></main></body></html>

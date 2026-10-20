@@ -37,7 +37,9 @@ const cases = [
   { id: "transport_unknown", title: "Transport fails after the call starts", input: params(), result: "throw",
     expected: { calls: 1, reason: "host_dispatch_error", result: "unknown" } },
   { id: "input_required", title: "The tool requests another input round", input: params(), result: "input",
-    expected: { calls: 1, reason: "host_dispatch_returned", result: "input_required" } }
+    expected: { calls: 1, reason: "host_dispatch_returned", result: "input_required" } },
+  { id: "unreadable_result", title: "A returned result throws during inspection", input: params(), result: "getter",
+    expected: { calls: 1, reason: "host_dispatch_returned", result: "invalid_result" } }
 ];
 
 function mockClient(spec, calls) {
@@ -48,6 +50,7 @@ function mockClient(spec, calls) {
       content: [{ type: "text", text: "provider error" }] };
     if (spec.result === "input") return { resultType: "input_required",
       inputRequests: { missing: { method: "elicitation/create" } } };
+    if (spec.result === "getter") return { get isError() { throw Error("unreadable result"); } };
     return { resultType: "complete", isError: false,
       content: [{ type: "text", text: "simulated" }] };
   } };
@@ -81,6 +84,7 @@ export async function runMCPCallCases() {
       assert.equal(after.plan.decision, spec.expected.decision ?? "requires_approval", spec.id);
       assert.equal(after.receipt.reason, spec.expected.reason, spec.id);
       if (spec.expected.result) assert.equal(after.mcp_result_status, spec.expected.result, spec.id);
+      if (spec.result === "getter") assert.equal(Object.hasOwn(after, "result"), false, spec.id);
     }
     rows.push({ id: spec.id, title: spec.title, model_proposed_call: spec.input,
       advertised_read_only_hint: listing.annotations.readOnlyHint,

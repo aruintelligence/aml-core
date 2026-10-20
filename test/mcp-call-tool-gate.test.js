@@ -22,7 +22,7 @@ const input = (to = team, body = "Original") => ({ name, arguments: { to, body }
 
 test("the measured hint counterexample blocks outside call and retains error semantics", async () => {
   const report = await runMCPCallCases();
-  assert.equal(report.cases.length, 8);
+  assert.equal(report.cases.length, 9);
   const forged = report.cases[0];
   assert.equal(forged.advertised_read_only_hint, true);
   assert.equal(forged.before.tool_callbacks, 1);
@@ -31,6 +31,10 @@ test("the measured hint counterexample blocks outside call and retains error sem
   assert.equal(report.cases.find(x => x.id === "tool_error").after.mcp_result_status, "tool_error");
   assert.equal(report.cases.find(x => x.id === "transport_unknown").after.receipt.execution_status, "unknown");
   assert.equal(report.cases.find(x => x.id === "input_required").after.mcp_result_status, "input_required");
+  const unreadable = report.cases.find(x => x.id === "unreadable_result");
+  assert.equal(unreadable.after.tool_callbacks, 1);
+  assert.equal(unreadable.after.receipt.execution_status, "dispatched");
+  assert.equal(unreadable.after.mcp_result_status, "invalid_result");
 });
 
 test("the client receives frozen validated arguments after an awaited approval", async () => {
@@ -79,4 +83,31 @@ test("an MCP error cannot be disguised as an input-required round", async () => 
   const outcome = await gate(input());
   assert.equal(outcome.receipt.execution_status, "dispatched");
   assert.equal(outcome.mcp_result_status, "tool_error");
+});
+
+test("an unreadable returned result preserves the dispatched receipt", async () => {
+  let calls = 0;
+  const gate = make({ callTool: async () => {
+    calls++;
+    return { get isError() { throw Error("unreadable result"); } };
+  } });
+  const outcome = await gate(input());
+  assert.equal(calls, 1);
+  assert.equal(outcome.receipt.execution_status, "dispatched");
+  assert.equal(outcome.receipt.reason, "host_dispatch_returned");
+  assert.equal(outcome.mcp_result_status, "invalid_result");
+  assert.equal(Object.hasOwn(outcome, "result"), false);
+});
+
+test("a throwing resultType getter also preserves the dispatched receipt", async () => {
+  let calls = 0;
+  const gate = make({ callTool: async () => {
+    calls++;
+    return { isError: false, get resultType() { throw Error("unreadable resultType"); } };
+  } });
+  const outcome = await gate(input());
+  assert.equal(calls, 1);
+  assert.equal(outcome.receipt.execution_status, "dispatched");
+  assert.equal(outcome.mcp_result_status, "invalid_result");
+  assert.equal(Object.hasOwn(outcome, "result"), false);
 });
