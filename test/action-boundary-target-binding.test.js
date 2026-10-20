@@ -87,3 +87,23 @@ test("a changed declared resource or invalid proposal never resolves or dispatch
   assert.equal(invalid.receipt.reason, "invalid_proposal");
   assert.equal(resolutions, 0); assert.equal(calls, 0);
 });
+
+test("a failed target-bound snapshot never rereads a stateful proposal", async () => {
+  let reads = 0, resolutions = 0, approvals = 0, calls = 0;
+  const proposal = original();
+  Object.defineProperty(proposal.arguments, "body", { enumerable: true, get() {
+    if (++reads === 1) throw Error("first snapshot failed");
+    return "Different text on the second read";
+  } });
+  const result = await dispatchTargetBoundAction(proposal, {
+    policy: policy(false),
+    resolveTarget: () => { resolutions++; return "team@example.test"; },
+    requestApproval: async () => { approvals++; return { approved: true }; },
+    executeTool: async () => { calls++; }
+  });
+  assert.deepEqual([reads, resolutions, approvals, calls], [1, 0, 0, 0]);
+  assert.deepEqual(result.receipt, {
+    protocol: "aml-action-dispatch/1", proposal_sha256: null,
+    policy_decision: "deny", execution_status: "blocked", reason: "invalid_proposal"
+  });
+});
