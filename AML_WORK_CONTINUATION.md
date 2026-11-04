@@ -1,6 +1,6 @@
 # Operation ĀML continuation record
 
-Date: 2026-11-04. Repository `aruintelligence/aml-core`. Baseline `main` SHA `79a24ba96820a4ca974bcba30b797bf35dd7abc7`; development branch `operation-aml/grant-store-integrity-20261104`. No main merge, release, production deployment or public website publication was authorized or performed. Initial code/docs commit: `f0d3e2dbdaaf6b1bb779c7c150f24144a23184e5`; check `git rev-parse HEAD` for later docs/report commit and the draft PR.
+Date: 2026-11-04. Repository `aruintelligence/aml-core`. Baseline `main` SHA `79a24ba96820a4ca974bcba30b797bf35dd7abc7`; development branch `operation-aml/grant-store-integrity-20261104`; review [draft PR #468](https://github.com/aruintelligence/aml-core/pull/468). No main merge, release, production deployment or public website publication was authorized or performed. Local code/docs commits were `f0d3e2dbdaaf6b1bb779c7c150f24144a23184e5` and `01a8b67`; direct Git push lacked credentials, so the connected GitHub integration created a new remote commit `c22332942b632ae6f3be7cd490a2030cc8869a44` whose **tree SHA** `48b5ef468fbf008220561c226e19590feb0e6503` matched local commit `01a8b67` exactly. Subsequent continuation-document edits have their own branch head; inspect PR #468 for the current remote SHA. No existing main or tag history was rewritten.
 
 ## Preserved work
 
