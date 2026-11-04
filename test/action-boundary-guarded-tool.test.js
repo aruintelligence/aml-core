@@ -108,3 +108,16 @@ test("a throwing approval accessor produces a blocked receipt without dispatch",
   assert.equal(output.receipt.reason, "approval_error");
   assert.equal(count, 0);
 });
+
+test("inherited approval fields cannot authorize a guarded callback", async () => {
+  let count = 0;
+  const guarded = makeTool({
+    requestApproval: async ({ proposal_sha256 }) =>
+      Object.create({ approved: true, proposal_sha256 }),
+    execute: async () => { count++; }
+  });
+  const output = await guarded({ to: route, body: "Hi" });
+  assert.equal(output.receipt.execution_status, "blocked");
+  assert.equal(output.receipt.reason, "approval_error");
+  assert.equal(count, 0);
+});
