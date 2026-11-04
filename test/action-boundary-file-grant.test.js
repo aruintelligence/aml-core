@@ -86,6 +86,24 @@ test("a claim-store error blocks dispatch rather than calling the tool", () => w
   assert.equal(calls, 0);
 }));
 
+test("a torn issued-grant record blocks dispatch without a callback", () => withDirectory(async directory => {
+  const proposal = { protocol: "aml-proposed-action/1", tool: "send_message", effect: "send",
+    resource: "team@example.test", purpose: "Test corrupt grant", arguments: { body: "Hi" } };
+  const policy = { protocol: "aml-action-policy/1", rules: [
+    { tool: proposal.tool, effect: proposal.effect, resource: proposal.resource, requires_approval: true }
+  ] };
+  const store = createFileOneShotGrants({ directory });
+  const grant = await store.issue(planAction(proposal, policy).proposal_sha256);
+  await writeFile(path.join(directory, "issued", `${grant.approval_id}.json`), '{"approval_id":');
+  let calls = 0;
+  const outcome = await dispatchAction(proposal, { policy, requestApproval: async () => grant,
+    consumeApproval: store.consume, executeTool: async () => { calls++; } });
+  assert.equal(outcome.receipt.execution_status, "blocked");
+  assert.equal(outcome.receipt.reason, "approval_consume_error");
+  assert.equal(calls, 0);
+  assert.deepEqual(await readdir(path.join(directory, "claimed")), []);
+}));
+
 test("a pre-existing writable root or claim directory cannot issue a grant", () =>
   withDirectory(async directory => {
     const store = createFileOneShotGrants({ directory });
