@@ -1,0 +1,32 @@
+# ĀML technical audit — Operation ĀML work session
+
+Date: 2026-11-04. Baseline: `main` at `79a24ba96820a4ca974bcba30b797bf35dd7abc7`. Work branch: `operation-aml/grant-store-integrity-20261104`. The baseline working tree was clean. No release tag or historical commit was changed.
+
+## Scope and evidence
+
+The [machine-readable inventory](audit/AML_REPOSITORY_INVENTORY.json) records every one of the **1,638 tracked baseline paths**, Git blob ID and byte size, grouped by top-level directory. The baseline `npm test` run completed with **1,090 pass, zero fail, zero skipped**. The inventory is a complete path inventory, **not** a claim that every file received individual manual review.
+
+Focused manual inspection covered `protocol/canonicalJson.js`, `docs/aml-browser-integrity.js`, `pilots/action-boundary/{boundary,guarded-tool,target-boundary,one-shot-grants,file-one-shot-grants,file-dispatch-ledger,file-revocation-handoff}.mjs`, related action tests, the action-boundary reproduction guide, the claims/evidence ledgers, and the central CI workflow. Repository-wide enumeration covered source, tests, scripts, docs, workflows, tags and the open GitHub issues and PRs. An individual line-by-line audit of the other production, experimental, browser and publication files remains **not done**.
+
+At baseline, GitHub reported eight releases, including stable `v1.3.0`, preview `v1.4.0-rc.2`, and two action-boundary evidence releases; 28 open issues and four open PRs. PR #422 proposes revocation-race semantics but is documentation-only. These counts were observed on 2026-11-04 and are not a release-readiness verdict.
+
+## Findings and remediation
+
+| ID | Severity / preconditions | Evidence and affected files | Status | Verification |
+| --- | --- | --- | --- | --- |
+| A-01 | High for this **local pilot** if host storage loses its spent-marker directory while issued grants survive. A model cannot remove a correctly protected host directory on its own. | Baseline `file-one-shot-grants.mjs` called recursive `mkdir(claimed)` on every issue. A locally reproduced consumed grant returned `true` a second time after the directory was removed and another grant issued. | Fixed on work branch. A version-2 store marker prevents silent partial reinitialization. Issue and claim directory entries are synced before return. | New loss/replay and marker-removal tests in `test/action-boundary-file-grant.test.js`; focused run 9/9 pass. Power-loss persistence itself was **not** fault-injection tested. |
+| A-02 | Medium under in-process prototype pollution or non-JSON JavaScript input. | `canonicalJSONStringify` and browser counterpart serialized ordinary copies that inherited `toJSON`; an inherited hook changed `{"a":1,"b":[2,3]}` to `{"rewritten":true}`. `value.map` could call an input-owned method. | Fixed on work branch for Node and browser canonicalizers; the exported `canonicalize` API shape and the normal `sorted-json-v1` wire bytes remain unchanged. | New hook and array-method regressions; 23/23 focused browser/canonical tests pass. Existing intentionally colliding malformed-array receipt test remains intact. |
+| A-03 | High for a production claim; **unresolved**. | The local file pilot is not a transactionally anchored, multi-machine grant store. A whole-store rollback, actor with the host OS identity, network filesystem, or unguarded tool path remains outside its guarantee. See existing `file-revocation-handoff.mjs` and `AUTHORITY_CHECKPOINT.md` for bounded stronger experiments. | Open design and validation work. | No production outage, external database, cross-machine, or independent test run in this session. |
+| A-04 | Medium for evidence interpretation; **unresolved**. | `boundary.mjs` returns `dispatched` when a host callback returns. A provider may not have accepted or completed the action. Existing ledger recognizes unknown outcomes. | Execution-state semantics specified in `AML_EXECUTION_INTEGRITY_SPEC.md`; runtime integration of provider acknowledgments is pending. | Local simulations only; no provider confirmation. |
+
+## Automated checks and limitations
+
+`npm run check:links` passed across 436 Markdown files. The 13-case JavaScript/Python action comparison and six Python vectors passed. A first full post-change suite found one incompatibility in the browser's deliberately retained negative fixture (1 fail / 1,097 tests). The canonicalizer was adjusted to preserve that legacy projection, without weakening the fixture. The final full suite passed **1,098/1,098**, zero fail/skipped. The separate controlled local outbox test and four-case bounded model also passed.
+
+`npm audit --omit=dev` on the nested MCP package returned zero advisories for its resolved dependencies at scan time; the root `package.json` declares no runtime dependencies. This is not an exhaustive supply-chain analysis. No secret scan of full Git history, full workflow permission review, independent reproduction, external pilot, live provider acceptance, or production penetration test was completed. A clean test suite does not establish absence of vulnerabilities.
+
+The broad `reproduction/action-boundary/reproduce.sh` run passed its earlier visible subchecks but exited nonzero when a Perl subprocess timed out inside `scripts/build-action-stress-matrix.mjs --check`. An isolated rerun failed on a Python child timeout in the same stress matrix; that exact case returned the expected denial when run alone in 0.490 seconds. These are **failed aggregate runs**, not passing end-to-end verification. The cause of intermittent five-second subprocess timeouts is unresolved; see `AML_WORK_CONTINUATION.md`.
+
+## Release interpretation
+
+The published stable package reports version `1.3.0`. Action-boundary files live under `pilots/`; the work in this branch is an **experimental reference change**, not a new stable product release. The existing MIT license remains unchanged. Project-authored tests and model exploration are E2 at most; none of this is E3–E7 evidence.

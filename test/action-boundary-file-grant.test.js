@@ -34,6 +34,28 @@ test("a claim persists across store instances and rejects reuse", () => withDire
   assert.equal((await readdir(path.join(directory, "claimed"))).length, 1);
 }));
 
+test("losing the spent-marker directory cannot be repaired by issuing a new grant", () =>
+  withDirectory(async directory => {
+    const store = createFileOneShotGrants({ directory });
+    const grant = await store.issue(digest);
+    assert.equal(await store.consume({ approval: grant, proposal_sha256: digest }), true);
+    await rm(path.join(directory, "claimed"), { recursive: true });
+    await assert.rejects(() => store.issue("b".repeat(64)));
+    await assert.rejects(() => createFileOneShotGrants({ directory }).issue("b".repeat(64)));
+    await assert.rejects(() => store.consume({ approval: grant, proposal_sha256: digest }));
+    assert.equal((await readdir(directory)).includes("claimed"), false);
+  }));
+
+test("a missing or damaged store marker cannot silently initialize over old grants", () =>
+  withDirectory(async directory => {
+    const store = createFileOneShotGrants({ directory });
+    await store.issue(digest);
+    await rm(path.join(directory, "store-state.json"));
+    await assert.rejects(() => createFileOneShotGrants({ directory }).issue(digest),
+      /grant_store_incomplete/);
+    assert.deepEqual(await readdir(path.join(directory, "claimed")), []);
+  }));
+
 test("expiry, digest mismatch, and invalid IDs fail without creating a claim", () => withDirectory(async directory => {
   let clock = 1000;
   const store = createFileOneShotGrants({ directory, now: () => clock });
@@ -72,8 +94,8 @@ test("a pre-existing writable root or claim directory cannot issue a grant", () 
     assert.deepEqual(await readdir(directory), []);
     await chmod(directory, 0o700);
     await mkdir(path.join(directory, "claimed"), { mode: 0o777 });
-    await assert.rejects(() => store.issue(digest), /private_grant_directory_required/);
-    assert.deepEqual(await readdir(path.join(directory, "issued")), []);
+    await assert.rejects(() => store.issue(digest), /grant_store_incomplete/);
+    assert.deepEqual(await readdir(directory), ["claimed"]);
   }));
 
 test("a claim directory made writable after issuance blocks before callback", () =>
@@ -103,6 +125,6 @@ test("a symlinked claim directory is rejected instead of followed", () =>
     await mkdir(root, { mode: 0o700 });
     await symlink(outside, path.join(root, "claimed"));
     const store = createFileOneShotGrants({ directory: root });
-    await assert.rejects(() => store.issue(digest), /private_grant_directory_required/);
+    await assert.rejects(() => store.issue(digest), /grant_store_incomplete/);
     assert.deepEqual(await readdir(outside), []);
   }));

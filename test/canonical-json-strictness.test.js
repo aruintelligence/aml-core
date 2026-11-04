@@ -40,6 +40,33 @@ for (const [name, stringify] of canonicalizers) {
     assert.throws(() => stringify({ id: 1n }), /AML_CANONICAL_JSON_UNSUPPORTED_VALUE/);
     assert.throws(() => stringify(Symbol("x")), /AML_CANONICAL_JSON_UNSUPPORTED_VALUE/);
   });
+
+  test(`${name} canonical JSON does not call input-controlled array methods`, () => {
+    const array = ["original"];
+    array.map = () => { throw new Error("attacker method ran"); };
+    assert.equal(stringify({ recipients: array }), '{"recipients":["original"]}');
+    // The old wire profile maps a hole to null; the browser receipt verifier
+    // separately rejects that malformed live input before sealing.
+    assert.equal(stringify({ recipients: [, "second"] }),
+      '{"recipients":[null,"second"]}');
+  });
+
+  test(`${name} canonical JSON ignores inherited serialization hooks`, () => {
+    const value = { action: { destination: "approved" }, arguments: ["first", { count: 2 }] };
+    const expected = stringify(value);
+    const objectHook = Object.getOwnPropertyDescriptor(Object.prototype, "toJSON");
+    const arrayHook = Object.getOwnPropertyDescriptor(Array.prototype, "toJSON");
+    try {
+      Object.prototype.toJSON = () => ({ action: "substituted" });
+      Array.prototype.toJSON = () => ["substituted"];
+      assert.equal(stringify(value), expected);
+    } finally {
+      if (objectHook) Object.defineProperty(Object.prototype, "toJSON", objectHook);
+      else delete Object.prototype.toJSON;
+      if (arrayHook) Object.defineProperty(Array.prototype, "toJSON", arrayHook);
+      else delete Array.prototype.toJSON;
+    }
+  });
 }
 
 test("node and browser canonical JSON remain byte-identical for JSON values", () => {

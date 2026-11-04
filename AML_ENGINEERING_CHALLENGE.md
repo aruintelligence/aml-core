@@ -1,0 +1,5 @@
+# Engineer-held verifier challenge
+
+Build a verifier from [the versioned action specification](reproduction/action-boundary/SPEC.md) and [six baseline vectors](pilots/action-boundary/vectors.json) without importing the repository's canonicalizer or Python adapter. Pin the exact source commit, state your supported JSON subset, independently recompute the proposal SHA-256, evaluate exact policy matches, and reject changed resource, payload and malformed input. Include one intentionally failing/tampered case and the exact bytes that were hashed.
+
+Then compare the 13-case cross-runtime challenge using `conformance/action-boundary-challenge.json`; state any unsupported cases rather than silently skipping them. Publish implementation source, environment, commands, PASS/FAIL/MIXED results and limitations. A fresh implementation from the specification can support E4 for the cases actually covered. A wrapper around project code remains project-maintained verification.

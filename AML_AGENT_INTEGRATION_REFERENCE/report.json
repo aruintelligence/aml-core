@@ -1,0 +1,65 @@
+{
+  "protocol": "aml-local-outbox-reference/1",
+  "evidence_level": "E2 project-authored local test",
+  "source": "function-tool wrapper plus private local grant store",
+  "cases": [
+    {
+      "name": "user_denies",
+      "receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "a093701e01deac40182b3011ec96b545b4925c393a84badfb5b696a8f9be09fb",
+        "policy_decision": "requires_approval",
+        "execution_status": "blocked",
+        "reason": "approval_missing_or_mismatched"
+      },
+      "local_records_after_case": 0
+    },
+    {
+      "name": "payload_changed",
+      "receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "5a6332411d790fc7dfb9744da64a8d9b8d0413c4627a81ae1c18aba5e6b6ec32",
+        "policy_decision": "requires_approval",
+        "execution_status": "blocked",
+        "reason": "approval_missing_or_mismatched"
+      },
+      "local_records_after_case": 0
+    },
+    {
+      "name": "approved",
+      "receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "a093701e01deac40182b3011ec96b545b4925c393a84badfb5b696a8f9be09fb",
+        "policy_decision": "requires_approval",
+        "execution_status": "dispatched",
+        "reason": "host_dispatch_returned"
+      },
+      "local_records_after_case": 1
+    },
+    {
+      "name": "replayed_grant",
+      "receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "a093701e01deac40182b3011ec96b545b4925c393a84badfb5b696a8f9be09fb",
+        "policy_decision": "requires_approval",
+        "execution_status": "blocked",
+        "reason": "approval_reused_or_expired"
+      },
+      "local_records_after_case": 1
+    },
+    {
+      "name": "callback_error_after_write",
+      "receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "dad0f3f7ea96b51d1fdf7ccfdea917b3880361d56551fdb785b766dfae5a9711",
+        "policy_decision": "requires_approval",
+        "execution_status": "unknown",
+        "reason": "host_dispatch_error"
+      },
+      "local_records_after_case": 2
+    }
+  ],
+  "callback_count": 2,
+  "local_observation_sha256": "867b10e54074337f07690d350c513f76bd5a101bd754b9bf4f77cf5e9a555603",
+  "limitations": "No real model, authenticated human UI, external provider, distributed store or provider confirmation."
+}

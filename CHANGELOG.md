@@ -4,6 +4,13 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 
 ## [Unreleased]
 
+### 2026-11-04 action-boundary pilot hardening
+
+- Prevented the local one-use grant pilot from silently recreating a missing spent-marker directory. New stores carry a version-2 state marker; existing unmarked stores require operator reconciliation and a fresh directory after grants expire.
+- Synced grant and claim directory entries before reporting issue or consumption on supported local POSIX filesystems. This is not a tested power-loss guarantee.
+- Prevented inherited `toJSON` hooks and input-owned array `map` methods from rewriting Node/browser canonical bytes. Ordinary JSON vectors and legacy malformed-array projection remain unchanged.
+- Added a bounded two-worker authorization model, a controlled local outbox integration, regression tests, repository inventory and honest audit/evaluation materials. None is an independent or production validation.
+
 ### Next
 
 - independent second-runtime interoperability testing

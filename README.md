@@ -22,6 +22,8 @@
 
 **Reproduce the host-owned action boundary:** [Run the full receipt-binding package](reproduction/action-boundary/REPRODUCE.md) to inspect 100 exact cases in five project-maintained bindings, ten paired public controlled-page pilots, four tool adapters, and the append-only registry of 125 distinct receipts. The [canonical specification](reproduction/action-boundary/SPEC.md) states what the hashes and callbacks prove and where the boundary stops.
 
+**Evaluate this development branch:** [Independent evaluation kit](AML_INDEPENDENT_EVALUATION_KIT.md) · [controlled local agent integration](AML_AGENT_INTEGRATION_GUIDE.md) · [execution-state contract](AML_EXECUTION_INTEGRITY_SPEC.md) · [security findings](AML_ADVERSARIAL_TEST_REPORT.md) · [capability matrix](AML_ENTERPRISE_CAPABILITY_MATRIX.md) · [measured overhead](AML_PERFORMANCE_REPORT.md). These are project-authored E2 checks for an experimental action boundary, not independent validation or a stable release. Approval identity, provider completion, distributed grants, and bypass-path coverage remain integration responsibilities.
+
 [**Enter the interactive first run →**](https://aruintelligence.github.io/aml-core/first-run.html) Change an agent's destination or a proposed interface value. The action path runs the project's browser planner, computes the canonical proposal SHA-256, and checks it against a published project vector. Then open the linked lab or reproduce locally. It never dispatches a tool.
 
 | Your goal | First useful result |

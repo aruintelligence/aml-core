@@ -1,0 +1,33 @@
+# Execution integrity contract — draft 0.1
+
+Status: **design**, with partial local reference behavior in `pilots/action-boundary/`. This document does not assert that a provider or external operation completed.
+
+## States that must remain distinct
+
+| State | Evidence a host needs | What it does not establish |
+| --- | --- | --- |
+| Proposal captured | Canonical proposal bytes and SHA-256, tool, resource, effect, policy identity | Human consent or actual target |
+| Policy decision | Host-held policy snapshot and decision at an identified epoch | Future policy validity |
+| Approval recorded | Authenticated approver, scope, digest, expiry, grant ID | One-use consumption or dispatch |
+| Grant consumed | Durable atomic claim and issuer epoch check | A request was sent |
+| Request initiated | Operation ID, exact provider request digest, dispatch attempt/time | Provider acceptance |
+| Provider accepted | Provider acknowledgment or durable idempotency record tied to operation ID | External completion |
+| External operation completed | Provider completion evidence with external identifier | Independent confirmation |
+| Independently confirmed | Separately obtained observation with provenance and reconciliation time | Universal or permanent truth |
+| Outcome uncertain | Timeout, crash, ambiguous response, or incomplete journal | Failure or permission to retry |
+
+`blocked` means the guarded path did not invoke its callback. `dispatched` in `aml-action-dispatch/1` means the callback returned; existing receipt semantics must not be silently upgraded to "provider accepted". A new provider-state receipt should use a new schema/protocol and bind the earlier proposal, policy epoch, grant ID, operation ID, request digest, prior-state digest, time and evidence references. A SHA-256 digest without a trusted signature/key or independently retained anchor is tamper detection against accidental byte changes, not provenance.
+
+## Reference transition rules
+
+The host records an intent ID separately from the proposal digest: two deliberate identical actions may have distinct IDs. The grant may move `issued → consumed` only once, atomically and durably. The host rechecks revocation at the linearization point and, where required, at provider handoff. After claim, `request_initiated → provider_accepted → completed → independently_confirmed` requires evidence at each transition. A timeout after initiation moves to `outcome_uncertain`; it does **not** move to `blocked` or `completed`. A crash after consumption but before request remains consumed and uncertain. Revocation after an irreversible provider acceptance cannot undo the effect.
+
+For a provider offering idempotency keys, derive a provider-scoped key from a **host-generated stable operation ID**, retain the key through retries, and verify the provider's retention window and semantics. An automatic retry is allowed only when a provider contract and reconciliation evidence establish that it cannot duplicate the external effect. Otherwise, freeze the operation for operator review. Distinguish cancellation requests, confirmed cancellation, and rollback or compensation; they are separate actions with their own authorization and evidence.
+
+## Trust and failure boundaries
+
+The host must own policy, identity verification, exact tool/target mapping, grant storage, trusted clock, provider credentials and side-effect callback. Any bypass path invalidates the guarded-path claim. Local file markers require private storage, durable directory entries, careful crash recovery and no network filesystem assumptions. The fixed `file-one-shot-grants.mjs` prevents a particular partial-store replay, but cannot detect whole-store rollback after restart or resist same-identity tampering. The existing stronger `file-revocation-handoff.mjs` has optional external claims/checkpoints; these are project-authored pilots, not a production distributed store.
+
+## Acceptance work before production
+
+Implement a transactional external claim and revocation epoch under one linearizable store; bind provider idempotency and independently held completion evidence; exercise crashes at every state boundary; document reconciliation and retention; test multi-worker and multi-host races; obtain an external review. Existing `aml-action-dispatch/1` receipts remain valid under their documented limited meaning.

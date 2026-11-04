@@ -40,6 +40,28 @@ test("mutation during approval cannot alter dispatched bytes", async () => {
   assert.deepEqual(seen, ["Hello"]);
 });
 
+test("inherited toJSON hooks cannot rewrite an approved proposal or policy", async () => {
+  const expected = planAction(proposal, policy).proposal_sha256;
+  const objectHook = Object.getOwnPropertyDescriptor(Object.prototype, "toJSON");
+  const arrayHook = Object.getOwnPropertyDescriptor(Array.prototype, "toJSON");
+  try {
+    Object.prototype.toJSON = () => ({ protocol: PROTOCOL, tool: "send_message",
+      effect: "send", resource: "other@example.test", purpose: "Substituted", arguments: {} });
+    Array.prototype.toJSON = () => [];
+    assert.equal(planAction(proposal, policy).proposal_sha256, expected);
+    const outcome = await dispatchAction(proposal, { policy,
+      requestApproval: async ({ proposal_sha256 }) => ({ approved: true, proposal_sha256 }),
+      executeTool: async frozen => frozen.resource });
+    assert.equal(outcome.receipt.execution_status, "dispatched");
+    assert.equal(outcome.result, proposal.resource);
+  } finally {
+    if (objectHook) Object.defineProperty(Object.prototype, "toJSON", objectHook);
+    else delete Object.prototype.toJSON;
+    if (arrayHook) Object.defineProperty(Array.prototype, "toJSON", arrayHook);
+    else delete Array.prototype.toJSON;
+  }
+});
+
 test("invalid or ambiguous policies fail closed; dispatch error is unknown", async () => {
   assert.equal(planAction(proposal, { ...policy, rules: [...policy.rules, ...policy.rules] }).reason, "ambiguous_policy");
   assert.equal(planAction({ ...proposal, extra: true }, policy).decision, "deny");

@@ -35,6 +35,8 @@ jobs:
         run: node scripts/check-external-evidence-registry.mjs > "${RUNNER_TEMP}/aml-external-evidence-registry.json"
       - name: Run automated tests
         run: npm test
+      - name: Check bounded action authorization model
+        run: node scripts/check-action-authorization-model.mjs
       - name: Guard deployment rollout surfaces
         run: node scripts/check-deployment-surfaces.mjs > "${RUNNER_TEMP}/aml-deployment-surfaces.json"
       - name: Run deployment rollout scenario

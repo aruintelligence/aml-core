@@ -1,0 +1,81 @@
+{
+  "schema": "aml-action-benchmark/1",
+  "commit": "f0d3e2dbdaaf6b1bb779c7c150f24144a23184e5",
+  "worktree_note": "branch may contain uncommitted changes",
+  "platform": "linux/x64",
+  "node": "v24.22.1",
+  "fixture_utf8_bytes": 452,
+  "iterations": 500,
+  "warmup_per_case": 50,
+  "rows": [
+    {
+      "name": "canonicalize",
+      "iterations": 500,
+      "median_ms": 0.0147,
+      "p95_ms": 0.1194,
+      "throughput_ops_s": 16533.5,
+      "rss_before_bytes": 40165376,
+      "rss_after_bytes": 42917888
+    },
+    {
+      "name": "sha256_canonical_bytes",
+      "iterations": 500,
+      "median_ms": 0.0022,
+      "p95_ms": 0.0154,
+      "throughput_ops_s": 44210,
+      "rss_before_bytes": 42917888,
+      "rss_after_bytes": 43442176
+    },
+    {
+      "name": "plan_policy_and_digest",
+      "iterations": 500,
+      "median_ms": 0.0153,
+      "p95_ms": 0.2891,
+      "throughput_ops_s": 12853.5,
+      "rss_before_bytes": 43442176,
+      "rss_after_bytes": 45277184
+    },
+    {
+      "name": "unprotected_same_callback",
+      "iterations": 500,
+      "median_ms": 0.0002,
+      "p95_ms": 0.0006,
+      "throughput_ops_s": 289863,
+      "rss_before_bytes": 45277184,
+      "rss_after_bytes": 45539328
+    },
+    {
+      "name": "guarded_no_approval_callback",
+      "iterations": 500,
+      "median_ms": 0.0287,
+      "p95_ms": 1.2095,
+      "throughput_ops_s": 5168.3,
+      "rss_before_bytes": 46325760,
+      "rss_after_bytes": 48492544
+    },
+    {
+      "name": "guarded_local_one_use_approval",
+      "iterations": 500,
+      "median_ms": 0.0569,
+      "p95_ms": 1.702,
+      "throughput_ops_s": 2837.7,
+      "rss_before_bytes": 48623616,
+      "rss_after_bytes": 49803264
+    },
+    {
+      "name": "file_grant_issue_consume",
+      "iterations": 20,
+      "median_ms": 72.5549,
+      "p95_ms": 128.237,
+      "throughput_ops_s": 13.2,
+      "rss_before_bytes": 49119232,
+      "rss_after_bytes": 49250304
+    }
+  ],
+  "concurrent": {
+    "requests": 100,
+    "elapsed_ms": 19.5008,
+    "throughput_ops_s": 5128
+  },
+  "interpretation": "Local sequential microbenchmark, no provider I/O. RSS is process-wide and noisy. Callback return is not delivery."
+}

@@ -17,7 +17,14 @@ function canonicalPrimitiveBrowser(value) {
 export function canonicalizeBrowser(value) {
   const primitive = canonicalPrimitiveBrowser(value);
   if (primitive !== undefined || value === null) return primitive;
-  if (Array.isArray(value)) return value.map(canonicalizeBrowser);
+  if (Array.isArray(value)) {
+    const length = value.length;
+    const result = new Array(length);
+    for (let i = 0; i < length; i++) {
+      if (i in value) result[i] = canonicalizeBrowser(value[i]);
+    }
+    return result;
+  }
   if (value && typeof value === 'object') {
     const prototype = Object.getPrototypeOf(value);
     if (prototype !== Object.prototype && prototype !== null) {
@@ -33,7 +40,14 @@ export function canonicalizeBrowser(value) {
 }
 
 export function canonicalJSONStringifyBrowser(value) {
-  return JSON.stringify(canonicalizeBrowser(value));
+  function stripInheritedHooks(item) {
+    if (item && typeof item === 'object') {
+      for (const child of Object.values(item)) stripInheritedHooks(child);
+      Object.setPrototypeOf(item, null);
+    }
+    return item;
+  }
+  return JSON.stringify(stripInheritedHooks(canonicalizeBrowser(value)));
 }
 
 // Async signing and replay must operate on the same JSON bytes from start to

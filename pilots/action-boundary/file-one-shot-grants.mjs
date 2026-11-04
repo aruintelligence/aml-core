@@ -2,7 +2,7 @@
 // directory race on exclusive creation of one claim marker. The directory must
 // be private to the host; this is not a network-store or multi-machine protocol.
 import { randomUUID } from "node:crypto";
-import { lstat, mkdir, open, readFile } from "node:fs/promises";
+import { lstat, mkdir, open, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
 const DIGEST = /^[a-f0-9]{64}$/;
@@ -15,6 +15,13 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
   }
   const issued = path.join(directory, "issued");
   const claimed = path.join(directory, "claimed");
+  const state = path.join(directory, "store-state.json");
+  let prepared = false;
+
+  async function syncDirectory(target) {
+    const handle = await open(target, "r");
+    try { await handle.sync(); } finally { await handle.close(); }
+  }
 
   async function requirePrivateDirectory(target) {
     // mkdir's mode only applies to newly created directories. An existing
@@ -27,12 +34,40 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
   }
 
   async function prepare() {
-    await mkdir(directory, { recursive: true, mode: 0o700 });
+    // An instance that has used a store must not silently recreate a removed
+    // root. A new instance also requires the state marker below.
+    if (!prepared) await mkdir(directory, { recursive: true, mode: 0o700 });
     await requirePrivateDirectory(directory);
-    await mkdir(issued, { recursive: true, mode: 0o700 });
-    await mkdir(claimed, { recursive: true, mode: 0o700 });
-    await requirePrivateDirectory(issued);
-    await requirePrivateDirectory(claimed);
+    let exists = true;
+    try { await lstat(state); }
+    catch (error) {
+      if (error.code !== "ENOENT") throw error;
+      exists = false;
+    }
+    if (!exists) {
+      // Only an empty directory is a fresh store. In particular, a missing
+      // marker next to old issued grants cannot be treated as initialization.
+      if (prepared || (await readdir(directory)).length !== 0) {
+        throw new Error("grant_store_incomplete");
+      }
+      let handle;
+      try { handle = await open(state, "wx", 0o600); }
+      catch (error) {
+        if (error.code !== "EEXIST") throw error;
+      }
+      if (handle) {
+        try {
+          await handle.writeFile('{"protocol":"aml-file-one-shot-store/2"}\n');
+          await handle.sync();
+        } finally { await handle.close(); }
+        await syncDirectory(directory);
+        await mkdir(issued, { mode: 0o700 });
+        await mkdir(claimed, { mode: 0o700 });
+        await syncDirectory(directory);
+      }
+    }
+    await verify();
+    prepared = true;
   }
 
   async function verify() {
@@ -41,6 +76,12 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
     await requirePrivateDirectory(directory);
     await requirePrivateDirectory(issued);
     await requirePrivateDirectory(claimed);
+    const info = await lstat(state);
+    if (!info.isFile() || (info.mode & 0o077) !== 0 ||
+        info.uid !== process.getuid() || info.size > 128 ||
+        (await readFile(state, "utf8")) !== '{"protocol":"aml-file-one-shot-store/2"}\n') {
+      throw new Error("grant_store_incomplete");
+    }
   }
 
   async function issue(proposal_sha256, { ttlMs = 60_000 } = {}) {
@@ -63,6 +104,7 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
     } finally {
       await handle.close();
     }
+    await syncDirectory(issued);
     return { approved: true, proposal_sha256, approval_id };
   }
 
@@ -99,6 +141,9 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
     } finally {
       await marker.close();
     }
+    // fsync of the file alone does not guarantee that its directory entry
+    // survives a power loss. Do not report a spent grant before syncing it.
+    await syncDirectory(claimed);
     // If time advanced during the claim, it remains spent and cannot dispatch.
     return now() < record.expires_at_ms;
   }
