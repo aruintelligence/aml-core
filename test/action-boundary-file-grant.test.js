@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { fork } from "node:child_process";
 import { chmod, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -33,6 +34,23 @@ test("a claim persists across store instances and rejects reuse", () => withDire
   assert.equal(await first.consume({ approval: grant, proposal_sha256: digest }), false);
   assert.equal((await readdir(path.join(directory, "claimed"))).length, 1);
 }));
+
+test("a worker dying after claim cannot replay the grant after restart", () =>
+  withDirectory(async directory => {
+    const store = createFileOneShotGrants({ directory });
+    const grant = await store.issue(digest);
+    const worker = new URL("../pilots/action-boundary/file-grant-crash-worker.mjs", import.meta.url);
+    const exitCode = await new Promise((resolve, reject) => {
+      const child = fork(worker, [directory, JSON.stringify(grant), digest],
+        { stdio: ["ignore", "ignore", "ignore", "ipc"] });
+      child.once("error", reject);
+      child.once("exit", resolve);
+    });
+    assert.equal(exitCode, 86);
+    const restarted = createFileOneShotGrants({ directory });
+    assert.equal(await restarted.consume({ approval: grant, proposal_sha256: digest }), false);
+    assert.equal((await readdir(path.join(directory, "claimed"))).length, 1);
+  }));
 
 test("losing the spent-marker directory cannot be repaired by issuing a new grant", () =>
   withDirectory(async directory => {
