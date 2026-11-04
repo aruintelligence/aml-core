@@ -30,3 +30,11 @@ The broad `reproduction/action-boundary/reproduce.sh` run passed its earlier vis
 ## Release interpretation
 
 The published stable package reports version `1.3.0`. Action-boundary files live under `pilots/`; the work in this branch is an **experimental reference change**, not a new stable product release. The existing MIT license remains unchanged. Project-authored tests and model exploration are E2 at most; none of this is E3–E7 evidence.
+
+## Follow-up verification and finding (2026-11-04)
+
+| ID | Severity / preconditions | Evidence and affected files | Status | Verification |
+| --- | --- | --- | --- | --- |
+| A-09 | Medium for callers using the host adapter with an approval provider returning a throwing accessor or Proxy. The direct pinned boundary expects host-trusted approval objects. | `dispatchAction` reads `approval.approved` and `proposal_sha256`; a throwing property previously rejected the promise without a blocked receipt. `pilots/action-boundary/guarded-tool.mjs` now snapshots approval output before invoking the pinned boundary. | Fixed in guarded-tool adapter; direct boundary callers remain responsible for trusted approval objects. | New regression observes `approval_error`, blocked, zero callback. Focused 8/8 including source-integrity checks; full suite 1,105/1,105 pass. |
+
+The exact pinned release checkout `79a24ba` completed `bash reproduction/action-boundary/reproduce.sh` with the original five-second subprocess timeout: 375/375 stress cases matched in five bindings; 508 registry receipts passed deep source verification; 146 manifest files matched; final tests 14/14 passed. Earlier development-branch aggregate failures remain recorded: intermittent child timeouts and then the expected immutable release-manifest drift. The branch's configurable 20-second child budget passed the unchanged stress matrix, but the full aggregate is a **FAIL** on this changed source tree by design. The CI reproduction workflow was changed to run branch checks and a separately checked-out pinned release. Its updated GitHub outcome was pending at this writing.
