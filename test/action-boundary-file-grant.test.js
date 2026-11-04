@@ -74,7 +74,7 @@ test("a missing or damaged store marker cannot silently initialize over old gran
     assert.deepEqual(await readdir(path.join(directory, "claimed")), []);
   }));
 
-test("expiry, digest mismatch, and invalid IDs fail without creating a claim", () => withDirectory(async directory => {
+test("invalid IDs and digests do not claim; observed expiry is spent across restart", () => withDirectory(async directory => {
   let clock = 1000;
   const store = createFileOneShotGrants({ directory, now: () => clock });
   const grant = await store.issue(digest, { ttlMs: 100 });
@@ -83,7 +83,10 @@ test("expiry, digest mismatch, and invalid IDs fail without creating a claim", (
   assert.equal(await store.consume({ approval: grant, proposal_sha256: "b".repeat(64) }), false);
   clock = 1100;
   assert.equal(await store.consume({ approval: grant, proposal_sha256: digest }), false);
-  assert.deepEqual(await readdir(path.join(directory, "claimed")), []);
+  assert.equal((await readdir(path.join(directory, "claimed"))).length, 1);
+  clock = 1050;
+  assert.equal(await createFileOneShotGrants({ directory, now: () => clock })
+    .consume({ approval: grant, proposal_sha256: digest }), false);
 }));
 
 test("a claim-store error blocks dispatch rather than calling the tool", () => withDirectory(async directory => {

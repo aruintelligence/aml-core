@@ -122,8 +122,6 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
     }
     if (record.approval_id !== id || record.proposal_sha256 !== proposal_sha256 ||
         !Number.isSafeInteger(record.expires_at_ms)) return false;
-    if (now() >= record.expires_at_ms) return false;
-
     await verify();
 
     // Exclusive creation is the linearization point on a local filesystem.
@@ -144,7 +142,9 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
     // fsync of the file alone does not guarantee that its directory entry
     // survives a power loss. Do not report a spent grant before syncing it.
     await syncDirectory(claimed);
-    // If time advanced during the claim, it remains spent and cannot dispatch.
+    // Even an expired grant is spent when first observed. A later host-clock
+    // rollback cannot revive that observed grant after a process restart.
+    // An unobserved expiry still requires a trustworthy clock/anchor.
     return now() < record.expires_at_ms;
   }
 
