@@ -17,3 +17,19 @@ Fixture: one 452-byte canonical proposed action; 50 warmups per case, then 500 s
 The 100-call Promise batch took **19.5008 ms** on this run (5,128 calls/s). It is event-loop concurrency, not multi-host or multi-core throughput. RSS rose from about 40.2 MB before the first case to 49.3 MB after the file case; these are process-wide snapshots affected by JIT, allocation and garbage collection, not a per-request memory cost. The unusually large p95 values and file sync latency on this shared environment should be repeated on target hardware before setting service-level objectives. The unprotected callback performs no canonicalization, policy or receipt work; its extremely small timing is a comparison baseline, not a real provider workload.
 
 This benchmark does **not** measure a real authenticated approval UI, cryptographic receipt verification, distributed grant store, provider request/acceptance/completion, sustained load, or error-path latency. In `aml-action-dispatch/1`, the local receipt is not a signed provider completion receipt. No claim of a production throughput or independent benchmark follows from this run.
+
+## Follow-up after cycle rejection
+
+The same script was rerun from local code commit `4ada7312d993f8bdfd12c1c3879d2c9ccc922094` (tree matched remote PR commit `b75793fa1ef709712937dd5174258c0b905a0ec6`). Raw output: [`audit/AML_ACTION_BENCHMARK_CYCLE_20261104.json`](audit/AML_ACTION_BENCHMARK_CYCLE_20261104.json). It used the same 452-byte fixture, 500 iterations per sequential case except 20 file-grant pairs, and 100 concurrent Promise calls.
+
+| Operation | Median ms | p95 ms | Measured throughput / s |
+| --- | ---: | ---: | ---: |
+| Canonicalization with cycle check | 0.0178 | 0.0530 | 24,103.4 |
+| SHA-256 | 0.0022 | 0.0059 | 39,543.5 |
+| Policy plan and digest | 0.0162 | 0.2095 | 3,087.8 |
+| Unprotected callback | 0.0002 | 0.0005 | 1,363,482.7 |
+| Guarded callback, no approval | 0.0270 | 0.2320 | 1,847.9 |
+| Guarded local one-use approval | 0.0435 | 0.8452 | 5,815.1 |
+| Local file grant issue and consume | 17.5817 | 39.4482 | 47.0 |
+
+The 100-call batch took 4.2485 ms. Differences from the earlier sample include large shifts in file I/O and throughput, showing substantial shared-runner noise; these two runs cannot isolate the cycle check's incremental cost. Reproduce under controlled load on target hardware before making a comparative performance claim.
