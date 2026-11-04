@@ -10,6 +10,7 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 - Synced grant and claim directory entries before reporting issue or consumption on supported local POSIX filesystems. This is not a tested power-loss guarantee.
 - Prevented inherited `toJSON` hooks and input-owned array `map` methods from rewriting Node/browser canonical bytes. Ordinary JSON vectors and legacy malformed-array projection remain unchanged.
 - Cyclic Node/browser canonical inputs now fail with `AML_CANONICAL_JSON_CYCLE`; the guarded function-tool path returns a blocked receipt without invoking the callback. Shared noncyclic subtrees retain their ordinary JSON bytes. Depth and proxy behavior remain bounded integration questions.
+- The guarded function-tool adapter now converts a canonicalization `RangeError` into a blocked `AML_CANONICAL_JSON_RANGE_ERROR` receipt. It does not infer the cause or impose a proactive depth limit.
 - Added a bounded two-worker authorization model, a controlled local outbox integration, regression tests, repository inventory and honest audit/evaluation materials. None is an independent or production validation.
 
 ### Next

@@ -24,12 +24,16 @@ export function createGuardedToolExecute({
     try {
       argumentBytes = canonicalJSONStringify(argumentsValue);
     } catch (error) {
-      if (!String(error?.message).startsWith("AML_CANONICAL_JSON_")) throw error;
+      // A deeply nested input (or an input-owned getter) may raise RangeError
+      // before a canonical JSON error is available. It must not escape without
+      // a blocked receipt, and its cause must not be guessed to be depth.
+      const reason = error instanceof RangeError ? "AML_CANONICAL_JSON_RANGE_ERROR" : error?.message;
+      if (!String(reason).startsWith("AML_CANONICAL_JSON_")) throw error;
       const plan = { protocol: "aml-action-plan/1", proposal_sha256: null,
-        decision: "deny", reason: error.message };
+        decision: "deny", reason };
       return { protocol: "aml-guarded-tool-result/1", plan,
         receipt: { protocol: "aml-action-dispatch/1", proposal_sha256: null,
-          policy_decision: "deny", execution_status: "blocked", reason: error.message } };
+          policy_decision: "deny", execution_status: "blocked", reason } };
     }
     const mappedArguments = JSON.parse(argumentBytes);
     const resource = resourceFor(mappedArguments, context);

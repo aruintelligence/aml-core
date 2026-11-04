@@ -68,3 +68,19 @@ test("cyclic arguments retain a blocked receipt and never execute", async () => 
   assert.equal(receipt.execution_status, "blocked");
   assert.equal(calls, 0);
 });
+
+test("deep arguments return a blocked receipt when recursion overflows", async () => {
+  let calls = 0;
+  const guarded = createGuardedToolExecute({
+    tool: "send_message", effect: "send", purpose: "Send a team update",
+    resourceFor: args => args.to, policy,
+    execute: async () => { calls++; }
+  });
+  let args = { to: "team@example.test" };
+  for (let i = 0; i < 12000; i++) args = { nested: args };
+  const { plan, receipt } = await guarded(args);
+  assert.equal(plan.decision, "deny");
+  assert.equal(receipt.reason, "AML_CANONICAL_JSON_RANGE_ERROR");
+  assert.equal(receipt.execution_status, "blocked");
+  assert.equal(calls, 0);
+});
