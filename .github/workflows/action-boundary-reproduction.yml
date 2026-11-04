@@ -29,4 +29,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: bash reproduction/action-boundary/reproduce.sh
+      - name: Check development branch stress matrix and guarded adapter
+        env:
+          AML_ACTION_STRESS_CHILD_TIMEOUT_MS: "20000"
+        run: |
+          node scripts/build-action-stress-matrix.mjs --check
+          node --test test/action-boundary-guarded-tool.test.js test/action-five-runtime.test.js
+      - uses: actions/checkout@v4
+        with:
+          ref: 79a24ba96820a4ca974bcba30b797bf35dd7abc7
+          path: release-snapshot
+          persist-credentials: false
+      - name: Reproduce pinned release evidence and manifest
+        run: bash release-snapshot/reproduction/action-boundary/reproduce.sh
