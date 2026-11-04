@@ -53,7 +53,7 @@
       },
       "after": {
         "issued": false,
-        "reason": "private_grant_directory_required",
+        "reason": "grant_store_incomplete",
         "outside_marker_count": 0
       }
     },
