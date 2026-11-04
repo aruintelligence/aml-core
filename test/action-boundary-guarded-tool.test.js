@@ -95,3 +95,16 @@ test("invalid host mappings and malformed arguments fail without execution", asy
   await assert.rejects(broken({ to: route }), /Host mapping failed/);
   assert.equal(count, 0);
 });
+
+test("a throwing approval accessor produces a blocked receipt without dispatch", async () => {
+  let count = 0;
+  const guarded = makeTool({
+    requestApproval: async () => ({ approved: true,
+      get proposal_sha256() { throw new Error("Malformed approval"); } }),
+    execute: async () => { count++; }
+  });
+  const output = await guarded({ to: route, body: "Hi" });
+  assert.equal(output.receipt.execution_status, "blocked");
+  assert.equal(output.receipt.reason, "approval_error");
+  assert.equal(count, 0);
+});

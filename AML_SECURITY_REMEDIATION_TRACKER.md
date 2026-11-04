@@ -10,3 +10,4 @@
 | A-06 target resolver and bypass routes | P1 | Integrating host: enumerate effectful paths | Open | Every effectful provider route mediated; negative bypass tests. |
 | A-07 private evidence/logging | P1 | Security team: retention/redaction review | Open | No credentials/personal payload in default logs; access and retention tests. |
 | A-08 external verification | P1 | Outside engineers | Open | Published independent PASS/FAIL/MIXED report tied to exact commit and vectors. |
+| A-09 malformed host approval accessor | P1 for adapter callers | Maintainer: review branch | Implemented in guarded-tool adapter, awaiting PR review | Throwing approval property returns a blocked `approval_error` receipt; zero dispatches in regression. Direct callers of pinned `dispatchAction` remain responsible for trusted approval objects. |

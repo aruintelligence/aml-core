@@ -47,7 +47,11 @@ export function createGuardedToolExecute({
     };
     const outcome = await dispatchAction(proposal, {
       policy,
-      requestApproval: requestApproval && (input => requestApproval(input, context)),
+      // Treat the host approval provider as an external input. Snapshot it
+      // before the pinned boundary reads its properties, so an accessor or
+      // proxy failure becomes the boundary's blocked approval_error receipt.
+      requestApproval: requestApproval && (async input =>
+        JSON.parse(canonicalJSONStringify(await requestApproval(input, context)))),
       consumeApproval: consumeApproval && (input => consumeApproval(input, context)),
       executeTool: frozen => execute(frozen.arguments, context, frozen)
     });
