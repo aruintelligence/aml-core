@@ -15,28 +15,38 @@ function canonicalPrimitiveBrowser(value) {
 }
 
 export function canonicalizeBrowser(value) {
-  const primitive = canonicalPrimitiveBrowser(value);
-  if (primitive !== undefined || value === null) return primitive;
-  if (Array.isArray(value)) {
-    const length = value.length;
-    const result = new Array(length);
-    for (let i = 0; i < length; i++) {
-      if (i in value) result[i] = canonicalizeBrowser(value[i]);
+  const ancestors = new Set();
+  function walk(value) {
+    const primitive = canonicalPrimitiveBrowser(value);
+    if (primitive !== undefined || value === null) return primitive;
+    if (ancestors.has(value)) throw new TypeError('AML_CANONICAL_JSON_CYCLE');
+    ancestors.add(value);
+    try {
+      if (Array.isArray(value)) {
+        const length = value.length;
+        const result = new Array(length);
+        for (let i = 0; i < length; i++) {
+          if (i in value) result[i] = walk(value[i]);
+        }
+        return result;
+      }
+      if (value && typeof value === 'object') {
+        const prototype = Object.getPrototypeOf(value);
+        if (prototype !== Object.prototype && prototype !== null) {
+          throw new TypeError('AML_CANONICAL_JSON_NON_PLAIN_OBJECT');
+        }
+        // Assignment to an ordinary object's "__proto__" changes its prototype
+        // instead of preserving that key as signed data.
+        return Object.fromEntries(
+          Object.keys(value).sort().map(key => [key, walk(value[key])])
+        );
+      }
+      throw new TypeError('AML_CANONICAL_JSON_UNSUPPORTED_VALUE');
+    } finally {
+      ancestors.delete(value);
     }
-    return result;
   }
-  if (value && typeof value === 'object') {
-    const prototype = Object.getPrototypeOf(value);
-    if (prototype !== Object.prototype && prototype !== null) {
-      throw new TypeError('AML_CANONICAL_JSON_NON_PLAIN_OBJECT');
-    }
-    // Assignment to an ordinary object's "__proto__" changes its prototype
-    // instead of preserving that key as signed data.
-    return Object.fromEntries(
-      Object.keys(value).sort().map(key => [key, canonicalizeBrowser(value[key])])
-    );
-  }
-  throw new TypeError('AML_CANONICAL_JSON_UNSUPPORTED_VALUE');
+  return walk(value);
 }
 
 export function canonicalJSONStringifyBrowser(value) {

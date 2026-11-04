@@ -52,3 +52,19 @@ test("malformed canonical arguments retain a blocked receipt", async () => {
   assert.equal(receipt.reason, "AML_CANONICAL_JSON_NON_FINITE_NUMBER");
   assert.equal(callbackCount, 0);
 });
+
+test("cyclic arguments retain a blocked receipt and never execute", async () => {
+  let calls = 0;
+  const guarded = createGuardedToolExecute({
+    tool: "send_message", effect: "send", purpose: "Send a team update",
+    resourceFor: args => args.to, policy,
+    execute: async () => { calls++; }
+  });
+  const args = { to: "team@example.test" };
+  args.self = args;
+  const { plan, receipt } = await guarded(args);
+  assert.equal(plan.decision, "deny");
+  assert.equal(plan.reason, "AML_CANONICAL_JSON_CYCLE");
+  assert.equal(receipt.execution_status, "blocked");
+  assert.equal(calls, 0);
+});

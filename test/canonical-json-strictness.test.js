@@ -67,6 +67,15 @@ for (const [name, stringify] of canonicalizers) {
       else delete Array.prototype.toJSON;
     }
   });
+
+  test(`${name} rejects a cycle but permits a repeated JSON subtree`, () => {
+    const cyclic = { label: "cycle" };
+    cyclic.self = cyclic;
+    assert.throws(() => stringify(cyclic), /AML_CANONICAL_JSON_CYCLE/);
+    const shared = { value: "same" };
+    assert.equal(stringify({ a: shared, b: shared }),
+      '{"a":{"value":"same"},"b":{"value":"same"}}');
+  });
 }
 
 test("node and browser canonical JSON remain byte-identical for JSON values", () => {
