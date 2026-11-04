@@ -39,6 +39,7 @@ jobs:
         with:
           ref: 79a24ba96820a4ca974bcba30b797bf35dd7abc7
           path: release-snapshot
+          fetch-depth: 0
           persist-credentials: false
       - name: Reproduce pinned release evidence and manifest
         run: bash release-snapshot/reproduction/action-boundary/reproduce.sh
