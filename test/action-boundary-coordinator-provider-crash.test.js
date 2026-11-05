@@ -28,6 +28,7 @@ for (const [fault, present] of [["after_commit", true], ["before_commit", false]
     assert.equal(result.coordinator_claims, 1);
     assert.equal(result.provider_record_matches, present);
     assert.equal(result.provider_record_absent, !present);
+    assert.equal(result.provider_signature_result, present ? "PROVIDER_REPORTED" : "INCOMPLETE");
     assert.equal(result.host_outcome, "unknown");
     assert.equal(result.independent_confirmation, false);
     assert.equal(result.retry_attempted, false);

@@ -17,6 +17,8 @@ if (!["start", "recover"].includes(mode) || !path.isAbsolute(directory) ||
   throw Error("invalid_crash_fixture_invocation");
 }
 const provider = fileURLToPath(new URL("./sqlite-provider-fixture.py", import.meta.url));
+const signer = fileURLToPath(new URL("./signed-provider-status.mjs", import.meta.url));
+const verifier = fileURLToPath(new URL("./verify-provider-status.mjs", import.meta.url));
 const journal = path.join(directory, "host-intent.json");
 const coordinatorDb = path.join(directory, "coordinator", "authority.sqlite");
 const providerDb = path.join(directory, "provider", "effects.sqlite");
@@ -38,6 +40,11 @@ function persist(record) {
 if (mode === "start") {
   fs.mkdirSync(path.dirname(coordinatorDb), { mode: 0o700 });
   fs.mkdirSync(path.dirname(providerDb), { mode: 0o700 });
+  const { privateKey, publicKey } = crypto.generateKeyPairSync("ed25519");
+  fs.writeFileSync(path.join(directory, "provider", "private.pem"),
+    privateKey.export({ type: "pkcs8", format: "pem" }), { mode: 0o600 });
+  fs.writeFileSync(path.join(directory, "pinned-provider-public.pem"),
+    publicKey.export({ type: "spki", format: "pem" }));
   coordinator.initialize();
   const operationId = crypto.randomUUID();
   const input = { tenant: "tenant-a", issuer: "host-a", actor: "fixture-reviewer",
@@ -77,9 +84,20 @@ if (mode === "start") {
     providerRecord.operation_id === record.operationId &&
     providerRecord.request_sha256 === record.requestSha256 &&
     providerRecord.destination === record.input.preparedRequest.destination;
+  const signed = spawnSync(process.execPath, [signer, providerDb,
+    path.join(directory, "provider", "private.pem")],
+  { input: record.operationId, encoding: "utf8", timeout: 20_000 });
+  if (signed.error || signed.status !== 0) throw signed.error || Error("provider_signing_failed");
+  const verified = spawnSync(process.execPath, [verifier,
+    path.join(directory, "pinned-provider-public.pem"), record.operationId,
+    record.requestSha256, record.input.preparedRequest.destination],
+  { input: signed.stdout.trim(), encoding: "utf8", timeout: 20_000 });
+  if (verified.error || verified.status !== 0) throw verified.error || Error("provider_verification_failed");
+  const verification = JSON.parse(verified.stdout).result;
   console.log(JSON.stringify({ protocol: "aml-coordinator-provider-crash-report/1",
     replay_status: replay.status, replay_reason: replay.reason, callbacks,
     coordinator_claims: coordinator.inspect().claims,
     provider_record_matches: matches, provider_record_absent: providerRecord === null,
-    host_outcome: "unknown", independent_confirmation: false, retry_attempted: false }));
+    provider_signature_result: verification, host_outcome: "unknown",
+    independent_confirmation: false, retry_attempted: false }));
 }

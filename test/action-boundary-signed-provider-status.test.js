@@ -1,0 +1,104 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
+
+const root = fileURLToPath(new URL("../pilots/action-boundary/", import.meta.url));
+const provider = path.join(root, "sqlite-provider-fixture.py");
+const signer = path.join(root, "signed-provider-status.mjs");
+const verifier = path.join(root, "verify-provider-status.mjs");
+
+function fixture(run) {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-signed-provider-"));
+  try {
+    const database = path.join(directory, "effects.sqlite");
+    const { privateKey, publicKey } = crypto.generateKeyPairSync("ed25519");
+    const privateFile = path.join(directory, "provider-private.pem");
+    const publicFile = path.join(directory, "pinned-public.pem");
+    fs.writeFileSync(privateFile, privateKey.export({ type: "pkcs8", format: "pem" }), { mode: 0o600 });
+    fs.writeFileSync(publicFile, publicKey.export({ type: "spki", format: "pem" }));
+    const operationId = crypto.randomUUID();
+    const requestBytes = JSON.stringify({ operation_id: operationId,
+      destination: "fixture:outbox", body: "approved" });
+    const requestSha256 = crypto.createHash("sha256").update(requestBytes).digest("hex");
+    const request = spawnSync("python3", [provider, database, "request"],
+      { encoding: "utf8", input: JSON.stringify({ request_bytes: requestBytes,
+        request_sha256: requestSha256 }), timeout: 20_000 });
+    assert.equal(request.status, 0, request.stderr);
+    const sign = op => {
+      const result = spawnSync(process.execPath, [signer, database, privateFile],
+        { encoding: "utf8", input: op, timeout: 20_000 });
+      assert.equal(result.status, 0, result.stderr);
+      return JSON.parse(result.stdout);
+    };
+    const verify = (envelope, { key = publicFile, op = operationId,
+      sha = requestSha256, destination = "fixture:outbox" } = {}) => {
+      const result = spawnSync(process.execPath, [verifier, key, op, sha, destination],
+        { encoding: "utf8", input: typeof envelope === "string" ? envelope :
+          canonicalJSONStringify(envelope), timeout: 20_000 });
+      return { ...JSON.parse(result.stdout), exit: result.status };
+    };
+    run({ sign, verify, operationId, requestSha256, publicFile, directory });
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+}
+
+test("pinned provider signature reports a committed fixture effect, not independent confirmation", () =>
+  fixture(({ sign, verify, operationId }) => {
+    const evidence = sign(operationId);
+    assert.equal(verify(evidence).result, "PROVIDER_REPORTED");
+    assert.equal(verify(evidence).independent_confirmation, false);
+    assert.equal(verify(evidence).exit, 0);
+  }));
+
+test("forged completion, operation substitution, request mutation and key substitution are rejected", () =>
+  fixture(({ sign, verify, operationId, directory }) => {
+    const evidence = sign(operationId);
+    const forged = structuredClone(evidence);
+    forged.record.effect_id = crypto.randomUUID();
+    assert.equal(verify(forged).result, "REJECTED");
+    assert.equal(verify(evidence, { op: crypto.randomUUID() }).result, "REJECTED");
+    assert.equal(verify(evidence, { sha: "f".repeat(64) }).result, "REJECTED");
+    assert.equal(verify(evidence, { destination: "fixture:other" }).result, "REJECTED");
+    const { publicKey } = crypto.generateKeyPairSync("ed25519");
+    const substituted = path.join(directory, "other-public.pem");
+    fs.writeFileSync(substituted, publicKey.export({ type: "spki", format: "pem" }));
+    assert.equal(verify(evidence, { key: substituted }).result, "REJECTED");
+    const raw = canonicalJSONStringify(evidence);
+    assert.equal(verify(raw.replace('"issuer":"fixture-provider",',
+      '"issuer":"attacker","issuer":"fixture-provider",')).result, "REJECTED");
+    assert.equal(verify(` ${raw}`).result, "REJECTED");
+  }));
+
+test("signed absence is incomplete; invented provider completion is unsupported", () =>
+  fixture(({ sign, verify }) => {
+    const absent = crypto.randomUUID();
+    const evidence = sign(absent);
+    assert.equal(evidence.record, null);
+    assert.equal(verify(evidence, { op: absent }).result, "INCOMPLETE");
+    assert.equal(verify({ ...evidence, record: { effect_id: crypto.randomUUID() } },
+      { op: absent }).result, "REJECTED");
+  }));
+
+test("substituting both the trust root and signed record defeats unpinned verification", () =>
+  fixture(({ sign, verify, operationId, directory }) => {
+    const evidence = sign(operationId);
+    const { privateKey, publicKey } = crypto.generateKeyPairSync("ed25519");
+    const fake = structuredClone(evidence);
+    fake.record.effect_id = crypto.randomUUID();
+    const statement = { protocol: fake.protocol, issuer: fake.issuer,
+      operation_id: fake.operation_id, record: fake.record };
+    fake.signature = crypto.sign(null, Buffer.concat([
+      Buffer.from("AML-LOCAL-PROVIDER-STATUS/1\0"),
+      Buffer.from(canonicalJSONStringify(statement))
+    ]), privateKey).toString("base64");
+    const attackerRoot = path.join(directory, "attacker-root.pem");
+    fs.writeFileSync(attackerRoot, publicKey.export({ type: "spki", format: "pem" }));
+    assert.equal(verify(fake).result, "REJECTED", "pinned genuine root rejects fabrication");
+    assert.equal(verify(fake, { key: attackerRoot }).result, "PROVIDER_REPORTED",
+      "caller-supplied attacker root can authenticate a forged record");
+  }));
