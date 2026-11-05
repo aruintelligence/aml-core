@@ -88,9 +88,13 @@ if (mode === "start") {
     state.record(event.to, event.evidence_ref);
   }
   if (state.snapshot().state !== "request_initiated") throw Error("Unexpected restart state");
+  const grants = createFileOneShotGrants({ directory: path.join(directory, "grants") });
+  if (!await grants.verifyConsumed({ approval: record.approval,
+    proposal_sha256: record.proposal_sha256 })) {
+    throw Error("Missing or invalid grant consumption evidence");
+  }
   state.record("outcome_uncertain", "host-restart-without-ack");
   const before = state.snapshot().state;
-  const grants = createFileOneShotGrants({ directory: path.join(directory, "grants") });
   const replayAccepted = await grants.consume({ approval: record.approval,
     proposal_sha256: record.proposal_sha256 });
   const child = providerCall("reconcile", record);

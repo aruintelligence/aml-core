@@ -2,6 +2,7 @@
 // directory race on exclusive creation of one claim marker. The directory must
 // be private to the host; this is not a network-store or multi-machine protocol.
 import { randomUUID } from "node:crypto";
+import { constants } from "node:fs";
 import { lstat, mkdir, open, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
@@ -148,8 +149,30 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
     return now() < record.expires_at_ms;
   }
 
+  async function verifyConsumed({ approval, proposal_sha256 } = {}) {
+    const id = approval?.approval_id;
+    if (typeof id !== "string" || !ID.test(id) || !DIGEST.test(proposal_sha256) ||
+        approval.proposal_sha256 !== proposal_sha256) return false;
+    await verify();
+    let marker;
+    try {
+      marker = await open(path.join(claimed, `${id}.claim`),
+        constants.O_RDONLY | constants.O_NOFOLLOW);
+    } catch (error) {
+      if (error.code === "ENOENT") return false;
+      throw error;
+    }
+    try {
+      const info = await marker.stat();
+      if (!info.isFile() || (info.mode & 0o077) !== 0 ||
+          info.uid !== process.getuid() || info.size > 256) return false;
+      return (await marker.readFile("utf8")) ===
+        JSON.stringify({ approval_id: id, proposal_sha256 });
+    } finally { await marker.close(); }
+  }
+
   // Call once before starting concurrent issuers. The same validation is
   // applied by issue(), so this does not relax integrity checks or migrate
   // an incomplete store.
-  return { initialize: prepare, issue, consume };
+  return { initialize: prepare, issue, consume, verifyConsumed };
 }

@@ -97,3 +97,34 @@ test("recomputed journal digest cannot replace the issued grant's proposal", () 
     assert.equal(fs.readdirSync(path.join(directory, "effects")).length, 1);
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });
+test("lost claim marker cannot be recovered as a completed authorized operation", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-host-lost-claim-"));
+  try {
+    const start = spawnSync(process.execPath, [worker, "start", directory, "lost_ack"],
+      { encoding: "utf8", timeout: 30_000 });
+    assert.equal(start.status, 77, start.stderr || start.error?.message);
+    const record = JSON.parse(fs.readFileSync(path.join(directory, "host-journal.json"), "utf8"));
+    const claim = path.join(directory, "grants", "claimed", `${record.approval.approval_id}.claim`);
+    fs.unlinkSync(claim);
+    const recovery = spawnSync(process.execPath, [worker, "recover", directory],
+      { encoding: "utf8", timeout: 30_000 });
+    assert.notEqual(recovery.status, 0, "missing consumption evidence must fail closed");
+    assert.equal(fs.existsSync(claim), false, "recovery must not synthesize a spent claim");
+    assert.equal(fs.readdirSync(path.join(directory, "effects")).length, 1);
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});
+test("corrupt claim marker cannot be recovered as completed", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-host-corrupt-claim-"));
+  try {
+    const start = spawnSync(process.execPath, [worker, "start", directory, "lost_ack"],
+      { encoding: "utf8", timeout: 30_000 });
+    assert.equal(start.status, 77, start.stderr || start.error?.message);
+    const record = JSON.parse(fs.readFileSync(path.join(directory, "host-journal.json"), "utf8"));
+    const claim = path.join(directory, "grants", "claimed", `${record.approval.approval_id}.claim`);
+    fs.writeFileSync(claim, "{}", { mode: 0o600 });
+    const recovery = spawnSync(process.execPath, [worker, "recover", directory],
+      { encoding: "utf8", timeout: 30_000 });
+    assert.notEqual(recovery.status, 0, "invalid consumption evidence must fail closed");
+    assert.equal(fs.readdirSync(path.join(directory, "effects")).length, 1);
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});
