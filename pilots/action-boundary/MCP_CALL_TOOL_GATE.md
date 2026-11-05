@@ -8,10 +8,12 @@ MCP tools are selected by name and invoked with an `arguments` object. A server 
 
 `createMCPCallToolGate` is a narrow **client-side** wrapper for one connected MCP client and one configured tool. The host assigns a stable `serverKey` to its actual client connection and configures the exact tool name, effect, purpose, argument validation, destination mapper, policy, and approval callback. The agent supplies only `{ name, arguments }`. The wrapper snapshots the JSON arguments, checks the host schema, builds a `mcp:<serverKey>:<name>` AML proposal, derives its resource from those arguments, then calls the connected client's `callTool({ name, arguments })` only after the AML action gate permits dispatch. It never uses tool-list annotations as policy.
 
-```js
-import { createMCPCallToolGate } from "./mcp-call-tool-gate.mjs";
+For an approval-required integration, `createOneUseMCPCallToolGate` requires a host `consumeApproval` callback at construction. The legacy `/1` dispatch API permits approvals without one, so reusing an approval can dispatch repeatedly if the host omits atomic consumption. The strict constructor checks the callback's presence; the host must implement durable atomic claims and authenticated approval.
 
-const callNotice = createMCPCallToolGate({
+```js
+import { createOneUseMCPCallToolGate } from "./mcp-call-tool-gate.mjs";
+
+const callNotice = createOneUseMCPCallToolGate({
   client: connectedHostOwnedMCPClient,
   serverKey: "orders-prod", // host-assigned identity, not serverInfo.name
   name: "send_notice",
@@ -24,7 +26,8 @@ const callNotice = createMCPCallToolGate({
     tool: "mcp:orders-prod:send_notice", effect: "send",
     resource: "team@example.test", requires_approval: true
   }] },
-  requestApproval: hostApprovalForExactProposalDigest
+  requestApproval: hostAuthenticatedApprovalForExactProposalDigest,
+  consumeApproval: hostDurableAtomicClaim // returns true exactly once per grant
 });
 
 const verdict = await callNotice({

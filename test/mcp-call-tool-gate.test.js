@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createMCPCallToolGate } from "../pilots/action-boundary/mcp-call-tool-gate.mjs";
+import { createMCPCallToolGate, createOneUseMCPCallToolGate } from "../pilots/action-boundary/mcp-call-tool-gate.mjs";
 import { runMCPCallCases } from "../pilots/action-boundary/mcp-call-demo.mjs";
 
 const serverKey = "trusted-orders";
@@ -19,6 +19,26 @@ const make = (client, overrides = {}) => createMCPCallToolGate({
   ...overrides
 });
 const input = (to = team, body = "Original") => ({ name, arguments: { to, body } });
+
+test("strict MCP profile requires a consumer and rejects a reused approval", async () => {
+  const client = { calls: 0, async callTool() { this.calls++; return { content: [] }; } };
+  assert.throws(() => createOneUseMCPCallToolGate({}), /consumeApproval/);
+  let consumed = false;
+  const gate = createOneUseMCPCallToolGate({
+    client, serverKey, name, effect: "send", purpose: "Send a notice",
+    validateArgs: args => Object.keys(args).sort().join(",") === "body,to",
+    resourceFor: args => args.to, policy: policy(),
+    requestApproval: async ({ proposal_sha256 }) => ({ approved: true, proposal_sha256, approval_id: "fixture" }),
+    consumeApproval: async () => {
+      if (consumed) return false;
+      consumed = true;
+      return true;
+    }
+  });
+  assert.equal((await gate(input())).receipt.execution_status, "dispatched");
+  assert.equal((await gate(input())).receipt.reason, "approval_reused_or_expired");
+  assert.equal(client.calls, 1);
+});
 
 test("the measured hint counterexample blocks outside call and retains error semantics", async () => {
   const report = await runMCPCallCases();

@@ -60,3 +60,13 @@ export function createMCPCallToolGate({ client, serverKey, name, effect, purpose
       mcp_result_status, ...(readableResult && Object.hasOwn(outcome, "result") ? { result } : {}) };
   };
 }
+
+// Strict construction profile for effectful integrations. The /1 boundary
+// retains its documented optional consumer for existing experiments; callers
+// choosing this profile cannot accidentally omit the host's atomic claim.
+export function createOneUseMCPCallToolGate(options = {}) {
+  if (typeof options.consumeApproval !== "function") {
+    throw new TypeError("A host-owned atomic consumeApproval callback is required");
+  }
+  return createMCPCallToolGate(options);
+}

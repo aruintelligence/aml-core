@@ -98,6 +98,49 @@
       }
     },
     {
+      "id": "approval_replay",
+      "title": "Same grant attempted twice",
+      "proposed_call": {
+        "name": "send_notice",
+        "arguments": {
+          "to": "team@example.test",
+          "body": "Build passed."
+        }
+      },
+      "server_handler_calls": 1,
+      "server_audit": [
+        {
+          "tool": "send_notice",
+          "to": "team@example.test",
+          "body": "Build passed."
+        }
+      ],
+      "first_receipt": {
+        "protocol": "aml-action-dispatch/1",
+        "proposal_sha256": "59d34209189040e883deb70df374a3efcf6a9061c71511567b468bd5453db34d",
+        "policy_decision": "requires_approval",
+        "execution_status": "dispatched",
+        "reason": "host_dispatch_returned"
+      },
+      "verdict": {
+        "rejection": null,
+        "plan": {
+          "protocol": "aml-action-plan/1",
+          "proposal_sha256": "59d34209189040e883deb70df374a3efcf6a9061c71511567b468bd5453db34d",
+          "decision": "requires_approval",
+          "reason": "exact_rule"
+        },
+        "receipt": {
+          "protocol": "aml-action-dispatch/1",
+          "proposal_sha256": "59d34209189040e883deb70df374a3efcf6a9061c71511567b468bd5453db34d",
+          "policy_decision": "requires_approval",
+          "execution_status": "blocked",
+          "reason": "approval_reused_or_expired"
+        },
+        "mcp_result_status": "not_called"
+      }
+    },
+    {
       "id": "changed_body",
       "title": "Approval bound to old bytes",
       "proposed_call": {
@@ -214,5 +257,5 @@
       }
     }
   ],
-  "limits": "The server only appends a temporary local audit line. This is a connected SDK pilot, not an external send, independent security assessment, general MCP interception, authenticated approval, or proof of provider delivery. A host must ensure every effectful call path uses its gate and bind the actual server/account and final provider request."
+  "limits": "The server only appends a temporary local audit line. The one-use grant is a local file-store claim, but the example approval is not an authenticated human decision. This is a project-authored connected SDK pilot, not an external send, independent security assessment, general MCP interception, or proof of provider delivery. A host must ensure every effectful call path uses its gate and bind the actual server/account and final provider request."
 }

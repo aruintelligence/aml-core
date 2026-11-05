@@ -7,8 +7,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
-import { createMCPCallToolGate } from "../mcp-call-tool-gate.mjs";
+import { createOneUseMCPCallToolGate } from "../mcp-call-tool-gate.mjs";
 import { planAction } from "../boundary.mjs";
+import { createFileOneShotGrants } from "../file-one-shot-grants.mjs";
 
 const serverKey = "local-notice-fixture";
 const name = "send_notice";
@@ -28,6 +29,8 @@ const scenarios = [
     expected: { calls: 0, reason: "no_exact_rule", status: "not_called" } },
   { id: "approved", title: "Matching route and approval", input: call(team),
     expected: { calls: 1, reason: "host_dispatch_returned", status: "returned" } },
+  { id: "approval_replay", title: "Same grant attempted twice", input: call(team), replay: true,
+    expected: { calls: 1, reason: "approval_reused_or_expired", status: "not_called" } },
   { id: "changed_body", title: "Approval bound to old bytes", input: call(team, "Changed body"), stale: true,
     expected: { calls: 0, reason: "approval_missing_or_mismatched", status: "not_called" } },
   { id: "extra_recipient", title: "Unexpected recipient field", input: {
@@ -48,6 +51,8 @@ export async function runConnectedMCP() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "aml-mcp-stdio-"));
   const auditPath = path.join(dir, "server-handlers.jsonl");
   fs.writeFileSync(auditPath, "");
+  const grants = createFileOneShotGrants({ directory: path.join(dir, "grants") });
+  await grants.initialize();
   const client = new Client({ name: "aml-host-pilot", version: "1.0.0" });
   try {
     const transport = new StdioClientTransport({ command: process.execPath,
@@ -70,23 +75,33 @@ export async function runConnectedMCP() {
 
     const rows = [];
     for (const spec of scenarios) {
-      const gate = createMCPCallToolGate({ client, serverKey, name, effect: "send", purpose,
+      let issuedApproval;
+      const gate = createOneUseMCPCallToolGate({ client, serverKey, name, effect: "send", purpose,
         validateArgs: args => Object.keys(args).sort().join(",") === "body,to" &&
           typeof args.to === "string" && typeof args.body === "string",
         resourceFor: args => args.to, policy,
-        requestApproval: async ({ proposal_sha256 }) => ({ approved: true,
-          proposal_sha256: spec.stale ? oldDigest : proposal_sha256 })
+        requestApproval: async ({ proposal_sha256 }) => {
+          if (!issuedApproval) issuedApproval = await grants.issue(spec.stale ? oldDigest : proposal_sha256);
+          return issuedApproval;
+        },
+        consumeApproval: ({ approval, proposal_sha256 }) => grants.consume({ approval, proposal_sha256 })
       });
       const count = readAudit(auditPath).length;
-      const result = await gate(structuredClone(spec.input));
+      const first = await gate(structuredClone(spec.input));
+      const result = spec.replay ? await gate(structuredClone(spec.input)) : first;
       const reached = readAudit(auditPath).slice(count);
       assert.equal(reached.length, spec.expected.calls, spec.id);
       assert.equal(result.mcp_result_status, spec.expected.status, spec.id);
       if (spec.expected.rejection) assert.equal(result.rejection, spec.expected.rejection, spec.id);
       else assert.equal(result.receipt?.reason, spec.expected.reason, spec.id);
+      if (spec.replay) {
+        assert.equal(first.receipt.reason, "host_dispatch_returned");
+        assert.equal(result.receipt.execution_status, "blocked");
+      }
       if (reached.length) assert.deepEqual(reached[0], { tool: name, ...spec.input.arguments }, spec.id);
       rows.push({ id: spec.id, title: spec.title, proposed_call: spec.input,
         server_handler_calls: reached.length, server_audit: reached,
+        ...(spec.replay ? { first_receipt: first.receipt } : {}),
         verdict: { rejection: result.rejection, plan: result.plan, receipt: result.receipt,
           mcp_result_status: result.mcp_result_status,
           ...(result.result ? { result: result.result } : {}) } });
@@ -99,7 +114,7 @@ export async function runConnectedMCP() {
       unsafe_comparison: { proposed_call: unsafeInput,
         server_handler_calls: unsafeEntries.length, server_audit: unsafeEntries },
       cases: rows,
-      limits: "The server only appends a temporary local audit line. This is a connected SDK pilot, not an external send, independent security assessment, general MCP interception, authenticated approval, or proof of provider delivery. A host must ensure every effectful call path uses its gate and bind the actual server/account and final provider request." };
+      limits: "The server only appends a temporary local audit line. The one-use grant is a local file-store claim, but the example approval is not an authenticated human decision. This is a project-authored connected SDK pilot, not an external send, independent security assessment, general MCP interception, or proof of provider delivery. A host must ensure every effectful call path uses its gate and bind the actual server/account and final provider request." };
   } finally {
     await client.close();
     fs.rmSync(dir, { recursive: true, force: true });
