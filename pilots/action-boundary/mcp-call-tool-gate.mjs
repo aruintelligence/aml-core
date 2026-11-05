@@ -70,3 +70,55 @@ export function createOneUseMCPCallToolGate(options = {}) {
   }
   return createMCPCallToolGate(options);
 }
+
+// A versioned host profile for a specific authenticated MCP connection/account.
+// The host must read identity from the active connection, not from agent input
+// or an unrelated cached configuration string.
+export function mcpConnectionResource(connectionIdentity, destination) {
+  if (typeof connectionIdentity !== "string" || !connectionIdentity.trim() ||
+      typeof destination !== "string" || !destination.trim()) {
+    throw new TypeError("A host connection identity and destination are required");
+  }
+  const resource = canonicalJSONStringify({ connection_identity: connectionIdentity, destination });
+  if (resource.length > 256) throw new TypeError("Bound MCP resource exceeds proposal limit");
+  return resource;
+}
+
+export function createConnectionBoundMCPCallToolGate({
+  client, connectionIdentity, readConnectionIdentity, resourceFor, consumeApproval, ...options
+} = {}) {
+  if (typeof readConnectionIdentity !== "function" || typeof resourceFor !== "function" ||
+      typeof consumeApproval !== "function" ||
+      typeof client?.callTool !== "function") {
+    throw new TypeError("A connected client, live identity reader, destination mapper, and one-use consumer are required");
+  }
+  // The symbol is private to this closure, so a provider cannot accidentally
+  // return the same sentinel. No provider call occurs on this branch.
+  const changed = Symbol("mcp_connection_changed");
+  const currentIdentity = () => {
+    const current = readConnectionIdentity();
+    if (typeof current !== "string" || !current.trim()) throw new Error("invalid_connection_identity");
+    return current;
+  };
+  const gate = createMCPCallToolGate({ ...options,
+    client: { callTool: async call => {
+      try { if (currentIdentity() !== connectionIdentity) return changed; }
+      catch { return changed; }
+      return client.callTool(call);
+    } },
+    resourceFor: (args, context) => {
+      if (currentIdentity() !== connectionIdentity) throw new Error("connection_changed");
+      return mcpConnectionResource(connectionIdentity, resourceFor(args, context));
+    }, consumeApproval
+  });
+  return async (params, context) => {
+    const outcome = await gate(params, context);
+    if (outcome.result !== changed) return outcome;
+    // The callback was entered by the boundary, but the MCP transport was not.
+    // Report the narrower observed state and keep the consumed grant spent.
+    const { result, ...withoutResult } = outcome;
+    return { ...withoutResult, receipt: { ...outcome.receipt,
+      execution_status: "blocked", reason: "connection_changed" },
+      mcp_result_status: "not_called" };
+  };
+}
