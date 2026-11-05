@@ -45,8 +45,8 @@ if (mode === "start") {
   const proposalSha256 = planAction(proposal, policy).proposal_sha256;
   const approval = await grants.issue(proposalSha256);
   const state = createProviderExecutionState({ operationId, proposalSha256 });
-  const requestBytes = JSON.stringify({ operation_id: operationId, to: proposal.resource,
-    body: proposal.arguments.body });
+  const requestBytes = JSON.stringify({ operation_id: operationId,
+    proposal_sha256: proposalSha256, to: proposal.resource, body: proposal.arguments.body });
   const record = { protocol: "aml-local-host-journal/1", operation_id: operationId,
     proposal_sha256: proposalSha256, approval, request_sha256: hash(requestBytes),
     request_bytes: requestBytes, events: [] };
@@ -69,8 +69,17 @@ if (mode === "start") {
   const record = JSON.parse(fs.readFileSync(journal, "utf8"));
   if (record.protocol !== "aml-local-host-journal/1" ||
       hash(record.request_bytes) !== record.request_sha256 ||
-      JSON.parse(record.request_bytes).operation_id !== record.operation_id) {
+      JSON.parse(record.request_bytes).operation_id !== record.operation_id ||
+      JSON.parse(record.request_bytes).proposal_sha256 !== record.proposal_sha256 ||
+      !/^[0-9a-f-]{36}$/i.test(record.approval?.approval_id)) {
     throw Error("Invalid host journal binding");
+  }
+  const issued = JSON.parse(fs.readFileSync(path.join(directory, "grants", "issued",
+    `${record.approval.approval_id}.json`), "utf8"));
+  if (issued.approval_id !== record.approval.approval_id ||
+      issued.proposal_sha256 !== record.proposal_sha256 ||
+      record.approval.proposal_sha256 !== record.proposal_sha256) {
+    throw Error("Invalid host grant binding");
   }
   const state = createProviderExecutionState({ operationId: record.operation_id,
     proposalSha256: record.proposal_sha256 });

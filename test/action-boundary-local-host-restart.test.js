@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import crypto from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
@@ -54,6 +55,45 @@ test("changed journal request bytes fail recovery without another effect", () =>
       { encoding: "utf8", timeout: 30_000 });
     assert.notEqual(recovery.status, 0);
     assert.match(recovery.stderr, /Invalid host journal binding/);
+    assert.equal(fs.readdirSync(path.join(directory, "effects")).length, 1);
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});
+test("substituted proposal identity cannot inherit another operation's provider completion", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-host-substitute-"));
+  try {
+    const start = spawnSync(process.execPath, [worker, "start", directory, "lost_ack"],
+      { encoding: "utf8", timeout: 30_000 });
+    assert.equal(start.status, 77, start.stderr || start.error?.message);
+    const journal = path.join(directory, "host-journal.json");
+    const record = JSON.parse(fs.readFileSync(journal, "utf8"));
+    record.proposal_sha256 = "f".repeat(64);
+    record.approval.proposal_sha256 = record.proposal_sha256;
+    fs.writeFileSync(journal, JSON.stringify(record));
+    const recovery = spawnSync(process.execPath, [worker, "recover", directory],
+      { encoding: "utf8", timeout: 30_000 });
+    assert.notEqual(recovery.status, 0, "recovery must reject an invented proposal digest");
+    assert.equal(fs.readdirSync(path.join(directory, "effects")).length, 1);
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});
+test("recomputed journal digest cannot replace the issued grant's proposal", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-host-rehash-"));
+  try {
+    const start = spawnSync(process.execPath, [worker, "start", directory, "lost_ack"],
+      { encoding: "utf8", timeout: 30_000 });
+    assert.equal(start.status, 77, start.stderr || start.error?.message);
+    const journal = path.join(directory, "host-journal.json");
+    const record = JSON.parse(fs.readFileSync(journal, "utf8"));
+    record.proposal_sha256 = "f".repeat(64);
+    record.approval.proposal_sha256 = record.proposal_sha256;
+    const request = JSON.parse(record.request_bytes);
+    request.proposal_sha256 = record.proposal_sha256;
+    record.request_bytes = JSON.stringify(request);
+    record.request_sha256 = crypto.createHash("sha256").update(record.request_bytes).digest("hex");
+    fs.writeFileSync(journal, JSON.stringify(record));
+    const recovery = spawnSync(process.execPath, [worker, "recover", directory],
+      { encoding: "utf8", timeout: 30_000 });
+    assert.notEqual(recovery.status, 0);
+    assert.match(recovery.stderr, /Invalid host grant binding/);
     assert.equal(fs.readdirSync(path.join(directory, "effects")).length, 1);
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });
