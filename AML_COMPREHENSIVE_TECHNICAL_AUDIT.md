@@ -56,3 +56,9 @@ The exact pinned release checkout `79a24ba` completed `bash reproduction/action-
 | A-05 follow-up | Medium local availability risk for sparse array length chosen by an untrusted caller. | Node canonicalization allocated/traversed `new Array(length)` before the serialized proposal byte cap. One million holes took about 45 ms in a single review-host probe. | Scoped optional 65,536-element cap at guarded-tool and MCP ingress. Default canonicalizer and pinned direct boundary remain unchanged. | Maximum-length sparse proxy tests assert zero index checks and zero callbacks. Focused canonical/guarded/MCP 32/32 and full suite 1,116/1,116 pass. Dense objects, depth and arbitrary Proxy resource budgets remain open. |
 
 All of these are project-authored observations (E2 at most). No live provider or third-party system was tested. Latest remote-head CI needs separate inspection before any release decision.
+
+## Target binding follow-up
+
+| ID | Severity / preconditions | Evidence and affected files | Status | Verification |
+| --- | --- | --- | --- | --- |
+| A-14 | High integration risk when the host routing state can change during approval and the callback consults it again. | Historical `target-boundary.mjs` matched an initial route and later returned a `dispatched` receipt for a callback reporting a changed destination. | An opt-in `/2` adapter re-resolves after one-use claim consumption and passes the pinned target to the callback. Legacy `/1` retained; provider-specific transport binding remains open. | Focused target tests 9/9 and full suite 1,119/1,119 pass locally; no real provider tested. |
