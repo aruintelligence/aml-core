@@ -68,3 +68,5 @@ A-13 follow-up: the new opt-in observed challenge uses a runner-owned loopback c
 ## Local provider uncertainty fixture
 
 A separate local provider worker receives exact request bytes and digest, writes one synced effect marker, and can exit without acknowledgment. The host reports uncertainty until another worker reads a matching provider record. Four focused tests cover lost acknowledgment, failure before write, normal acknowledgment and mismatched request bytes. The full post-adjustment suite passed 1,127/1,127 locally. This is project-authored E2 evidence; the host process does not restart, and the marker is not independently authenticated. No actual provider delivery is claimed.
+
+A-04 follow-up: the local host-restart fixture exits after provider handoff and reconstructs the journal in a fresh process. Three tests distinguish recorded effect, missing effect and changed request bytes. The current journal is unauthenticated and has no external rollback anchor, so this does not close provider-completion ambiguity in a real deployment. No independent confirmation is claimed.
