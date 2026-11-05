@@ -24,12 +24,31 @@ test("uncertainty is not completion and requires new evidence to reconcile", () 
   run.record("request_initiated", "outbound:1");
   const before = run.record("outcome_uncertain", "transport-timeout:1");
   assert.equal(before.state, "outcome_uncertain");
+  assert.equal(before.uncertain_from, "request_initiated");
   assert.throws(() => run.record("completed", ""), /invalid_execution_transition/);
+  assert.throws(() => run.record("completed", "invented-completion"), /invalid_execution_transition/);
   run.record("provider_accepted", "reconciliation:provider-request-1");
   run.record("completed", "provider-completion:1");
   assert.equal(before.state, "outcome_uncertain");
   assert.equal(before.events.length, 4);
   assert.equal(run.snapshot().state, "completed");
+});
+
+test("uncertainty cannot skip unobserved milestones", () => {
+  const consumed = make();
+  consumed.record("approved", "approval:1");
+  consumed.record("grant_consumed", "claim:1");
+  consumed.record("outcome_uncertain", "crash-after-claim");
+  assert.throws(() => consumed.record("provider_accepted", "unrelated"), /invalid_execution_transition/);
+  assert.throws(() => consumed.record("completed", "unrelated"), /invalid_execution_transition/);
+
+  const accepted = make();
+  for (const state of ["approved", "grant_consumed", "request_initiated", "provider_accepted"])
+    accepted.record(state, `evidence:${state}`);
+  accepted.record("outcome_uncertain", "lost-completion-response");
+  assert.throws(() => accepted.record("independently_confirmed", "skip"), /invalid_execution_transition/);
+  accepted.record("completed", "reconciled-provider-completion");
+  assert.equal(accepted.snapshot().state, "completed");
 });
 
 test("denial, skipped stages, and malformed identities fail closed", () => {
