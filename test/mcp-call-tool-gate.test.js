@@ -87,6 +87,22 @@ test("host server identity, exact tool name, and schema are checked before callT
   assert.equal(calls, 0);
 });
 
+test("oversized sparse MCP arguments reject before index traversal", async () => {
+  let calls = 0;
+  let indexChecks = 0;
+  const sparse = [];
+  sparse.length = 0xffff_ffff;
+  const inputArray = new Proxy(sparse, { has(target, key) {
+    indexChecks++;
+    return Reflect.has(target, key);
+  } });
+  const gate = make({ callTool: async () => { calls++; return { content: [] }; } });
+  const outcome = await gate({ name, arguments: { to: team, body: "Original", sparse: inputArray } });
+  assert.equal(outcome.rejection, "invalid_arguments");
+  assert.equal(calls, 0);
+  assert.equal(indexChecks, 0);
+});
+
 test("host mapping errors and approval failure reach zero callbacks", async () => {
   let calls = 0;
   const client = { callTool: async () => { calls++; return { content: [] }; } };

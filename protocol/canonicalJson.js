@@ -10,7 +10,11 @@ function canonicalPrimitive(value) {
   return undefined;
 }
 
-export function canonicalize(value) {
+export function canonicalize(value, { maxArrayLength = Infinity } = {}) {
+  if (maxArrayLength !== Infinity &&
+      (!Number.isSafeInteger(maxArrayLength) || maxArrayLength < 0)) {
+    throw new TypeError("AML_CANONICAL_JSON_INVALID_LIMIT");
+  }
   const ancestors = new Set();
   function walk(item) {
     const primitive = canonicalPrimitive(item);
@@ -23,6 +27,7 @@ export function canonicalize(value) {
         // the bytes being authorized. Keep the existing JSON.stringify projection
         // of holes and extra properties for this versioned canonicalization.
         const length = item.length;
+        if (length > maxArrayLength) throw new TypeError("AML_CANONICAL_JSON_ARRAY_TOO_LARGE");
         const result = new Array(length);
         for (let i = 0; i < length; i++) {
           if (i in item) result[i] = walk(item[i]);
@@ -48,7 +53,7 @@ export function canonicalize(value) {
   return walk(value);
 }
 
-export function canonicalJSONStringify(value) {
+export function canonicalJSONStringify(value, options) {
   // JSON.stringify invokes inherited toJSON hooks. The canonical copy must
   // not inherit hooks from a polluted Object or Array prototype. The public
   // canonicalize() result retains its existing ordinary-object API shape.
@@ -59,5 +64,5 @@ export function canonicalJSONStringify(value) {
     }
     return item;
   }
-  return JSON.stringify(stripInheritedHooks(canonicalize(value)));
+  return JSON.stringify(stripInheritedHooks(canonicalize(value, options)));
 }

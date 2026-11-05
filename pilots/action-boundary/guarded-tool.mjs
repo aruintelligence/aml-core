@@ -22,7 +22,10 @@ export function createGuardedToolExecute({
     // getter or mapper must not shift the arguments between policy and dispatch.
     let argumentBytes;
     try {
-      argumentBytes = canonicalJSONStringify(argumentsValue);
+      // A proposal that fits 65,536 UTF-8 bytes cannot contain an array with
+      // more than 65,536 elements. Reject larger declared lengths before
+      // allocating or iterating a sparse array of attacker-selected size.
+      argumentBytes = canonicalJSONStringify(argumentsValue, { maxArrayLength: 65_536 });
     } catch (error) {
       // A deeply nested input (or an input-owned getter) may raise RangeError
       // before a canonical JSON error is available. It must not escape without

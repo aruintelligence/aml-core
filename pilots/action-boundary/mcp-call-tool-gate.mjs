@@ -30,7 +30,7 @@ export function createMCPCallToolGate({ client, serverKey, name, effect, purpose
         params.name !== name || !plain(params.arguments)) return reject("invalid_or_unregistered_call");
     let args;
     try {
-      const bytes = canonicalJSONStringify(params.arguments);
+      const bytes = canonicalJSONStringify(params.arguments, { maxArrayLength: 65_536 });
       if (Buffer.byteLength(bytes, "utf8") > 60_000) return reject("arguments_too_large");
       args = JSON.parse(bytes);
       if (validateArgs(structuredClone(args), context) !== true) return reject("invalid_arguments");
