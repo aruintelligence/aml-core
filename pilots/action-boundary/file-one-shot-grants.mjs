@@ -148,5 +148,8 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
     return now() < record.expires_at_ms;
   }
 
-  return { issue, consume };
+  // Call once before starting concurrent issuers. The same validation is
+  // applied by issue(), so this does not relax integrity checks or migrate
+  // an incomplete store.
+  return { initialize: prepare, issue, consume };
 }

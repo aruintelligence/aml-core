@@ -35,6 +35,19 @@ test("a claim persists across store instances and rejects reuse", () => withDire
   assert.equal((await readdir(path.join(directory, "claimed"))).length, 1);
 }));
 
+test("one explicit initializer permits concurrent issuers into a fresh store", () =>
+  withDirectory(async directory => {
+    await createFileOneShotGrants({ directory }).initialize();
+    const [first, second] = await Promise.all([
+      createFileOneShotGrants({ directory }).issue(digest),
+      createFileOneShotGrants({ directory }).issue("b".repeat(64))
+    ]);
+    assert.notEqual(first.approval_id, second.approval_id);
+    assert.equal((await readdir(path.join(directory, "issued"))).length, 2);
+    await rm(path.join(directory, "claimed"), { recursive: true });
+    await assert.rejects(() => createFileOneShotGrants({ directory }).initialize());
+  }));
+
 test("a worker dying after claim cannot replay the grant after restart", () =>
   withDirectory(async directory => {
     const store = createFileOneShotGrants({ directory });
