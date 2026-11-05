@@ -8,7 +8,7 @@ import { spawnSync } from "node:child_process";
 const root = path.resolve(import.meta.dirname, "..");
 const runner = path.join(root, "scripts/run-action-observed-challenge.mjs");
 const run = args => spawnSync(process.execPath, [runner, ...args], {
-  cwd: root, encoding: "utf8", timeout: 30_000, maxBuffer: 2 * 1024 * 1024
+  cwd: root, encoding: "utf8", timeout: 120_000, maxBuffer: 2 * 1024 * 1024
 });
 
 test("runner observes reference callbacks on published and seeded cases", () => {

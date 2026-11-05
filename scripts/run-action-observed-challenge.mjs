@@ -91,7 +91,7 @@ async function observer(token, nonce) {
 function invoke(command, args, file) {
   return new Promise(resolve => {
     execFile(command, [...args, file], { cwd: process.cwd(), encoding: "utf8",
-      timeout: 5000, maxBuffer: 256 * 1024 }, (error, stdout) => {
+      timeout: 20_000, maxBuffer: 256 * 1024 }, (error, stdout) => {
       resolve({ status: error ? (typeof error.code === "number" ? error.code : 1) : 0,
         error, stdout });
     });

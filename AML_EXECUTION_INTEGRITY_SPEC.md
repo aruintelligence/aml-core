@@ -33,3 +33,7 @@ The host must own policy, identity verification, exact tool/target mapping, gran
 ## Acceptance work before production
 
 Implement a transactional external claim and revocation epoch under one linearizable store; bind provider idempotency and independently held completion evidence; exercise crashes at every state boundary; document reconciliation and retention; test multi-worker and multi-host races; obtain an external review. Existing `aml-action-dispatch/1` receipts remain valid under their documented limited meaning.
+
+## Narrow local uncertainty fixture
+
+`pilots/action-boundary/local-provider-recovery.mjs` now demonstrates one bounded failure: a child provider writes an exclusive local effect marker and exits without acknowledgment. The host state remains `outcome_uncertain` until a second process reads the provider's matching operation/request record, then may label the fixture `completed`; it never labels it `independently_confirmed`. An exit before write leaves uncertainty, even when this fixture's store is empty. The one-use grant rejects replay and the host does not automatically retry. This project-authored simulation is not a durable host journal, actual network send, authenticated provider evidence, or real-world completion verifier. A full verified execution protocol still needs those properties and independent evaluation.
