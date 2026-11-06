@@ -84,13 +84,14 @@ if (mode === "start") {
     providerRecord.operation_id === record.operationId &&
     providerRecord.request_sha256 === record.requestSha256 &&
     providerRecord.destination === record.input.preparedRequest.destination;
+  const challenge = crypto.randomBytes(32).toString("hex");
   const signed = spawnSync(process.execPath, [signer, providerDb,
-    path.join(directory, "provider", "private.pem")],
+    path.join(directory, "provider", "private.pem"), challenge],
   { input: record.operationId, encoding: "utf8", timeout: 20_000 });
   if (signed.error || signed.status !== 0) throw signed.error || Error("provider_signing_failed");
   const verified = spawnSync(process.execPath, [verifier,
     path.join(directory, "pinned-provider-public.pem"), record.operationId,
-    record.requestSha256, record.input.preparedRequest.destination],
+    record.requestSha256, record.input.preparedRequest.destination, challenge],
   { input: signed.stdout.trim(), encoding: "utf8", timeout: 20_000 });
   if (verified.error || verified.status !== 0) throw verified.error || Error("provider_verification_failed");
   const verification = JSON.parse(verified.stdout).result;

@@ -30,15 +30,17 @@ function fixture(run) {
       { encoding: "utf8", input: JSON.stringify({ request_bytes: requestBytes,
         request_sha256: requestSha256 }), timeout: 20_000 });
     assert.equal(request.status, 0, request.stderr);
-    const sign = op => {
-      const result = spawnSync(process.execPath, [signer, database, privateFile],
+    const sign = (op, challenge) => {
+      const result = spawnSync(process.execPath, [signer, database, privateFile,
+        ...(challenge === undefined ? [] : [challenge])],
         { encoding: "utf8", input: op, timeout: 20_000 });
       assert.equal(result.status, 0, result.stderr);
       return JSON.parse(result.stdout);
     };
     const verify = (envelope, { key = publicFile, op = operationId,
-      sha = requestSha256, destination = "fixture:outbox" } = {}) => {
-      const result = spawnSync(process.execPath, [verifier, key, op, sha, destination],
+      sha = requestSha256, destination = "fixture:outbox", challenge } = {}) => {
+      const result = spawnSync(process.execPath, [verifier, key, op, sha, destination,
+        ...(challenge === undefined ? [] : [challenge])],
         { encoding: "utf8", input: typeof envelope === "string" ? envelope :
           canonicalJSONStringify(envelope), timeout: 20_000 });
       return { ...JSON.parse(result.stdout), exit: result.status };
@@ -101,4 +103,17 @@ test("substituting both the trust root and signed record defeats unpinned verifi
     assert.equal(verify(fake).result, "REJECTED", "pinned genuine root rejects fabrication");
     assert.equal(verify(fake, { key: attackerRoot }).result, "PROVIDER_REPORTED",
       "caller-supplied attacker root can authenticate a forged record");
+  }));
+
+test("version 2 status rejects replay under a fresh verifier challenge", () =>
+  fixture(({ sign, verify, operationId }) => {
+    const firstChallenge = crypto.randomBytes(32).toString("hex");
+    const nextChallenge = crypto.randomBytes(32).toString("hex");
+    const first = sign(operationId, firstChallenge);
+    assert.equal(verify(first, { challenge: firstChallenge }).result, "PROVIDER_REPORTED");
+    assert.equal(verify(first, { challenge: nextChallenge }).result, "REJECTED");
+    assert.equal(verify(first).result, "REJECTED", "version 1 cannot accept version 2 bytes");
+    const next = sign(operationId, nextChallenge);
+    assert.equal(verify(next, { challenge: nextChallenge }).result, "PROVIDER_REPORTED");
+    assert.equal(verify(next, { challenge: firstChallenge }).result, "REJECTED");
   }));

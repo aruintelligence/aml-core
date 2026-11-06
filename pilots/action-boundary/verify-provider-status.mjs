@@ -4,25 +4,28 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import { canonicalJSONStringify } from "../../protocol/canonicalJson.js";
 
-const DOMAIN = Buffer.from("AML-LOCAL-PROVIDER-STATUS/1\0", "utf8");
 const DIGEST = /^[0-9a-f]{64}$/;
 const ID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const exact = (value, fields) => value && typeof value === "object" &&
   !Array.isArray(value) && Object.keys(value).sort().join("|") === fields.sort().join("|");
 
 export function verifyProviderStatus(envelope, { publicKey, operationId, requestSha256,
-  destination } = {}) {
+  destination, challenge } = {}) {
   try {
-    if (!exact(envelope, ["protocol", "issuer", "operation_id", "record", "signature"]) ||
-        envelope.protocol !== "aml-fixture-provider-status/1" ||
+    const version = challenge === undefined ? 1 : 2;
+    if (!exact(envelope, ["protocol", "issuer", "operation_id", "record", "signature",
+      ...(version === 2 ? ["challenge"] : [])]) ||
+        envelope.protocol !== `aml-fixture-provider-status/${version}` ||
+        (version === 2 && (!DIGEST.test(challenge) || envelope.challenge !== challenge)) ||
         envelope.issuer !== "fixture-provider" || !ID.test(envelope.operation_id) ||
         envelope.operation_id !== operationId || !DIGEST.test(requestSha256) ||
         typeof destination !== "string" || !destination ||
         typeof envelope.signature !== "string" ||
         !/^[A-Za-z0-9+/]{86}==$/.test(envelope.signature)) return "REJECTED";
     const statement = { protocol: envelope.protocol, issuer: envelope.issuer,
-      operation_id: envelope.operation_id, record: envelope.record };
-    const bytes = Buffer.concat([DOMAIN,
+      operation_id: envelope.operation_id,
+      ...(version === 2 ? { challenge: envelope.challenge } : {}), record: envelope.record };
+    const bytes = Buffer.concat([Buffer.from(`AML-LOCAL-PROVIDER-STATUS/${version}\0`, "utf8"),
       Buffer.from(canonicalJSONStringify(statement), "utf8")]);
     const key = crypto.createPublicKey(publicKey);
     if (key.asymmetricKeyType !== "ed25519" ||
@@ -39,7 +42,7 @@ export function verifyProviderStatus(envelope, { publicKey, operationId, request
 }
 
 if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
-  const [publicKeyFile, operationId, requestSha256, destination] = process.argv.slice(2);
+  const [publicKeyFile, operationId, requestSha256, destination, challenge] = process.argv.slice(2);
   try {
     const raw = fs.readFileSync(0, "utf8");
     if (Buffer.byteLength(raw, "utf8") > 8192) throw Error("oversized_provider_status");
@@ -48,7 +51,7 @@ if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
     // interpretations before any signature or claim is evaluated.
     if (raw !== canonicalJSONStringify(envelope)) throw Error("noncanonical_provider_status");
     const result = verifyProviderStatus(envelope, { publicKey: fs.readFileSync(publicKeyFile),
-      operationId, requestSha256, destination });
+      operationId, requestSha256, destination, challenge });
     console.log(JSON.stringify({ protocol: "aml-fixture-provider-verification/1", result,
       independent_confirmation: false }));
     if (result === "REJECTED") process.exitCode = 2;
