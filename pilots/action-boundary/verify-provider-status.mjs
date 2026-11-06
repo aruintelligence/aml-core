@@ -41,6 +41,24 @@ export function verifyProviderStatus(envelope, { publicKey, operationId, request
   } catch { return "REJECTED"; }
 }
 
+// Evaluate a caller-retained collection. Absence after a signed positive is
+// conflicting evidence, not proof that the earlier effect was undone.
+export function verifyProviderHistory(envelopes, { challenges, ...expected } = {}) {
+  if (!Array.isArray(envelopes) || envelopes.length < 1 || envelopes.length > 32 ||
+      !Array.isArray(challenges) || challenges.length !== envelopes.length ||
+      new Set(challenges).size !== challenges.length) return "REJECTED";
+  const records = [];
+  for (let i = 0; i < envelopes.length; i++) {
+    const result = verifyProviderStatus(envelopes[i],
+      { ...expected, challenge: challenges[i] });
+    if (result === "REJECTED") return "REJECTED";
+    records.push(envelopes[i].record === null ? "absent" :
+      canonicalJSONStringify(envelopes[i].record));
+  }
+  if (new Set(records).size > 1) return "CONFLICTING_EVIDENCE";
+  return records[0] === "absent" ? "INCOMPLETE" : "PROVIDER_REPORTED";
+}
+
 if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
   const [publicKeyFile, operationId, requestSha256, destination, challenge] = process.argv.slice(2);
   try {

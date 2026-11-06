@@ -12,6 +12,7 @@ const root = fileURLToPath(new URL("../pilots/action-boundary/", import.meta.url
 const provider = path.join(root, "sqlite-provider-fixture.py");
 const signer = path.join(root, "signed-provider-status.mjs");
 const verifier = path.join(root, "verify-provider-status.mjs");
+const historyVerifier = path.join(root, "verify-provider-history.mjs");
 
 function fixture(run) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-signed-provider-"));
@@ -45,7 +46,13 @@ function fixture(run) {
           canonicalJSONStringify(envelope), timeout: 20_000 });
       return { ...JSON.parse(result.stdout), exit: result.status };
     };
-    run({ sign, verify, operationId, requestSha256, publicFile, directory });
+    const verifyHistory = (envelopes, challenges) => {
+      const result = spawnSync(process.execPath, [historyVerifier, publicFile,
+        operationId, requestSha256, "fixture:outbox"], { encoding: "utf8",
+        input: canonicalJSONStringify({ envelopes, challenges }), timeout: 20_000 });
+      return JSON.parse(result.stdout).result;
+    };
+    run({ sign, verify, verifyHistory, operationId, requestSha256, publicFile, directory, database });
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 }
 
@@ -116,4 +123,22 @@ test("version 2 status rejects replay under a fresh verifier challenge", () =>
     const next = sign(operationId, nextChallenge);
     assert.equal(verify(next, { challenge: nextChallenge }).result, "PROVIDER_REPORTED");
     assert.equal(verify(next, { challenge: firstChallenge }).result, "REJECTED");
+  }));
+
+test("two valid signatures expose a deleted provider row as conflicting evidence", () =>
+  fixture(({ sign, verifyHistory, operationId, database }) => {
+    const a = crypto.randomBytes(32).toString("hex");
+    const b = crypto.randomBytes(32).toString("hex");
+    const before = sign(operationId, a);
+    const deleteRow = spawnSync("python3", ["-c",
+      "import sqlite3,sys; c=sqlite3.connect(sys.argv[1]); c.execute('DELETE FROM effects'); c.commit()",
+      database], { encoding: "utf8", timeout: 20_000 });
+    assert.equal(deleteRow.status, 0, deleteRow.stderr);
+    const after = sign(operationId, b);
+    assert.equal(after.record, null);
+    assert.equal(verifyHistory([before, after], [a, b]), "CONFLICTING_EVIDENCE");
+    assert.equal(verifyHistory([after], [b]), "INCOMPLETE",
+      "without retained earlier evidence, rollback cannot be detected");
+    assert.equal(verifyHistory([before, before], [a, b]), "REJECTED",
+      "a response cannot be reused as evidence of a second challenge");
   }));
