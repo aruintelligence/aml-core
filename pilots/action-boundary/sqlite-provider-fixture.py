@@ -5,9 +5,10 @@ import json
 import sqlite3
 import sys
 import uuid
+from sqlite_execution_gate import consume
 
 
-def main(database, command):
+def main(database, command, gate=None):
     if command == "status":
         # Read-only open cannot silently create a missing provider history.
         con = sqlite3.connect("file:" + database + "?mode=ro", uri=True)
@@ -32,6 +33,8 @@ def main(database, command):
     destination = request.get("destination")
     if not isinstance(op, str) or not isinstance(destination, str) or not op or not destination:
         raise ValueError("invalid_request")
+    if gate is not None and not consume(gate, op, digest):
+        raise ValueError("execution_claim_spent")
     con = sqlite3.connect(database, timeout=10, isolation_level=None)
     try:
         con.execute("PRAGMA synchronous=FULL")
@@ -57,10 +60,10 @@ def main(database, command):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         sys.exit(2)
     try:
-        main(sys.argv[1], sys.argv[2])
+        main(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) == 4 else None)
     except (ValueError, KeyError, sqlite3.Error, OSError) as error:
         print(type(error).__name__ + ": " + str(error), file=sys.stderr)
         sys.exit(2)
