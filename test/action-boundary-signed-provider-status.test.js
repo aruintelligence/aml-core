@@ -175,3 +175,32 @@ test("separate retained witness exposes provider rollback across processes", () 
     assert.equal(verifyHistory(JSON.parse(call("read", operationId).stdout).envelopes,
       [firstChallenge, secondChallenge]), "CONFLICTING_EVIDENCE");
   }));
+
+test("ambiguous JSON cannot occupy a valid witness challenge slot", () =>
+  fixture(({ sign, operationId, directory }) => {
+    const database = path.join(directory, "witness.sqlite");
+    const challenge = crypto.randomBytes(32).toString("hex");
+    const signed = canonicalJSONStringify(sign(operationId, challenge));
+    const ambiguous = signed.replace('"issuer":"fixture-provider",',
+      '"issuer":"attacker","issuer":"fixture-provider",');
+    const append = input => spawnSync("python3", [witness, database, "append"],
+      { input, encoding: "utf8", timeout: 20_000 });
+    assert.notEqual(append(ambiguous).status, 0);
+    const valid = append(signed);
+    assert.equal(valid.status, 0, valid.stderr);
+    assert.equal(JSON.parse(valid.stdout).duplicate, false);
+  }));
+
+test("well-shaped forged evidence can still poison an unauthenticated witness slot", () =>
+  fixture(({ sign, operationId, directory }) => {
+    const database = path.join(directory, "witness.sqlite");
+    const challenge = crypto.randomBytes(32).toString("hex");
+    const legitimate = sign(operationId, challenge);
+    const forged = { ...legitimate, signature: "A".repeat(86) + "==" };
+    const append = value => spawnSync("python3", [witness, database, "append"],
+      { input: canonicalJSONStringify(value), encoding: "utf8", timeout: 20_000 });
+    assert.equal(append(forged).status, 0, "shape-only witness accepts a forged signature");
+    const blocked = append(legitimate);
+    assert.notEqual(blocked.status, 0, "valid evidence cannot replace the poisoned slot");
+    assert.match(blocked.stderr, /witness_challenge_conflict/);
+  }));

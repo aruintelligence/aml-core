@@ -2,8 +2,21 @@
 """Controlled retained-status witness. Same-identity local SQLite, not a remote trust root."""
 import hashlib
 import json
+import re
 import sqlite3
 import sys
+
+UUID = re.compile(r"^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$", re.I)
+HEX = re.compile(r"^[0-9a-f]{64}$")
+
+
+def unique_pairs(pairs):
+    value = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError("duplicate_witness_key")
+        value[key] = item
+    return value
 
 
 def main(database, action):
@@ -22,12 +35,21 @@ def main(database, action):
     raw = sys.stdin.read()
     if len(raw.encode("utf-8")) > 8192:
         raise ValueError("oversized_witness_input")
-    record = json.loads(raw)
-    if not isinstance(record, dict) or record.get("protocol") != "aml-fixture-provider-status/2":
+    record = json.loads(raw, object_pairs_hook=unique_pairs)
+    if not isinstance(record, dict) or set(record) != {
+        "protocol", "issuer", "operation_id", "challenge", "record", "signature"
+    } or record.get("protocol") != "aml-fixture-provider-status/2" or record.get("issuer") != "fixture-provider":
         raise ValueError("invalid_witness_envelope")
     operation, challenge = record.get("operation_id"), record.get("challenge")
-    if not isinstance(operation, str) or not isinstance(challenge, str):
+    if not isinstance(operation, str) or not UUID.fullmatch(operation) or not isinstance(challenge, str) or not HEX.fullmatch(challenge) or not isinstance(record["signature"], str) or not re.fullmatch(r"[A-Za-z0-9+/]{86}==", record["signature"]):
         raise ValueError("invalid_witness_binding")
+    effect = record["record"]
+    if effect is not None and (not isinstance(effect, dict) or set(effect) != {
+        "operation_id", "request_sha256", "destination", "effect_id"
+    } or effect["operation_id"] != operation or not isinstance(effect["request_sha256"], str) or not HEX.fullmatch(effect["request_sha256"]) or not isinstance(effect["destination"], str) or not effect["destination"] or not isinstance(effect["effect_id"], str) or not UUID.fullmatch(effect["effect_id"])):
+        raise ValueError("invalid_witness_effect")
+    if raw != json.dumps(record, ensure_ascii=False, sort_keys=True, separators=(",", ":")):
+        raise ValueError("noncanonical_witness_input")
     digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     con = sqlite3.connect(database, timeout=10, isolation_level=None)
     try:
