@@ -19,6 +19,8 @@ The signed statement has exactly these fields: `version` (`aml-authorized-execut
 
 The public key path supplied to the verifier must match the pinned hash. Because the local host can edit the file and authority DB under the same OS identity, this is an approximation of independent administration, **not** an independently operated trust domain. The issuer metadata strings are cryptographically bound but not checked against an identity directory. A valid signature means only that the private key signed the specified bytes.
 
+The verifier captures the issuer PEM bytes once, uses those bytes for OpenSSL verification and compares their SHA-256 to the gate's pinned digest. This closes a file-swap window between separate key reads, assuming the SQLite gate itself remains trusted. A caller capable of replacing both the pinned gate and key remains outside the guarantee.
+
 ## Adversarial evidence and counterexamples
 
 The focused test covers the protected path's signed positive, replay, destination and payload mutation, operation substitution, forged signature, key substitution, expiry, revocation, stale epoch, concurrent processes, duplicate JSON keys, provider-only history deletion and missing gate. The preexisting Proof 001 tests preserve **KNOWN TO FAIL** coordinated rollback and direct ungated route counterexamples. The old provider fixture and raw SQLite file remain accessible under the same identity; therefore a compromised host with those privileges can still write or call around the gate. There is no complete mediation guarantee in this repository fixture.

@@ -77,7 +77,7 @@ def set_epoch(database, epoch):
         con.close()
 
 
-def _verify_signature(public_key, statement, signature):
+def _verify_signature(public_key_bytes, statement, signature):
     try:
         signature_bytes = base64.b64decode(signature, validate=True)
     except (ValueError, TypeError) as error:
@@ -87,10 +87,12 @@ def _verify_signature(public_key, statement, signature):
     with tempfile.TemporaryDirectory() as directory:
         message = Path(directory) / "message"
         sigfile = Path(directory) / "signature"
+        keyfile = Path(directory) / "issuer.pem"
         message.write_bytes(DOMAIN + canonical(statement))
         sigfile.write_bytes(signature_bytes)
+        keyfile.write_bytes(public_key_bytes)
         result = subprocess.run(["openssl", "pkeyutl", "-verify", "-rawin", "-pubin",
-                                 "-inkey", public_key, "-sigfile", str(sigfile), "-in", str(message)],
+                                 "-inkey", str(keyfile), "-sigfile", str(sigfile), "-in", str(message)],
                                 capture_output=True, timeout=10, check=False)
         if result.returncode != 0:
             raise ValueError("invalid_authorization_signature")
@@ -119,13 +121,17 @@ def consume(database, public_key, statement, signature, request_bytes):
     if (not isinstance(request, dict) or set(request) != {"operation_id", "destination", "effect", "body"} or
         any(request.get(k) != statement[k] for k in ("operation_id", "destination", "effect"))):
         raise ValueError("request_binding_mismatch")
-    _verify_signature(public_key, statement, signature)
+    # One immutable snapshot of the supplied key must be used for both checks;
+    # otherwise a caller with write access can swap it between verification and
+    # comparison with the authority's pinned fingerprint.
+    public_key_bytes = Path(public_key).read_bytes()
+    _verify_signature(public_key_bytes, statement, signature)
     con = sqlite3.connect("file:" + database + "?mode=rw", uri=True, timeout=10, isolation_level=None)
     try:
         con.execute("PRAGMA synchronous=FULL")
         con.execute("BEGIN IMMEDIATE")
         rows = con.execute("SELECT issuer_key_sha256,policy_epoch FROM config").fetchall()
-        if len(rows) != 1 or rows[0][0] != hashlib.sha256(Path(public_key).read_bytes()).hexdigest():
+        if len(rows) != 1 or rows[0][0] != hashlib.sha256(public_key_bytes).hexdigest():
             raise ValueError("untrusted_issuer_key")
         if statement["policy_epoch"] != rows[0][1]:
             raise ValueError("stale_policy_epoch")
