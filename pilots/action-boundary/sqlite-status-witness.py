@@ -34,8 +34,35 @@ def main(database, action, public_key=None):
         finally:
             con.close()
         return
-    if action != "append":
+    if action not in ("initialize", "append"):
         raise ValueError("invalid_witness_action")
+    if not public_key or not Path(public_key).is_file():
+        raise ValueError("pinned_witness_key_required")
+    key_hash = hashlib.sha256(Path(public_key).read_bytes()).hexdigest()
+    if action == "initialize":
+        con = sqlite3.connect(database, timeout=10, isolation_level=None)
+        try:
+            con.execute("PRAGMA synchronous=FULL")
+            con.execute("PRAGMA journal_mode=DELETE")
+            con.execute("BEGIN IMMEDIATE")
+            con.execute("CREATE TABLE IF NOT EXISTS meta (key_sha256 TEXT NOT NULL)")
+            con.execute("CREATE TABLE IF NOT EXISTS snapshots (sequence INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "operation_id TEXT NOT NULL, challenge TEXT NOT NULL, digest TEXT NOT NULL, "
+                        "envelope TEXT NOT NULL, UNIQUE(operation_id,challenge))")
+            rows = con.execute("SELECT key_sha256 FROM meta").fetchall()
+            if not rows:
+                con.execute("INSERT INTO meta VALUES (?)", (key_hash,))
+            elif rows != [(key_hash,)]:
+                raise ValueError("witness_trust_root_mismatch")
+            con.execute("COMMIT")
+            print(json.dumps({"initialized": True}))
+        except BaseException:
+            if con.in_transaction:
+                con.execute("ROLLBACK")
+            raise
+        finally:
+            con.close()
+        return
     raw = sys.stdin.read()
     if len(raw.encode("utf-8")) > 8192:
         raise ValueError("oversized_witness_input")
@@ -54,8 +81,6 @@ def main(database, action, public_key=None):
         raise ValueError("invalid_witness_effect")
     if raw != json.dumps(record, ensure_ascii=False, sort_keys=True, separators=(",", ":")):
         raise ValueError("noncanonical_witness_input")
-    if not public_key or not Path(public_key).is_file():
-        raise ValueError("pinned_witness_key_required")
     statement = {key: value for key, value in record.items() if key != "signature"}
     signed = b"AML-LOCAL-PROVIDER-STATUS/2\0" + json.dumps(
         statement, ensure_ascii=False, sort_keys=True, separators=(",", ":")
@@ -75,10 +100,9 @@ def main(database, action, public_key=None):
     try:
         con.execute("PRAGMA synchronous=FULL")
         con.execute("PRAGMA journal_mode=DELETE")
-        con.execute("CREATE TABLE IF NOT EXISTS snapshots (sequence INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    "operation_id TEXT NOT NULL, challenge TEXT NOT NULL, digest TEXT NOT NULL, "
-                    "envelope TEXT NOT NULL, UNIQUE(operation_id,challenge))")
         con.execute("BEGIN IMMEDIATE")
+        if con.execute("SELECT key_sha256 FROM meta").fetchall() != [(key_hash,)]:
+            raise ValueError("witness_trust_root_mismatch")
         existing = con.execute("SELECT digest FROM snapshots WHERE operation_id=? AND challenge=?",
                                (operation, challenge)).fetchone()
         if existing and existing[0] != digest:

@@ -150,8 +150,9 @@ test("separate retained witness exposes provider rollback across processes", () 
     fs.mkdirSync(witnessDirectory, { mode: 0o700 });
     const witnessDb = path.join(witnessDirectory, "status.sqlite");
     const call = (action, input) => spawnSync("python3", [witness, witnessDb, action,
-      ...(action === "append" ? [publicFile] : [])],
+      ...(action === "read" ? [] : [publicFile])],
       { input, encoding: "utf8", timeout: 20_000 });
+    assert.equal(call("initialize", "").status, 0);
     const firstChallenge = crypto.randomBytes(32).toString("hex");
     const first = sign(operationId, firstChallenge);
     assert.equal(call("append", canonicalJSONStringify(first)).status, 0);
@@ -186,6 +187,7 @@ test("ambiguous JSON cannot occupy a valid witness challenge slot", () =>
       '"issuer":"attacker","issuer":"fixture-provider",');
     const append = input => spawnSync("python3", [witness, database, "append", publicFile],
       { input, encoding: "utf8", timeout: 20_000 });
+    assert.equal(spawnSync("python3", [witness, database, "initialize", publicFile]).status, 0);
     assert.notEqual(append(ambiguous).status, 0);
     const valid = append(signed);
     assert.equal(valid.status, 0, valid.stderr);
@@ -200,10 +202,36 @@ test("forged signature cannot occupy a pinned witness slot", () =>
     const forged = { ...legitimate, signature: "A".repeat(86) + "==" };
     const append = value => spawnSync("python3", [witness, database, "append", publicFile],
       { input: canonicalJSONStringify(value), encoding: "utf8", timeout: 20_000 });
+    assert.equal(spawnSync("python3", [witness, database, "initialize", publicFile]).status, 0);
     const rejected = append(forged);
     assert.notEqual(rejected.status, 0);
     assert.match(rejected.stderr, /invalid_witness_signature/);
     const accepted = append(legitimate);
     assert.equal(accepted.status, 0, accepted.stderr);
     assert.equal(JSON.parse(accepted.stdout).duplicate, false);
+  }));
+
+test("initialized witness rejects a caller-supplied replacement trust root", () =>
+  fixture(({ sign, operationId, directory, publicFile }) => {
+    const database = path.join(directory, "witness-root.sqlite");
+    const challenge = crypto.randomBytes(32).toString("hex");
+    const legitimate = sign(operationId, challenge);
+    const { privateKey, publicKey } = crypto.generateKeyPairSync("ed25519");
+    const attackerKey = path.join(directory, "attacker-public.pem");
+    fs.writeFileSync(attackerKey, publicKey.export({ type: "spki", format: "pem" }));
+    const fake = structuredClone(legitimate);
+    fake.record.effect_id = crypto.randomUUID();
+    const { signature, ...statement } = fake;
+    fake.signature = crypto.sign(null, Buffer.concat([
+      Buffer.from("AML-LOCAL-PROVIDER-STATUS/2\0"),
+      Buffer.from(canonicalJSONStringify(statement))
+    ]), privateKey).toString("base64");
+    const invoke = (action, key, value = "") => spawnSync("python3",
+      [witness, database, action, key], { input: value, encoding: "utf8", timeout: 20_000 });
+    assert.equal(invoke("initialize", publicFile).status, 0);
+    const rejected = invoke("append", attackerKey, canonicalJSONStringify(fake));
+    assert.notEqual(rejected.status, 0);
+    assert.match(rejected.stderr, /witness_trust_root_mismatch/);
+    const accepted = invoke("append", publicFile, canonicalJSONStringify(legitimate));
+    assert.equal(accepted.status, 0, accepted.stderr);
   }));
