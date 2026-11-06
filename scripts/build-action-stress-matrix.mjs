@@ -17,6 +17,12 @@ const corpus = JSON.parse(casesBytes);
 const receipts = receiptBytes.toString('utf8').trimEnd().split('\n').map(JSON.parse);
 const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const sourceHash = file => sha(fs.readFileSync(new URL(file, root)));
+// Default remains strict. A slower host may opt into a declared larger child
+// process budget without changing any case, assertion, fixture, or report bytes.
+const timeoutMs = Number(process.env.AML_ACTION_STRESS_CHILD_TIMEOUT_MS ?? 5000);
+if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 5000 || timeoutMs > 30000) {
+  throw Error('AML_ACTION_STRESS_CHILD_TIMEOUT_MS must be 5000..30000');
+}
 assert.equal(corpus.protocol, 'aml-action-stress-challenge/1');
 assert.equal(corpus.cases.length, receipts.length);
 assert.equal(corpus.cases.length, 375);
@@ -56,7 +62,7 @@ try {
       else if (name === 'webcrypto_node_host') result = await runWebCryptoCase(input);
       else {
         const execution = spawnSync(command[0], [command[1], caseFile],
-          { cwd: root.pathname, encoding: 'utf8', timeout: 5000, maxBuffer: 256 * 1024 });
+          { cwd: root.pathname, encoding: 'utf8', timeout: timeoutMs, maxBuffer: 256 * 1024 });
         assert.equal(execution.status, 0, `${row.id} ${name}: ${execution.stderr || execution.error}`);
         result = JSON.parse(execution.stdout.trim());
       }
@@ -95,5 +101,6 @@ const mode = process.argv[2];
 if (mode === '--write') fs.writeFileSync(file, bytes);
 else if (mode === '--check') assert.equal(fs.readFileSync(file, 'utf8'), bytes);
 else throw Error('Usage: node scripts/build-action-stress-matrix.mjs --write|--check');
-console.log(JSON.stringify({ cases: rows.length, matches: report.matches_by_runtime, callbacks, blocked,
+console.log(JSON.stringify({ cases: rows.length, child_timeout_ms: timeoutMs,
+  matches: report.matches_by_runtime, callbacks, blocked,
   report_sha256: sha(bytes), first_receipt_sha256: rows[0].receipt_sha256 }));

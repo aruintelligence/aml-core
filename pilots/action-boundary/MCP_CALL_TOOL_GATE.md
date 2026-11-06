@@ -8,10 +8,16 @@ MCP tools are selected by name and invoked with an `arguments` object. A server 
 
 `createMCPCallToolGate` is a narrow **client-side** wrapper for one connected MCP client and one configured tool. The host assigns a stable `serverKey` to its actual client connection and configures the exact tool name, effect, purpose, argument validation, destination mapper, policy, and approval callback. The agent supplies only `{ name, arguments }`. The wrapper snapshots the JSON arguments, checks the host schema, builds a `mcp:<serverKey>:<name>` AML proposal, derives its resource from those arguments, then calls the connected client's `callTool({ name, arguments })` only after the AML action gate permits dispatch. It never uses tool-list annotations as policy.
 
-```js
-import { createMCPCallToolGate } from "./mcp-call-tool-gate.mjs";
+For an approval-required integration, `createOneUseMCPCallToolGate` requires a host `consumeApproval` callback at construction. The legacy `/1` dispatch API permits approvals without one, so reusing an approval can dispatch repeatedly if the host omits atomic consumption. The strict constructor checks the callback's presence; the host must implement durable atomic claims and authenticated approval.
 
-const callNotice = createMCPCallToolGate({
+For a connection that can change account or transport during approval, the opt-in `createConnectionBoundMCPCallToolGate` additionally binds a host-supplied `connectionIdentity` into the exact policy resource with `mcpConnectionResource(connectionIdentity, destination)`. It calls the host's synchronous `readConnectionIdentity()` before planning and immediately before the SDK call. A switch between those points spends the grant but returns `blocked/connection_changed` without calling the MCP client. The host must derive identity from the active authenticated connection/account, not from a cached label or server-advertised metadata. This profile cannot detect a transport that changes after the final check, a lying identity reader, hidden client retries, or a provider-side redirect. The existing connected SDK fixture uses the simpler one-use profile and does not demonstrate multi-account switching; the account-switch regression uses a local mocked client.
+
+For that profile, configure the exact rule's `resource` as `mcpConnectionResource("account-A", "team@example.test")`, provide `connectionIdentity: "account-A"` and a live `readConnectionIdentity: () => activeClientAccountId`, then supply the remaining client, validator, mapper, policy, approval and atomic consumer options shown below. Use a new approval when the connection identity changes.
+
+```js
+import { createOneUseMCPCallToolGate } from "./mcp-call-tool-gate.mjs";
+
+const callNotice = createOneUseMCPCallToolGate({
   client: connectedHostOwnedMCPClient,
   serverKey: "orders-prod", // host-assigned identity, not serverInfo.name
   name: "send_notice",
@@ -24,7 +30,8 @@ const callNotice = createMCPCallToolGate({
     tool: "mcp:orders-prod:send_notice", effect: "send",
     resource: "team@example.test", requires_approval: true
   }] },
-  requestApproval: hostApprovalForExactProposalDigest
+  requestApproval: hostAuthenticatedApprovalForExactProposalDigest,
+  consumeApproval: hostDurableAtomicClaim // returns true exactly once per grant
 });
 
 const verdict = await callNotice({

@@ -95,3 +95,60 @@ test("invalid host mappings and malformed arguments fail without execution", asy
   await assert.rejects(broken({ to: route }), /Host mapping failed/);
   assert.equal(count, 0);
 });
+
+test("a throwing approval accessor produces a blocked receipt without dispatch", async () => {
+  let count = 0;
+  const guarded = makeTool({
+    requestApproval: async () => ({ approved: true,
+      get proposal_sha256() { throw new Error("Malformed approval"); } }),
+    execute: async () => { count++; }
+  });
+  const output = await guarded({ to: route, body: "Hi" });
+  assert.equal(output.receipt.execution_status, "blocked");
+  assert.equal(output.receipt.reason, "approval_error");
+  assert.equal(count, 0);
+});
+
+test("inherited approval fields cannot authorize a guarded callback", async () => {
+  let count = 0;
+  const guarded = makeTool({
+    requestApproval: async ({ proposal_sha256 }) =>
+      Object.create({ approved: true, proposal_sha256 }),
+    execute: async () => { count++; }
+  });
+  const output = await guarded({ to: route, body: "Hi" });
+  assert.equal(output.receipt.execution_status, "blocked");
+  assert.equal(output.receipt.reason, "approval_error");
+  assert.equal(count, 0);
+});
+
+test("an oversized proposal blocks before approval or tool execution", async () => {
+  let approvals = 0;
+  let calls = 0;
+  const guarded = makeTool({
+    requestApproval: async () => { approvals++; return { approved: true }; },
+    execute: async () => { calls++; }
+  });
+  const output = await guarded({ to: route, body: "x".repeat(70_000) });
+  assert.equal(output.receipt.execution_status, "blocked");
+  assert.equal(output.receipt.reason, "proposal_too_large");
+  assert.equal(approvals, 0);
+  assert.equal(calls, 0);
+});
+
+test("the proposal limit is measured in UTF-8 bytes at its exact boundary", async () => {
+  let calls = 0;
+  const guarded = makeTool({ execute: async () => { calls++; } });
+  const empty = { protocol: "aml-proposed-action/1", tool: "send_message",
+    effect: "send", resource: route, purpose: "Send a status update",
+    arguments: { to: route, body: "" } };
+  const available = 65_536 - Buffer.byteLength(JSON.stringify(empty));
+  assert.ok(available > 0);
+  const exact = "é".repeat(Math.floor(available / 2)) + (available % 2 ? "x" : "");
+  assert.equal(Buffer.byteLength(exact), available);
+  assert.equal((await guarded({ to: route, body: exact }))
+    .receipt.execution_status, "dispatched");
+  assert.equal((await guarded({ to: route, body: "x".repeat(available + 1) }))
+    .receipt.reason, "proposal_too_large");
+  assert.equal(calls, 1);
+});

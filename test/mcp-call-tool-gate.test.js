@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createMCPCallToolGate } from "../pilots/action-boundary/mcp-call-tool-gate.mjs";
+import { createMCPCallToolGate, createOneUseMCPCallToolGate,
+  createConnectionBoundMCPCallToolGate, mcpConnectionResource } from "../pilots/action-boundary/mcp-call-tool-gate.mjs";
 import { runMCPCallCases } from "../pilots/action-boundary/mcp-call-demo.mjs";
 
 const serverKey = "trusted-orders";
@@ -19,6 +20,66 @@ const make = (client, overrides = {}) => createMCPCallToolGate({
   ...overrides
 });
 const input = (to = team, body = "Original") => ({ name, arguments: { to, body } });
+
+test("strict MCP profile requires a consumer and rejects a reused approval", async () => {
+  const client = { calls: 0, async callTool() { this.calls++; return { content: [] }; } };
+  assert.throws(() => createOneUseMCPCallToolGate({}), /consumeApproval/);
+  let consumed = false;
+  const gate = createOneUseMCPCallToolGate({
+    client, serverKey, name, effect: "send", purpose: "Send a notice",
+    validateArgs: args => Object.keys(args).sort().join(",") === "body,to",
+    resourceFor: args => args.to, policy: policy(),
+    requestApproval: async ({ proposal_sha256 }) => ({ approved: true, proposal_sha256, approval_id: "fixture" }),
+    consumeApproval: async () => {
+      if (consumed) return false;
+      consumed = true;
+      return true;
+    }
+  });
+  assert.equal((await gate(input())).receipt.execution_status, "dispatched");
+  assert.equal((await gate(input())).receipt.reason, "approval_reused_or_expired");
+  assert.equal(client.calls, 1);
+});
+
+test("connection-bound MCP approval cannot move to another host account", async () => {
+  const reached = [];
+  let account = "account-A";
+  const client = { callTool: async call => { reached.push({ account, call }); return { content: [] }; } };
+  const boundPolicy = { protocol: "aml-action-policy/1", rules: [{
+    tool: `mcp:${serverKey}:${name}`, effect: "send",
+    resource: mcpConnectionResource("account-A", team), requires_approval: true
+  }] };
+  let consumed = 0;
+  const gate = createConnectionBoundMCPCallToolGate({
+    client, serverKey, name, effect: "send", purpose: "Send a notice",
+    connectionIdentity: "account-A", readConnectionIdentity: () => account,
+    validateArgs: args => Object.keys(args).sort().join(",") === "body,to",
+    resourceFor: args => args.to, policy: boundPolicy,
+    requestApproval: async ({ proposal_sha256 }) => {
+      account = "account-B";
+      return { approved: true, proposal_sha256 };
+    },
+    consumeApproval: async () => { consumed++; return true; }
+  });
+  const outcome = await gate(input());
+  assert.equal(outcome.plan.decision, "requires_approval");
+  assert.equal(outcome.receipt.execution_status, "blocked");
+  assert.equal(outcome.receipt.reason, "connection_changed");
+  assert.equal(outcome.mcp_result_status, "not_called");
+  assert.equal(consumed, 1);
+  assert.deepEqual(reached, []);
+  account = "account-A";
+  const good = await createConnectionBoundMCPCallToolGate({
+    client, serverKey, name, effect: "send", purpose: "Send a notice",
+    connectionIdentity: "account-A", readConnectionIdentity: () => account,
+    validateArgs: args => Object.keys(args).sort().join(",") === "body,to",
+    resourceFor: args => args.to, policy: boundPolicy,
+    requestApproval: async ({ proposal_sha256 }) => ({ approved: true, proposal_sha256 }),
+    consumeApproval: async () => true
+  })(input());
+  assert.equal(good.receipt.execution_status, "dispatched");
+  assert.deepEqual(reached, [{ account: "account-A", call: input() }]);
+});
 
 test("the measured hint counterexample blocks outside call and retains error semantics", async () => {
   const report = await runMCPCallCases();
@@ -65,6 +126,22 @@ test("host server identity, exact tool name, and schema are checked before callT
   assert.equal((await gate({ name, arguments: { ...input().arguments,
     bcc: ["outside@example.test"] } })).rejection, "invalid_arguments");
   assert.equal(calls, 0);
+});
+
+test("oversized sparse MCP arguments reject before index traversal", async () => {
+  let calls = 0;
+  let indexChecks = 0;
+  const sparse = [];
+  sparse.length = 0xffff_ffff;
+  const inputArray = new Proxy(sparse, { has(target, key) {
+    indexChecks++;
+    return Reflect.has(target, key);
+  } });
+  const gate = make({ callTool: async () => { calls++; return { content: [] }; } });
+  const outcome = await gate({ name, arguments: { to: team, body: "Original", sparse: inputArray } });
+  assert.equal(outcome.rejection, "invalid_arguments");
+  assert.equal(calls, 0);
+  assert.equal(indexChecks, 0);
 });
 
 test("host mapping errors and approval failure reach zero callbacks", async () => {

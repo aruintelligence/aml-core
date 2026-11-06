@@ -22,14 +22,21 @@ export function createGuardedToolExecute({
     // getter or mapper must not shift the arguments between policy and dispatch.
     let argumentBytes;
     try {
-      argumentBytes = canonicalJSONStringify(argumentsValue);
+      // A proposal that fits 65,536 UTF-8 bytes cannot contain an array with
+      // more than 65,536 elements. Reject larger declared lengths before
+      // allocating or iterating a sparse array of attacker-selected size.
+      argumentBytes = canonicalJSONStringify(argumentsValue, { maxArrayLength: 65_536 });
     } catch (error) {
-      if (!String(error?.message).startsWith("AML_CANONICAL_JSON_")) throw error;
+      // A deeply nested input (or an input-owned getter) may raise RangeError
+      // before a canonical JSON error is available. It must not escape without
+      // a blocked receipt, and its cause must not be guessed to be depth.
+      const reason = error instanceof RangeError ? "AML_CANONICAL_JSON_RANGE_ERROR" : error?.message;
+      if (!String(reason).startsWith("AML_CANONICAL_JSON_")) throw error;
       const plan = { protocol: "aml-action-plan/1", proposal_sha256: null,
-        decision: "deny", reason: error.message };
+        decision: "deny", reason };
       return { protocol: "aml-guarded-tool-result/1", plan,
         receipt: { protocol: "aml-action-dispatch/1", proposal_sha256: null,
-          policy_decision: "deny", execution_status: "blocked", reason: error.message } };
+          policy_decision: "deny", execution_status: "blocked", reason } };
     }
     const mappedArguments = JSON.parse(argumentBytes);
     const resource = resourceFor(mappedArguments, context);
@@ -43,7 +50,11 @@ export function createGuardedToolExecute({
     };
     const outcome = await dispatchAction(proposal, {
       policy,
-      requestApproval: requestApproval && (input => requestApproval(input, context)),
+      // Treat the host approval provider as an external input. Snapshot it
+      // before the pinned boundary reads its properties, so an accessor or
+      // proxy failure becomes the boundary's blocked approval_error receipt.
+      requestApproval: requestApproval && (async input =>
+        JSON.parse(canonicalJSONStringify(await requestApproval(input, context)))),
       consumeApproval: consumeApproval && (input => consumeApproval(input, context)),
       executeTool: frozen => execute(frozen.arguments, context, frozen)
     });

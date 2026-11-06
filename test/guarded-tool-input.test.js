@@ -52,3 +52,56 @@ test("malformed canonical arguments retain a blocked receipt", async () => {
   assert.equal(receipt.reason, "AML_CANONICAL_JSON_NON_FINITE_NUMBER");
   assert.equal(callbackCount, 0);
 });
+
+test("cyclic arguments retain a blocked receipt and never execute", async () => {
+  let calls = 0;
+  const guarded = createGuardedToolExecute({
+    tool: "send_message", effect: "send", purpose: "Send a team update",
+    resourceFor: args => args.to, policy,
+    execute: async () => { calls++; }
+  });
+  const args = { to: "team@example.test" };
+  args.self = args;
+  const { plan, receipt } = await guarded(args);
+  assert.equal(plan.decision, "deny");
+  assert.equal(plan.reason, "AML_CANONICAL_JSON_CYCLE");
+  assert.equal(receipt.execution_status, "blocked");
+  assert.equal(calls, 0);
+});
+
+test("a huge sparse array blocks before proportional allocation or callback", async () => {
+  let calls = 0;
+  const guarded = createGuardedToolExecute({
+    tool: "send_message", effect: "send", purpose: "Send a team update",
+    resourceFor: args => args.to, policy,
+    execute: async () => { calls++; }
+  });
+  const sparse = [];
+  sparse.length = 0xffff_ffff;
+  let indexChecks = 0;
+  const guardedSparse = new Proxy(sparse, { has(target, key) {
+    indexChecks++;
+    return Reflect.has(target, key);
+  } });
+  const { plan, receipt } = await guarded({ to: "team@example.test", sparse: guardedSparse });
+  assert.equal(plan.reason, "AML_CANONICAL_JSON_ARRAY_TOO_LARGE");
+  assert.equal(receipt.execution_status, "blocked");
+  assert.equal(calls, 0);
+  assert.equal(indexChecks, 0, "No array indices should be traversed before rejection");
+});
+
+test("deep arguments return a blocked receipt when recursion overflows", async () => {
+  let calls = 0;
+  const guarded = createGuardedToolExecute({
+    tool: "send_message", effect: "send", purpose: "Send a team update",
+    resourceFor: args => args.to, policy,
+    execute: async () => { calls++; }
+  });
+  let args = { to: "team@example.test" };
+  for (let i = 0; i < 12000; i++) args = { nested: args };
+  const { plan, receipt } = await guarded(args);
+  assert.equal(plan.decision, "deny");
+  assert.equal(receipt.reason, "AML_CANONICAL_JSON_RANGE_ERROR");
+  assert.equal(receipt.execution_status, "blocked");
+  assert.equal(calls, 0);
+});

@@ -29,6 +29,15 @@ export async function runReferenceCase(input) {
     executeTool: async frozen => {
       toolCalls++;
       executedProposal = frozen;
+      if (host.observed_callback) {
+        const response = await fetch(host.observed_callback.url, {
+          method: "POST",
+          headers: { "content-type": "application/json",
+            "x-aml-challenge-token": host.observed_callback.token },
+          body: JSON.stringify(frozen)
+        });
+        if (!response.ok) throw new Error("Observed local callback rejected");
+      }
       if (host.tool === "throw") throw new Error("Simulated callback uncertainty");
       return { simulated: true };
     }

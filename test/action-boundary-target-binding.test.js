@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { dispatchAction, planAction } from "../pilots/action-boundary/boundary.mjs";
-import { dispatchTargetBoundAction } from "../pilots/action-boundary/target-boundary.mjs";
+import { dispatchTargetBoundAction, dispatchTargetBoundActionV2 } from "../pilots/action-boundary/target-boundary.mjs";
 
 const original = () => ({ protocol: "aml-proposed-action/1", tool: "send_message",
   effect: "send", resource: "team@example.test", purpose: "Send the release update",
@@ -106,4 +106,47 @@ test("a failed target-bound snapshot never rereads a stateful proposal", async (
     protocol: "aml-action-dispatch/1", proposal_sha256: null,
     policy_decision: "deny", execution_status: "blocked", reason: "invalid_proposal"
   });
+});
+
+test("v2 blocks a route swapped during approval after spending the one-use claim", async () => {
+  const proposal = original();
+  let route = "team@example.test", resolutions = 0, claims = 0, calls = 0;
+  const result = await dispatchTargetBoundActionV2(proposal, {
+    policy: policy(true), resolveTarget: () => { resolutions++; return route; },
+    requestApproval: async ({ proposal_sha256 }) => {
+      route = "outside@example.test";
+      return { approved: true, proposal_sha256 };
+    },
+    consumeApproval: async () => { claims++; return true; },
+    executeTool: async () => { calls++; }
+  });
+  assert.equal(result.receipt.execution_status, "blocked");
+  assert.equal(result.receipt.reason, "target_changed");
+  assert.equal(result.receipt.proposal_sha256, planAction(proposal, policy(true)).proposal_sha256);
+  assert.deepEqual([resolutions, claims, calls], [2, 1, 0]);
+});
+
+test("v2 approval-required route refuses missing one-use claim consumer", async () => {
+  let approvals = 0, calls = 0;
+  const result = await dispatchTargetBoundActionV2(original(), {
+    policy: policy(true), resolveTarget: recipient,
+    requestApproval: async () => { approvals++; return { approved: true }; },
+    executeTool: async () => { calls++; }
+  });
+  assert.equal(result.receipt.reason, "approval_consumer_unavailable");
+  assert.deepEqual([approvals, calls], [0, 0]);
+});
+
+test("v2 passes the pinned target to the provider adapter", async () => {
+  let route = "team@example.test";
+  const used = [];
+  const outcome = await dispatchTargetBoundActionV2(original(), {
+    policy: policy(false), resolveTarget: () => route,
+    executeTool: async (frozen, boundTarget) => {
+      route = "outside@example.test";
+      used.push({ to: boundTarget, body: frozen.arguments.body });
+    }
+  });
+  assert.equal(outcome.receipt.execution_status, "dispatched");
+  assert.deepEqual(used, [{ to: "team@example.test", body: "The release is ready." }]);
 });

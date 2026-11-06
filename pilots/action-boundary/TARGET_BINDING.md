@@ -6,6 +6,8 @@ The reference action rule matches `tool`, `effect`, and the proposal's declared 
 
 `dispatchTargetBoundAction` is an opt-in, host-owned adapter. It snapshots the proposal, asks a tool-specific `resolveTarget` callback to derive the actual destination from frozen arguments, and requires exact equality with `resource` before approval or dispatch. A missing callback, missing target, resolver error, or mismatch blocks. When it matches, the existing action boundary handles policy, digest-bound approval, final recheck, frozen dispatch, and uncertain callback outcomes.
 
+**Versioned stricter profile:** `dispatchTargetBoundActionV2` repeats host target resolution after asynchronous approval and one-use claim consumption, immediately before callback entry. If the route changed, it returns `blocked/target_changed` without entering the callback; the grant remains spent. For an approval-required rule it blocks without a `consumeApproval` hook. The callback receives `(frozenProposal, boundTarget)` and must construct its final provider request using that target. The earlier adapter remains available for historical `/1` evidence.
+
 The returned `plan` and receipt come from the same dispatch decision. The adapter may check policy before calling the resolver and again before dispatch; the host can change policy in between. The mail guard reports the plan returned by this adapter rather than making an additional policy read of its own.
 
 If the initial snapshot fails, the adapter returns a blocked receipt with `policy_decision: "deny"` and `proposal_sha256: null`. It does not retry the caller's object to manufacture a digest: a stateful getter might return different content on a second read. The regression test verifies one read and zero resolver, approval, and tool calls on that path.
@@ -28,6 +30,8 @@ const result = await dispatchTargetBoundAction(proposal, {
   }
 });
 ```
+
+For the stricter path, import `dispatchTargetBoundActionV2` and use `executeTool: async (frozen, boundTarget) => hostMailer.send({ to: boundTarget, body: frozen.arguments.body })`. Provide a durable atomic `consumeApproval` callback whenever the rule requires approval. A route switch before the second resolution blocks. A transport or account that changes after the check, a provider redirect, or a callback that ignores `boundTarget` remains the integrating host's responsibility; the adapter cannot observe the final external side effect.
 
 The resolver must be written and controlled by the host, not the agent. It must cover every supported tool and destination shape: aliases, CC/BCC or multiple recipients, URLs, redirects, normalized addresses, and any field the downstream tool can use to change its destination. For multiple destinations, design a host-specific resource representation and compare the whole set. The [mail recipient manifest example](MAIL_TARGET_MANIFEST.md) reproduces a BCC bypass in the to-only mapper above, then binds To, CC, and BCC under one exact resource. If the tool rewrites or redirects after mapping, this local equality check is insufficient. Never allow a second unwrapped path to the same sensitive callback.
 
