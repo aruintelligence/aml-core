@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """Controlled retained-status witness. Same-identity local SQLite, not a remote trust root."""
 import hashlib
+import base64
 import json
 import re
 import sqlite3
+import subprocess
 import sys
+import tempfile
+from pathlib import Path
 
 UUID = re.compile(r"^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$", re.I)
 HEX = re.compile(r"^[0-9a-f]{64}$")
@@ -19,7 +23,7 @@ def unique_pairs(pairs):
     return value
 
 
-def main(database, action):
+def main(database, action, public_key=None):
     if action == "read":
         operation = sys.stdin.read().strip()
         con = sqlite3.connect("file:" + database + "?mode=ro", uri=True)
@@ -50,6 +54,22 @@ def main(database, action):
         raise ValueError("invalid_witness_effect")
     if raw != json.dumps(record, ensure_ascii=False, sort_keys=True, separators=(",", ":")):
         raise ValueError("noncanonical_witness_input")
+    if not public_key or not Path(public_key).is_file():
+        raise ValueError("pinned_witness_key_required")
+    statement = {key: value for key, value in record.items() if key != "signature"}
+    signed = b"AML-LOCAL-PROVIDER-STATUS/2\0" + json.dumps(
+        statement, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    with tempfile.TemporaryDirectory(prefix="aml-witness-verify-") as temp:
+        data = Path(temp) / "statement"
+        signature = Path(temp) / "signature"
+        data.write_bytes(signed)
+        signature.write_bytes(base64.b64decode(record["signature"], validate=True))
+        check = subprocess.run(["openssl", "pkeyutl", "-verify", "-pubin", "-inkey",
+                                public_key, "-rawin", "-in", str(data), "-sigfile",
+                                str(signature)], capture_output=True, timeout=10, check=False)
+        if check.returncode != 0:
+            raise ValueError("invalid_witness_signature")
     digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     con = sqlite3.connect(database, timeout=10, isolation_level=None)
     try:
@@ -77,10 +97,10 @@ def main(database, action):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         sys.exit(2)
     try:
-        main(sys.argv[1], sys.argv[2])
-    except (ValueError, sqlite3.Error, OSError) as error:
+        main(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) == 4 else None)
+    except (ValueError, sqlite3.Error, OSError, subprocess.SubprocessError) as error:
         print(type(error).__name__ + ": " + str(error), file=sys.stderr)
         sys.exit(2)

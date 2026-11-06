@@ -145,11 +145,12 @@ test("two valid signatures expose a deleted provider row as conflicting evidence
   }));
 
 test("separate retained witness exposes provider rollback across processes", () =>
-  fixture(({ sign, verifyHistory, operationId, database, directory }) => {
+  fixture(({ sign, verifyHistory, operationId, database, directory, publicFile }) => {
     const witnessDirectory = path.join(directory, "retained-witness");
     fs.mkdirSync(witnessDirectory, { mode: 0o700 });
     const witnessDb = path.join(witnessDirectory, "status.sqlite");
-    const call = (action, input) => spawnSync("python3", [witness, witnessDb, action],
+    const call = (action, input) => spawnSync("python3", [witness, witnessDb, action,
+      ...(action === "append" ? [publicFile] : [])],
       { input, encoding: "utf8", timeout: 20_000 });
     const firstChallenge = crypto.randomBytes(32).toString("hex");
     const first = sign(operationId, firstChallenge);
@@ -177,13 +178,13 @@ test("separate retained witness exposes provider rollback across processes", () 
   }));
 
 test("ambiguous JSON cannot occupy a valid witness challenge slot", () =>
-  fixture(({ sign, operationId, directory }) => {
+  fixture(({ sign, operationId, directory, publicFile }) => {
     const database = path.join(directory, "witness.sqlite");
     const challenge = crypto.randomBytes(32).toString("hex");
     const signed = canonicalJSONStringify(sign(operationId, challenge));
     const ambiguous = signed.replace('"issuer":"fixture-provider",',
       '"issuer":"attacker","issuer":"fixture-provider",');
-    const append = input => spawnSync("python3", [witness, database, "append"],
+    const append = input => spawnSync("python3", [witness, database, "append", publicFile],
       { input, encoding: "utf8", timeout: 20_000 });
     assert.notEqual(append(ambiguous).status, 0);
     const valid = append(signed);
@@ -191,16 +192,18 @@ test("ambiguous JSON cannot occupy a valid witness challenge slot", () =>
     assert.equal(JSON.parse(valid.stdout).duplicate, false);
   }));
 
-test("well-shaped forged evidence can still poison an unauthenticated witness slot", () =>
-  fixture(({ sign, operationId, directory }) => {
+test("forged signature cannot occupy a pinned witness slot", () =>
+  fixture(({ sign, operationId, directory, publicFile }) => {
     const database = path.join(directory, "witness.sqlite");
     const challenge = crypto.randomBytes(32).toString("hex");
     const legitimate = sign(operationId, challenge);
     const forged = { ...legitimate, signature: "A".repeat(86) + "==" };
-    const append = value => spawnSync("python3", [witness, database, "append"],
+    const append = value => spawnSync("python3", [witness, database, "append", publicFile],
       { input: canonicalJSONStringify(value), encoding: "utf8", timeout: 20_000 });
-    assert.equal(append(forged).status, 0, "shape-only witness accepts a forged signature");
-    const blocked = append(legitimate);
-    assert.notEqual(blocked.status, 0, "valid evidence cannot replace the poisoned slot");
-    assert.match(blocked.stderr, /witness_challenge_conflict/);
+    const rejected = append(forged);
+    assert.notEqual(rejected.status, 0);
+    assert.match(rejected.stderr, /invalid_witness_signature/);
+    const accepted = append(legitimate);
+    assert.equal(accepted.status, 0, accepted.stderr);
+    assert.equal(JSON.parse(accepted.stdout).duplicate, false);
   }));
