@@ -13,6 +13,7 @@ const provider = path.join(root, "sqlite-provider-fixture.py");
 const signer = path.join(root, "signed-provider-status.mjs");
 const verifier = path.join(root, "verify-provider-status.mjs");
 const historyVerifier = path.join(root, "verify-provider-history.mjs");
+const witness = path.join(root, "sqlite-status-witness.py");
 
 function fixture(run) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-signed-provider-"));
@@ -141,4 +142,36 @@ test("two valid signatures expose a deleted provider row as conflicting evidence
       "without retained earlier evidence, rollback cannot be detected");
     assert.equal(verifyHistory([before, before], [a, b]), "REJECTED",
       "a response cannot be reused as evidence of a second challenge");
+  }));
+
+test("separate retained witness exposes provider rollback across processes", () =>
+  fixture(({ sign, verifyHistory, operationId, database, directory }) => {
+    const witnessDirectory = path.join(directory, "retained-witness");
+    fs.mkdirSync(witnessDirectory, { mode: 0o700 });
+    const witnessDb = path.join(witnessDirectory, "status.sqlite");
+    const call = (action, input) => spawnSync("python3", [witness, witnessDb, action],
+      { input, encoding: "utf8", timeout: 20_000 });
+    const firstChallenge = crypto.randomBytes(32).toString("hex");
+    const first = sign(operationId, firstChallenge);
+    assert.equal(call("append", canonicalJSONStringify(first)).status, 0);
+    const duplicate = call("append", canonicalJSONStringify(first));
+    assert.equal(JSON.parse(duplicate.stdout).duplicate, true);
+    const removed = spawnSync("python3", ["-c",
+      "import sqlite3,sys; c=sqlite3.connect(sys.argv[1]); c.execute('DELETE FROM effects'); c.commit()",
+      database], { encoding: "utf8", timeout: 20_000 });
+    assert.equal(removed.status, 0, removed.stderr);
+    const secondChallenge = crypto.randomBytes(32).toString("hex");
+    const second = sign(operationId, secondChallenge);
+    assert.equal(call("append", canonicalJSONStringify(second)).status, 0);
+    const read = call("read", operationId);
+    assert.equal(read.status, 0, read.stderr);
+    const retained = JSON.parse(read.stdout).envelopes;
+    assert.equal(retained.length, 2);
+    assert.equal(verifyHistory(retained, [firstChallenge, secondChallenge]), "CONFLICTING_EVIDENCE");
+    const wrong = structuredClone(first);
+    wrong.record.effect_id = crypto.randomUUID();
+    assert.notEqual(call("append", canonicalJSONStringify(wrong)).status, 0,
+      "witness challenge slot cannot be replaced with a different record");
+    assert.equal(verifyHistory(JSON.parse(call("read", operationId).stdout).envelopes,
+      [firstChallenge, secondChallenge]), "CONFLICTING_EVIDENCE");
   }));
