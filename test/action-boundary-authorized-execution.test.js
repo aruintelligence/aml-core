@@ -93,6 +93,17 @@ test("missing retained authority fails closed; provider history deletion does no
   assert.equal(count(), 0);
 }));
 
+test("KNOWN COUNTEREXAMPLE: joint provider and authority rollback revives signed grant", () => scenario(({ db, gate, send, admin, count }) => {
+  const first = send();
+  assert.equal(first.status, 0, first.stderr);
+  const rollback = admin("sqlite3; p=sqlite3.connect(sys.argv[2]); g=sqlite3.connect(sys.argv[3]); p.execute('DELETE FROM effects'); g.execute('DELETE FROM claims'); p.commit(); g.commit()", db, gate);
+  assert.equal(rollback.status, 0, rollback.stderr);
+  const repeated = send();
+  assert.equal(repeated.status, 0, repeated.stderr);
+  assert.notEqual(JSON.parse(first.stdout).effect_id, JSON.parse(repeated.stdout).effect_id);
+  assert.equal(count(), 1, "current provider row conceals earlier effect without retained history");
+}));
+
 test("malformed and duplicate-key request cannot consume a valid grant", () => scenario(({ send, authorization, bytes, count, sign }) => {
   const withDuplicate = bytes.replace('"destination":"fixture:approved"', '"destination":"fixture:approved","destination":"fixture:stolen"');
   const duplicateAuth = { ...authorization, request_sha256: sha(withDuplicate) };
