@@ -144,6 +144,28 @@ test("two valid signatures expose a deleted provider row as conflicting evidence
       "a response cannot be reused as evidence of a second challenge");
   }));
 
+test("two signed positive statuses expose re-execution after provider history loss", () =>
+  fixture(({ sign, verifyHistory, operationId, requestSha256, database }) => {
+    const a = crypto.randomBytes(32).toString("hex");
+    const b = crypto.randomBytes(32).toString("hex");
+    const first = sign(operationId, a);
+    const removed = spawnSync("python3", ["-c",
+      "import sqlite3,sys; c=sqlite3.connect(sys.argv[1]); c.execute('DELETE FROM effects'); c.commit()",
+      database], { encoding: "utf8", timeout: 20_000 });
+    assert.equal(removed.status, 0, removed.stderr);
+    const requestBytes = JSON.stringify({ operation_id: operationId,
+      destination: "fixture:outbox", body: "approved" });
+    const retried = spawnSync("python3", [provider, database, "request"],
+      { encoding: "utf8", input: JSON.stringify({ request_bytes: requestBytes,
+        request_sha256: requestSha256 }), timeout: 20_000 });
+    assert.equal(retried.status, 0, retried.stderr);
+    const second = sign(operationId, b);
+    assert.notEqual(first.record.effect_id, second.record.effect_id);
+    assert.equal(verifyHistory([first, second], [a, b]), "CONFLICTING_EVIDENCE");
+    assert.equal(verifyHistory([second], [b]), "PROVIDER_REPORTED",
+      "the latest signed status alone cannot reveal prior execution");
+  }));
+
 test("separate retained witness exposes provider rollback across processes", () =>
   fixture(({ sign, verifyHistory, operationId, database, directory, publicFile }) => {
     const witnessDirectory = path.join(directory, "retained-witness");
