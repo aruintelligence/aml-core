@@ -144,3 +144,17 @@ test("decoded inventory same-inode growth is finite, rejected and does not leak 
     assert.equal(original.whole(file, "utf8"), initial + " ".repeat(8192));
   } finally { fs.openSync = original.open; fs.fstatSync = original.stat; fs.readSync = original.read; fs.readFileSync = original.whole; fs.rmSync(tmp, { recursive: true, force: true }); }
 });
+
+test("unexpected CODEQL/debug-upload inputs reject even false-looking values; known modes are pinned", () => {
+  for (const name of ["CODEQL_FUTURE_DEBUG_MODE", "CODEQL_ACTION_EXPECT_UPLOAD_FAILED_SARIF",
+    "CODEQL_ACTION_UNKNOWN_UPLOAD_MODE", "CODEQL_ACTION_FEATURE_FLAGS", "INPUT_DEBUG_ARTIFACT_NAME",
+    "INPUT_DEBUG_DATABASE_NAME", "INPUT_UPLOAD", "INPUT_UPLOAD_DATABASE"]) {
+    for (const value of ["", "false", "0", "true", "SYNTHETIC_PRIVATE_VALUE"]) {
+      assert.throws(() => assertNoCodeqlDebug({ [name]: value }), /codeql_debug_policy_rejected/);
+    }
+  }
+  assert.equal(assertNoCodeqlDebug({ CODEQL_ACTION_DIFF_INFORMED_QUERIES: "false", CODEQL_ACTION_OVERLAY_ANALYSIS: "false",
+    CODEQL_EXTRACTOR_JAVASCRIPT_ALLOW_MINIFIED_FILES: "true" }).debug_policy_valid, true);
+  for (const env of [{ CODEQL_ACTION_DIFF_INFORMED_QUERIES: "true" }, { CODEQL_ACTION_OVERLAY_ANALYSIS: "true" },
+    { CODEQL_EXTRACTOR_JAVASCRIPT_ALLOW_MINIFIED_FILES: "false" }]) assert.throws(() => assertNoCodeqlDebug(env));
+});

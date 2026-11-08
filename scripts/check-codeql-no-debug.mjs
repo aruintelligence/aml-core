@@ -1,15 +1,24 @@
 #!/usr/bin/env node
 import { pathToFileURL } from "node:url";
 
-// Pinned CodeQL init ORs input debug with core.isDebug(); upload:never does not
-// disable its separate debug post-action or combined-SARIF artifact path.
+// Pinned init ORs input debug with core.isDebug(); upload:never does not
+// disable its separate debug post-action. Also reject debug-SARIF selectors;
+// this is not a claim that every selector reaches an uploader in this workflow.
+const disabledDebug = new Set(["RUNNER_DEBUG", "ACTIONS_STEP_DEBUG", "ACTIONS_RUNNER_DEBUG",
+  "INPUT_DEBUG", "CODEQL_ACTION_DEBUG_COMBINED_SARIF", "CODEQL_ACTION_JAVA_NETWORK_DEBUGGING"]);
+const allowedCodeql = new Map([
+  ["CODEQL_ACTION_DIFF_INFORMED_QUERIES", "false"],
+  ["CODEQL_ACTION_OVERLAY_ANALYSIS", "false"],
+  ["CODEQL_EXTRACTOR_JAVASCRIPT_ALLOW_MINIFIED_FILES", "true"]
+]);
 export function assertNoCodeqlDebug(env = process.env) {
   for (const [name, value] of Object.entries(env)) {
-    if (/^(?:RUNNER_DEBUG|ACTIONS_STEP_DEBUG|ACTIONS_RUNNER_DEBUG|INPUT_DEBUG)$/.test(name)
-        || /^CODEQL_.*DEBUG/.test(name)) {
-      if (typeof value !== "string" || !["", "0", "false"].includes(value)) {
-        throw new Error("codeql_debug_policy_rejected");
-      }
+    if (disabledDebug.has(name)) {
+      if (typeof value !== "string" || !["", "0", "false"].includes(value)) throw new Error("codeql_debug_policy_rejected");
+    } else if (name.startsWith("CODEQL_")) {
+      if (!allowedCodeql.has(name) || value !== allowedCodeql.get(name)) throw new Error("codeql_debug_policy_rejected");
+    } else if (/^INPUT_(?:DEBUG|UPLOAD)(?:_|$)/.test(name)) {
+      throw new Error("codeql_debug_policy_rejected");
     }
   }
   return { protocol: "aml-codeql-no-debug/1", debug_policy_valid: true };
