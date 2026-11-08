@@ -3,6 +3,7 @@
 import hashlib
 import json
 import sqlite3
+from sqlite_path import sqlite_file_uri
 import sys
 import uuid
 from sqlite_execution_gate import consume
@@ -11,7 +12,7 @@ from sqlite_execution_gate import consume
 def main(database, command, gate=None):
     if command == "status":
         # Read-only open cannot silently create a missing provider history.
-        con = sqlite3.connect("file:" + database + "?mode=ro", uri=True)
+        con = sqlite3.connect(sqlite_file_uri(database, "ro"), uri=True)
         try:
             op = sys.stdin.read().strip()
             row = con.execute("SELECT request_sha256,destination,effect_id FROM effects WHERE operation_id=?", (op,)).fetchone()

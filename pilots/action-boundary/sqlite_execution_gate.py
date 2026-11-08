@@ -1,5 +1,6 @@
 """Single-machine test execution claim; retained outside provider rollback domain."""
 import sqlite3
+from sqlite_path import sqlite_file_uri
 
 
 def initialize(database):
@@ -24,7 +25,7 @@ def initialize(database):
 def consume(database, operation_id, request_sha256):
     # Open existing database only: a missing/rolled-back provider-local state
     # must never create a fresh execution authority implicitly.
-    con = sqlite3.connect("file:" + database + "?mode=rw", uri=True,
+    con = sqlite3.connect(sqlite_file_uri(database, "rw"), uri=True,
                           timeout=10, isolation_level=None)
     try:
         con.execute("PRAGMA synchronous=FULL")

@@ -8,6 +8,7 @@ import hashlib
 import json
 import re
 import sqlite3
+from sqlite_path import sqlite_file_uri
 import subprocess
 import tempfile
 import time
@@ -51,7 +52,7 @@ def initialize(database, issuer_public_pem, policy_epoch=1):
 
 
 def revoke(database, operation_id):
-    con = sqlite3.connect("file:" + database + "?mode=rw", uri=True, timeout=10, isolation_level=None)
+    con = sqlite3.connect(sqlite_file_uri(database, "rw"), uri=True, timeout=10, isolation_level=None)
     try:
         con.execute("BEGIN IMMEDIATE")
         con.execute("INSERT OR IGNORE INTO revoked VALUES (?)", (operation_id,))
@@ -61,7 +62,7 @@ def revoke(database, operation_id):
 
 
 def set_epoch(database, epoch):
-    con = sqlite3.connect("file:" + database + "?mode=rw", uri=True, timeout=10, isolation_level=None)
+    con = sqlite3.connect(sqlite_file_uri(database, "rw"), uri=True, timeout=10, isolation_level=None)
     try:
         con.execute("BEGIN IMMEDIATE")
         current, = con.execute("SELECT policy_epoch FROM config").fetchone()
@@ -98,9 +99,11 @@ def _verify_signature(public_key_bytes, statement, signature):
             raise ValueError("invalid_authorization_signature")
 
 
-def consume(database, public_key, statement, signature, request_bytes):
+def _verify_authorization_binding(public_key, statement, signature, request_bytes):
     if not isinstance(statement, dict) or set(statement) != FIELDS or statement.get("version") != "aml-authorized-execution/1":
         raise ValueError("invalid_authorization")
+    # Snapshot the flat, strictly typed statement before signature/state checks.
+    statement = dict(statement)
     if any(not isinstance(statement[k], str) or not statement[k] or not statement[k].isascii()
            for k in ("issuer", "principal", "policy_id", "operation_id", "destination", "effect")):
         raise ValueError("invalid_authorization")
@@ -126,23 +129,53 @@ def consume(database, public_key, statement, signature, request_bytes):
     # comparison with the authority's pinned fingerprint.
     public_key_bytes = Path(public_key).read_bytes()
     _verify_signature(public_key_bytes, statement, signature)
-    con = sqlite3.connect("file:" + database + "?mode=rw", uri=True, timeout=10, isolation_level=None)
+    return statement, request, hashlib.sha256(public_key_bytes).hexdigest()
+
+
+def _consume_verified_in_transaction(con, verified):
+    if not con.in_transaction:
+        raise ValueError("authorization_transaction_required")
+    statement, request, key_digest = verified
+    rows = con.execute("SELECT issuer_key_sha256,policy_epoch FROM config").fetchall()
+    if len(rows) != 1 or rows[0][0] != key_digest:
+        raise ValueError("untrusted_issuer_key")
+    if statement["policy_epoch"] != rows[0][1]:
+        raise ValueError("stale_policy_epoch")
+    if statement["expires_at_ms"] <= time.time_ns() // 1000000:
+        raise ValueError("authorization_expired")
+    op = statement["operation_id"]
+    if con.execute("SELECT 1 FROM revoked WHERE operation_id=?", (op,)).fetchone():
+        raise ValueError("authorization_revoked")
+    if con.execute("SELECT 1 FROM claims WHERE operation_id=?", (op,)).fetchone():
+        raise ValueError("authorization_spent")
+    con.execute("INSERT INTO claims VALUES (?,?)", (op, statement["request_sha256"]))
+    return request
+
+
+def consume_in_transaction(con, public_key, statement, signature, request_bytes):
+    """Verify and claim in a trusted provider's existing transaction; never commit.
+
+    The caller owns BEGIN IMMEDIATE, effect validation, COMMIT and ROLLBACK.
+    Only effects in this same SQLite transaction can share its atomicity. This
+    is not a callback/SQL execution API and does not span another DB or service.
+    The connection, key path and transaction owner must not be agent-controlled.
+    """
+    if not con.in_transaction:
+        raise ValueError("authorization_transaction_required")
+    verified = _verify_authorization_binding(public_key, statement, signature, request_bytes)
+    return _consume_verified_in_transaction(con, verified)
+
+
+def consume(database, public_key, statement, signature, request_bytes):
+    """Legacy one-use claim API: commit before returning the parsed request."""
+    # Preserve validation-before-open and the immutable key snapshot used by the
+    # existing two-database fixture. Its intentional crash counterexample stays.
+    verified = _verify_authorization_binding(public_key, statement, signature, request_bytes)
+    con = sqlite3.connect(sqlite_file_uri(database, "rw"), uri=True, timeout=10, isolation_level=None)
     try:
         con.execute("PRAGMA synchronous=FULL")
         con.execute("BEGIN IMMEDIATE")
-        rows = con.execute("SELECT issuer_key_sha256,policy_epoch FROM config").fetchall()
-        if len(rows) != 1 or rows[0][0] != hashlib.sha256(public_key_bytes).hexdigest():
-            raise ValueError("untrusted_issuer_key")
-        if statement["policy_epoch"] != rows[0][1]:
-            raise ValueError("stale_policy_epoch")
-        if statement["expires_at_ms"] <= time.time_ns() // 1000000:
-            raise ValueError("authorization_expired")
-        op = statement["operation_id"]
-        if con.execute("SELECT 1 FROM revoked WHERE operation_id=?", (op,)).fetchone():
-            raise ValueError("authorization_revoked")
-        if con.execute("SELECT 1 FROM claims WHERE operation_id=?", (op,)).fetchone():
-            raise ValueError("authorization_spent")
-        con.execute("INSERT INTO claims VALUES (?,?)", (op, statement["request_sha256"]))
+        request = _consume_verified_in_transaction(con, verified)
         con.execute("COMMIT")
         return request
     except BaseException:

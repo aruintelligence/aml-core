@@ -1,0 +1,76 @@
+name: AML Action Contract Pilot 003
+
+# Intentionally no path filters: policy, canonicalization, adapters, shared test
+# helpers, package metadata and future dependencies must not silently skip this.
+on:
+  pull_request:
+    branches:
+      - main
+      - operation-aml/grant-store-integrity-20261104
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+  push:
+    branches:
+      - main
+      - operation-aml/grant-store-integrity-20261104
+
+permissions:
+  contents: read
+
+jobs:
+  atomic-acceptance:
+    name: pilot-003-atomic-acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Check out candidate without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Confirm local toolchain
+        run: node --version && python3 --version && openssl version
+      - name: Run atomic crash, authorization and recovery acceptance tests
+        run: node --test --test-timeout=120000 test/action-boundary-atomic-authorized-execution.test.js test/action-boundary-atomic-review-regressions.test.js
+
+  full-regression:
+    name: pilot-003-full-regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Check out candidate without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Confirm local toolchain
+        run: node --version && python3 --version && openssl version
+      # The root package has no dependencies or install/test lifecycle hooks.
+      # Invoke the test runner directly: no npm install, npm token or secrets.
+      - name: Run full regression suite including the atomic pilot
+        run: node --test --test-timeout=120000
+      - name: Check repository security baseline contract
+        run: node scripts/check-security-baseline.mjs
+      - name: Check repository workflow permission policy
+        run: node scripts/check-workflow-safety.mjs
+      - name: Check local documentation links
+        run: node scripts/check-local-links.js
