@@ -1,6 +1,6 @@
 # PR469 Mission 1 — bounded security and authorization-path coverage
 
-**Local follow-up candidate; not yet published, independently cleared or cloud-scanned.**
+**Prepublication author snapshot; actual independent review and cloud results must be recorded separately.**
 No merge or deployment. This is conventional security/CI work, not a new protocol,
 patent novelty assertion, production audit or universal non-bypass proof.
 
@@ -175,3 +175,34 @@ required statuses after verifying real job names. App-binding prevents another a
 satisfying the context, NOT a malicious workflow edit reusing the same job name;
 trusted workflow review, repository administration and runner/tool integrity remain
 assumptions. No branch protection is changed by this source patch.
+
+
+## Explicit no-debug and per-file extraction gates
+
+A fixed-output guard must pass immediately BEFORE CodeQL init. It fails the job
+(not a skipped-success context) if runner/step/CodeQL debug modes are enabled or
+ambiguous. The pinned upstream Action's supported debug post-action can upload raw
+SARIF/databases/logs despite upload:never; debug:false alone does not disable runner
+debug. Combined-SARIF debug overrides are also rejected. This is a disclosure policy
+for a supported debugging feature, not an upstream vulnerability or an observed leak.
+Trusted workflow/admin/runner control remains required; no universal log-secrecy claim.
+
+After actual analysis, the exact init output CLI and explicit database root execute
+the committed table queries. The comparator requires positive TopLevel/Module roots
+for EVERY tracked JS/TS/Python file, including all four authored report scripts that
+previously lost ASTs. Missing, zero, duplicate, malformed or unavailable inventories
+fail; extras such as HTML/Actions are not mistaken for tracked language roots. Only
+bounded aggregate counts/status leave the step. Raw rows/paths/child stdout/stderr
+stay transient; no raw artifact/database upload is configured. This is presence,
+not complete semantics, vulnerability absence or authenticated scanner evidence.
+Actual cloud producer metadata and AST results must still be observed, never restamped.
+
+
+The governance-stream HTTP boundary now returns only a finite allowlist of public
+protocol messages or stable codes. Unknown reader/evaluation errors use a generic
+failure; malformed JSON no longer echoes parser detail. Dynamic duplicate/transition/
+unsupported-protocol suffixes are intentionally reduced to codes. Before-header
+HTTP status and after-header NDJSON terminal error behavior are tested separately.
+This narrows error-detail API output; core session/auth/policy decisions are unchanged.
+Synthetic no-detail regressions do not establish a preexisting remote secret exploit,
+and do not claim resistance to malicious code/admin or arbitrary response contents.

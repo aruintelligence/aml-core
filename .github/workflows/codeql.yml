@@ -49,7 +49,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # Fail BEFORE init registers its debug-uploading post-action. No skip-success.
+      - name: Enforce no-debug disclosure policy before scanner initialization
+        run: node scripts/check-codeql-no-debug.mjs
       - name: Initialize CodeQL security-extended analysis
+        id: codeql-init
         # Immutable commit resolved from supported CodeQL Action v4 on 2026-11-07.
         uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066
         with:
@@ -57,6 +61,8 @@ jobs:
           build-mode: none
           tools: linked
           queries: security-extended
+          debug: false
+          db-location: ${{ runner.temp }}/aml-codeql-db
           dependency-caching: none
           trap-caching: false
       - name: Run actual CodeQL queries without Code Scanning upload
@@ -67,6 +73,12 @@ jobs:
           upload-database: false
           wait-for-processing: false
           output: codeql-results
+      - name: Verify tracked source AST and module extraction
+        env:
+          CODEQL_CLI: ${{ steps.codeql-init.outputs.codeql-path }}
+          CODEQL_DB_ROOT: ${{ runner.temp }}/aml-codeql-db
+          CODEQL_LANGUAGE: ${{ matrix.language }}
+        run: node scripts/check-codeql-extraction.mjs "$CODEQL_CLI" "$CODEQL_DB_ROOT" "$CODEQL_LANGUAGE"
       # Raw reports stay transient on the runner: no artifact/database/scanning upload.
       - name: Validate analysis quality and publish aggregate status only
         shell: bash

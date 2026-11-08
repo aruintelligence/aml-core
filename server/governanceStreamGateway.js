@@ -27,6 +27,52 @@ function json(res, status, body, headers = {}) {
   res.end(payload);
 }
 
+// Finite public protocol surface: values, never arbitrary error details, leave
+// the process. Matching an input string is NOT authentication or authorization.
+const publicProtocolErrors = new Map([
+  ...[
+    ["unauthorized", 401], ["authentication_unavailable", 503],
+    ["policy_override_forbidden", 403], ["trusted_context_unavailable", 503],
+    ["invalid_request_body", 400], ["invalid_json", 400],
+    ["governance stream exceeds max_stream_bytes", 413],
+    ["governance stream line exceeds max_line_bytes", 413],
+    ["governance stream exceeds max_messages", 413],
+    ["first NDJSON message must be aml-governance-stream-open/1", 400],
+    ["governance stream contained no open message", 400],
+    ["governance stream ended before aml-governance-stream-finalize/1", 400],
+    ["profile must be a non-empty string", 400], ["mode must be enforce or shadow", 400],
+    ["failure_mode must be closed or open", 400], ["policy context must be an object.", 400],
+    ["open must be an object.", 400], ["open.policy_authorization must be an object.", 400],
+    ["stream node must be an object.", 400], ["stream node.type is required.", 400],
+    ["AML_STREAM_ALREADY_FINALIZED", 400], ["AML_GOVERNANCE_STREAM_ALREADY_FINALIZED", 400],
+    ["AML_POLICY_TRANSITION_AUTHORIZATION_REQUIRED", 400],
+    ["AML_POLICY_TRANSITION_AUTHORIZATION_MISMATCH", 400]
+  ].map(([message, status]) => [message, Object.freeze({ error: message, status })])
+]);
+const publicProtocolPrefixes = [
+  ["AML_STREAM_DUPLICATE_IDENTIFIER:", "AML_STREAM_DUPLICATE_IDENTIFIER"],
+  ["AML_POLICY_TRANSITION_UNAUTHORIZED:", "AML_POLICY_TRANSITION_UNAUTHORIZED"],
+  ["Unsupported governance stream protocol:", "unsupported_governance_stream_protocol"],
+  ["Unsupported governance stream message protocol:", "unsupported_governance_stream_message"]
+];
+function publicFailure(error, authentication = false) {
+  let message;
+  try { message = error?.message; } catch { /* no arbitrary getter output */ }
+  const known = typeof message === "string" ? publicProtocolErrors.get(message) : undefined;
+  if (authentication) return known && ["unauthorized", "authentication_unavailable"].includes(known.error)
+    ? known : { status: 503, error: "authentication_unavailable" };
+  if (known) return known;
+  if (typeof message === "string") {
+    for (const [prefix, code] of publicProtocolPrefixes) {
+      if (message.startsWith(prefix)) return { status: 400, error: code };
+    }
+  }
+  return { status: 400, error: "governance_stream_failed" };
+}
+function responseClosed(error) {
+  try { return error?.code === "AML_RESPONSE_CLOSED"; } catch { return false; }
+}
+
 export function createGovernanceStreamGateway(options = {}) {
   const maxLineBytes = options.max_line_bytes ?? 256 * 1024;
   const maxStreamBytes = options.max_stream_bytes ?? 8 * 1024 * 1024;
@@ -66,8 +112,9 @@ export function createGovernanceStreamGateway(options = {}) {
       try {
         await authorize(req);
       } catch (error) {
-        return json(res, error.statusCode ?? 503, { error: error.message },
-          error.statusCode === 401 ? bearerChallenge : {});
+        const failure = publicFailure(error, true);
+        return json(res, failure.status, { error: failure.error },
+          failure.status === 401 ? bearerChallenge : {});
       }
     }
 
@@ -96,7 +143,9 @@ export function createGovernanceStreamGateway(options = {}) {
         if (messageCount > maxMessages) {
           throw Object.assign(new Error("governance stream exceeds max_messages"), { statusCode: 413 });
         }
-        const message = JSON.parse(line);
+        let message;
+        try { message = JSON.parse(line); }
+        catch { throw new Error("invalid_json"); }
 
         if (!session) {
           if (message.protocol !== AML_GOVERNANCE_STREAM_OPEN) {
@@ -142,13 +191,14 @@ export function createGovernanceStreamGateway(options = {}) {
       if (!session.finalized) throw new Error("governance stream ended before aml-governance-stream-finalize/1");
       res.end();
     } catch (error) {
-      if (res.destroyed || res.writableEnded || error.code === "AML_RESPONSE_CLOSED") return;
+      if (res.destroyed || res.writableEnded || responseClosed(error)) return;
+      const publicError = publicFailure(error);
       const failure = {
         protocol: AML_GOVERNANCE_STREAM_ERROR,
         line: lineNumber || null,
-        error: error.message || String(error)
+        error: publicError.error
       };
-      if (!res.headersSent) return json(res, error.statusCode ?? 400, failure);
+      if (!res.headersSent) return json(res, publicError.status, failure);
       try {
         await writeNdjson(res, failure);
         res.end();

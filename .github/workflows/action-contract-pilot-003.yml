@@ -40,7 +40,7 @@ jobs:
       - name: Confirm local toolchain
         run: node --version && python3 --version && openssl version
       - name: Run atomic crash, authorization and recovery acceptance tests
-        run: node --test --test-timeout=120000 test/action-boundary-atomic-authorized-execution.test.js test/action-boundary-atomic-review-regressions.test.js test/action-boundary-authorization-paths.test.js test/codeql-security-workflow.test.js test/codeql-sarif-integrity.test.js test/security-evidence-filesystem-repairs.test.js test/compiler-entrypoint-integrity.test.js test/external-verifier-kit-path-boundary.test.js test/action-challenge-visual-report.test.js test/generic-content-rendering.test.js test/playground-report.test.js test/action-observed-callback-confinement.test.js test/codeql-public-status.test.js
+        run: node --test --test-timeout=120000 test/action-boundary-atomic-authorized-execution.test.js test/action-boundary-atomic-review-regressions.test.js test/action-boundary-authorization-paths.test.js test/codeql-security-workflow.test.js test/codeql-sarif-integrity.test.js test/security-evidence-filesystem-repairs.test.js test/compiler-entrypoint-integrity.test.js test/external-verifier-kit-path-boundary.test.js test/action-challenge-visual-report.test.js test/generic-content-rendering.test.js test/playground-report.test.js test/action-observed-callback-confinement.test.js test/codeql-public-status.test.js test/codeql-disclosure-completeness.test.js test/governance-stream-error-boundary.test.js
 
   full-regression:
     name: pilot-003-full-regression
