@@ -17,7 +17,7 @@ export function assertNoCodeqlDebug(env = process.env) {
       if (typeof value !== "string" || !["", "0", "false"].includes(value)) throw new Error("codeql_debug_policy_rejected");
     } else if (name.startsWith("CODEQL_")) {
       if (!allowedCodeql.has(name) || value !== allowedCodeql.get(name)) throw new Error("codeql_debug_policy_rejected");
-    } else if (/^INPUT_(?:DEBUG|UPLOAD)(?:_|$)/.test(name)) {
+    } else if (name.startsWith("INPUT_DEBUG") || name.startsWith("INPUT_UPLOAD")) {
       throw new Error("codeql_debug_policy_rejected");
     }
   }

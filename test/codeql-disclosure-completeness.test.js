@@ -32,7 +32,10 @@ for (const name of ["RUNNER_DEBUG", "ACTIONS_STEP_DEBUG", "ACTIONS_RUNNER_DEBUG"
 }
 test("pre-init CLI rejects runner and combined-SARIF modes with fixed non-sensitive output", () => {
   for (const env of [{ RUNNER_DEBUG: "1" }, { CODEQL_ACTION_DEBUG_COMBINED_SARIF: "true" },
-    { CODEQL_FUTURE_DEBUG_MODE: "SYNTHETIC_PRIVATE_CANARY" }]) {
+    { CODEQL_FUTURE_DEBUG_MODE: "SYNTHETIC_PRIVATE_CANARY" },
+    { "INPUT_DEBUG-ARTIFACT-NAME": "SYNTHETIC_PRIVATE_CANARY" },
+    { "INPUT_DEBUG-DATABASE-NAME": "SYNTHETIC_PRIVATE_CANARY" },
+    { "INPUT_UPLOAD-DATABASE": "SYNTHETIC_PRIVATE_CANARY" }]) {
     const result = spawnSync(process.execPath, [guard], { env: { PATH: process.env.PATH, ...env }, encoding: "utf8" });
     assert.equal(result.status, 1); assert.equal(result.stdout, "");
     assert.deepEqual(JSON.parse(result.stderr), { protocol: "aml-codeql-no-debug/1", debug_policy_valid: false });
@@ -157,4 +160,23 @@ test("unexpected CODEQL/debug-upload inputs reject even false-looking values; kn
     CODEQL_EXTRACTOR_JAVASCRIPT_ALLOW_MINIFIED_FILES: "true" }).debug_policy_valid, true);
   for (const env of [{ CODEQL_ACTION_DIFF_INFORMED_QUERIES: "true" }, { CODEQL_ACTION_OVERLAY_ANALYSIS: "true" },
     { CODEQL_EXTRACTOR_JAVASCRIPT_ALLOW_MINIFIED_FILES: "false" }]) assert.throws(() => assertNoCodeqlDebug(env));
+});
+
+for (const name of ["INPUT_DEBUG-ARTIFACT-NAME", "INPUT_DEBUG-DATABASE-NAME", "INPUT_UPLOAD-DATABASE"]) {
+  test(`actual hyphenated debug/upload selector fails closed: ${name}`, () => {
+    for (const value of ["", "0", "false", "true", "SYNTHETIC_PRIVATE_VALUE"]) {
+      assert.throws(() => assertNoCodeqlDebug({ [name]: value }), /codeql_debug_policy_rejected/);
+    }
+  });
+}
+test("entire debug/upload input prefix rejects every tested suffix without relaxing exact disabled debug", () => {
+  for (const value of ["", "0", "false"]) assert.equal(assertNoCodeqlDebug({ INPUT_DEBUG: value }).debug_policy_valid, true);
+  for (const prefix of ["INPUT_DEBUG", "INPUT_UPLOAD"]) {
+    for (const suffix of ["-ARTIFACT-NAME", "-DATABASE-NAME", "_ARTIFACT_NAME", "_DATABASE_NAME", "EXTRA", "NEW",
+      "-", "_", ".MODE", ":MODE", "/MODE", " MODE", "0", "\u03a9"]) {
+      for (const value of ["", "0", "false", "true", null, undefined, 1, {}]) {
+        assert.throws(() => assertNoCodeqlDebug({ [prefix + suffix]: value }), /codeql_debug_policy_rejected/);
+      }
+    }
+  }
 });
