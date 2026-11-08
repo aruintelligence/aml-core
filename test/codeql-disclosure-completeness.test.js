@@ -6,7 +6,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { assertNoCodeqlDebug } from "../scripts/check-codeql-no-debug.mjs";
-import { compareExtractionInventory } from "../scripts/check-codeql-extraction.mjs";
+import { compareExtractionInventory, readExtractionInventory } from "../scripts/check-codeql-extraction.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const guard = path.join(root, "scripts/check-codeql-no-debug.mjs");
@@ -114,3 +114,33 @@ else{if(process.env.STUB_MODE==='decode_fail')process.exit(2);fs.writeFileSync(o
     } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
   });
 }
+
+test("decoded inventory reads the checked descriptor, not a substituted symlink", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "aml-inventory-fd-"));
+  const file = path.join(tmp, "inventory.json"), other = path.join(tmp, "other.json");
+  const expected = table([["one.py", 1]]);
+  fs.writeFileSync(file, JSON.stringify(expected)); fs.writeFileSync(other, "SYNTHETIC_PRIVATE_CANARY");
+  const original = { open: fs.openSync, stat: fs.fstatSync, read: fs.readFileSync };
+  let fd, swapped = false, wholeReads = 0;
+  fs.openSync = function(p, ...args) { const result = original.open.call(this, p, ...args); if (p === file) fd = result; return result; };
+  fs.fstatSync = function(target, ...args) { const info = original.stat.call(this, target, ...args); if (target === fd && !swapped) { swapped = true; fs.unlinkSync(file); fs.symlinkSync(other, file); } return info; };
+  fs.readFileSync = function(p, ...args) { if (p === file || p === fd) wholeReads++; return original.read.call(this, p, ...args); };
+  try { assert.deepEqual(readExtractionInventory(file), expected); assert.equal(wholeReads, 0); assert.throws(() => readExtractionInventory(file)); }
+  finally { fs.openSync = original.open; fs.fstatSync = original.stat; fs.readFileSync = original.read; fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+test("decoded inventory same-inode growth is finite, rejected and does not leak its descriptor", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "aml-inventory-growth-")), file = path.join(tmp, "inventory.json");
+  const initial = JSON.stringify(table([["one.py", 1]])); fs.writeFileSync(file, initial);
+  const original = { open: fs.openSync, stat: fs.fstatSync, read: fs.readSync, whole: fs.readFileSync };
+  let fd, grew = false, largestRead = 0, wholeReads = 0;
+  fs.openSync = function(p, flags, ...args) { const result = original.open.call(this, p, flags, ...args); if (p === file && typeof flags === "number") fd = result; return result; };
+  fs.fstatSync = function(target, ...args) { const info = original.stat.call(this, target, ...args); if (target === fd && !grew) { grew = true; fs.appendFileSync(file, " ".repeat(8192)); } return info; };
+  fs.readSync = function(target, buffer, offset, length, ...args) { if (target === fd) largestRead = Math.max(largestRead, length); return original.read.call(this, target, buffer, offset, length, ...args); };
+  fs.readFileSync = function(p, ...args) { if (p === file || p === fd) wholeReads++; return original.whole.call(this, p, ...args); };
+  try {
+    assert.throws(() => readExtractionInventory(file), /regular_file_changed_during_read/);
+    assert.equal(wholeReads, 0); assert.ok(largestRead <= Buffer.byteLength(initial) + 1);
+    assert.throws(() => original.read(fd, Buffer.alloc(1), 0, 1, 0), /EBADF/);
+    assert.equal(original.whole(file, "utf8"), initial + " ".repeat(8192));
+  } finally { fs.openSync = original.open; fs.fstatSync = original.stat; fs.readSync = original.read; fs.readFileSync = original.whole; fs.rmSync(tmp, { recursive: true, force: true }); }
+});

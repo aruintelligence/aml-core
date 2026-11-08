@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { readRegularFile } from "../tooling/readRegularFile.js";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
@@ -42,6 +43,10 @@ export function compareExtractionInventory(tracked, inventory, language) {
     extraction_complete: missing === 0 && zero === 0 && positive === expected.length };
 }
 
+export function readExtractionInventory(file) {
+  return JSON.parse(readRegularFile(file, { maxBytes: 32 * 1024 * 1024, noFollow: true }).toString("utf8"));
+}
+
 export function verifyExtraction(cli, databaseRoot, language) {
   if (!Object.hasOwn(extensions, language)) throw failure("unsupported_language");
   const lang = language === "javascript-typescript" ? "javascript" : "python";
@@ -62,8 +67,7 @@ export function verifyExtraction(cli, databaseRoot, language) {
     run("query", ["query", "run", path.join(root, ".github/codeql/extraction-inventory", lang, "inventory.ql"),
       "--database=" + path.join(databaseRoot, lang), "--output=" + bqrs, "--threads=2", "--ram=4096"]);
     run("decode", ["bqrs", "decode", bqrs, "--format=json", "--output=" + decoded]);
-    if (fs.statSync(decoded).size > 32 * 1024 * 1024) throw failure("invalid_inventory");
-    return compareExtractionInventory(tracked, JSON.parse(fs.readFileSync(decoded, "utf8")), language);
+    return compareExtractionInventory(tracked, readExtractionInventory(decoded), language);
   } finally { fs.rmSync(temporary, { recursive: true, force: true }); }
 }
 
