@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
+import { readRegularFile } from '../tooling/readRegularFile.js';
 
 const FORBIDDEN_SOURCE_EXTENSIONS = new Set([
   '.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.py', '.go', '.rs', '.java', '.kt', '.kts', '.cs', '.c', '.cc', '.cpp', '.h', '.hpp', '.swift', '.zig', '.rb', '.php', '.sh', '.bash', '.ps1'
@@ -52,14 +53,18 @@ export function checkExternalVerifierKit(root = 'dist/external-verifier-kit') {
     }
     if (seen.has(entry.path)) failures.push(`duplicate manifest path: ${entry.path}`);
     seen.add(entry.path);
-    if (entry.path.startsWith('/') || entry.path.includes('..') || entry.path.includes('\\')) failures.push(`unsafe path: ${entry.path}`);
+    if (entry.path.startsWith('/') || entry.path.includes('..') || entry.path.includes('\\')) {
+      failures.push(`unsafe path: ${entry.path}`);
+      continue; // Reject before any filesystem access derived from this path.
+    }
     if (FORBIDDEN_SOURCE_EXTENSIONS.has(path.extname(entry.path).toLowerCase())) failures.push(`reference source code path included: ${entry.path}`);
     const full = path.join(root, entry.path);
-    if (!fs.existsSync(full) || !fs.statSync(full).isFile()) {
-      failures.push(`manifest file missing: ${entry.path}`);
+    let bytes;
+    try { bytes = readRegularFile(full, { maxBytes: 16 * 1024 * 1024, noFollow: true }); }
+    catch {
+      failures.push(`manifest file missing or unreadable: ${entry.path}`);
       continue;
     }
-    const bytes = fs.readFileSync(full);
     if (bytes.length !== entry.bytes) failures.push(`byte size mismatch: ${entry.path}`);
     if (sha256(bytes) !== entry.sha256) failures.push(`SHA-256 mismatch: ${entry.path}`);
   }

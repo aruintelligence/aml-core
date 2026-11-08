@@ -7,6 +7,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { canonicalJSONStringify } from '../protocol/canonicalJson.js';
+import { appendOnlyFile } from '../tooling/appendOnlyFile.js';
 
 const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const registryPath = 'registry/action-receipts.jsonl';
@@ -50,11 +51,7 @@ for (const source of sources.sources) {
 }
 const expected = entries.map(x => JSON.stringify(x)).join('\n') + '\n';
 if (mode === '--write') {
-  if (fs.existsSync(registryFile)) {
-    assert.ok(expected.startsWith(fs.readFileSync(registryFile, 'utf8')),
-      'existing registry rows are immutable; new receipts must append');
-  }
-  fs.writeFileSync(registryFile, expected);
+  appendOnlyFile(registryFile, expected);
 } else assert.equal(fs.readFileSync(registryFile, 'utf8'), expected, 'registry does not match sources');
 
 const baseFlag = process.argv.indexOf('--append-only-base');

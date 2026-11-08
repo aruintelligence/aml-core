@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { constants } from "node:fs";
 import { lstat, mkdir, open, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
+import { readRegularFile } from "../../tooling/readRegularFile.js";
 
 const DIGEST = /^[a-f0-9]{64}$/;
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -77,12 +78,10 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
     await requirePrivateDirectory(directory);
     await requirePrivateDirectory(issued);
     await requirePrivateDirectory(claimed);
-    const info = await lstat(state);
-    if (!info.isFile() || (info.mode & 0o077) !== 0 ||
-        info.uid !== process.getuid() || info.size > 128 ||
-        (await readFile(state, "utf8")) !== '{"protocol":"aml-file-one-shot-store/2"}\n') {
-      throw new Error("grant_store_incomplete");
-    }
+    try {
+      if (readRegularFile(state, { maxBytes: 128, privateOwner: true, noFollow: true }).toString("utf8") !==
+          '{"protocol":"aml-file-one-shot-store/2"}\n') throw new Error("invalid_marker");
+    } catch { throw new Error("grant_store_incomplete"); }
   }
 
   async function issue(proposal_sha256, { ttlMs = 60_000 } = {}) {

@@ -61,7 +61,19 @@ test("malicious adapter text remains JSON data, never markup or executable scrip
   const html = renderActionChallengeReport(report);
   assert.deepEqual(embedded(html), report);
   assert.equal(html.includes(payload), false);
-  assert.equal((html.match(/<script>/g) ?? []).length, 1, "only the authored script is executable");
+  const executable = [...html.matchAll(/<script\b([^>]*)>/gi)]
+    .filter(([, attrs]) => !/\btype\s*=\s*["']application\/json["']/i.test(attrs));
+  assert.equal(executable.length, 1, "only the authored script is executable");
   assert.match(html, /\\u003c\/script\\u003e/);
   assert.throws(() => renderActionChallengeReport({ cases: [] }), /unsupported_action_challenge_report/);
+});
+
+test("mixed-case and attributed adapter markup stays escaped JSON", () => {
+  for (const payload of ["</SCRIPT><SCRIPT>alert(1)</SCRIPT>", "</ScRiPt><ScRiPt src='https://example.invalid/x'></ScRiPt>"]) {
+    const report = { protocol: "aml-action-boundary-challenge-report/1", project_reference_self_test: false,
+      case_scope: "single", passed: false, cases: [{ id: "injection", passed: false, failures: [payload], diagnostics: [] }] };
+    const html = renderActionChallengeReport(report);
+    assert.deepEqual(embedded(html), report); assert.equal(html.includes(payload), false);
+    assert.equal([...html.matchAll(/<script\b([^>]*)>/gi)].filter(([, attrs]) => !/\btype\s*=\s*["']application\/json["']/i.test(attrs)).length, 1);
+  }
 });

@@ -3,6 +3,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { readRegularFile } from "../../tooling/readRegularFile.js";
 import { canonicalJSONStringify } from "../../protocol/canonicalJson.js";
 
 const hex = value => crypto.createHash("sha256").update(value).digest("hex");
@@ -49,9 +50,7 @@ function createExclusive(file, record, directory) {
 
 function readRecord(file) {
   try {
-    const info = fs.lstatSync(file);
-    if (!info.isFile() || (info.mode & 0o077) !== 0 || info.size > 2048) return null;
-    return JSON.parse(fs.readFileSync(file, "utf8"));
+    return JSON.parse(readRegularFile(file, { maxBytes: 2048, privateOwner: true, noFollow: true }).toString("utf8"));
   } catch { return null; }
 }
 
