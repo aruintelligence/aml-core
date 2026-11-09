@@ -212,30 +212,114 @@ test("an https endpoint redirecting to http (downgrade) never re-sends the inten
   } finally { close(plain); rmSync(dir, { recursive: true, force: true }); }
 });
 
-test("Node environment proxies cannot carry the cleartext loopback exchange", async () => {
+// Node support for environment proxies in the built-in fetch:
+// - NODE_USE_ENV_PROXY: v24.0.0 (nodejs/node#57165), backported to v22.21.0.
+// - --use-env-proxy (argv and NODE_OPTIONS): v24.5.0 and v22.21.0 (#59151).
+// Older lines (for example Node 20) ignore NODE_USE_ENV_PROXY and refuse to
+// start with the flag. Each branch below asserts an observable outcome.
+function nodeProxySupport(version = process.versions.node) {
+  const [major, minor] = version.split(".").map(Number);
+  const at = (line, min) => major === line && minor >= min;
+  return { env: major >= 24 || at(22, 21), flag: major >= 25 || at(24, 5) || at(22, 21) };
+}
+
+function proxyFixture() {
   const seen = [];
   const target = http.createServer(capture(seen, "loopback_target"));
-  const targetPort = await listen(target);
   const proxy = http.createServer((req, res) => { req.resume(); seen.push({ name: "proxy_request" }); res.writeHead(502); res.end(); });
-  proxy.on("connect", (req, socket) => { seen.push({ name: "proxy_connect" }); socket.destroy(); });
+  proxy.on("connect", (req, socket) => {
+    seen.push({ name: "proxy_connect" });
+    socket.end("HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n");
+  });
+  return { seen, target, proxy };
+}
+
+async function runChild(args, env) {
+  try {
+    const { stdout } = await run(process.execPath, args, { env, timeout: 20000 });
+    return { code: 0, stdout, stderr: "" };
+  } catch (error) {
+    if (typeof error.code !== "number") throw error;
+    return { code: error.code, stdout: String(error.stdout ?? ""), stderr: String(error.stderr ?? "") };
+  }
+}
+
+test("version table matches this Node runtime's actual flag support", async () => {
+  const support = nodeProxySupport();
+  const started = await runChild(["--use-env-proxy", "-e", "0"], childEnv({}));
+  assert.equal(started.code === 0, support.flag, `node ${process.version} --use-env-proxy start: ${started.stderr}`);
+  assert.deepEqual(nodeProxySupport("20.20.2"), { env: false, flag: false });
+  assert.deepEqual(nodeProxySupport("22.20.0"), { env: false, flag: false });
+  assert.deepEqual(nodeProxySupport("22.21.0"), { env: true, flag: true });
+  assert.deepEqual(nodeProxySupport("24.0.0"), { env: true, flag: false });
+  assert.deepEqual(nodeProxySupport("24.5.0"), { env: true, flag: true });
+});
+
+test("plain Node fetch uses HTTP_PROXY for loopback exactly when this Node supports NODE_USE_ENV_PROXY", async () => {
+  const { seen, target, proxy } = proxyFixture();
+  const targetPort = await listen(target);
+  const proxyPort = await listen(proxy);
+  try {
+    const child = `await fetch(process.env.AML_URL, { method: "POST", body: "SYNTHETIC_INTENT_CANARY_9b02",
+      signal: AbortSignal.timeout(3000) }).catch(() => {}); process.exit(0);`;
+    const result = await runChild(["--input-type=module", "-e", child], childEnv({
+      AML_URL: `http://127.0.0.1:${targetPort}/v1/deployment/evaluate`,
+      HTTP_PROXY: `http://127.0.0.1:${proxyPort}`, NODE_USE_ENV_PROXY: "1" }));
+    assert.equal(result.code, 0, result.stderr);
+    if (nodeProxySupport().env) {
+      assert.deepEqual([...new Set(seen.map(item => item.name))], ["proxy_connect"],
+        "the threat is real here: the proxy is offered the cleartext loopback exchange");
+    } else {
+      assert.deepEqual(seen.map(item => item.name), ["loopback_target"],
+        "this Node ignores the proxy: the proxy received nothing and the exchange went direct");
+    }
+  } finally { close(target, proxy); }
+});
+
+test("Node environment proxies cannot carry the cleartext loopback exchange", async () => {
+  const support = nodeProxySupport();
+  const { seen, target, proxy } = proxyFixture();
+  const targetPort = await listen(target);
   const proxyPort = await listen(proxy);
   const url = `http://127.0.0.1:${targetPort}/v1/deployment/evaluate`;
   const proxyEnv = { HTTP_PROXY: `http://127.0.0.1:${proxyPort}`, HTTPS_PROXY: `http://127.0.0.1:${proxyPort}` };
+  const script = ["--input-type=module", "-e", CHILD];
+  const cases = [
+    { name: "NODE_USE_ENV_PROXY=1", args: script, env: { NODE_USE_ENV_PROXY: "1" }, needsFlag: false },
+    { name: "NODE_USE_ENV_PROXY=true with NO_PROXY", args: script,
+      env: { NODE_USE_ENV_PROXY: "true", NO_PROXY: "127.0.0.1" }, needsFlag: false },
+    { name: "argv --use-env-proxy", args: ["--use-env-proxy", ...script], env: {}, needsFlag: true },
+    { name: "argv --use_env_proxy", args: ["--use_env_proxy", ...script], env: {}, needsFlag: true },
+    { name: "argv --use-env-proxy=1", args: ["--use-env-proxy=1", ...script], env: {}, needsFlag: true },
+    { name: "NODE_OPTIONS --use-env-proxy", args: script, env: { NODE_OPTIONS: "--use-env-proxy" }, needsFlag: true },
+    { name: "NODE_OPTIONS --use_env_proxy", args: script, env: { NODE_OPTIONS: "--use_env_proxy" }, needsFlag: true },
+    { name: "NODE_OPTIONS quoted", args: script, env: { NODE_OPTIONS: '"--use-env-proxy"' }, needsFlag: true }
+  ];
   try {
-    for (const enable of [{ NODE_USE_ENV_PROXY: "1" }, { NODE_OPTIONS: "--use-env-proxy" },
-      { NODE_USE_ENV_PROXY: "true", NO_PROXY: "127.0.0.1" }]) {
+    let refusedByGuard = 0;
+    for (const item of cases) {
       seen.length = 0;
-      const { stdout } = await run(process.execPath, ["--input-type=module", "-e", CHILD], {
-        env: childEnv({ AML_URL: url, ...proxyEnv, ...enable }), timeout: 20000 });
-      assert.equal(JSON.parse(stdout).reason, "cleartext_proxy_refused", JSON.stringify(enable));
-      assert.deepEqual(seen, [], "neither the proxy nor the target received any byte");
+      const result = await runChild(item.args, childEnv({ AML_URL: url, ...proxyEnv, ...item.env }));
+      if (item.needsFlag && !support.flag) {
+        // This Node cannot enable the proxy this way: it refuses to start, so
+        // no exchange exists. Assert that refusal rather than skipping.
+        assert.notEqual(result.code, 0, `${item.name}: expected Node ${process.version} to reject the flag`);
+        assert.match(result.stderr, /use[-_]env[-_]proxy/, item.name);
+        assert.equal(result.stdout, "", item.name);
+      } else {
+        assert.equal(result.code, 0, `${item.name}: ${result.stderr}`);
+        assert.equal(JSON.parse(result.stdout).reason, "cleartext_proxy_refused", item.name);
+        refusedByGuard += 1;
+      }
+      assert.deepEqual(seen, [], `${item.name}: neither the proxy nor the target received any byte`);
     }
-    // Proxy variables alone do not change Node's built-in fetch, so the direct
-    // loopback exchange stays compatible and the proxy sees nothing.
+    assert.equal(refusedByGuard, support.flag ? cases.length : 2, "every case reached an asserted outcome");
+    // Proxy variables alone do not enable the built-in fetch proxy, so the
+    // direct loopback exchange stays compatible and the proxy sees nothing.
     seen.length = 0;
-    const { stdout } = await run(process.execPath, ["--input-type=module", "-e", CHILD], {
-      env: childEnv({ AML_URL: url, ...proxyEnv }), timeout: 20000 });
-    assert.equal(JSON.parse(stdout).reason, "http_evaluation_unavailable");
+    const direct = await runChild(script, childEnv({ AML_URL: url, ...proxyEnv }));
+    assert.equal(direct.code, 0, direct.stderr);
+    assert.equal(JSON.parse(direct.stdout).reason, "http_evaluation_unavailable");
     assert.deepEqual(seen.map(item => item.name), ["loopback_target"]);
   } finally { close(target, proxy); }
 });
@@ -253,6 +337,30 @@ test("https destinations remain allowed when an environment proxy is configured"
     assert.equal((await call("http://127.0.0.1:8787/x", blockedCleartext.fetchImpl)).reason,
       "cleartext_proxy_refused");
     assert.equal(blockedCleartext.calls.length, 0, "custom transports are held to the same rule");
+  } finally {
+    for (const key of Object.keys(process.env)) if (!(key in saved)) delete process.env[key];
+    Object.assign(process.env, saved);
+  }
+});
+
+test("every NODE_OPTIONS spelling of --use-env-proxy is detected on any Node version", async () => {
+  // Checked in-process with a custom transport, so it runs where the flag
+  // itself cannot start a process (Node 20) and covers custom fetchImpl.
+  const saved = { ...process.env };
+  try {
+    delete process.env.NODE_USE_ENV_PROXY;
+    process.env.HTTP_PROXY = "http://127.0.0.1:9";
+    for (const options of ["--use-env-proxy", "--use_env_proxy", "--use-env-proxy=1", '"--use-env-proxy"',
+      "--max-old-space-size=64 --use_env-proxy"]) {
+      process.env.NODE_OPTIONS = options;
+      const { calls, fetchImpl } = spy();
+      assert.equal((await call("http://127.0.0.1:8787/x", fetchImpl)).reason, "cleartext_proxy_refused", options);
+      assert.equal(calls.length, 0, options);
+    }
+    process.env.NODE_OPTIONS = "--max-old-space-size=64";
+    const control = spy();
+    assert.equal((await call("http://127.0.0.1:8787/x", control.fetchImpl)).reason, "http_evaluation_unavailable");
+    assert.equal(control.calls.length, 1, "unrelated NODE_OPTIONS keep the loopback exchange");
   } finally {
     for (const key of Object.keys(process.env)) if (!(key in saved)) delete process.env[key];
     Object.assign(process.env, saved);

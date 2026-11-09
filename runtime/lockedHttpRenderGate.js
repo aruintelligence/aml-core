@@ -128,15 +128,19 @@ function evaluationDestination(url) {
 }
 
 // Node's built-in fetch tunnels http: requests through HTTP_PROXY when
-// NODE_USE_ENV_PROXY or --use-env-proxy is enabled. A tunnel does not encrypt
-// cleartext bytes, so the proxy would see the token and intent. Refuse this
-// combination instead of re-implementing NO_PROXY matching. The check also
-// applies to a custom fetchImpl, which may honor the same variables.
+// NODE_USE_ENV_PROXY (fetch: v24.0.0+, v22.21.0+) or --use-env-proxy
+// (v24.5.0+, v22.21.0+) is enabled. A tunnel does not encrypt cleartext bytes,
+// so the proxy would see the token and intent. Refuse this combination instead
+// of re-implementing NO_PROXY matching. The check also applies to a custom
+// fetchImpl, which may honor the same variables. Node accepts underscores for
+// dashes in option names, an "=value" suffix and quoted NODE_OPTIONS tokens,
+// so match the option name anywhere in execArgv or NODE_OPTIONS; over-matching
+// (for example --no-use-env-proxy) only refuses more.
 function environmentProxyMayCarryCleartext() {
   const env = globalThis.process?.env ?? {};
   const flag = value => typeof value === "string" && value !== "" && value !== "0" && value.toLowerCase() !== "false";
-  const options = [...(globalThis.process?.execArgv ?? []), ...String(env.NODE_OPTIONS ?? "").split(/\s+/)];
-  const enabled = flag(env.NODE_USE_ENV_PROXY) || options.some(option => option === "--use-env-proxy");
+  const options = [...(globalThis.process?.execArgv ?? []), String(env.NODE_OPTIONS ?? "")];
+  const enabled = flag(env.NODE_USE_ENV_PROXY) || options.some(option => /use[-_]env[-_]proxy/i.test(String(option)));
   return enabled && [env.HTTP_PROXY, env.http_proxy].some(value => typeof value === "string" && value.trim() !== "");
 }
 
