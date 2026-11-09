@@ -12,7 +12,7 @@ const reporter = path.join(root, "scripts/check-codeql-sarif.mjs");
 function synthetic(language = "javascript-typescript") {
   const prefix = language === "python" ? "py" : "js";
   return { version: "2.1.0", runs: [{
-    tool: { driver: { name: "CodeQL", semanticVersion: "0.0.0-synthetic-test" }, extensions: [{
+    tool: { driver: { name: "CodeQL", semanticVersion: "2.27.4" }, extensions: [{
       name: `codeql/${language}-queries`, rules: [{ id: `${prefix}/synthetic-rule`, defaultConfiguration: { level: "error" }, properties: { "security-severity": "7.8" } }],
       notifications: [{ id: "synthetic/extraction-error", defaultConfiguration: { level: "error" } }]
     }] },
@@ -102,7 +102,7 @@ test("SARIF CLI extraction failure preserves structured report and exits nonzero
 }));
 test("SARIF CLI synthetic valid metadata exits zero without pretending a scanner ran", () => directory(dir => {
   fs.writeFileSync(path.join(dir, "result.sarif"), JSON.stringify(synthetic()));
-  const r = cli(dir); assert.equal(r.status, 0); assert.equal(JSON.parse(r.stdout).codeql_versions[0], "0.0.0-synthetic-test");
+  const r = cli(dir); assert.equal(r.status, 0); assert.equal(JSON.parse(r.stdout).codeql_versions[0], "2.27.4");
 }));
 test("CodeQL workflow uses normal development/main PR triggers with no path filter", () => {
   const text = fs.readFileSync(path.join(root, ".github/workflows/codeql.yml"), "utf8").replace(/^\s*#.*$/gm, "");

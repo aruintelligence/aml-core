@@ -85,5 +85,5 @@ jobs:
         run: |
           status=0
           node scripts/check-codeql-sarif.mjs codeql-results ${{ matrix.language }} > codeql-private-review.json 2> codeql-private-error.json || status=$?
-          node scripts/summarize-codeql-status.mjs codeql-private-review.json ${{ matrix.language }} || status=1
+          node scripts/summarize-codeql-status.mjs codeql-private-review.json ${{ matrix.language }} codeql-private-error.json || status=1
           exit "$status"

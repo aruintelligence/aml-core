@@ -106,9 +106,12 @@ allowed. Component-qualified descriptor resolution cannot borrow another pack's
 severity. Externalized reports and nonempty severity override chains are unsupported
 and fail closed; this is not a general-purpose complete SARIF-schema implementation.
 
-The workflow explicitly disables pinned-Action diff-informed and overlay analysis;
-producer-reported `incrementalMode` other than `none` (including missing) fails
-quality without dropping findings. The historical artifact reports `diff-informed`:
+The workflow explicitly disables pinned-Action diff-informed and overlay analysis.
+The pinned Action (v4.39.3 `analyze.ts`) writes `incrementalMode` ONLY for
+diff-informed/overlay runs, so a full analysis omits it: absent or `none` is full;
+any other value, the `codeql-action/pr-diff-range` extension pack, or a CLI other
+than the bundled 2.27.4 fails quality without dropping findings. Public status adds
+only allowlisted enum `quality_reason_codes`. The historical artifact reports `diff-informed`:
 its28 findings were NOT an exhaustive whole-candidate inventory. Scan metadata and
 artifact presence are not extraction-completeness or authenticity proof. A forged
 synthetic report can satisfy the format profile; original scanner command/database/
