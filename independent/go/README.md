@@ -11,14 +11,23 @@ cd independent/go
 go run . --now 2030-01-01T00:05:00Z ../python/witness-vector.json
 ```
 
-Expected result:
+Expected result (abridged), exit status `3`:
 
 ```json
 {
   "valid": true,
-  "reason": "AML_GO_WITNESS_BUNDLE_VALID"
+  "reason": "AML_GO_WITNESS_BUNDLE_VALID",
+  "authorized": false
 }
 ```
+
+This verifier has no held-challenge input and does not trust a caller
+`--now`, so it never authorizes: a valid bundle exits `3`, an invalid one `1`,
+an input error `2`. `--diagnostic-only` exits `0` for a valid bundle and
+reports `NOT AN AUTHORIZATION DECISION`; the black-box conformance harness
+uses that mode. `verify.sh` builds the binary and preserves its exit code
+(`go run` would report every failure as `1`). See
+[docs/COMMAND_AUTHORIZATION.md](../../docs/COMMAND_AUTHORIZATION.md).
 
 The implementation checks:
 

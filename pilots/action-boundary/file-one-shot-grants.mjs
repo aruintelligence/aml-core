@@ -3,8 +3,9 @@
 // be private to the host; this is not a network-store or multi-machine protocol.
 import { randomUUID } from "node:crypto";
 import { constants } from "node:fs";
-import { lstat, mkdir, open, readFile, readdir } from "node:fs/promises";
+import { lstat, mkdir, open, readdir, realpath } from "node:fs/promises";
 import path from "node:path";
+import { readRegularFile } from "../../tooling/readRegularFile.js";
 
 const DIGEST = /^[a-f0-9]{64}$/;
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -24,6 +25,34 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
     try { await handle.sync(); } finally { await handle.close(); }
   }
 
+  // Every check below names files by path. A principal that can rename an
+  // entry in any ancestor directory can swap the whole store between two of
+  // those checks (for example, to serve a forged grant record with a later
+  // expiry and then swap the real store back). Require that each ancestor, on
+  // both the lexical path and its canonical resolution, is owned by root or by
+  // this uid and is not writable by others unless the sticky bit stops them
+  // renaming entries they do not own (as on /tmp).
+  async function requireTrustedAncestors(target) {
+    const uid = process.getuid();
+    const chain = start => {
+      const dirs = [];
+      for (let dir = path.dirname(start); ; dir = path.dirname(dir)) {
+        dirs.push(dir);
+        if (dir === path.dirname(dir)) return dirs;
+      }
+    };
+    for (const dir of [...chain(target), ...chain(path.join(await realpath(path.dirname(target)), "x"))]) {
+      const info = await lstat(dir);
+      // A symlinked ancestor can only be replaced through its own parent,
+      // which is the next entry checked; its target is on the canonical chain.
+      if (info.isSymbolicLink()) continue;
+      if (!info.isDirectory() || (info.uid !== 0 && info.uid !== uid) ||
+          ((info.mode & 0o022) !== 0 && (info.mode & 0o1000) === 0)) {
+        throw new Error("trusted_grant_directory_ancestors_required");
+      }
+    }
+  }
+
   async function requirePrivateDirectory(target) {
     // mkdir's mode only applies to newly created directories. An existing
     // directory may be writable by someone who can replace a claim marker.
@@ -32,6 +61,7 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
         typeof process.getuid !== "function" || info.uid !== process.getuid()) {
       throw new Error("private_grant_directory_required");
     }
+    if (target === directory) await requireTrustedAncestors(target);
   }
 
   async function prepare() {
@@ -77,12 +107,10 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
     await requirePrivateDirectory(directory);
     await requirePrivateDirectory(issued);
     await requirePrivateDirectory(claimed);
-    const info = await lstat(state);
-    if (!info.isFile() || (info.mode & 0o077) !== 0 ||
-        info.uid !== process.getuid() || info.size > 128 ||
-        (await readFile(state, "utf8")) !== '{"protocol":"aml-file-one-shot-store/2"}\n') {
-      throw new Error("grant_store_incomplete");
-    }
+    try {
+      if (readRegularFile(state, { maxBytes: 128, privateOwner: true, noFollow: true }).toString("utf8") !==
+          '{"protocol":"aml-file-one-shot-store/2"}\n') throw new Error("invalid_marker");
+    } catch { throw new Error("grant_store_incomplete"); }
   }
 
   async function issue(proposal_sha256, { ttlMs = 60_000 } = {}) {
@@ -116,7 +144,10 @@ export function createFileOneShotGrants({ directory, now = () => Date.now() } = 
     await verify();
     let record;
     try {
-      record = JSON.parse(await readFile(path.join(issued, `${id}.json`), "utf8"));
+      // Read the record through one no-follow descriptor owned by this uid
+      // with a private mode, never a replaced or foreign file.
+      record = JSON.parse(readRegularFile(path.join(issued, `${id}.json`),
+        { maxBytes: 512, privateOwner: true, noFollow: true }).toString("utf8"));
     } catch (error) {
       if (error.code === "ENOENT") return false;
       throw error; // A storage or integrity error must fail closed at the boundary.

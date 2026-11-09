@@ -272,6 +272,36 @@ def unsatisfied_witness_claims(report):
     return fields
 
 
+# `valid` is internal consistency only; `authorized` is the only field that
+# grants permission to act. Mirrors signedQuorumAuthorizationDecision in
+# docs/aml-signed-verification-quorum.js and fails closed the same way.
+AUTHORIZATION_REQUIRED = ("valid", "threshold_met", "requested_conditions_met",
+                          "held_policy_met", "witness_requirement_met")
+AUTHORIZATION_DENIALS = {
+    "valid": "AML_AUTHZ_QUORUM_NOT_VALID",
+    "threshold_met": "AML_AUTHZ_THRESHOLD_NOT_MET",
+    "requested_conditions_met": "AML_AUTHZ_REQUESTED_CONDITIONS_UNMET",
+    "held_policy_met": "AML_AUTHZ_HELD_POLICY_REQUIRED_AND_MET",
+    "witness_requirement_met": "AML_AUTHZ_WITNESS_REQUIREMENT_UNMET",
+}
+
+
+def authorization_decision(conditions):
+    def deny(reasons):
+        return {"schema": "aml-authorization-decision/1", "authorized": False,
+                "decision": "deny", "reasons": reasons, "required": list(AUTHORIZATION_REQUIRED)}
+    if not isinstance(conditions, dict):
+        return deny(["AML_AUTHZ_CONDITIONS_MISSING"])
+    reasons = [AUTHORIZATION_DENIALS[name] for name in AUTHORIZATION_REQUIRED
+               if conditions.get(name) is not True]
+    if any(name not in AUTHORIZATION_REQUIRED for name in conditions):
+        reasons.append("AML_AUTHZ_UNKNOWN_CONDITION")
+    if reasons:
+        return deny(reasons)
+    return {"schema": "aml-authorization-decision/1", "authorized": True, "decision": "allow",
+            "reasons": ["AML_AUTHZ_ALLOW"], "required": list(AUTHORIZATION_REQUIRED)}
+
+
 def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=None,
                   expected_input_fingerprints=None):
     # Direct Python callers need the same held-input validation as the CLI.
@@ -299,10 +329,27 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
     if expected_input_fingerprints is not None:
         checked_conditions.append("inputs_met")
 
+    policy_needs_witness = policy is not None and policy["schema"] in (
+        "aml-signed-quorum-held-policy/4", "aml-signed-quorum-held-policy/5",
+        "aml-signed-quorum-held-policy/6")
+
     def with_requested_conditions(result):
         unmet = [name for name in checked_conditions if result.get(name) is not True]
         result["requested_conditions_met"] = not unmet
         result["requested_conditions"] = {"checked": checked_conditions, "unmet": unmet}
+        witness_required = with_witness or policy_needs_witness
+        authorization = authorization_decision({
+            "valid": result.get("valid") is True,
+            "threshold_met": result.get("threshold_met") is True,
+            "requested_conditions_met": not unmet,
+            "held_policy_met": (policy is not None and "policy_met" in checked_conditions and
+                                result.get("policy_met") is True),
+            "witness_requirement_met": (not witness_required or (
+                "witness_met" in checked_conditions and result.get("witness_met") is True and
+                result.get("replayable_claims_consistent") is True)),
+        })
+        result["authorized"] = authorization["authorized"]
+        result["authorization"] = authorization
         return result
 
     rejected = {"valid": False, "threshold_met": False}
@@ -531,6 +578,11 @@ def load_json(filename):
                          parse_constant=lambda _: (_ for _ in ()).throw(ValueError("non_json_number")))
 
 
+AUTHZ_REASON = re.compile(r"AML_AUTHZ_[A-Z_]+")
+EXIT_NOT_AUTHORIZED = 3
+NOT_AN_AUTHORIZATION_DECISION = "NOT AN AUTHORIZATION DECISION"
+
+
 def decision_only(result):
     """Project an unsigned decision without copying untrusted report content."""
     names = {"valid", "threshold_met", "portable_met", "policy_met", "witness_met",
@@ -547,6 +599,15 @@ def decision_only(result):
         **{name: result[name] for name in checked},
         "requested_conditions_met": not unmet,
         "requested_conditions": {"checked": checked, "unmet": unmet},
+        # The complete decision; requested_conditions_met alone is not permission.
+        "authorized": result.get("authorized") is True and
+                      isinstance(result.get("authorization"), dict) and
+                      result["authorization"].get("authorized") is True,
+        "authorization_reasons": ([reason for reason in result["authorization"]["reasons"]
+                                   if isinstance(reason, str) and AUTHZ_REASON.fullmatch(reason)]
+                                  if isinstance(result.get("authorization"), dict) and
+                                  isinstance(result["authorization"].get("reasons"), list)
+                                  else ["AML_AUTHZ_EVALUATION_ERROR"]),
     }
     if "input_fingerprints" in result:
         source = result["input_fingerprints"]
@@ -583,6 +644,8 @@ def main():
     parser.add_argument("--challenge", help="Separately retained verifier challenge; requires --bundle")
     parser.add_argument("--expect-inputs", help="Held canonical SHA-256 pins for supplied inputs")
     parser.add_argument("--decision-only", action="store_true", help="Print a compact decision without supplied report contents")
+    parser.add_argument("--diagnostic-only", action="store_true",
+                        help="Exit 0 when requested conditions are met; output says NOT AN AUTHORIZATION DECISION")
     args = parser.parse_args()
     try:
         if bool(args.bundle) != bool(args.challenge):
@@ -610,8 +673,17 @@ def main():
         reason = "AML_SIGNED_QUORUM_INPUT_OR_USAGE_ERROR" if args.decision_only else str(error)
         print(json.dumps({"valid": False, "reason": reason}))
         return 1
+    if args.diagnostic_only:
+        output = {**output, "authorized": False, "diagnostic_only": True,
+                  "decision_use": NOT_AN_AUTHORIZATION_DECISION}
     print(json.dumps(output, indent=2))
-    return 0 if result["requested_conditions_met"] else 2
+    # Exit 0 only on the complete decision (`authorized`); requested
+    # conditions met without it exit 3. Mirrors `aml verify-signed-quorum`.
+    if args.diagnostic_only:
+        return 0 if result["requested_conditions_met"] is True else 2
+    if result.get("authorized") is True and result["authorization"].get("authorized") is True:
+        return 0
+    return EXIT_NOT_AUTHORIZED if result["requested_conditions_met"] is True else 2
 
 
 if __name__ == "__main__":

@@ -57,6 +57,10 @@ async function compare(name, quorum, policy, expected, { bundle, challenge, expe
     assert.equal(py[field], js[field], `${name}: ${field}: ${run.stderr} ${run.stdout}`);
   }
   assert.deepEqual(py.requested_conditions, js.requested_conditions, `${name}: requested conditions`);
+  assert.deepEqual(py.authorization, js.authorization, `${name}: authorization decision`);
+  assert.equal(py.authorized, js.authorized, `${name}: authorized`);
+  assert.equal(js.authorized === true, js.requested_conditions_met === true && policy != null &&
+    js.policy_met === true, `${name}: authorized requires requested conditions and a held policy`);
   assert.equal(js.requested_conditions_met, expected, `${name}: JavaScript decision gate`);
   if (bundle) {
     for (const result of [py, js]) {
@@ -82,7 +86,11 @@ async function compare(name, quorum, policy, expected, { bundle, challenge, expe
   assert.equal(py.valid && py.threshold_met && (!policy || py.policy_met) &&
     (!bundle || (py.witness_met && py.replayable_claims_consistent)) &&
     (!expectedInputs || py.inputs_met), expected, name);
-  assert.equal(run.status, expected ? 0 : 2, `${name}: ${run.stderr} ${run.stdout}`);
+  assert.equal(py.authorized, js.authorized, `${name}: authorized`);
+  // Exit 0 only on the complete decision; met-but-unauthorized exits 3.
+  assert.equal(run.status, py.authorized === true && py.authorization?.authorized === true ? 0 : expected ? 3 : 2,
+    `${name}: ${run.stderr} ${run.stdout}`);
+  if (py.authorized !== true) assert.notEqual(run.status, 0, `${name}: unauthorized exit`);
   if (js.valid) assert.deepEqual(py.summary, js.quorum.summary, name);
   checks.push({ case: name, valid: py.valid, threshold_met: py.threshold_met,
     ...(policy ? { policy_met: py.policy_met } : {}),
@@ -106,7 +114,9 @@ function compareDecisionOnly(name, quorum, policy, expected, { bundle, challenge
     { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
   const jsRun = spawnSync(process.execPath,
     ['bin/aml.js', 'verify-signed-quorum', quorumPath, ...options], { encoding: 'utf8' });
-  assert.equal(pyRun.status, expected ? 0 : 2, `${name}: ${pyRun.stderr} ${pyRun.stdout}`);
+  const pyDecision = JSON.parse(pyRun.stdout);
+  assert.equal(pyRun.status, pyDecision.authorized === true ? 0 : expected ? 3 : 2,
+    `${name}: ${pyRun.stderr} ${pyRun.stdout}`);
   assert.equal(jsRun.status, pyRun.status, `${name}: ${jsRun.stderr} ${jsRun.stdout}`);
   const py = JSON.parse(pyRun.stdout);
   const js = JSON.parse(jsRun.stdout);
@@ -405,6 +415,7 @@ print(json.dumps({'valid_policy_met': verify_quorum(quorum, policy=policy)['requ
   { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
   assert.equal(secondPython.status, 0, secondPython.stderr);
   assert.equal(JSON.parse(secondPython.stdout).valid, true);
+  assert.equal(JSON.parse(secondPython.stdout).authorized, true);
   const witnessKeyA = await createVerifierKeyPair();
   const witnessKeyB = await createVerifierKeyPair();
   // These adversarial cases explicitly claim a different artifact hash without
@@ -881,8 +892,16 @@ print(json.dumps({'valid_policy_met': verify_quorum(quorum, policy=policy)['requ
   const heldRun = spawnSync('python3', [witnessPython, goldenBundle, '--now', fixedTime,
     '--challenge', heldChallenge],
     { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
-  assert.equal(heldRun.status, 0, heldRun.stderr);
+  // A caller-supplied --now is not the verifier's own clock: valid, not authorized.
+  assert.equal(heldRun.status, 3, heldRun.stderr);
   assert.equal(JSON.parse(heldRun.stdout).valid, true);
+  assert.equal(JSON.parse(heldRun.stdout).authorized, false);
+  const heldDiagnostic = spawnSync('python3', [witnessPython, goldenBundle, '--now', fixedTime,
+    '--challenge', heldChallenge, '--diagnostic-only'],
+    { encoding: 'utf8', env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1' } });
+  assert.equal(heldDiagnostic.status, 0, heldDiagnostic.stderr);
+  assert.equal(JSON.parse(heldDiagnostic.stdout).authorized, false);
+  assert.equal(JSON.parse(heldDiagnostic.stdout).decision_use, 'NOT AN AUTHORIZATION DECISION');
   assert.equal((await verifyWitnessBundle(golden, {
     expectedChallenge: golden.challenge, now: Date.parse(fixedTime)
   })).valid, true);

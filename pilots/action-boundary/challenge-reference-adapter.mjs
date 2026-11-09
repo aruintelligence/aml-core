@@ -6,8 +6,22 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { dispatchAction } from "./boundary.mjs";
 
+// Fixed local challenge observer only; not a generic network-provider policy.
+function observedCallbackSnapshot(value) {
+  if (value === undefined) return null;
+  if (value === null || typeof value !== "object" || Array.isArray(value)) throw new TypeError("invalid_local_observed_callback");
+  const { url, token } = value;
+  if (typeof url !== "string" || typeof token !== "string") throw new TypeError("invalid_local_observed_callback");
+  const match = /^http:\/\/127\.0\.0\.1:([1-9][0-9]{0,4})\/invoke\/[a-f0-9]{32}$/.exec(url);
+  if (!match || match[0] !== url || Number(match[1]) > 65535 || !/^[a-f0-9]{48}$/.test(token) || token.length !== 48) {
+    throw new TypeError("invalid_local_observed_callback");
+  }
+  return Object.freeze({ url, token });
+}
+
 export async function runReferenceCase(input) {
   if (input.protocol !== "aml-action-challenge-case/1") throw new Error("Unknown case protocol");
+  const callback = observedCallbackSnapshot(input.host?.observed_callback);
   const proposal = structuredClone(input.proposal);
   const policy = structuredClone(input.policy);
   let toolCalls = 0;
@@ -29,11 +43,12 @@ export async function runReferenceCase(input) {
     executeTool: async frozen => {
       toolCalls++;
       executedProposal = frozen;
-      if (host.observed_callback) {
-        const response = await fetch(host.observed_callback.url, {
+      if (callback) {
+        const response = await fetch(callback.url, {
+          redirect: "error",
           method: "POST",
           headers: { "content-type": "application/json",
-            "x-aml-challenge-token": host.observed_callback.token },
+            "x-aml-challenge-token": callback.token },
           body: JSON.stringify(frozen)
         });
         if (!response.ok) throw new Error("Observed local callback rejected");

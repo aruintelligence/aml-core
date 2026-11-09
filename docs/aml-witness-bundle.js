@@ -65,6 +65,51 @@ export async function createWitnessBundle({ evidence, challenge, attestation }) 
   return bundle;
 }
 
+// Authorization semantics (fail closed). `valid` means only that the bundle is
+// internally consistent and `verified` that it also answered the caller's
+// retained challenge. Neither field is permission to act. `authorized` is the
+// only decision field: it is true only when every required condition below is
+// the boolean `true`. Missing, unknown, or non-boolean conditions deny.
+// Trust rule for time: the verifier trusts only its own clock. A caller may
+// pass `now` (an outer verifier that already read the same clock, or a fixed
+// test clock), and `valid`/`verified` are computed with it for compatibility,
+// but `authorized` requires that value to be a finite number within
+// WITNESS_AUTHORIZATION_CLOCK_SKEW_MS of this verifier's own reading. A stale
+// or future caller clock therefore never authorizes.
+export const WITNESS_AUTHORIZATION_CLOCK_SKEW_MS = 1000;
+export const WITNESS_AUTHORIZATION_REQUIRED = Object.freeze([
+  'bundle_valid', 'verifier_held_challenge', 'trusted_clock'
+]);
+const witnessAuthorizationDenials = Object.freeze({
+  bundle_valid: 'AML_AUTHZ_BUNDLE_NOT_VALID',
+  verifier_held_challenge: 'AML_AUTHZ_HELD_CHALLENGE_NOT_MATCHED',
+  trusted_clock: 'AML_AUTHZ_CALLER_CLOCK_UNTRUSTED'
+});
+
+export function witnessAuthorizationDecision(conditions) {
+  const deny = reasons => ({ schema: 'aml-authorization-decision/1', authorized: false,
+    decision: 'deny', reasons, required: [...WITNESS_AUTHORIZATION_REQUIRED] });
+  try {
+    if (!conditions || typeof conditions !== 'object' || Array.isArray(conditions)) {
+      return deny(['AML_AUTHZ_CONDITIONS_MISSING']);
+    }
+    const reasons = [];
+    for (const name of WITNESS_AUTHORIZATION_REQUIRED) {
+      if (!Object.hasOwn(conditions, name) || conditions[name] !== true) {
+        reasons.push(witnessAuthorizationDenials[name]);
+      }
+    }
+    if (Object.keys(conditions).some(name => !WITNESS_AUTHORIZATION_REQUIRED.includes(name))) {
+      reasons.push('AML_AUTHZ_UNKNOWN_CONDITION');
+    }
+    if (reasons.length) return deny(reasons);
+    return { schema: 'aml-authorization-decision/1', authorized: true, decision: 'allow',
+      reasons: ['AML_AUTHZ_ALLOW'], required: [...WITNESS_AUTHORIZATION_REQUIRED] };
+  } catch {
+    return deny(['AML_AUTHZ_EVALUATION_ERROR']);
+  }
+}
+
 export async function verifyWitnessBundle(bundle, options = {}) {
   const callerSuppliedClock = Object.hasOwn(options, 'now');
   // Avoid reading Date.now twice when an outer verifier already captured one
@@ -79,6 +124,15 @@ export async function verifyWitnessBundle(bundle, options = {}) {
     evaluated_at: Number.isFinite(localNow) && Math.abs(localNow) <= 8.64e15
       ? new Date(localNow).toISOString() : null,
     freshness_clock_source: callerSuppliedClock ? 'caller_supplied' : 'local_system'
+  };
+  const trustedClock = Number.isFinite(localNow) && (!callerSuppliedClock ||
+    (typeof now === 'number' && Number.isFinite(now) &&
+      Math.abs(now - localNow) <= WITNESS_AUTHORIZATION_CLOCK_SKEW_MS));
+  const decide = (bundleValid, heldChallenge) => {
+    const authorization = witnessAuthorizationDecision({
+      bundle_valid: bundleValid, verifier_held_challenge: heldChallenge, trusted_clock: trustedClock
+    });
+    return { authorized: authorization.authorized, authorization };
   };
   const checks = {
     bundle_integrity: false,
@@ -97,9 +151,13 @@ export async function verifyWitnessBundle(bundle, options = {}) {
     session_key_fingerprint: null,
     challenge_expires_at: null
   };
+  // `valid` keeps its historical meaning: the bundle is internally consistent.
+  // Anyone can assemble a self-consistent bundle around a challenge they made
+  // themselves. `verified` adds that the caller's own retained challenge
+  // matched. `authorized` (above) is the only field that grants permission.
   const fail = (reason, extra = {}) => ({
-    valid: false, reason, checks: { ...checks }, inspected: { ...inspected },
-    ...timing, ...extra
+    ...extra, valid: false, verified: false, ...decide(false, false), reason,
+    checks: { ...checks }, inspected: { ...inspected }, ...timing
   });
   try {
     let heldInputError;
@@ -155,6 +213,8 @@ export async function verifyWitnessBundle(bundle, options = {}) {
     if (timeFailure) return fail(timeFailure);
     return {
       valid: true,
+      verified: checks.verifier_held_challenge === true,
+      ...decide(true, checks.verifier_held_challenge === true),
       reason: 'AML_WITNESS_BUNDLE_VALID',
       checks: { ...checks },
       inspected: { ...inspected },

@@ -5,6 +5,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
+import { readRegularFile } from '../tooling/readRegularFile.js';
+import { commandAuthorizationDecision, withCommandAuthorization, commandOutcome, diagnosticOnlyRequested,
+  AML_DIAGNOSTIC_ONLY_FLAG } from '../runtime/commandAuthorization.js';
+
+// Authorized only when the kit is consistent and its root SHA-256 equals a
+// root the relying party pinned (--expected-root-sha256). Without a pin the
+// check is consistency-only: exit 3, or 0 under --diagnostic-only.
+const KIT_REQUIRED = ['kit_valid', 'root_pinned'];
+const KIT_DENIALS = { kit_valid: 'AML_AUTHZ_KIT_NOT_VALID', root_pinned: 'AML_AUTHZ_KIT_ROOT_NOT_PINNED' };
+const KIT_TRUST = ['the expected root SHA-256 was obtained from an independently trusted source'];
 
 const FORBIDDEN_SOURCE_EXTENSIONS = new Set([
   '.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.py', '.go', '.rs', '.java', '.kt', '.kts', '.cs', '.c', '.cc', '.cpp', '.h', '.hpp', '.swift', '.zig', '.rb', '.php', '.sh', '.bash', '.ps1'
@@ -52,14 +62,18 @@ export function checkExternalVerifierKit(root = 'dist/external-verifier-kit') {
     }
     if (seen.has(entry.path)) failures.push(`duplicate manifest path: ${entry.path}`);
     seen.add(entry.path);
-    if (entry.path.startsWith('/') || entry.path.includes('..') || entry.path.includes('\\')) failures.push(`unsafe path: ${entry.path}`);
+    if (entry.path.startsWith('/') || entry.path.includes('..') || entry.path.includes('\\')) {
+      failures.push(`unsafe path: ${entry.path}`);
+      continue; // Reject before any filesystem access derived from this path.
+    }
     if (FORBIDDEN_SOURCE_EXTENSIONS.has(path.extname(entry.path).toLowerCase())) failures.push(`reference source code path included: ${entry.path}`);
     const full = path.join(root, entry.path);
-    if (!fs.existsSync(full) || !fs.statSync(full).isFile()) {
-      failures.push(`manifest file missing: ${entry.path}`);
+    let bytes;
+    try { bytes = readRegularFile(full, { maxBytes: 16 * 1024 * 1024, noFollow: true }); }
+    catch {
+      failures.push(`manifest file missing or unreadable: ${entry.path}`);
       continue;
     }
-    const bytes = fs.readFileSync(full);
     if (bytes.length !== entry.bytes) failures.push(`byte size mismatch: ${entry.path}`);
     if (sha256(bytes) !== entry.sha256) failures.push(`SHA-256 mismatch: ${entry.path}`);
   }
@@ -137,10 +151,21 @@ export function checkExternalVerifierKit(root = 'dist/external-verifier-kit') {
 }
 
 function main() {
-  const root = process.argv[2] || 'dist/external-verifier-kit';
-  const result = checkExternalVerifierKit(root);
-  console.log(JSON.stringify(result, null, 2));
-  process.exit(result.valid ? 0 : 1);
+  const diagnosticOnly = diagnosticOnlyRequested(process.argv);
+  const args = process.argv.slice(2).filter(arg => arg !== AML_DIAGNOSTIC_ONLY_FLAG);
+  const pinIndex = args.indexOf('--expected-root-sha256');
+  const expectedRoot = pinIndex >= 0 ? args[pinIndex + 1] ?? null : null;
+  if (pinIndex >= 0) args.splice(pinIndex, 2);
+  const root = args[0] || 'dist/external-verifier-kit';
+  const verification = checkExternalVerifierKit(root);
+  const result = withCommandAuthorization(verification, commandAuthorizationDecision({
+    kit_valid: verification.valid === true,
+    root_pinned: typeof expectedRoot === 'string' && /^[a-f0-9]{64}$/.test(expectedRoot) &&
+      verification.root_sha256 === expectedRoot
+  }, KIT_REQUIRED, KIT_DENIALS), KIT_TRUST);
+  const { output, exitCode } = commandOutcome(result, { diagnosticOnly, invalidCode: 1 });
+  console.log(JSON.stringify(output, null, 2));
+  process.exit(exitCode);
 }
 
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) main();

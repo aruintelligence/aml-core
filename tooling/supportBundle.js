@@ -1,8 +1,8 @@
-import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { runAmlDoctor } from "./doctor.js";
+import { readRegularFile } from "./readRegularFile.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -19,10 +19,9 @@ const CONTRACT_FILES = [
 
 function fileEvidence(relativePath) {
   const absolutePath = path.join(ROOT, relativePath);
-  if (!fs.existsSync(absolutePath) || !fs.statSync(absolutePath).isFile()) {
-    return { path: relativePath, present: false, size: 0, sha256: null };
-  }
-  const bytes = fs.readFileSync(absolutePath);
+  let bytes;
+  try { bytes = readRegularFile(absolutePath, { maxBytes: 8 * 1024 * 1024 }); }
+  catch { return { path: relativePath, present: false, size: 0, sha256: null }; }
   return {
     path: relativePath,
     present: true,

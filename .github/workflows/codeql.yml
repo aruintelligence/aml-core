@@ -2,36 +2,88 @@ name: AML CodeQL Security Analysis
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - operation-aml/grant-store-integrity-20261104
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - operation-aml/grant-store-integrity-20261104
+    types: [opened, synchronize, reopened, ready_for_review, edited]
   schedule:
     - cron: "17 5 * * 1"
 
+# Runner-local advanced analysis: no Code Scanning write token or secrets.
+# upload: never is deliberate; deprecated false can mean failure-only in v4.
 permissions:
   contents: read
   actions: read
 
 jobs:
   analyze:
-    name: CodeQL JavaScript/TypeScript
+    name: CodeQL (${{ matrix.language }})
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Full-candidate recovery evidence, not a PR-diff-only finding subset.
+    # Supported feature switches in the exact pinned Action's feature-flags.ts.
+    env:
+      CODEQL_ACTION_DIFF_INFORMED_QUERIES: "false"
+      CODEQL_ACTION_OVERLAY_ANALYSIS: "false"
+      # Four authored report scripts otherwise silently lose primary ASTs.
+      CODEQL_EXTRACTOR_JAVASCRIPT_ALLOW_MINIFIED_FILES: "true"
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, python]
     steps:
-      - name: Check out repository
+      - name: Check out candidate without persisted credentials
         uses: actions/checkout@v4
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
         with:
-          languages: javascript-typescript
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Node.js for SARIF review
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Set up Python for interpreted-source analysis
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Fail BEFORE init registers its debug-uploading post-action. No skip-success.
+      - name: Enforce no-debug disclosure policy before scanner initialization
+        run: node scripts/check-codeql-no-debug.mjs
+      - name: Initialize CodeQL security-extended analysis
+        id: codeql-init
+        # Immutable commit resolved from supported CodeQL Action v4 on 2026-11-07.
+        uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          tools: linked
           queries: security-extended
-      - name: Perform read-only CodeQL analysis
-        uses: github/codeql-action/analyze@v3
+          debug: false
+          db-location: ${{ runner.temp }}/aml-codeql-db
+          dependency-caching: none
+          trap-caching: false
+      - name: Run actual CodeQL queries without Code Scanning upload
+        uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066
         with:
-          category: "/language:javascript-typescript"
-          upload: false
+          category: /language:${{ matrix.language }}
+          upload: never
+          upload-database: false
+          wait-for-processing: false
           output: codeql-results
-      - name: Upload CodeQL SARIF artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: aml-codeql-sarif
-          path: codeql-results
+      - name: Verify tracked source AST and module extraction
+        env:
+          CODEQL_CLI: ${{ steps.codeql-init.outputs.codeql-path }}
+          CODEQL_DB_ROOT: ${{ runner.temp }}/aml-codeql-db
+          CODEQL_LANGUAGE: ${{ matrix.language }}
+        run: node scripts/check-codeql-extraction.mjs "$CODEQL_CLI" "$CODEQL_DB_ROOT" "$CODEQL_LANGUAGE"
+      # Raw reports stay transient on the runner: no artifact/database/scanning upload.
+      - name: Validate analysis quality and publish aggregate status only
+        shell: bash
+        run: |
+          status=0
+          node scripts/check-codeql-sarif.mjs codeql-results ${{ matrix.language }} > codeql-private-review.json 2> codeql-private-error.json || status=$?
+          node scripts/summarize-codeql-status.mjs codeql-private-review.json ${{ matrix.language }} codeql-private-error.json || status=1
+          exit "$status"

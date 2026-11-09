@@ -23,11 +23,21 @@ function file(name, value) {
   return output;
 }
 
+// `verify` is consistency-only: it never authorizes, so a valid artifact
+// exits 3 (0 only under --diagnostic-only) and reports authorized:false.
 function run(args, expected) {
   const result = spawnSync("python3", [runtime, ...args], { encoding: "utf8" });
-  assert.equal(result.status, expected ? 0 : 1, result.stderr || result.stdout);
+  const verifying = args[0] === "verify";
+  const diagnostic = args.includes("--diagnostic-only");
+  const expectedStatus = !expected ? 1 : verifying && !diagnostic ? 3 : 0;
+  assert.equal(result.status, expectedStatus, result.stderr || result.stdout);
   const report = JSON.parse(result.stdout);
   assert.equal(report.valid ?? report.accepted, expected, JSON.stringify(report));
+  if (verifying) {
+    assert.equal(report.authorized, false, JSON.stringify(report));
+    assert.equal(report.decision_use, "NOT AN AUTHORIZATION DECISION");
+    assert.ok(report.authorization.reasons.includes("AML_AUTHZ_NO_TRUST_ROOTS"));
+  }
   return report;
 }
 
@@ -53,6 +63,7 @@ try {
   });
   assert.equal(validateWireEnvelope(envelope, { now: "2030-01-01T12:00:00Z" }).valid, true);
   verify("envelope", "envelope", envelope, true, ["--now", "2030-01-01T12:00:00Z", "--allowed-kind", "policy-passport"]);
+  verify("envelope", "envelope-diagnostic", envelope, true, ["--now", "2030-01-01T12:00:00Z", "--allowed-kind", "policy-passport", "--diagnostic-only"]);
   const badEnvelope = { ...envelope, protocol: "aml-wire/0" };
   assert.equal(validateWireEnvelope(badEnvelope).valid, false);
   verify("envelope", "bad-envelope", badEnvelope, false);

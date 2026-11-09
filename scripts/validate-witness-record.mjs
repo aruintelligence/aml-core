@@ -5,6 +5,23 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { commandAuthorizationDecision, withCommandAuthorization, commandOutcome, diagnosticOnlyRequested,
+  AML_DIAGNOSTIC_ONLY_FLAG } from '../runtime/commandAuthorization.js';
+
+// A witness record is accepted into the registry only after human/public
+// evidence review, which this validator cannot perform. It therefore never
+// authorizes: a valid record exits 3, or 0 under --diagnostic-only.
+export const WITNESS_RECORD_AUTHORIZATION_REQUIRED = ['record_valid', 'human_review_completed'];
+const WITNESS_RECORD_DENIALS = { record_valid: 'AML_AUTHZ_RECORD_NOT_VALID',
+  human_review_completed: 'AML_AUTHZ_HUMAN_REVIEW_REQUIRED' };
+const WITNESS_RECORD_TRUST = ['independent maintenance and truth of the external report require human/public-evidence review'];
+
+export function witnessRecordCommandResult(record) {
+  const verification = validateWitnessRecord(record);
+  return withCommandAuthorization(verification, commandAuthorizationDecision({
+    record_valid: verification.valid === true, human_review_completed: false
+  }, WITNESS_RECORD_AUTHORIZATION_REQUIRED, WITNESS_RECORD_DENIALS), WITNESS_RECORD_TRUST);
+}
 
 const REQUIRED = [
   'schema', 'witness_id', 'observed_at', 'source_url',
@@ -125,9 +142,10 @@ export function validateWitnessRecord(record) {
 }
 
 function main() {
-  const file = process.argv[2];
+  const diagnosticOnly = diagnosticOnlyRequested(process.argv);
+  const file = process.argv.slice(2).filter(arg => arg !== AML_DIAGNOSTIC_ONLY_FLAG)[0];
   if (!file) {
-    console.error('Usage: node scripts/validate-witness-record.mjs <witness-record.json>');
+    console.error('Usage: node scripts/validate-witness-record.mjs <witness-record.json> [--diagnostic-only]');
     process.exit(2);
   }
   let record;
@@ -137,9 +155,9 @@ function main() {
     console.error(JSON.stringify({ valid: false, failures: [`unable to read/parse record: ${error.message}`] }, null, 2));
     process.exit(2);
   }
-  const result = validateWitnessRecord(record);
-  console.log(JSON.stringify(result, null, 2));
-  process.exit(result.valid ? 0 : 1);
+  const { output, exitCode } = commandOutcome(witnessRecordCommandResult(record), { diagnosticOnly, invalidCode: 1 });
+  console.log(JSON.stringify(output, null, 2));
+  process.exit(exitCode);
 }
 
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) main();

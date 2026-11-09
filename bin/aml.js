@@ -27,6 +27,20 @@ import { signPolicyPack, verifySignedPolicyPack } from "../runtime/policyPack.js
 import { verifyAuditStream } from "../runtime/auditStream.js";
 import { enforceCumulativeAttentionBudget } from "../runtime/attentionLedger.js";
 import { signBrandAuthorization, verifyBrandAuthorization } from "../runtime/brandAuthorization.js";
+import { commandAuthorizationDecision, withCommandAuthorization, commandOutcome, trustedCommandClock,
+  AML_DIAGNOSTIC_ONLY_FLAG, AML_EXIT_NOT_AUTHORIZED, AML_NOT_AN_AUTHORIZATION_DECISION } from "../runtime/commandAuthorization.js";
+
+// verify-brand-authorization authorizes only a valid credential whose issuer
+// and signing-key fingerprint were pinned by the relying party, after a
+// revocation registry was checked, evaluated on the verifier's own clock.
+// AML_VERIFY_AT is a replay override: outside the skew bound it is untrusted
+// and the result is not authorized.
+const BRAND_REQUIRED = ["credential_valid", "issuer_pinned", "signing_key_pinned", "revocation_checked", "trusted_clock"];
+const BRAND_DENIALS = { credential_valid: "AML_AUTHZ_CREDENTIAL_NOT_VALID", issuer_pinned: "AML_AUTHZ_ISSUER_NOT_PINNED",
+  signing_key_pinned: "AML_AUTHZ_SIGNING_KEY_NOT_PINNED", revocation_checked: "AML_AUTHZ_REVOCATION_NOT_CHECKED",
+  trusted_clock: "AML_AUTHZ_CALLER_CLOCK_UNTRUSTED" };
+const BRAND_TRUST = ["the pinned issuer and key fingerprint came from an independently trusted source",
+  "the supplied revocation registry is current", "the verifier host clock"];
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
 import { evaluatePolicyCanary } from "../runtime/policyCanary.js";
 import { verifyWitnessBundle } from "../docs/aml-witness-bundle.js";
@@ -53,7 +67,7 @@ Usage:
   aml verify-witness <bundle.json> <verifier-held-challenge.json>
   aml fingerprint-verifier-key <public-jwk.json>
   aml fingerprint-json <input.json>
-  aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json] [--portable] [--decision-only]
+  aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json] [--portable] [--decision-only] [--diagnostic-only]
   aml replay-receipt <receipt.json>
   aml sign-receipt <receipt.json> <private-key.pem> [signed-receipt.json]
   aml verify-signed-receipt <signed-receipt.json>
@@ -63,7 +77,7 @@ Usage:
   aml sign-policy-pack <pack.json> <private-key.pem> [signed-pack.json]
   aml verify-policy-pack <signed-pack.json>
   aml sign-brand-authorization <authorization.json> <private-key.pem> [credential.json]
-  aml verify-brand-authorization <credential.json> [revocation-registry.json]
+  aml verify-brand-authorization <credential.json> [revocation-registry.json] [--diagnostic-only]
   aml verify-audit <audit-stream.json>
   aml attention-account <file.aml> <budget> [policy]
   aml policies
@@ -88,7 +102,7 @@ Commands:
   verify-witness              Verify a browser witness bundle against your retained challenge
   fingerprint-verifier-key    Derive full-JWK and P-256 material fingerprints from a public key
   fingerprint-json            Hash a strict JSON input under sorted-json-v1
-  verify-signed-quorum        Recheck a signed quorum; --decision-only omits supplied report contents
+  verify-signed-quorum        Recheck a signed quorum; exit 0 only when authorized; --decision-only omits supplied report contents
   replay-receipt              Re-execute declared receipt inputs with the installed engine
   sign-receipt                Add an Ed25519 attestation to a valid execution receipt
   verify-signed-receipt       Verify receipt integrity, signature, and public-key fingerprint
@@ -98,7 +112,7 @@ Commands:
   sign-policy-pack            Sign a data-only policy pack with Ed25519
   verify-policy-pack          Verify policy-pack hash, signature, and key fingerprint
   sign-brand-authorization    Sign a scoped official-brand authorization credential with Ed25519
-  verify-brand-authorization  Verify brand credential integrity, expiry, and optional revocation status
+  verify-brand-authorization  Verify brand credential; exit 0 only when authorized (pinned issuer/key, revocation, own clock)
   verify-audit                Verify a SHA-256 hash-chained runtime audit stream
   attention-account           Apply cumulative session attention accounting to render decisions
   policies                    List built-in policy engines
@@ -163,7 +177,11 @@ function signedQuorumDecisionOnly(result) {
     schema: 'aml-signed-quorum-decision/1', prototype: true,
     ...Object.fromEntries(checked.map(name => [name, result[name]])),
     requested_conditions_met: unmet.length === 0,
-    requested_conditions: { checked, unmet }
+    requested_conditions: { checked, unmet },
+    // The complete decision; requested_conditions_met alone is not permission.
+    authorized: result.authorized === true && result.authorization?.authorized === true,
+    authorization_reasons: Array.isArray(result.authorization?.reasons)
+      ? result.authorization.reasons.filter(reason => /^AML_AUTHZ_[A-Z_]+$/.test(reason)) : ['AML_AUTHZ_EVALUATION_ERROR']
   };
   if (result.input_fingerprints) {
     const input = result.input_fingerprints;
@@ -307,7 +325,8 @@ try {
     const expectedChallenge = readUnambiguousJSON(args[2]);
     const result = await verifyWitnessBundle(bundle, { expectedChallenge });
     console.log(JSON.stringify(result, null, 2));
-    process.exit(result.valid ? 0 : 2);
+    // `valid` is internal consistency only; exit 0 requires the explicit decision.
+    process.exit(result.authorized === true ? 0 : 2);
   }
   if (command === "fingerprint-verifier-key") {
     if (args.length !== 2 || !args[1]) {
@@ -328,16 +347,23 @@ try {
     process.exit(0);
   }
   if (command === "verify-signed-quorum") {
-    const usage = "Usage: aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json] [--portable] [--decision-only]";
+    const usage = "Usage: aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json] [--portable] [--decision-only] [--diagnostic-only]";
     if (!args[1] || args[1].startsWith('--')) throw new Error(usage);
     const options = new Map();
     let portable = false;
     let decisionOnly = false;
+    let diagnosticOnly = false;
     for (let index = 2; index < args.length;) {
       const flag = args[index];
       if (flag === '--portable') {
         if (portable) throw new Error(usage);
         portable = true;
+        index += 1;
+        continue;
+      }
+      if (flag === AML_DIAGNOSTIC_ONLY_FLAG) {
+        if (diagnosticOnly) throw new Error(usage);
+        diagnosticOnly = true;
         index += 1;
         continue;
       }
@@ -367,10 +393,17 @@ try {
     // A saved quorum can produce more JSON than a pipe can buffer. Wait for
     // stdout to finish writing before exiting with the verification status.
     await new Promise((resolve, reject) => {
-      process.stdout.write(`${JSON.stringify(decisionOnly ? signedQuorumDecisionOnly(result) : result, null, 2)}\n`, error =>
+      const projected = decisionOnly ? signedQuorumDecisionOnly(result) : result;
+      const printed = diagnosticOnly ? { ...projected, authorized: false, diagnostic_only: true,
+        decision_use: AML_NOT_AN_AUTHORIZATION_DECISION } : projected;
+      process.stdout.write(`${JSON.stringify(printed, null, 2)}\n`, error =>
         error ? reject(error) : resolve());
     });
-    process.exit(result.requested_conditions_met ? 0 : 2);
+    // Exit 0 only on the complete decision (`authorized`). Requested
+    // conditions met without a held policy or witness requirement exits 3.
+    process.exit(diagnosticOnly ? (result.requested_conditions_met === true ? 0 : 2)
+      : result.authorized === true && result.authorization?.authorized === true ? 0
+      : result.requested_conditions_met === true ? AML_EXIT_NOT_AUTHORIZED : 2);
   }
   if (command === "replay-receipt") {
     const result = replayExecutionReceipt(JSON.parse(readSource(inputPath)));
@@ -432,15 +465,30 @@ try {
     process.exit(0);
   }
   if (command === "verify-brand-authorization") {
-    const credential = JSON.parse(readSource(inputPath));
-    const revocationRegistry = args[2] ? JSON.parse(readSource(args[2])) : null;
-    const result = verifyBrandAuthorization(credential, {
-      now: process.env.AML_VERIFY_AT || null,
+    const positional = args.slice(1).filter(arg => arg !== AML_DIAGNOSTIC_ONLY_FLAG);
+    const diagnosticOnly = args.includes(AML_DIAGNOSTIC_ONLY_FLAG);
+    const credential = JSON.parse(readSource(positional[0] || inputPath));
+    const revocationRegistry = positional[1] ? JSON.parse(readSource(positional[1])) : null;
+    const callerTime = process.env.AML_VERIFY_AT || null;
+    const localNow = Date.now();
+    const expectedIssuer = process.env.AML_EXPECTED_BRAND_ISSUER || null;
+    const trustedKey = process.env.AML_TRUSTED_BRAND_KEY_SHA256 || null;
+    const verification = verifyBrandAuthorization(credential, {
+      now: callerTime,
       revocation_registry: revocationRegistry,
-      expected_issuer: process.env.AML_EXPECTED_BRAND_ISSUER || null
+      expected_issuer: expectedIssuer
     });
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.valid ? 0 : 1);
+    const result = withCommandAuthorization(verification, commandAuthorizationDecision({
+      credential_valid: verification.valid === true,
+      issuer_pinned: typeof expectedIssuer === "string" && verification.issuer === expectedIssuer,
+      signing_key_pinned: typeof trustedKey === "string" && /^[a-f0-9]{64}$/.test(trustedKey) &&
+        credential?.public_key_sha256 === trustedKey,
+      revocation_checked: verification.credential_revocation_checked === true,
+      trusted_clock: trustedCommandClock(callerTime, localNow)
+    }, BRAND_REQUIRED, BRAND_DENIALS), BRAND_TRUST);
+    const { output, exitCode } = commandOutcome(result, { diagnosticOnly, invalidCode: 1 });
+    console.log(JSON.stringify(output, null, 2));
+    process.exit(exitCode);
   }
   if (command === "verify-audit") {
     const result = verifyAuditStream(JSON.parse(readSource(inputPath)));

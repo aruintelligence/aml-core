@@ -62,8 +62,12 @@ test("aml-meaning verify-manifest exits 1 after compiled meaning drifts", () => 
 
 test("aml-meaning manifest refuses files outside the current project root", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "aml-meaning-manifest-"));
-  const outside = path.join(os.tmpdir(), `aml-outside-${process.pid}.aml`);
-  fs.writeFileSync(outside, a);
+  // A shared predictable /tmp filename could be precreated as a symlink.
+  const outsideDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-meaning-outside-"));
+  const outside = path.join(outsideDirectory, "outside.aml");
+  assert.notEqual(path.dirname(outside), os.tmpdir());
+  if (process.platform !== "win32") assert.equal(fs.statSync(outsideDirectory).mode & 0o077, 0);
+  fs.writeFileSync(outside, a, { flag: "wx", mode: 0o600 });
   const result = run(dir, "manifest", outside);
   assert.equal(result.status, 2);
   assert.match(result.stderr, /inside the current working directory/);

@@ -23,7 +23,7 @@ test("offline report includes the matched card, exact source, rule and full reco
   assert.match(html, /Compiler: <b>suppress<\/b> · Browser: <b>withheld<\/b>/);
   assert.match(html, /Compiler: <b>allow<\/b> · Browser: <b>visible<\/b>/);
   assert.match(html, /&lt;\/pre&gt;&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
-  assert.doesNotMatch(html, /<script>/);
+  assert.doesNotMatch(html, /<script\b/i);
   assert.match(html, /source_sha256/);
   assert.match(html, /#v=1&amp;source=/);
   assert.match(html, /href="https:\/\/example.org\/check-run.html"/);
@@ -34,4 +34,9 @@ test("oversized source stays inspectable offline without a truncated replay URL"
   assert.match(html, /Source is too long for a replay link/);
   assert.doesNotMatch(html, /href="[^"]*#v=1/);
   assert.throws(() => buildComparisonReport({ ...record, gates: [record.gates[0]] }), /matched two-gate/);
+});
+
+test("offline comparison report escapes mixed-case attributed script markup", () => {
+  const html = buildComparisonReport({ ...record, source: "</PRE><ScRiPt src='https://example.invalid/x'>bad</ScRiPt>" });
+  assert.doesNotMatch(html, /<script\b/i); assert.match(html, /&lt;ScRiPt/);
 });

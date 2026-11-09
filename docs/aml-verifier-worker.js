@@ -9,10 +9,13 @@ self.addEventListener('message', async (event) => {
   try {
     const result = await verifyWitnessBundle(bundle, { expectedChallenge });
     const report = witnessVerificationReport(bundle, result, { verifier: 'aml-web-worker' });
-    self.postMessage({ id, report });
+    // The report's `valid` is consistency only; consumers act on `authorized`.
+    self.postMessage({ id, report, authorized: result.authorized === true,
+      authorization: result.authorization });
   } catch (error) {
     self.postMessage({
       id,
+      authorized: false,
       report: {
         schema: 'aml-verification-report/1',
         prototype: true,

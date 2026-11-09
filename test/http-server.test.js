@@ -464,12 +464,19 @@ test("AML HTTP verifies a cross-language witness bundle and rejects mutation", a
     const validResponse = await fetch(`${base}/v1/verify-witness-bundle`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ bundle, now: "2030-01-01T00:05:00Z" })
+      body: JSON.stringify({ bundle, expected_challenge: bundle.challenge, now: "2030-01-01T00:05:00Z" })
     });
-    assert.equal(validResponse.status, 200);
+    // The fixed vector needs a caller clock in 2030. The bundle still verifies
+    // against that clock, but a caller-supplied clock never authorizes, so the
+    // endpoint answers 422 with the full result rather than 200.
+    assert.equal(validResponse.status, 422);
     const valid = await validResponse.json();
     assert.equal(valid.protocol, "aml-http-witness-verification/1");
     assert.equal(valid.valid, true);
+    assert.equal(valid.verified, true);
+    assert.equal(valid.authorized, false);
+    assert.deepEqual(valid.authorization.reasons, ["AML_AUTHZ_CALLER_CLOCK_UNTRUSTED"]);
+    assert.equal(valid.freshness_clock_source, "caller_supplied");
     assert.equal(valid.reason, "AML_WITNESS_BUNDLE_VALID");
 
     const mutated = structuredClone(bundle);
@@ -477,11 +484,12 @@ test("AML HTTP verifies a cross-language witness bundle and rejects mutation", a
     const badResponse = await fetch(`${base}/v1/verify-witness-bundle`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ bundle: mutated, now: "2030-01-01T00:05:00Z" })
+      body: JSON.stringify({ bundle: mutated, expected_challenge: bundle.challenge, now: "2030-01-01T00:05:00Z" })
     });
     assert.equal(badResponse.status, 422);
     const bad = await badResponse.json();
     assert.equal(bad.valid, false);
+    assert.equal(bad.authorized, false);
   });
 });
 

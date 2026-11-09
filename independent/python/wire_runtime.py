@@ -299,6 +299,8 @@ def main():
     verification.add_argument("artifact", type=Path)
     verification.add_argument("--now")
     verification.add_argument("--allowed-kind", action="append", default=[])
+    verification.add_argument("--diagnostic-only", action="store_true",
+                              help="Exit 0 for a consistent artifact; NOT AN AUTHORIZATION DECISION")
     negotiation = commands.add_parser("negotiate")
     negotiation.add_argument("local", type=Path)
     negotiation.add_argument("remote", type=Path)
@@ -315,9 +317,24 @@ def main():
             if args.kind == "envelope":
                 options["allowed_kinds"] = args.allowed_kind
             result = VERIFIERS[args.kind](artifact, **options)
-            accepted = result["valid"]
+            # Verification has no relying-party trust roots or held policy,
+            # so it is consistency-only and never authorizes execution.
+            consistent = result.get("valid") is True
+            result = dict(result, authorized=False, authorization={
+                "schema": "aml-authorization-decision/1", "authorized": False, "decision": "deny",
+                "reasons": (["AML_AUTHZ_DIAGNOSTIC_ONLY"] if args.diagnostic_only else []) +
+                           ["AML_AUTHZ_NO_TRUST_ROOTS"] + ([] if consistent else ["AML_AUTHZ_ARTIFACT_NOT_VALID"]),
+                "required": ["artifact_valid", "relying_party_trust_roots"]},
+                decision_use="NOT AN AUTHORIZATION DECISION")
+            if args.diagnostic_only:
+                result["diagnostic_only"] = True
+            print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+            if args.diagnostic_only:
+                return 0 if consistent else 1
+            return 3 if consistent else 1
     except (ValueError, OSError, TypeError) as error:
         result, accepted = failure("invalid_input", detail=str(error)), False
+        result = dict(result, authorized=False)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     return 0 if accepted else 1
 

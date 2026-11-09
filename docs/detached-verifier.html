@@ -75,7 +75,7 @@
         const check = await verifyWitnessBundle(bundle, { expectedChallenge: currentChallenge });
         latestReport = witnessVerificationReport(bundle, check, { verifier: 'aml-detached-browser' });
         resultEl.textContent = JSON.stringify(latestReport, null, 2);
-        resultEl.className = check.valid ? 'ok' : 'bad';
+        resultEl.className = check.authorized === true ? 'ok' : 'bad';
       } catch (error) {
         latestReport = null;
         resultEl.textContent = JSON.stringify({ valid:false, reason:error?.message || String(error) }, null, 2);

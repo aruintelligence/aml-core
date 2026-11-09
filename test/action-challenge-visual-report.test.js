@@ -13,6 +13,18 @@ const invoke = (args) => spawnSync(process.execPath, [runner, ...args],
   { cwd: root, encoding: "utf8", timeout: 30000 });
 const embedded = html => JSON.parse(html.match(/<script type="application\/json" id="report-data">([^<]*)<\/script>/)?.[1] ?? "null");
 
+// This is an assertion about this fixed authored fixture, not an HTML sanitizer.
+function assertAuthoredScriptOpeners(html) {
+  // Count every start first, including an unterminated one. Do not infer inert
+  // scripts by substring-matching attributes (e.g. data-type or quoted values).
+  assert.equal((html.match(/<script\b/gi) ?? []).length, 2,
+    "the fixed report has exactly two authored script starts");
+  assert.deepEqual([...html.matchAll(/<script\b[^>]*>/gi)].map(([opener]) => opener), [
+    '<script type="application/json" id="report-data">',
+    '<script>'
+  ], "only the exact JSON-data and authored executable openers are allowed");
+}
+
 test("self-test can export an offline, full-scope visual result without changing JSON stdout", () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-visual-report-"));
   try {
@@ -61,7 +73,46 @@ test("malicious adapter text remains JSON data, never markup or executable scrip
   const html = renderActionChallengeReport(report);
   assert.deepEqual(embedded(html), report);
   assert.equal(html.includes(payload), false);
-  assert.equal((html.match(/<script>/g) ?? []).length, 1, "only the authored script is executable");
+  assertAuthoredScriptOpeners(html);
   assert.match(html, /\\u003c\/script\\u003e/);
   assert.throws(() => renderActionChallengeReport({ cases: [] }), /unsupported_action_challenge_report/);
 });
+
+test("mixed-case and attributed adapter markup stays escaped JSON", () => {
+  for (const payload of ["</SCRIPT><SCRIPT>alert(1)</SCRIPT>", "</ScRiPt><ScRiPt src='https://example.invalid/x'></ScRiPt>"]) {
+    const report = { protocol: "aml-action-boundary-challenge-report/1", project_reference_self_test: false,
+      case_scope: "single", passed: false, cases: [{ id: "injection", passed: false, failures: [payload], diagnostics: [] }] };
+    const html = renderActionChallengeReport(report);
+    assert.deepEqual(embedded(html), report); assert.equal(html.includes(payload), false);
+    assertAuthoredScriptOpeners(html);
+  }
+});
+
+// Extra starts are forbidden regardless of their attributes. Mutated authored
+// openers are also forbidden, even when the total number of script starts is two.
+const nonAuthoredOpeners = [
+  "<script data-type=\"application/json\">",
+  "<script aria-type=\"application/json\">",
+  "<script x-type=\"application/json\">",
+  "<script notype=\"application/json\">",
+  "<script data-note='type=\"application/json\"'>",
+  "<script data-note=\"type='application/json'\">",
+  "<script type=\"application/json\" data-note=\"extra\">",
+  "<script type=application/json>",
+  "<SCRIPT TYPE=\"application/json\">",
+  "<script data-note='prefix > type=\"application/json\"'>",
+  "<script type=\"application/json; charset=utf-8\">",
+  "<script src=\"https://example.invalid/not-fetched.js\">"
+];
+for (const opener of nonAuthoredOpeners) {
+  test(`fixed report assertion rejects additional/altered opener ${opener}`, () => {
+    const html = renderActionChallengeReport({ protocol: "aml-action-boundary-challenge-report/1",
+      project_reference_self_test: false, case_scope: "single", passed: false, cases: [] });
+    assertAuthoredScriptOpeners(html);
+    assert.throws(() => assertAuthoredScriptOpeners(`${html}${opener}void 0;</script>`),
+      assert.AssertionError, "an additional start must never be accepted as inert");
+    assert.throws(() => assertAuthoredScriptOpeners(html.replace(
+      '<script type="application/json" id="report-data">', opener)),
+      assert.AssertionError, "the two exact authored openers are required");
+  });
+}
