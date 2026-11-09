@@ -10,7 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { scanRepository, scanSource, scanDecisionSinks, checkInventory, checkDecisionSinks,
-  REQUIRED_DECISION_SINKS, INVENTORY_PATH } from '../scripts/check-valid-field-decisions.mjs';
+  REQUIRED_DECISION_SINKS, INVENTORY_PATH, REVIEWED_DIAGNOSTIC_EXITS } from '../scripts/check-valid-field-decisions.mjs';
 
 const inventory = JSON.parse(fs.readFileSync(INVENTORY_PATH, 'utf8'));
 
@@ -41,23 +41,22 @@ test('seeded valid-only positive sinks are rejected whatever category they claim
   for (const [file, source] of Object.entries(seeded)) {
     const findings = scanSource(file, source).map(f => ({ ...f, scope: 'shipped' }));
     assert.ok(findings.length > 0, `${file} read found`);
-    for (const category of ['deny-guard', 'conjunct', 'signed-verdict-count', 'schema-check', 'validator-exit', 'assertion']) {
+    for (const category of ['deny-guard', 'conjunct', 'signed-verdict-count', 'schema-check', 'consistency-status', 'diagnostic-exit', 'report-only', 'assertion']) {
       const failures = checkInventory(findings, classify(findings, category, { conjunct_with: 'claimed' }));
       assert.ok(failures.length > 0, `${file} accepted as ${category}`);
     }
   }
   const sinks = scanDecisionSinks('runtime/seeded.js', 'process.exitCode = r.valid ? 0 : 2;\nsend(res, r.valid === true ? 200 : 403);');
-  assert.equal(sinks.length, 2);
-  for (const category of ['explicit-decision', 'conjunct', 'validator-exit']) {
+  assert.deepEqual([...new Set(sinks.map(s => s.line))], [1, 2]);
+  for (const category of ['explicit-decision', 'conjunct', 'diagnostic-exit', 'non-decision']) {
     const failures = checkDecisionSinks(sinks, { ...inventory, decision_sinks: sinks.map(s => ({ ...s, category, effect: 'seeded fixture' })) });
     const flagged = new Set(failures.map(f => f.split(':')[1]));
     assert.deepEqual([...flagged].sort(), ['1', '2'], `${category}: ${failures}`);
   }
-  const alias = scanDecisionSinks('independent/seeded.py', 'return 0 if accepted else 1');
-  const aliasFailures = checkDecisionSinks(alias, { ...inventory, decision_sinks: alias.map(s =>
-    ({ ...s, category: 'explicit-decision', effect: 'seeded fixture', alias_of_valid: true })) });
-  assert.ok(aliasFailures.length >= 1 && aliasFailures.every(f => f.startsWith('independent/seeded.py:1:')),
-    'a reviewed alias of valid cannot pass as an explicit decision');
+  // A validator command no longer has a valid-only exit category.
+  const legacy = scanDecisionSinks('bin/seeded-validator.js', 'process.exit(result.valid ? 0 : 1);');
+  assert.ok(checkDecisionSinks(legacy, { ...inventory, decision_sinks: legacy.map(s =>
+    ({ ...s, category: 'validator-exit', effect: 'seeded fixture' })) }).some(f => /unknown sink category|valid alone/.test(f)));
 });
 
 test('unclassified, stale and comment/string-only reads are handled exactly', () => {
@@ -105,4 +104,108 @@ test('HTML pages cannot hide a valid read behind tag spelling, inline handlers, 
   }
   assert.deepEqual(scanSource('docs/seeded-comment.html', '<!-- if (r.valid) go(); -->\n<p>.valid</p>').map(f => f.line), [2],
     'HTML comments are blanked; other markup stays visible (fail-safe over-reporting)');
+});
+
+// Adversarial alias (data-flow) cases: each hides a valid-only success
+// behind a variable, destructuring, helper, property, subscript, inversion
+// or implicit success. Every one must surface as a valid-only sink.
+const jsBypasses = {
+  'subscript': "if (r['valid']) execute();",
+  'variable': 'const ok = r.valid;\nif (ok) execute();',
+  'transitive': 'const a = r.valid;\nconst b = a && true;\nprocess.exitCode = b ? 0 : 2;',
+  'destructure': 'const { valid } = r;\nif (valid) execute();',
+  'destructure-rename': 'const { valid: fine } = r;\nprocess.exit(fine ? 0 : 1);',
+  'helper': 'function isOk(r) { return r.valid; }\nif (isOk(x)) execute();',
+  'arrow-helper': 'const isOk = r => r?.valid === true;\nsend(res, isOk(x) ? 200 : 403);',
+  'property': 'const out = { go: r.valid };\nif (out.go) execute();',
+  'object-assign': 'Object.assign(state, { go: r.valid });\nif (state.go) execute();',
+  'boolean-wrap': 'const ok = Boolean(r.valid);\nprocess.exit(ok ? 0 : 1);',
+  'inverted-exit': 'process.exit(!r.valid ? 1 : 0);',
+  'implicit-success': 'if (!r.valid) process.exitCode = 2;',
+  'implicit-success-block': 'if (!r.valid) {\n  process.exitCode = 2;\n}',
+  'computed-code': 'const code = r.valid ? 0 : 1;\nprocess.exit(code);',
+  'status-code': 'res.statusCode = r.valid ? 200 : 403;'
+};
+
+function validOnlyFailures(rel, source) {
+  const findings = scanSource(rel, source).map(f => ({ ...f, scope: 'shipped' }));
+  const sinks = scanDecisionSinks(rel, source);
+  const readFailures = checkInventory(findings, classify(findings, 'conjunct', { conjunct_with: 'claimed' }))
+    .filter(f => /controls a positive/.test(f));
+  const sinkFailures = checkDecisionSinks(sinks, { ...inventory, decision_sinks: sinks.map(s =>
+    ({ ...s, category: 'explicit-decision', effect: 'seeded fixture' })) }).filter(f => /reads valid|valid alone/.test(f));
+  return [...readFailures, ...sinkFailures];
+}
+
+test('JavaScript aliases of valid cannot hide a valid-only success', () => {
+  for (const [name, source] of Object.entries(jsBypasses)) {
+    assert.ok(validOnlyFailures(`pilots/seeded-${name}.js`, source).length > 0, `${name} bypass not caught`);
+  }
+  // Controls: an explicit decision in the same expression is not valid-only.
+  for (const source of ['const ok = r.valid && r.authorized === true;\nif (ok) execute();',
+    'process.exit(r.authorized === true ? 0 : 3);', 'if (!r.valid) throw new Error("x");']) {
+    assert.deepEqual(validOnlyFailures('pilots/seeded-control.js', source), [], source);
+  }
+});
+
+test('Python aliases of valid are found by the AST data-flow pass', () => {
+  const pyBypasses = {
+    'subscript-alias': 'ok = result["valid"]\nreturn 0 if ok else 1',
+    'get-alias': 'ok = result.get("valid") is True\nif ok:\n    run()',
+    'helper': 'def fine(r):\n    return r["valid"]\nsys.exit(0 if fine(x) else 1)',
+    'dict-property': 'out = {"go": result["valid"]}\nif out["go"]:\n    run()',
+    'implicit-success': 'if not result["valid"]:\n    return 1\nreturn 0',
+    'inverted': 'return 1 if not result["valid"] else 0'
+  };
+  for (const [name, source] of Object.entries(pyBypasses)) {
+    assert.ok(validOnlyFailures(`independent/seeded_${name.replace(/-/g, '_')}.py`, source).length > 0, `${name} bypass not caught`);
+  }
+});
+
+test('an imported valid-derived helper is tracked across modules', t => {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-valid-alias-'));
+  t.after(() => fs.rmSync(base, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(base, 'pilots'), { recursive: true });
+  fs.writeFileSync(path.join(base, 'pilots/helper.mjs'), 'export function accepted(r) { return r.valid === true; }\n');
+  fs.writeFileSync(path.join(base, 'pilots/caller.mjs'),
+    "import { accepted as fine } from './helper.mjs';\nif (fine(result)) execute();\nprocess.exit(fine(result) ? 0 : 1);\n");
+  const { findings, sinks } = scanRepository(base);
+  const caller = findings.filter(f => f.file === 'pilots/caller.mjs');
+  assert.deepEqual(caller.map(f => f.line), [2, 3]);
+  assert.ok(caller.every(f => f.kind === 'alias'));
+  const failures = checkDecisionSinks(sinks.filter(s => s.file === 'pilots/caller.mjs'), { ...inventory,
+    decision_sinks: sinks.filter(s => s.file === 'pilots/caller.mjs').map(s => ({ ...s, category: 'explicit-decision', effect: 'seeded fixture' })) }, base);
+  assert.ok(failures.some(f => /pilots\/caller\.mjs:3: explicit-decision gate reads valid/.test(f)), failures.join('\n'));
+});
+
+test('a diagnostic exit must be reviewed and stay under its diagnostic guard', t => {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-valid-diag-'));
+  t.after(() => fs.rmSync(base, { recursive: true, force: true }));
+  for (const entry of REVIEWED_DIAGNOSTIC_EXITS) {
+    fs.mkdirSync(path.join(base, path.dirname(entry.file)), { recursive: true });
+    fs.copyFileSync(entry.file, path.join(base, entry.file));
+  }
+  const diag = inventory.decision_sinks.filter(e => e.category === 'diagnostic-exit');
+  assert.equal(diag.length, REVIEWED_DIAGNOSTIC_EXITS.length);
+  const sinksOf = b => REVIEWED_DIAGNOSTIC_EXITS.flatMap(e => scanDecisionSinks(e.file, fs.readFileSync(path.join(b, e.file), 'utf8')))
+    .filter(s => diag.some(d => d.file === s.file && d.code === s.code));
+  const inv = sinks => ({ ...inventory, decision_sinks: sinks.map(s => ({ ...s, category: 'diagnostic-exit', effect: 'reviewed' })) });
+  assert.deepEqual(checkDecisionSinks(sinksOf(base), inv(sinksOf(base)), base), []);
+  // Removing the guard (exit 0 for any consistent result) must fail.
+  const shared = path.join(base, 'runtime/commandAuthorization.js');
+  fs.writeFileSync(shared, fs.readFileSync(shared, 'utf8').replace('  if (diagnosticOnly) {', '  if (true) {'));
+  assert.ok(checkDecisionSinks(sinksOf(base), inv(sinksOf(base)), base).some(f => /without its guard/.test(f)));
+  // An unreviewed valid-only exit cannot claim the diagnostic category.
+  const seeded = scanDecisionSinks('bin/seeded.js', 'if (diagnosticOnly) {\n  process.exit(r.valid ? 0 : 1);\n}');
+  assert.ok(checkDecisionSinks(seeded, inv(seeded), base).some(f => /not in REVIEWED_DIAGNOSTIC_EXITS/.test(f)));
+});
+
+test('the check fails closed when the Python data-flow pass cannot run', t => {
+  const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'aml-valid-nopython-'));
+  t.after(() => fs.rmSync(bin, { recursive: true, force: true }));
+  fs.symlinkSync(process.execPath, path.join(bin, 'node'));
+  const run = spawnSync(process.execPath, ['scripts/check-valid-field-decisions.mjs'],
+    { encoding: 'utf8', env: { PATH: bin } });
+  assert.notEqual(run.status, 0, run.stdout);
+  assert.match(run.stderr + run.stdout, /python data-flow pass failed/);
 });

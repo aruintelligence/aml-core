@@ -50,6 +50,8 @@ A verifier can preserve that SHA-256 outside the release pipeline and later requ
 aml-release-profile verify production-release-profile.json <expected-profile-sha256>
 ```
 
+`verify` exits `0` only when the profile is valid and its SHA-256 equals the pinned 64-hex value (`authorized: true`). `validate` checks structure only and exits `3` for a valid profile; it never authorizes. `--diagnostic-only` exits `0` for a valid profile with `NOT AN AUTHORIZATION DECISION`. See [Command exit status and authorization](../docs/COMMAND_AUTHORIZATION.md).
+
 The fingerprint commits to:
 
 - repository identity;

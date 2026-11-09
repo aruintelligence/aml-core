@@ -25,6 +25,60 @@ type result struct {
 	Reason string `json:"reason"`
 }
 
+// Exit-status contract: exit 0 only when the complete authorization decision
+// is true. This verifier cannot check a verifier-held challenge, so it never
+// authorizes: a consistent bundle exits 3, or 0 under --diagnostic-only,
+// whose output reports authorized false and NOT AN AUTHORIZATION DECISION.
+const exitNotAuthorized = 3
+const notAnAuthorizationDecision = "NOT AN AUTHORIZATION DECISION"
+
+type authorization struct {
+	Schema     string   `json:"schema"`
+	Authorized bool     `json:"authorized"`
+	Decision   string   `json:"decision"`
+	Reasons    []string `json:"reasons"`
+	Required   []string `json:"required"`
+}
+
+type report struct {
+	Valid          bool          `json:"valid"`
+	Reason         string        `json:"reason"`
+	Authorized     bool          `json:"authorized"`
+	Authorization  authorization `json:"authorization"`
+	DecisionUse    string        `json:"decision_use"`
+	DiagnosticOnly bool          `json:"diagnostic_only,omitempty"`
+	Trust          []string      `json:"remaining_trust_assumptions"`
+}
+
+func decide(r result, diagnostic bool, callerClock bool) (report, int) {
+	reasons := []string{}
+	if diagnostic {
+		reasons = append(reasons, "AML_AUTHZ_DIAGNOSTIC_ONLY")
+	}
+	if !r.Valid {
+		reasons = append(reasons, "AML_AUTHZ_BUNDLE_NOT_VALID")
+	}
+	reasons = append(reasons, "AML_AUTHZ_HELD_CHALLENGE_UNSUPPORTED")
+	if callerClock {
+		reasons = append(reasons, "AML_AUTHZ_CALLER_CLOCK_UNTRUSTED")
+	}
+	out := report{Valid: r.Valid, Reason: r.Reason, Authorized: false,
+		Authorization: authorization{"aml-authorization-decision/1", false, "deny", reasons,
+			[]string{"bundle_valid", "verifier_held_challenge", "trusted_clock"}},
+		DecisionUse: notAnAuthorizationDecision, DiagnosticOnly: diagnostic,
+		Trust: []string{"this verifier cannot check a verifier-held challenge", "the verifier host clock"}}
+	if diagnostic {
+		if r.Valid {
+			return out, 0
+		}
+		return out, 1
+	}
+	if r.Valid {
+		return out, exitNotAuthorized
+	}
+	return out, 1
+}
+
 func quoteString(s string) (string, error) {
 	var b bytes.Buffer
 	enc := json.NewEncoder(&b)
@@ -217,26 +271,35 @@ func readBundle(path string) (map[string]any, error) {
 }
 
 func main() {
-	nowFlag := flag.String("now", "", "RFC3339 verification time for fixed vectors")
+	nowFlag := flag.String("now", "", "RFC3339 verification time for fixed vectors (untrusted: never authorizes)")
+	diagnostic := flag.Bool("diagnostic-only", false, "exit 0 for a consistent bundle; NOT AN AUTHORIZATION DECISION")
 	flag.Parse()
 	if flag.NArg() != 1 {
-		fmt.Fprintln(os.Stderr, "usage: go run . [--now RFC3339] bundle.json")
+		fmt.Fprintln(os.Stderr, "usage: go run . [--diagnostic-only] [--now RFC3339] bundle.json")
 		os.Exit(2)
 	}
+	callerClock := *nowFlag != ""
 	bundle, err := readBundle(flag.Arg(0))
-	if err != nil { emit(result{false, "AML_GO_INPUT_INVALID"}, 2); return }
+	if err != nil {
+		out, _ := decide(result{false, "AML_GO_INPUT_INVALID"}, *diagnostic, callerClock)
+		emit(out, 2)
+		return
+	}
 	now := time.Now().UTC()
-	if *nowFlag != "" {
+	if callerClock {
 		now, err = parseTime(*nowFlag)
-		if err != nil { emit(result{false, "AML_GO_NOW_INVALID"}, 2); return }
+		if err != nil {
+			out, _ := decide(result{false, "AML_GO_NOW_INVALID"}, *diagnostic, callerClock)
+			emit(out, 2)
+			return
+		}
 	}
 	valid, reason := verifyBundle(bundle, now)
-	code := 1
-	if valid { code = 0 }
-	emit(result{valid, reason}, code)
+	out, code := decide(result{valid, reason}, *diagnostic, callerClock)
+	emit(out, code)
 }
 
-func emit(r result, code int) {
+func emit(r report, code int) {
 	data, err := json.MarshalIndent(r, "", "  ")
 	if err != nil { panic(errors.New("unable to encode result")) }
 	fmt.Println(string(data))

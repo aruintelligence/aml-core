@@ -578,6 +578,11 @@ def load_json(filename):
                          parse_constant=lambda _: (_ for _ in ()).throw(ValueError("non_json_number")))
 
 
+AUTHZ_REASON = re.compile(r"AML_AUTHZ_[A-Z_]+")
+EXIT_NOT_AUTHORIZED = 3
+NOT_AN_AUTHORIZATION_DECISION = "NOT AN AUTHORIZATION DECISION"
+
+
 def decision_only(result):
     """Project an unsigned decision without copying untrusted report content."""
     names = {"valid", "threshold_met", "portable_met", "policy_met", "witness_met",
@@ -594,6 +599,15 @@ def decision_only(result):
         **{name: result[name] for name in checked},
         "requested_conditions_met": not unmet,
         "requested_conditions": {"checked": checked, "unmet": unmet},
+        # The complete decision; requested_conditions_met alone is not permission.
+        "authorized": result.get("authorized") is True and
+                      isinstance(result.get("authorization"), dict) and
+                      result["authorization"].get("authorized") is True,
+        "authorization_reasons": ([reason for reason in result["authorization"]["reasons"]
+                                   if isinstance(reason, str) and AUTHZ_REASON.fullmatch(reason)]
+                                  if isinstance(result.get("authorization"), dict) and
+                                  isinstance(result["authorization"].get("reasons"), list)
+                                  else ["AML_AUTHZ_EVALUATION_ERROR"]),
     }
     if "input_fingerprints" in result:
         source = result["input_fingerprints"]
@@ -630,6 +644,8 @@ def main():
     parser.add_argument("--challenge", help="Separately retained verifier challenge; requires --bundle")
     parser.add_argument("--expect-inputs", help="Held canonical SHA-256 pins for supplied inputs")
     parser.add_argument("--decision-only", action="store_true", help="Print a compact decision without supplied report contents")
+    parser.add_argument("--diagnostic-only", action="store_true",
+                        help="Exit 0 when requested conditions are met; output says NOT AN AUTHORIZATION DECISION")
     args = parser.parse_args()
     try:
         if bool(args.bundle) != bool(args.challenge):
@@ -657,8 +673,17 @@ def main():
         reason = "AML_SIGNED_QUORUM_INPUT_OR_USAGE_ERROR" if args.decision_only else str(error)
         print(json.dumps({"valid": False, "reason": reason}))
         return 1
+    if args.diagnostic_only:
+        output = {**output, "authorized": False, "diagnostic_only": True,
+                  "decision_use": NOT_AN_AUTHORIZATION_DECISION}
     print(json.dumps(output, indent=2))
-    return 0 if result["requested_conditions_met"] else 2
+    # Exit 0 only on the complete decision (`authorized`); requested
+    # conditions met without it exit 3. Mirrors `aml verify-signed-quorum`.
+    if args.diagnostic_only:
+        return 0 if result["requested_conditions_met"] is True else 2
+    if result.get("authorized") is True and result["authorization"].get("authorized") is True:
+        return 0
+    return EXIT_NOT_AUTHORIZED if result["requested_conditions_met"] is True else 2
 
 
 if __name__ == "__main__":

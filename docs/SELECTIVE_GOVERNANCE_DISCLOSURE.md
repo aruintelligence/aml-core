@@ -18,6 +18,8 @@ aml-governance-disclosure-verify disclosure.json \
   --expected-transcript-root <trusted-transcript-root>
 ```
 
+Exit `0` requires `authorized: true`: a valid disclosure whose Merkle root equals the pinned `--expected-merkle-root`. A valid disclosure without that pin exits `3`; an invalid one exits `2`. See [Command exit status and authorization](COMMAND_AUTHORIZATION.md) for the exit contract.
+
 Protocol:
 
 ```text

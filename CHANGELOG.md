@@ -4,6 +4,14 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 
 ## [Unreleased]
 
+### Breaking: verifier commands exit 0 only on an explicit authorization decision
+
+- A successful verification command no longer implies authorization from `valid` alone. Verifier and validator commands now exit `0` only when `authorized === true` and the `aml-authorization-decision/1` object agrees; a consistent but unauthorized result exits `3`. Other non-zero codes keep their meaning. Reports include `valid`, `authorized`, `authorization.reasons` and `remaining_trust_assumptions`.
+- Affected: `aml-governance-disclosure-verify`, `aml-governance-disclosure-signed-verify`, `aml-governance-transcript-verify`, `aml-governance-transcript-signature-verify`, `aml-release-profile validate|verify`, `aml verify-brand-authorization` (new `AML_TRUSTED_BRAND_KEY_SHA256`; caller time authorizes only within 1 s of the local clock), `aml verify-signed-quorum`, `independent/python/verify_signed_quorum.py`, `scripts/check-external-verifier-kit.mjs` (new `--expected-root-sha256`), `scripts/validate-witness-record.mjs`, `scripts/witness-record-gate.mjs` and `actions/witness-record`, `independent/python/verify_witness.py`, `independent/go` (`verify.sh` now preserves exit codes), and `independent/python/wire_runtime.py verify`.
+- New `--diagnostic-only` keeps exit `0` for a consistent result; its output reports `authorized: false` and `NOT AN AUTHORIZATION DECISION`. CI conformance runs, the external verifier kit workflow and the witness-record Action use it. The locked external verifier contract is unchanged.
+- The valid-field static check now follows aliases (variables, destructuring, subscripts, properties, helper returns, relative imports; Python via AST) and implicit or inverted exits. It no longer allowlists valid-only validator exits.
+- Exit table, migration guidance and remaining exceptions: [docs/COMMAND_AUTHORIZATION.md](docs/COMMAND_AUTHORIZATION.md).
+
 ### 2026-11-04 action-boundary pilot hardening
 
 - Prevented the local one-use grant pilot from silently recreating a missing spent-marker directory. New stores carry a version-2 state marker; existing unmarked stores require operator reconciliation and a fresh directory after grants expire.

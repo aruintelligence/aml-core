@@ -1,7 +1,7 @@
 {
  "schema": "aml-valid-field-decision-inventory/1",
  "rule": "`valid` is never, by itself, permission to execute. Authorization APIs expose an explicit decision (`authorized`, or a documented equivalent such as `verified`, `official`, `requested_conditions_met`, `claim_verified`).",
- "method": "Lexical enumeration by scripts/check-valid-field-decisions.mjs of every `.valid`, `?.valid`, [\"valid\"], .get(\"valid\") read and `{ valid } =` destructuring in shipped JS/MJS/CJS/HTML/Python, positive valid-only sinks under test/, and every exit-0 / HTTP-2xx decision sink in JS/Python/Go. It does not follow data flow across variables or modules; aliases such as `accepted = result[\"valid\"]` are classified by review (alias_of_valid).",
+ "method": "Enumeration by scripts/check-valid-field-decisions.mjs of every `.valid`, `?.valid`, [\"valid\"], .get(\"valid\") read and `{ valid } =` destructuring in shipped JS/MJS/CJS/HTML/Python, positive valid-only sinks under test/, and every exit-0 / HTTP-2xx decision sink in JS/Python/Go. Valid-derived aliases (variables, destructuring, helper return values, object properties, imported helpers; Python via its AST) are rewritten to reads before sinks are matched, and their uses are listed. Limits: no flow through arbitrary call arguments, containers, or dynamic property names; see docs/COMMAND_AUTHORIZATION.md.",
  "categories": {
   "valid_reads": {
    "deny-guard": "valid=false denies (throw/return/exit non-zero/skip); a true value only lets later checks run.",
@@ -9,13 +9,15 @@
    "signed-verdict-count": "a signer verdict counted toward a quorum; permission additionally requires a relying-party-held policy.",
    "report-only": "copied into an output, report, log or display; no action is gated on it.",
    "schema-check": "type or shape check of a verdict field; malformed input is rejected.",
-   "validator-exit": "exit status of a validator command whose documented meaning is format/integrity validity only; it executes nothing.",
+   "consistency-status": "selects only a non-authorization outcome: exit 3 (consistent, not authorized) versus failure, a diagnostic field, or a reviewed diagnostic exit.",
+   "diagnostic-exit": "read inside a reviewed --diagnostic-only branch whose output reports authorized:false and NOT AN AUTHORIZATION DECISION.",
    "assertion": "test or self-check assertion; not an execution path."
   },
   "decision_sinks": {
    "explicit-decision": "success status requires an explicit decision field other than `valid`.",
    "conjunct": "success status requires `valid` and an explicit decision field.",
-   "validator-exit": "exit status of a validator whose documented meaning is format/integrity validity only; it executes nothing."
+   "diagnostic-exit": "exit 0 in a reviewed --diagnostic-only branch (REVIEWED_DIAGNOSTIC_EXITS); output reports authorized:false and NOT AN AUTHORIZATION DECISION.",
+   "non-decision": "a zero/non-zero value that is not an authorization outcome (count, index, sort key); it gates nothing."
   }
  },
  "entries": [
@@ -35,52 +37,51 @@
   },
   {
    "file": "bin/aml-governance-disclosure-signed-verify.js",
-   "line": 32,
-   "code": "process.exitCode = result.valid ? 0 : 2;",
-   "category": "validator-exit",
-   "effect": "governance disclosure (signed) verify CLI: exit 0 = disclosure integrity (and signature) valid; executes nothing and does not establish signer trust."
+   "line": 46,
+   "code": "disclosure_valid: verification.valid === true,",
+   "category": "conjunct",
+   "effect": "condition disclosure_valid of the command decision; authorized also requires trusted_key and scope_pinned.",
+   "conjunct_with": "trusted_key, scope_pinned"
   },
   {
    "file": "bin/aml-governance-disclosure-verify.js",
-   "line": 24,
-   "code": "process.exitCode = result.valid ? 0 : 2;",
-   "category": "validator-exit",
-   "effect": "governance disclosure (signed) verify CLI: exit 0 = disclosure integrity (and signature) valid; executes nothing and does not establish signer trust."
+   "line": 36,
+   "code": "disclosure_valid: verification.valid === true,",
+   "category": "conjunct",
+   "effect": "condition disclosure_valid of the command decision; authorized also requires merkle_root_pinned.",
+   "conjunct_with": "merkle_root_pinned (caller-pinned --expected-merkle-root)"
   },
   {
    "file": "bin/aml-governance-transcript-signature-verify.js",
-   "line": 33,
-   "code": "if (!verification.valid) process.exitCode = 2;",
-   "category": "deny-guard",
-   "effect": "transcript verify CLI sets a failing exit code on an invalid transcript."
+   "line": 47,
+   "code": "transcript_valid: verification.valid === true,",
+   "category": "conjunct",
+   "effect": "condition transcript_valid; authorized also requires trusted_key and key_id_pinned.",
+   "conjunct_with": "trusted_key, key_id_pinned"
   },
   {
    "file": "bin/aml-governance-transcript-verify.js",
-   "line": 13,
-   "code": "if (!verification.valid) process.exitCode = 2;",
-   "category": "deny-guard",
-   "effect": "transcript verify CLI sets a failing exit code on an invalid transcript."
+   "line": 24,
+   "code": "transcript_valid: verification.valid === true, authenticated_source: false",
+   "category": "conjunct",
+   "effect": "condition transcript_valid; authenticated_source is always false, so the command never authorizes.",
+   "conjunct_with": "authenticated_source (always false)"
   },
   {
    "file": "bin/aml-release-profile.js",
    "line": 23,
-   "code": "process.exit(result.valid ? 0 : 1);",
-   "category": "validator-exit",
-   "effect": "release authorization profile validate/verify: exit 0 = profile well-formed (and matches the pinned SHA-256); it authorizes no release."
-  },
-  {
-   "file": "bin/aml-release-profile.js",
-   "line": 32,
-   "code": "process.exit(result.valid ? 0 : 1);",
-   "category": "validator-exit",
-   "effect": "release authorization profile validate/verify: exit 0 = profile well-formed (and matches the pinned SHA-256); it authorizes no release."
+   "code": "profile_valid: verification.valid === true, profile_fingerprint_pinned: pinned === true",
+   "category": "conjunct",
+   "effect": "condition profile_valid; authorized also requires profile_fingerprint_pinned (verify only; validate never authorizes).",
+   "conjunct_with": "profile_fingerprint_pinned"
   },
   {
    "file": "bin/aml.js",
-   "line": 444,
-   "code": "process.exit(result.valid ? 0 : 1);",
-   "category": "validator-exit",
-   "effect": "aml verify-brand-authorization: exit 0 = credential integrity, time and optional revocation only; documented as not official. Official decisions use aml-brand-verify / HTTP (valid AND official)."
+   "line": 482,
+   "code": "credential_valid: verification.valid === true,",
+   "category": "conjunct",
+   "effect": "verify-brand-authorization condition credential_valid; authorized also requires issuer and key pins, a revocation check and a trusted clock.",
+   "conjunct_with": "issuer_pinned, signing_key_pinned, revocation_checked, trusted_clock"
   },
   {
    "file": "compiler/meaningManifest.js",
@@ -494,10 +495,31 @@
   },
   {
    "file": "independent/python/wire_runtime.py",
-   "line": 318,
-   "code": "accepted = result[\"valid\"]",
-   "category": "validator-exit",
-   "effect": "wire_runtime verify CLI exit status (integrity/structure of wire artifacts); see decision sink entry."
+   "line": 322,
+   "code": "consistent = result.get(\"valid\") is True",
+   "category": "consistency-status",
+   "effect": "wire runtime verify: consistency selects exit 3 (consistent, never authorized: no trust roots) vs 1, or the diagnostic outcome and reason list."
+  },
+  {
+   "file": "independent/python/wire_runtime.py",
+   "line": 326,
+   "code": "[\"AML_AUTHZ_NO_TRUST_ROOTS\"] + ([] if consistent else [\"AML_AUTHZ_ARTIFACT_NOT_VALID\"]),",
+   "category": "consistency-status",
+   "effect": "wire runtime verify: consistency selects exit 3 (consistent, never authorized: no trust roots) vs 1, or the diagnostic outcome and reason list."
+  },
+  {
+   "file": "independent/python/wire_runtime.py",
+   "line": 333,
+   "code": "return 0 if consistent else 1",
+   "category": "diagnostic-exit",
+   "effect": "wire runtime verify --diagnostic-only exit 0 for a consistent artifact; output authorized:false, NOT AN AUTHORIZATION DECISION."
+  },
+  {
+   "file": "independent/python/wire_runtime.py",
+   "line": 334,
+   "code": "return 3 if consistent else 1",
+   "category": "consistency-status",
+   "effect": "wire runtime verify: consistency selects exit 3 (consistent, never authorized: no trust roots) vs 1, or the diagnostic outcome and reason list."
   },
   {
    "file": "protocol/governanceDisclosure.js",
@@ -638,6 +660,36 @@
    "code": "if (!credentialVerification.valid) {",
    "category": "deny-guard",
    "effect": "refuses on an invalid registry/credential/revocation result; official/trust checks follow."
+  },
+  {
+   "file": "runtime/commandAuthorization.js",
+   "line": 69,
+   "code": "const consistent = result?.valid === true;",
+   "category": "consistency-status",
+   "effect": "consistency selects exit 3 (consistent, not authorized) vs the command failure code."
+  },
+  {
+   "file": "runtime/commandAuthorization.js",
+   "line": 77,
+   "code": "exitCode: consistent ? 0 : invalidCode",
+   "category": "diagnostic-exit",
+   "effect": "shared --diagnostic-only outcome: exit 0 for a consistent result; output authorized:false, NOT AN AUTHORIZATION DECISION."
+  },
+  {
+   "file": "runtime/commandAuthorization.js",
+   "line": 80,
+   "code": "const authorized = result?.authorized === true && result?.authorization?.authorized === true && consistent;",
+   "category": "conjunct",
+   "effect": "decision-mode exit 0 requires authorized === true and authorization.authorized === true and valid.",
+   "conjunct_with": "result.authorized === true && result.authorization.authorized === true"
+  },
+  {
+   "file": "runtime/commandAuthorization.js",
+   "line": 82,
+   "code": "exitCode: authorized ? AML_EXIT_AUTHORIZED : consistent ? AML_EXIT_NOT_AUTHORIZED : invalidCode };",
+   "category": "conjunct",
+   "effect": "decision-mode exit 0 requires authorized === true and authorization.authorized === true and valid.",
+   "conjunct_with": "result.authorized === true && result.authorization.authorized === true"
   },
   {
    "file": "runtime/federatedExchange.js",
@@ -788,126 +840,127 @@
   },
   {
    "file": "scripts/check-external-verifier-kit.mjs",
-   "line": 148,
-   "code": "process.exit(result.valid ? 0 : 1);",
-   "category": "validator-exit",
-   "effect": "external verifier kit self-check exit status."
+   "line": 162,
+   "code": "kit_valid: verification.valid === true,",
+   "category": "conjunct",
+   "effect": "condition kit_valid; authorized also requires root_pinned (--expected-root-sha256).",
+   "conjunct_with": "root_pinned"
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 30,
+   "line": 35,
    "code": "assert.equal(report.valid ?? report.accepted, expected, JSON.stringify(report));",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 54,
+   "line": 64,
    "code": "assert.equal(validateWireEnvelope(envelope, { now: \"2030-01-01T12:00:00Z\" }).valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 57,
+   "line": 68,
    "code": "assert.equal(validateWireEnvelope(badEnvelope).valid, false);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 90,
+   "line": 101,
    "code": "assert.deepEqual({ valid: js.valid, reason: js.reason },",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 91,
+   "line": 102,
    "code": "{ valid: python.valid, reason: python.reason }, name);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 93,
+   "line": 104,
    "code": "envelopeResults.push({ id: name, valid: js.valid, reason: js.reason, runtimes_agree: true });",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 100,
+   "line": 111,
    "code": "assert.equal(verifyPolicyPassport(passport, { now: \"2030-01-01T12:00:00Z\" }).valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 103,
+   "line": 114,
    "code": "assert.equal(verifyPolicyPassport(badPassport, { now: \"2030-01-01T12:00:00Z\" }).valid, false);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 108,
+   "line": 119,
    "code": "assert.equal(verifyContentAddressedBundle(bundle).valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 112,
+   "line": 123,
    "code": "assert.equal(verifyContentAddressedBundle(badBundle).valid, false);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 115,
+   "line": 126,
    "code": "assert.equal(verifyContentAddressedBundle(fractionalBundle).valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 119,
+   "line": 130,
    "code": "assert.equal(verifyDisclosureProof(disclosure).valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 123,
+   "line": 134,
    "code": "assert.equal(verifyDisclosureProof(badDisclosure).valid, false);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 126,
+   "line": 137,
    "code": "assert.equal(verifyDisclosureProof(mixedCaseDisclosure).valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 132,
+   "line": 143,
    "code": "assert.equal(verifyCausalExecutionGraph(graph).valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 136,
+   "line": 147,
    "code": "assert.equal(verifyCausalExecutionGraph(badGraph).valid, false);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-python-wire-runtime.mjs",
-   "line": 140,
+   "line": 151,
    "code": "assert.equal(verifyCausalExecutionGraph(orphanGraph).valid, false);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
@@ -984,140 +1037,140 @@
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 90,
+   "line": 94,
    "code": "if (js.valid) assert.deepEqual(py.summary, js.quorum.summary, name);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 91,
+   "line": 95,
    "code": "checks.push({ case: name, valid: py.valid, threshold_met: py.threshold_met,",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 398,
+   "line": 404,
    "code": "assert.equal(witness.valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 404,
+   "line": 410,
    "code": "assert.equal((await verifyWitnessBundle(secondBundle, { expectedChallenge: challenge })).valid,",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 411,
+   "line": 417,
    "code": "assert.equal(JSON.parse(secondPython.stdout).valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 445,
+   "line": 452,
    "code": "assert.equal(timeAliasDecision.valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 471,
+   "line": 478,
    "code": "assert.equal(decision.valid, true, name);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 495,
+   "line": 502,
    "code": "assert.equal(aliasedDecision.valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 517,
+   "line": 524,
    "code": "assert.equal(futureDecision.valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 630,
+   "line": 637,
    "code": "negative.valid = false;",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 672,
+   "line": 679,
    "code": "assert.equal(heldVsSaved.valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 680,
+   "line": 687,
    "code": "assert.equal(vetoBelowSaved.valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 807,
+   "line": 814,
    "code": "assert.equal((await verifySignedVerificationQuorum(fractionalQuorum)).valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 812,
+   "line": 819,
    "code": "assert.equal(fractionalPortable.valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 840,
+   "line": 847,
    "code": "assert.equal(gated.valid, true, name);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 857,
+   "line": 864,
    "code": "assert.equal(JSON.parse(malformed.stdout).valid, false);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 858,
+   "line": 865,
    "code": "assert.equal((await verifySignedVerificationQuorum(malformedSignature)).valid, false);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 889,
+   "line": 897,
    "code": "assert.equal(JSON.parse(heldRun.stdout).valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 892,
+   "line": 907,
    "code": "})).valid, true);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/check-signed-quorum-python.mjs",
-   "line": 940,
+   "line": 955,
    "code": "assert.equal(JSON.parse(brokenSignatureRun.stdout).valid, false);",
    "category": "assertion",
    "effect": "self-check / conformance comparison; not an execution path."
@@ -1145,10 +1198,11 @@
   },
   {
    "file": "scripts/validate-witness-record.mjs",
-   "line": 142,
-   "code": "process.exit(result.valid ? 0 : 1);",
-   "category": "validator-exit",
-   "effect": "witness record schema validator exit status."
+   "line": 22,
+   "code": "record_valid: verification.valid === true, human_review_completed: false",
+   "category": "conjunct",
+   "effect": "condition record_valid; human_review_completed is always false, so the command never authorizes.",
+   "conjunct_with": "human_review_completed (always false)"
   },
   {
    "file": "scripts/verify-verifier-conformance-result.mjs",
@@ -1158,39 +1212,46 @@
    "effect": "self-check / conformance comparison; not an execution path."
   },
   {
-   "file": "scripts/witness-record-gate.mjs",
-   "line": 27,
-   "code": "`valid=${result.valid ? 'true' : 'false'}`,",
-   "category": "report-only",
-   "effect": "writes validation outputs for a workflow step."
+   "file": "scripts/verify-verifier-conformance-result.mjs",
+   "line": 58,
+   "code": "? observedValid === expected.expected_valid && (expected.expected_valid ? exitCode === 0 : Number.isInteger(exitCode) && exitCode !== 0)",
+   "category": "assertion",
+   "effect": "self-check / conformance comparison; not an execution path."
   },
   {
    "file": "scripts/witness-record-gate.mjs",
-   "line": 28,
-   "code": "`witness-id=${result.valid ? result.witness_id : ''}`,",
-   "category": "report-only",
-   "effect": "writes validation outputs for a workflow step."
+   "line": 32,
+   "code": "const consistent = result.valid === true;",
+   "category": "consistency-status",
+   "effect": "witness record gate: consistency selects exit 3 vs 1 (never authorized: human review required) and the workflow outputs."
   },
   {
    "file": "scripts/witness-record-gate.mjs",
-   "line": 29,
-   "code": "`result=${result.valid ? result.result : ''}`,",
+   "line": 34,
+   "code": "`valid=${consistent ? 'true' : 'false'}`,",
    "category": "report-only",
-   "effect": "writes validation outputs for a workflow step."
+   "effect": "writes diagnostic workflow outputs (authorized=false, NOT AN AUTHORIZATION DECISION)."
   },
   {
    "file": "scripts/witness-record-gate.mjs",
-   "line": 30,
-   "code": "`source-url=${result.valid ? result.source_url : ''}`",
+   "line": 37,
+   "code": "`witness-id=${consistent ? result.witness_id : ''}`,",
    "category": "report-only",
-   "effect": "writes validation outputs for a workflow step."
+   "effect": "writes diagnostic workflow outputs (authorized=false, NOT AN AUTHORIZATION DECISION)."
   },
   {
    "file": "scripts/witness-record-gate.mjs",
-   "line": 35,
-   "code": "process.exit(result.valid ? 0 : 1);",
-   "category": "validator-exit",
-   "effect": "witness record schema gate exit status."
+   "line": 38,
+   "code": "`result=${consistent ? result.result : ''}`,",
+   "category": "report-only",
+   "effect": "writes diagnostic workflow outputs (authorized=false, NOT AN AUTHORIZATION DECISION)."
+  },
+  {
+   "file": "scripts/witness-record-gate.mjs",
+   "line": 39,
+   "code": "`source-url=${consistent ? result.source_url : ''}`",
+   "category": "report-only",
+   "effect": "writes diagnostic workflow outputs (authorized=false, NOT AN AUTHORIZATION DECISION)."
   },
   {
    "file": "server/httpServer.js",
@@ -1265,7 +1326,8 @@
     "healthy"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on healthy (exit)."
+   "effect": "success status gated on healthy (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml-github-attestation.js",
@@ -1276,29 +1338,19 @@
     "verified"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on verified (exit)."
+   "effect": "success status gated on verified (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
-   "file": "bin/aml-governance-disclosure-signed-verify.js",
-   "line": 32,
-   "code": "process.exitCode = result.valid ? 0 : 2;",
-   "kind": "exit",
+   "file": "bin/aml-governance-witness-quorum.js",
+   "line": 17,
+   "code": "if (!result.quorum_met) process.exitCode = 2;",
+   "kind": "exit-implicit",
    "gate_fields": [
-    "valid"
+    "quorum_met"
    ],
-   "category": "validator-exit",
-   "effect": "governance disclosure (signed) verify CLI: exit 0 = disclosure integrity (and signature) valid; executes nothing and does not establish signer trust."
-  },
-  {
-   "file": "bin/aml-governance-disclosure-verify.js",
-   "line": 24,
-   "code": "process.exitCode = result.valid ? 0 : 2;",
-   "kind": "exit",
-   "gate_fields": [
-    "valid"
-   ],
-   "category": "validator-exit",
-   "effect": "governance disclosure (signed) verify CLI: exit 0 = disclosure integrity (and signature) valid; executes nothing and does not establish signer trust."
+   "category": "explicit-decision",
+   "effect": "success status gated on quorum_met (exit-implicit)."
   },
   {
    "file": "bin/aml-meaning.js",
@@ -1309,7 +1361,8 @@
     "verified"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on verified (exit)."
+   "effect": "success status gated on verified (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml-meaning.js",
@@ -1320,7 +1373,8 @@
     "verified"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on verified (exit)."
+   "effect": "success status gated on verified (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml-meaning.js",
@@ -1331,29 +1385,8 @@
     "equivalent"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on equivalent (exit)."
-  },
-  {
-   "file": "bin/aml-release-profile.js",
-   "line": 23,
-   "code": "process.exit(result.valid ? 0 : 1);",
-   "kind": "exit",
-   "gate_fields": [
-    "valid"
-   ],
-   "category": "validator-exit",
-   "effect": "release authorization profile validate/verify: exit 0 = profile well-formed (and matches the pinned SHA-256); it authorizes no release."
-  },
-  {
-   "file": "bin/aml-release-profile.js",
-   "line": 32,
-   "code": "process.exit(result.valid ? 0 : 1);",
-   "kind": "exit",
-   "gate_fields": [
-    "valid"
-   ],
-   "category": "validator-exit",
-   "effect": "release authorization profile validate/verify: exit 0 = profile well-formed (and matches the pinned SHA-256); it authorizes no release."
+   "effect": "success status gated on equivalent (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml-release-proof.js",
@@ -1364,7 +1397,8 @@
     "verified"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on verified (exit)."
+   "effect": "success status gated on verified (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml-release-proof.js",
@@ -1375,7 +1409,8 @@
     "verified"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on verified (exit)."
+   "effect": "success status gated on verified (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml-release-proof.js",
@@ -1386,7 +1421,8 @@
     "verified"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on verified (exit)."
+   "effect": "success status gated on verified (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml-release-quorum.js",
@@ -1397,7 +1433,8 @@
     "verified"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on verified (exit)."
+   "effect": "success status gated on verified (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml-runtime-disagreement.js",
@@ -1408,7 +1445,8 @@
     "equivalent"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on equivalent (exit)."
+   "effect": "success status gated on equivalent (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml-support-bundle.js",
@@ -1419,128 +1457,134 @@
     "healthy"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on healthy (exit)."
+   "effect": "success status gated on healthy (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml.js",
-   "line": 298,
+   "line": 316,
    "code": "process.exit(result.verified ? 0 : 1);",
    "kind": "exit",
    "gate_fields": [
     "verified"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on verified (exit)."
+   "effect": "success status gated on verified (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml.js",
-   "line": 311,
+   "line": 329,
    "code": "process.exit(result.authorized === true ? 0 : 2);",
    "kind": "exit",
    "gate_fields": [
     "authorized"
    ],
    "category": "explicit-decision",
-   "effect": "aml verify-witness exit 0 only when authorized."
+   "effect": "aml verify-witness / verify-signed-quorum exit 0 only when authorized."
   },
   {
    "file": "bin/aml.js",
-   "line": 374,
-   "code": "process.exit(result.requested_conditions_met ? 0 : 2);",
+   "line": 404,
+   "code": "process.exit(diagnosticOnly ? (result.requested_conditions_met === true ? 0 : 2)",
    "kind": "exit",
    "gate_fields": [
     "requested_conditions_met"
    ],
    "category": "explicit-decision",
-   "effect": "aml verify-signed-quorum exit 0 when every requested condition is met (unchanged for compatibility; `authorized` reported in JSON)."
+   "effect": "success status gated on requested_conditions_met (exit)."
   },
   {
    "file": "bin/aml.js",
-   "line": 379,
+   "line": 411,
    "code": "process.exit(result.verified ? 0 : 1);",
    "kind": "exit",
    "gate_fields": [
     "verified"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on verified (exit)."
+   "effect": "success status gated on verified (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml.js",
-   "line": 391,
+   "line": 423,
    "code": "process.exit(result.verified ? 0 : 1);",
    "kind": "exit",
    "gate_fields": [
     "verified"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on verified (exit)."
+   "effect": "success status gated on verified (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml.js",
-   "line": 422,
+   "line": 454,
    "code": "process.exit(result.verified ? 0 : 1);",
    "kind": "exit",
    "gate_fields": [
     "verified"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on verified (exit)."
+   "effect": "success status gated on verified (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml.js",
-   "line": 444,
-   "code": "process.exit(result.valid ? 0 : 1);",
-   "kind": "exit",
-   "gate_fields": [
-    "valid"
-   ],
-   "category": "validator-exit",
-   "effect": "aml verify-brand-authorization: exit 0 = credential integrity, time and optional revocation only; documented as not official. Official decisions use aml-brand-verify / HTTP (valid AND official)."
-  },
-  {
-   "file": "bin/aml.js",
-   "line": 449,
+   "line": 496,
    "code": "process.exit(result.verified ? 0 : 1);",
    "kind": "exit",
    "gate_fields": [
     "verified"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on verified (exit)."
+   "effect": "success status gated on verified (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml.js",
-   "line": 494,
+   "line": 533,
+   "code": "process.exit(errors.length > 0 ? 1 : 0);",
+   "kind": "exit-inverted",
+   "gate_fields": [],
+   "category": "explicit-decision",
+   "effect": "success status gated on a non-valid expression (exit-inverted)."
+  },
+  {
+   "file": "bin/aml.js",
+   "line": 541,
    "code": "process.exit(result.verified ? 0 : 1);",
    "kind": "exit",
    "gate_fields": [
     "verified"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on verified (exit)."
+   "effect": "success status gated on verified (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "bin/aml.js",
-   "line": 507,
+   "line": 554,
    "code": "process.exit(result.verified ? 0 : 1);",
    "kind": "exit",
    "gate_fields": [
     "verified"
    ],
    "category": "explicit-decision",
-   "effect": "success status gated on verified (exit)."
+   "effect": "success status gated on verified (exit).",
+   "authorization_semantics": "UNRESOLVED under the governing invariant: verification command without a complete `authorized` decision (gates on its own explicit field, not valid)."
   },
   {
    "file": "independent/go/main.go",
-   "line": 235,
-   "code": "if valid { code = 0 }",
-   "kind": "go-exit",
+   "line": 72,
+   "code": "return out, 0",
+   "kind": "go-return-zero",
    "gate_fields": [
     "valid"
    ],
-   "category": "validator-exit",
-   "effect": "Go witness conformance verifier exit = contract validity; no retained challenge support, caller --now; not an authorization decision."
+   "category": "diagnostic-exit",
+   "effect": "exit 0 only under --diagnostic-only; output reports authorized:false and NOT AN AUTHORIZATION DECISION."
   },
   {
    "file": "independent/python/evidence_drill.py",
@@ -1644,37 +1688,59 @@
   },
   {
    "file": "independent/python/verify_signed_quorum.py",
-   "line": 661,
-   "code": "return 0 if result[\"requested_conditions_met\"] else 2",
+   "line": 683,
+   "code": "return 0 if result[\"requested_conditions_met\"] is True else 2",
    "kind": "py-exit",
    "gate_fields": [
     "requested_conditions_met"
    ],
    "category": "explicit-decision",
-   "effect": "Python signed quorum verifier exit 0 when requested conditions are met (mirrors CLI; `authorized` reported)."
+   "effect": "success status gated on requested_conditions_met (py-exit)."
   },
   {
    "file": "independent/python/verify_witness.py",
-   "line": 352,
-   "code": "return 0 if valid else 1",
+   "line": 416,
+   "code": "return 0 if valid is True else 1",
    "kind": "py-exit",
    "gate_fields": [
     "valid"
    ],
-   "category": "validator-exit",
-   "effect": "Python witness conformance verifier exit = contract validity with optional challenge and caller --now; not an authorization decision (no `authorized`); conformance vectors require caller time."
+   "category": "diagnostic-exit",
+   "effect": "exit 0 only under --diagnostic-only; output reports authorized:false and NOT AN AUTHORIZATION DECISION."
   },
   {
    "file": "independent/python/wire_runtime.py",
-   "line": 322,
+   "line": 333,
+   "code": "return 0 if consistent else 1",
+   "kind": "py-exit",
+   "gate_fields": [
+    "valid"
+   ],
+   "category": "diagnostic-exit",
+   "effect": "exit 0 only under --diagnostic-only; output reports authorized:false and NOT AN AUTHORIZATION DECISION."
+  },
+  {
+   "file": "independent/python/wire_runtime.py",
+   "line": 339,
    "code": "return 0 if accepted else 1",
    "kind": "py-exit",
    "gate_fields": [
     "accepted"
    ],
-   "category": "validator-exit",
-   "effect": "wire runtime verify CLI exit (accepted = result[\"valid\"] for verify kinds: structure/integrity of wire artifacts); negotiate uses accepted.",
-   "alias_of_valid": true
+   "category": "explicit-decision",
+   "effect": "success status gated on accepted (py-exit)."
+  },
+  {
+   "file": "pilots/action-boundary/file-grant-crash-worker.mjs",
+   "line": 7,
+   "code": "if (!await store.consume({ approval: JSON.parse(serializedGrant), proposal_sha256: digest })) {",
+   "kind": "exit-implicit",
+   "gate_fields": [
+    "consume",
+    "parse"
+   ],
+   "category": "explicit-decision",
+   "effect": "success status gated on consume, parse (exit-implicit)."
   },
   {
    "file": "pilots/action-boundary/verify_authority_checkpoint.py",
@@ -1688,15 +1754,147 @@
    "effect": "success status gated on status (py-exit)."
   },
   {
-   "file": "scripts/check-external-verifier-kit.mjs",
-   "line": 148,
-   "code": "process.exit(result.valid ? 0 : 1);",
-   "kind": "exit",
+   "file": "pilots/enterprise-30min/run.mjs",
+   "line": 79,
+   "code": "if (!report.passed) process.exitCode = 1;",
+   "kind": "exit-implicit",
+   "gate_fields": [
+    "passed"
+   ],
+   "category": "explicit-decision",
+   "effect": "success status gated on passed (exit-implicit)."
+  },
+  {
+   "file": "pilots/enterprise-http-gate/adversarial.mjs",
+   "line": 212,
+   "code": "if (!passed) process.exitCode = 1;",
+   "kind": "exit-implicit",
+   "gate_fields": [
+    "passed"
+   ],
+   "category": "explicit-decision",
+   "effect": "success status gated on passed (exit-implicit)."
+  },
+  {
+   "file": "runtime/commandAuthorization.js",
+   "line": 77,
+   "code": "exitCode: consistent ? 0 : invalidCode",
+   "kind": "exit-code-value",
    "gate_fields": [
     "valid"
    ],
-   "category": "validator-exit",
-   "effect": "external verifier kit self-check exit status."
+   "category": "diagnostic-exit",
+   "effect": "exit 0 only under --diagnostic-only; output reports authorized:false and NOT AN AUTHORIZATION DECISION."
+  },
+  {
+   "file": "scripts/check-codeql-extraction.mjs",
+   "line": 79,
+   "code": "if (!result.extraction_complete) process.exitCode = 1;",
+   "kind": "exit-implicit",
+   "gate_fields": [
+    "extraction_complete"
+   ],
+   "category": "explicit-decision",
+   "effect": "success status gated on extraction_complete (exit-implicit)."
+  },
+  {
+   "file": "scripts/check-codeql-sarif.mjs",
+   "line": 232,
+   "code": "if (!report.analysis_quality_valid) process.exitCode = 1;",
+   "kind": "exit-implicit",
+   "gate_fields": [
+    "analysis_quality_valid"
+   ],
+   "category": "explicit-decision",
+   "effect": "success status gated on analysis_quality_valid (exit-implicit)."
+  },
+  {
+   "file": "scripts/check-evidence-archive-python.mjs",
+   "line": 51,
+   "code": "if (report.verified !== expected || result.status !== (expected ? 0 : 1) || (reason && report.reason !== reason)) {",
+   "kind": "zero-ternary",
+   "gate_fields": [
+    "expected"
+   ],
+   "category": "non-decision",
+   "effect": "expected exit status in a self-check assertion; gates nothing."
+  },
+  {
+   "file": "scripts/check-evidence-capsule-python.mjs",
+   "line": 93,
+   "code": "if (report.verified !== expected || result.status !== (expected ? 0 : 1) ||",
+   "kind": "zero-ternary",
+   "gate_fields": [
+    "expected"
+   ],
+   "category": "non-decision",
+   "effect": "expected exit status in a self-check assertion; gates nothing."
+  },
+  {
+   "file": "scripts/check-evidence-drill-python.mjs",
+   "line": 41,
+   "code": "javascript.health !== health || result.status !== (javascript.ready ? 0 : 1)) {",
+   "kind": "zero-ternary",
+   "gate_fields": [
+    "ready"
+   ],
+   "category": "non-decision",
+   "effect": "expected exit status in a self-check assertion; gates nothing."
+  },
+  {
+   "file": "scripts/check-evidence-migration-python.mjs",
+   "line": 37,
+   "code": "if (report.verified !== expected || result.status !== (expected ? 0 : 1) || (reason && report.reason !== reason)) {",
+   "kind": "zero-ternary",
+   "gate_fields": [
+    "expected"
+   ],
+   "category": "non-decision",
+   "effect": "expected exit status in a self-check assertion; gates nothing."
+  },
+  {
+   "file": "scripts/check-evidence-placement-python.mjs",
+   "line": 29,
+   "code": "assert.equal(result.status, js.ready ? 0 : 1, `${name}: ${result.stdout} ${result.stderr}`);",
+   "kind": "zero-ternary",
+   "gate_fields": [
+    "ready"
+   ],
+   "category": "non-decision",
+   "effect": "expected exit status in a self-check assertion; gates nothing."
+  },
+  {
+   "file": "scripts/check-evidence-repair-python.mjs",
+   "line": 29,
+   "code": "assert.equal(result.status, expected ? 0 : 1, `${name}: ${result.stdout} ${result.stderr}`);",
+   "kind": "zero-ternary",
+   "gate_fields": [
+    "expected"
+   ],
+   "category": "non-decision",
+   "effect": "expected exit status in a self-check assertion; gates nothing."
+  },
+  {
+   "file": "scripts/check-evidence-repair-record-python.mjs",
+   "line": 17,
+   "code": "assert.equal(result.status, success ? 0 : 1, `${result.stdout} ${result.stderr}`);",
+   "kind": "zero-ternary",
+   "gate_fields": [
+    "success"
+   ],
+   "category": "non-decision",
+   "effect": "expected exit status in a self-check assertion; gates nothing."
+  },
+  {
+   "file": "scripts/check-evidence-shards-python.mjs",
+   "line": 36,
+   "code": "if (report.recovered !== expected || result.status !== (expected ? 0 : 1) ||",
+   "kind": "zero-ternary",
+   "gate_fields": [
+    "expected"
+   ],
+   "category": "non-decision",
+   "effect": "expected exit status in a self-check assertion; gates nothing."
   },
   {
    "file": "scripts/check-npm-identity.mjs",
@@ -1730,6 +1928,59 @@
    ],
    "category": "explicit-decision",
    "effect": "success status gated on softUnavailable (exit)."
+  },
+  {
+   "file": "scripts/check-valid-field-decisions.mjs",
+   "line": 666,
+   "code": "process.exitCode = failures.length ? 1 : 0;",
+   "kind": "exit-inverted",
+   "gate_fields": [],
+   "category": "explicit-decision",
+   "effect": "success status gated on a non-valid expression (exit-inverted)."
+  },
+  {
+   "file": "scripts/evidence-drill-html.mjs",
+   "line": 20,
+   "code": "if (!report.ready) process.exitCode = 1;",
+   "kind": "exit-implicit",
+   "gate_fields": [
+    "ready"
+   ],
+   "category": "explicit-decision",
+   "effect": "success status gated on ready (exit-implicit)."
+  },
+  {
+   "file": "scripts/evidence-drill.mjs",
+   "line": 20,
+   "code": "if (!report.ready) process.exitCode = 1;",
+   "kind": "exit-implicit",
+   "gate_fields": [
+    "ready"
+   ],
+   "category": "explicit-decision",
+   "effect": "success status gated on ready (exit-implicit)."
+  },
+  {
+   "file": "scripts/evidence-placement.mjs",
+   "line": 16,
+   "code": "if (!report.ready) process.exitCode = 1;",
+   "kind": "exit-implicit",
+   "gate_fields": [
+    "ready"
+   ],
+   "category": "explicit-decision",
+   "effect": "success status gated on ready (exit-implicit)."
+  },
+  {
+   "file": "scripts/evidence-repair-record.mjs",
+   "line": 17,
+   "code": "if (!result.verified) process.exitCode = 1;",
+   "kind": "exit-implicit",
+   "gate_fields": [
+    "verified"
+   ],
+   "category": "explicit-decision",
+   "effect": "success status gated on verified (exit-implicit)."
   },
   {
    "file": "scripts/meaning-gate.js",
@@ -1787,15 +2038,26 @@
    "effect": "success status gated on verified (exit)."
   },
   {
-   "file": "scripts/validate-witness-record.mjs",
-   "line": 142,
-   "code": "process.exit(result.valid ? 0 : 1);",
-   "kind": "exit",
+   "file": "scripts/summarize-codeql-status.mjs",
+   "line": 32,
+   "code": "if (!summary.analysis_quality_valid) process.exitCode = 1;",
+   "kind": "exit-implicit",
    "gate_fields": [
-    "valid"
+    "analysis_quality_valid"
    ],
-   "category": "validator-exit",
-   "effect": "witness record schema validator exit status."
+   "category": "explicit-decision",
+   "effect": "success status gated on analysis_quality_valid (exit-implicit)."
+  },
+  {
+   "file": "scripts/verify-action-studio-bundle.mjs",
+   "line": 13,
+   "code": "if (!result.consistent) process.exitCode = 1;",
+   "kind": "exit-implicit",
+   "gate_fields": [
+    "consistent"
+   ],
+   "category": "explicit-decision",
+   "effect": "success status gated on consistent (exit-implicit)."
   },
   {
    "file": "scripts/verify-verifier-conformance-result.mjs",
@@ -1807,17 +2069,6 @@
    ],
    "category": "explicit-decision",
    "effect": "success status gated on verified (exit)."
-  },
-  {
-   "file": "scripts/witness-record-gate.mjs",
-   "line": 35,
-   "code": "process.exit(result.valid ? 0 : 1);",
-   "kind": "exit",
-   "gate_fields": [
-    "valid"
-   ],
-   "category": "validator-exit",
-   "effect": "witness record schema gate exit status."
   },
   {
    "file": "server/httpServer.js",

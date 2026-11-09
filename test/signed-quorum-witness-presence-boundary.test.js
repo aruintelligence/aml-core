@@ -58,8 +58,12 @@ test('omitting or substituting the witness cannot satisfy a relying party that r
   const q = write('quorum.json', quorum), b = write('bundle.json', bundle), c = write('held.json', held);
   assert.equal(cli(q, '--challenge', c).status, 1, 'CLI refuses a challenge without a bundle');
   assert.equal(cli(q, '--bundle', b, '--challenge', c).status, 2, 'CLI rejects a substituted witness');
-  assert.equal(cli(q, '--bundle', b, '--challenge', write('own.json', bundle.challenge)).status, 0,
-    'positive control: the submitter challenge passes only if the relying party itself supplies it');
+  const own = cli(q, '--bundle', b, '--challenge', write('own.json', bundle.challenge));
+  // Requested conditions are met, but without a relying-party-held policy the
+  // complete decision is false: exit 3 (consistent, not authorized), never 0.
+  assert.equal(own.status, 3, 'the submitter challenge meets the requested conditions only');
+  assert.equal(JSON.parse(own.stdout).requested_conditions_met, true);
+  assert.equal(JSON.parse(own.stdout).authorized, false);
 });
 
 test('without retained inputs the decision states that no witness condition was checked', async () => {

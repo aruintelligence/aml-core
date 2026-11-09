@@ -121,8 +121,12 @@ still fail this additional condition with exit `2`. Invalid expectations or
 a pin for an absent input produce usage exit `1`. The Python verifier uses its
 documented narrower portable JSON subset.
 
-Exit `0` requires internal validity, the saved threshold, and every held
-condition supplied. Exit `2` means a verification condition failed; exit `1`
+Exit `0` requires the complete authorization decision (`authorized: true`):
+internal validity, the saved threshold, every held condition supplied, and a
+held policy. Exit `3` means the requested conditions were met without
+authorization (for example no `--policy`); `--diagnostic-only` exits `0` in
+that case and labels the output `NOT AN AUTHORIZATION DECISION`. Exit `2`
+means a verification condition failed; exit `1`
 means unreadable JSON, missing paired inputs, or invalid held configuration. Run
 `node scripts/check-signed-quorum-python.mjs` to compare its results against
 JavaScript on signed fixtures, including dissent, tampering, key metadata

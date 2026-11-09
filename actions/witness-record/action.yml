@@ -1,13 +1,19 @@
 name: AML Witness Record Validator
-description: Validate an external aml-witness-record/1 before submitting it to the public witness registry.
+description: Diagnose an external aml-witness-record/1 before submitting it to the public witness registry. NOT AN AUTHORIZATION DECISION; registry acceptance requires human review.
 inputs:
   record-file:
     description: Path to a JSON witness record in the caller repository.
     required: true
 outputs:
   valid:
-    description: true only when the record passes the machine-checkable acceptance profile.
+    description: true only when the record passes the machine-checkable acceptance profile. Consistency only; never permission.
     value: ${{ steps.validate.outputs.valid }}
+  authorized:
+    description: Always false. This action cannot establish registry acceptance, which requires human review.
+    value: ${{ steps.validate.outputs.authorized }}
+  decision-use:
+    description: Always "NOT AN AUTHORIZATION DECISION".
+    value: ${{ steps.validate.outputs.decision-use }}
   witness-id:
     description: Validated witness identifier.
     value: ${{ steps.validate.outputs.witness-id }}
@@ -22,4 +28,4 @@ runs:
   steps:
     - id: validate
       shell: bash
-      run: node "$GITHUB_ACTION_PATH/../../scripts/witness-record-gate.mjs" "${{ inputs.record-file }}"
+      run: node "$GITHUB_ACTION_PATH/../../scripts/witness-record-gate.mjs" --diagnostic-only "${{ inputs.record-file }}"

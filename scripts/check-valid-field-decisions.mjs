@@ -10,11 +10,23 @@
 // Unclassified reads, stale inventory lines, and positive decision sinks
 // (process exit 0, HTTP 2xx, `if (x.valid) {`, decision-named assignments)
 // controlled by `valid` alone fail the check. Reads under test/ are scanned for
-// those positive sinks as well. The check is lexical, not a proof of data
-// flow; see the inventory `method` field for its limits.
+// those positive sinks as well.
+//
+// Before reads and sinks are matched, an alias pass rewrites names derived
+// from `valid` to a synthetic `.valid` read: variables (`const ok = r.valid`),
+// destructuring (`{ valid }`, `{ valid: x }`), object properties and
+// Object.assign, subscripts (`r['valid']`), function and arrow-function
+// returns, and functions imported from relative modules; derivation is
+// transitive. Python uses an AST pass (scripts/valid_field_dataflow.py) with
+// the same rules plus `from x import f`. Go is matched lexically.
+// Not followed: values passed as call arguments or stored in containers,
+// computed property names, non-relative imports, and expressions split over
+// several lines. This is a static approximation, not a proof of data flow;
+// see the inventory `method` field for its limits.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const INVENTORY_PATH = 'audit/AML_VALID_FIELD_DECISION_INVENTORY.json';
@@ -27,7 +39,8 @@ export const CATEGORIES = Object.freeze({
   'signed-verdict-count': 'a signer verdict counted toward a quorum; permission additionally requires a relying-party-held policy.',
   'report-only': 'copied into an output, report, log or display; no action is gated on it.',
   'schema-check': 'type or shape check of a verdict field; malformed input is rejected.',
-  'validator-exit': 'exit status of a validator command whose documented meaning is format/integrity validity only; it executes nothing.',
+  'consistency-status': 'selects only a non-authorization outcome: exit 3 (consistent, not authorized) versus failure, a diagnostic field, or a reviewed diagnostic exit.',
+  'diagnostic-exit': 'read inside a reviewed --diagnostic-only branch whose output reports authorized:false and NOT AN AUTHORIZATION DECISION.',
   'assertion': 'test or self-check assertion; not an execution path.'
 });
 
@@ -45,7 +58,16 @@ export const REQUIRED_DECISION_SINKS = Object.freeze([
   { file: 'docs/detached-verifier.html', pattern: "check.authorized === true ? 'ok' : 'bad'",
     effect: 'detached verifier pass styling' },
   { file: 'docs/worker-verifier.html', pattern: "event.data?.authorized === true ? 'ok' : 'bad'",
-    effect: 'worker verifier pass styling' }
+    effect: 'worker verifier pass styling' },
+  { file: 'runtime/commandAuthorization.js',
+    pattern: 'const authorized = result?.authorized === true && result?.authorization?.authorized === true && consistent;',
+    effect: 'exit 0 for every JS verifier command that uses commandOutcome' },
+  { file: 'bin/aml.js', pattern: ': result.authorized === true && result.authorization?.authorized === true ? 0',
+    effect: 'exit 0 for aml verify-signed-quorum' },
+  { file: 'independent/python/verify_witness.py', pattern: 'authorized = authorization["authorized"] is True and valid is True',
+    effect: 'exit 0 for the Python witness verifier' },
+  { file: 'independent/go/main.go', pattern: 'Authorized: false',
+    effect: 'the Go witness verifier never authorizes' }
 ]);
 
 // Blank comments and string/template contents (keeping newlines and length)
@@ -65,7 +87,9 @@ export function maskJavaScript(source) {
     if (c === '\'' || c === '"') {
       let j = i + 1;
       while (j < n && source[j] !== c && source[j] !== '\n') j += source[j] === '\\' ? 2 : 1;
-      blank(i + 1, Math.min(j, n)); i = j + 1; prevSignificant = 'str'; continue;
+      // Keep identifier-like literals visible: `r['valid']` is a field read.
+      if (!/^[A-Za-z_$][\w$]{0,63}$/.test(source.slice(i + 1, j))) blank(i + 1, Math.min(j, n));
+      i = j + 1; prevSignificant = 'str'; continue;
     }
     if (c === '`' || (c === '}' && templateDepth.length && templateDepth[templateDepth.length - 1] === 0)) {
       if (c === '}') templateDepth.pop();
@@ -184,11 +208,19 @@ export function validOnlyPositiveSinks(maskedLine) {
 // Positive `if (x.valid)` branches reviewed in code (not just in the
 // inventory): each is a counted signed verdict or has its other conjunct on
 // the immediately preceding guard. Adding one requires changing this check.
-// Decision-named aliases of `valid` that feed only a validator exit status.
-// They remain valid-only (reported as such) and are pinned here for review.
-export const REVIEWED_VALIDATOR_ALIASES = Object.freeze([
-  { file: 'independent/python/wire_runtime.py', code: 'accepted = result["valid"]',
-    why: 'wire runtime verify CLI: exit status reports artifact integrity/structure only; executes nothing' }
+// Exit-0 sinks that read `valid` (or an alias) inside an explicitly requested
+// --diagnostic-only branch. Each must sit within ten lines after a guard
+// naming the diagnostic mode; its output reports authorized:false and
+// NOT AN AUTHORIZATION DECISION. Adding one requires changing this check.
+export const REVIEWED_DIAGNOSTIC_EXITS = Object.freeze([
+  { file: 'runtime/commandAuthorization.js', code: 'exitCode: consistent ? 0 : invalidCode',
+    guard: 'if (diagnosticOnly) {', why: 'shared JS --diagnostic-only outcome' },
+  { file: 'independent/python/verify_witness.py', code: 'return 0 if valid is True else 1',
+    guard: 'if args.diagnostic_only:', why: 'Python witness verifier --diagnostic-only (conformance harness)' },
+  { file: 'independent/python/wire_runtime.py', code: 'return 0 if consistent else 1',
+    guard: 'if args.diagnostic_only:', why: 'Python wire runtime verify --diagnostic-only' },
+  { file: 'independent/go/main.go', code: 'return out, 0',
+    guard: 'if diagnostic {', why: 'Go witness verifier --diagnostic-only (conformance harness)' }
 ]);
 
 export const REVIEWED_POSITIVE_IF = Object.freeze([
@@ -200,6 +232,175 @@ export const REVIEWED_POSITIVE_IF = Object.freeze([
     why: 'Python mirror of the signed-verdict count' }
 ]);
 
+// ---------------------------------------------------------------------------
+// Alias (data-flow) pass. A lexical scan of `x.valid` misses permission that
+// flows through a variable, destructuring, a helper's return value, an
+// object property, or an imported helper. Before sinks are matched, every
+// use of a valid-derived name is rewritten to `__aml_alias.valid`, so the
+// same sink rules see it. Derivation is transitive within a file; imported
+// helpers are resolved across relative ES module imports, and Python uses
+// its own AST (scripts/valid_field_dataflow.py). Expressions that also read
+// an explicit decision field (see EXPLICIT) are not valid-only.
+export const ALIAS_TOKEN = '__aml_alias.valid';
+const READ_ATOM = String.raw`(?:[\w$][\w$.?\[\]]*?(?:\?\.|\.)valid\b|[\w$][\w$.?\]]*\[\s*['"]valid['"]\s*\]|[\w$][\w$.?\]]*\.get\(\s*['"]valid['"]\s*\))`;
+
+function splitOperands(expr) {
+  return expr.split(/&&|\|\||\band\b|\bor\b/).map(t => t.trim()).filter(Boolean);
+}
+
+// True when the expression is a positive use of valid-derived values only.
+export function isValidOnlyExpression(expr, names = new Set(), functions = new Set()) {
+  let e = String(expr).trim().replace(/;$/, '').trim();
+  if (!e || EXPLICIT.test(e.replace(/\bvalid\b/g, ''))) return false;
+  if (/\?[^.?]/.test(e.replace(/\?\./g, '.'))) return false; // ternaries are sinks, not aliases
+  const ops = splitOperands(e);
+  if (!ops.length) return false;
+  let sawValid = false;
+  for (let op of ops) {
+    op = op.trim().replace(/^(?:Boolean|bool)\s*\(\s*(.*)\s*\)$/, '$1').replace(/^!!/, '')
+      .replace(/^\(+|\)+$/g, '').trim()
+      .replace(/^(?:Boolean|bool)\s*\(\s*(.*)\s*\)$/, '$1').replace(/^!!/, '')
+      .replace(/\s*(?:===|==)\s*true$|\s*!==\s*false$|\s+is\s+True$/, '').replace(/^\(+|\)+$/g, '').trim();
+    if (/^(?:true|True)$/.test(op)) continue;
+    if (/^!|^not\b|!==|!=|===\s*false|is\s+not|==\s*False/.test(op)) return false;
+    if (new RegExp(`^${READ_ATOM}$`).test(op) || op === ALIAS_TOKEN) { sawValid = true; continue; }
+    if (/^[A-Za-z_$][\w$]*$/.test(op) && names.has(op)) { sawValid = true; continue; }
+    const call = op.match(/^([A-Za-z_$][\w$.]*)\s*\(/);
+    if (call && functions.has(call[1].split('.').pop()) && /\)$/.test(op)) { sawValid = true; continue; }
+    return false;
+  }
+  return sawValid;
+}
+
+function functionBodies(masked) {
+  // name -> body text for `function name(...) {...}` and `name = (...) => {...}` / `=> expr`.
+  const out = [];
+  const starts = /(?:\bfunction\s*\*?\s*([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{|\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>\s*(\{)?)/g;
+  let m;
+  while ((m = starts.exec(masked))) {
+    const name = m[1] || m[2];
+    const braceAt = m[1] || m[3] ? masked.indexOf('{', m.index + m[0].length - 1) : -1;
+    if (braceAt < 0) {
+      const end = masked.indexOf('\n', starts.lastIndex);
+      out.push({ name, returns: [masked.slice(starts.lastIndex, end < 0 ? undefined : end)] });
+      continue;
+    }
+    let depth = 0; let j = braceAt;
+    for (; j < masked.length; j += 1) {
+      if (masked[j] === '{') depth += 1;
+      else if (masked[j] === '}') { depth -= 1; if (depth === 0) break; }
+    }
+    const body = masked.slice(braceAt + 1, j);
+    out.push({ name, returns: [...body.matchAll(/\breturn\s+([^;\n]+)/g)].map(r => r[1]) });
+  }
+  return out;
+}
+
+// Local valid-derived names, functions and object properties of one file.
+export function deriveAliases(rel, masked, imported = { names: new Set(), functions: new Set() }) {
+  const names = new Set(imported.names);
+  const functions = new Set(imported.functions);
+  const properties = new Set();
+  if (rel.endsWith('.py') || rel.endsWith('.go')) return { names, functions, properties };
+  const lines = masked.split('\n');
+  for (let round = 0; round < 8; round += 1) {
+    const before = names.size + functions.size + properties.size;
+    for (const line of lines) {
+      for (const m of line.matchAll(/(?:\b(?:const|let|var)\s+|^\s*|[;{(,]\s*)([A-Za-z_$][\w$]*)\s*=(?![=>])\s*([^;]+)/g)) {
+        if (isValidOnlyExpression(m[2], names, functions)) names.add(m[1]);
+      }
+      for (const m of line.matchAll(/\b(?:const|let|var)?\s*\{([^{}]*)\}\s*=(?!=)/g)) {
+        for (const part of m[1].split(',')) {
+          const d = part.trim().match(/^valid\s*(?::\s*([A-Za-z_$][\w$]*))?\s*(?:=.*)?$/);
+          if (d) names.add(d[1] || 'valid');
+        }
+      }
+      for (const m of line.matchAll(/(?:[{,]\s*|^\s*)([A-Za-z_$][\w$]*)\s*:\s*([^,}]+)/g)) {
+        if (m[1] !== 'valid' && isValidOnlyExpression(m[2], names, functions)) properties.add(m[1]);
+      }
+      for (const m of line.matchAll(/\bObject\.assign\(\s*[^,]+,\s*\{\s*([A-Za-z_$][\w$]*)\s*:\s*([^}]+)\}/g)) {
+        if (isValidOnlyExpression(m[2], names, functions)) properties.add(m[1]);
+      }
+    }
+    for (const f of functionBodies(masked)) {
+      if (f.returns.some(r => isValidOnlyExpression(r, names, functions))) functions.add(f.name);
+    }
+    if (names.size + functions.size + properties.size === before) break;
+  }
+  names.delete('valid_is_not_alias');
+  return { names, functions, properties };
+}
+
+// Rewrite uses (not definitions) of valid-derived names to ALIAS_TOKEN.
+const escapeRegExp = text => String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+export function applyAliases(maskedLine, aliases) {
+  let line = maskedLine;
+  for (const fn of aliases.functions) {
+    line = line.replace(new RegExp(String.raw`(?<![\w$.])(?:[\w$]+\.)?${escapeRegExp(fn)}\s*\((?:[^()]|\([^()]*\))*\)`, 'g'),
+      (m, offset, all) => /\bfunction\s*$/.test(all.slice(0, offset)) ? m : ALIAS_TOKEN);
+  }
+  for (const name of aliases.names) {
+    line = line.replace(new RegExp(String.raw`(?<![\w$.])${escapeRegExp(name)}(?![\w$])(?!\s*=(?![=]))(?!\s*:(?!\s*[^,}]*\?))`, 'g'),
+      (m, offset, all) => /\b(?:const|let|var|function)\s*[{\s]*$|[{,]\s*$/.test(all.slice(0, offset)) && /^\s*[,}=:]/.test(all.slice(offset + m.length)) ? m : ALIAS_TOKEN);
+  }
+  for (const prop of aliases.properties) {
+    line = line.replace(new RegExp(String.raw`(?:\?\.|\.)${escapeRegExp(prop)}(?![\w$])(?!\s*=(?!=))`, 'g'), '.' + ALIAS_TOKEN);
+    line = line.replace(new RegExp(String.raw`\[\s*(['"])${escapeRegExp(prop)}\1\s*\](?!\s*=(?!=))`, 'g'), '.' + ALIAS_TOKEN);
+  }
+  return line;
+}
+
+let pythonAliasCache = null;
+// Python AST data-flow (names, functions, properties per file). Fails closed:
+// if python3 is unavailable the check reports an error instead of passing.
+export function pythonAliases(base, files) {
+  if (pythonAliasCache && pythonAliasCache.base === base) return pythonAliasCache.map;
+  const run = spawnSync('python3', [path.join(root, 'scripts/valid_field_dataflow.py'), base, ...files], { encoding: 'utf8' });
+  if (run.status !== 0) throw new Error(`python data-flow pass failed: ${run.stderr || run.status}`);
+  const map = JSON.parse(run.stdout);
+  pythonAliasCache = { base, map };
+  return map;
+}
+
+export function pythonAliasesForSource(rel, source) {
+  const run = spawnSync('python3', [path.join(root, 'scripts/valid_field_dataflow.py'), '--stdin', rel],
+    { input: source, encoding: 'utf8' });
+  if (run.status !== 0) throw new Error(`python data-flow pass failed: ${run.stderr || run.status}`);
+  return JSON.parse(run.stdout)[rel];
+}
+
+function toAliasSets(entry) {
+  return { names: new Set(entry?.names || []), functions: new Set(entry?.functions || []),
+    properties: new Set(entry?.properties || []) };
+}
+
+// Aliases for one file: Python from the AST pass, JS/HTML from deriveAliases.
+export function aliasesFor(rel, source, context = {}) {
+  if (rel.endsWith('.go')) return { names: new Set(), functions: new Set(), properties: new Set() };
+  if (rel.endsWith('.py')) return toAliasSets(context.python ? context.python[rel] : pythonAliasesForSource(rel, source));
+  const imported = context.exportedFunctions ? resolveImports(rel, source, context.exportedFunctions)
+    : { names: new Set(), functions: new Set() };
+  return deriveAliases(rel, maskFor(rel, source), imported);
+}
+
+function resolveImports(rel, source, exportedFunctions) {
+  const masked = source;
+  const functions = new Set();
+  const names = new Set();
+  for (const m of masked.matchAll(/\bimport\s*\{([^}]*)\}\s*from\s*['"]([^'"]+)['"]/g)) {
+    if (!m[2].startsWith('.')) continue;
+    const target = path.posix.normalize(path.posix.join(path.posix.dirname(rel), m[2]));
+    const exported = exportedFunctions.get(target);
+    if (!exported) continue;
+    for (const part of m[1].split(',')) {
+      const [orig, local] = part.trim().split(/\s+as\s+/);
+      if (orig && exported.has(orig.trim())) functions.add((local || orig).trim());
+    }
+  }
+  return { names, functions };
+}
+
 function maskFor(rel, source) {
   const ext = path.extname(rel);
   return ext === '.py' ? maskPython(source) : ext === '.html' ? htmlScripts(source) : maskJavaScript(source);
@@ -207,11 +408,22 @@ function maskFor(rel, source) {
 
 // Every success-status decision sink (exit 0, HTTP 2xx), whatever field it
 // reads, with the gate expression and the fields it names.
+// Success outcomes: exit 0 (direct, inverted `cond ? 1 : 0`, via a computed
+// code value, or any `cond ? 0 : N` exit-code expression) and HTTP 2xx.
 const SINK_PATTERNS = [
   ['exit', /process\.exit(?:Code\s*=\s*|\s*\(\s*)(.+)\?\s*0\b/],
+  ['exit-inverted', /process\.exit(?:Code\s*=\s*|\s*\(\s*)(.+)\?\s*[1-9]\d*\s*:\s*0\b/],
+  ['exit-code-value', /(?:^|[^\w$.])(?:exitCode|exit_code|code|status)\s*[:=]\s*(?!=)(.+?)\?\s*0\s*:/],
+  ['zero-ternary', /(?:^|[=(,:]\s*|return\s+)((?:[^(,:?=!]|[=!]={1,2}(?!=)|!(?!=))+?)\?\s*0\s*:\s*[1-9]\d*\b/],
   ['http', /\bsend\s*\(\s*res\s*,\s*(.+)\?\s*2\d\d\b/],
-  ['py-exit', /(?:return\s+|sys\.exit\(\s*)0\s+if\s+(.+?)\s+else\b/],
-  ['go-exit', /\bif\s+(.+?)\s*\{\s*code\s*=\s*0\s*\}/]
+  // A failure exit set only when a gate is false leaves success implicit.
+  ['exit-implicit', /\bif\s*\(\s*!\s*(.+?)\)\s*\{?\s*process\.exit(?:Code\s*=\s*|\s*\(\s*)[1-9]/],
+  ['py-exit-implicit', /\bif\s+not\s+(.+?):\s*(?:return|sys\.exit\(|raise\s+SystemExit\()\s*[1-9]/],
+  ['http-status', /(?:statusCode\s*=|writeHead\s*\(|\.status\s*\()\s*(.+?)\?\s*2\d\d\b/],
+  ['py-exit', /(?:return\s+|sys\.exit\(\s*|SystemExit\(\s*)0\s+if\s+(.+?)\s+else\b/],
+  ['py-exit-inverted', /(?:return\s+|sys\.exit\(\s*|SystemExit\(\s*)[1-9]\d*\s+if\s+(.+?)\s+else\s+0\b/],
+  ['go-exit', /\bif\s+(.+?)\s*\{\s*code\s*=\s*0\s*\}/],
+  ['go-return-zero', /^\s*(?:return\s+[\w.]+\s*,\s*0|os\.Exit\(\s*0\s*\)|code\s*=\s*0)\s*$/]
 ];
 
 export function gateFields(gate) {
@@ -221,33 +433,52 @@ export function gateFields(gate) {
     fields.add(m[1] || m[2] || m[3]);
   }
   if (!fields.size) for (const m of g.matchAll(/[A-Za-z_$][\w$]*/g)) fields.add(m[0]);
-  for (const noise of ['get', 'if', 'not', 'and', 'or', 'true', 'false', 'True', 'False', 'None', 'null', 'length']) fields.delete(noise);
+  for (const noise of ['get', 'if', 'not', 'and', 'or', 'true', 'false', 'True', 'False', 'None', 'null', 'length', 'is']) fields.delete(noise);
+  if (fields.has('Valid')) { fields.delete('Valid'); fields.add('valid'); }
   return [...fields].sort();
 }
 
-export function scanDecisionSinks(rel, source) {
+export function scanDecisionSinks(rel, source, aliases = aliasesFor(rel, source)) {
   if (rel.startsWith('test/')) return [];
-  const masked = maskFor(rel, source);
+  const masked = maskFor(rel, source).split('\n').map(line => applyAliases(line, aliases)).join('\n');
   const raw = source.split('\n');
   const out = [];
   masked.split('\n').forEach((line, index) => {
     for (const [kind, re] of SINK_PATTERNS) {
-      if (kind === 'go-exit' && !rel.endsWith('.go')) continue;
-      if (kind === 'py-exit' && !rel.endsWith('.py')) continue;
-      if ((kind === 'exit' || kind === 'http') && rel.endsWith('.py')) continue;
-      const m = line.match(re);
+      const go = kind.startsWith('go-');
+      const py = kind.startsWith('py-');
+      if (go !== rel.endsWith('.go')) continue;
+      if (py && !rel.endsWith('.py')) continue;
+      if (!py && !go && rel.endsWith('.py') && kind !== 'zero-ternary') continue;
+      if (kind === 'zero-ternary' && rel.endsWith('.py')) continue;
+      const allLines = masked.split('\n');
+      // Implicit-success guards may put the exit on the next line.
+      const probe = kind.endsWith('-implicit') && /\{\s*$|:\s*$/.test(line)
+        ? `${line} ${allLines[index + 1] ?? ''}` : line;
+      const m = probe.match(re);
       if (!m) continue;
-      const gate = m[1].replace(/^\(+/, '').trim();
+      let gate = (m[1] ?? '').replace(/^\(+/, '').trim();
+      if (kind === 'go-return-zero') {
+        // The gate is the nearest enclosing `if` condition above (by indentation).
+        const indent = line.match(/^\s*/)[0].length;
+        const lines = masked.split('\n');
+        for (let k = index - 1; k >= 0; k -= 1) {
+          const c = lines[k].match(/^(\s*)(?:\}\s*else\s+)?if\s+(.+?)\s*\{\s*$/);
+          if (c && c[1].length < indent) { gate = c[2]; break; }
+          if (/^\S/.test(lines[k])) break;
+        }
+        if (!gate) gate = 'unconditional';
+      }
       out.push({ file: rel, line: index + 1, code: raw[index].trim(), kind, gate, gate_fields: gateFields(gate) });
     }
   });
   return out;
 }
 
-export function scanSource(rel, source) {
+export function scanSource(rel, source, aliases = aliasesFor(rel, source)) {
   const ext = path.extname(rel);
   if (ext === '.go') return [];
-  const masked = maskFor(rel, source);
+  const masked = maskFor(rel, source).split('\n').map(line => applyAliases(line, aliases)).join('\n');
   const rawLines = source.split('\n');
   const maskedLines = masked.split('\n');
   const reads = [];
@@ -257,8 +488,10 @@ export function scanSource(rel, source) {
     let m;
     while ((m = re.exec(masked))) {
       const line = lineOf(masked, m.index);
+      const aliasUse = masked.slice(m.index - ALIAS_TOKEN.length + 6, m.index + 6) === ALIAS_TOKEN ||
+        masked.slice(Math.max(0, m.index - 14), m.index + 6).endsWith(ALIAS_TOKEN);
       reads.push({ file: rel, line, code: rawLines[line - 1].trim(),
-        kind: re === JS_DESTRUCTURE ? 'destructure' : 'read' });
+        kind: re === JS_DESTRUCTURE ? 'destructure' : aliasUse ? 'alias' : 'read' });
     }
   }
   // One entry per (line, kind); several reads on one line share a classification.
@@ -278,45 +511,80 @@ export function scanSource(rel, source) {
 export function scanRepository(base = root) {
   const findings = [];
   const sinks = [];
-  for (const full of walk(base).sort()) {
-    const rel = path.relative(base, full).split(path.sep).join('/');
+  const files = walk(base).sort().map(full => ({ full, rel: path.relative(base, full).split(path.sep).join('/') }));
+  const sources = new Map(files.map(f => [f.rel, fs.readFileSync(f.full, 'utf8')]));
+  const python = pythonAliases(base, files.filter(f => f.rel.endsWith('.py')).map(f => f.rel));
+  // Exported valid-derived helpers, for cross-module import resolution.
+  const exportedFunctions = new Map();
+  for (const { rel } of files) {
+    if (rel.endsWith('.py') || rel.endsWith('.go')) continue;
+    const local = deriveAliases(rel, maskFor(rel, sources.get(rel)));
+    if (local.functions.size) exportedFunctions.set(rel, local.functions);
+  }
+  const context = { python, exportedFunctions };
+  const aliasSummary = [];
+  for (const { rel } of files) {
     const isTest = rel.startsWith('test/');
-    const source = fs.readFileSync(full, 'utf8');
-    sinks.push(...scanDecisionSinks(rel, source));
-    if (!/valid/.test(source)) continue;
-    for (const r of scanSource(rel, source)) {
+    const source = sources.get(rel);
+    const aliases = aliasesFor(rel, source, context);
+    if (aliases.names.size || aliases.functions.size || aliases.properties.size) {
+      aliasSummary.push({ file: rel, names: [...aliases.names].sort(), functions: [...aliases.functions].sort(),
+        properties: [...aliases.properties].sort() });
+    }
+    sinks.push(...scanDecisionSinks(rel, source, aliases));
+    if (!/valid/.test(source) && !(aliases.names.size || aliases.functions.size || aliases.properties.size)) continue;
+    for (const r of scanSource(rel, source, aliases)) {
       if (isTest && !r.valid_only_positive_sink) continue;
       findings.push({ ...r, scope: isTest ? 'test' : 'shipped' });
     }
   }
-  return { findings, sinks };
+  return { findings, sinks, aliases: aliasSummary };
 }
 
 export const SINK_CATEGORIES = Object.freeze({
   'explicit-decision': 'success status requires an explicit decision field other than `valid`.',
   'conjunct': 'success status requires `valid` and an explicit decision field.',
-  'validator-exit': 'exit status of a validator whose documented meaning is format/integrity validity only; it executes nothing.'
+  'diagnostic-exit': 'exit 0 in a reviewed --diagnostic-only branch (REVIEWED_DIAGNOSTIC_EXITS); output reports authorized:false and NOT AN AUTHORIZATION DECISION.',
+  'non-decision': 'a zero/non-zero value that is not an authorization outcome (count, index, sort key); it gates nothing.'
 });
 
-export function checkDecisionSinks(sinks, inventory) {
+function diagnosticGuarded(base, file, line, guard) {
+  try {
+    const lines = fs.readFileSync(path.join(base, file), 'utf8').split('\n');
+    for (let k = Math.max(0, line - 11); k < line - 1; k += 1) if (lines[k].trim() === guard) return true;
+  } catch {}
+  return false;
+}
+
+export function checkDecisionSinks(sinks, inventory, base = root) {
   const failures = [];
   if (!Array.isArray(inventory.decision_sinks)) return ['inventory decision_sinks missing'];
   const key = e => `${e.file}\u0000${e.line}\u0000${e.code}`;
   const byKey = new Map(inventory.decision_sinks.map(e => [key(e), e]));
+  // Several sink patterns can match one line; judge the line on the union
+  // of every gate field read there.
+  const merged = new Map();
   for (const sink of sinks) {
+    const prior = merged.get(key(sink));
+    merged.set(key(sink), prior ? { ...prior, kind: `${prior.kind}+${sink.kind}`,
+      gate_fields: [...new Set([...prior.gate_fields, ...sink.gate_fields])].sort() } : sink);
+  }
+  for (const sink of merged.values()) {
     const entry = byKey.get(key(sink));
     const where = `${sink.file}:${sink.line}`;
     if (!entry) { failures.push(`${where}: unclassified decision sink: ${sink.code}`); continue; }
     if (!Object.hasOwn(SINK_CATEGORIES, entry.category)) failures.push(`${where}: unknown sink category ${entry.category}`);
     if (typeof entry.effect !== 'string' || entry.effect.length < 8) failures.push(`${where}: effect missing`);
     const fields = sink.gate_fields;
-    const aliasOfValid = entry.alias_of_valid === true;
-    const validOnly = aliasOfValid || (fields.length > 0 && fields.every(f => f === 'valid'));
-    if (validOnly && entry.category !== 'validator-exit') failures.push(`${where}: gate reads valid alone (${entry.category})`);
-    if (entry.category === 'validator-exit' && !/^(bin|scripts|independent)\//.test(sink.file)) {
-      failures.push(`${where}: validator-exit is limited to command-line validators`);
+    const validOnly = fields.length > 0 && fields.every(f => f === 'valid');
+    const reviewed = REVIEWED_DIAGNOSTIC_EXITS.find(r => r.file === sink.file && r.code === sink.code);
+    if (entry.category === 'diagnostic-exit') {
+      if (!reviewed) failures.push(`${where}: diagnostic-exit not in REVIEWED_DIAGNOSTIC_EXITS`);
+      else if (!diagnosticGuarded(base, sink.file, sink.line, reviewed.guard)) failures.push(`${where}: diagnostic-exit without its guard`);
+    } else if (validOnly) failures.push(`${where}: gate reads valid alone (${entry.category})`);
+    if (entry.category === 'non-decision' && (fields.includes('valid') || /process\.exit|send\s*\(|statusCode|writeHead|sys\.exit|SystemExit|exitCode|os\.Exit/.test(sink.code))) {
+      failures.push(`${where}: non-decision used for an exit/HTTP sink or a valid gate`);
     }
-    if (entry.category === 'validator-exit' && !validOnly) failures.push(`${where}: validator-exit used for a non-valid gate`);
     if (entry.category === 'conjunct' && !(fields.includes('valid') && fields.some(f => f !== 'valid'))) {
       failures.push(`${where}: conjunct gate must read valid and another decision field`);
     }
@@ -347,15 +615,19 @@ export function checkInventory(findings, inventory, base = root) {
     // other conjunct that the same branch requires.
     for (const sink of f.positive_sinks || []) {
       const reviewed = sink === 'if' && REVIEWED_POSITIVE_IF.some(r => r.file === f.file && r.code === f.code);
-      const alias = sink === 'assign' && REVIEWED_VALIDATOR_ALIASES.some(r => r.file === f.file && r.code === f.code);
-      const allowed = sink === 'assign' ? (alias ? ['validator-exit'] : []) : sink === 'if'
-        ? (reviewed ? ['signed-verdict-count', 'conjunct'] : ['assertion']) : ['validator-exit'];
+      const diagnostic = REVIEWED_DIAGNOSTIC_EXITS.some(r => r.file === f.file && r.code === f.code);
+      const allowed = sink === 'assign' ? [] : sink === 'if'
+        ? (reviewed ? ['signed-verdict-count', 'conjunct'] : ['assertion'])
+        : diagnostic ? ['diagnostic-exit'] : [];
       if (!allowed.includes(entry.category)) {
         failures.push(`${f.file}:${f.line}: valid alone controls a positive ${sink} sink (${entry.category})`);
       }
     }
-    if (entry.category === 'validator-exit' && !/^(bin|scripts|independent)\//.test(f.file)) {
-      failures.push(`${f.file}:${f.line}: validator-exit is limited to command-line validators`);
+    if (entry.category === 'consistency-status' && !/^(bin|scripts|independent|runtime\/commandAuthorization\.js)/.test(f.file)) {
+      failures.push(`${f.file}:${f.line}: consistency-status is limited to command-line outcome code`);
+    }
+    if (entry.category === 'diagnostic-exit' && !REVIEWED_DIAGNOSTIC_EXITS.some(r => r.file === f.file && r.code === f.code)) {
+      failures.push(`${f.file}:${f.line}: diagnostic-exit read not in REVIEWED_DIAGNOSTIC_EXITS`);
     }
     if (entry.category === 'deny-guard' && !f.negated) failures.push(`${f.file}:${f.line}: deny-guard read is not negated`);
     if (entry.category === 'conjunct' && !f.explicit_on_line && !entry.conjunct_with) {
@@ -380,7 +652,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const { findings, sinks } = scanRepository();
   let output;
   if (process.argv.includes('--scan')) {
-    output = { findings, sinks };
+    const scan = scanRepository();
+    output = { findings: scan.findings, sinks: scan.sinks, aliases: scan.aliases };
   } else {
     const inventory = JSON.parse(fs.readFileSync(path.join(root, INVENTORY_PATH), 'utf8'));
     const failures = [...checkInventory(findings, inventory), ...checkDecisionSinks(sinks, inventory)];

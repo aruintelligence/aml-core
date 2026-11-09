@@ -28,6 +28,8 @@ aml-governance-transcript conformance/governance-stream/mixed.ndjson > transcrip
 aml-governance-transcript-verify transcript.json
 ```
 
+An unsigned transcript has no authenticated source, so this command never authorizes: a valid transcript exits `3`, an invalid one `2`. `--diagnostic-only` exits `0` for a valid transcript with `NOT AN AUTHORIZATION DECISION`. See [Command exit status and authorization](COMMAND_AUTHORIZATION.md).
+
 A successful verification reports both:
 
 - `hash_chain_valid: true`

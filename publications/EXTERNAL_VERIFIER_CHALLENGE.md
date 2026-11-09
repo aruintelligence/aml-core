@@ -17,6 +17,8 @@ Your repository supplies one executable command. The ĀML harness invokes it as:
 
 The verifier must emit one JSON object containing a boolean `valid` field. A valid bundle must exit `0`; an invalid bundle must exit nonzero.
 
+This black-box contract measures consistency, not authorization. AML's own Python and Go reference verifiers satisfy it only in `--diagnostic-only` mode, which reports `authorized: false` and `NOT AN AUTHORIZATION DECISION`; without that flag they exit `0` only on a complete authorization decision. See [Command exit status and authorization](../docs/COMMAND_AUTHORIZATION.md).
+
 The machine-readable contract is [`conformance/verifier-challenge.json`](../conformance/verifier-challenge.json).
 
 ## Start without reading the reference verifier
@@ -82,6 +84,8 @@ Or run the validator directly from a checkout:
 ```bash
 node scripts/validate-witness-record.mjs witness-record.json
 ```
+
+A well-formed record exits `3`, not `0`: validation is not acceptance, and a witness record still requires human/public-evidence review. Add `--diagnostic-only` for exit `0` on a well-formed record; that output says `NOT AN AUTHORIZATION DECISION`. Invalid records exit `1`. The Action runs the gate in diagnostic-only mode and exposes `authorized=false` and `decision-use` outputs.
 
 The same validator is used by the canonical `WITNESSES.json` registry guard. That prevents the registry and the submission instructions from drifting into different acceptance formats.
 

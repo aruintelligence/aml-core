@@ -35,6 +35,8 @@ aml-governance-disclosure-signed-verify \
   --required-scope governance-disclosure-commitment
 ```
 
+Exit `0` requires `authorized: true`: valid, a trusted and unrevoked key, and a pinned `--required-scope`. A valid result missing any of these exits `3`; an invalid one exits `2`. See [Command exit status and authorization](COMMAND_AUTHORIZATION.md) for the exit contract.
+
 The verifier independently checks:
 
 1. the Ed25519 signature over the commitment;
