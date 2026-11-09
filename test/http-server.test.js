@@ -464,7 +464,7 @@ test("AML HTTP verifies a cross-language witness bundle and rejects mutation", a
     const validResponse = await fetch(`${base}/v1/verify-witness-bundle`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ bundle, now: "2030-01-01T00:05:00Z" })
+      body: JSON.stringify({ bundle, expected_challenge: bundle.challenge, now: "2030-01-01T00:05:00Z" })
     });
     assert.equal(validResponse.status, 200);
     const valid = await validResponse.json();
@@ -477,7 +477,7 @@ test("AML HTTP verifies a cross-language witness bundle and rejects mutation", a
     const badResponse = await fetch(`${base}/v1/verify-witness-bundle`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ bundle: mutated, now: "2030-01-01T00:05:00Z" })
+      body: JSON.stringify({ bundle: mutated, expected_challenge: bundle.challenge, now: "2030-01-01T00:05:00Z" })
     });
     assert.equal(badResponse.status, 422);
     const bad = await badResponse.json();

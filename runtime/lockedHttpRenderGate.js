@@ -1,6 +1,7 @@
 // Host-side gate for nonce-bound signed responses from the locked HTTP service.
 // The host owns its token, signer trust, expected inputs, and render callback.
 import { randomBytes } from "node:crypto";
+import { isIPv4 } from "node:net";
 import { verifySignedExecutionReceipt, replayExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { resolvePolicyProfile } from "./policyProfiles.js";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
@@ -99,6 +100,46 @@ async function readBoundedJson(response, maxResponseBytes) {
     .decode(Buffer.concat(parts, bytes)));
 }
 
+// The bearer token and intent are confidential before any signed response can
+// be checked, so the destination must protect them. Accept https: anywhere, and
+// cleartext http: only for an IP literal that the OS connects to without a name
+// lookup: 127.0.0.0/8 or [::1]. WHATWG URL parsing has already normalized
+// decimal, octal and hexadecimal IPv4 spellings to dotted form, so the checked
+// literal is the connected address. Host names (including "localhost"),
+// 0.0.0.0, IPv4-mapped IPv6 and every other scheme are refused: a name can
+// resolve differently at connect time, and the others are not loopback-only.
+// There is deliberately no option for non-loopback cleartext: AML cannot verify
+// that a network path encrypts and authenticates traffic. Use https: or a
+// loopback sidecar instead.
+function evaluationDestination(url) {
+  let destination;
+  try {
+    if (typeof url !== "string" && !(url instanceof URL)) return { reason: "invalid_evaluation_url" };
+    destination = new URL(url);
+  } catch {
+    return { reason: "invalid_evaluation_url" };
+  }
+  if (destination.username || destination.password) return { reason: "evaluation_url_credentials" };
+  const host = destination.hostname;
+  const loopbackLiteral = (isIPv4(host) && host.split(".")[0] === "127") || host === "[::1]";
+  if (destination.protocol === "https:") return { destination, cleartext: false };
+  if (destination.protocol === "http:" && loopbackLiteral) return { destination, cleartext: true };
+  return { reason: "insecure_evaluation_url" };
+}
+
+// Node's built-in fetch tunnels http: requests through HTTP_PROXY when
+// NODE_USE_ENV_PROXY or --use-env-proxy is enabled. A tunnel does not encrypt
+// cleartext bytes, so the proxy would see the token and intent. Refuse this
+// combination instead of re-implementing NO_PROXY matching. The check also
+// applies to a custom fetchImpl, which may honor the same variables.
+function environmentProxyMayCarryCleartext() {
+  const env = globalThis.process?.env ?? {};
+  const flag = value => typeof value === "string" && value !== "" && value !== "0" && value.toLowerCase() !== "false";
+  const options = [...(globalThis.process?.execArgv ?? []), ...String(env.NODE_OPTIONS ?? "").split(/\s+/)];
+  const enabled = flag(env.NODE_USE_ENV_PROXY) || options.some(option => option === "--use-env-proxy");
+  return enabled && [env.HTTP_PROXY, env.http_proxy].some(value => typeof value === "string" && value.trim() !== "");
+}
+
 export async function evaluateLockedHttpAndRender({ url, token, intent, profile, context, render,
   trustedReceiptFingerprints, timeoutMs = DEFAULT_TIMEOUT_MS,
   maxResponseBytes = DEFAULT_MAX_RESPONSE_BYTES, fetchImpl = fetch }) {
@@ -110,6 +151,13 @@ export async function evaluateLockedHttpAndRender({ url, token, intent, profile,
     throw new TypeError("maxResponseBytes must be a positive safe integer");
   }
   if (typeof fetchImpl !== "function") throw new TypeError("fetchImpl must be a function");
+  // Decide the destination once, before the token or intent leaves the process.
+  const target = evaluationDestination(url);
+  if (!target.destination) return blocked(target.reason);
+  if (target.cleartext && environmentProxyMayCarryCleartext()) {
+    return blocked("cleartext_proxy_refused");
+  }
+  const destinationHref = target.destination.href;
   // Preserve the trust inputs and the exact JSON intent sent over the wire.
   // A mutable caller object cannot change what a later response is checked against.
   const trustedPins = [...trustedReceiptFingerprints];
@@ -131,12 +179,18 @@ export async function evaluateLockedHttpAndRender({ url, token, intent, profile,
   try {
     outcome = await Promise.race([
       (async () => {
-        const response = await fetchImpl(url, {
+        const response = await fetchImpl(destinationHref, {
           method: "POST",
+          // A redirect would re-send the intent (and, same-origin, the token)
+          // to a location the host never configured, possibly over http:.
+          redirect: "error",
           headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
           body: requestBody,
           signal: controller.signal
         });
+        if (response.redirected === true || (response.status >= 300 && response.status < 400)) {
+          return { redirect: true };
+        }
         if (response.status !== 200) return { httpStatus: response.status, body: null };
         return { httpStatus: response.status, body: await readBoundedJson(response, maxResponseBytes) };
       })(),
@@ -152,9 +206,14 @@ export async function evaluateLockedHttpAndRender({ url, token, intent, profile,
     if (error?.code === "AML_EVALUATION_TIMEOUT") return blocked("evaluation_timeout");
     if (error?.code === "AML_RESPONSE_TOO_LARGE") return blocked("response_too_large");
     if (error?.code === "AML_DUPLICATE_JSON_KEY") return blocked("ambiguous_json");
+    if (error?.cause?.message === "unexpected redirect") return blocked("redirect_refused");
     return blocked("transport_or_response_error");
   } finally {
     clearTimeout(timer);
+  }
+  if (outcome.redirect) {
+    controller.abort();
+    return blocked("redirect_refused");
   }
   if (outcome.httpStatus !== 200) controller.abort();
   return applyLockedHttpDecision({ ...outcome, intent: expectedIntent, profile,

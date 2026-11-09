@@ -1,5 +1,5 @@
 import http from "node:http";
-import { createPrivateKey, randomUUID } from "node:crypto";
+import { createHash, createPrivateKey, randomUUID } from "node:crypto";
 import { readJson } from "./readJson.js";
 import { createLockedHttpPolicy } from "./lockedPolicy.js";
 import { createRequestAuthenticator } from "./requestAuth.js";
@@ -11,6 +11,7 @@ import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
 import { evaluateInterfaceBatch } from "../runtime/batchInterfaceFirewall.js";
 import { evaluatePolicyCanary } from "../runtime/policyCanary.js";
 import { verifyWitnessBundle } from "../docs/aml-witness-bundle.js";
+import { canonicalJSONStringifyBrowser } from "../docs/aml-browser-integrity.js";
 import fs from "node:fs";
 
 function send(res, status, body, headers = {}) {
@@ -287,14 +288,25 @@ export function createAmlHttpServer(options = {}) {
       try {
         const body = await readJson(req, maxBodyBytes, bodyTimeoutMs);
         if (!body.bundle) return send(res, 400, { error: "bundle_required" }, headers);
+        // A bundle is self-consistent around whatever challenge it carries, so
+        // a 200 must mean it matched the challenge the caller retained. The
+        // caller is the relying party; a relayed response is bound to that
+        // challenge only through held_challenge_sha256.
+        if (body.expected_challenge == null || typeof body.expected_challenge !== "object" ||
+            Array.isArray(body.expected_challenge)) {
+          return send(res, 400, { error: "expected_challenge_required" }, headers);
+        }
         const now = body.now == null
           ? Date.now()
           : (typeof body.now === "number" ? body.now : Date.parse(body.now));
         if (!Number.isFinite(now)) return send(res, 400, { error: "invalid_now" }, headers);
-        const result = await verifyWitnessBundle(body.bundle, { now });
-        return send(res, result.valid ? 200 : 422, {
+        const result = await verifyWitnessBundle(body.bundle,
+          { now, expectedChallenge: body.expected_challenge });
+        return send(res, result.verified === true ? 200 : 422, {
           protocol: "aml-http-witness-verification/1",
-          ...result
+          ...result,
+          held_challenge_sha256: createHash("sha256")
+            .update(canonicalJSONStringifyBrowser(body.expected_challenge)).digest("hex")
         }, headers);
       } catch (error) {
         return send(res, error.statusCode ?? 400, { error: error.message || "witness_verification_failed" }, headers);

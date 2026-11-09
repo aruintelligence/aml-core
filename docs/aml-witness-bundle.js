@@ -97,8 +97,12 @@ export async function verifyWitnessBundle(bundle, options = {}) {
     session_key_fingerprint: null,
     challenge_expires_at: null
   };
+  // `valid` keeps its historical meaning: the bundle is internally consistent.
+  // Anyone can assemble a self-consistent bundle around a challenge they made
+  // themselves, so `verified` is the acceptance decision: it is true only when
+  // the caller also supplied its own retained challenge and that matched.
   const fail = (reason, extra = {}) => ({
-    valid: false, reason, checks: { ...checks }, inspected: { ...inspected },
+    valid: false, verified: false, reason, checks: { ...checks }, inspected: { ...inspected },
     ...timing, ...extra
   });
   try {
@@ -155,6 +159,7 @@ export async function verifyWitnessBundle(bundle, options = {}) {
     if (timeFailure) return fail(timeFailure);
     return {
       valid: true,
+      verified: checks.verifier_held_challenge === true,
       reason: 'AML_WITNESS_BUNDLE_VALID',
       checks: { ...checks },
       inspected: { ...inspected },

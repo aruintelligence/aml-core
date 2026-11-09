@@ -108,6 +108,17 @@ challenge and the complete challenge matched. A self-contained bundle can
 pass its own cryptographic checks without establishing that it answered a
 verifier's request.
 
+`verifyWitnessBundle` therefore reports two booleans. `valid` keeps its
+earlier meaning: the bundle is internally consistent. `verified` is the
+acceptance decision. It is true only when `valid` is true and the caller's
+retained `expectedChallenge` matched. Anyone can build a valid bundle around a
+challenge they generated themselves, so accept on `verified`, not `valid`. The
+HTTP endpoint `/v1/verify-witness-bundle` requires an `expected_challenge`
+object (`400 expected_challenge_required` otherwise). It returns `200` only
+when `verified` is true, and echoes `held_challenge_sha256` so that a relayed
+response can be tied to the retained challenge. Callers that posted only
+`bundle` must now send their retained challenge.
+
 ## Verify a saved bundle from the CLI
 
 From a checkout or packed preview that contains this command, save the
