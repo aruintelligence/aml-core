@@ -262,6 +262,24 @@ reports. With a policy, exit `0` requires all three. Exit `2` means a quorum
 or policy condition failed; malformed verifier-held policy is a usage error
 (exit `1`). The policy must be kept separately from the untrusted quorum.
 
+Both the JavaScript and Python verifier results also include `authorized`
+and `authorization` (`decision`, `required`, fixed `reasons`). `valid` means
+only that the saved quorum is internally consistent: anyone can mint keys and
+sign agreeing reports, and a substituted witness bundle leaves `valid` true.
+Never act on `valid` alone. `authorized` is the field that grants permission:
+it requires `valid`, `threshold_met`, every requested condition, a
+relying-party-held policy with `policy_met`, and, when a witness bundle is
+supplied or the policy requires one, `witness_met` and
+`replayable_claims_consistent` (the witness replay must itself be authorized
+against your retained challenge on the verifier's clock). Missing, unknown, or
+non-boolean conditions deny (`AML_AUTHZ_QUORUM_NOT_VALID`,
+`AML_AUTHZ_THRESHOLD_NOT_MET`, `AML_AUTHZ_REQUESTED_CONDITIONS_UNMET`,
+`AML_AUTHZ_HELD_POLICY_REQUIRED_AND_MET`,
+`AML_AUTHZ_WITNESS_REQUIREMENT_UNMET`, `AML_AUTHZ_UNKNOWN_CONDITION`). For
+compatibility, the CLI exit status and `--decision-only` output are unchanged:
+exit `0` still means `requested_conditions_met`, which without a held policy
+does not imply authorization.
+
 Both the JavaScript and Python verifier results include
 `requested_conditions_met`, the exact exit `0` gate for the options supplied.
 `requested_conditions.checked` lists `valid` and `threshold_met`, then the

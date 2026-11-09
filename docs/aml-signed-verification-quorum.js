@@ -313,6 +313,50 @@ function validateInputExpectations(expectations, { policy, witnessBundle }) {
   return pinned;
 }
 
+// Authorization semantics (fail closed). `valid` means only that the saved
+// quorum is internally consistent with its signed reports: anyone can mint keys
+// and sign agreeing reports, and a substituted witness bundle leaves `valid`
+// true. `requested_conditions_met` covers only the conditions the caller asked
+// for. `authorized` is the only decision field that grants permission to act:
+// it requires every requested condition, a relying-party-held policy whose
+// trusted keys were met, and, when a witness was supplied or the policy needs
+// one, a witness replay that was itself authorized against the retained
+// challenge on this verifier's clock. Missing or non-boolean values deny.
+export const SIGNED_QUORUM_AUTHORIZATION_REQUIRED = Object.freeze([
+  'valid', 'threshold_met', 'requested_conditions_met', 'held_policy_met', 'witness_requirement_met'
+]);
+const signedQuorumAuthorizationDenials = Object.freeze({
+  valid: 'AML_AUTHZ_QUORUM_NOT_VALID',
+  threshold_met: 'AML_AUTHZ_THRESHOLD_NOT_MET',
+  requested_conditions_met: 'AML_AUTHZ_REQUESTED_CONDITIONS_UNMET',
+  held_policy_met: 'AML_AUTHZ_HELD_POLICY_REQUIRED_AND_MET',
+  witness_requirement_met: 'AML_AUTHZ_WITNESS_REQUIREMENT_UNMET'
+});
+
+export function signedQuorumAuthorizationDecision(conditions) {
+  const deny = reasons => ({ schema: 'aml-authorization-decision/1', authorized: false,
+    decision: 'deny', reasons, required: [...SIGNED_QUORUM_AUTHORIZATION_REQUIRED] });
+  try {
+    if (!conditions || typeof conditions !== 'object' || Array.isArray(conditions)) {
+      return deny(['AML_AUTHZ_CONDITIONS_MISSING']);
+    }
+    const reasons = [];
+    for (const name of SIGNED_QUORUM_AUTHORIZATION_REQUIRED) {
+      if (!Object.hasOwn(conditions, name) || conditions[name] !== true) {
+        reasons.push(signedQuorumAuthorizationDenials[name]);
+      }
+    }
+    if (Object.keys(conditions).some(name => !SIGNED_QUORUM_AUTHORIZATION_REQUIRED.includes(name))) {
+      reasons.push('AML_AUTHZ_UNKNOWN_CONDITION');
+    }
+    if (reasons.length) return deny(reasons);
+    return { schema: 'aml-authorization-decision/1', authorized: true, decision: 'allow',
+      reasons: ['AML_AUTHZ_ALLOW'], required: [...SIGNED_QUORUM_AUTHORIZATION_REQUIRED] };
+  } catch {
+    return deny(['AML_AUTHZ_EVALUATION_ERROR']);
+  }
+}
+
 export async function verifySignedVerificationQuorum(quorum, {
   policy, witnessBundle, expectedChallenge, expectedInputFingerprints, portable = false
 } = {}) {
@@ -349,12 +393,27 @@ export async function verifySignedVerificationQuorum(quorum, {
     ...(policy === undefined ? [] : ['policy_met']),
     ...(witnessBundle === undefined ? [] : ['witness_met', 'replayable_claims_consistent']),
     ...(expectedInputFingerprints === undefined ? [] : ['inputs_met'])];
+  const policyNeedsWitness = ['aml-signed-quorum-held-policy/4', 'aml-signed-quorum-held-policy/5',
+    'aml-signed-quorum-held-policy/6'].includes(policy?.schema);
   const withRequestedConditions = result => {
     const unmet = checkedConditions.filter(name => result[name] !== true);
+    const requestedMet = unmet.length === 0;
+    const witnessRequired = witnessBundle !== undefined || policyNeedsWitness;
+    const authorization = signedQuorumAuthorizationDecision({
+      valid: result.valid === true,
+      threshold_met: result.threshold_met === true,
+      requested_conditions_met: requestedMet,
+      held_policy_met: policy !== undefined && checkedConditions.includes('policy_met') &&
+        result.policy_met === true,
+      witness_requirement_met: !witnessRequired || (checkedConditions.includes('witness_met') &&
+        result.witness_met === true && result.replayable_claims_consistent === true)
+    });
     return {
       ...result,
-      requested_conditions_met: unmet.length === 0,
-      requested_conditions: { checked: checkedConditions, unmet }
+      requested_conditions_met: requestedMet,
+      requested_conditions: { checked: checkedConditions, unmet },
+      authorized: authorization.authorized,
+      authorization
     };
   };
   let portabilityChecked = false;
@@ -526,12 +585,15 @@ export async function verifySignedVerificationQuorum(quorum, {
         : await verifyWitnessBundle(witnessBundle, { expectedChallenge, now: replayNow });
       const artifactMatches = !witnessInputError && rebuilt.artifact_type === 'aml-witness-bundle/1' &&
         rebuilt.artifact_hash === witnessBundle?.integrity?.value;
-      result.witness_met = valid && witness.valid &&
+      // Keep every earlier conjunct and also require the replay's own
+      // authorization decision (retained challenge on a trusted clock).
+      result.witness_met = valid && witness.valid === true && witness.authorized === true &&
         witness.checks?.verifier_held_challenge === true && artifactMatches;
       result.witness_evaluation = {
         evaluated_at: new Date(replayNow).toISOString(),
         clock_source: 'local_system',
         local_bundle_valid: witness.valid,
+        local_bundle_authorized: witness.authorized === true,
         reason: witness.reason,
         retained_challenge_matched: witness.checks?.verifier_held_challenge === true,
         artifact_matches: artifactMatches

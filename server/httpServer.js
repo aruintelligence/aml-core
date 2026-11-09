@@ -291,7 +291,10 @@ export function createAmlHttpServer(options = {}) {
         // A bundle is self-consistent around whatever challenge it carries, so
         // a 200 must mean it matched the challenge the caller retained. The
         // caller is the relying party; a relayed response is bound to that
-        // challenge only through held_challenge_sha256.
+        // challenge only through held_challenge_sha256. 200 requires the
+        // explicit `authorized` decision: `valid` is consistency only, and a
+        // caller-supplied `now` outside the library's clock-skew bound is
+        // reported (verified may be true) but never authorizes.
         if (body.expected_challenge == null || typeof body.expected_challenge !== "object" ||
             Array.isArray(body.expected_challenge)) {
           return send(res, 400, { error: "expected_challenge_required" }, headers);
@@ -302,7 +305,7 @@ export function createAmlHttpServer(options = {}) {
         if (!Number.isFinite(now)) return send(res, 400, { error: "invalid_now" }, headers);
         const result = await verifyWitnessBundle(body.bundle,
           { now, expectedChallenge: body.expected_challenge });
-        return send(res, result.verified === true ? 200 : 422, {
+        return send(res, result.authorized === true ? 200 : 422, {
           protocol: "aml-http-witness-verification/1",
           ...result,
           held_challenge_sha256: createHash("sha256")

@@ -452,3 +452,7 @@ This is a declared research model, not a universal ethics standard or a validate
 - Playground: https://aruintelligence.github.io/aml-core/playground.html
 - View Meaning™: https://aruintelligence.github.io/aml-core/view-meaning.html
 - Official AML verification: https://aruintelligence.github.io/aml-core/official-verify.html
+
+## `valid` is not permission
+
+Many verifiers return `valid`, which means only that an artifact is internally consistent. It is never, by itself, permission to execute. Authorization APIs expose an explicit, fail-closed decision instead: `verifyWitnessBundle` and `verifySignedVerificationQuorum` return `authorized` plus `authorization` (`decision`, `required`, fixed `reasons`); missing, unknown, or non-boolean conditions deny. See [detached verification](docs/DETACHED_VERIFIER.md) for the witness trust rule for caller-supplied time and [verifier plurality](docs/VERIFIER_PLURALITY.md) for the quorum decision. `scripts/check-valid-field-decisions.mjs` (run by `test/valid-field-decision-inventory.test.js`) fails CI when a `valid` read or success-status sink is unclassified in [the inventory](audit/AML_VALID_FIELD_DECISION_INVENTORY.json) or when `valid` alone controls a positive decision outside a reviewed validator command.

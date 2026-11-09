@@ -272,6 +272,36 @@ def unsatisfied_witness_claims(report):
     return fields
 
 
+# `valid` is internal consistency only; `authorized` is the only field that
+# grants permission to act. Mirrors signedQuorumAuthorizationDecision in
+# docs/aml-signed-verification-quorum.js and fails closed the same way.
+AUTHORIZATION_REQUIRED = ("valid", "threshold_met", "requested_conditions_met",
+                          "held_policy_met", "witness_requirement_met")
+AUTHORIZATION_DENIALS = {
+    "valid": "AML_AUTHZ_QUORUM_NOT_VALID",
+    "threshold_met": "AML_AUTHZ_THRESHOLD_NOT_MET",
+    "requested_conditions_met": "AML_AUTHZ_REQUESTED_CONDITIONS_UNMET",
+    "held_policy_met": "AML_AUTHZ_HELD_POLICY_REQUIRED_AND_MET",
+    "witness_requirement_met": "AML_AUTHZ_WITNESS_REQUIREMENT_UNMET",
+}
+
+
+def authorization_decision(conditions):
+    def deny(reasons):
+        return {"schema": "aml-authorization-decision/1", "authorized": False,
+                "decision": "deny", "reasons": reasons, "required": list(AUTHORIZATION_REQUIRED)}
+    if not isinstance(conditions, dict):
+        return deny(["AML_AUTHZ_CONDITIONS_MISSING"])
+    reasons = [AUTHORIZATION_DENIALS[name] for name in AUTHORIZATION_REQUIRED
+               if conditions.get(name) is not True]
+    if any(name not in AUTHORIZATION_REQUIRED for name in conditions):
+        reasons.append("AML_AUTHZ_UNKNOWN_CONDITION")
+    if reasons:
+        return deny(reasons)
+    return {"schema": "aml-authorization-decision/1", "authorized": True, "decision": "allow",
+            "reasons": ["AML_AUTHZ_ALLOW"], "required": list(AUTHORIZATION_REQUIRED)}
+
+
 def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=None,
                   expected_input_fingerprints=None):
     # Direct Python callers need the same held-input validation as the CLI.
@@ -299,10 +329,27 @@ def verify_quorum(quorum, policy=None, witness_bundle=None, expected_challenge=N
     if expected_input_fingerprints is not None:
         checked_conditions.append("inputs_met")
 
+    policy_needs_witness = policy is not None and policy["schema"] in (
+        "aml-signed-quorum-held-policy/4", "aml-signed-quorum-held-policy/5",
+        "aml-signed-quorum-held-policy/6")
+
     def with_requested_conditions(result):
         unmet = [name for name in checked_conditions if result.get(name) is not True]
         result["requested_conditions_met"] = not unmet
         result["requested_conditions"] = {"checked": checked_conditions, "unmet": unmet}
+        witness_required = with_witness or policy_needs_witness
+        authorization = authorization_decision({
+            "valid": result.get("valid") is True,
+            "threshold_met": result.get("threshold_met") is True,
+            "requested_conditions_met": not unmet,
+            "held_policy_met": (policy is not None and "policy_met" in checked_conditions and
+                                result.get("policy_met") is True),
+            "witness_requirement_met": (not witness_required or (
+                "witness_met" in checked_conditions and result.get("witness_met") is True and
+                result.get("replayable_claims_consistent") is True)),
+        })
+        result["authorized"] = authorization["authorized"]
+        result["authorization"] = authorization
         return result
 
     rejected = {"valid": False, "threshold_met": False}

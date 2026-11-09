@@ -307,7 +307,8 @@ try {
     const expectedChallenge = readUnambiguousJSON(args[2]);
     const result = await verifyWitnessBundle(bundle, { expectedChallenge });
     console.log(JSON.stringify(result, null, 2));
-    process.exit(result.valid ? 0 : 2);
+    // `valid` is internal consistency only; exit 0 requires the explicit decision.
+    process.exit(result.authorized === true ? 0 : 2);
   }
   if (command === "fingerprint-verifier-key") {
     if (args.length !== 2 || !args[1]) {

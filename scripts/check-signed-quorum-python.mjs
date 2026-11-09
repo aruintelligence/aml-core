@@ -57,6 +57,10 @@ async function compare(name, quorum, policy, expected, { bundle, challenge, expe
     assert.equal(py[field], js[field], `${name}: ${field}: ${run.stderr} ${run.stdout}`);
   }
   assert.deepEqual(py.requested_conditions, js.requested_conditions, `${name}: requested conditions`);
+  assert.deepEqual(py.authorization, js.authorization, `${name}: authorization decision`);
+  assert.equal(py.authorized, js.authorized, `${name}: authorized`);
+  assert.equal(js.authorized === true, js.requested_conditions_met === true && policy != null &&
+    js.policy_met === true, `${name}: authorized requires requested conditions and a held policy`);
   assert.equal(js.requested_conditions_met, expected, `${name}: JavaScript decision gate`);
   if (bundle) {
     for (const result of [py, js]) {

@@ -108,16 +108,35 @@ challenge and the complete challenge matched. A self-contained bundle can
 pass its own cryptographic checks without establishing that it answered a
 verifier's request.
 
-`verifyWitnessBundle` therefore reports two booleans. `valid` keeps its
-earlier meaning: the bundle is internally consistent. `verified` is the
-acceptance decision. It is true only when `valid` is true and the caller's
-retained `expectedChallenge` matched. Anyone can build a valid bundle around a
-challenge they generated themselves, so accept on `verified`, not `valid`. The
-HTTP endpoint `/v1/verify-witness-bundle` requires an `expected_challenge`
+`verifyWitnessBundle` therefore reports three booleans. `valid` keeps its
+earlier meaning: the bundle is internally consistent. `verified` adds that the
+caller's retained `expectedChallenge` matched. `authorized` is the only field
+that grants permission to act on the bundle. It is true only when the bundle is
+valid, the retained challenge matched, and the freshness decision used a clock
+the verifier trusts. `authorization` carries `decision` (`allow` or `deny`),
+the `required` conditions and fixed `reasons` codes
+(`AML_AUTHZ_BUNDLE_NOT_VALID`, `AML_AUTHZ_HELD_CHALLENGE_NOT_MATCHED`,
+`AML_AUTHZ_CALLER_CLOCK_UNTRUSTED`, `AML_AUTHZ_UNKNOWN_CONDITION`,
+`AML_AUTHZ_EVALUATION_ERROR`). Missing, unknown, or non-boolean conditions
+deny. Anyone can build a valid bundle around a challenge they generated
+themselves, so never act on `valid` alone.
+
+Trust rule for time: the verifier trusts only its own clock. A caller may pass
+`now` (an outer verifier that already read the same clock, or a fixed test
+clock). `valid` and `verified` are computed with it for compatibility and the
+result reports `freshness_clock_source: caller_supplied`, but `authorized`
+requires `now` to be a finite number within one second
+(`WITNESS_AUTHORIZATION_CLOCK_SKEW_MS`) of the verifier's own reading. A stale
+or future caller clock can make an expired challenge look fresh for
+`verified`; it never authorizes.
+
+The HTTP endpoint `/v1/verify-witness-bundle` requires an `expected_challenge`
 object (`400 expected_challenge_required` otherwise). It returns `200` only
-when `verified` is true, and echoes `held_challenge_sha256` so that a relayed
-response can be tied to the retained challenge. Callers that posted only
-`bundle` must now send their retained challenge.
+when `authorized` is true, and echoes `held_challenge_sha256` so that a relayed
+response can be tied to the retained challenge. A request that supplies a
+`now` outside the skew bound now receives `422` with the full result
+(`verified` may be true, `authorized` is false); it previously received `200`.
+`aml verify-witness` exits `0` only when `authorized` is true.
 
 ## Verify a saved bundle from the CLI
 
