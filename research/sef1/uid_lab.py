@@ -7,7 +7,9 @@ administrative domain, a real provider, or protection against root compromise.
 """
 import json
 import os
+from pathlib import Path
 import pwd
+import shutil
 import subprocess
 import sys
 import time
@@ -28,6 +30,19 @@ class TwoIdentityLab(Lab):
         if self.service_user.pw_uid == self.agent_user.pw_uid:
             raise ValueError("separate_identity_required")
         super().setUp()
+        # GitHub's checkout parent may be private to the runner account. Copy
+        # only public fixture source into a readable temporary tree; the key
+        # and databases stay under the distinct service-owned trusted path.
+        self.code_root = self.base / "code"
+        self.code_root.mkdir(mode=0o755)
+        for name in ("research/sef1/service.py", "research/sef1/client.py",
+                     "pilots/action-boundary/authorized_execution.py",
+                     "pilots/action-boundary/sqlite_path.py"):
+            target = self.code_root / name
+            target.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+            target.parent.chmod(0o755)
+            shutil.copyfile(ROOT / name, target)
+            target.chmod(0o644)
         # The administrator provisions the issuer and both DBs before granting
         # the untrusted identity access to the public request inbox.
         os.chmod(self.base, 0o711)
@@ -48,7 +63,7 @@ class TwoIdentityLab(Lab):
     def start(self, fault=None):
         if self.process is not None:
             self.stop()
-        command = [sys.executable, str(ROOT / "research/sef1/service.py"),
+        command = [sys.executable, str(self.code_root / "research/sef1/service.py"),
                    "--inbox", str(self.inbox), "--outbox", str(self.outbox),
                    "--authority", str(self.authority), "--provider", str(self.provider),
                    "--public-key", str(self.public)]
@@ -63,7 +78,7 @@ class TwoIdentityLab(Lab):
     def send(self, request, sandbox=True):
         raw = json.dumps(request, separators=(",", ":")).encode()
         child = subprocess.run(self.as_user(self.agent_user, sys.executable,
-            ROOT / "research/sef1/client.py", self.inbox, self.outbox),
+            self.code_root / "research/sef1/client.py", self.inbox, self.outbox),
             input=raw, capture_output=True, timeout=10)
         if child.returncode != 0:
             raise RuntimeError(child.stderr.decode())
