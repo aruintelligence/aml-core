@@ -1,0 +1,35 @@
+name: AML SEF Portable Research Lab
+
+on:
+  pull_request:
+    branches:
+      - main
+      - operation-aml/directive-011-sovereign-execution-fabric
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-payables:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Explore bounded safety model
+        run: python3 research/sef1/model.py > "${RUNNER_TEMP}/sef1-model.json"
+      - name: Run portable adversarial lab without sandbox route claim
+        run: python3 research/sef1/lab_test.py --portable --report "${RUNNER_TEMP}/sef1-results.json"
+      - name: Run buyer-facing synthetic demo
+        run: python3 research/sef1/demo.py --portable > "${RUNNER_TEMP}/sef1-demo.json"
+      - name: Run two-UID compromised-agent experiment
+        run: |
+          sudo useradd --system --no-create-home --shell /usr/sbin/nologin aml_sef_lab
+          sudo python3 research/sef1/uid_lab.py > "${RUNNER_TEMP}/sef1-two-uid.json"
+          python3 - <<'PY'
+          import json, os, pathlib
+          result = json.loads((pathlib.Path(os.environ["RUNNER_TEMP"]) / "sef1-two-uid.json").read_text())
+          assert result["tests_run"] == 2 and result["skipped"] == 0
+          assert result["failures"] == 0 and result["errors"] == 0
+          assert all(row["pass"] for row in result["assertions"])
+          print("two-UID observations:", len(result["assertions"]))
+          PY
