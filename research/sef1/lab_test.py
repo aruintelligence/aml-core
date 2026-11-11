@@ -191,7 +191,8 @@ class Lab(unittest.TestCase):
         self.assertEqual(self.count(), 0)
 
     def test_lost_ack_and_crash_after_claim(self):
-        for fault, expected_status in [("after_claim", "UNCERTAIN"), ("after_effect", "PROVIDER_REPORTED")]:
+        for fault, expected_status in [("after_claim", "UNCERTAIN"), ("after_effect", "PROVIDER_REPORTED"),
+                                       ("before_response_publish", "PROVIDER_REPORTED")]:
             self.start(fault)
             request = self.request()
             observe(fault + "_reply", "UNCERTAIN", self.send(request)["state"], "acknowledgment failure")

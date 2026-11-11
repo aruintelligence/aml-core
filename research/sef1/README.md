@@ -50,6 +50,10 @@ policy epoch before it commits a one-use claim and writes the synthetic effect.
 The response is `PROVIDER_REPORTED`, `DENIED`, `UNCERTAIN`, or `INCOMPLETE`.
 `PROVIDER_REPORTED` is a row in the fixture's provider database; it is not
 independent confirmation of real provider acceptance or completion.
+The file response is staged and published atomically so a reader cannot
+mistake partial JSON for a complete acknowledgment. A crash just before
+publication leaves the caller uncertain; a fresh status query can reconcile
+the retained synthetic provider row without retrying the effect.
 
 The `bwrap` launcher in `lab_test.py` makes the agent's root read-only,
 exposes a writable inbox and read-only outbox, and masks the trusted directory.

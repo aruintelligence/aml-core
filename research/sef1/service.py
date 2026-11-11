@@ -176,11 +176,21 @@ def serve(inbox, outbox, fabric):
             except (ValueError, TypeError, KeyError, RecursionError, sqlite3.Error, OSError):
                 response = {"state": "DENIED", "reason": "AML_SEF_REQUEST_REJECTED", "independent_confirmation": False}
             destination = Path(outbox) / (identifier + ".response")
+            staged = Path(outbox) / (identifier + ".tmp")
             try:
-                with destination.open("x", encoding="utf-8") as stream:
+                with staged.open("x", encoding="utf-8") as stream:
                     json.dump(response, stream, separators=(",", ":"))
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                if fabric.fault == "before_response_publish":
+                    os._exit(87)
+                # A same-name retry cannot replace an earlier response. The
+                # new name becomes visible only after all bytes are written.
+                os.link(staged, destination, follow_symlinks=False)
             except OSError:
                 pass  # Lost acknowledgment never authorizes another attempt.
+            finally:
+                staged.unlink(missing_ok=True)
         time.sleep(0.01)
 
 
@@ -188,7 +198,7 @@ def main():
     parser = argparse.ArgumentParser()
     for flag in ("inbox", "outbox", "authority", "provider", "public-key"):
         parser.add_argument("--" + flag, required=True)
-    parser.add_argument("--fault", choices=("after_claim", "after_effect"))
+    parser.add_argument("--fault", choices=("after_claim", "after_effect", "before_response_publish"))
     args = parser.parse_args()
     # Only the trusted launcher chooses paths/failpoints; none are API inputs.
     serve(args.inbox, args.outbox, Fabric(args.authority, args.provider, args.public_key, args.fault))
