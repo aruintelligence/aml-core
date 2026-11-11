@@ -49,8 +49,11 @@ class TwoIdentityLab(Lab):
         os.chown(self.trusted, self.service_user.pw_uid, self.service_user.pw_gid)
         for item in self.trusted.iterdir():
             os.chown(item, self.service_user.pw_uid, self.service_user.pw_gid)
-        os.chown(self.inbox, self.agent_user.pw_uid, self.agent_user.pw_gid)
-        os.chmod(self.inbox, 0o755)
+        # Service owns the sticky drop-box so it can unlink agent-owned
+        # requests after opening them. The agent may create files but cannot
+        # list the queue or remove another identity's files.
+        os.chown(self.inbox, self.service_user.pw_uid, self.service_user.pw_gid)
+        os.chmod(self.inbox, 0o1733)
         os.chown(self.outbox, self.service_user.pw_uid, self.service_user.pw_gid)
         os.chmod(self.outbox, 0o755)
         os.chown(self.agent, self.agent_user.pw_uid, self.agent_user.pw_gid)
