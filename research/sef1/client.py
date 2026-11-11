@@ -14,7 +14,10 @@ def exchange(inbox, outbox, raw):
     staged = Path(inbox) / (identifier + ".tmp")
     response = Path(outbox) / (identifier + ".response")
     try:
-        fd = os.open(staged, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+        # The synthetic lab queue is shared across two OS identities. Its
+        # request bytes contain no production secrets; real deployments need
+        # a dedicated authenticated transport and private queue ACLs.
+        fd = os.open(staged, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o644)
         with os.fdopen(fd, "wb") as stream:
             stream.write(raw)
             stream.flush()

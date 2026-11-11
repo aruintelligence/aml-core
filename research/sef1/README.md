@@ -28,6 +28,15 @@ before making any claim about confinement. The initial CI attempt to install
 bubblewrap failed because the runner could not resolve Ubuntu package mirrors;
 that failed run remains part of the experiment record.
 
+The CI workflow also runs `uid_lab.py` with a disposable service account
+(`aml_sef_lab`) and a separate unprivileged agent account (`nobody`). The root
+orchestrator provisions the key/stores; the agent cannot read the key, edit
+either database, forge a service response file, or restore the authority DB.
+The service account and agent still share one kernel and root administrator.
+Run this mode only on a disposable Linux VM with root access. Its synthetic
+request queue is intentionally world-readable within that VM; do not put real
+payee or customer information in it.
+
 ## Integration contract
 
 The untrusted agent can write a bounded JSON proposal to the inbox. The

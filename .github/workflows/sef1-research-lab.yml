@@ -21,3 +21,7 @@ jobs:
         run: python3 research/sef1/lab_test.py --portable --report "${RUNNER_TEMP}/sef1-results.json"
       - name: Run buyer-facing synthetic demo
         run: python3 research/sef1/demo.py --portable > "${RUNNER_TEMP}/sef1-demo.json"
+      - name: Run two-UID compromised-agent experiment
+        run: |
+          sudo useradd --system --no-create-home --shell /usr/sbin/nologin aml_sef_lab
+          sudo python3 research/sef1/uid_lab.py > "${RUNNER_TEMP}/sef1-two-uid.json"
