@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Separate-process, project-owned provider fixture; database row is the effect."""
+"""Separate-process provider fixture; ungated requests need diagnostic opt-in."""
 import hashlib
 import json
 import sqlite3
@@ -24,6 +24,13 @@ def main(database, command, gate=None):
         return
     if command != "request":
         raise ValueError("invalid_command")
+    diagnostic_only = gate == "--diagnostic-only-unguarded"
+    if gate is None:
+        raise ValueError("execution_gate_required")
+    if diagnostic_only:
+        gate = None
+    elif gate.startswith("--"):
+        raise ValueError("invalid_gate_argument")
     envelope = json.load(sys.stdin)
     raw = envelope["request_bytes"].encode("utf-8")
     digest = hashlib.sha256(raw).hexdigest()
@@ -55,7 +62,8 @@ def main(database, command, gate=None):
         if envelope.get("fault") == "after_commit":
             sys.exit(75)
         print(json.dumps({"operation_id": op, "request_sha256": row[0],
-                          "destination": row[1], "effect_id": row[2]}))
+                          "destination": row[1], "effect_id": row[2],
+                          "diagnostic_only_unguarded": diagnostic_only}))
     finally:
         con.close()
 

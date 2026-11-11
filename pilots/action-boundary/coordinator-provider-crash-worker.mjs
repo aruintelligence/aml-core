@@ -25,7 +25,8 @@ const providerDb = path.join(directory, "provider", "effects.sqlite");
 const coordinator = createSqliteEpochCoordinator({ database: coordinatorDb });
 const host = createFileRevocationHandoff({ directory: path.join(directory, "authority"),
   epochAnchor: coordinator });
-const callProvider = (command, input) => spawnSync("python3", [provider, providerDb, command],
+const callProvider = (command, input) => spawnSync("python3", [provider, providerDb, command,
+  ...(command === "request" ? ["--diagnostic-only-unguarded"] : [])],
   { input, encoding: "utf8", timeout: 20_000 });
 const hash = value => crypto.createHash("sha256").update(value).digest("hex");
 

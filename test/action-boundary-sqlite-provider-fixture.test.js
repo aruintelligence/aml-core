@@ -11,7 +11,8 @@ const worker = fileURLToPath(new URL("../pilots/action-boundary/sqlite-provider-
 function fixture(run) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-sqlite-provider-"));
   const database = path.join(directory, "provider.sqlite");
-  const call = (command, input) => spawnSync("python3", [worker, database, command],
+  const call = (command, input) => spawnSync("python3", [worker, database, command,
+    ...(command === "request" ? ["--diagnostic-only-unguarded"] : [])],
     { encoding: "utf8", input, timeout: 20_000 });
   const bytes = JSON.stringify({ operation_id: crypto.randomUUID(),
     destination: "fixture:outbox", body: "approved" });
@@ -35,6 +36,7 @@ test("lost response after provider commit remains uncertain until status query",
   const duplicate = call("request", JSON.stringify(request));
   assert.equal(duplicate.status, 0, duplicate.stderr);
   assert.equal(JSON.parse(duplicate.stdout).effect_id, record.effect_id);
+  assert.equal(JSON.parse(duplicate.stdout).diagnostic_only_unguarded, true);
 }));
 
 test("loss before provider commit remains uncertain until status query", () => fixture(({ call, request, operation }) => {

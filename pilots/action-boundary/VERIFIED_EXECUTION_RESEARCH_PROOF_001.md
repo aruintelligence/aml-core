@@ -10,7 +10,7 @@ The controlled provider's only effect is a SQLite row. Its optional gate opens a
 | --- | --- | --- |
 | AI proposal to host approval | Existing guarded/action-boundary pilots | Host controls policy, canonical action, approval and dispatch. This test does not authenticate a human. |
 | Host authorization to execution claim | Existing file authority and SQLite epoch coordinator | Their earlier tests cover spent grants. The new gate is **not yet bound to those grants**. |
-| Provider entry to execution claim | `sqlite-provider-fixture.py` optionally calls `sqlite_execution_gate.py` | Every consequential provider route must call the gate, and its database must survive provider rollback. Commit of the claim is the local linearization point. |
+| Provider entry to execution claim | `sqlite-provider-fixture.py` requires `sqlite_execution_gate.py` for a normal request; `--diagnostic-only-unguarded` retains an explicitly labeled unsafe comparison | Every consequential provider route must call the gate, and its database must survive provider rollback. Commit of the claim is the local linearization point. |
 | Gate to provider effect | Separate SQLite databases, non-atomic across them | Crash after gate commit but before effect strands the action. No automatic replay of an irreversible effect. |
 | Provider effect to evidence | Provider row, signed status, witness/history verifier in companion fixtures | A provider signature proves a statement was signed, not physical execution. Prior signed records must be retained to detect conflicting effects after provider history loss. |
 
