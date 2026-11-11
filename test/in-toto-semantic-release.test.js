@@ -143,7 +143,7 @@ test("aml-release-proof CLI exports and verifies the in-toto statement", () => {
     const statement = JSON.parse(exported);
     fs.writeFileSync(statementPath, `${JSON.stringify(statement, null, 2)}\n`);
     const verified = spawnSync(process.execPath, ["bin/aml-release-proof.js", "verify-in-toto", statementPath], { encoding: "utf8" });
-    assert.equal(verified.status, 0, verified.stderr || verified.stdout);
+    assert.equal(verified.status, 3, verified.stderr || verified.stdout);
     assert.equal(JSON.parse(verified.stdout).verified, true);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });

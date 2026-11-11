@@ -49,7 +49,7 @@ test("aml-meaning prints a fingerprint for one file", () => {
   assert.match(body.fingerprint, /^[a-f0-9]{64}$/);
 });
 
-test("aml-meaning exits 0 for equivalent meaning and 1 for changed meaning", () => {
+test("aml-meaning exits 3 for equivalent meaning and 1 for changed meaning", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "aml-meaning-"));
   const before = path.join(dir, "before.aml");
   const same = path.join(dir, "same.aml");
@@ -59,7 +59,7 @@ test("aml-meaning exits 0 for equivalent meaning and 1 for changed meaning", () 
   fs.writeFileSync(changed, changedMeaning);
 
   const equivalent = run(before, same);
-  assert.equal(equivalent.status, 0, equivalent.stderr);
+  assert.equal(equivalent.status, 3, equivalent.stderr);
   assert.equal(JSON.parse(equivalent.stdout).equivalent, true);
 
   const different = run(before, changed);

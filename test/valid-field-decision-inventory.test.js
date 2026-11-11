@@ -186,7 +186,8 @@ test('a diagnostic exit must be reviewed and stay under its diagnostic guard', t
     fs.copyFileSync(entry.file, path.join(base, entry.file));
   }
   const diag = inventory.decision_sinks.filter(e => e.category === 'diagnostic-exit');
-  assert.equal(diag.length, REVIEWED_DIAGNOSTIC_EXITS.length);
+  assert.deepEqual([...new Set(diag.map(e => `${e.file}:${e.code}`))].sort(),
+    REVIEWED_DIAGNOSTIC_EXITS.map(e => `${e.file}:${e.code}`).sort());
   const sinksOf = b => REVIEWED_DIAGNOSTIC_EXITS.flatMap(e => scanDecisionSinks(e.file, fs.readFileSync(path.join(b, e.file), 'utf8')))
     .filter(s => diag.some(d => d.file === s.file && d.code === s.code));
   const inv = sinks => ({ ...inventory, decision_sinks: sinks.map(s => ({ ...s, category: 'diagnostic-exit', effect: 'reviewed' })) });

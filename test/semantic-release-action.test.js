@@ -26,7 +26,8 @@ test("Semantic Release Gate invokes the canonical release-proof verifier", () =>
   assert.match(action, /proof-file:/);
   assert.match(action, /scripts\/semantic-release-gate\.js/);
   assert.match(runner, /verifySemanticReleaseProof/);
-  assert.match(runner, /process\.exit\(result\.verified \? 0 : 1\)/);
+  assert.match(runner, /consistencyCommandOutcome\(result, result\.verified/);
+  assert.match(runner, /process\.exitCode = exitCode/);
 });
 
 test("Semantic Release Gate exposes every documented trusted output through one verification step", () => {

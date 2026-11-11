@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { finishConsistencyCommand, diagnosticOnlyRequested } from "../runtime/commandAuthorization.js";
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import {
@@ -60,7 +61,8 @@ function parseArgs(argv) {
 }
 
 try {
-  const options = parseArgs(process.argv.slice(2));
+  const diagnosticOnly = diagnosticOnlyRequested(process.argv.slice(2));
+  const options = parseArgs(process.argv.slice(2).filter(arg => arg !== "--diagnostic-only"));
   let authorizationProfile = null;
   let authorizationProfileSha256 = null;
 
@@ -117,13 +119,12 @@ try {
     quorumPolicy,
     expectedQuorumPolicySha256: options.expectedQuorumPolicySha256 ?? null
   });
-  console.log(JSON.stringify({
+  await finishConsistencyCommand({
     ...result,
     authorization_profile_required: authorizationProfile !== null,
     authorization_profile_id: authorizationProfile?.profile_id ?? null,
     authorization_profile_sha256: authorizationProfileSha256
-  }, null, 2));
-  process.exit(result.verified ? 0 : 1);
+  }, result.verified, { diagnosticOnly });
 } catch (error) {
   usage();
   console.error(error instanceof Error ? error.message : String(error));

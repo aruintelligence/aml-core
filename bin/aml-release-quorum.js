@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { finishConsistencyCommand, diagnosticOnlyRequested } from "../runtime/commandAuthorization.js";
 import fs from "node:fs";
 import {
   createSemanticReleaseEndorsement,
@@ -32,7 +33,8 @@ function parseOptions(args) {
 }
 
 try {
-  const [command, ...args] = process.argv.slice(2);
+  const diagnosticOnly = diagnosticOnlyRequested(process.argv.slice(2));
+  const [command, ...args] = process.argv.slice(2).filter(arg => arg !== "--diagnostic-only");
 
   if (command === "endorse" && args.length >= 2) {
     const [proofFile, keyFile, ...rest] = args;
@@ -56,8 +58,7 @@ try {
     const result = verifySemanticReleaseQuorum(proof, endorsements, policy, {
       expectedPolicySha256: options["policy-sha256"] ?? null
     });
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    await finishConsistencyCommand(result, result.verified, { diagnosticOnly });
   }
 
   if (command === "hash-policy" && args.length === 1) {

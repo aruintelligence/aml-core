@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
+import { finishConsistencyCommand, diagnosticOnlyRequested } from "../runtime/commandAuthorization.js";
 import fs from "node:fs";
 import path from "node:path";
 import { meaningFingerprint, compareMeaningFingerprints } from "../compiler/meaningFingerprint.js";
 import { createMeaningManifest, verifyMeaningManifest } from "../compiler/meaningManifest.js";
 import { signMeaningManifest, verifySignedMeaningManifest } from "../compiler/meaningManifestAttestation.js";
 
-const args = process.argv.slice(2);
+const diagnosticOnly = diagnosticOnlyRequested(process.argv.slice(2));
+const args = process.argv.slice(2).filter(arg => arg !== "--diagnostic-only");
 
 function usage() {
   console.error("Usage:");
@@ -53,8 +55,7 @@ try {
     if (!Array.isArray(manifest.files)) throw new Error("Meaning Manifest files must be an array.");
     const sources = Object.fromEntries(manifest.files.map(file => [file.path, fs.readFileSync(safeManifestReadPath(file.path), "utf8")]));
     const report = verifyMeaningManifest(manifest, sources);
-    console.log(JSON.stringify(report, null, 2));
-    process.exit(report.verified ? 0 : 1);
+    await finishConsistencyCommand(report, report.verified, { diagnosticOnly });
   }
 
   if (args[0] === "sign-manifest") {
@@ -72,8 +73,7 @@ try {
     const attestation = JSON.parse(fs.readFileSync(attestationPath, "utf8"));
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
     const report = verifySignedMeaningManifest(attestation, manifest);
-    console.log(JSON.stringify(report, null, 2));
-    process.exit(report.verified ? 0 : 1);
+    await finishConsistencyCommand(report, report.verified, { diagnosticOnly });
   }
 
   const [leftPath, rightPath, ...rest] = args;
@@ -85,8 +85,7 @@ try {
   }
   const rightSource = fs.readFileSync(rightPath, "utf8");
   const report = compareMeaningFingerprints(leftSource, rightSource);
-  console.log(JSON.stringify({ left_file: leftPath, right_file: rightPath, ...report }, null, 2));
-  process.exit(report.equivalent ? 0 : 1);
+  await finishConsistencyCommand({ left_file: leftPath, right_file: rightPath, ...report }, report.equivalent, { diagnosticOnly });
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(2);

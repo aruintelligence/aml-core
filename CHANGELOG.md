@@ -4,6 +4,16 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 
 ## [Unreleased]
 
+### Directive 011 command boundary
+
+Breaking: artifact verification, meaning equivalence, release/quorum/brand
+checks and Python wire negotiation now exit 3 for consistency without protected
+execution authority. Explicit `--diagnostic-only` preserves consistency checks
+with `authorized:false`. Build-manifest verification reports JSON. The brand
+credential command also requires an independently provisioned exact registry
+SHA-256 pin. Contradictory/inherited/accessor decision flags fail closed.
+See `docs/COMMAND_AUTHORIZATION.md` for commands and Action migration limits.
+
 ### Breaking: verifier commands exit 0 only on an explicit authorization decision
 
 - A successful verification command no longer implies authorization from `valid` alone. Verifier and validator commands now exit `0` only when `authorized === true` and the `aml-authorization-decision/1` object agrees; a consistent but unauthorized result exits `3`. Other non-zero codes keep their meaning. Reports include `valid`, `authorized`, `authorization.reasons` and `remaining_trust_assumptions`.

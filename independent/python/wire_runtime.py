@@ -305,12 +305,24 @@ def main():
     negotiation.add_argument("local", type=Path)
     negotiation.add_argument("remote", type=Path)
     negotiation.add_argument("--required", action="append", default=[])
+    negotiation.add_argument("--diagnostic-only", action="store_true",
+                             help="Compatibility only; NOT AN AUTHORIZATION DECISION")
     args = parser.parse_args()
     try:
         if args.command == "negotiate":
             result = negotiate(json.loads(args.local.read_text(encoding="utf-8")),
                                json.loads(args.remote.read_text(encoding="utf-8")), args.required)
-            accepted = result["accepted"]
+            consistent = result["accepted"] is True
+            result = dict(result, valid=consistent, authorized=False, authorization={
+                "schema": "aml-authorization-decision/1", "authorized": False, "decision": "deny",
+                "reasons": ["AML_AUTHZ_EXECUTION_AUTHORITY_REQUIRED"],
+                "required": ["execution_authority"]}, decision_use="NOT AN AUTHORIZATION DECISION")
+            if args.diagnostic_only:
+                result["diagnostic_only"] = True
+            print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+            if args.diagnostic_only:
+                return 0 if consistent else 1
+            return 3 if consistent else 1
         else:
             artifact = json.loads(args.artifact.read_text(encoding="utf-8"))
             options = {"now": args.now} if args.kind in ("envelope", "passport") else {}
@@ -336,7 +348,7 @@ def main():
         result, accepted = failure("invalid_input", detail=str(error)), False
         result = dict(result, authorized=False)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
-    return 0 if accepted else 1
+    return 1
 
 
 if __name__ == "__main__":

@@ -87,7 +87,7 @@ test("a valid official signer does not grant a different grantee, mark, or use",
   assert.equal(verifyBrandClaim(credential, roots, revocations, {}).reason, "invalid_claim_policy");
 });
 
-test("buyer policy CLI exits successfully only for the exact pinned claim", () => {
+test("buyer policy CLI reports exact pinned claim without authorizing execution", () => {
   const { credential, roots, revocations, policy } = fixture();
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-brand-claim-"));
   try {
@@ -97,7 +97,7 @@ test("buyer policy CLI exits successfully only for the exact pinned claim", () =
     const cwd = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
     const run = () => spawnSync(process.execPath, ["bin/aml-brand-verify.js", ...paths], { cwd, encoding: "utf8" });
     const accepted = run();
-    assert.equal(accepted.status, 0, accepted.stderr || accepted.stdout);
+    assert.equal(accepted.status, 3, accepted.stderr || accepted.stdout);
     assert.equal(JSON.parse(accepted.stdout).claim_verified, true);
     fs.writeFileSync(paths[3], JSON.stringify({ ...policy, permitted_use: "resale" }));
     const rejected = run();
@@ -119,7 +119,7 @@ test("brand CLI rejects duplicate keys in every evidence file before a positive 
     const run = (files = paths) => spawnSync(process.execPath, ["bin/aml-brand-verify.js", ...files],
       { cwd, encoding: "utf8" });
     values.forEach((value, index) => fs.writeFileSync(paths[index], JSON.stringify(value)));
-    assert.equal(run().status, 0, "the unambiguous claim should be accepted");
+    assert.equal(run().status, 3, "the unambiguous claim should be accepted");
 
     const firstUse = '"permitted_use":"resale","permitted_use":"official-compatible-badge"';
     const ambiguous = [

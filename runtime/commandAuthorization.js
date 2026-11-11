@@ -26,7 +26,9 @@ const deny = (required, reasons) => ({
 // exactly `true`; unknown or missing conditions and evaluation errors deny.
 export function commandAuthorizationDecision(conditions, required, denials) {
   try {
-    if (!Array.isArray(required) || required.length === 0 || !denials || typeof denials !== "object") {
+    if (!Array.isArray(required) || required.length === 0 ||
+        required.some(name => typeof name !== "string" || !name) || new Set(required).size !== required.length ||
+        !denials || typeof denials !== "object") {
       return deny([], ["AML_AUTHZ_EVALUATION_ERROR"]);
     }
     if (conditions === null || typeof conditions !== "object" || Array.isArray(conditions)) {
@@ -66,7 +68,9 @@ export function withCommandAuthorization(result, decision, trustAssumptions = []
 // command's existing failure code. Exit 0 requires `authorized === true` in
 // decision mode; diagnostic mode reports authorized:false and is labelled.
 export function commandOutcome(result, { diagnosticOnly = false, invalidCode = 1 } = {}) {
-  const consistent = result?.valid === true;
+  result = ownDataRecord(result);
+  result.authorization = ownDataRecord(result.authorization);
+  const consistent = Object.getOwnPropertyDescriptor(result || {}, "valid")?.value === true;
   if (diagnosticOnly) {
     const authorization = { ...(result?.authorization || {}), authorized: false, decision: "deny",
       reasons: ["AML_AUTHZ_DIAGNOSTIC_ONLY", ...((result?.authorization?.reasons) || [])
@@ -77,9 +81,60 @@ export function commandOutcome(result, { diagnosticOnly = false, invalidCode = 1
       exitCode: consistent ? 0 : invalidCode
     };
   }
-  const authorized = result?.authorized === true && result?.authorization?.authorized === true && consistent;
-  return { output: { ...result, decision_use: authorized ? "authorization" : AML_NOT_AN_AUTHORIZATION_DECISION },
+  const authorized = completeCommandAuthorization(result) && consistent;
+  const authorization = authorized ? result.authorization : {
+    ...result?.authorization, schema: "aml-authorization-decision/1", authorized: false, decision: "deny",
+    reasons: result?.authorized === true || result?.authorization?.authorized === true
+      ? ["AML_AUTHZ_INCOMPLETE_DECISION"] : result?.authorization?.reasons || ["AML_AUTHZ_EXECUTION_AUTHORITY_REQUIRED"]
+  };
+  return { output: { ...result, authorized, authorization,
+    decision_use: authorized ? "authorization" : AML_NOT_AN_AUTHORIZATION_DECISION },
     exitCode: authorized ? AML_EXIT_AUTHORIZED : consistent ? AML_EXIT_NOT_AUTHORIZED : invalidCode };
+}
+
+function ownDataRecord(value) {
+  try {
+    const descriptors = Object.getOwnPropertyDescriptors(value);
+    if (Object.values(descriptors).some(descriptor => !Object.hasOwn(descriptor, "value"))) return {};
+    return Object.fromEntries(Object.entries(descriptors).map(([key, descriptor]) => [key, descriptor.value]));
+  } catch { return {}; }
+}
+
+// This checks a trusted verifier's decision shape, not an untrusted host's
+// authority. A host can manufacture an object; protected providers must verify
+// independently. Own data properties avoid interpreting prototypes/accessors
+// as a decision. Contradictory or incomplete decisions always fail closed.
+export function completeCommandAuthorization(result) {
+  const own = (object, key) => Object.getOwnPropertyDescriptor(object, key)?.value;
+  try {
+    const decision = own(result, "authorization");
+    const required = own(decision, "required");
+    const reasons = own(decision, "reasons");
+    return own(result, "authorized") === true && own(decision, "authorized") === true &&
+      own(decision, "schema") === "aml-authorization-decision/1" && own(decision, "decision") === "allow" &&
+      Array.isArray(required) && required.length > 0 && required.every(x => typeof x === "string" && x.length > 0) &&
+      new Set(required).size === required.length && Array.isArray(reasons) &&
+      reasons.length === 1 && reasons[0] === "AML_AUTHZ_ALLOW";
+  } catch { return false; }
+}
+
+// Artifact verification, equivalence, negotiation and a quorum are evidence,
+// not permission for a consequential effect. Preserve their original fields
+// and expose the same explicit diagnostic contract across command families.
+export function consistencyCommandOutcome(result, consistent, options = {}) {
+  const decision = commandAuthorizationDecision({ artifact_valid: consistent === true,
+    execution_authority: false }, ["artifact_valid", "execution_authority"], {
+    artifact_valid: "AML_AUTHZ_ARTIFACT_NOT_VALID", execution_authority: "AML_AUTHZ_EXECUTION_AUTHORITY_REQUIRED"
+  });
+  return commandOutcome(withCommandAuthorization({ ...result, valid: consistent === true }, decision,
+    ["Artifact verification does not authorize a protected effect; use an independently enforced execution authority."]), options);
+}
+
+export async function finishConsistencyCommand(result, consistent, options = {}) {
+  const { output, exitCode } = consistencyCommandOutcome(result, consistent, options);
+  await new Promise((resolve, reject) => process.stdout.write(`${JSON.stringify(output, null, 2)}\n`,
+    error => error ? reject(error) : resolve()));
+  process.exit(exitCode);
 }
 
 export function diagnosticOnlyRequested(argv) {
