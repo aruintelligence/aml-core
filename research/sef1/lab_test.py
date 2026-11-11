@@ -24,6 +24,7 @@ from authorized_execution import DOMAIN, canonical, initialize, revoke, set_epoc
 from client import exchange
 
 RESULTS = []
+PORTABLE = False
 
 
 def observe(case, expected, actual, property_name):
@@ -110,7 +111,7 @@ class Lab(unittest.TestCase):
 
     def send(self, request, sandbox=True):
         data = json.dumps(request, separators=(",", ":")).encode()
-        if not sandbox:
+        if not sandbox or PORTABLE:
             return exchange(self.inbox, self.outbox, data)
         cmd = ["bwrap", "--ro-bind", "/", "/", "--unshare-user", "--unshare-pid",
                "--proc", "/proc", "--dev", "/dev", "--ro-bind", str(self.empty), str(self.trusted),
@@ -200,6 +201,8 @@ class Lab(unittest.TestCase):
             observe(fault + "_status", expected_status, self.status(request)["state"], "read-only reconciliation")
 
     def test_sandbox_denies_direct_provider_route_and_admin_access(self):
+        if PORTABLE:
+            self.skipTest("requires bubblewrap isolation; run default lab on Linux")
         self.start()
         script = ("from pathlib import Path\nimport sqlite3\n"
                   f"p=Path({str(self.provider)!r})\n"
@@ -287,6 +290,9 @@ class Lab(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    if "--portable" in sys.argv:
+        PORTABLE = True
+        sys.argv.remove("--portable")
     report = None
     if "--report" in sys.argv:
         index = sys.argv.index("--report")
@@ -298,7 +304,8 @@ if __name__ == "__main__":
         report.write_text(json.dumps({"schema": "aml-sef-lab-results/1", "source": "project-authored",
             "case_count": len(RESULTS), "assertions": RESULTS, "tests_run": result.testsRun,
             "failures": len(result.failures), "errors": len(result.errors),
-            "sandbox": "bubblewrap read-only root; hidden trusted directory; agent process only",
+            "sandbox": "not exercised; sandbox test skipped" if PORTABLE else
+                       "bubblewrap read-only root; hidden trusted directory; agent process only",
             "limitations": ["same-UID unsandboxed administrator can bypass", "joint trusted-store rollback duplicates",
                             "no external payment provider", "no independent completion"]}, indent=2) + "\n")
     sys.exit(0 if result.wasSuccessful() else 1)

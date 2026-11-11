@@ -20,9 +20,13 @@ python3 research/sef1/model.py
 The demo returns a provider-reported synthetic effect, denial of exact replay,
 and denial of changing the merchant after approval. The lab tests also retain
 deliberately successful bypasses outside the confined agent boundary.
-The focused workflow `.github/workflows/sef1-research-lab.yml` runs these
-commands on an Ubuntu runner; the local test result and workflow result must
-both be checked before review.
+The focused workflow `.github/workflows/sef1-research-lab.yml` runs a
+`--portable` mode on an Ubuntu runner without installing bubblewrap. It tests
+authorization and crash/rollback behavior but explicitly skips the sandbox
+isolation test. Run the default commands above on a Linux system with bubblewrap
+before making any claim about confinement. The initial CI attempt to install
+bubblewrap failed because the runner could not resolve Ubuntu package mirrors;
+that failed run remains part of the experiment record.
 
 ## Integration contract
 
