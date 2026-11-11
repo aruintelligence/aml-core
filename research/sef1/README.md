@@ -20,6 +20,9 @@ python3 research/sef1/model.py
 The demo returns a provider-reported synthetic effect, denial of exact replay,
 and denial of changing the merchant after approval. The lab tests also retain
 deliberately successful bypasses outside the confined agent boundary.
+The focused workflow `.github/workflows/sef1-research-lab.yml` runs these
+commands on an Ubuntu runner; the local test result and workflow result must
+both be checked before review.
 
 ## Integration contract
 

@@ -1,0 +1,27 @@
+name: AML SEF Research Lab
+
+on:
+  pull_request:
+    branches:
+      - main
+      - operation-aml/directive-011-sovereign-execution-fabric
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-payables:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install isolated lab runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap openssl
+      - name: Explore bounded safety model
+        run: python3 research/sef1/model.py > "${RUNNER_TEMP}/sef1-model.json"
+      - name: Run adversarial synthetic payables lab
+        run: python3 research/sef1/lab_test.py --report "${RUNNER_TEMP}/sef1-results.json"
+      - name: Run buyer-facing synthetic demo
+        run: python3 research/sef1/demo.py > "${RUNNER_TEMP}/sef1-demo.json"
