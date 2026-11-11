@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
+import { consistencyCommandOutcome, diagnosticOnlyRequested } from "../runtime/commandAuthorization.js";
 import fs from "node:fs";
 import { verifySemanticReleaseProof } from "../compiler/semanticReleaseProof.js";
 
-const [proofPath, ...rest] = process.argv.slice(2);
+const diagnosticOnly = diagnosticOnlyRequested(process.argv.slice(2));
+const [proofPath, ...rest] = process.argv.slice(2).filter(arg => arg !== "--diagnostic-only");
 
 function failUsage() {
   console.error("Usage: node scripts/semantic-release-gate.js <proof.json>");
@@ -23,7 +25,10 @@ try {
   const result = verifySemanticReleaseProof(proof);
   const summary = result.change_summary || { added: 0, removed: 0, changed: 0, unchanged: 0 };
 
+  const { output, exitCode } = consistencyCommandOutcome(result, result.verified, { diagnosticOnly });
   const outputs = {
+    authorized: output.authorized,
+    "decision-use": output.decision_use,
     verified: result.verified,
     signer: result.signer,
     release_id: result.release_id,
@@ -43,11 +48,12 @@ try {
 
   console.log(JSON.stringify({
     protocol: "aml-semantic-release-gate-result/1",
+    ...output,
     ...outputs,
     reason: result.reason ?? null
   }, null, 2));
 
-  process.exit(result.verified ? 0 : 1);
+  process.exitCode = exitCode;
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(2);

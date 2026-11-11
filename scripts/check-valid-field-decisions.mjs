@@ -60,7 +60,7 @@ export const REQUIRED_DECISION_SINKS = Object.freeze([
   { file: 'docs/worker-verifier.html', pattern: "event.data?.authorized === true ? 'ok' : 'bad'",
     effect: 'worker verifier pass styling' },
   { file: 'runtime/commandAuthorization.js',
-    pattern: 'const authorized = result?.authorized === true && result?.authorization?.authorized === true && consistent;',
+    pattern: 'const authorized = completeCommandAuthorization(result) && consistent;',
     effect: 'exit 0 for every JS verifier command that uses commandOutcome' },
   { file: 'bin/aml.js', pattern: ': result.authorized === true && result.authorization?.authorized === true ? 0',
     effect: 'exit 0 for aml verify-signed-quorum' },

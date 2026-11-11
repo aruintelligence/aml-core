@@ -3,8 +3,9 @@
 // bin/aml.js
 // ĀML_CORE — Command-Line Interface
 
+import { finishConsistencyCommand, diagnosticOnlyRequested } from "../runtime/commandAuthorization.js";
 import fs from "fs";
-import { webcrypto } from "node:crypto";
+import { webcrypto, createHash } from "node:crypto";
 import { compileAML, compileSource } from "../compiler/compiler.js";
 import { generateAMLFromIntent } from "../compiler/intentCompiler.js";
 import { simulatePolicies } from "../compiler/policySimulator.js";
@@ -35,10 +36,10 @@ import { commandAuthorizationDecision, withCommandAuthorization, commandOutcome,
 // revocation registry was checked, evaluated on the verifier's own clock.
 // AML_VERIFY_AT is a replay override: outside the skew bound it is untrusted
 // and the result is not authorized.
-const BRAND_REQUIRED = ["credential_valid", "issuer_pinned", "signing_key_pinned", "revocation_checked", "trusted_clock"];
+const BRAND_REQUIRED = ["credential_valid", "issuer_pinned", "signing_key_pinned", "revocation_checked", "revocation_registry_pinned", "trusted_clock"];
 const BRAND_DENIALS = { credential_valid: "AML_AUTHZ_CREDENTIAL_NOT_VALID", issuer_pinned: "AML_AUTHZ_ISSUER_NOT_PINNED",
   signing_key_pinned: "AML_AUTHZ_SIGNING_KEY_NOT_PINNED", revocation_checked: "AML_AUTHZ_REVOCATION_NOT_CHECKED",
-  trusted_clock: "AML_AUTHZ_CALLER_CLOCK_UNTRUSTED" };
+  revocation_registry_pinned: "AML_AUTHZ_REVOCATION_REGISTRY_NOT_PINNED", trusted_clock: "AML_AUTHZ_CALLER_CLOCK_UNTRUSTED" };
 const BRAND_TRUST = ["the pinned issuer and key fingerprint came from an independently trusted source",
   "the supplied revocation registry is current", "the verifier host clock"];
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
@@ -312,8 +313,7 @@ try {
   }
   if (command === "verify-receipt") {
     const result = verifyExecutionReceipt(JSON.parse(readSource(inputPath)));
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    await finishConsistencyCommand(result, result.verified, { diagnosticOnly: diagnosticOnlyRequested(args) });
   }
   if (command === "verify-witness") {
     if (args.length !== 3 || !args[1] || !args[2]) {
@@ -407,8 +407,7 @@ try {
   }
   if (command === "replay-receipt") {
     const result = replayExecutionReceipt(JSON.parse(readSource(inputPath)));
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    await finishConsistencyCommand(result, result.verified, { diagnosticOnly: diagnosticOnlyRequested(args) });
   }
   if (command === "sign-receipt") {
     const privateKeyPath = args[2];
@@ -419,8 +418,7 @@ try {
   }
   if (command === "verify-signed-receipt") {
     const result = verifySignedExecutionReceipt(JSON.parse(readSource(inputPath)));
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    await finishConsistencyCommand(result, result.verified, { diagnosticOnly: diagnosticOnlyRequested(args) });
   }
   if (command === "simulate") {
     const policies = (args[2] || "restorative_v1,attention_conservative_v1").split(",").map(item => item.trim()).filter(Boolean);
@@ -450,8 +448,7 @@ try {
   }
   if (command === "verify-policy-pack") {
     const result = verifySignedPolicyPack(JSON.parse(readSource(inputPath)));
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    await finishConsistencyCommand(result, result.verified, { diagnosticOnly: diagnosticOnlyRequested(args) });
   }
   if (command === "sign-brand-authorization") {
     const privateKeyPath = args[2];
@@ -467,8 +464,10 @@ try {
   if (command === "verify-brand-authorization") {
     const positional = args.slice(1).filter(arg => arg !== AML_DIAGNOSTIC_ONLY_FLAG);
     const diagnosticOnly = args.includes(AML_DIAGNOSTIC_ONLY_FLAG);
-    const credential = JSON.parse(readSource(positional[0] || inputPath));
-    const revocationRegistry = positional[1] ? JSON.parse(readSource(positional[1])) : null;
+    const credential = readUnambiguousJSON(positional[0] || inputPath);
+    const revocationSource = positional[1] ? readSource(positional[1]) : null;
+    const revocationRegistry = revocationSource === null ? null : parseJsonWithoutDuplicateKeys(revocationSource);
+    const trustedRegistry = process.env.AML_TRUSTED_BRAND_REVOCATION_SHA256 || null;
     const callerTime = process.env.AML_VERIFY_AT || null;
     const localNow = Date.now();
     const expectedIssuer = process.env.AML_EXPECTED_BRAND_ISSUER || null;
@@ -484,6 +483,8 @@ try {
       signing_key_pinned: typeof trustedKey === "string" && /^[a-f0-9]{64}$/.test(trustedKey) &&
         credential?.public_key_sha256 === trustedKey,
       revocation_checked: verification.credential_revocation_checked === true,
+      revocation_registry_pinned: typeof trustedRegistry === "string" && /^[a-f0-9]{64}$/.test(trustedRegistry) &&
+        revocationSource !== null && createHash("sha256").update(revocationSource, "utf8").digest("hex") === trustedRegistry,
       trusted_clock: trustedCommandClock(callerTime, localNow)
     }, BRAND_REQUIRED, BRAND_DENIALS), BRAND_TRUST);
     const { output, exitCode } = commandOutcome(result, { diagnosticOnly, invalidCode: 1 });
@@ -492,8 +493,7 @@ try {
   }
   if (command === "verify-audit") {
     const result = verifyAuditStream(JSON.parse(readSource(inputPath)));
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    await finishConsistencyCommand(result, result.verified, { diagnosticOnly: diagnosticOnlyRequested(args) });
   }
   if (command === "attention-account") {
     const budget = Number(args[2]);
@@ -534,11 +534,7 @@ try {
   }
   if (command === "verify") {
     const result = verifyBuildManifest(inputPath);
-    for (const check of result.checks) console.log(`${check.ok ? "PASS" : "FAIL"} ${check.kind}: ${check.file} — ${check.reason}`);
-    console.log(`Verified: ${result.verified}`);
-    console.log(`Passed: ${result.passed}`);
-    console.log(`Failed: ${result.failed}`);
-    process.exit(result.verified ? 0 : 1);
+    await finishConsistencyCommand(result, result.verified, { diagnosticOnly: diagnosticOnlyRequested(args) });
   }
   if (command === "sign") {
     const privateKeyPath = args[2];
@@ -550,8 +546,7 @@ try {
   if (command === "verify-attestation") {
     const attestation = JSON.parse(readSource(inputPath));
     const result = verifyBuildAttestation(attestation, args[2] || attestation.manifest_path);
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    await finishConsistencyCommand(result, result.verified, { diagnosticOnly: diagnosticOnlyRequested(args) });
   }
 
   console.error(`Unknown command: ${command}`);

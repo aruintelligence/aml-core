@@ -57,8 +57,40 @@ verifier). The Go verifier never treats `--now` as trusted.
 | `independent/go` (`verify.sh`, `main.go`) | never: no held-challenge support | 0 valid, 1 invalid, 2 input error (`verify.sh` collapsed non-zero to 1) | 3 valid, 1 invalid, 2 input error; `verify.sh` now preserves the exit code |
 | `independent/python/wire_runtime.py verify` | never: no trust roots | 0 valid, 1 invalid | 3 consistent, 1 invalid |
 
-`wire_runtime.py negotiate` (exit on `accepted`) is unchanged; see
-"Remaining exceptions".
+### Directive 011 extension
+
+The remaining artifact-verification and compatibility commands now follow the
+same explicit diagnostic contract: `aml verify`, `verify-receipt`,
+`replay-receipt`, `verify-signed-receipt`, `verify-policy-pack`, `verify-audit`,
+`verify-attestation`; `aml-meaning verify-manifest`, `verify-attestation` and
+meaning comparison; `aml-release-proof` verification (including `trusted` and
+`verify-in-toto`); `aml-release-quorum verify`; `aml-github-attestation`;
+`aml-brand-verify`; `aml-governance-witness-quorum`; the semantic-release gate;
+and Python `wire_runtime.py negotiate`.
+
+A consistent result exits **3**, with `authorized: false`. An explicitly supplied
+`--diagnostic-only` exits 0 for consistency and labels the output. Invalid
+artifacts keep their failure codes. Existing `verified`, `accepted`,
+`quorum_met`, `claim_verified` and `equivalent` fields retain their diagnostic
+meanings. These commands do not implement a protected-effect execution authority;
+even a pinned release policy or key is not such an authority. Library return
+values and published signed wire material are unchanged. `aml verify` now emits
+a JSON report rather than the old human-readable checklist.
+
+The shared outcome helper rejects incomplete or contradictory decision objects:
+both flags, the `/1` schema, `allow`, nonempty unique required-condition names,
+and the sole `AML_AUTHZ_ALLOW` reason must agree. It snapshots own data properties
+without invoking accessors. Rejected decision outputs normalize both flags to
+false. This is defense in depth inside a **trusted** verifier, not proof of
+permission when a malicious host can construct arbitrary JSON.
+
+`aml verify-brand-authorization` additionally requires
+`AML_TRUSTED_BRAND_REVOCATION_SHA256`: lowercase SHA-256 of the exact UTF-8
+registry bytes, provisioned by the relying party independently of the request.
+Missing or substituted registries cannot authorize. A trusted administrator
+can still pin stale data; no live registry service, freshness protocol or
+rollback-resistant policy distributor is implemented here. Duplicate keys in
+credential/registry JSON fail before verification.
 
 ## Migration
 
@@ -90,20 +122,25 @@ property names, non-relative imports, and expressions split across lines are
 not followed; Go is matched lexically. It is a static approximation, not a
 proof.
 
-## Remaining exceptions
+## Scope still open
 
-These commands exit 0 on a field other than `valid` (for example `verified`,
-`accepted`, `quorum_met`) without a complete `authorization` decision object.
-They are not changed here and remain open:
-`aml verify`, `verify-receipt`, `replay-receipt`, `verify-signed-receipt`,
-`verify-policy-pack`, `verify-audit` and similar `aml` subcommands;
-`aml-github-attestation`, `aml-meaning`, `aml-release-proof`,
-`aml-release-quorum`, `aml-brand-verify`, `aml-governance-witness-quorum`,
-`scripts/semantic-release-gate`; `wire_runtime.py negotiate`.
+The static checker remains an approximation focused on `valid`; its six
+previously documented data-flow limitations are not closed by this change.
+Dynamic module loading, external consumers and every application-specific
+execution route require separate review. HTTP status 200 on an evaluation API
+is transport success, not a general execution capability. Build/lint/creation,
+help and version commands can exit 0 without being authorization gates.
+
+The main CI build-manifest step explicitly uses diagnostic mode. Existing
+brand/release/quorum/meaning composite Actions are **not silently opted into**
+diagnostic mode: their default commands now fail closed with exit 3. Consumers
+must deliberately migrate their consistency checks and must not use diagnostic
+success or a `verified` output alone as release/deployment permission. A full
+redesign of their release-authorization interfaces remains open.
 
 ## Remaining trust assumptions
 
 Pinned roots, fingerprints, key ids and scopes are only as good as the
 channel they came from. A trusted key does not establish real-world signer
-identity. The brand revocation registry argument is not itself signed; its
-presence is checked, not its provenance. The local clock is trusted.
+identity. The brand registry pin binds exact supplied bytes; trusted provisioning and
+freshness of that pin remain deployment assumptions. The local clock is trusted.

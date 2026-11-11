@@ -38,7 +38,7 @@ test("aml-meaning manifest creates a verifiable project meaning lock", () => {
   fs.writeFileSync(path.join(dir, "aml-meaning-lock.json"), JSON.stringify(manifest, null, 2));
 
   const verified = run(dir, "verify-manifest", "aml-meaning-lock.json");
-  assert.equal(verified.status, 0, verified.stderr);
+  assert.equal(verified.status, 3, verified.stderr);
   assert.equal(JSON.parse(verified.stdout).verified, true);
 });
 

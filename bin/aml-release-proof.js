@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
+import { finishConsistencyCommand, diagnosticOnlyRequested } from "../runtime/commandAuthorization.js";
 import fs from "node:fs";
 import { verifySemanticReleaseProof } from "../compiler/semanticReleaseProof.js";
 import { createInTotoSemanticReleaseStatement, verifyInTotoSemanticReleaseStatement } from "../compiler/inTotoSemanticRelease.js";
 import { releaseKeyTrustPolicyFingerprint, verifyTrustedSemanticReleaseProof } from "../tooling/releaseKeyTrust.js";
 
-const args = process.argv.slice(2);
+const diagnosticOnly = diagnosticOnlyRequested(process.argv.slice(2));
+const args = process.argv.slice(2).filter(arg => arg !== "--diagnostic-only");
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
@@ -19,16 +21,14 @@ try {
   if (args.length === 1) {
     const proof = readJson(args[0]);
     const result = verifySemanticReleaseProof(proof);
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    await finishConsistencyCommand(result, result.verified, { diagnosticOnly });
   }
 
   if ((args.length === 3 || args.length === 4) && args[0] === "trusted") {
     const proof = readJson(args[1]);
     const policy = readJson(args[2]);
     const result = verifyTrustedSemanticReleaseProof(proof, policy, { expected_policy_sha256: args[3] ?? null });
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    await finishConsistencyCommand(result, result.verified, { diagnosticOnly });
   }
 
   if (args.length === 2 && args[0] === "policy-hash") {
@@ -47,8 +47,7 @@ try {
   if (args.length === 2 && args[0] === "verify-in-toto") {
     const statement = readJson(args[1]);
     const result = verifyInTotoSemanticReleaseStatement(statement);
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    await finishConsistencyCommand(result, result.verified, { diagnosticOnly });
   }
 
   usage();

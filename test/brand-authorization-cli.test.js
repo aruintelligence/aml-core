@@ -48,7 +48,7 @@ test("CLI signs and verifies an AML brand authorization credential", () => {
   assert.equal(result.authorized, false);
   assert.equal(result.decision_use, "NOT AN AUTHORIZATION DECISION");
   assert.deepEqual(result.authorization.reasons, ["AML_AUTHZ_SIGNING_KEY_NOT_PINNED",
-    "AML_AUTHZ_REVOCATION_NOT_CHECKED", "AML_AUTHZ_CALLER_CLOCK_UNTRUSTED"]);
+    "AML_AUTHZ_REVOCATION_NOT_CHECKED", "AML_AUTHZ_REVOCATION_REGISTRY_NOT_PINNED", "AML_AUTHZ_CALLER_CLOCK_UNTRUSTED"]);
   assert.equal(result.grantee, "Example Integrator LLC");
   assert.equal(result.clock_source, "caller_supplied");
 });
@@ -66,7 +66,8 @@ test("verify-brand-authorization exits 0 only for the complete authorization dec
   fs.writeFileSync(credentialPath, JSON.stringify(credential));
   fs.writeFileSync(registryPath, JSON.stringify(createRevocationRegistry()));
   const pinned = { AML_VERIFY_AT: "", AML_EXPECTED_BRAND_ISSUER: "Example Issuer",
-    AML_TRUSTED_BRAND_KEY_SHA256: credential.public_key_sha256 };
+    AML_TRUSTED_BRAND_KEY_SHA256: credential.public_key_sha256,
+    AML_TRUSTED_BRAND_REVOCATION_SHA256: crypto.createHash("sha256").update(fs.readFileSync(registryPath)).digest("hex") };
   const verify = (env, ...extra) => {
     const out = run(["verify-brand-authorization", credentialPath, ...extra], { env: { ...process.env, ...env } });
     return { status: out.status, result: JSON.parse(out.stdout) };
@@ -79,6 +80,8 @@ test("verify-brand-authorization exits 0 only for the complete authorization dec
     "no issuer pin": [{ ...pinned, AML_EXPECTED_BRAND_ISSUER: "" }, [registryPath], "AML_AUTHZ_ISSUER_NOT_PINNED"],
     "no key pin": [{ ...pinned, AML_TRUSTED_BRAND_KEY_SHA256: "" }, [registryPath], "AML_AUTHZ_SIGNING_KEY_NOT_PINNED"],
     "other key pin": [{ ...pinned, AML_TRUSTED_BRAND_KEY_SHA256: "0".repeat(64) }, [registryPath], "AML_AUTHZ_SIGNING_KEY_NOT_PINNED"],
+    "no registry pin": [{ ...pinned, AML_TRUSTED_BRAND_REVOCATION_SHA256: "" }, [registryPath], "AML_AUTHZ_REVOCATION_REGISTRY_NOT_PINNED"],
+    "substituted registry pin": [{ ...pinned, AML_TRUSTED_BRAND_REVOCATION_SHA256: "0".repeat(64) }, [registryPath], "AML_AUTHZ_REVOCATION_REGISTRY_NOT_PINNED"],
     "no revocation registry": [pinned, [], "AML_AUTHZ_REVOCATION_NOT_CHECKED"],
     "stale caller clock": [{ ...pinned, AML_VERIFY_AT: new Date(Date.now() - 60000).toISOString() }, [registryPath], "AML_AUTHZ_CALLER_CLOCK_UNTRUSTED"],
     "future caller clock": [{ ...pinned, AML_VERIFY_AT: new Date(Date.now() + 60000).toISOString() }, [registryPath], "AML_AUTHZ_CALLER_CLOCK_UNTRUSTED"]

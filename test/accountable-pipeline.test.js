@@ -176,14 +176,14 @@ test("replay-receipt CLI exits nonzero for a hash-consistent invented output", (
   try {
     const receipt = freshReceipt();
     fs.writeFileSync(receiptPath, JSON.stringify(receipt));
-    assert.equal(invoke("replay-receipt").status, 0);
+    assert.equal(invoke("replay-receipt").status, 3);
 
     receipt.selected_render.html += "<aside>Unreviewed output</aside>";
     receipt.output_sha256 = sha256(receipt.selected_render.html);
     receipt.runtime_audit_stream.entries[4].payload.output_sha256 = receipt.output_sha256;
     refreshAuditAndReceiptHashes(receipt);
     fs.writeFileSync(receiptPath, JSON.stringify(receipt));
-    assert.equal(invoke("verify-receipt").status, 0);
+    assert.equal(invoke("verify-receipt").status, 3);
     const replay = invoke("replay-receipt");
     assert.equal(replay.status, 1, replay.stderr);
     assert.equal(JSON.parse(replay.stdout).reason, "replay_mismatch");
