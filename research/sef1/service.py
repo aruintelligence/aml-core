@@ -7,6 +7,7 @@ Reuses the already disclosed aml-authorized-execution/1 signature profile.
 """
 import argparse
 import hashlib
+from itertools import islice
 import json
 import os
 from pathlib import Path
@@ -21,6 +22,7 @@ from authorized_execution import consume
 from sqlite_path import sqlite_file_uri
 
 MAX_WIRE = 65536
+MAX_SCAN_BATCH = 64
 DESTINATION = "fixture:merchant-a"
 EFFECT = "payment:simulate"
 
@@ -168,9 +170,14 @@ class Fabric:
 def serve(inbox, outbox, fabric):
     """Lab file transport; only the trusted process reads the request queue."""
     while True:
-        for entry in sorted(Path(inbox).glob("*.request")):
+        # Avoid materializing an attacker-controlled directory in memory.
+        for entry in islice(Path(inbox).glob("*.request"), MAX_SCAN_BATCH):
             identifier = entry.name[:-8]
             if not re.fullmatch(r"[0-9a-f]{32}", identifier):
+                try:
+                    entry.unlink(missing_ok=True)
+                except OSError:
+                    pass
                 continue
             try:
                 fd = os.open(entry, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
@@ -181,8 +188,16 @@ def serve(inbox, outbox, fabric):
                 entry.unlink()
                 response = fabric.handle(strict_json(raw))
             except (ValueError, TypeError, KeyError, RecursionError):
+                try:
+                    entry.unlink(missing_ok=True)
+                except OSError:
+                    pass
                 response = {"state": "DENIED", "reason": "AML_SEF_REQUEST_REJECTED", "independent_confirmation": False}
             except (EvidenceConflict, sqlite3.Error, OSError):
+                try:
+                    entry.unlink(missing_ok=True)
+                except OSError:
+                    pass
                 # A claim or effect may already be committed. A storage fault
                 # cannot truthfully be reported as an authorization denial.
                 response = {"state": "UNCERTAIN", "reason": "AML_SEF_STORAGE_UNAVAILABLE",

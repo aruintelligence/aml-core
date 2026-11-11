@@ -36,6 +36,10 @@ The service account and agent still share one kernel and root administrator.
 Run this mode only on a disposable Linux VM with root access. Its synthetic
 request queue is intentionally world-readable within that VM; do not put real
 payee or customer information in it.
+The service scans at most 64 queue entries per cycle and removes malformed
+names and requests. A finite 256-entry malformed flood drains in the lab;
+sustained flooding and disk exhaustion remain liveness risks. A real adapter
+needs queue quotas, backpressure and separate availability controls.
 
 ## Integration contract
 

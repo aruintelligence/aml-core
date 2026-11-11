@@ -228,6 +228,22 @@ class Lab(unittest.TestCase):
         observe("provider_row_without_claim", "UNCERTAIN", self.status(request)["state"],
                 "conflicting retained evidence")
 
+    def test_finite_malformed_queue_flood_drains_without_effect(self):
+        for index in range(128):
+            (self.inbox / f"invalid-{index:04d}.request").write_bytes(b"invalid")
+            (self.inbox / (uuid.uuid4().hex + ".request")).write_bytes(b'{"a":1,"a":2}')
+        (self.inbox / (uuid.uuid4().hex + ".request")).symlink_to(self.private)
+        self.start()
+        deadline = time.monotonic() + 10
+        while any(self.inbox.glob("*.request")) and time.monotonic() < deadline:
+            time.sleep(0.02)
+        observe("finite_malformed_queue_drained", 0,
+                sum(1 for _ in self.inbox.glob("*.request")), "bounded scanning liveness")
+        observe("flood_no_provider_effect", 0, self.count(), "malformed queue safety")
+        self.assertTrue(self.private.is_file(), "symlink must not delete its target")
+        self.assertEqual(self.send(self.request())["state"], "PROVIDER_REPORTED")
+        self.assertEqual(self.count(), 1)
+
     def test_lost_ack_and_crash_after_claim(self):
         for fault, expected_status in [("after_claim", "UNCERTAIN"), ("after_effect", "PROVIDER_REPORTED"),
                                        ("before_response_publish", "PROVIDER_REPORTED")]:
