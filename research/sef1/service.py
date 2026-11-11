@@ -25,6 +25,10 @@ DESTINATION = "fixture:merchant-a"
 EFFECT = "payment:simulate"
 
 
+class EvidenceConflict(Exception):
+    """Trusted stores disagree about a possible effect; never deny as absent."""
+
+
 def strict_json(raw):
     if len(raw) > MAX_WIRE:
         raise ValueError("input_limit")
@@ -142,17 +146,20 @@ class Fabric:
             not isinstance(binding["request_sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", binding["request_sha256"]) or
             binding["destination"] != DESTINATION or not isinstance(binding["operation_id"], str)):
             raise ValueError("status_profile")
-        a, p = connect(self.authority, "ro"), connect(self.provider, "ro")
+        a = connect(self.authority, "ro")
         try:
-            claim = a.execute("SELECT request_sha256 FROM claims WHERE operation_id=?", (binding["operation_id"],)).fetchone()
-            row = p.execute("SELECT digest,destination,effect_id FROM effects WHERE operation_id=?", (binding["operation_id"],)).fetchone()
+            p = connect(self.provider, "ro")
+            try:
+                claim = a.execute("SELECT request_sha256 FROM claims WHERE operation_id=?", (binding["operation_id"],)).fetchone()
+                row = p.execute("SELECT digest,destination,effect_id FROM effects WHERE operation_id=?", (binding["operation_id"],)).fetchone()
+            finally:
+                p.close()
         finally:
             a.close()
-            p.close()
         if claim and claim[0] != binding["request_sha256"]:
             raise ValueError("binding_conflict")
         if row and (not claim or row[:2] != (binding["request_sha256"], binding["destination"])):
-            raise ValueError("evidence_conflict")
+            raise EvidenceConflict("evidence_conflict")
         return {"protocol": "aml-sef-lab-status/1", "challenge": challenge, **binding,
                 "state": "PROVIDER_REPORTED" if row else "UNCERTAIN" if claim else "INCOMPLETE",
                 "effect_id": row[2] if row else None, "independent_confirmation": False}
@@ -173,8 +180,13 @@ def serve(inbox, outbox, fabric):
                     os.close(fd)
                 entry.unlink()
                 response = fabric.handle(strict_json(raw))
-            except (ValueError, TypeError, KeyError, RecursionError, sqlite3.Error, OSError):
+            except (ValueError, TypeError, KeyError, RecursionError):
                 response = {"state": "DENIED", "reason": "AML_SEF_REQUEST_REJECTED", "independent_confirmation": False}
+            except (EvidenceConflict, sqlite3.Error, OSError):
+                # A claim or effect may already be committed. A storage fault
+                # cannot truthfully be reported as an authorization denial.
+                response = {"state": "UNCERTAIN", "reason": "AML_SEF_STORAGE_UNAVAILABLE",
+                            "independent_confirmation": False}
             destination = Path(outbox) / (identifier + ".response")
             staged = Path(outbox) / (identifier + ".tmp")
             try:

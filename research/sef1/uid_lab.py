@@ -119,6 +119,11 @@ class TwoIdentityLab(Lab):
         observe("two_uid_replay", "DENIED", self.send(request)["state"], "retained authority")
         observe("two_uid_status", first["effect_id"], self.status(request)["effect_id"],
                 "same provider report")
+        forged = self.request()
+        forged["envelope"]["signature"] = "AA=="
+        observe("two_uid_forged_authorization", "DENIED", self.send(forged)["state"],
+                "agent cannot issue authorization")
+        self.assertEqual(self.count(), 1)
 
     def test_attacker_cannot_restore_trusted_state(self):
         self.start()

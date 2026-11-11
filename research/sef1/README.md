@@ -54,6 +54,9 @@ The file response is staged and published atomically so a reader cannot
 mistake partial JSON for a complete acknowledgment. A crash just before
 publication leaves the caller uncertain; a fresh status query can reconcile
 the retained synthetic provider row without retrying the effect.
+Missing, corrupt or conflicting provider state is also `UNCERTAIN`, since the authority may
+already have consumed the one-use claim. It is never presented as a confirmed
+denial or a completed external payment.
 
 The `bwrap` launcher in `lab_test.py` makes the agent's root read-only,
 exposes a writable inbox and read-only outbox, and masks the trusted directory.

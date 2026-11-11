@@ -190,6 +190,44 @@ class Lab(unittest.TestCase):
         observe("claim_without_provider_history", "UNCERTAIN", self.status(request)["state"], "evidence uncertainty")
         self.assertEqual(self.count(), 0)
 
+    def test_missing_or_corrupted_provider_state_is_uncertain(self):
+        self.start()
+        request = self.request()
+        self.provider.unlink()
+        observe("missing_provider_after_claim", "UNCERTAIN", self.send(request)["state"],
+                "ambiguous execution outcome")
+        con = sqlite3.connect(self.authority)
+        try:
+            self.assertEqual(con.execute("SELECT count(*) FROM claims").fetchone()[0], 1)
+        finally:
+            con.close()
+        observe("missing_provider_replay", "DENIED", self.send(request)["state"], "one-use safety")
+        observe("missing_provider_status", "UNCERTAIN", self.status(request)["state"],
+                "unavailable evidence")
+        self.stop()
+        initialize_provider(self.provider)
+        second = self.request()
+        self.start()
+        self.assertEqual(self.send(second)["state"], "PROVIDER_REPORTED")
+        self.stop()
+        self.provider.write_bytes(b"corrupt provider history")
+        self.start()
+        observe("corrupted_provider_status", "UNCERTAIN", self.status(second)["state"],
+                "corrupted evidence")
+
+    def test_disagreeing_trusted_stores_are_uncertain(self):
+        self.start()
+        request = self.request()
+        self.assertEqual(self.send(request)["state"], "PROVIDER_REPORTED")
+        self.stop()
+        con = sqlite3.connect(self.authority)
+        con.execute("DELETE FROM claims")
+        con.commit()
+        con.close()
+        self.start()
+        observe("provider_row_without_claim", "UNCERTAIN", self.status(request)["state"],
+                "conflicting retained evidence")
+
     def test_lost_ack_and_crash_after_claim(self):
         for fault, expected_status in [("after_claim", "UNCERTAIN"), ("after_effect", "PROVIDER_REPORTED"),
                                        ("before_response_publish", "PROVIDER_REPORTED")]:
