@@ -28,7 +28,7 @@ function fixture(run) {
     const requestBytes = JSON.stringify({ operation_id: operationId,
       destination: "fixture:outbox", body: "approved" });
     const requestSha256 = crypto.createHash("sha256").update(requestBytes).digest("hex");
-    const request = spawnSync("python3", [provider, database, "request"],
+    const request = spawnSync("python3", [provider, database, "request", "--diagnostic-only-unguarded"],
       { encoding: "utf8", input: JSON.stringify({ request_bytes: requestBytes,
         request_sha256: requestSha256 }), timeout: 20_000 });
     assert.equal(request.status, 0, request.stderr);
@@ -155,7 +155,7 @@ test("two signed positive statuses expose re-execution after provider history lo
     assert.equal(removed.status, 0, removed.stderr);
     const requestBytes = JSON.stringify({ operation_id: operationId,
       destination: "fixture:outbox", body: "approved" });
-    const retried = spawnSync("python3", [provider, database, "request"],
+    const retried = spawnSync("python3", [provider, database, "request", "--diagnostic-only-unguarded"],
       { encoding: "utf8", input: JSON.stringify({ request_bytes: requestBytes,
         request_sha256: requestSha256 }), timeout: 20_000 });
     assert.equal(retried.status, 0, retried.stderr);

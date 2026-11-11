@@ -1,5 +1,11 @@
 # Separate-process SQLite provider fixture
 
+An omitted execution-gate path on `request` fails closed before opening the
+database. Historical ungated comparisons require the explicit
+`--diagnostic-only-unguarded` argument and label their response
+`diagnostic_only_unguarded: true`. That mode still writes a synthetic row;
+never expose it as a protected provider route.
+
 Run `node --test test/action-boundary-sqlite-provider-fixture.test.js` with Python 3. The test launches a separate Python process for each request and status query. Its only side effect is one unique row in a temporary provider SQLite database. The host process cannot infer a result from the child's missing acknowledgment; a later read-only query checks the provider record by stable host operation ID.
 
 The provider hashes exact received request bytes, persists one `(operation_id, request_sha256, destination, effect_id)` row under a SQLite unique key, and returns the original effect ID for a duplicate identical request. A changed payload or destination under the same operation ID is rejected. `before_commit` exits without an effect row; `after_commit` commits the row and exits without an acknowledgment. Both initially look like an unknown outcome to the caller. Only a subsequent status read distinguishes them **within this fixture's complete database-view assumption**.

@@ -21,7 +21,8 @@ async function scenario(fault) {
   const coordinator = createSqliteEpochCoordinator({
     database: path.join(coordinatorDirectory, "authority.sqlite") });
   const providerDatabase = path.join(providerDirectory, "effects.sqlite");
-  const callProvider = (command, input) => spawnSync("python3", [provider, providerDatabase, command],
+  const callProvider = (command, input) => spawnSync("python3", [provider, providerDatabase, command,
+    ...(command === "request" ? ["--diagnostic-only-unguarded"] : [])],
     { input, encoding: "utf8", timeout: 20_000 });
   try {
     coordinator.initialize();

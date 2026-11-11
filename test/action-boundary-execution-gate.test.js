@@ -24,7 +24,7 @@ function scenario(run) {
     const input = JSON.stringify({ request_bytes: bytes,
       request_sha256: crypto.createHash("sha256").update(bytes).digest("hex") });
     const send = (gate = gateDb, fault) => spawnSync("python3", [provider, providerDb, "request",
-      ...(gate === null ? [] : [gate])], { input: fault ?
+      ...(gate === null ? ["--diagnostic-only-unguarded"] : [gate])], { input: fault ?
         JSON.stringify({ ...JSON.parse(input), fault }) : input,
       encoding: "utf8", timeout: 20_000 });
     const remove = database => {
@@ -41,6 +41,7 @@ function scenario(run) {
 test("retained execution claim blocks duplicate effect after provider history loss", () => scenario(({ send, remove, providerDb }) => {
   const first = send();
   assert.equal(first.status, 0, first.stderr);
+  assert.equal(JSON.parse(first.stdout).diagnostic_only_unguarded, false);
   remove(providerDb);
   const replay = send();
   assert.equal(replay.status, 2);
@@ -67,6 +68,14 @@ test("unmediated provider route bypasses a retained execution claim", () => scen
   const bypass = send(null);
   assert.equal(bypass.status, 0, bypass.stderr);
   assert.notEqual(JSON.parse(first.stdout).effect_id, JSON.parse(bypass.stdout).effect_id);
+}));
+
+test("omitted execution gate fails closed before any provider effect", () => scenario(({ providerDb }) => {
+  const result = spawnSync("python3", [provider, providerDb, "request"],
+    { input: "{}", encoding: "utf8", timeout: 20_000 });
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /execution_gate_required/);
+  assert.equal(fs.existsSync(providerDb), false);
 }));
 
 test("crash after gate consumption but before effect preserves safety and loses liveness", () => scenario(({ send }) => {
