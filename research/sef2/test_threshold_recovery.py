@@ -1,7 +1,7 @@
 import copy,unittest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from threshold_recovery import POLICY_SCHEMA,make_approval_bundle,make_threshold_transition,RecoveryAuthoritySigner,validate_policy,verify_approval_bundle
-def make_policy(keys,threshold=2):
+def make_policy(keys,threshold=3):
  return {"schema":POLICY_SCHEMA,"policy_id":"recovery-council-1","threshold":threshold,"max_faults":1,"authorities":{n:k.public_key().public_bytes_raw().hex() for n,k in keys.items()}}
 class ThresholdRecoveryTests(unittest.TestCase):
  def setUp(self):
