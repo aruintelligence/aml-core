@@ -4,7 +4,6 @@ import json
 import socket
 import sqlite3
 import struct
-from gated_action_broker import canonical_request
 
 class SignerWitness:
     def __init__(self,database):
@@ -20,7 +19,13 @@ class SignerWitness:
         if (type(challenge) is not str or not 32<=len(challenge)<=128
             or type(operation_id) is not str or not operation_id):
             raise PermissionError("invalid witness intent")
-        digest=hashlib.sha256(canonical_request(request)).hexdigest()
+        if (type(request) is not dict or set(request)!={"operation_id","action","target","amount_cents"}
+            or request.get("operation_id")!=operation_id or request.get("action")!="payment:simulate"
+            or request.get("target")!="fixture:merchant-a" or type(request.get("amount_cents")) is not int
+            or not 1<=request["amount_cents"]<=10000):
+            raise PermissionError("invalid witness request scope")
+        canonical=json.dumps(request,sort_keys=True,separators=(",",":"),ensure_ascii=False).encode()
+        digest=hashlib.sha256(canonical).hexdigest()
         try:
             with sqlite3.connect(self.database,timeout=5,isolation_level=None) as db:
                 db.execute("PRAGMA synchronous=FULL")
