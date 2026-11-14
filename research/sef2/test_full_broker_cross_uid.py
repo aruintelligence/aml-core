@@ -4,7 +4,7 @@ Synthetic-only. Authority private keys are generated in a separate short-lived
 process; broker receives only public keys and signed evidence. The signer and broker run under distinct non-root Linux UIDs in disposable CI.
 This is OS-separated test custody, not independently operated remote authority.
 """
-import os,pathlib,pwd,shutil,sqlite3,subprocess,sys,tempfile,time
+import json,os,pathlib,pwd,shutil,sqlite3,subprocess,sys,tempfile,time
 from test_cross_uid_boundary import drop,HERE
 
 SERVER=r'''
