@@ -93,3 +93,22 @@ class IsolatedBrokerServer(BrokerServer):
         if pathlib.Path(socket_path).resolve().parent==pathlib.Path(broker.path).resolve().parent:
             raise ValueError("socket cannot live inside private effects directory")
         super().__init__(socket_path,broker,allowed_uids)
+
+def grant_client_socket_access(socket_path,client_gid):
+    """Explicit group-scoped socket grant; operator must provision group membership.
+
+    Do not grant world access. Socket directory traversal and group membership
+    remain externally provisioned, kernel-enforced deployment prerequisites.
+    """
+    import pathlib
+    import stat
+    path=pathlib.Path(socket_path)
+    if (type(client_gid) is not int or client_gid<0 or path.is_symlink()
+        or not path.exists() or not stat.S_ISSOCK(path.stat().st_mode)
+        or path.stat().st_uid!=os.geteuid()):
+        raise ValueError("invalid socket grant")
+    os.chown(path,-1,client_gid)
+    os.chmod(path,0o660)
+    info=path.stat()
+    if (info.st_gid!=client_gid or stat.S_IMODE(info.st_mode)!=0o660):
+        raise ValueError("socket access grant not applied")

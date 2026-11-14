@@ -4,7 +4,7 @@ import pathlib
 import tempfile
 import unittest
 from broker_isolation_guard import validate_isolation
-from broker_socket import IsolatedBrokerServer
+from broker_socket import IsolatedBrokerServer,grant_client_socket_access
 
 class IsolationGuardTests(unittest.TestCase):
     def setUp(self):
@@ -66,3 +66,15 @@ class IsolationGuardTests(unittest.TestCase):
             path=str(self.db)
         with self.assertRaises(ValueError):
             IsolatedBrokerServer(self.parent/"socket",Broker(),frozenset({self.uid+1}))
+
+    def test_explicit_group_socket_grant_never_world_access(self):
+        class Broker:
+            path=str(self.db)
+        socket_path=self.parent.parent/"group-socket"
+        with IsolatedBrokerServer(socket_path,Broker(),frozenset({self.uid+1})):
+            grant_client_socket_access(socket_path,os.getegid())
+            self.assertEqual(socket_path.stat().st_mode & 0o777,0o660)
+        socket_path.unlink(missing_ok=True)
+    def test_group_grant_rejects_regular_file(self):
+        with self.assertRaises(ValueError):
+            grant_client_socket_access(self.db,os.getegid())
