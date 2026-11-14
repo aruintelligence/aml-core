@@ -1,13 +1,12 @@
 """Synthetic multi-witness checkpoint publication with independently pinned keys.
 
-Each witness must retain its own last accepted checkpoint outside the history
-writer's control. A quorum is not proof of independence or global freshness.
+A quorum is agreement by at least threshold distinct pinned identities on the
+independently expected checkpoint. Minority equivocation is tolerated for
+safety only within the declared fault bound; conflicting evidence is not erased.
 """
-import hashlib
 import json
 from cryptography.exceptions import InvalidSignature
 from signed_receipt import canonical
-from signed_history import digest
 
 DOMAIN=b"AML-SEF2-CHECKPOINT-WITNESS-V1\x00"
 
@@ -56,32 +55,43 @@ class WitnessCouncil:
             if type(p["version"]) is not int or p["version"]!=1 or not valid_checkpoint(p["checkpoint"]):
                 return "INVALID"
             try:
-                self.keys[witness].verify(bytes.fromhex(envelope["signature"]),
-                    DOMAIN+canonical(p))
+                self.keys[witness].verify(bytes.fromhex(envelope["signature"]),DOMAIN+canonical(p))
             except (InvalidSignature,ValueError,TypeError,KeyError):
                 return "INVALID_SIGNATURE"
             previous=self.retained.get(witness)
+            candidate=p["checkpoint"]
             if previous is not None:
                 if not valid_checkpoint(previous):
                     return "INVALID_RETAINED_STATE"
-                if p["checkpoint"]["epoch"]<previous["epoch"]:
+                if candidate["epoch"]<previous["epoch"]:
                     return "STALE_HISTORY"
-                if (p["checkpoint"]["epoch"]==previous["epoch"]
-                    and p["checkpoint"]["head_hash"]!=previous["head_hash"]):
+                if candidate["epoch"]==previous["epoch"] and candidate["head_hash"]!=previous["head_hash"]:
                     return "FORK_DETECTED"
-            verified[witness]=p["checkpoint"]
+            verified[witness]=candidate
+        matching=[name for name,cp in verified.items() if cp==expected_checkpoint]
+        if len(matching)>=self.threshold:
+            return "WITNESS_QUORUM_CONSISTENT"
         if len(verified)<self.threshold:
+            if any(cp["epoch"]==expected_checkpoint["epoch"] and cp!=expected_checkpoint
+                   for cp in verified.values()):
+                return "FORK_DETECTED"
             return "INSUFFICIENT_WITNESSES"
-        if any(cp["epoch"]!=expected_checkpoint["epoch"] for cp in verified.values()):
+        if any(cp["epoch"]<expected_checkpoint["epoch"] for cp in verified.values()):
             return "STALE_HISTORY"
+        if any(cp["epoch"]>expected_checkpoint["epoch"] for cp in verified.values()):
+            return "ADVANCED_HISTORY"
         if any(cp!=expected_checkpoint for cp in verified.values()):
             return "FORK_DETECTED"
-        return "WITNESS_QUORUM_CONSISTENT"
+        return "INSUFFICIENT_WITNESSES"
 
     def retain(self,envelopes,expected_checkpoint):
         verdict=self.adjudicate(envelopes,expected_checkpoint)
         if verdict!="WITNESS_QUORUM_CONSISTENT":
             return verdict
+        # Retain only identities that signed the agreed checkpoint. A dissenting
+        # identity is not silently advanced by the council.
         for envelope in envelopes:
-            self.retained[envelope["payload"]["witness_id"]]=dict(expected_checkpoint)
+            name=envelope["payload"]["witness_id"]
+            if envelope["payload"]["checkpoint"]==expected_checkpoint:
+                self.retained[name]=dict(expected_checkpoint)
         return verdict
