@@ -58,6 +58,13 @@ class BrokerProcessTests(unittest.TestCase):
             self.assertEqual(json.loads(client.recv(1024))["status"],"DENIED")
         self.assertEqual(request_action(self.socket_path,{"junk":"x"*70000}),"DENIED")
         self.assertEqual(self.fixture.count(),0)
+    def test_duplicate_json_keys_fail_closed(self):
+        with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as client:
+            client.settimeout(3)
+            client.connect(str(self.socket_path))
+            client.sendall(b'{"request":{},"request":{},"attestations":[],"capability":null}\\n')
+            self.assertEqual(json.loads(client.recv(1024))["status"],"DENIED")
+        self.assertEqual(self.fixture.count(),0)
     def test_killed_broker_fails_closed_and_restarts_idempotently(self):
         env=self.envelope()
         self.assertEqual(request_action(self.socket_path,env),"APPLIED")

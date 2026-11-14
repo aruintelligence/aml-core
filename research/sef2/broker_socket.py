@@ -12,6 +12,14 @@ import socketserver
 
 MAX_REQUEST=65536
 
+def reject_duplicate_keys(pairs):
+    result={}
+    for key,value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON key")
+        result[key]=value
+    return result
+
 class _Handler(socketserver.StreamRequestHandler):
     def handle(self):
         line=self.rfile.readline(MAX_REQUEST+1)
@@ -19,7 +27,7 @@ class _Handler(socketserver.StreamRequestHandler):
             self.wfile.write(b'{"status":"DENIED"}\n')
             return
         try:
-            envelope=json.loads(line)
+            envelope=json.loads(line,object_pairs_hook=reject_duplicate_keys)
             if type(envelope) is not dict or set(envelope)!={"request","attestations","capability"}:
                 raise ValueError("invalid envelope")
             status=self.server.broker.execute(envelope["request"],envelope["attestations"],envelope["capability"])
