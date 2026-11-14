@@ -111,3 +111,7 @@ python3 research/sef2/evaluation_kit/verify_historical.py --input /tmp/aml-sef2-
 ```
 
 All trusted inputs must come from **independent, controlled provisioning**, not the evidence bundle. The verifier rejects inconsistent history but does not create independent publication, guarantee global freshness, or prevent a privileged attacker from replacing both the history and its external pin. The legacy `verify_enrolled.py` still exists for compatibility and does not perform full-history verification. This is synthetic research, not production-ready authorization.
+
+## Multi-witness checkpoint publication research
+
+`checkpoint_council.py` provides signed checkpoint attestations by distinct Ed25519 witness identities, separately provisioned public keys, configurable quorum (minimum two), retained per-witness checkpoint heads, and fail-closed detection of signature forgery, duplicate or unknown witnesses, stale epochs, same-epoch forks and inconsistent approver identities. `WitnessCouncil.retain()` updates **in-memory** witness retention only after quorum consistency. Each actual witness must be separately administered and retain its state in independently controlled durable storage for the intended guarantees. The library does not provide a network publication service, authenticated cross-witness gossip, durable external retention, trust-root enrollment, global latest-epoch consensus or Byzantine fault tolerance. It is a synthetic adversarial research primitive; the strict historical bundle verifier does not yet require council attestations.
