@@ -60,34 +60,50 @@ def verify_live(directory,manifest_path,manifest_pin,history_db,approver_public_
 def verify_pinned_live(directory,manifest_path,manifest_pin,history_db,approver_public_hex,
                        checkpoint_path,checkpoint_pin,expected_epoch,witness_keys_path,
                        attestations_path,threshold,endpoints,anchor_files,anchor_pins,nonce=None):
-    """Strict live verification additionally requires independently supplied anchor pins."""
-    if not verify_live(directory,manifest_path,manifest_pin,history_db,approver_public_hex,
-                       checkpoint_path,checkpoint_pin,expected_epoch,witness_keys_path,
-                       attestations_path,threshold,endpoints,nonce):
+    """Fail-closed explicit witness-id to endpoint binding and pinned live quorum.
+
+    endpoints MUST be a dict {witness_id: exact_loopback_url}.  A list or an
+    unbound endpoint is rejected; each response must name the requested identity.
+    All participating witness anchors must be pinned independently.
+    """
+    if not verify_with_quorum(directory,manifest_path,manifest_pin,history_db,
+                              approver_public_hex,checkpoint_path,checkpoint_pin,
+                              expected_epoch,witness_keys_path,attestations_path,threshold):
         return False
     try:
-        if (type(anchor_files) is not dict or type(anchor_pins) is not dict
-            or set(anchor_files)!=set(anchor_pins) or len(anchor_files)!=len(endpoints)):
+        if (type(endpoints) is not dict or type(anchor_files) is not dict
+            or type(anchor_pins) is not dict or type(threshold) is not int
+            or threshold<2 or len(endpoints)<threshold
+            or set(endpoints)!=set(anchor_files) or set(endpoints)!=set(anchor_pins)
+            or len(set(endpoints.values()))!=len(endpoints)):
             return False
-        keys=load_unique(witness_keys_path)
-        if not set(anchor_files).issubset(set(keys)) or len(set(endpoints))!=len(endpoints):
+        keys_hex=load_unique(witness_keys_path)
+        if not set(endpoints).issubset(keys_hex):
             return False
+        keys={name:Ed25519PublicKey.from_public_bytes(bytes.fromhex(keys_hex[name]))
+              for name in endpoints}
         expected=load_unique(checkpoint_path)
-        if len(anchor_files)<threshold:
-            return False
-        for name,path in anchor_files.items():
-            anchor=json.loads(pathlib.Path(path).read_text(),object_pairs_hook=unique)
+        for name in endpoints:
+            anchor=json.loads(pathlib.Path(anchor_files[name]).read_text(),object_pairs_hook=unique)
             pin=anchor_pins[name]
             if (type(pin) is not str or len(pin)!=64 or anchor_pin(anchor)!=pin
-                or anchor["witness_id"]!=name or anchor["witness_public_hex"]!=keys[name]
+                or anchor["witness_id"]!=name or anchor["witness_public_hex"]!=keys_hex[name]
                 or anchor["checkpoint"]!=expected):
                 return False
-            payload=anchor["witness_envelope"]["payload"]
+            envelope=anchor["witness_envelope"]
+            payload=envelope["payload"]
             if payload!={"version":1,"witness_id":name,"checkpoint":expected}:
                 return False
-            key=Ed25519PublicKey.from_public_bytes(bytes.fromhex(keys[name]))
-            key.verify(bytes.fromhex(anchor["witness_envelope"]["signature"]),
-                       DOMAIN+canonical(payload))
-        return True
-    except (OSError,ValueError,KeyError,TypeError,InvalidSignature,OverflowError):
+            keys[name].verify(bytes.fromhex(envelope["signature"]),DOMAIN+canonical(payload))
+        n=challenge() if nonce is None else nonce
+        responses=[]
+        for name,url in endpoints.items():
+            response=collect_latest([url],n)[0]
+            if (type(response) is not dict or type(response.get("payload")) is not dict
+                or response["payload"].get("witness_id")!=name):
+                return False
+            responses.append(response)
+        return verify_fresh(responses,n,keys,threshold,expected)=="FRESH_QUORUM_CONSISTENT"
+    except (OSError,ValueError,KeyError,TypeError,InvalidSignature,OverflowError,
+            TimeoutError,urllib.error.URLError):
         return False

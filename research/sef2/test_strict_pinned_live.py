@@ -22,7 +22,7 @@ class StrictPinnedLiveTests(unittest.TestCase):
         self.pins={}
         self.servers=[]
         self.threads=[]
-        self.urls=[]
+        self.urls={}
         self.addCleanup(self.stop)
         for name in ("north","south"):
             anchor=issue_anchor(f.witnesses[name])
@@ -37,7 +37,7 @@ class StrictPinnedLiveTests(unittest.TestCase):
             thread=threading.Thread(target=server.serve_forever,daemon=True)
             thread.start()
             self.threads.append(thread)
-            self.urls.append("http://127.0.0.1:%d/latest"%server.server_address[1])
+            self.urls[name]="http://127.0.0.1:%d/latest"%server.server_address[1]
     def stop(self):
         for server in self.servers:
             server.shutdown()
@@ -73,8 +73,8 @@ class StrictPinnedLiveTests(unittest.TestCase):
         self.assertTrue(self.check())
 
     def test_duplicate_witness_endpoint_rejected(self):
-        original=list(self.urls)
-        self.urls[1]=self.urls[0]
+        original=dict(self.urls)
+        self.urls["south"]=self.urls["north"]
         self.assertFalse(self.check())
         self.urls=original
         self.assertTrue(self.check())
@@ -91,3 +91,25 @@ class StrictPinnedLiveTests(unittest.TestCase):
         anchor["checkpoint"]["epoch"]=0
         self.anchors["north"].write_text(json.dumps(anchor))
         self.assertFalse(self.check())
+
+    def test_endpoint_identity_substitution_rejected(self):
+        original=dict(self.urls)
+        self.urls={"north":original["south"],"south":original["north"]}
+        self.assertFalse(self.check())
+        self.urls=original
+        self.assertTrue(self.check())
+    def test_unbound_endpoint_list_rejected(self):
+        original=self.urls
+        self.urls=list(original.values())
+        self.assertFalse(self.check())
+        self.urls=original
+    def test_endpoint_missing_binding_rejected(self):
+        original=self.urls
+        self.urls={"north":original["north"]}
+        self.assertFalse(self.check())
+        self.urls=original
+    def test_endpoint_extra_unpinned_identity_rejected(self):
+        original=self.urls
+        self.urls=dict(original,unknown="http://127.0.0.1:1/latest")
+        self.assertFalse(self.check())
+        self.urls=original

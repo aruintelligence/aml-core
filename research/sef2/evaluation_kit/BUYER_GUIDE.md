@@ -155,3 +155,7 @@ Run the witness service with `--anchor-file`, `--anchor-pin`, and `--witness-pub
 ## Strict pinned live enterprise regression
 
 `test_strict_pinned_live.py` executes the full signed-history enterprise verifier against two live loopback witness servers with per-request externally pinned anchor guards. The tests require both witness keys, both anchor digests, the signed checkpoint, signed quorum attestations and fresh challenge-bound responses. They reject substituted/missing anchor pins, tampered anchor files and incorrect signed-history checkpoint pins. The legacy `verify_live` API remains available for non-anchored research use; security-sensitive integrators must call `verify_pinned_live` explicitly. A same-host synthetic test is not evidence of independent external witness operation.
+
+### Mandatory endpoint identity bindings
+
+`verify_pinned_live` now accepts only an explicit mapping `{witness_id: endpoint_url}` rather than a positional list. It checks the mapping against independently pinned witness keys, per-witness anchor pins and challenge-bound response identities, rejecting swapped identities, duplicate endpoint URLs, missing mappings and extra unpinned witnesses. This is a deliberate strict API change; non-pinned research `verify_live` continues to accept lists. These localhost synthetic tests do not prove independent administration or network transport authenticity.
