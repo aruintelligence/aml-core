@@ -78,3 +78,15 @@ class IsolationGuardTests(unittest.TestCase):
     def test_group_grant_rejects_regular_file(self):
         with self.assertRaises(ValueError):
             grant_client_socket_access(self.db,os.getegid())
+
+    def test_group_grant_rejects_symlink_socket(self):
+        class Broker:
+            path=str(self.db)
+        socket_path=self.parent.parent/"real-socket"
+        alias=self.parent.parent/"alias-socket"
+        with IsolatedBrokerServer(socket_path,Broker(),frozenset({self.uid+1})):
+            alias.symlink_to(socket_path)
+            with self.assertRaises(ValueError):
+                grant_client_socket_access(alias,os.getegid())
+        alias.unlink()
+        socket_path.unlink(missing_ok=True)

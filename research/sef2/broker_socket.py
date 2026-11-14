@@ -52,7 +52,7 @@ class _Handler(socketserver.StreamRequestHandler):
 class BrokerServer(socketserver.UnixStreamServer):
     allow_reuse_address=False
     def __init__(self,socket_path,broker,allowed_uids):
-        if (type(allowed_uids) is not frozenset or not allowed_uids
+        if (not hasattr(socket,"SO_PEERCRED") or type(allowed_uids) is not frozenset or not allowed_uids
             or any(type(uid) is not int or uid<0 for uid in allowed_uids)):
             raise ValueError("explicit allowed client UIDs required")
         self.allowed_uids=allowed_uids
