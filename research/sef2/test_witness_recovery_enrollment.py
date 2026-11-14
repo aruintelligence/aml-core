@@ -41,3 +41,15 @@ class RecoveryEnrollmentIntegrationTests(unittest.TestCase):
   with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool: results=list(pool.map(lambda _:self.coordinator.recover("north",self.transition),range(2)))
   self.assertEqual(results.count("RECOVERED"),1); self.assertEqual(results.count("INVALID_RECOVERY"),1)
  def test_uninitialized_witness_fails_closed(self): self.assertEqual(self.coordinator.recover("south",self.transition),"UNINITIALIZED")
+
+    def test_storage_failure_rolls_back_manifest_revocation_and_generation(self):
+        import sqlite3
+        with sqlite3.connect(self.path) as con:
+            con.execute("""CREATE TRIGGER reject_recovery_event BEFORE INSERT ON witness_recovery_events
+                BEGIN SELECT RAISE(ABORT,'injected durable event failure'); END""")
+        self.assertEqual(self.coordinator.recover("north",self.transition),"STORE_OR_STATE_ERROR")
+        self.assertEqual(self.enrollment.manifest()["epoch"],1)
+        self.assertEqual(self.enrollment.manifest()["public_keys"]["witness"],pub(self.old))
+        self.assertEqual(self.coordinator.state("north"),self.state)
+        with sqlite3.connect(self.path) as con:
+            self.assertEqual(con.execute("SELECT COUNT(*) FROM witness_recovery_events").fetchone()[0],0)
