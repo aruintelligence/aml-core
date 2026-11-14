@@ -7,6 +7,7 @@ import unittest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from durable_checkpoint_witness import DurableWitness
 from external_witness_anchor import issue_anchor,anchor_pin,verify_anchor
+from anchor_rotation import rotate_anchor
 
 def cp(epoch,head):
     return {"schema":"AML-SEF2-SIGNED-HISTORY-CHECKPOINT-V1","epoch":epoch,
@@ -69,3 +70,29 @@ class ExternalAnchorTests(unittest.TestCase):
     def test_missing_external_anchor_rejected(self):
         self.anchor_file.unlink()
         self.assertFalse(self.check())
+
+    def test_atomic_rotation_accepts_new_independent_pin(self):
+        old=self.pin
+        self.assertEqual(self.store.publish(cp(3,"d"*64))[0],"PUBLISHED")
+        new=rotate_anchor(self.store,self.anchor_file,old)
+        self.assertNotEqual(old,new)
+        self.assertFalse(verify_anchor(self.db,"north",self.pub,self.anchor_file,old))
+        self.assertTrue(verify_anchor(self.db,"north",self.pub,self.anchor_file,new))
+
+    def test_rotation_rejects_untrusted_predecessor(self):
+        self.assertEqual(self.store.publish(cp(3,"d"*64))[0],"PUBLISHED")
+        with self.assertRaises(ValueError):
+            rotate_anchor(self.store,self.anchor_file,"0"*64)
+        self.assertEqual(anchor_pin(json.loads(self.anchor_file.read_text())),self.pin)
+
+    def test_rotation_rejects_same_epoch(self):
+        with self.assertRaises(ValueError):
+            rotate_anchor(self.store,self.anchor_file,self.pin)
+
+    def test_rollback_after_rotation_fails_with_new_pin(self):
+        self.assertEqual(self.store.publish(cp(3,"d"*64))[0],"PUBLISHED")
+        new=rotate_anchor(self.store,self.anchor_file,self.pin)
+        with sqlite3.connect(self.snapshot) as source:
+            with sqlite3.connect(self.db) as dest:
+                source.backup(dest)
+        self.assertFalse(verify_anchor(self.db,"north",self.pub,self.anchor_file,new))
