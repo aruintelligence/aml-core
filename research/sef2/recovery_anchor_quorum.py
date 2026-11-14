@@ -101,6 +101,11 @@ class RecoveryAnchorWitness:
         if (type(payload) is not dict or set(payload)!={"schema","policy_id","target_authority_id",
             "sequence","previous_pin_sha256","checkpoint","checkpoint_pin_sha256"}
             or payload["schema"]!=PAYLOAD_SCHEMA or payload["policy_id"]!=policy["policy_id"]
+            or type(payload["sequence"]) is not int or payload["sequence"]<1
+            or type(payload["previous_pin_sha256"]) is not str or len(payload["previous_pin_sha256"])!=64
+            or any(c not in "0123456789abcdef" for c in payload["previous_pin_sha256"])
+            or type(payload["checkpoint_pin_sha256"]) is not str or len(payload["checkpoint_pin_sha256"])!=64
+            or any(c not in "0123456789abcdef" for c in payload["checkpoint_pin_sha256"])
             or not valid_checkpoint(payload["checkpoint"])
             or payload["checkpoint"]["authority_id"]!=payload["target_authority_id"]
             or checkpoint_pin(payload["checkpoint"])!=payload["checkpoint_pin_sha256"]):
