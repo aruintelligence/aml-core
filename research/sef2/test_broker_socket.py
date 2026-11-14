@@ -7,7 +7,7 @@ import socket
 import tempfile
 import time
 import unittest
-from test_gated_action_broker import CapabilityBoundaryTests
+import test_gated_action_broker as fixtures
 from broker_socket import BrokerServer,request_action
 
 def serve(socket_path,broker):
@@ -17,7 +17,7 @@ def serve(socket_path,broker):
 class BrokerProcessTests(unittest.TestCase):
     def setUp(self):
         # Reuse the exact signed test fixture without inheriting its test methods.
-        self.fixture=CapabilityBoundaryTests(methodName="test_capability_required")
+        self.fixture=fixtures.CapabilityBoundaryTests(methodName="test_capability_required")
         self.fixture.setUp()
         self.addCleanup(self.fixture.doCleanups)
         self.root=pathlib.Path(self.fixture.broker.path).parent
