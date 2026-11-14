@@ -44,3 +44,7 @@ The authority is restarted against its retained SQLite database after a complete
 ## Adversarial evidence conflicts
 
 Additional tests inject forged rows into the **synthetic provider SQLite store**, both with a mismatching request digest after consumption and with no authority approval. The reconciliation endpoint must return `UNCERTAIN` rather than report confirmed execution. An unconsumed authorization queried via status must remain `INCOMPLETE`. This detects inconsistent local evidence; it does not make the provider store independently trustworthy or detect a colluding authority/provider.
+
+## Experimental dual-role receipt envelopes
+
+`receipt.py` issues domain-separated canonical JSON HMAC envelopes for the authority and provider with distinct fixture keys. `test_receipt.py` checks role confusion, cross-operation/request binding, payload mutation, schema strictness and incomplete authority state. The verifier returns `CORROBORATED_CLAIMS_ONLY`, **not** independently confirmed execution. HMAC verifiers possess the signing key and can forge receipts; therefore this is not a publicly verifiable signature, external witness, append-only log, nonrepudiation, or actual provider confirmation. Production exploration should use asymmetric signing, independent key custody, a real provider attestation and a transparent witness log, with explicit threat assumptions.
