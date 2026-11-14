@@ -1,5 +1,5 @@
 """Real separate-UID witness IPC, signed receipts and rollback/fork detection."""
-import os,pathlib,pwd,shutil,sqlite3,subprocess,sys,tempfile,time
+import os,pathlib,pwd,shutil,socket,sqlite3,struct,subprocess,sys,tempfile,time
 from test_cross_uid_boundary import drop,HERE
 
 CLIENT=r'''
@@ -52,9 +52,11 @@ def start_service(sock,db,private_key,public_key,lib,witness,signer,env):
         if proc.poll() is not None: raise AssertionError("witness service exited: "+proc.stderr.read())
         if sock.exists() and public_key.exists():
             try:
-                with __import__("socket").socket(__import__("socket").AF_UNIX,__import__("socket").SOCK_STREAM) as probe:
+                with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as probe:
                     probe.settimeout(.2)
                     probe.connect(str(sock))
+                    probe.sendall(struct.pack("!I",0))
+                    while probe.recv(4096): pass
                 return proc
             except OSError:
                 pass
