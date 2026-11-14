@@ -2,7 +2,7 @@ import copy,unittest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from threshold_recovery import POLICY_SCHEMA,make_approval_bundle,make_threshold_transition,validate_policy,verify_approval_bundle
 def make_policy(keys,threshold=2):
- return {"schema":POLICY_SCHEMA,"policy_id":"recovery-council-1","threshold":threshold,"authorities":{n:k.public_key().public_bytes_raw().hex() for n,k in keys.items()}}
+ return {"schema":POLICY_SCHEMA,"policy_id":"recovery-council-1","threshold":threshold,"max_faults":1,"authorities":{n:k.public_key().public_bytes_raw().hex() for n,k in keys.items()}}
 class ThresholdRecoveryTests(unittest.TestCase):
  def setUp(self):
   self.keys={f"authority-{i}":Ed25519PrivateKey.generate() for i in range(4)}
@@ -29,8 +29,24 @@ class ThresholdRecoveryTests(unittest.TestCase):
  def test_duplicate_public_keys_make_policy_invalid(self):
   p=copy.deepcopy(self.policy); p["authorities"]["authority-3"]=p["authorities"]["authority-0"]; self.assertFalse(validate_policy(p))
  def test_invalid_threshold_rejected(self):
-  for q in (0,5,True,2.5):
+  for q in (0,2,5,True,2.5):
    p=copy.deepcopy(self.policy); p["threshold"]=q; self.assertFalse(validate_policy(p))
+ def test_policy_rejects_quorum_without_honest_intersection(self):
+  p=copy.deepcopy(self.policy); p["threshold"]=2
+  self.assertFalse(validate_policy(p))
+ def test_policy_rejects_unavailable_quorum(self):
+  p=copy.deepcopy(self.policy); p["threshold"]=4
+  self.assertFalse(validate_policy(p))
+ def test_policy_rejects_fault_bound_above_classical_bft_limit(self):
+  p=copy.deepcopy(self.policy); p["max_faults"]=2
+  self.assertFalse(validate_policy(p))
+ def test_quorum_intersection_contains_honest_authority(self):
+  import itertools
+  n=len(self.policy["authorities"]); q=self.policy["threshold"]; f=self.policy["max_faults"]
+  members=set(self.policy["authorities"])
+  quorums=list(itertools.combinations(members,q))
+  for left,right in itertools.combinations(quorums,2):
+   self.assertGreater(len(set(left)&set(right)),f)
  def test_unsorted_approvals_rejected(self):
   b=copy.deepcopy(self.bundle); b["approvals"].reverse(); self.assertFalse(verify_approval_bundle(self.payload,b,self.policy))
  def test_signer_key_mismatch_rejected_when_building(self):
