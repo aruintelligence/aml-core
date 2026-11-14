@@ -62,7 +62,7 @@ def post(url, data, secret=None):
     except HTTPError as error:
         return json.load(error)
 
-def handler(kind, path, authority_url=None, secret=None):
+def handler(kind, path, authority_url=None, secret=None, fault=None):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
             pass
@@ -92,11 +92,16 @@ def handler(kind, path, authority_url=None, secret=None):
                     parse_float=lambda _: (_ for _ in ()).throw(ValueError("float")))
                 if kind == "authority":
                     mac = hmac.new(secret, raw, hashlib.sha256).hexdigest()
-                    if self.path != "/consume" or not hmac.compare_digest(
+                    if self.path not in ("/consume", "/status") or not hmac.compare_digest(
                         self.headers.get("X-SEF2-MAC", ""), mac):
                         return self.reply(403, {"state": "DENIED", "reason": "service_auth"})
                     if type(payload) is not dict or set(payload) != {"operation_id", "request_sha256"}:
                         return self.reply(400, {"state": "DENIED"})
+                    if self.path == "/status":
+                        with db(path) as con:
+                            row = con.execute("SELECT digest,consumed FROM approvals WHERE op=?",
+                                (payload["operation_id"],)).fetchone()
+                        return self.reply(200, {"state": "CONSUMED" if row and row[0] == payload["request_sha256"] and row[1] else "INCOMPLETE" if not row else "DENIED"})
                     with db(path) as con:
                         con.execute("BEGIN IMMEDIATE")
                         result = con.execute(
@@ -105,21 +110,36 @@ def handler(kind, path, authority_url=None, secret=None):
                         allowed = result.rowcount == 1
                         con.execute("COMMIT")
                     return self.reply(200, {"state": "CONSUMED" if allowed else "DENIED"})
-                if self.path != "/execute" or not valid_request(payload):
+                if self.path not in ("/execute", "/status") or not valid_request(payload):
                     return self.reply(400, {"state": "DENIED", "reason": "request"})
                 op = payload["operation_id"]
                 request_digest = digest(payload)
+                if self.path == "/status":
+                    authority_state = post(authority_url + "/status",
+                        {"operation_id": op, "request_sha256": request_digest}, secret)["state"]
+                    with db(path) as con:
+                        row = con.execute("SELECT digest,effect_id FROM effects WHERE op=?", (op,)).fetchone()
+                    if row and row[0] != request_digest:
+                        return self.reply(409, {"state": "UNCERTAIN", "reason": "evidence_conflict"})
+                    if row and authority_state != "CONSUMED":
+                        return self.reply(409, {"state": "UNCERTAIN", "reason": "authority_conflict"})
+                    return self.reply(200, {"state": "PROVIDER_REPORTED" if row else "UNCERTAIN" if authority_state == "CONSUMED" else "INCOMPLETE",
+                        "effect_id": row[1] if row else None, "independent_confirmation": False})
                 decision = post(authority_url + "/consume",
                     {"operation_id": op, "request_sha256": request_digest}, secret)
                 if decision.get("state") != "CONSUMED":
                     return self.reply(403, {"state": "DENIED"})
                 try:
+                    if fault == "after_claim":
+                        raise RuntimeError("injected_after_claim")
                     with db(path) as con:
                         con.execute("BEGIN IMMEDIATE")
                         effect_id = str(uuid.uuid4())
                         con.execute("INSERT INTO effects VALUES (?,?,?)",
                             (op, request_digest, effect_id))
                         con.execute("COMMIT")
+                    if fault == "after_effect":
+                        raise RuntimeError("injected_after_effect")
                     return self.reply(200, {"state": "PROVIDER_REPORTED",
                         "effect_id": effect_id, "independent_confirmation": False})
                 except sqlite3.Error:
@@ -130,9 +150,9 @@ def handler(kind, path, authority_url=None, secret=None):
                 return self.reply(503, {"state": "UNCERTAIN"})
     return Handler
 
-def start(kind, path, authority_url=None, secret=None):
+def start(kind, path, authority_url=None, secret=None, fault=None):
     server = ThreadingHTTPServer(("127.0.0.1", 0),
-        handler(kind, path, authority_url, secret))
+        handler(kind, path, authority_url, secret, fault))
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     return server, "http://127.0.0.1:" + str(server.server_port)

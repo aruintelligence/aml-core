@@ -26,3 +26,9 @@ This is **not** an independently administered remote domain: both services run o
 The prototype deliberately does not replace the SEF/1 signed-authorization implementation; integration with the existing wire profile requires separate compatibility review. The attacker cannot choose approval records, service secrets, database files, or service code in the tested model.
 
 Next: test separate VMs/administrative domains, mTLS with rotation, independent durable witness, explicit uncertainty recovery, and provider-side idempotency. Preserve all failed experiments.
+
+## Crash-window fault injection and recovery
+
+The expanded lab injects exceptions at the **after-claim** and **after-effect-before-response** boundaries and restarts the provider server using retained SQLite files. These are process-level fault simulations, **not** hard-kill or power-loss durability tests. A new authenticated authority `/status` lookup and synthetic provider `/status` endpoint reconcile a retained claim with the provider row. `UNCERTAIN` after a consumed claim never triggers automatic re-execution. The status path is fixture-only and does not constitute independently witnessed completion. A compromised provider administrator or coordinated authority rollback remains outside the tested boundary.
+
+CI executes the exact pull-request checkout with Python resource warnings treated as errors. Review the GitHub Actions run for the exact head SHA; a workflow definition is not evidence of a successful run.

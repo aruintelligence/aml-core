@@ -1,0 +1,27 @@
+name: AML SEF2 Synthetic Crash and Recovery Lab
+
+on:
+  pull_request:
+    paths:
+      - 'research/sef2/**'
+      - '.github/workflows/sef2-research-lab.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sef2-adversarial:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Exact checkout SHA
+        run: git rev-parse HEAD
+      - name: Compile fixture and tests
+        run: python3 -m compileall -q research/sef2
+      - name: Execute synthetic-only adversarial and recovery suite
+        working-directory: research/sef2
+        run: python3 -W error::ResourceWarning -m unittest -v test_sef2

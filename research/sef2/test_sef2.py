@@ -21,8 +21,8 @@ class Adversarial(unittest.TestCase):
         self.prov, self.url = start("provider", self.p, self.auth_url, self.secret)
         self.addCleanup(self.auth.server_close)
         self.addCleanup(self.auth.shutdown)
-        self.addCleanup(self.prov.server_close)
-        self.addCleanup(self.prov.shutdown)
+        self.addCleanup(lambda: self.prov.server_close())
+        self.addCleanup(lambda: self.prov.shutdown())
 
     def request(self):
         return {"operation_id": str(uuid.uuid4()), "destination": "fixture:merchant-a",
@@ -66,6 +66,41 @@ class Adversarial(unittest.TestCase):
             con.execute("DELETE FROM effects")
         self.assertEqual(post(self.url + "/execute", r)["state"], "DENIED")
         self.assertEqual(self.count(), 0)
+
+    def restart_provider(self, fault=None):
+        self.prov.shutdown()
+        self.prov.server_close()
+        self.prov, self.url = start("provider", self.p, self.auth_url, self.secret, fault=fault)
+
+    def test_after_claim_uncertain_and_reconciles_without_retry(self):
+        self.restart_provider(fault="after_claim")
+        r = self.request()
+        approve(self.a, r["operation_id"], digest(r))
+        self.assertEqual(post(self.url + "/execute", r)["state"], "UNCERTAIN")
+        self.assertEqual(self.count(), 0)
+        self.restart_provider()
+        self.assertEqual(post(self.url + "/status", r)["state"], "UNCERTAIN")
+        self.assertEqual(post(self.url + "/execute", r)["state"], "DENIED")
+        self.assertEqual(self.count(), 0)
+
+    def test_after_effect_uncertain_then_reconciles(self):
+        self.restart_provider(fault="after_effect")
+        r = self.request()
+        approve(self.a, r["operation_id"], digest(r))
+        self.assertEqual(post(self.url + "/execute", r)["state"], "UNCERTAIN")
+        self.assertEqual(self.count(), 1)
+        self.restart_provider()
+        self.assertEqual(post(self.url + "/status", r)["state"], "PROVIDER_REPORTED")
+        self.assertEqual(post(self.url + "/execute", r)["state"], "DENIED")
+        self.assertEqual(self.count(), 1)
+
+    def test_provider_restart_retains_one_use_claim(self):
+        r = self.request()
+        approve(self.a, r["operation_id"], digest(r))
+        self.assertEqual(post(self.url + "/execute", r)["state"], "PROVIDER_REPORTED")
+        self.restart_provider()
+        self.assertEqual(post(self.url + "/status", r)["state"], "PROVIDER_REPORTED")
+        self.assertEqual(post(self.url + "/execute", r)["state"], "DENIED")
 
     def test_duplicate_keys_rejected(self):
         r = self.request()
