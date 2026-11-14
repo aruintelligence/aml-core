@@ -80,8 +80,9 @@ def main():
     broker=pwd.getpwnam("aml_broker_test")
     client=pwd.getpwnam("aml_client_test")
     signer=pwd.getpwnam("aml_signer_test")
-    signer=pwd.getpwnam("aml_signer_test")
-    assert broker.pw_uid!=client.pw_uid and broker.pw_uid!=0 and client.pw_uid!=0
+    # The authority signer, broker and untrusted client must be three distinct non-root OS identities.
+    assert len({broker.pw_uid,client.pw_uid,signer.pw_uid})==3
+    assert all(account.pw_uid!=0 for account in (broker,client,signer))
     with tempfile.TemporaryDirectory(prefix="aml-full-broker-") as tmp:
         root=pathlib.Path(tmp)
         root.chmod(0o755)
