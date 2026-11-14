@@ -7,7 +7,7 @@ import unittest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from durable_checkpoint_witness import DurableWitness
 from external_witness_anchor import issue_anchor,anchor_pin,verify_anchor
-from anchor_rotation import rotate_anchor
+from anchor_rotation import rotate_anchor,prepare_rotation,activate_prepared_rotation
 
 def cp(epoch,head):
     return {"schema":"AML-SEF2-SIGNED-HISTORY-CHECKPOINT-V1","epoch":epoch,
@@ -96,3 +96,39 @@ class ExternalAnchorTests(unittest.TestCase):
             with sqlite3.connect(self.db) as dest:
                 source.backup(dest)
         self.assertFalse(verify_anchor(self.db,"north",self.pub,self.anchor_file,new))
+
+    def test_prepared_rotation_keeps_old_anchor_active(self):
+        self.assertEqual(self.store.publish(cp(3,"d"*64))[0],"PUBLISHED")
+        candidate=self.root/"candidate.json"
+        new=prepare_rotation(self.store,self.anchor_file,self.pin,candidate)
+        self.assertNotEqual(new,self.pin)
+        self.assertEqual(anchor_pin(json.loads(self.anchor_file.read_text())),self.pin)
+        self.assertEqual(anchor_pin(json.loads(candidate.read_text())),new)
+
+    def test_prepared_rotation_requires_approved_pin(self):
+        self.assertEqual(self.store.publish(cp(3,"d"*64))[0],"PUBLISHED")
+        candidate=self.root/"candidate.json"
+        new=prepare_rotation(self.store,self.anchor_file,self.pin,candidate)
+        with self.assertRaises(ValueError):
+            activate_prepared_rotation(self.anchor_file,candidate,self.pin,"0"*64)
+        self.assertTrue(candidate.exists())
+        self.assertEqual(anchor_pin(json.loads(self.anchor_file.read_text())),self.pin)
+        self.assertEqual(activate_prepared_rotation(self.anchor_file,candidate,self.pin,new),new)
+        self.assertTrue(verify_anchor(self.db,"north",self.pub,self.anchor_file,new))
+
+    def test_prepared_rotation_restart_recovery(self):
+        self.assertEqual(self.store.publish(cp(3,"d"*64))[0],"PUBLISHED")
+        candidate=self.root/"candidate.json"
+        new=prepare_rotation(self.store,self.anchor_file,self.pin,candidate)
+        restarted=DurableWitness(self.db,"north",self.key)
+        self.assertEqual(restarted.latest()["payload"]["checkpoint"]["epoch"],3)
+        self.assertEqual(activate_prepared_rotation(self.anchor_file,candidate,self.pin,new),new)
+        self.assertTrue(verify_anchor(self.db,"north",self.pub,self.anchor_file,new))
+
+    def test_prepared_rotation_rejects_stale_old_pin(self):
+        self.assertEqual(self.store.publish(cp(3,"d"*64))[0],"PUBLISHED")
+        candidate=self.root/"candidate.json"
+        new=prepare_rotation(self.store,self.anchor_file,self.pin,candidate)
+        with self.assertRaises(ValueError):
+            activate_prepared_rotation(self.anchor_file,candidate,"0"*64,new)
+        self.assertEqual(anchor_pin(json.loads(self.anchor_file.read_text())),self.pin)
