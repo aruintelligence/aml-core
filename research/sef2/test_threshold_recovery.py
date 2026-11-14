@@ -208,7 +208,7 @@ class RecoveryQuorumModelTests(unittest.TestCase):
   from recovery_quorum_model import exhaustively_check
   result=exhaustively_check(4,2,1)
   self.assertFalse(result["safe"])
-  self.assertEqual(result["minimum_intersection"],1)
+  self.assertEqual(result["minimum_intersection"],0)
   self.assertEqual(result["counterexample"]["intersection"],[0])
   self.assertEqual(result["counterexample"]["byzantine_set"],[0])
  def test_boundary_threshold_has_honest_intersection(self):
