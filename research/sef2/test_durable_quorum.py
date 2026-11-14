@@ -40,13 +40,13 @@ class DurableQuorumTests(unittest.TestCase):
         self.checkpoint_path=self.root/"checkpoint.json"
         self.checkpoint_path.write_text(json.dumps(self.checkpoint))
         self.pin=digest(self.checkpoint)
-        self.privates={name:Ed25519PrivateKey.generate() for name in ("north","south","east")}
+        self.privates={name:Ed25519PrivateKey.generate() for name in ("north","south","east","west")}
         self.keys_path=self.root/"keys.json"
         self.keys_path.write_text(json.dumps({n:public_hex(k) for n,k in self.privates.items()}))
         self.witnesses={name:DurableWitness(self.root/(name+".sqlite"),name,k)
                         for name,k in self.privates.items()}
         self.receipts=[]
-        for name in ("north","south"):
+        for name in ("north","south","east"):
             status,receipt=self.witnesses[name].publish(self.checkpoint)
             self.assertEqual(status,"PUBLISHED")
             self.receipts.append(receipt)
@@ -56,10 +56,10 @@ class DurableQuorumTests(unittest.TestCase):
     def save(self):
         self.attestations.write_text(json.dumps(self.receipts))
 
-    def check(self,threshold=2):
+    def check(self,threshold=3,max_faults=1):
         return verify_with_quorum(self.root,self.manifest_path,self.manifest_pin,
             self.history_db,public_hex(self.approver),self.checkpoint_path,
-            self.pin,1,self.keys_path,self.attestations,threshold)
+            self.pin,1,self.keys_path,self.attestations,threshold,max_faults)
 
     def test_durable_quorum_accepts(self):
         self.assertTrue(self.check())
@@ -109,8 +109,13 @@ class DurableQuorumTests(unittest.TestCase):
             con.execute("DELETE FROM signed_epochs")
         self.assertFalse(self.check())
 
-    def test_wrong_quorum_threshold_rejected(self):
-        self.assertFalse(self.check(threshold=3))
+    def test_two_of_four_rejected_for_one_byzantine_fault_bound(self):
+        self.assertFalse(self.check(threshold=2,max_faults=1))
+
+    def test_three_of_four_quorum_rejected_when_one_attestation_missing(self):
+        self.receipts=self.receipts[:2]
+        self.save()
+        self.assertFalse(self.check())
 
     def test_duplicate_witness_rejected(self):
         self.receipts[1]=self.receipts[0]
