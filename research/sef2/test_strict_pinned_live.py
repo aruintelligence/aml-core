@@ -237,3 +237,43 @@ class StrictPinnedLiveTests(unittest.TestCase):
         pins=dict(self.pins,north=anchor_pin(anchor))
         self.assertFalse(self.check(pins=pins))
         self.anchors["north"].write_text(original)
+
+    def test_signed_quorum_replay_duplicate_receipt_rejected(self):
+        f=self.fixture
+        original=f.attestations.read_text()
+        receipts=json.loads(original)
+        receipts[1]=receipts[0]
+        f.attestations.write_text(json.dumps(receipts))
+        self.assertFalse(self.check())
+        f.attestations.write_text(original)
+        self.assertTrue(self.check())
+
+    def test_signed_quorum_identity_substitution_rejected(self):
+        f=self.fixture
+        original=f.attestations.read_text()
+        receipts=json.loads(original)
+        receipts[1]["payload"]["witness_id"]="east"
+        f.attestations.write_text(json.dumps(receipts))
+        self.assertFalse(self.check())
+        f.attestations.write_text(original)
+        self.assertTrue(self.check())
+
+    def test_external_anchor_rollback_rejected_with_old_pin(self):
+        original=self.anchors["north"].read_text()
+        anchor=json.loads(original)
+        anchor["checkpoint"]["epoch"]=0
+        self.anchors["north"].write_text(json.dumps(anchor))
+        pins=dict(self.pins,north=anchor_pin(anchor))
+        self.assertFalse(self.check(pins=pins))
+        self.anchors["north"].write_text(original)
+        self.assertTrue(self.check())
+
+    def test_anchor_payload_malformed_type_fails_closed(self):
+        original=self.anchors["north"].read_text()
+        anchor=json.loads(original)
+        anchor["witness_envelope"]["payload"]=[]
+        self.anchors["north"].write_text(json.dumps(anchor))
+        pins=dict(self.pins,north=anchor_pin(anchor))
+        self.assertFalse(self.check(pins=pins))
+        self.anchors["north"].write_text(original)
+        self.assertTrue(self.check())
