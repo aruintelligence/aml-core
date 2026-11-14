@@ -186,3 +186,14 @@ class RecoveryQuorumModelTests(unittest.TestCase):
   result=exhaustively_check(4,3,1)
   self.assertTrue(result["safe"])
   self.assertEqual(result["minimum_intersection"],2)
+
+ def test_bounded_quorum_intersection_for_small_classical_bft_councils(self):
+  import itertools
+  for n in range(4,10):
+   for faults in range(1,(n-1)//3+1):
+    for quorum in range((n+faults)//2+1,n-faults+1):
+     members=range(n)
+     sets=list(itertools.combinations(members,quorum))
+     for left,right in itertools.combinations(sets,2):
+      self.assertGreater(len(set(left)&set(right)),faults,
+       msg=f"n={n}, f={faults}, q={quorum}")
