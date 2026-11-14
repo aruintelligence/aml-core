@@ -107,7 +107,16 @@ class RecoveryAuthoritySigner:
         self.authority_id=authority_id
         self.private_key=private_key
         self.ledger_path=str(ledger_path)
-        import sqlite3
+        import os,stat,sqlite3
+        flags=os.O_CREAT|os.O_EXCL|os.O_RDWR|getattr(os,"O_NOFOLLOW",0)
+        try:
+            fd=os.open(self.ledger_path,flags,0o600)
+            os.close(fd)
+        except FileExistsError:
+            info=os.stat(self.ledger_path,follow_symlinks=False)
+            if not stat.S_ISREG(info.st_mode) or info.st_mode & 0o077:
+                raise ValueError("recovery approval ledger must be a private regular file")
+        os.chmod(self.ledger_path,0o600,follow_symlinks=False)
         with sqlite3.connect(self.ledger_path,timeout=10) as con:
             con.execute("PRAGMA journal_mode=DELETE")
             con.execute("PRAGMA synchronous=FULL")
