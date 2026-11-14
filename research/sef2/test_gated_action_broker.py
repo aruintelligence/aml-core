@@ -56,9 +56,11 @@ class BrokerBoundaryTests(unittest.TestCase):
         self.assertEqual(self.broker.execute(dict(self.request,amount_cents=200),self.signed()),"DENIED")
         self.assertEqual(self.count(),1)
 
-class CapabilityBoundaryTests(BrokerBoundaryTests):
+class CapabilityBoundaryTests(unittest.TestCase):
+    signed=BrokerBoundaryTests.signed
+    count=BrokerBoundaryTests.count
     def setUp(self):
-        super().setUp()
+        BrokerBoundaryTests.setUp(self)
         self.issuer_key=Ed25519PrivateKey.generate()
         self.broker=CapabilityBroker(self.broker.path,self.registry,"north",self.replicas,2,
             self.enrolled,"authority",self.issuer_key.public_key().public_bytes_raw().hex(),"broker-a")
