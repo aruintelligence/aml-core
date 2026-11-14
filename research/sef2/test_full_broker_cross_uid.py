@@ -30,7 +30,7 @@ with IsolatedBrokerServer(socket_path,broker,frozenset({int(client_uid)})) as se
 AUTHORITY=r'''
 import json,sys
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from action_capability import issue_capability
+from signer_policy import SignerPolicy
 from replica_attestation import DOMAIN
 from signed_receipt import canonical
 path=sys.argv[1]
@@ -46,7 +46,7 @@ for i,key in enumerate(keys):
 config={"issuer_public":issuer.public_key().public_bytes_raw().hex(),
         "enrolled":{"r%d"%i:k.public_key().public_bytes_raw().hex() for i,k in enumerate(keys)},
         "request":request,"attestations":attestations,
-        "capability":issue_capability(issuer,"authority","broker-a",request,0)}
+        "capability":SignerPolicy(signer_db,issuer,"authority","broker-a",0).authorize(request,"challenge-"+("a"*32))}
 with open(path,"w") as output:json.dump(config,output)
 print("AUTHORITY_KEYS_HELD_OUTSIDE_BROKER")
 '''
@@ -101,21 +101,21 @@ def main():
         for name in ("broker_socket","broker_isolation_guard","pin_registry",
                      "pin_replication","replica_attestation","signed_receipt",
                      "action_capability","capability_broker","gated_action_broker",
-                     "strict_evaluator"):
+                     "strict_evaluator","signer_policy"):
             dest=lib/(name+".py")
             shutil.copyfile(HERE/(name+".py"),dest)
             dest.chmod(0o644)
         sock=ipc/"broker.sock"
-        public=authority_dir/"signed_request.json"
+        public=authority_dir/"signed_request.json"\n        signer_db=authority_dir/"signer.sqlite"
         client_public=ipc/"signed_request.json"
         env=dict(os.environ,PYTHONPATH=str(lib))
-        authority=subprocess.run([sys.executable,"-c",AUTHORITY,str(public)],
+        authority=subprocess.run([sys.executable,"-c",AUTHORITY,str(public),str(signer_db)],
             preexec_fn=drop(signer.pw_uid,signer.pw_gid,(broker.pw_gid,)),
             env=env,capture_output=True,text=True,timeout=10)
         assert authority.returncode==0,(authority.stdout,authority.stderr)
-        assert "AUTHORITY_KEYS_HELD_OUTSIDE_BROKER" in authority.stdout
+        assert "AUTHORITY_KEYS_HELD_OUTSIDE_BROKER" in authority.stdout\n        assert signer_db.exists() and signer_db.stat().st_uid==signer.pw_uid
         os.chown(public,-1,broker.pw_gid)
-        public.chmod(0o640)
+        public.chmod(0o640)\n        signer_db.chmod(0o600)
         assert public.stat().st_uid==signer.pw_uid and public.stat().st_gid==broker.pw_gid
         assert public.stat().st_mode & 0o007 == 0
         shutil.copyfile(public,client_public)
