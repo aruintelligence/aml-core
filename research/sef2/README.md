@@ -167,3 +167,6 @@ The bounded quorum model also records the concrete counterexample for 2-of-4 wit
 
 
 The threshold adapter parses recovery payloads and approval bundles with duplicate-object-key rejection and requires byte-for-byte canonical serialization before signature verification. This closes parser-differential ambiguity where two JSON implementations could interpret the same signed envelope differently. Regression tests cover duplicate keys in both payload and bundle plus noncanonical whitespace encoding.
+
+
+**Enforcement refinement:** `make_threshold_transition` now requires `RecoveryAuthoritySigner` instances for every approval, not raw ephemeral private keys. This prevents the ordinary integrated recovery API from silently bypassing the local anti-equivocation ledger. The stateless `make_approval_bundle` remains available as a lower-level verifier/fixture primitive; it is not the guarded transition-construction path. The local ledger still requires independent anti-rollback anchoring for a hostile-storage threat model.
