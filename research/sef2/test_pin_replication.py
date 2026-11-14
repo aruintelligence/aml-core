@@ -56,3 +56,22 @@ class PinReplicationTests(unittest.TestCase):
     def test_replica_generation_skip_rejected(self):
         with self.assertRaises(ValueError):
             self.replicas[0].record(self.witness,2,self.second)
+
+    def test_interrupted_replication_catches_up_identical_predecessors(self):
+        self.advance()
+        self.replicas[0].record(self.witness,1,self.second)
+        self.assertEqual(replicate_committed(self.registry,self.witness,self.replicas,2)["generation"],1)
+    def test_divergent_predecessor_rejected_before_any_replica_write(self):
+        self.advance()
+        with sqlite3.connect(self.replicas[0].path) as db:
+            db.execute("UPDATE history SET pin=? WHERE witness=? AND generation=0",("f"*64,self.witness))
+        with self.assertRaises(ValueError):
+            replicate_committed(self.registry,self.witness,self.replicas,2)
+        self.assertEqual(self.replicas[1].latest(self.witness),(0,self.first))
+    def test_registry_replay_does_not_override_replica_advance(self):
+        self.advance()
+        replicate_committed(self.registry,self.witness,self.replicas,2)
+        with sqlite3.connect(self.registry.path) as db:
+            db.execute("UPDATE pins SET generation=0,active=?,pending=NULL WHERE witness=?",(self.first,self.witness))
+        with self.assertRaises(ValueError):
+            replicate_committed(self.registry,self.witness,self.replicas,2)
