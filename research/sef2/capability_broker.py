@@ -4,6 +4,9 @@ Research-only: revocation is local to the broker SQLite DB. External effect
 access and direct database writes remain outside this prototype boundary.
 """
 import sqlite3
+import hashlib
+from gated_action_broker import canonical_request
+from strict_evaluator import verify_strict_evaluator
 from gated_action_broker import GatedBroker
 from action_capability import verify_capability
 
@@ -35,14 +38,23 @@ class CapabilityBroker(GatedBroker):
             return row[0]
     def execute(self,request,attestations,capability=None):
         try:
-            # Recheck revocation while holding a write lock. The base broker
-            # performs its own transaction after this call; a concurrent
-            # revoke can race between validation and effect insertion.
-            # Therefore this is an explicit experimental limitation.
-            epoch=self.current_epoch()
-            if not verify_capability(capability,self.issuer_public_hex,
-                                     self.issuer,self.audience,request,epoch):
+            body=canonical_request(request)
+            if not verify_strict_evaluator(self.registry,self.witness,self.replicas,
+                                            self.threshold,attestations,self.enrolled_keys):
                 return "DENIED"
-            return super().execute(request,attestations)
+            digest=hashlib.sha256(body).hexdigest()
+            with sqlite3.connect(self.path,timeout=10) as db:
+                db.execute("PRAGMA synchronous=FULL")
+                db.execute("BEGIN IMMEDIATE")
+                row=db.execute("SELECT epoch FROM policy_epoch WHERE audience=?",(self.audience,)).fetchone()
+                if row is None or not verify_capability(capability,self.issuer_public_hex,
+                    self.issuer,self.audience,request,row[0]):
+                    return "DENIED"
+                existing=db.execute("SELECT request_hash FROM effects WHERE operation_id=?",
+                                    (request["operation_id"],)).fetchone()
+                if existing is not None:
+                    return "ALREADY_APPLIED" if existing[0]==digest else "DENIED"
+                db.execute("INSERT INTO effects VALUES (?,?)",(request["operation_id"],digest))
+            return "APPLIED"
         except (OSError,ValueError,TypeError,KeyError,sqlite3.DatabaseError):
             return "DENIED"
