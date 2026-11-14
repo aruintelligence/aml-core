@@ -58,3 +58,21 @@ class SignerWitnessTests(unittest.TestCase):
         self.witness.consume("u"*48,"op-digest",first)
         with self.assertRaises(PermissionError):
             self.witness.consume("v"*48,"op-digest",dict(first,amount_cents=101))
+
+    def test_signed_receipts_form_verifiable_append_chain(self):
+        from signer_witness import RECEIPT_DOMAIN,ZERO_HASH
+        from signed_receipt import canonical
+        witness_key=Ed25519PrivateKey.generate()
+        witness=SignerWitness(self.root/"signed.sqlite",witness_key)
+        first=witness.consume("a"*48,"chain-a",dict(self.request,operation_id="chain-a"))
+        second=witness.consume("b"*48,"chain-b",dict(self.request,operation_id="chain-b"))
+        p1,p2=first["payload"],second["payload"]
+        self.assertEqual(p1["sequence"],1)
+        self.assertEqual(p1["previous_hash"],ZERO_HASH)
+        self.assertEqual(p2["sequence"],2)
+        self.assertEqual(p2["previous_hash"],p1["entry_hash"])
+        witness_key.public_key().verify(bytes.fromhex(first["signature"]),RECEIPT_DOMAIN+canonical(p1))
+        witness_key.public_key().verify(bytes.fromhex(second["signature"]),RECEIPT_DOMAIN+canonical(p2))
+        altered=dict(p2,operation_id="attacker-op")
+        with self.assertRaises(Exception):
+            witness_key.public_key().verify(bytes.fromhex(second["signature"]),RECEIPT_DOMAIN+canonical(altered))
