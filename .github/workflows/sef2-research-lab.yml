@@ -40,3 +40,9 @@ jobs:
       - name: Verify pinned trust-manifest adversarial suite
         run: python3 -m compileall -q research/sef2/evaluation_kit/verify_trusted.py
 
+
+      - name: Disposable Linux separate-UID broker boundary
+        run: |
+          sudo useradd --system --no-create-home --user-group aml_broker_test
+          sudo useradd --system --no-create-home --user-group aml_client_test
+          sudo python3 research/sef2/test_cross_uid_boundary.py
