@@ -38,3 +38,51 @@ class ThresholdRecoveryTests(unittest.TestCase):
   with self.assertRaises(ValueError): make_approval_bundle(self.payload,self.policy,{"outsider":Ed25519PrivateKey.generate()})
  def test_malformed_bundle_fails_closed(self): self.assertFalse(verify_approval_bundle(self.payload,{"approvals":[]},self.policy))
  def test_invalid_policy_fails_closed(self): self.assertFalse(verify_approval_bundle(self.payload,self.bundle,{"schema":"wrong"}))
+
+class ThresholdRecoveryEnrollmentTests(unittest.TestCase):
+ def setUp(self):
+  import pathlib,tempfile
+  from trust_enrollment import Enrollment,propose
+  from witness_recovery_enrollment import WitnessRecoveryEnrollment
+  from threshold_recovery import ThresholdRecoveryPublicKey
+  self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+  self.trust_path=str(pathlib.Path(self.temp.name)/"trust.sqlite")
+  self.recovery_path=str(pathlib.Path(self.temp.name)/"recovery.sqlite")
+  self.approver=Ed25519PrivateKey.generate(); self.old=Ed25519PrivateKey.generate(); self.new=Ed25519PrivateKey.generate()
+  self.keys={"authority":self.approver.public_key().public_bytes_raw().hex(),
+    "provider":Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex(),
+    "witness":self.old.public_key().public_bytes_raw().hex()}
+  self.enrollment=Enrollment(self.trust_path,self.approver.public_key())
+  self.enrollment.accept(propose(self.approver,1,self.keys))
+  self.authorities={f"council-{i}":Ed25519PrivateKey.generate() for i in range(4)}
+  self.policy=make_policy(self.authorities,3)
+  self.verifier=ThresholdRecoveryPublicKey(self.policy)
+  self.coordinator=WitnessRecoveryEnrollment(self.trust_path,self.recovery_path,self.verifier,self.policy["policy_id"])
+  self.checkpoint={"schema":"AML-SEF2-SIGNED-HISTORY-CHECKPOINT-V1","epoch":1,"head_hash":"a"*64,"count":1,"approver_key_id":"c"*64}
+  self.state=self.coordinator.initialize("north",self.checkpoint)
+  self.next_checkpoint={**self.checkpoint,"epoch":2,"head_hash":"b"*64,"count":2}
+  self.transition=make_threshold_transition(self.new,"north",self.state,self.next_checkpoint,
+    self.policy,{k:self.authorities[k] for k in ("council-0","council-1","council-2")})
+ def test_threshold_recovery_replaces_and_revokes_old_witness_key(self):
+  from witness_recovery_enrollment import WitnessRecoveryEnrollment
+  self.assertEqual(self.coordinator.recover("north",self.transition),"RECOVERED")
+  manifest=self.enrollment.manifest()
+  self.assertEqual(manifest["public_keys"]["witness"],self.new.public_key().public_bytes_raw().hex())
+  self.assertIn(self.old.public_key().public_bytes_raw().hex(),manifest["revoked_key_hex"])
+ def test_two_approvals_cannot_recover(self):
+  import json
+  from signed_receipt import canonical
+  bad=dict(self.transition)
+  bundle=json.loads(bytes.fromhex(bad["recovery_signature"]))
+  bundle["approvals"]=bundle["approvals"][:2]
+  bad["recovery_signature"]=canonical(bundle).hex()
+  self.assertEqual(self.coordinator.recover("north",bad),"INVALID_RECOVERY")
+ def test_wrong_pinned_policy_cannot_recover(self):
+  other=make_policy({f"other-{i}":Ed25519PrivateKey.generate() for i in range(4)},3)
+  from threshold_recovery import ThresholdRecoveryPublicKey
+  from witness_recovery_enrollment import WitnessRecoveryEnrollment
+  coordinator=WitnessRecoveryEnrollment(self.trust_path,self.recovery_path,ThresholdRecoveryPublicKey(other),other["policy_id"])
+  self.assertEqual(coordinator.recover("north",self.transition),"INVALID_RECOVERY")
+ def test_threshold_transition_replay_rejected(self):
+  self.assertEqual(self.coordinator.recover("north",self.transition),"RECOVERED")
+  self.assertEqual(self.coordinator.recover("north",self.transition),"INVALID_RECOVERY")
