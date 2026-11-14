@@ -106,16 +106,19 @@ def main():
             shutil.copyfile(HERE/(name+".py"),dest)
             dest.chmod(0o644)
         sock=ipc/"broker.sock"
-        public=authority_dir/"signed_request.json"\n        signer_db=authority_dir/"signer.sqlite"
+        public=authority_dir/"signed_request.json"
+        signer_db=authority_dir/"signer.sqlite"
         client_public=ipc/"signed_request.json"
         env=dict(os.environ,PYTHONPATH=str(lib))
         authority=subprocess.run([sys.executable,"-c",AUTHORITY,str(public),str(signer_db)],
             preexec_fn=drop(signer.pw_uid,signer.pw_gid,(broker.pw_gid,)),
             env=env,capture_output=True,text=True,timeout=10)
         assert authority.returncode==0,(authority.stdout,authority.stderr)
-        assert "AUTHORITY_KEYS_HELD_OUTSIDE_BROKER" in authority.stdout\n        assert signer_db.exists() and signer_db.stat().st_uid==signer.pw_uid
+        assert "AUTHORITY_KEYS_HELD_OUTSIDE_BROKER" in authority.stdout
+        assert signer_db.exists() and signer_db.stat().st_uid==signer.pw_uid
         os.chown(public,-1,broker.pw_gid)
-        public.chmod(0o640)\n        signer_db.chmod(0o600)
+        public.chmod(0o640)
+        signer_db.chmod(0o600)
         assert public.stat().st_uid==signer.pw_uid and public.stat().st_gid==broker.pw_gid
         assert public.stat().st_mode & 0o007 == 0
         shutil.copyfile(public,client_public)
