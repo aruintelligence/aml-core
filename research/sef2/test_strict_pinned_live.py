@@ -142,3 +142,30 @@ class StrictPinnedLiveTests(unittest.TestCase):
         self.urls["north"]=None
         self.assertFalse(self.check())
         self.urls=original
+
+    def test_unhashable_attested_identity_fails_closed(self):
+        f=self.fixture
+        original=f.attestations.read_text()
+        receipts=json.loads(original)
+        receipts[0]["payload"]["witness_id"]=["north"]
+        f.attestations.write_text(json.dumps(receipts))
+        self.assertFalse(self.check())
+        f.attestations.write_text(original)
+
+    def test_null_attested_identity_fails_closed(self):
+        f=self.fixture
+        original=f.attestations.read_text()
+        receipts=json.loads(original)
+        receipts[0]["payload"]["witness_id"]=None
+        f.attestations.write_text(json.dumps(receipts))
+        self.assertFalse(self.check())
+        f.attestations.write_text(original)
+
+    def test_conflicting_pinned_anchor_fails_closed(self):
+        original=self.anchors["north"].read_text()
+        anchor=json.loads(original)
+        anchor["checkpoint"]["head_hash"]="f"*64
+        self.anchors["north"].write_text(json.dumps(anchor))
+        self.assertFalse(self.check())
+        self.anchors["north"].write_text(original)
+        self.assertTrue(self.check())

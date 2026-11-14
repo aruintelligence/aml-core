@@ -85,11 +85,13 @@ def verify_pinned_live(directory,manifest_path,manifest_pin,history_db,approver_
         for receipt in attestations:
             if type(receipt) is not dict or type(receipt.get("payload")) is not dict:
                 return False
-            attested.append(receipt["payload"].get("witness_id"))
+            identity=receipt["payload"].get("witness_id")
+            if type(identity) is not str or not identity:
+                return False
+            attested.append(identity)
         if (len(set(attested))!=len(attested) or set(endpoints)!=set(attested)
             or not set(endpoints).issubset(keys_hex)
             or len(set(keys_hex.values()))!=len(keys_hex)):
-            return False
             return False
         keys={name:Ed25519PublicKey.from_public_bytes(bytes.fromhex(keys_hex[name]))
               for name in endpoints}
