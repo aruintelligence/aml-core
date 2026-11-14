@@ -13,6 +13,9 @@ class WitnessRecoveryEnrollment:
             raise ValueError("recovery state must use a separate database file")
         self.recovery_public_key=recovery_public_key
         self.recovery_authority_id=recovery_authority_id
+        with sqlite3.connect(self.path) as con:
+            con.execute("PRAGMA journal_mode=DELETE")
+            con.execute("PRAGMA synchronous=FULL")
         with sqlite3.connect(self.recovery_state_path) as con:
             con.execute("PRAGMA journal_mode=DELETE")
             con.execute("PRAGMA synchronous=FULL")
@@ -21,10 +24,8 @@ class WitnessRecoveryEnrollment:
 
     def _connect(self):
         con=sqlite3.connect(self.path,timeout=10)
-        con.execute("PRAGMA main.journal_mode=DELETE")
         con.execute("PRAGMA main.synchronous=FULL")
         con.execute("ATTACH DATABASE ? AS recovery",(self.recovery_state_path,))
-        con.execute("PRAGMA recovery.journal_mode=DELETE")
         con.execute("PRAGMA recovery.synchronous=FULL")
         return con
     def initialize(self,witness_id,checkpoint):
