@@ -145,3 +145,6 @@ The recovery authority key and the current witness state must be independently p
 
 
 **Directive 021 local signer guard:** `RecoveryAuthoritySigner` adds a durable per-authority ledger that refuses to sign two different recovery payloads for the same pinned policy, witness, generation, and previous-state digest. Exact repeat approvals are idempotent; concurrent conflicting requests are serialized through a SQLite write transaction and only one payload is accepted. This reduces accidental or process-level equivocation for a single signer instance. The ledger is not rollback-resistant and does not prevent equivocation across cloned signer instances or independently restored ledger copies; each authority still needs isolated key custody and externally anchored monotonic state.
+
+
+The signer ledger's anti-equivocation scope is the pinned policy, authority identity, witness identity, and recovery generation—not the predecessor digest. This is deliberate: allowing the predecessor digest into the uniqueness key would let one signer approve two competing predecessor histories at the same generation. The predecessor digest is instead stored as part of the immutable approval record and any conflicting value is rejected. The ledger schema is versioned to avoid silently reusing the earlier, weaker uniqueness constraint.
