@@ -26,7 +26,7 @@ def make_handler(store,approver_public=None):
                     return
                 raw=self.rfile.read(length)
                 request=json.loads(raw)
-                if type(request) is not dict or set(request)!={"challenge"}:
+                if type(request) is not dict:
                     raise ValueError("invalid request")
                 if self.path=="/publish":
                     if approver_public is None or not verify_checkpoint_publication(request,approver_public):
