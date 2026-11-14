@@ -170,3 +170,6 @@ The threshold adapter parses recovery payloads and approval bundles with duplica
 
 
 **Enforcement refinement:** `make_threshold_transition` now requires `RecoveryAuthoritySigner` instances for every approval, not raw ephemeral private keys. This prevents the ordinary integrated recovery API from silently bypassing the local anti-equivocation ledger. The stateless `make_approval_bundle` remains available as a lower-level verifier/fixture primitive; it is not the guarded transition-construction path. The local ledger still requires independent anti-rollback anchoring for a hostile-storage threat model.
+
+
+**Rollback falsification result:** a deterministic snapshot-restore test copies the local signer ledger before approval, records one valid approval, restores the earlier database snapshot, and then obtains a second valid signature for a conflicting payload at the same recovery generation. Both signatures independently verify. This is an intentional passing attack-demonstration test: it proves the local SQLite guard is bypassable if its ledger is rolled back. It does not represent a regression in the stated local guarantee; it identifies why an external monotonic witness or independently administered quorum checkpoint is required before claiming rollback-resistant anti-equivocation.
