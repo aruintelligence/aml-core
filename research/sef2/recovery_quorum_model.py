@@ -36,6 +36,12 @@ def exhaustively_check(n,q,f):
     quorums=list(combinations(range(n),q))
     intersections=[len(set(a)&set(b)) for a,b in combinations(quorums,2)]
     minimum=min(intersections) if intersections else n
+    fault_bound_valid=(n>=3*f+1)
+    liveness=(q<=n-f)
+    intersection_safe=(counterexample is None)
     return {"n":n,"q":q,"f":f,"quorum_count":len(quorums),
         "pair_count":len(intersections),"minimum_intersection":minimum,
-        "safe":counterexample is None,"counterexample":counterexample}
+        "fault_bound_valid":fault_bound_valid,"liveness":liveness,
+        "intersection_safe":intersection_safe,
+        "safe":fault_bound_valid and liveness and intersection_safe,
+        "counterexample":counterexample}
