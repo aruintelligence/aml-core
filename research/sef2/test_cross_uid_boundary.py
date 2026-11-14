@@ -44,12 +44,19 @@ assert status=="APPLIED",("authorized socket denied",status)
 status=request_action(socket_path,{"request":{"probe":"unauthorized"},"attestations":[],"capability":None})
 assert status=="DENIED",("unauthorized socket accepted",status)
 try:
+    with open(db_path,"rb") as secret:
+        secret.read(1)
+except PermissionError:
+    pass
+else:
+    raise AssertionError("client read broker-owned database")
+try:
     sqlite3.connect("file:"+db_path+"?mode=rw",uri=True).execute("CREATE TABLE bypass (id INTEGER)")
 except sqlite3.OperationalError:
     pass
 else:
     raise AssertionError("client modified broker-owned SQLite database")
-print("KERNEL_BOUNDARY_OK: authorized socket, denied unauthorized request, denied direct SQLite write")
+print("KERNEL_BOUNDARY_OK: authorized socket, denied unauthorized request, denied direct SQLite read/write")
 '''
 
 def main():
