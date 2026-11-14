@@ -30,7 +30,7 @@ class _Handler(socketserver.StreamRequestHandler):
             raw=self.request.getsockopt(socket.SOL_SOCKET,socket.SO_PEERCRED,struct.calcsize("3i"))
             _,uid,_=struct.unpack("3i",raw)
             if uid not in self.server.allowed_uids:
-                self.wfile.write(b'{"status":"DENIED"}\\n')
+                self.wfile.write(b'{"status":"DENIED"}\n')
                 return
         except (OSError,ValueError,struct.error):
             return
