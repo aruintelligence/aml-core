@@ -138,6 +138,14 @@ class RecoveryAuthoritySigner:
                 policy_sha256 TEXT NOT NULL, previous_state_sha256 TEXT NOT NULL,
                 payload_sha256 TEXT NOT NULL, signature TEXT NOT NULL,
                 PRIMARY KEY(policy_id,authority_id,witness_id,generation))""")
+            con.execute("""CREATE TABLE IF NOT EXISTS recovery_approval_events (
+                sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+                previous_event_sha256 TEXT NOT NULL,
+                policy_id TEXT NOT NULL, authority_id TEXT NOT NULL,
+                witness_id TEXT NOT NULL, generation INTEGER NOT NULL,
+                policy_sha256 TEXT NOT NULL, previous_state_sha256 TEXT NOT NULL,
+                payload_sha256 TEXT NOT NULL, signature TEXT NOT NULL,
+                event_sha256 TEXT NOT NULL UNIQUE)""")
 
     def public_key(self):
         return self.private_key.public_key()
@@ -170,4 +178,59 @@ class RecoveryAuthoritySigner:
                 return row[3]
             con.execute("INSERT INTO recovery_approval_ledger_v3 VALUES (?,?,?,?,?,?,?,?)",
                 (*scope,pd,previous_state,digest,signature))
+            prior=con.execute("SELECT event_sha256 FROM recovery_approval_events ORDER BY sequence DESC LIMIT 1").fetchone()
+            previous_event=prior[0] if prior else "0"*64
+            event={"previous_event_sha256":previous_event,"policy_id":scope[0],
+                "authority_id":scope[1],"witness_id":scope[2],"generation":scope[3],
+                "policy_sha256":pd,"previous_state_sha256":previous_state,
+                "payload_sha256":digest,"signature":signature}
+            event_hash=hashlib.sha256(canonical(event)).hexdigest()
+            con.execute("""INSERT INTO recovery_approval_events
+                (previous_event_sha256,policy_id,authority_id,witness_id,generation,
+                 policy_sha256,previous_state_sha256,payload_sha256,signature,event_sha256)
+                 VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                (previous_event,scope[0],scope[1],scope[2],scope[3],pd,previous_state,digest,signature,event_hash))
         return signature
+
+    def export_approval_ledger(self):
+        import sqlite3
+        with sqlite3.connect(self.ledger_path,timeout=10) as con:
+            rows=con.execute("""SELECT sequence,previous_event_sha256,policy_id,authority_id,
+                witness_id,generation,policy_sha256,previous_state_sha256,payload_sha256,
+                signature,event_sha256 FROM recovery_approval_events ORDER BY sequence""").fetchall()
+        fields=("sequence","previous_event_sha256","policy_id","authority_id","witness_id",
+            "generation","policy_sha256","previous_state_sha256","payload_sha256","signature","event_sha256")
+        events=[dict(zip(fields,row)) for row in rows]
+        return {"schema":"AML-SEF2-RECOVERY-APPROVAL-LEDGER-V1","authority_id":self.authority_id,
+            "events":events,"head_sha256":events[-1]["event_sha256"] if events else "0"*64}
+
+def verify_approval_ledger(bundle,authority_public_key,expected_head_sha256=None):
+    try:
+        if type(bundle) is not dict or set(bundle)!={"schema","authority_id","events","head_sha256"}:
+            return False
+        if bundle["schema"]!="AML-SEF2-RECOVERY-APPROVAL-LEDGER-V1" or type(bundle["authority_id"]) is not str:
+            return False
+        if type(bundle["events"]) is not list: return False
+        previous="0"*64
+        seen=set()
+        for sequence,event in enumerate(bundle["events"],1):
+            required={"sequence","previous_event_sha256","policy_id","authority_id","witness_id",
+                "generation","policy_sha256","previous_state_sha256","payload_sha256","signature","event_sha256"}
+            if type(event) is not dict or set(event)!=required: return False
+            if (event["sequence"]!=sequence or event["authority_id"]!=bundle["authority_id"]
+                or event["previous_event_sha256"]!=previous): return False
+            scope=(event["policy_id"],event["authority_id"],event["witness_id"],event["generation"])
+            if scope in seen: return False
+            seen.add(scope)
+            signed=DOMAIN+canonical({"policy_sha256":event["policy_sha256"],
+                "payload_sha256":event["payload_sha256"]})
+            authority_public_key.verify(bytes.fromhex(event["signature"]),signed)
+            unsigned={k:event[k] for k in required if k!="event_sha256"}
+            calculated=hashlib.sha256(canonical(unsigned)).hexdigest()
+            if calculated!=event["event_sha256"]: return False
+            previous=calculated
+        if bundle["head_sha256"]!=previous: return False
+        if expected_head_sha256 is not None and expected_head_sha256!=previous: return False
+        return True
+    except (InvalidSignature,ValueError,TypeError,KeyError,OverflowError,AttributeError):
+        return False
