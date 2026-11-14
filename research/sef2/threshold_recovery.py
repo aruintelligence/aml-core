@@ -70,12 +70,21 @@ class ThresholdRecoveryPublicKey:
         self.policy=policy
     def verify(self,signature,message):
         from witness_key_recovery import AUTH_DOMAIN
+        def unique_object(pairs):
+            result={}
+            for key,value in pairs:
+                if key in result: raise ValueError("duplicate JSON key")
+                result[key]=value
+            return result
         if not message.startswith(AUTH_DOMAIN): raise InvalidSignature
         try:
-            payload=__import__("json").loads(message[len(AUTH_DOMAIN):].decode("utf-8"))
-        except (ValueError,UnicodeDecodeError):
+            payload_bytes=message[len(AUTH_DOMAIN):]
+            payload=json.loads(payload_bytes.decode("utf-8"),object_pairs_hook=unique_object)
+            if canonical(payload)!=payload_bytes: raise InvalidSignature
+            bundle=json.loads(signature.decode("utf-8"),object_pairs_hook=unique_object)
+            if canonical(bundle)!=signature: raise InvalidSignature
+        except (ValueError,UnicodeDecodeError,TypeError):
             raise InvalidSignature
-        bundle=__import__("json").loads(signature.decode("utf-8"))
         if not verify_approval_bundle(payload,bundle,self.policy): raise InvalidSignature
 
 def make_threshold_transition(new_witness_private,witness_id,current_state,checkpoint,
