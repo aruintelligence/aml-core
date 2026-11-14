@@ -13,7 +13,7 @@ from action_capability import verify_capability
 class CapabilityBroker:
     def __init__(self,path,registry,witness,replicas,threshold,enrolled_keys,
                  issuer,issuer_public_hex,audience):
-        # Initialize shared storage without inheriting the weaker execute API.\n        GatedBroker.__init__(self,path,registry,witness,replicas,threshold,enrolled_keys)
+        # Initialize shared storage without inheriting the weaker execute API.\n        self._gate=GatedBroker(path,registry,witness,replicas,threshold,enrolled_keys)\n        self.path=str(path)
         if type(issuer) is not str or not issuer or type(audience) is not str or not audience:
             raise ValueError("invalid issuer or audience")
         if type(issuer_public_hex) is not str or len(bytes.fromhex(issuer_public_hex))!=32:
