@@ -5,10 +5,10 @@ from test_cross_uid_boundary import drop,HERE
 CLIENT=r'''
 from signer_witness import RemoteSignerWitness
 import sys
-socket_path=sys.argv[1]
+socket_path,pub=sys.argv[1:3]
 request={"operation_id":"remote-op","action":"payment:simulate",
          "target":"fixture:merchant-a","amount_cents":100}
-w=RemoteSignerWitness(socket_path)
+w=RemoteSignerWitness(socket_path,pub)
 w.consume("x"*48,"remote-op",request)
 try:
     w.consume("x"*48,"remote-op",request)
@@ -52,26 +52,28 @@ def main():
         state=root/"state"; state.mkdir(mode=0o700)
         os.chown(state,witness.pw_uid,witness.pw_gid)
         db=state/"witness.sqlite"; sock=ipc/"witness.sock"
+        private_key=state/"witness_ed25519.pem"; public_key=state/"witness_ed25519.pub"
         lib=root/"lib"; lib.mkdir(mode=0o755)
         for name in ("signer_witness.py","signer_witness_service.py","gated_action_broker.py",
                      "signed_receipt.py"):
             target=lib/name; shutil.copyfile(HERE/name,target); target.chmod(0o644)
         env=dict(os.environ,PYTHONPATH=str(lib))
         proc=subprocess.Popen([sys.executable,str(lib/"signer_witness_service.py"),
-            str(sock),str(db),str(signer.pw_uid),str(signer.pw_gid)],
+            str(sock),str(db),str(signer.pw_uid),str(signer.pw_gid),str(private_key),str(public_key)],
             preexec_fn=drop(witness.pw_uid,witness.pw_gid,(signer.pw_gid,)),env=env,
             stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)
         try:
             for _ in range(200):
-                if sock.exists(): break
+                if sock.exists() and public_key.exists(): break
                 if proc.poll() is not None: raise AssertionError("witness service exited: "+proc.stderr.read())
                 time.sleep(.02)
-            assert sock.exists(),"witness socket startup timeout"
-            result=subprocess.run([sys.executable,"-c",CLIENT,str(sock)],
+            assert sock.exists() and public_key.exists(),"witness socket/key startup timeout"
+            pub=public_key.read_text().strip()
+            result=subprocess.run([sys.executable,"-c",CLIENT,str(sock),pub],
                 preexec_fn=drop(signer.pw_uid,signer.pw_gid),env=env,capture_output=True,text=True,timeout=10)
             assert result.returncode==0,(result.stdout,result.stderr)
             print(result.stdout.strip())
-            denied=subprocess.run([sys.executable,"-c",UNTRUSTED,str(sock)],
+            denied=subprocess.run([sys.executable,"-c",UNTRUSTED,str(sock),pub],
                 preexec_fn=drop(client.pw_uid,client.pw_gid),env=env,capture_output=True,text=True,timeout=10)
             assert denied.returncode==0,(denied.stdout,denied.stderr)
             print(denied.stdout.strip())
