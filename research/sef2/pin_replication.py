@@ -64,11 +64,12 @@ def replicate_committed(registry,witness,replicas,threshold):
         raise ValueError("insufficient replicas")
     # Before writing, require all replicas to be at the same predecessor
     # (or already at the target after an interrupted replication).
-    for replica in replicas:
-        latest=replica.latest(witness)
-        target=(state["generation"],state["active"])
-        if latest!=target and (latest[0]!=state["generation"]-1):
-            raise ValueError("replica cannot be advanced safely")
+    target=(state["generation"],state["active"])
+    latests=[replica.latest(witness) for replica in replicas]
+    predecessors={row for row in latests if row!=target}
+    if (len(predecessors)>1 or
+        any(row[0]!=state["generation"]-1 for row in predecessors)):
+        raise ValueError("replica cannot be advanced safely")
     for replica in replicas:
         replica.record(witness,state["generation"],state["active"])
     return verified_state(registry,witness,replicas,threshold)
