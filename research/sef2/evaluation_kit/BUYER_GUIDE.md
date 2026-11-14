@@ -131,3 +131,7 @@ All trusted inputs must come from **independent, controlled provisioning**, not 
 ## Separate-process witness integration
 
 `test_witness_process.py` starts two real independent Python witness HTTP child processes with separate Ed25519 signing keys and SQLite stores, exercises challenge-bound quorum, process termination, stale epochs, replay and cross-process conflicting history. The client disables proxy forwarding and HTTP redirects and validates parsed loopback endpoint origin to avoid URL user-info bypass. Tests remain synthetic localhost research, not independent organizational hosting. Witness private keys are fixture files with restrictive permissions; they are not HSM-backed. The current verifier still requires the evaluator to independently provision trustworthy pins and checkpoint freshness expectations.
+
+## Authenticated witness checkpoint publication
+
+`authenticated_publication.py` signs checkpoints under a separate approver Ed25519 key and domain separator. `witness_http_service.py` exposes a loopback-only `POST /publish` when the administrator explicitly provisions `--approver-public-file`. Invalid or missing approver signatures fail closed (403); stale epochs and same-epoch forks are rejected (409); same-head replay is idempotent. `POST /latest` remains a separately signed challenge-bound witness read. Each witness must be administered independently; localhost-only services do not demonstrate separate trust domains. Do not treat local database rollback or a compromised approver key as solved.
