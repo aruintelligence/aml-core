@@ -1,5 +1,5 @@
 """Atomic bridge from offline key recovery into durable witness trust enrollment."""
-import json,sqlite3
+import json,sqlite3,os
 from cryptography.exceptions import InvalidSignature
 from signed_receipt import canonical
 from trust_enrollment import valid
@@ -9,7 +9,7 @@ from checkpoint_council import valid_checkpoint
 class WitnessRecoveryEnrollment:
     def __init__(self,path,recovery_state_path,recovery_public_key,recovery_authority_id):
         self.path=str(path); self.recovery_state_path=str(recovery_state_path)
-        if sqlite3.os.path.abspath(self.path)==sqlite3.os.path.abspath(self.recovery_state_path):
+        if os.path.abspath(self.path)==sqlite3.os.path.abspath(self.recovery_state_path):
             raise ValueError("recovery state must use a separate database file")
         self.recovery_public_key=recovery_public_key
         self.recovery_authority_id=recovery_authority_id
@@ -48,7 +48,7 @@ class WitnessRecoveryEnrollment:
         return json.loads(row[0])
     def recover(self,witness_id,envelope):
         try:
-            with sqlite3.connect(self.path,timeout=10) as con:
+            with self._connect() as con:
                 con.execute("BEGIN IMMEDIATE")
                 row=con.execute("SELECT state FROM recovery.witness_recovery_state WHERE witness_id=?",(witness_id,)).fetchone()
                 mr=con.execute("SELECT epoch,payload FROM epochs ORDER BY epoch DESC LIMIT 1").fetchone()
