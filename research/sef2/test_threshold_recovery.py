@@ -318,3 +318,49 @@ class ThresholdEnvelopeParsingTests(unittest.TestCase):
   with self.assertRaises(InvalidSignature):
    verifier.verify(bytes.fromhex(self.transition["recovery_signature"]),
     AUTH_DOMAIN+b'{"witness_id":"north","witness_id":"south"}')
+
+class RecoveryLedgerAnchorTests(unittest.TestCase):
+ def setUp(self):
+  import tempfile,pathlib
+  from recovery_ledger_anchor import ledger_checkpoint,checkpoint_pin
+  self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+  self.ledger=str(pathlib.Path(self.temp.name)/"authority.sqlite")
+  self.key=Ed25519PrivateKey.generate()
+  keys={"authority-0":self.key,"authority-1":Ed25519PrivateKey.generate(),
+   "authority-2":Ed25519PrivateKey.generate(),"authority-3":Ed25519PrivateKey.generate()}
+  self.policy=make_policy(keys,3)
+  self.signer=RecoveryAuthoritySigner("authority-0",self.key,self.ledger)
+  self.payload={"witness_id":"north","generation":1,"previous_state_sha256":"a"*64,"new_key":"b"*64}
+  self.signer.approve(self.payload,self.policy)
+  self.public_hex=self.key.public_key().public_bytes_raw().hex()
+  self.checkpoint=ledger_checkpoint(self.ledger,"authority-0",self.public_hex)
+  self.pin=checkpoint_pin(self.checkpoint)
+ def test_independent_pin_accepts_unchanged_signed_ledger(self):
+  from recovery_ledger_anchor import verify_ledger_checkpoint
+  self.assertTrue(verify_ledger_checkpoint(self.ledger,self.public_hex,self.checkpoint,self.pin))
+ def test_ledger_rollback_detected_against_external_checkpoint(self):
+  import shutil,pathlib
+  from recovery_ledger_anchor import verify_ledger_checkpoint,ledger_checkpoint
+  snapshot=str(pathlib.Path(self.temp.name)/"approved.sqlite")
+  shutil.copy2(self.ledger,snapshot)
+  changed={**self.payload,"generation":2,"previous_state_sha256":"c"*64,"new_key":"d"*64}
+  self.signer.approve(changed,self.policy)
+  latest=ledger_checkpoint(self.ledger,"authority-0",self.public_hex)
+  latest_pin=__import__("recovery_ledger_anchor").checkpoint_pin(latest)
+  self.assertTrue(verify_ledger_checkpoint(self.ledger,self.public_hex,latest,latest_pin))
+  shutil.copy2(snapshot,self.ledger)
+  self.assertFalse(verify_ledger_checkpoint(self.ledger,self.public_hex,latest,latest_pin))
+ def test_tampered_signature_rejected_even_with_recomputed_checkpoint_pin(self):
+  import sqlite3
+  from recovery_ledger_anchor import verify_ledger_checkpoint,ledger_checkpoint,checkpoint_pin
+  with sqlite3.connect(self.ledger) as con:
+   con.execute("UPDATE recovery_approval_ledger_v3 SET signature=?",( "00"*64,))
+  changed=ledger_checkpoint(self.ledger,"authority-0",self.public_hex)
+  self.assertFalse(verify_ledger_checkpoint(self.ledger,self.public_hex,changed,checkpoint_pin(changed)))
+ def test_wrong_authority_public_key_rejected(self):
+  from recovery_ledger_anchor import verify_ledger_checkpoint
+  wrong=Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex()
+  self.assertFalse(verify_ledger_checkpoint(self.ledger,wrong,self.checkpoint,self.pin))
+ def test_external_pin_tampering_rejected(self):
+  from recovery_ledger_anchor import verify_ledger_checkpoint
+  self.assertFalse(verify_ledger_checkpoint(self.ledger,self.public_hex,self.checkpoint,"0"*64))
