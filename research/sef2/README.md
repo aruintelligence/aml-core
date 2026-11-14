@@ -157,3 +157,10 @@ The signer ledger's anti-equivocation scope is the pinned policy, authority iden
 
 
 The bounded quorum model also records the concrete counterexample for 2-of-4 with f=1: two disjoint two-member quorums can approve conflicting payloads. The safe 3-of-4 threshold has a minimum intersection of two, so at least one member of every pairwise intersection is honest under f=1. This is a finite-state combinatorial result under the explicit model, not a universal implementation proof.
+
+
+### Authority anti-equivocation and bounded quorum model
+
+`RecoveryAuthoritySigner` persists a per-authority decision under the key `(policy_id, authority_id, witness_id, generation)`. A repeat request for the identical policy digest, parent-state digest, and payload digest returns the original signature; any conflicting payload, competing parent, or policy revision under that same policy identifier and generation is refused. A SQLite `BEGIN IMMEDIATE` serializes concurrent calls sharing this ledger file. The ledger is not an external consensus service: independent copies, restored snapshots, cloned signing keys with separate ledgers, or a compromised host can defeat the anti-equivocation property. Production use would require independently protected/monotonic ledger anchoring and an operational process preventing key duplication.
+
+`recovery_quorum_model.py` exhaustively enumerates pairs of q-sized quorums for bounded council sizes. Under fixed authenticated membership and at most f Byzantine identities, it checks that any two quorums intersect in more than f identities. For n=4, f=1, q=3 satisfies the property; q=2 produces an explicit counterexample. This is a combinatorial safety check, not Byzantine consensus, not a proof that authorities share a policy epoch, and not a liveness guarantee under arbitrary partitions.
