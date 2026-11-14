@@ -26,7 +26,7 @@ jobs:
         run: python3 -m compileall -q research/sef2
       - name: Execute synthetic-only adversarial and recovery suite
         working-directory: research/sef2
-        run: python3 -W error::ResourceWarning -m unittest -v test_sef2 test_receipt test_witness_chain test_pinned_witness test_durable_witness test_signed_receipt test_evidence_gate test_evaluation_kit test_observer_process test_origin_event test_observer_authenticated test_observer_pinned test_enterprise_bundle test_pinned_trust test_trust_enrollment test_enrolled_bundle test_signed_history test_historical_bundle test_checkpoint_council test_durable_quorum test_witness_freshness test_witness_http test_witness_process test_authenticated_publication test_live_enterprise_demo
+        run: python3 -W error::ResourceWarning -m unittest -v test_sef2 test_receipt test_witness_chain test_pinned_witness test_durable_witness test_signed_receipt test_evidence_gate test_evaluation_kit test_observer_process test_origin_event test_observer_authenticated test_observer_pinned test_enterprise_bundle test_pinned_trust test_trust_enrollment test_enrolled_bundle test_signed_history test_historical_bundle test_checkpoint_council test_durable_quorum test_witness_freshness test_witness_http test_witness_process test_authenticated_publication test_live_enterprise_demo test_witness_recovery_controls
       - name: Execute enterprise synthetic evaluation demo
         run: python3 research/sef2/evaluation_kit/demo.py
       - name: Produce and independently verify enterprise evaluation bundle
@@ -35,6 +35,8 @@ jobs:
           python3 research/sef2/evaluation_kit/verify_bundle.py --input /tmp/aml-sef2-evaluation
       - name: Execute signed-history live witness enterprise demonstration
         run: python3 research/sef2/evaluation_kit/live_enterprise_demo.py --output /tmp/aml-sef2-live-enterprise
+      - name: Execute restart rollback fork and pin adversarial evidence
+        run: python3 research/sef2/test_witness_recovery_controls.py --output /tmp/aml-sef2-witness-adversarial-report.json
       - name: Verify pinned trust-manifest adversarial suite
         run: python3 -m compileall -q research/sef2/evaluation_kit/verify_trusted.py
 
