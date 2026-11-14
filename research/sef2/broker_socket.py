@@ -9,6 +9,7 @@ import json
 import os
 import socket
 import socketserver
+import struct
 
 MAX_REQUEST=65536
 
@@ -22,6 +23,17 @@ def reject_duplicate_keys(pairs):
 
 class _Handler(socketserver.StreamRequestHandler):
     def handle(self):
+        try:
+            # Linux kernel-provided peer credentials, not caller JSON.
+            if not hasattr(socket,"SO_PEERCRED"):
+                return
+            raw=self.request.getsockopt(socket.SOL_SOCKET,socket.SO_PEERCRED,struct.calcsize("3i"))
+            _,uid,_=struct.unpack("3i",raw)
+            if uid not in self.server.allowed_uids:
+                self.wfile.write(b'{"status":"DENIED"}\\n')
+                return
+        except (OSError,ValueError,struct.error):
+            return
         line=self.rfile.readline(MAX_REQUEST+1)
         if len(line)>MAX_REQUEST or not line.endswith(b"\n"):
             self.wfile.write(b'{"status":"DENIED"}\n')
@@ -39,7 +51,11 @@ class _Handler(socketserver.StreamRequestHandler):
 
 class BrokerServer(socketserver.UnixStreamServer):
     allow_reuse_address=False
-    def __init__(self,socket_path,broker):
+    def __init__(self,socket_path,broker,allowed_uids):
+        if (type(allowed_uids) is not frozenset or not allowed_uids
+            or any(type(uid) is not int or uid<0 for uid in allowed_uids)):
+            raise ValueError("explicit allowed client UIDs required")
+        self.allowed_uids=allowed_uids
         self.broker=broker
         super().__init__(str(socket_path),_Handler)
         os.chmod(socket_path,0o600)

@@ -12,7 +12,7 @@ import test_gated_action_broker as fixtures
 from broker_socket import BrokerServer,request_action
 
 def serve(socket_path,broker):
-    with BrokerServer(socket_path,broker) as server:
+    with BrokerServer(socket_path,broker,frozenset({os.getuid()})) as server:
         server.serve_forever(poll_interval=0.05)
 
 class BrokerProcessTests(unittest.TestCase):
@@ -66,6 +66,26 @@ class BrokerProcessTests(unittest.TestCase):
             client.sendall(b'{"request":{},"request":{},"attestations":[],"capability":null}\\n')
             self.assertEqual(json.loads(client.recv(1024))["status"],"DENIED")
         self.assertEqual(self.fixture.count(),0)
+    def test_peer_uid_allowlist_rejects_unenrolled_client(self):
+        # A server configured to allow a different UID rejects this caller.
+        self.stop()
+        self.socket_path.unlink(missing_ok=True)
+        def denied_server(path,broker):
+            with BrokerServer(path,broker,frozenset({os.getuid()+100000})) as server:
+                server.serve_forever(poll_interval=0.05)
+        child=multiprocessing.Process(target=denied_server,
+            args=(str(self.socket_path),self.fixture.broker))
+        child.start()
+        try:
+            for _ in range(100):
+                if self.socket_path.exists():
+                    break
+                time.sleep(0.02)
+            self.assertEqual(request_action(self.socket_path,self.envelope()),"DENIED")
+            self.assertEqual(self.fixture.count(),0)
+        finally:
+            child.terminate()
+            child.join(timeout=5)
     def test_same_uid_direct_storage_bypass_is_demonstrated(self):
         # Red-team negative control: the test client runs under the broker's
         # OS UID and can mutate its DB without any capability. This MUST be
