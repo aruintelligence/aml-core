@@ -39,7 +39,8 @@ pathlib.Path(private_path).write_bytes(key.private_bytes(
 pathlib.Path(private_path).chmod(0o600)
 request={"operation_id":"full-uid-op","action":"payment:simulate",
          "target":"fixture:merchant-a","amount_cents":100}
-enrollment={"request":request,
+enrollment={"broker_public":key.public_key().public_bytes_raw().hex(),
+            "request":request,
             "intent":create_intent(key,"broker-1","broker-a",request,secrets.token_hex(24))}
 pathlib.Path(handoff).write_text(json.dumps(enrollment))
 pathlib.Path(handoff).chmod(0o644)
