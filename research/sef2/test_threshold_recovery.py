@@ -430,3 +430,16 @@ class RecoveryLedgerAnchorTests(unittest.TestCase):
  def test_external_pin_tampering_rejected(self):
   from recovery_ledger_anchor import verify_ledger_checkpoint
   self.assertFalse(verify_ledger_checkpoint(self.ledger,self.public_hex,self.checkpoint,"0"*64))
+
+ def test_authority_refuses_equivocation_across_competing_parent_forks(self):
+  self.signer.approve(self.payload,self.policy)
+  fork={**self.payload,"previous_state_sha256":"f"*64,"new_key":"c"*64}
+  with self.assertRaisesRegex(ValueError,"equivocation"):
+   self.signer.approve(fork,self.policy)
+ def test_authority_refuses_policy_revision_reuse_for_same_generation(self):
+  self.signer.approve(self.payload,self.policy)
+  revised=dict(self.policy)
+  revised["policy_id"]="recovery-council-1"
+  revised["threshold"]=4
+  with self.assertRaisesRegex(ValueError,"equivocation"):
+   self.signer.approve(self.payload,revised)
