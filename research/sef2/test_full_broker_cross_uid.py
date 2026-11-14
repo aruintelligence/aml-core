@@ -1,8 +1,8 @@
 """Full cryptographic broker across two real Linux UIDs in disposable CI.
 
 Synthetic-only. Authority private keys are generated in a separate short-lived
-process; broker receives only public keys and signed evidence. This is process
-separation, not yet a separate-UID or independently operated signer service.
+process; broker receives only public keys and signed evidence. The signer and broker run under distinct non-root Linux UIDs in disposable CI.
+This is OS-separated test custody, not independently operated remote authority.
 """
 import os,pathlib,pwd,shutil,sqlite3,subprocess,sys,tempfile,time
 from test_cross_uid_boundary import drop,HERE
@@ -71,7 +71,7 @@ try:
         dbconn.execute("INSERT INTO effects VALUES ('bypass','0')")
 except sqlite3.OperationalError:pass
 else:raise AssertionError("cross-UID direct database write succeeded")
-print("FULL_BROKER_UID_OK: signed effect once, replay idempotent, forgery denied, direct storage denied")
+print("FULL_BROKER_UID_OK: signer UID != broker UID != client UID; signed effect once, replay idempotent, forgery denied, direct storage denied")
 '''
 
 def main():
@@ -79,6 +79,7 @@ def main():
         raise SystemExit("requires isolated Linux root CI runner")
     broker=pwd.getpwnam("aml_broker_test")
     client=pwd.getpwnam("aml_client_test")
+    signer=pwd.getpwnam("aml_signer_test")
     assert broker.pw_uid!=client.pw_uid and broker.pw_uid!=0 and client.pw_uid!=0
     with tempfile.TemporaryDirectory(prefix="aml-full-broker-") as tmp:
         root=pathlib.Path(tmp)
@@ -86,6 +87,10 @@ def main():
         private=root/"private"
         private.mkdir(mode=0o700)
         os.chown(private,broker.pw_uid,broker.pw_gid)
+        authority_dir=root/"authority"
+        authority_dir.mkdir(mode=0o755)
+        os.chown(authority_dir,signer.pw_uid,signer.pw_gid)
+        authority_dir.chmod(0o755)
         ipc=root/"ipc"
         ipc.mkdir(mode=0o711)
         os.chown(ipc,broker.pw_uid,broker.pw_gid)
@@ -100,12 +105,12 @@ def main():
             shutil.copyfile(HERE/(name+".py"),dest)
             dest.chmod(0o644)
         sock=ipc/"broker.sock"
-        public=ipc/"signed_request.json"
+        public=authority_dir/"signed_request.json"
         env=dict(os.environ,PYTHONPATH=str(lib))
         authority=subprocess.run([sys.executable,"-c",AUTHORITY,str(public)],
             env=env,capture_output=True,text=True,timeout=10)
         assert authority.returncode==0,(authority.stdout,authority.stderr)
-        assert "AUTHORITY_KEYS_HELD_OUTSIDE_BROKER" in authority.stdout
+        assert "AUTHORITY_KEYS_HELD_OUTSIDE_BROKER" in authority.stdout\n        assert public.stat().st_uid==signer.pw_uid and public.stat().st_mode & 0o077 == 0
         public.chmod(0o644)
         assert all("private" not in key for key in __import__("json").loads(public.read_text()))
         proc=subprocess.Popen([sys.executable,"-c",SERVER,str(sock),str(private),
