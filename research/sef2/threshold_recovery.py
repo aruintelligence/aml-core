@@ -5,7 +5,7 @@ validates an approval bundle over an exact canonical payload; it does not
 provide secure policy distribution, key custody, revocation freshness, or
 anti-rollback storage.
 """
-import hashlib
+import hashlib,json
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from signed_receipt import canonical
@@ -58,3 +58,37 @@ def verify_approval_bundle(payload,bundle,policy):
    Ed25519PublicKey.from_public_bytes(raw).verify(sig,statement)
   return ids==sorted(ids) and len(ids)>=policy["threshold"]
  except (InvalidSignature,ValueError,TypeError,KeyError,OverflowError,AttributeError): return False
+
+class ThresholdRecoveryPublicKey:
+    """Adapter implementing the Ed25519 verify interface expected by recovery."""
+    def __init__(self,policy):
+        if not validate_policy(policy): raise ValueError("invalid threshold recovery policy")
+        self.policy=policy
+    def verify(self,signature,message):
+        from witness_key_recovery import AUTH_DOMAIN
+        if not message.startswith(AUTH_DOMAIN): raise InvalidSignature
+        try:
+            payload=__import__("json").loads(message[len(AUTH_DOMAIN):].decode("utf-8"))
+        except (ValueError,UnicodeDecodeError):
+            raise InvalidSignature
+        bundle=__import__("json").loads(signature.decode("utf-8"))
+        if not verify_approval_bundle(payload,bundle,self.policy): raise InvalidSignature
+
+def make_threshold_transition(new_witness_private,witness_id,current_state,checkpoint,
+                              policy,signers):
+    from witness_key_recovery import SCHEMA,POP_DOMAIN,state_digest
+    from checkpoint_council import valid_checkpoint
+    if not valid_policy_checkpoint(checkpoint): raise ValueError("invalid checkpoint")
+    payload={"schema":SCHEMA,"witness_id":witness_id,
+        "generation":current_state["generation"]+1,
+        "previous_state_sha256":state_digest(current_state),
+        "previous_public_key_sha256":current_state["public_key_sha256"],
+        "new_public_key_hex":new_witness_private.public_key().public_bytes_raw().hex(),
+        "checkpoint":checkpoint,"recovery_authority_id":policy["policy_id"]}
+    bundle=make_approval_bundle(payload,policy,signers)
+    return {"payload":payload,"recovery_signature":canonical(bundle).hex(),
+        "proof_of_possession":new_witness_private.sign(POP_DOMAIN+canonical(payload)).hex()}
+
+def valid_policy_checkpoint(checkpoint):
+    from checkpoint_council import valid_checkpoint
+    return valid_checkpoint(checkpoint)
