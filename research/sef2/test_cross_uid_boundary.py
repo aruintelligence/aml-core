@@ -8,6 +8,7 @@ import os
 import pathlib
 import pwd
 import socket
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -80,7 +81,16 @@ def main():
         os.chown(ipc,broker.pw_uid,broker.pw_gid)
         ipc.chmod(0o711)
         sock=ipc/"broker.sock"
-        env=dict(os.environ,PYTHONPATH=str(HERE))
+        # GitHub checkout lives under /home/runner, inaccessible to test UIDs.
+        # Copy only the broker transport and guard into a world-traversable
+        # disposable fixture directory; never copy signing keys or databases.
+        lib=root/"lib"
+        lib.mkdir(mode=0o755)
+        for name in ("broker_socket.py","broker_isolation_guard.py"):
+            target=lib/name
+            shutil.copyfile(HERE/name,target)
+            target.chmod(0o644)
+        env=dict(os.environ,PYTHONPATH=str(lib))
         # Broker can chgrp its own socket to the designated client group,
         # without gaining the client's UID or database access privileges.
         proc=subprocess.Popen([sys.executable,"-c",SERVER,str(sock),str(db),
