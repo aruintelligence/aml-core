@@ -49,7 +49,7 @@ class RecoveryEnrollmentIntegrationTests(unittest.TestCase):
     BEGIN SELECT RAISE(ABORT,'injected durable event failure'); END""")
   self.assertEqual(self.coordinator.recover("north",self.transition),"STORE_OR_STATE_ERROR")
   self.assertEqual(self.enrollment.manifest()["epoch"],1)
-        self.assertEqual(self.enrollment.manifest()["public_keys"]["witness"],pub(self.old))
+  self.assertEqual(self.enrollment.manifest()["public_keys"]["witness"],pub(self.old))
   self.assertEqual(self.coordinator.state("north"),self.state)
   with sqlite3.connect(self.path) as con:
    self.assertEqual(con.execute("SELECT COUNT(*) FROM witness_recovery_events").fetchone()[0],0)
