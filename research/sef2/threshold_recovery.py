@@ -111,7 +111,7 @@ class RecoveryAuthoritySigner:
         with sqlite3.connect(self.ledger_path,timeout=10) as con:
             con.execute("PRAGMA journal_mode=DELETE")
             con.execute("PRAGMA synchronous=FULL")
-            con.execute("""CREATE TABLE IF NOT EXISTS recovery_approval_ledger (
+            con.execute("""CREATE TABLE IF NOT EXISTS recovery_approval_ledger_v2 (
                 policy_sha256 TEXT NOT NULL, authority_id TEXT NOT NULL,
                 witness_id TEXT NOT NULL, generation INTEGER NOT NULL,
                 previous_state_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL,
@@ -139,10 +139,10 @@ class RecoveryAuthoritySigner:
         with sqlite3.connect(self.ledger_path,timeout=10) as con:
             con.execute("PRAGMA synchronous=FULL")
             con.execute("BEGIN IMMEDIATE")
-            row=con.execute("""SELECT payload_sha256,signature FROM recovery_approval_ledger
+            row=con.execute("""SELECT payload_sha256,signature FROM recovery_approval_ledger_v2
                 WHERE policy_sha256=? AND authority_id=? AND witness_id=? AND generation=?""",scope).fetchone()
             if row:
                 if row[0]!=previous_state or row[1]!=digest: raise ValueError("recovery authority equivocation refused")
                 return row[1]
-            con.execute("INSERT INTO recovery_approval_ledger VALUES (?,?,?,?,?,?,?)",(*scope,previous_state,digest,signature))
+            con.execute("INSERT INTO recovery_approval_ledger_v2 VALUES (?,?,?,?,?,?,?)",(*scope,previous_state,digest,signature))
         return signature
