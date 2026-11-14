@@ -53,8 +53,12 @@ def verify_transition(envelope,current_state,recovery_public_key,recovery_author
             return False
         if type(current_state) is not dict or set(current_state)!={"witness_id","generation","public_key_sha256","checkpoint","transition_sha256"}:
             return False
-        if (p["schema"]!=SCHEMA or p["witness_id"]!=current_state["witness_id"]
-            or p["witness_id"]=="" or type(p["generation"]) is not int
+        if (type(p["witness_id"]) is not str or type(current_state["witness_id"]) is not str
+            or not p["witness_id"] or type(p["schema"]) is not str
+            or not _digest(current_state["public_key_sha256"])
+            or not _digest(current_state["transition_sha256"])
+            or p["schema"]!=SCHEMA or p["witness_id"]!=current_state["witness_id"]
+            or type(p["generation"]) is not int
             or p["generation"]!=current_state["generation"]+1
             or type(current_state["generation"]) is not int or current_state["generation"]<0
             or p["previous_state_sha256"]!=state_digest(current_state)
@@ -77,7 +81,7 @@ def verify_transition(envelope,current_state,recovery_public_key,recovery_author
         Ed25519PublicKey.from_public_bytes(new_raw).verify(
             bytes.fromhex(envelope["proof_of_possession"]),POP_DOMAIN+canonical(p))
         return True
-    except (InvalidSignature,ValueError,TypeError,KeyError,OverflowError):
+    except (InvalidSignature,ValueError,TypeError,KeyError,OverflowError,AttributeError):
         return False
 
 def advance_state(envelope,current_state,recovery_public_key,recovery_authority_id):
@@ -88,3 +92,7 @@ def advance_state(envelope,current_state,recovery_public_key,recovery_authority_
         "public_key_sha256":key_fingerprint(p["new_public_key_hex"]),
         "checkpoint":dict(p["checkpoint"]),
         "transition_sha256":hashlib.sha256(canonical(envelope)).hexdigest()}
+
+def _digest(value):
+    return (type(value) is str and len(value)==64
+        and all(c in "0123456789abcdef" for c in value))
