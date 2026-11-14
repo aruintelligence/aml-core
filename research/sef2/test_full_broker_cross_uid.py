@@ -89,8 +89,8 @@ def main():
         os.chown(private,broker.pw_uid,broker.pw_gid)
         authority_dir=root/"authority"
         authority_dir.mkdir(mode=0o755)
-        os.chown(authority_dir,signer.pw_uid,signer.pw_gid)
-        authority_dir.chmod(0o755)
+        os.chown(authority_dir,signer.pw_uid,broker.pw_gid)
+        authority_dir.chmod(0o750)
         ipc=root/"ipc"
         ipc.mkdir(mode=0o711)
         os.chown(ipc,broker.pw_uid,broker.pw_gid)
@@ -110,7 +110,7 @@ def main():
         authority=subprocess.run([sys.executable,"-c",AUTHORITY,str(public)],
             env=env,capture_output=True,text=True,timeout=10)
         assert authority.returncode==0,(authority.stdout,authority.stderr)
-        assert "AUTHORITY_KEYS_HELD_OUTSIDE_BROKER" in authority.stdout\n        assert public.stat().st_uid==signer.pw_uid and public.stat().st_mode & 0o077 == 0
+        assert "AUTHORITY_KEYS_HELD_OUTSIDE_BROKER" in authority.stdout\n        os.chown(public,-1,broker.pw_gid)\n        public.chmod(0o640)\n        assert public.stat().st_uid==signer.pw_uid and public.stat().st_gid==broker.pw_gid\n        assert public.stat().st_mode & 0o007 == 0
         public.chmod(0o644)
         assert all("private" not in key for key in __import__("json").loads(public.read_text()))
         proc=subprocess.Popen([sys.executable,"-c",SERVER,str(sock),str(private),
