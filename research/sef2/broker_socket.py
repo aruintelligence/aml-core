@@ -80,3 +80,11 @@ def request_action(socket_path,envelope,timeout=3):
             and response["status"] in {"APPLIED","ALREADY_APPLIED","DENIED"}) else "DENIED"
     except (OSError,ValueError,TypeError,KeyError):
         return "DENIED"
+
+class IsolatedBrokerServer(BrokerServer):
+    """Strict launch profile; refuse unsafe broker/client UID or DB ownership."""
+    def __init__(self,socket_path,broker,allowed_uids):
+        from broker_isolation_guard import validate_isolation
+        if not validate_isolation(broker.path,os.geteuid(),allowed_uids):
+            raise ValueError("unsafe broker isolation configuration")
+        super().__init__(socket_path,broker,allowed_uids)

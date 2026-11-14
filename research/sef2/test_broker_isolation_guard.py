@@ -4,6 +4,7 @@ import pathlib
 import tempfile
 import unittest
 from broker_isolation_guard import validate_isolation
+from broker_socket import IsolatedBrokerServer
 
 class IsolationGuardTests(unittest.TestCase):
     def setUp(self):
@@ -37,3 +38,10 @@ class IsolationGuardTests(unittest.TestCase):
     def test_claimed_broker_identity_must_match_process_uid(self):
         with self.assertRaises(ValueError):
             validate_isolation(self.db,self.uid+1,frozenset({self.uid+2}))
+
+    def test_strict_broker_server_rejects_same_uid_client(self):
+        class Broker:
+            path=str(self.db)
+        with self.assertRaises(ValueError):
+            IsolatedBrokerServer(self.parent/"socket",Broker(),frozenset({self.uid}))
+        self.assertFalse((self.parent/"socket").exists())
