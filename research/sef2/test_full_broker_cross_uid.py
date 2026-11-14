@@ -80,6 +80,7 @@ def main():
     broker=pwd.getpwnam("aml_broker_test")
     client=pwd.getpwnam("aml_client_test")
     signer=pwd.getpwnam("aml_signer_test")
+    signer=pwd.getpwnam("aml_signer_test")
     assert broker.pw_uid!=client.pw_uid and broker.pw_uid!=0 and client.pw_uid!=0
     with tempfile.TemporaryDirectory(prefix="aml-full-broker-") as tmp:
         root=pathlib.Path(tmp)
@@ -109,6 +110,7 @@ def main():
         client_public=ipc/"signed_request.json"
         env=dict(os.environ,PYTHONPATH=str(lib))
         authority=subprocess.run([sys.executable,"-c",AUTHORITY,str(public)],
+            preexec_fn=drop(signer.pw_uid,signer.pw_gid,(broker.pw_gid,)),
             env=env,capture_output=True,text=True,timeout=10)
         assert authority.returncode==0,(authority.stdout,authority.stderr)
         assert "AUTHORITY_KEYS_HELD_OUTSIDE_BROKER" in authority.stdout
