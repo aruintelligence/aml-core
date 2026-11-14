@@ -39,10 +39,10 @@ def collect_latest(endpoints,nonce,timeout=2):
 
 def verify_live(directory,manifest_path,manifest_pin,history_db,approver_public_hex,
                 checkpoint_path,checkpoint_pin,expected_epoch,witness_keys_path,
-                attestations_path,threshold,endpoints,nonce=None):
+                attestations_path,threshold,endpoints,nonce=None,max_faults=0):
     if not verify_with_quorum(directory,manifest_path,manifest_pin,history_db,
                               approver_public_hex,checkpoint_path,checkpoint_pin,expected_epoch,
-                              witness_keys_path,attestations_path,threshold):
+                              witness_keys_path,attestations_path,threshold,max_faults):
         return False
     try:
         if type(endpoints) is not list or len(endpoints)<threshold:
@@ -59,7 +59,7 @@ def verify_live(directory,manifest_path,manifest_pin,history_db,approver_public_
 
 def verify_pinned_live(directory,manifest_path,manifest_pin,history_db,approver_public_hex,
                        checkpoint_path,checkpoint_pin,expected_epoch,witness_keys_path,
-                       attestations_path,threshold,endpoints,anchor_files,anchor_pins,nonce=None):
+                       attestations_path,threshold,endpoints,anchor_files,anchor_pins,nonce=None,max_faults=0):
     """Fail-closed explicit witness-id to endpoint binding and pinned live quorum.
 
     endpoints MUST be a dict {witness_id: exact_loopback_url}.  A list or an
@@ -68,7 +68,7 @@ def verify_pinned_live(directory,manifest_path,manifest_pin,history_db,approver_
     """
     if not verify_with_quorum(directory,manifest_path,manifest_pin,history_db,
                               approver_public_hex,checkpoint_path,checkpoint_pin,
-                              expected_epoch,witness_keys_path,attestations_path,threshold):
+                              expected_epoch,witness_keys_path,attestations_path,threshold,max_faults):
         return False
     try:
         if (type(endpoints) is not dict or type(anchor_files) is not dict
