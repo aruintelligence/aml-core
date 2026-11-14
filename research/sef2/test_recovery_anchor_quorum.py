@@ -23,24 +23,24 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
   self.assertTrue(verify_anchor_certificate(self.payload,self.certificate,self.policy,1,"0"*64,"recovery-authority-1","a"*64))
  def test_two_votes_are_insufficient(self):
   c=copy.deepcopy(self.certificate); c["approvals"]=c["approvals"][:2]
-  self.assertFalse(verify_anchor_certificate(self.payload,c,self.policy,1,"0"*64))
+  self.assertFalse(verify_anchor_certificate(self.payload,c,self.policy,1,"0"*64,"recovery-authority-1","a"*64))
  def test_duplicate_anchor_identity_rejected(self):
   c=copy.deepcopy(self.certificate); c["approvals"][1]=dict(c["approvals"][0])
   c["approvals"].sort(key=lambda x:x["anchor_id"])
-  self.assertFalse(verify_anchor_certificate(self.payload,c,self.policy,1,"0"*64))
+  self.assertFalse(verify_anchor_certificate(self.payload,c,self.policy,1,"0"*64,"recovery-authority-1","a"*64))
  def test_forged_anchor_signature_rejected(self):
   c=copy.deepcopy(self.certificate); c["approvals"][0]["signature"]="00"*64
-  self.assertFalse(verify_anchor_certificate(self.payload,c,self.policy,1,"0"*64))
+  self.assertFalse(verify_anchor_certificate(self.payload,c,self.policy,1,"0"*64,"recovery-authority-1","a"*64))
  def test_checkpoint_substitution_rejected(self):
   p=copy.deepcopy(self.payload); p["checkpoint"]["head_hash"]="c"*64
-  self.assertFalse(verify_anchor_certificate(p,self.certificate,self.policy,1,"0"*64))
+  self.assertFalse(verify_anchor_certificate(p,self.certificate,self.policy,1,"0"*64,"recovery-authority-1","a"*64))
  def test_policy_substitution_rejected(self):
   p=copy.deepcopy(self.policy); p["threshold"]=2
   self.assertFalse(verify_anchor_certificate(self.payload,self.certificate,p,1,"0"*64))
  def test_stale_expected_pin_rejected(self):
-  self.assertFalse(verify_anchor_certificate(self.payload,self.certificate,self.policy,1,"f"*64))
+  self.assertFalse(verify_anchor_certificate(self.payload,self.certificate,self.policy,1,"f"*64,"recovery-authority-1","a"*64))
  def test_stale_sequence_rejected(self):
-  self.assertFalse(verify_anchor_certificate(self.payload,self.certificate,self.policy,2,"0"*64))
+  self.assertFalse(verify_anchor_certificate(self.payload,self.certificate,self.policy,2,"0"*64,"recovery-authority-1","a"*64))
  def test_witness_refuses_conflicting_checkpoint_at_same_sequence(self):
   changed=make_anchor_payload({**self.checkpoint,"head_hash":"c"*64},1,"0"*64,self.policy)
   with self.assertRaisesRegex(ValueError,"equivocation"):
