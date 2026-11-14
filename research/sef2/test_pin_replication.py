@@ -3,8 +3,19 @@ import pathlib
 import sqlite3
 import tempfile
 import unittest
+import multiprocessing
+import os
 from pin_registry import PinRegistry
 from pin_replication import PinReplica,verified_state,replicate_committed
+
+def crash_after_replica_write(registry_path,replica_paths):
+    registry=PinRegistry(registry_path)
+    replicas=[PinReplica(p) for p in replica_paths]
+    try:
+        replicate_committed(registry,"north",replicas,2,crash_after=1)
+    except RuntimeError:
+        os._exit(47)
+    os._exit(48)
 
 class PinReplicationTests(unittest.TestCase):
     def setUp(self):
@@ -93,3 +104,18 @@ class PinReplicationTests(unittest.TestCase):
                     with self.assertRaises(RuntimeError):
                         replicate_committed(registry,"north",replicas,2,crash_after=index)
                     self.assertEqual(replicate_committed(registry,"north",replicas,2)["generation"],1)
+
+    def test_real_subprocess_exit_mid_replication_recovers(self):
+        self.advance()
+        child=multiprocessing.Process(target=crash_after_replica_write,
+            args=(self.registry.path,[r.path for r in self.replicas]))
+        child.start()
+        child.join(timeout=10)
+        if child.is_alive():
+            child.kill()
+            child.join(timeout=5)
+            self.fail("replication child hung")
+        self.assertEqual(child.exitcode,47)
+        self.assertEqual(self.replicas[0].latest(self.witness),(1,self.second))
+        self.assertEqual(self.replicas[1].latest(self.witness),(0,self.first))
+        self.assertEqual(replicate_committed(self.registry,self.witness,self.replicas,2)["generation"],1)
