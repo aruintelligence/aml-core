@@ -197,3 +197,22 @@ class RecoveryQuorumModelTests(unittest.TestCase):
      for left,right in itertools.combinations(sets,2):
       self.assertGreater(len(set(left)&set(right)),faults,
        msg=f"n={n}, f={faults}, q={quorum}")
+
+ def test_ledger_file_is_private(self):
+  import os,stat
+  self.assertEqual(stat.S_IMODE(os.stat(self.ledger).st_mode),0o600)
+ def test_insecure_existing_ledger_permissions_are_rejected(self):
+  import os,pathlib
+  path=str(pathlib.Path(self.temp.name)/"insecure.sqlite")
+  pathlib.Path(path).write_bytes(b"")
+  os.chmod(path,0o644)
+  with self.assertRaisesRegex(ValueError,"private regular file"):
+   RecoveryAuthoritySigner("authority-0",self.key,path)
+ def test_symlink_ledger_path_is_rejected(self):
+  import pathlib
+  target=str(pathlib.Path(self.temp.name)/"target.sqlite")
+  pathlib.Path(target).write_bytes(b"")
+  link=str(pathlib.Path(self.temp.name)/"link.sqlite")
+  pathlib.Path(link).symlink_to(target)
+  with self.assertRaisesRegex(ValueError,"private regular file"):
+   RecoveryAuthoritySigner("authority-0",self.key,link)
