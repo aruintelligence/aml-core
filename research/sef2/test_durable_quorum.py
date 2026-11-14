@@ -46,7 +46,7 @@ class DurableQuorumTests(unittest.TestCase):
         self.witnesses={name:DurableWitness(self.root/(name+".sqlite"),name,k)
                         for name,k in self.privates.items()}
         self.receipts=[]
-        for name in ("north","south","east"):
+        for name in ("north","south","east","west"):
             status,receipt=self.witnesses[name].publish(self.checkpoint)
             self.assertEqual(status,"PUBLISHED")
             self.receipts.append(receipt)
@@ -103,6 +103,15 @@ class DurableQuorumTests(unittest.TestCase):
         self.receipts[1]=publish(self.privates["south"],"south",fork)
         self.save()
         self.assertFalse(self.check())
+
+    def test_three_honest_witnesses_outvote_one_equivocating_witness(self):
+        self.receipts[1]["payload"]["checkpoint"]["head_hash"]="b"*64
+        from checkpoint_council import publish
+        fork=dict(self.checkpoint,head_hash="b"*64)
+        self.receipts[1]=publish(self.privates["south"],"south",fork)
+        self.receipts=[self.receipts[0],self.receipts[2],self.receipts[3]]
+        self.save()
+        self.assertTrue(self.check())
 
     def test_history_rollback_rejected_end_to_end(self):
         with sqlite3.connect(self.history_db) as con:
