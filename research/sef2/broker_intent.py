@@ -5,7 +5,7 @@ from cryptography.exceptions import InvalidSignature
 from signed_receipt import canonical
 from gated_action_broker import canonical_request
 
-DOMAIN=b"AML-SEF2-BROKER-INTENT-V1\\x00"
+DOMAIN=b"AML-SEF2-BROKER-INTENT-V1\x00"
 SCHEMA="AML-SEF2-BROKER-INTENT-V1"
 
 def create_intent(private_key,broker_id,audience,request,challenge):
