@@ -46,3 +46,4 @@ jobs:
           sudo useradd --system --no-create-home --user-group aml_broker_test
           sudo useradd --system --no-create-home --user-group aml_client_test
           sudo python3 research/sef2/test_cross_uid_boundary.py
+          sudo python3 research/sef2/test_full_broker_cross_uid.py
