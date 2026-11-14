@@ -28,8 +28,9 @@ print("REMOTE_WITNESS_OK: distinct UID service consumed once and denied nonce/op
 UNTRUSTED=r'''
 from signer_witness import RemoteSignerWitness
 import sys
+socket_path,pub=sys.argv[1:3]
 try:
-    RemoteSignerWitness(sys.argv[1]).consume("z"*48,"unauthorized-op",
+    RemoteSignerWitness(socket_path,pub).consume("z"*48,"unauthorized-op",
       {"operation_id":"unauthorized-op","action":"payment:simulate",
        "target":"fixture:merchant-a","amount_cents":100})
 except (PermissionError,OSError):
