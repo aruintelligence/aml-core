@@ -8,7 +8,7 @@ from action_capability import issue_capability
 from broker_intent import verify_intent
 
 class SignerPolicy:
-    def __init__(self,database,private_key,issuer,audience,broker_id,broker_public_hex,policy_epoch=0):
+    def __init__(self,database,private_key,issuer,audience,broker_id,broker_public_hex,policy_epoch=0,signer_witness=None):
         if (type(broker_id) is not str or not broker_id or type(audience) is not str or not audience
             or type(broker_public_hex) is not str or len(bytes.fromhex(broker_public_hex))!=32):
             raise ValueError("invalid enrolled broker identity")
@@ -19,6 +19,7 @@ class SignerPolicy:
         self.broker_id=broker_id
         self.broker_public_hex=broker_public_hex
         self.policy_epoch=policy_epoch
+        self.signer_witness=signer_witness
         with sqlite3.connect(database) as db:
             db.execute("PRAGMA synchronous=FULL")
             db.execute("CREATE TABLE IF NOT EXISTS signer_challenges (challenge TEXT PRIMARY KEY, operation_id TEXT UNIQUE NOT NULL)")
@@ -43,6 +44,10 @@ class SignerPolicy:
         if not verify_intent(intent,self.broker_public_hex,self.broker_id,self.audience,request):
             raise PermissionError("broker intent signature or scope invalid")
         challenge=intent["payload"]["challenge"]
+        # Append to independently administered monotonic state before local issuance.
+        # A crash after this point can strand an operation, but cannot safely replay it.
+        if self.signer_witness is not None:
+            self.signer_witness.consume(challenge,request["operation_id"],request)
         try:
             with sqlite3.connect(self.database,timeout=5,isolation_level=None) as db:
                 db.execute("PRAGMA synchronous=FULL")
