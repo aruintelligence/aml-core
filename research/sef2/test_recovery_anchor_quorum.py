@@ -63,6 +63,15 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
   first=self.witnesses["anchor-0"].approve(self.payload,self.policy)
   second=self.witnesses["anchor-0"].approve(self.payload,self.policy)
   self.assertEqual(first,second)
+ def test_anchor_witness_rejects_boolean_sequence(self):
+  malformed={**self.payload,"sequence":True}
+  with self.assertRaisesRegex(ValueError,"invalid anchor payload"):
+   self.witnesses["anchor-3"].approve(malformed,self.policy)
+ def test_anchor_witness_rejects_malformed_checkpoint_hash(self):
+  malformed=copy.deepcopy(self.payload)
+  malformed["checkpoint"]["head_hash"]="not-a-hash"
+  with self.assertRaisesRegex(ValueError,"invalid anchor payload"):
+   self.witnesses["anchor-3"].approve(malformed,self.policy)
  def test_policy_requires_byzantine_safe_quorum(self):
   bad=copy.deepcopy(self.policy); bad["threshold"]=2
   self.assertFalse(validate_anchor_policy(bad))
