@@ -6,6 +6,7 @@ Not a remote trust domain, real payment provider, or independently witnessed evi
 import hashlib
 import hmac
 import json
+import os
 import sqlite3
 import threading
 import uuid
@@ -130,6 +131,8 @@ def handler(kind, path, authority_url=None, secret=None, fault=None):
                 if decision.get("state") != "CONSUMED":
                     return self.reply(403, {"state": "DENIED"})
                 try:
+                    if fault == "kill_after_claim":
+                        os._exit(71)
                     if fault == "after_claim":
                         raise RuntimeError("injected_after_claim")
                     with db(path) as con:
@@ -138,6 +141,8 @@ def handler(kind, path, authority_url=None, secret=None, fault=None):
                         con.execute("INSERT INTO effects VALUES (?,?,?)",
                             (op, request_digest, effect_id))
                         con.execute("COMMIT")
+                    if fault == "kill_after_effect":
+                        os._exit(72)
                     if fault == "after_effect":
                         raise RuntimeError("injected_after_effect")
                     return self.reply(200, {"state": "PROVIDER_REPORTED",

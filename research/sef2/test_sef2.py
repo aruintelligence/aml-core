@@ -2,10 +2,14 @@
 import concurrent.futures
 import json
 import os
+import pathlib
+import subprocess
+import sys
+import time
 import tempfile
 import unittest
 import uuid
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from sef2 import approve, db, digest, initialize, post, start
 
@@ -101,6 +105,47 @@ class Adversarial(unittest.TestCase):
         self.restart_provider()
         self.assertEqual(post(self.url + "/status", r)["state"], "PROVIDER_REPORTED")
         self.assertEqual(post(self.url + "/execute", r)["state"], "DENIED")
+
+    def child_provider(self, fault):
+        # Child is a distinct OS process; os._exit cannot terminate the test runner.
+        port_file = pathlib.Path(self.tmp.name) / ("port-" + str(uuid.uuid4()))
+        proc = subprocess.Popen([sys.executable, "provider_child.py",
+            "--provider-db", self.p, "--authority-url", self.auth_url,
+            "--secret-hex", self.secret.hex(), "--fault", fault,
+            "--port-file", str(port_file)], stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE)
+        self.addCleanup(lambda: proc.kill() if proc.poll() is None else None)
+        deadline = time.monotonic() + 5
+        while not port_file.exists() and time.monotonic() < deadline:
+            if proc.poll() is not None:
+                raise AssertionError("provider child exited before readiness")
+            time.sleep(0.01)
+        self.assertTrue(port_file.exists(), "provider child never became ready")
+        return proc, port_file.read_text()
+
+    def test_hard_kill_after_claim_no_duplicate(self):
+        r = self.request()
+        approve(self.a, r["operation_id"], digest(r))
+        proc, url = self.child_provider("kill_after_claim")
+        with self.assertRaises((URLError, ConnectionError, TimeoutError, OSError)):
+            post(url + "/execute", r)
+        self.assertEqual(proc.wait(timeout=5), 71)
+        self.assertEqual(self.count(), 0)
+        self.assertEqual(post(self.url + "/status", r)["state"], "UNCERTAIN")
+        self.assertEqual(post(self.url + "/execute", r)["state"], "DENIED")
+        self.assertEqual(self.count(), 0)
+
+    def test_hard_kill_after_effect_recovers_report(self):
+        r = self.request()
+        approve(self.a, r["operation_id"], digest(r))
+        proc, url = self.child_provider("kill_after_effect")
+        with self.assertRaises((URLError, ConnectionError, TimeoutError, OSError)):
+            post(url + "/execute", r)
+        self.assertEqual(proc.wait(timeout=5), 72)
+        self.assertEqual(self.count(), 1)
+        self.assertEqual(post(self.url + "/status", r)["state"], "PROVIDER_REPORTED")
+        self.assertEqual(post(self.url + "/execute", r)["state"], "DENIED")
+        self.assertEqual(self.count(), 1)
 
     def test_duplicate_keys_rejected(self):
         r = self.request()
