@@ -87,3 +87,13 @@ The verifier fails closed on missing or mismatched external manifest digest, pub
 ## Signed trust enrollment and key lifecycle research
 
 `trust_enrollment.py` adds a pinned-approver Ed25519 authorization boundary, strictly increasing trust epochs, atomic SQLite updates, explicit revocation on key rotation, durable revoked-key tombstones and fail-closed rejection of unknown signers, substituted keys, stale epochs, key reuse across roles and re-enrollment of revoked keys. The caller must **independently provision the approver public key** and control the approver private key. Enrollment state is local and rollbackable by a privileged actor; external monotonic publication and independent approval governance are **not implemented**. This research module does not automatically feed the strict bundle verifier or replace its externally pinned manifest digest. Real-world trust enrollment additionally needs independent identity vetting, quorum authorization, hardware-backed key custody, expiry, emergency compromise recovery, immutable audit publication and verified integration into all verifiers.
+
+## Active trust enrollment integrated with strict bundle verification
+
+`verify_enrolled.py` combines the externally pinned bundle manifest verifier with the latest active epoch in the signed-enrollment SQLite store. The evaluator must supply the expected active epoch and a **separately retained, trusted SHA-256 of the approved enrollment payload**; the verifier rejects stale epochs, mismatched keys, revoked active identities, missing enrollment state and substituted evidence. Invocation:
+
+```bash
+python3 research/sef2/evaluation_kit/verify_enrolled.py --input /tmp/aml-sef2-evaluation --trust-manifest /secure/trust-manifest.json --pinned-manifest-sha256 TRUSTED_MANIFEST_SHA256 --enrollment-db /secure/enrollment.sqlite --active-epoch 1 --pinned-enrollment-sha256 TRUSTED_APPROVED_ENROLLMENT_PAYLOAD_SHA256
+```
+
+**Security limitation:** the bridge checks a previously accepted enrollment payload in the local store; it does not revalidate the approver signature because the enrollment database currently stores only the accepted payload. Its integrity therefore depends on the external state digest and trusted epoch. The store and digest are not independently published or protected against an attacker who controls both. An attacker able to supply a new trusted digest can authorize substituted identities. Revocation is effective for the current approved state; historic receipts need an explicit verification-time and revocation policy. This is a research integration, not independent production trust governance.
