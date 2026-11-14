@@ -158,3 +158,9 @@ class RecoveryAuthorityLedgerTests(unittest.TestCase):
   revised["authorities"]["authority-3"]=Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex()
   with self.assertRaisesRegex(ValueError,"equivocation"):
    self.signer.approve(self.payload,revised)
+
+ def test_equivocation_record_survives_signer_restart(self):
+  self.signer.approve(self.payload,self.policy)
+  restarted=RecoveryAuthoritySigner("authority-0",self.key,self.ledger)
+  with self.assertRaisesRegex(ValueError,"equivocation"):
+   restarted.approve({**self.payload,"new_key":"f"*64},self.policy)
