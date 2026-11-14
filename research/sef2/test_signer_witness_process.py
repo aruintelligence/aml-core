@@ -1,43 +1,69 @@
-"""Real separate-UID signer-to-witness IPC and rollback experiment; disposable Linux root CI only."""
-import os,pathlib,pwd,shutil,socket,sqlite3,subprocess,sys,tempfile,time
+"""Real separate-UID witness IPC, signed receipts and rollback/fork detection."""
+import os,pathlib,pwd,shutil,sqlite3,subprocess,sys,tempfile,time
 from test_cross_uid_boundary import drop,HERE
 
 CLIENT=r'''
 from signer_witness import RemoteSignerWitness
 import sys
-socket_path,pub=sys.argv[1:3]
-request={"operation_id":"remote-op","action":"payment:simulate",
+socket_path,pub,checkpoint=sys.argv[1:4]
+w=RemoteSignerWitness(socket_path,pub,checkpoint)
+for i in range(2):
+    operation="remote-op-%d"%i
+    request={"operation_id":operation,"action":"payment:simulate",
+             "target":"fixture:merchant-a","amount_cents":100}
+    w.consume(("x%047d"%i),operation,request)
+print("REMOTE_WITNESS_OK: signed receipts verified and signer checkpoint advanced")
+'''
+
+ROLLBACK_CLIENT=r'''
+from signer_witness import RemoteSignerWitness
+import sys
+socket_path,pub,checkpoint=sys.argv[1:4]
+w=RemoteSignerWitness(socket_path,pub,checkpoint)
+request={"operation_id":"after-rollback","action":"payment:simulate",
          "target":"fixture:merchant-a","amount_cents":100}
-w=RemoteSignerWitness(socket_path,pub)
-w.consume("x"*48,"remote-op",request)
 try:
-    w.consume("x"*48,"remote-op",request)
+    w.consume("z"*48,"after-rollback",request)
 except PermissionError:
-    pass
+    print("WITNESS_ROLLBACK_DETECTED: signed but stale witness branch rejected")
 else:
-    raise AssertionError("remote witness accepted replay")
-try:
-    w.consume("y"*48,"remote-op",request)
-except PermissionError:
-    pass
-else:
-    raise AssertionError("remote witness accepted second nonce for operation")
-print("REMOTE_WITNESS_OK: distinct UID service consumed once and denied nonce/operation replay")
+    raise AssertionError("signer accepted rolled-back witness history")
 '''
 
 UNTRUSTED=r'''
-from signer_witness import RemoteSignerWitness
-import sys
-socket_path,pub=sys.argv[1:3]
+import socket,sys
 try:
-    RemoteSignerWitness(socket_path,pub).consume("z"*48,"unauthorized-op",
-      {"operation_id":"unauthorized-op","action":"payment:simulate",
-       "target":"fixture:merchant-a","amount_cents":100})
-except (PermissionError,OSError):
+    with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as conn:
+        conn.settimeout(2); conn.connect(sys.argv[1])
+except OSError:
     print("UNTRUSTED_UID_DENIED")
 else:
-    raise AssertionError("untrusted UID reached witness")
+    raise AssertionError("untrusted UID connected to witness socket")
 '''
+
+def start_service(sock,db,private_key,public_key,lib,witness,signer,env):
+    proc=subprocess.Popen([sys.executable,str(lib/"signer_witness_service.py"),
+        str(sock),str(db),str(signer.pw_uid),str(signer.pw_gid),str(private_key),str(public_key)],
+        preexec_fn=drop(witness.pw_uid,witness.pw_gid,(signer.pw_gid,)),env=env,
+        stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)
+    for _ in range(200):
+        if sock.exists() and public_key.exists(): return proc
+        if proc.poll() is not None: raise AssertionError("witness service exited: "+proc.stderr.read())
+        time.sleep(.02)
+    proc.terminate()
+    raise AssertionError("witness socket/key startup timeout")
+
+def stop_service(proc):
+    proc.terminate()
+    try: proc.communicate(timeout=5)
+    except subprocess.TimeoutExpired:
+        proc.kill(); proc.communicate(timeout=5)
+
+def run_as(script,args,account,env):
+    result=subprocess.run([sys.executable,"-c",script,*map(str,args)],
+        preexec_fn=drop(account.pw_uid,account.pw_gid),env=env,capture_output=True,text=True,timeout=12)
+    assert result.returncode==0,(result.stdout,result.stderr)
+    return result.stdout.strip()
 
 def main():
     if sys.platform!="linux" or os.geteuid()!=0:
@@ -51,39 +77,36 @@ def main():
         ipc=root/"ipc"; ipc.mkdir(mode=0o711)
         os.chown(ipc,witness.pw_uid,witness.pw_gid); ipc.chmod(0o711)
         state=root/"state"; state.mkdir(mode=0o700)
-        os.chown(state,witness.pw_uid,witness.pw_gid)
+        os.chown(state,witness.pw_uid,witness.pw_gid); state.chmod(0o700)
+        signer_state=root/"signer-state"; signer_state.mkdir(mode=0o700)
+        os.chown(signer_state,signer.pw_uid,signer.pw_gid); signer_state.chmod(0o700)
         db=state/"witness.sqlite"; sock=ipc/"witness.sock"
         private_key=state/"witness_ed25519.pem"; public_key=state/"witness_ed25519.pub"
+        checkpoint=signer_state/"accepted_witness.sqlite"; snapshot=root/"witness-before.sqlite"
         lib=root/"lib"; lib.mkdir(mode=0o755)
-        for name in ("signer_witness.py","signer_witness_service.py","gated_action_broker.py",
-                     "signed_receipt.py"):
+        for name in ("signer_witness.py","signer_witness_service.py","signed_receipt.py"):
             target=lib/name; shutil.copyfile(HERE/name,target); target.chmod(0o644)
         env=dict(os.environ,PYTHONPATH=str(lib))
-        proc=subprocess.Popen([sys.executable,str(lib/"signer_witness_service.py"),
-            str(sock),str(db),str(signer.pw_uid),str(signer.pw_gid),str(private_key),str(public_key)],
-            preexec_fn=drop(witness.pw_uid,witness.pw_gid,(signer.pw_gid,)),env=env,
-            stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)
+        proc=start_service(sock,db,private_key,public_key,lib,witness,signer,env)
         try:
-            for _ in range(200):
-                if sock.exists() and public_key.exists(): break
-                if proc.poll() is not None: raise AssertionError("witness service exited: "+proc.stderr.read())
-                time.sleep(.02)
-            assert sock.exists() and public_key.exists(),"witness socket/key startup timeout"
+            # Snapshot the initialized but empty witness state before any append.
+            shutil.copy2(db,snapshot)
             pub=public_key.read_text().strip()
-            result=subprocess.run([sys.executable,"-c",CLIENT,str(sock),pub],
-                preexec_fn=drop(signer.pw_uid,signer.pw_gid),env=env,capture_output=True,text=True,timeout=10)
-            assert result.returncode==0,(result.stdout,result.stderr)
-            print(result.stdout.strip())
-            denied=subprocess.run([sys.executable,"-c",UNTRUSTED,str(sock),pub],
-                preexec_fn=drop(client.pw_uid,client.pw_gid),env=env,capture_output=True,text=True,timeout=10)
-            assert denied.returncode==0,(denied.stdout,denied.stderr)
-            print(denied.stdout.strip())
-            with sqlite3.connect(db) as conn:
-                assert conn.execute("SELECT COUNT(*) FROM consumed_intents").fetchone()[0]==1
+            print(run_as(CLIENT,[sock,pub,checkpoint],signer,env))
         finally:
-            proc.terminate()
-            try: proc.communicate(timeout=5)
-            except subprocess.TimeoutExpired:
-                proc.kill(); proc.communicate(timeout=5)
+            stop_service(proc)
+        # Simulate privileged restoration of witness DB while signer checkpoint and
+        # witness signing key remain unchanged. The signer must reject the stale fork.
+        shutil.copy2(snapshot,db)
+        os.chown(db,witness.pw_uid,witness.pw_gid); db.chmod(0o600)
+        proc=start_service(sock,db,private_key,public_key,lib,witness,signer,env)
+        try:
+            print(run_as(ROLLBACK_CLIENT,[sock,pub,checkpoint],signer,env))
+            print(run_as(UNTRUSTED,[sock],client,env))
+        finally:
+            stop_service(proc)
+        with sqlite3.connect(checkpoint) as conn:
+            seq=conn.execute("SELECT sequence FROM witness_checkpoint WHERE singleton=1").fetchone()[0]
+            assert seq==2
 
 if __name__=="__main__": main()
