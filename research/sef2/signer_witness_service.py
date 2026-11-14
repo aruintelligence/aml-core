@@ -14,6 +14,13 @@ def read_exact(conn,size):
         chunks.append(chunk); size-=len(chunk)
     return b"".join(chunks)
 
+def reject_duplicate_keys(pairs):
+    result={}
+    for key,value in pairs:
+        if key in result: raise ValueError("duplicate JSON key")
+        result[key]=value
+    return result
+
 def serve(sock_path,database,allowed_uid,allowed_gid):
     witness=SignerWitness(database)
     try: os.unlink(sock_path)
@@ -26,6 +33,7 @@ def serve(sock_path,database,allowed_uid,allowed_gid):
         while True:
             conn,_=server.accept()
             with conn:
+                conn.settimeout(3.0)
                 try:
                     if not hasattr(socket,"SO_PEERCRED"):
                         raise PermissionError("SO_PEERCRED unavailable")
@@ -34,7 +42,7 @@ def serve(sock_path,database,allowed_uid,allowed_gid):
                         raise PermissionError("untrusted signer UID")
                     size=struct.unpack("!I",read_exact(conn,4))[0]
                     if size>65536: raise ValueError("request too large")
-                    request=json.loads(read_exact(conn,size))
+                    request=json.loads(read_exact(conn,size),object_pairs_hook=reject_duplicate_keys)
                     if type(request) is not dict or set(request)!={"challenge","operation_id","request"}:
                         raise ValueError("invalid request schema")
                     witness.consume(request["challenge"],request["operation_id"],request["request"])
