@@ -17,6 +17,7 @@ from capability_broker import CapabilityBroker
 from broker_socket import IsolatedBrokerServer,grant_client_socket_access
 socket_path,private,public,client_uid,client_gid=sys.argv[1:]
 root=pathlib.Path(private)
+os.umask(0o077)
 registry=PinRegistry(root/"registry.sqlite")
 registry.enroll("north","a"*64)
 replicas=[PinReplica(root/("replica%d.sqlite"%i)) for i in range(3)]
