@@ -168,6 +168,13 @@ class RecoveryAuthorityLedgerTests(unittest.TestCase):
   with self.assertRaisesRegex(ValueError,"equivocation"):
    self.signer.approve(self.payload,revised)
 
+ def test_authority_refuses_same_generation_after_policy_id_rotation(self):
+  self.signer.approve(self.payload,self.policy)
+  rotated=copy.deepcopy(self.policy)
+  rotated["policy_id"]="recovery-council-2"
+  with self.assertRaisesRegex(ValueError,"equivocation"):
+   self.signer.approve(self.payload,rotated)
+
  def test_equivocation_record_survives_signer_restart(self):
   self.signer.approve(self.payload,self.policy)
   restarted=RecoveryAuthoritySigner("authority-0",self.key,self.ledger)
