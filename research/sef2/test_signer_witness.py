@@ -76,3 +76,23 @@ class SignerWitnessTests(unittest.TestCase):
         altered=dict(p2,operation_id="attacker-op")
         with self.assertRaises(Exception):
             witness_key.public_key().verify(bytes.fromhex(second["signature"]),RECEIPT_DOMAIN+canonical(altered))
+
+    def test_concurrent_appends_produce_one_linear_hash_chain(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from signer_witness import RECEIPT_DOMAIN
+        from signed_receipt import canonical
+        key=Ed25519PrivateKey.generate()
+        witness=SignerWitness(self.root/"concurrent.sqlite",key)
+        def append(i):
+            request=dict(self.request,operation_id="parallel-%02d"%i)
+            return witness.consume(("n%047d"%i),"parallel-%02d"%i,request)
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            receipts=list(pool.map(append,range(12)))
+        receipts.sort(key=lambda item:item["payload"]["sequence"])
+        self.assertEqual([r["payload"]["sequence"] for r in receipts],list(range(1,13)))
+        previous="0"*64
+        for receipt in receipts:
+            payload=receipt["payload"]
+            self.assertEqual(payload["previous_hash"],previous)
+            key.public_key().verify(bytes.fromhex(receipt["signature"]),RECEIPT_DOMAIN+canonical(payload))
+            previous=payload["entry_hash"]
