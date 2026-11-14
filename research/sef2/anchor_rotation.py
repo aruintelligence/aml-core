@@ -8,7 +8,9 @@ import json
 import os
 import pathlib
 import tempfile
-from external_witness_anchor import issue_anchor,anchor_pin,verify_anchor,unique
+from external_witness_anchor import issue_anchor,anchor_pin,unique
+from checkpoint_council import DOMAIN
+from signed_receipt import canonical
 from checkpoint_council import valid_checkpoint
 
 def rotate_anchor(store,anchor_path,trusted_old_pin):
@@ -16,9 +18,18 @@ def rotate_anchor(store,anchor_path,trusted_old_pin):
     if type(trusted_old_pin) is not str or len(trusted_old_pin)!=64:
         raise ValueError("trusted old pin required")
     pub=store.private.public_key().public_bytes_raw().hex()
-    if not verify_anchor(store.path,store.name,pub,path,trusted_old_pin):
-        raise ValueError("current anchor is not independently pinned")
     old=json.loads(path.read_text(),object_pairs_hook=unique)
+    if (type(old) is not dict or anchor_pin(old)!=trusted_old_pin
+        or set(old)!={"schema","witness_id","witness_public_hex","checkpoint","witness_envelope"}
+        or old["schema"]!="AML-SEF2-EXTERNAL-WITNESS-ANCHOR-V1"
+        or old["witness_id"]!=store.name or old["witness_public_hex"]!=pub
+        or not valid_checkpoint(old["checkpoint"])):
+        raise ValueError("old anchor pin or identity invalid")
+    envelope=old["witness_envelope"]
+    payload={"version":1,"witness_id":store.name,"checkpoint":old["checkpoint"]}
+    if type(envelope) is not dict or set(envelope)!={"payload","signature"} or envelope["payload"]!=payload:
+        raise ValueError("old anchor envelope invalid")
+    store.private.public_key().verify(bytes.fromhex(envelope["signature"]),DOMAIN+canonical(payload))
     new=issue_anchor(store)
     before=old["checkpoint"]
     after=new["checkpoint"]
