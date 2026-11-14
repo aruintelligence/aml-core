@@ -103,3 +103,17 @@ class CapabilityBoundaryTests(unittest.TestCase):
     def test_legacy_base_method_cannot_bypass_capability_broker(self):
         self.assertEqual(GatedBroker.execute(self.broker,self.request,self.signed()),"DENIED")
         self.assertEqual(self.count(),0)
+
+    def test_concurrent_revocation_and_execution_linearize(self):
+        import concurrent.futures
+        token=self.token()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            future_execute=pool.submit(self.broker.execute,self.request,self.signed(),token)
+            future_revoke=pool.submit(self.broker.revoke_all)
+            result=future_execute.result(timeout=10)
+            future_revoke.result(timeout=10)
+        self.assertIn(result,{"APPLIED","DENIED"})
+        self.assertEqual(self.count(),1 if result=="APPLIED" else 0)
+        self.assertEqual(self.broker.execute(dict(self.request,operation_id="op-2"),
+            self.signed(),issue_capability(self.issuer_key,"authority","broker-a",
+            dict(self.request,operation_id="op-2"),0)),"DENIED")
