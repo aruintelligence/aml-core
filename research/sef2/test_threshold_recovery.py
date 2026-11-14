@@ -138,6 +138,8 @@ class RecoveryAuthorityLedgerTests(unittest.TestCase):
    sig=self.key.sign(DOMAIN+canonical({"policy_sha256":pd,"payload_sha256":digest})).hex()
    con.execute("INSERT INTO recovery_approval_ledger_v3 VALUES (?,?,?,?,?,?,?,?)",
     (self.policy["policy_id"],"authority-0","north",1,pd,"a"*64,digest,sig))
+  import os
+  os.chmod(path,0o600)
   signer=RecoveryAuthoritySigner("authority-0",self.key,path)
   ledger=signer.export_approval_ledger()
   self.assertEqual(len(ledger["events"]),1)
@@ -161,6 +163,8 @@ class RecoveryAuthorityLedgerTests(unittest.TestCase):
     sig=self.key.sign(DOMAIN+canonical({"policy_sha256":pd,"payload_sha256":digest})).hex()
     con.execute("INSERT INTO recovery_approval_ledger_v3 VALUES (?,?,?,?,?,?,?,?)",
      (policy_id,"authority-0","north",1,pd,"a"*64,digest,sig))
+  import os
+  os.chmod(path,0o600)
   with self.assertRaisesRegex(ValueError,"conflicting approvals"):
    RecoveryAuthoritySigner("authority-0",self.key,path)
 
