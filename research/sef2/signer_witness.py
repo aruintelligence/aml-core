@@ -61,11 +61,19 @@ class SignerWitness:
 
 class RemoteSignerWitness:
     """Unix socket client with pinned Ed25519 verification of append receipts."""
-    def __init__(self,socket_path,trusted_public_hex,timeout=3):
+    def __init__(self,socket_path,trusted_public_hex,checkpoint_database,timeout=3):
         self.socket_path=str(socket_path)
         self.timeout=timeout
+        self.checkpoint_database=str(checkpoint_database)
         try: self.public_key=Ed25519PublicKey.from_public_bytes(bytes.fromhex(trusted_public_hex))
         except (ValueError,TypeError) as exc: raise ValueError("invalid witness public key pin") from exc
+        with sqlite3.connect(self.checkpoint_database) as db:
+            db.execute("PRAGMA synchronous=FULL")
+            db.execute("""CREATE TABLE IF NOT EXISTS witness_checkpoint (
+                singleton INTEGER PRIMARY KEY CHECK(singleton=1),
+                sequence INTEGER NOT NULL, head_hash TEXT NOT NULL)""")
+            db.execute("INSERT OR IGNORE INTO witness_checkpoint VALUES (1,0,?)",(ZERO_HASH,))
+            db.commit()
 
     def consume(self,challenge,operation_id,request):
         body=json.dumps({"challenge":challenge,"operation_id":operation_id,
@@ -96,6 +104,19 @@ class RemoteSignerWitness:
             raise PermissionError("witness receipt scope or hash invalid")
         try: self.public_key.verify(bytes.fromhex(receipt["signature"]),RECEIPT_DOMAIN+canonical(p))
         except (ValueError,InvalidSignature) as exc: raise PermissionError("witness receipt signature invalid") from exc
+        # The signer retains its last accepted witness head independently of the witness DB.
+        try:
+            with sqlite3.connect(self.checkpoint_database,timeout=5,isolation_level=None) as db:
+                db.execute("PRAGMA synchronous=FULL")
+                db.execute("BEGIN IMMEDIATE")
+                sequence,head=db.execute("SELECT sequence,head_hash FROM witness_checkpoint WHERE singleton=1").fetchone()
+                if p["sequence"]!=sequence+1 or p["previous_hash"]!=head:
+                    raise PermissionError("witness rollback or fork detected")
+                db.execute("UPDATE witness_checkpoint SET sequence=?,head_hash=? WHERE singleton=1",
+                           (p["sequence"],p["entry_hash"]))
+                db.commit()
+        except sqlite3.DatabaseError as exc:
+            raise PermissionError("signer checkpoint unavailable") from exc
         return receipt
 
     @staticmethod
