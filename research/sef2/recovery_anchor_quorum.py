@@ -40,10 +40,25 @@ def validate_anchor_policy(policy):
     except (ValueError,TypeError,KeyError):
         return False
 
+def valid_checkpoint(checkpoint):
+    try:
+        if type(checkpoint) is not dict or set(checkpoint)!={"schema","authority_id","authority_key_sha256","sequence","head_hash"}:
+            return False
+        if (checkpoint["schema"]!=CHECKPOINT_SCHEMA or type(checkpoint["authority_id"]) is not str
+            or not checkpoint["authority_id"] or type(checkpoint["sequence"]) is not int
+            or checkpoint["sequence"]<0):
+            return False
+        for field in ("authority_key_sha256","head_hash"):
+            value=checkpoint[field]
+            if type(value) is not str or len(value)!=64 or any(c not in "0123456789abcdef" for c in value):
+                return False
+        return True
+    except (KeyError,TypeError):
+        return False
+
 def make_anchor_payload(checkpoint,sequence,previous_pin_sha256,policy):
     if not validate_anchor_policy(policy): raise ValueError("invalid anchor policy")
-    if type(checkpoint) is not dict or checkpoint.get("schema")!=CHECKPOINT_SCHEMA:
-        raise ValueError("invalid recovery ledger checkpoint")
+    if not valid_checkpoint(checkpoint): raise ValueError("invalid recovery ledger checkpoint")
     if type(sequence) is not int or sequence<1: raise ValueError("invalid anchor sequence")
     if type(previous_pin_sha256) is not str or len(previous_pin_sha256)!=64:
         raise ValueError("invalid previous anchor pin")
@@ -86,7 +101,8 @@ class RecoveryAnchorWitness:
         if (type(payload) is not dict or set(payload)!={"schema","policy_id","target_authority_id",
             "sequence","previous_pin_sha256","checkpoint","checkpoint_pin_sha256"}
             or payload["schema"]!=PAYLOAD_SCHEMA or payload["policy_id"]!=policy["policy_id"]
-            or payload["checkpoint"].get("authority_id")!=payload["target_authority_id"]
+            or not valid_checkpoint(payload["checkpoint"])
+            or payload["checkpoint"]["authority_id"]!=payload["target_authority_id"]
             or checkpoint_pin(payload["checkpoint"])!=payload["checkpoint_pin_sha256"]):
             raise ValueError("invalid anchor payload")
         pd=policy_digest(policy); digest=hashlib.sha256(canonical(payload)).hexdigest()
@@ -142,9 +158,13 @@ def verify_anchor_certificate(payload,certificate,policy,expected_sequence,expec
         if type(payload) is not dict or set(payload)!={"schema","policy_id","target_authority_id",
             "sequence","previous_pin_sha256","checkpoint","checkpoint_pin_sha256"}: return False
         if (payload["schema"]!=PAYLOAD_SCHEMA or payload["policy_id"]!=policy["policy_id"]
-            or type(expected_sequence) is not int or payload["sequence"]!=expected_sequence
+            or type(payload["sequence"]) is not int or payload["sequence"]<1
+            or type(expected_sequence) is not int or expected_sequence<1 or payload["sequence"]!=expected_sequence
+            or type(expected_previous_pin) is not str or len(expected_previous_pin)!=64
+            or any(c not in "0123456789abcdef" for c in expected_previous_pin)
             or payload["previous_pin_sha256"]!=expected_previous_pin
-            or payload["checkpoint"].get("authority_id")!=payload["target_authority_id"]
+            or not valid_checkpoint(payload["checkpoint"])
+            or payload["checkpoint"]["authority_id"]!=payload["target_authority_id"]
             or checkpoint_pin(payload["checkpoint"])!=payload["checkpoint_pin_sha256"]):
             return False
         if type(certificate) is not dict or set(certificate)!={"schema","policy_sha256","payload_sha256","approvals"}:
