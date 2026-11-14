@@ -10,7 +10,8 @@ class ThresholdRecoveryTests(unittest.TestCase):
   self.bundle=make_approval_bundle(self.payload,self.policy,{k:self.keys[k] for k in ("authority-0","authority-1","authority-2")})
  def test_three_of_four_approvals_succeed(self): self.assertTrue(verify_approval_bundle(self.payload,self.bundle,self.policy))
  def test_two_of_four_is_insufficient(self):
-  b=make_approval_bundle(self.payload,self.policy,{k:self.keys[k] for k in ("authority-0","authority-1")})
+  b=copy.deepcopy(self.bundle)
+  b["approvals"]=b["approvals"][:2]
   self.assertFalse(verify_approval_bundle(self.payload,b,self.policy))
  def test_one_signer_cannot_be_counted_twice(self):
   b=copy.deepcopy(self.bundle); b["approvals"][1]=dict(b["approvals"][0]); b["approvals"].sort(key=lambda x:x["authority_id"])
