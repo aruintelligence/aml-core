@@ -113,7 +113,7 @@ class Adversarial(unittest.TestCase):
             "--provider-db", self.p, "--authority-url", self.auth_url,
             "--secret-hex", self.secret.hex(), "--fault", fault,
             "--port-file", str(port_file)], stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.DEVNULL)
         self.addCleanup(lambda: proc.kill() if proc.poll() is None else None)
         deadline = time.monotonic() + 5
         while not port_file.exists() and time.monotonic() < deadline:

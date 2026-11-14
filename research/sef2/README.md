@@ -36,3 +36,7 @@ CI executes the exact pull-request checkout with Python resource warnings treate
 ## Hard process termination (SEF/2 research phase 3)
 
 Two additional adversarial tests launch a separate provider **OS process** and call `os._exit(71)` immediately after authority consumption or `os._exit(72)` immediately after the synthetic provider row commit, before HTTP response. The parent test runner survives, inspects exit status and retained SQLite state, and checks reconciliation and replay denial through the still-running fixture services. These are **real process exits**, but not power loss, fsync proof, separate-host failure, malicious privileged actor, or external-provider confirmation. The subprocess gets the same fixture HMAC secret and is not an independently administered domain. Run CI and inspect logs before asserting these two new tests pass.
+
+## Authority restart and unavailable-authority tests
+
+The authority is restarted against its retained SQLite database after a completed synthetic effect, then the provider is restarted against the new authority address. The retained consumed claim denies replay. A second test closes the authority listener while an approved operation is pending; the provider must not record a synthetic effect when it cannot reach the authority. The latter currently returns `UNCERTAIN`, not a definitive authorization denial. The subprocess test harness discards child stderr to avoid an unclosed PIPE file descriptor; this also means child stderr is not available for diagnostics.
