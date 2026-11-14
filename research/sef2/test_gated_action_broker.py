@@ -99,3 +99,8 @@ class CapabilityBoundaryTests(unittest.TestCase):
             self.enrolled,"authority",self.issuer_key.public_key().public_bytes_raw().hex(),"broker-a")
         self.assertEqual(broker.current_epoch(),1)
         self.assertEqual(broker.execute(self.request,self.signed(),token),"DENIED")
+
+    def test_legacy_base_method_cannot_bypass_capability_broker(self):
+        with self.assertRaises(TypeError):
+            GatedBroker.execute(self.broker,self.request,self.signed())
+        self.assertEqual(self.count(),0)

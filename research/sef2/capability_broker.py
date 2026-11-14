@@ -10,10 +10,10 @@ from strict_evaluator import verify_strict_evaluator
 from gated_action_broker import GatedBroker
 from action_capability import verify_capability
 
-class CapabilityBroker(GatedBroker):
+class CapabilityBroker:
     def __init__(self,path,registry,witness,replicas,threshold,enrolled_keys,
                  issuer,issuer_public_hex,audience):
-        super().__init__(path,registry,witness,replicas,threshold,enrolled_keys)
+        # Initialize shared storage without inheriting the weaker execute API.\n        GatedBroker.__init__(self,path,registry,witness,replicas,threshold,enrolled_keys)
         if type(issuer) is not str or not issuer or type(audience) is not str or not audience:
             raise ValueError("invalid issuer or audience")
         if type(issuer_public_hex) is not str or len(bytes.fromhex(issuer_public_hex))!=32:
