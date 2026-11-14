@@ -8,6 +8,8 @@ from pin_registry import PinRegistry
 from pin_replication import PinReplica
 from replica_attestation import attest
 from gated_action_broker import GatedBroker
+from capability_broker import CapabilityBroker
+from action_capability import issue_capability
 
 class BrokerBoundaryTests(unittest.TestCase):
     def setUp(self):
@@ -53,3 +55,45 @@ class BrokerBoundaryTests(unittest.TestCase):
         self.assertEqual(self.broker.execute(self.request,self.signed()),"APPLIED")
         self.assertEqual(self.broker.execute(dict(self.request,amount_cents=200),self.signed()),"DENIED")
         self.assertEqual(self.count(),1)
+
+class CapabilityBoundaryTests(BrokerBoundaryTests):
+    def setUp(self):
+        super().setUp()
+        self.issuer_key=Ed25519PrivateKey.generate()
+        self.broker=CapabilityBroker(self.broker.path,self.registry,"north",self.replicas,2,
+            self.enrolled,"authority",self.issuer_key.public_key().public_bytes_raw().hex(),"broker-a")
+    def token(self,request=None,epoch=None):
+        return issue_capability(self.issuer_key,"authority","broker-a",
+            request or self.request,self.broker.current_epoch() if epoch is None else epoch)
+    def test_capability_required(self):
+        self.assertEqual(self.broker.execute(self.request,self.signed()),"DENIED")
+        self.assertEqual(self.count(),0)
+    def test_signed_exact_action_accepted_once(self):
+        token=self.token()
+        self.assertEqual(self.broker.execute(self.request,self.signed(),token),"APPLIED")
+        self.assertEqual(self.broker.execute(self.request,self.signed(),token),"ALREADY_APPLIED")
+        self.assertEqual(self.count(),1)
+    def test_scope_substitution_denied(self):
+        token=self.token()
+        self.assertEqual(self.broker.execute(dict(self.request,amount_cents=101),self.signed(),token),"DENIED")
+        self.assertEqual(self.count(),0)
+    def test_wrong_issuer_signature_denied(self):
+        other=Ed25519PrivateKey.generate()
+        token=issue_capability(other,"authority","broker-a",self.request,0)
+        self.assertEqual(self.broker.execute(self.request,self.signed(),token),"DENIED")
+    def test_wrong_audience_denied(self):
+        token=issue_capability(self.issuer_key,"authority","broker-b",self.request,0)
+        self.assertEqual(self.broker.execute(self.request,self.signed(),token),"DENIED")
+    def test_revoked_epoch_denied(self):
+        token=self.token()
+        self.broker.revoke_all()
+        self.assertEqual(self.broker.execute(self.request,self.signed(),token),"DENIED")
+        self.assertEqual(self.count(),0)
+        self.assertEqual(self.broker.execute(self.request,self.signed(),self.token()),"APPLIED")
+    def test_revocation_persists_across_restart(self):
+        token=self.token()
+        self.broker.revoke_all()
+        broker=CapabilityBroker(self.broker.path,self.registry,"north",self.replicas,2,
+            self.enrolled,"authority",self.issuer_key.public_key().public_bytes_raw().hex(),"broker-a")
+        self.assertEqual(broker.current_epoch(),1)
+        self.assertEqual(broker.execute(self.request,self.signed(),token),"DENIED")
