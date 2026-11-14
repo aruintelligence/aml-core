@@ -16,10 +16,13 @@ def policy_digest(policy): return hashlib.sha256(canonical(policy)).hexdigest()
 def payload_digest(payload): return hashlib.sha256(canonical(payload)).hexdigest()
 def validate_policy(policy):
  try:
-  if type(policy) is not dict or set(policy)!={"schema","policy_id","threshold","authorities"}: return False
+  if type(policy) is not dict or set(policy)!={"schema","policy_id","threshold","max_faults","authorities"}: return False
   if policy["schema"]!=POLICY_SCHEMA or type(policy["policy_id"]) is not str or not policy["policy_id"]: return False
-  authorities=policy["authorities"]; threshold=policy["threshold"]
-  if type(authorities) is not dict or type(threshold) is not int or not 1<=threshold<=len(authorities): return False
+  authorities=policy["authorities"]; threshold=policy["threshold"]; faults=policy["max_faults"]
+  if type(authorities) is not dict or type(threshold) is not int or type(faults) is not int: return False
+  n=len(authorities)
+  if faults<0 or n<3*faults+1 or threshold<1 or threshold>n-faults: return False
+  if 2*threshold-n<=faults: return False
   keys=set()
   for aid,key_hex in authorities.items():
    if type(aid) is not str or not aid or type(key_hex) is not str: return False
