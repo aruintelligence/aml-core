@@ -1,6 +1,6 @@
 import copy,unittest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from threshold_recovery import POLICY_SCHEMA,make_approval_bundle,make_threshold_transition,validate_policy,verify_approval_bundle
+from threshold_recovery import POLICY_SCHEMA,make_approval_bundle,make_threshold_transition,RecoveryAuthoritySigner,validate_policy,verify_approval_bundle
 def make_policy(keys,threshold=2):
  return {"schema":POLICY_SCHEMA,"policy_id":"recovery-council-1","threshold":threshold,"max_faults":1,"authorities":{n:k.public_key().public_bytes_raw().hex() for n,k in keys.items()}}
 class ThresholdRecoveryTests(unittest.TestCase):
@@ -103,3 +103,40 @@ class ThresholdRecoveryEnrollmentTests(unittest.TestCase):
  def test_threshold_transition_replay_rejected(self):
   self.assertEqual(self.coordinator.recover("north",self.transition),"RECOVERED")
   self.assertEqual(self.coordinator.recover("north",self.transition),"INVALID_RECOVERY")
+
+class RecoveryAuthorityLedgerTests(unittest.TestCase):
+ def setUp(self):
+  import tempfile,pathlib
+  self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+  self.ledger=str(pathlib.Path(self.temp.name)/"authority.sqlite")
+  self.key=Ed25519PrivateKey.generate()
+  self.policy=make_policy({"authority-0":self.key,"authority-1":Ed25519PrivateKey.generate(),
+    "authority-2":Ed25519PrivateKey.generate(),"authority-3":Ed25519PrivateKey.generate()},3)
+  self.signer=RecoveryAuthoritySigner("authority-0",self.key,self.ledger)
+  self.payload={"witness_id":"north","generation":1,"previous_state_sha256":"a"*64,"new_key":"b"*64}
+ def test_authority_refuses_conflicting_payload_for_same_recovery_generation(self):
+  self.signer.approve(self.payload,self.policy)
+  changed={**self.payload,"new_key":"c"*64}
+  with self.assertRaisesRegex(ValueError,"equivocation"):
+   self.signer.approve(changed,self.policy)
+ def test_exact_approval_is_idempotent(self):
+  first=self.signer.approve(self.payload,self.policy)
+  second=self.signer.approve(self.payload,self.policy)
+  self.assertEqual(first,second)
+ def test_concurrent_conflicting_approvals_only_one_is_accepted(self):
+  import concurrent.futures
+  left={**self.payload,"new_key":"d"*64}; right={**self.payload,"new_key":"e"*64}
+  def attempt(payload):
+   try: return ("ok",self.signer.approve(payload,self.policy))
+   except ValueError: return ("rejected",None)
+  with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+   results=list(pool.map(attempt,(left,right)))
+  self.assertEqual([x[0] for x in results].count("ok"),1)
+  self.assertEqual([x[0] for x in results].count("rejected"),1)
+ def test_signer_ledger_can_produce_threshold_approval_bundle(self):
+  signers={"authority-0":self.signer}
+  for i in (1,2):
+   key=Ed25519PrivateKey.generate()
+   signers[f"authority-{i}"]=key
+   self.policy["authorities"][f"authority-{i}"]=key.public_key().public_bytes_raw().hex()
+  self.assertTrue(verify_approval_bundle(self.payload,make_approval_bundle(self.payload,self.policy,signers),self.policy))
