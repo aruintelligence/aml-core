@@ -30,6 +30,8 @@ class GatedBroker:
             db.execute("PRAGMA synchronous=FULL")
             db.execute("CREATE TABLE IF NOT EXISTS effects (operation_id TEXT PRIMARY KEY, request_hash TEXT NOT NULL)")
     def execute(self,request,attestations):
+        if type(self) is not GatedBroker:
+            return "DENIED"
         try:
             body=canonical_request(request)
             if not verify_strict_evaluator(self.registry,self.witness,self.replicas,
