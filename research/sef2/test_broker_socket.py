@@ -3,6 +3,7 @@ import json
 import multiprocessing
 import os
 import pathlib
+import sqlite3
 import socket
 import tempfile
 import time
@@ -65,6 +66,15 @@ class BrokerProcessTests(unittest.TestCase):
             client.sendall(b'{"request":{},"request":{},"attestations":[],"capability":null}\\n')
             self.assertEqual(json.loads(client.recv(1024))["status"],"DENIED")
         self.assertEqual(self.fixture.count(),0)
+    def test_same_uid_direct_storage_bypass_is_demonstrated(self):
+        # Red-team negative control: the test client runs under the broker's
+        # OS UID and can mutate its DB without any capability. This MUST be
+        # eliminated by an actual separate-UID deployment before security claims.
+        self.assertEqual(request_action(self.socket_path,{"request":self.fixture.request,
+            "attestations":[],"capability":None}),"DENIED")
+        with sqlite3.connect(self.fixture.broker.path) as db:
+            db.execute("INSERT INTO effects VALUES (?,?)",("unauthorized-direct-write","0"*64))
+        self.assertEqual(self.fixture.count(),1)
     def test_killed_broker_fails_closed_and_restarts_idempotently(self):
         env=self.envelope()
         self.assertEqual(request_action(self.socket_path,env),"APPLIED")
