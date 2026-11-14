@@ -116,7 +116,7 @@ class RecoveryAuthoritySigner:
                 witness_id TEXT NOT NULL, generation INTEGER NOT NULL,
                 previous_state_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL,
                 signature TEXT NOT NULL,
-                PRIMARY KEY(policy_sha256,authority_id,witness_id,generation,previous_state_sha256))""")
+                PRIMARY KEY(policy_sha256,authority_id,witness_id,generation))""")
 
     def public_key(self):
         return self.private_key.public_key()
@@ -128,9 +128,10 @@ class RecoveryAuthoritySigner:
         if self.public_key().public_bytes_raw().hex()!=policy["authorities"][self.authority_id]:
             raise ValueError("authority private key does not match pinned identity")
         scope=(policy_digest(policy),self.authority_id,payload.get("witness_id"),
-            payload.get("generation"),payload.get("previous_state_sha256"))
+            payload.get("generation"))
+        previous_state=payload.get("previous_state_sha256")
         if (type(scope[2]) is not str or not scope[2] or type(scope[3]) is not int
-            or scope[3]<1 or type(scope[4]) is not str or len(scope[4])!=64):
+            or scope[3]<1 or type(previous_state) is not str or len(previous_state)!=64):
             raise ValueError("payload lacks a valid recovery scope")
         digest=payload_digest(payload)
         statement=DOMAIN+canonical({"policy_sha256":scope[0],"payload_sha256":digest})
@@ -139,9 +140,9 @@ class RecoveryAuthoritySigner:
             con.execute("PRAGMA synchronous=FULL")
             con.execute("BEGIN IMMEDIATE")
             row=con.execute("""SELECT payload_sha256,signature FROM recovery_approval_ledger
-                WHERE policy_sha256=? AND authority_id=? AND witness_id=? AND generation=? AND previous_state_sha256=?""",scope).fetchone()
+                WHERE policy_sha256=? AND authority_id=? AND witness_id=? AND generation=?""",scope).fetchone()
             if row:
-                if row[0]!=digest: raise ValueError("recovery authority equivocation refused")
+                if row[0]!=previous_state or row[1]!=digest: raise ValueError("recovery authority equivocation refused")
                 return row[1]
-            con.execute("INSERT INTO recovery_approval_ledger VALUES (?,?,?,?,?,?,?)",(*scope,digest,signature))
+            con.execute("INSERT INTO recovery_approval_ledger VALUES (?,?,?,?,?,?,?)",(*scope,previous_state,digest,signature))
         return signature
