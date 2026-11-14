@@ -164,3 +164,25 @@ class RecoveryAuthorityLedgerTests(unittest.TestCase):
   restarted=RecoveryAuthoritySigner("authority-0",self.key,self.ledger)
   with self.assertRaisesRegex(ValueError,"equivocation"):
    restarted.approve({**self.payload,"new_key":"f"*64},self.policy)
+
+class RecoveryQuorumModelTests(unittest.TestCase):
+ def test_safe_thresholds_exhaustively_for_councils_four_through_nine(self):
+  from recovery_quorum_model import exhaustively_check
+  for n in range(4,10):
+   f=(n-1)//3
+   q=(n+f)//2+1
+   result=exhaustively_check(n,q,f)
+   self.assertTrue(result["safe"],result)
+   self.assertGreater(result["minimum_intersection"],f)
+   self.assertLessEqual(q,n-f)
+ def test_unsafe_two_of_four_has_concrete_conflicting_quorums(self):
+  from recovery_quorum_model import exhaustively_check
+  result=exhaustively_check(4,2,1)
+  self.assertFalse(result["safe"])
+  self.assertEqual(result["minimum_intersection"],0)
+  self.assertEqual(result["counterexample"]["intersection"],[])
+ def test_boundary_threshold_has_honest_intersection(self):
+  from recovery_quorum_model import exhaustively_check
+  result=exhaustively_check(4,3,1)
+  self.assertTrue(result["safe"])
+  self.assertEqual(result["minimum_intersection"],2)
