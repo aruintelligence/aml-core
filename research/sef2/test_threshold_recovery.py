@@ -174,6 +174,26 @@ class RecoveryAuthorityLedgerTests(unittest.TestCase):
   with self.assertRaisesRegex(ValueError,"equivocation"):
    restarted.approve({**self.payload,"new_key":"f"*64},self.policy)
 
+ def test_ledger_file_is_private(self):
+  import os,stat
+  self.assertEqual(stat.S_IMODE(os.stat(self.ledger).st_mode),0o600)
+ def test_insecure_existing_ledger_permissions_are_rejected(self):
+  import os,pathlib
+  path=str(pathlib.Path(self.temp.name)/"insecure.sqlite")
+  pathlib.Path(path).write_bytes(b"")
+  os.chmod(path,0o644)
+  with self.assertRaisesRegex(ValueError,"private regular file"):
+   RecoveryAuthoritySigner("authority-0",self.key,path)
+ def test_symlink_ledger_path_is_rejected(self):
+  import pathlib
+  target=str(pathlib.Path(self.temp.name)/"target.sqlite")
+  pathlib.Path(target).write_bytes(b"")
+  link=str(pathlib.Path(self.temp.name)/"link.sqlite")
+  pathlib.Path(link).symlink_to(target)
+  with self.assertRaisesRegex(ValueError,"private regular file"):
+   RecoveryAuthoritySigner("authority-0",self.key,link)
+
+
 class RecoveryQuorumModelTests(unittest.TestCase):
  def test_safe_thresholds_exhaustively_for_councils_four_through_nine(self):
   from recovery_quorum_model import exhaustively_check
@@ -208,25 +228,25 @@ class RecoveryQuorumModelTests(unittest.TestCase):
       self.assertGreater(len(set(left)&set(right)),faults,
        msg=f"n={n}, f={faults}, q={quorum}")
 
- def test_ledger_file_is_private(self):
-  import os,stat
-  self.assertEqual(stat.S_IMODE(os.stat(self.ledger).st_mode),0o600)
- def test_insecure_existing_ledger_permissions_are_rejected(self):
-  import os,pathlib
-  path=str(pathlib.Path(self.temp.name)/"insecure.sqlite")
-  pathlib.Path(path).write_bytes(b"")
-  os.chmod(path,0o644)
-  with self.assertRaisesRegex(ValueError,"private regular file"):
-   RecoveryAuthoritySigner("authority-0",self.key,path)
- def test_symlink_ledger_path_is_rejected(self):
-  import pathlib
-  target=str(pathlib.Path(self.temp.name)/"target.sqlite")
-  pathlib.Path(target).write_bytes(b"")
-  link=str(pathlib.Path(self.temp.name)/"link.sqlite")
-  pathlib.Path(link).symlink_to(target)
-  with self.assertRaisesRegex(ValueError,"private regular file"):
-   RecoveryAuthoritySigner("authority-0",self.key,link)
 
+
+class ThresholdEnvelopeParsingTests(unittest.TestCase):
+ def setUp(self):
+  import tempfile,pathlib
+  from witness_key_recovery import key_fingerprint
+  self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+  self.authorities={f"council-{i}":Ed25519PrivateKey.generate() for i in range(4)}
+  self.policy=make_policy(self.authorities,3)
+  self.old=Ed25519PrivateKey.generate(); self.new=Ed25519PrivateKey.generate()
+  checkpoint={"schema":"AML-SEF2-SIGNED-HISTORY-CHECKPOINT-V1","epoch":1,"head_hash":"a"*64,"count":1,"approver_key_id":"c"*64}
+  state={"witness_id":"north","generation":0,
+   "public_key_sha256":key_fingerprint(self.old.public_key().public_bytes_raw().hex()),
+   "checkpoint":checkpoint,"transition_sha256":"0"*64}
+  signers={aid:RecoveryAuthoritySigner(aid,key,str(pathlib.Path(self.temp.name)/(aid+".sqlite")))
+   for aid,key in self.authorities.items()}
+  self.transition=make_threshold_transition(self.new,"north",state,
+   {**checkpoint,"epoch":2,"head_hash":"b"*64,"count":2},self.policy,
+   {k:signers[k] for k in ("council-0","council-1","council-2")})
  def test_threshold_adapter_rejects_duplicate_json_keys(self):
   from cryptography.exceptions import InvalidSignature
   from threshold_recovery import ThresholdRecoveryPublicKey
