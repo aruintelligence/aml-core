@@ -39,9 +39,10 @@ def make_approval_bundle(payload,policy,signers):
  approvals=[]
  for aid,private_key in signers.items():
   if aid not in policy["authorities"]: raise ValueError("signer is not in pinned recovery policy")
-  public_hex=private_key.public_key().public_bytes_raw().hex()
+  public_hex=private_key.public_key().public_bytes_raw().hex() if hasattr(private_key,"public_key") else ""
   if public_hex!=policy["authorities"][aid]: raise ValueError("private key does not match authority identity")
-  approvals.append({"authority_id":aid,"signature":private_key.sign(statement).hex()})
+  signature=private_key.approve(payload,policy) if isinstance(private_key,RecoveryAuthoritySigner) else private_key.sign(statement).hex()
+  approvals.append({"authority_id":aid,"signature":signature})
  approvals.sort(key=lambda item:item["authority_id"])
  return {"schema":BUNDLE_SCHEMA,"policy_sha256":pd,"payload_sha256":md,"approvals":approvals}
 def verify_approval_bundle(payload,bundle,policy):
@@ -95,3 +96,49 @@ def make_threshold_transition(new_witness_private,witness_id,current_state,check
 def valid_policy_checkpoint(checkpoint):
     from checkpoint_council import valid_checkpoint
     return valid_checkpoint(checkpoint)
+
+class RecoveryAuthoritySigner:
+    """Local durable anti-equivocation guard for one authority identity.
+
+    This is not rollback-resistant. The ledger must be independently protected
+    and anchored to prevent snapshot restoration from erasing prior approvals.
+    """
+    def __init__(self,authority_id,private_key,ledger_path):
+        self.authority_id=authority_id
+        self.private_key=private_key
+        self.ledger_path=str(ledger_path)
+
+    def public_key(self):
+        return self.private_key.public_key()
+
+    def approve(self,payload,policy):
+        import sqlite3
+        if not validate_policy(policy) or self.authority_id not in policy["authorities"]:
+            raise ValueError("authority is not enrolled in pinned policy")
+        if self.public_key().public_bytes_raw().hex()!=policy["authorities"][self.authority_id]:
+            raise ValueError("authority private key does not match pinned identity")
+        scope=(policy_digest(policy),self.authority_id,payload.get("witness_id"),
+            payload.get("generation"),payload.get("previous_state_sha256"))
+        if (type(scope[2]) is not str or not scope[2] or type(scope[3]) is not int
+            or scope[3]<1 or type(scope[4]) is not str or len(scope[4])!=64):
+            raise ValueError("payload lacks a valid recovery scope")
+        digest=payload_digest(payload)
+        statement=DOMAIN+canonical({"policy_sha256":scope[0],"payload_sha256":digest})
+        signature=self.private_key.sign(statement).hex()
+        with sqlite3.connect(self.ledger_path,timeout=10) as con:
+            con.execute("PRAGMA journal_mode=DELETE")
+            con.execute("PRAGMA synchronous=FULL")
+            con.execute("""CREATE TABLE IF NOT EXISTS recovery_approval_ledger (
+                policy_sha256 TEXT NOT NULL, authority_id TEXT NOT NULL,
+                witness_id TEXT NOT NULL, generation INTEGER NOT NULL,
+                previous_state_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL,
+                signature TEXT NOT NULL,
+                PRIMARY KEY(policy_sha256,authority_id,witness_id,generation,previous_state_sha256))""")
+            con.execute("BEGIN IMMEDIATE")
+            row=con.execute("""SELECT payload_sha256,signature FROM recovery_approval_ledger
+                WHERE policy_sha256=? AND authority_id=? AND witness_id=? AND generation=? AND previous_state_sha256=?""",scope).fetchone()
+            if row:
+                if row[0]!=digest: raise ValueError("recovery authority equivocation refused")
+                return row[1]
+            con.execute("INSERT INTO recovery_approval_ledger VALUES (?,?,?,?,?,?,?)",(*scope,digest,signature))
+        return signature
