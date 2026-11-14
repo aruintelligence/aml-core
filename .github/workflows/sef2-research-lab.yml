@@ -20,7 +20,9 @@ jobs:
           persist-credentials: false
       - name: Exact checkout SHA
         run: git rev-parse HEAD
-      - name: Install pinned cryptographic dependency\n        run: python3 -m pip install cryptography==46.0.3\n      - name: Compile fixture and tests
+      - name: Install pinned cryptographic dependency
+        run: python3 -m pip install cryptography==46.0.3
+      - name: Compile fixture and tests
         run: python3 -m compileall -q research/sef2
       - name: Execute synthetic-only adversarial and recovery suite
         working-directory: research/sef2
