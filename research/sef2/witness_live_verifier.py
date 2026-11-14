@@ -34,7 +34,7 @@ def collect_latest(endpoints,nonce,timeout=2):
             raw=response.read(8193)
             if len(raw)>8192:
                 raise ValueError("oversize witness response")
-        results.append(json.loads(raw))
+        results.append(json.loads(raw,object_pairs_hook=unique))
     return results
 
 def verify_live(directory,manifest_path,manifest_pin,history_db,approver_public_hex,
@@ -78,7 +78,18 @@ def verify_pinned_live(directory,manifest_path,manifest_pin,history_db,approver_
             or len(set(endpoints.values()))!=len(endpoints)):
             return False
         keys_hex=load_unique(witness_keys_path)
-        if not set(endpoints).issubset(keys_hex):
+        attestations=load_unique(attestations_path)
+        if type(attestations) is not list or len(attestations)<threshold:
+            return False
+        attested=[]
+        for receipt in attestations:
+            if type(receipt) is not dict or type(receipt.get("payload")) is not dict:
+                return False
+            attested.append(receipt["payload"].get("witness_id"))
+        if (len(set(attested))!=len(attested) or set(endpoints)!=set(attested)
+            or not set(endpoints).issubset(keys_hex)
+            or len(set(keys_hex.values()))!=len(keys_hex)):
+            return False
             return False
         keys={name:Ed25519PublicKey.from_public_bytes(bytes.fromhex(keys_hex[name]))
               for name in endpoints}
