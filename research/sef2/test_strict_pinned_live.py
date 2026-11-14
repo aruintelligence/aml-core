@@ -113,3 +113,32 @@ class StrictPinnedLiveTests(unittest.TestCase):
         self.urls=dict(original,unknown="http://127.0.0.1:1/latest")
         self.assertFalse(self.check())
         self.urls=original
+
+    def test_signed_attestation_participant_mismatch_rejected(self):
+        f=self.fixture
+        original=list(f.receipts)
+        f.receipts=f.receipts[:1]
+        f.save()
+        self.assertFalse(self.check())
+        f.receipts=original
+        f.save()
+        self.assertTrue(self.check())
+
+    def test_duplicate_enrolled_public_key_rejected(self):
+        f=self.fixture
+        keys=json.loads(f.keys_path.read_text())
+        keys["east"]=keys["north"]
+        f.keys_path.write_text(json.dumps(keys))
+        self.assertFalse(self.check())
+
+    def test_extra_live_endpoint_rejected_even_if_key_enrolled(self):
+        original=dict(self.urls)
+        self.urls["east"]="http://127.0.0.1:65534/latest"
+        self.assertFalse(self.check())
+        self.urls=original
+
+    def test_non_string_endpoint_fails_closed(self):
+        original=dict(self.urls)
+        self.urls["north"]=None
+        self.assertFalse(self.check())
+        self.urls=original
