@@ -42,7 +42,7 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
  def test_stale_sequence_rejected(self):
   self.assertFalse(verify_anchor_certificate(self.payload,self.certificate,self.policy,2,"0"*64))
  def test_witness_refuses_conflicting_checkpoint_at_same_sequence(self):
-  changed={**self.payload,"checkpoint_pin_sha256":"c"*64}
+  changed=make_anchor_payload({**self.checkpoint,"head_hash":"c"*64},1,"0"*64,self.policy)
   with self.assertRaisesRegex(ValueError,"equivocation"):
    self.witnesses["anchor-0"].approve(changed,self.policy)
  def test_witness_refuses_wrong_previous_pin_and_sequence(self):
@@ -55,8 +55,10 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
   self.witnesses["anchor-0"].approve(changed,self.policy)
   restarted=RecoveryAnchorWitness("anchor-0",self.keys["anchor-0"],
    str(pathlib.Path(self.temp.name)/"anchor-0.sqlite"))
+  conflicting=make_anchor_payload({**self.checkpoint,"sequence":5,"head_hash":"d"*64},
+   3,"f"*64,self.policy)
   with self.assertRaisesRegex(ValueError,"stale or forked"):
-   restarted.approve(self.payload,self.policy)
+   restarted.approve(conflicting,self.policy)
  def test_exact_retry_is_idempotent(self):
   first=self.witnesses["anchor-0"].approve(self.payload,self.policy)
   second=self.witnesses["anchor-0"].approve(self.payload,self.policy)
