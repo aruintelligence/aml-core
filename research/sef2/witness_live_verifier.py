@@ -1,6 +1,10 @@
 """Fail-closed live witness challenge verification for strict enterprise bundles."""
 import json
+import pathlib
+import sys
+import urllib.error
 import urllib.request
+sys.path.insert(0,str(pathlib.Path(__file__).resolve().parent/'evaluation_kit'))
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from witness_freshness import challenge,verify_fresh
 from verify_quorum import verify_with_quorum
@@ -38,6 +42,6 @@ def verify_live(directory,manifest_path,manifest_pin,history_db,approver_public_
         n=challenge() if nonce is None else nonce
         responses=collect_latest(endpoints,n)
         return verify_fresh(responses,n,keys,threshold,load_unique(checkpoint_path))=="FRESH_QUORUM_CONSISTENT"
-    except (OSError,ValueError,KeyError,TypeError,TimeoutError,OverflowError,Exception) as exc:
+    except (OSError,ValueError,KeyError,TypeError,TimeoutError,OverflowError,urllib.error.URLError):
         # The network gate is fail-closed. Do not disclose or log signing secrets.
         return False
