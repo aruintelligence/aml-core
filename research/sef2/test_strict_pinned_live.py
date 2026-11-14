@@ -50,7 +50,7 @@ class StrictPinnedLiveTests(unittest.TestCase):
         return verify_pinned_live(f.root,f.manifest_path,f.manifest_pin,f.history_db,
             public_hex(f.approver),f.checkpoint_path,f.pin,1,f.keys_path,
             f.attestations,3,self.urls,self.anchors if anchors is None else anchors,
-            self.pins if pins is None else pins)
+            self.pins if pins is None else pins,max_faults=1)
     def test_full_pinned_enterprise_verification_passes(self):
         self.assertTrue(self.check())
     def test_substituted_external_anchor_pin_fails(self):
