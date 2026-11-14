@@ -57,7 +57,7 @@ def verified_state(registry,witness,replicas,threshold):
             raise ValueError("registry and independent replica disagreement")
     return state
 
-def replicate_committed(registry,witness,replicas,threshold):
+def replicate_committed(registry,witness,replicas,threshold,crash_after=None):
     """Record a completed transition; any unavailable replica fails closed."""
     state=registry.state(witness)
     if (type(replicas) is not list or type(threshold) is not int or len(replicas)<threshold or threshold<2):
@@ -70,6 +70,12 @@ def replicate_committed(registry,witness,replicas,threshold):
     if (len(predecessors)>1 or
         any(row[0]!=state["generation"]-1 for row in predecessors)):
         raise ValueError("replica cannot be advanced safely")
-    for replica in replicas:
+    if crash_after is not None and (type(crash_after) is not int or crash_after<0):
+        raise ValueError("invalid crash injection point")
+    for index,replica in enumerate(replicas):
+        if crash_after==index:
+            raise RuntimeError("injected replica-write interruption")
         replica.record(witness,state["generation"],state["active"])
+    if crash_after==len(replicas):
+        raise RuntimeError("injected post-replication interruption")
     return verified_state(registry,witness,replicas,threshold)
