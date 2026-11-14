@@ -9,7 +9,7 @@ from checkpoint_council import valid_checkpoint
 class WitnessRecoveryEnrollment:
     def __init__(self,path,recovery_state_path,recovery_public_key,recovery_authority_id):
         self.path=str(path); self.recovery_state_path=str(recovery_state_path)
-        if os.path.abspath(self.path)==sqlite3.os.path.abspath(self.recovery_state_path):
+        if os.path.realpath(self.path)==os.path.realpath(self.recovery_state_path):
             raise ValueError("recovery state must use a separate database file")
         self.recovery_public_key=recovery_public_key
         self.recovery_authority_id=recovery_authority_id
