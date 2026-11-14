@@ -443,3 +443,26 @@ class RecoveryLedgerAnchorTests(unittest.TestCase):
   revised["threshold"]=4
   with self.assertRaisesRegex(ValueError,"equivocation"):
    self.signer.approve(self.payload,revised)
+
+ def test_event_chain_verifies_against_external_pin(self):
+  from recovery_ledger_anchor import event_chain_checkpoint,verify_event_chain,checkpoint_pin
+  checkpoint=event_chain_checkpoint(self.ledger,"authority-0",self.public_hex)
+  self.assertTrue(verify_event_chain(self.ledger,self.public_hex,checkpoint,checkpoint_pin(checkpoint)))
+ def test_event_chain_detects_event_tampering(self):
+  import sqlite3
+  from recovery_ledger_anchor import event_chain_checkpoint,verify_event_chain,checkpoint_pin
+  checkpoint=event_chain_checkpoint(self.ledger,"authority-0",self.public_hex)
+  with sqlite3.connect(self.ledger) as con:
+   con.execute("UPDATE recovery_approval_events SET payload_sha256=? WHERE sequence=1",("f"*64,))
+  self.assertFalse(verify_event_chain(self.ledger,self.public_hex,checkpoint,checkpoint_pin(checkpoint)))
+ def test_event_chain_detects_rollback_against_later_external_pin(self):
+  import shutil,pathlib
+  from recovery_ledger_anchor import event_chain_checkpoint,verify_event_chain,checkpoint_pin
+  snapshot=str(pathlib.Path(self.temp.name)/"event-snapshot.sqlite")
+  shutil.copy2(self.ledger,snapshot)
+  self.signer.approve({**self.payload,"generation":2,"previous_state_sha256":"c"*64},self.policy)
+  latest=event_chain_checkpoint(self.ledger,"authority-0",self.public_hex)
+  pin=checkpoint_pin(latest)
+  self.assertTrue(verify_event_chain(self.ledger,self.public_hex,latest,pin))
+  shutil.copy2(snapshot,self.ledger)
+  self.assertFalse(verify_event_chain(self.ledger,self.public_hex,latest,pin))
