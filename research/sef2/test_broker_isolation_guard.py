@@ -49,7 +49,7 @@ class IsolationGuardTests(unittest.TestCase):
     def test_strict_server_accepts_valid_private_storage_profile(self):
         class Broker:
             path=str(self.db)
-        socket_path=self.parent/"socket"
+        socket_path=self.parent.parent/"socket"
         with IsolatedBrokerServer(socket_path,Broker(),frozenset({self.uid+1})):
             self.assertTrue(socket_path.exists())
         socket_path.unlink(missing_ok=True)
@@ -60,3 +60,9 @@ class IsolationGuardTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             IsolatedBrokerServer(self.parent/"socket",Broker(),frozenset({self.uid+1}))
         self.assertFalse((self.parent/"socket").exists())
+
+    def test_strict_server_rejects_socket_inside_private_database_directory(self):
+        class Broker:
+            path=str(self.db)
+        with self.assertRaises(ValueError):
+            IsolatedBrokerServer(self.parent/"socket",Broker(),frozenset({self.uid+1}))

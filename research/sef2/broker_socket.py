@@ -87,4 +87,9 @@ class IsolatedBrokerServer(BrokerServer):
         from broker_isolation_guard import validate_isolation
         if not validate_isolation(broker.path,os.geteuid(),allowed_uids):
             raise ValueError("unsafe broker isolation configuration")
+        # A client of a different UID cannot traverse the private 0700
+        # database directory. Put the socket in a separate IPC directory.
+        import pathlib
+        if pathlib.Path(socket_path).resolve().parent==pathlib.Path(broker.path).resolve().parent:
+            raise ValueError("socket cannot live inside private effects directory")
         super().__init__(socket_path,broker,allowed_uids)
