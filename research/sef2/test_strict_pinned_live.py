@@ -277,3 +277,30 @@ class StrictPinnedLiveTests(unittest.TestCase):
         self.assertFalse(self.check(pins=pins))
         self.anchors["north"].write_text(original)
         self.assertTrue(self.check())
+
+    def test_anchor_duplicate_json_key_rejected(self):
+        original=self.anchors["north"].read_text()
+        self.anchors["north"].write_text(original[:-1]+',"witness_id":"north"}')
+        self.assertFalse(self.check())
+        self.anchors["north"].write_text(original)
+        self.assertTrue(self.check())
+
+    def test_anchor_signature_substitution_rejected_even_with_new_digest(self):
+        original=self.anchors["north"].read_text()
+        anchor=json.loads(original)
+        anchor["witness_envelope"]["signature"]="00"*64
+        self.anchors["north"].write_text(json.dumps(anchor))
+        pins=dict(self.pins,north=anchor_pin(anchor))
+        self.assertFalse(self.check(pins=pins))
+        self.anchors["north"].write_text(original)
+        self.assertTrue(self.check())
+
+    def test_anchor_checkpoint_future_epoch_rejected(self):
+        original=self.anchors["north"].read_text()
+        anchor=json.loads(original)
+        anchor["checkpoint"]["epoch"]+=1
+        self.anchors["north"].write_text(json.dumps(anchor))
+        pins=dict(self.pins,north=anchor_pin(anchor))
+        self.assertFalse(self.check(pins=pins))
+        self.anchors["north"].write_text(original)
+        self.assertTrue(self.check())
