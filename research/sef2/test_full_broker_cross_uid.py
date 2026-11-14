@@ -86,7 +86,7 @@ def main():
             shutil.copyfile(HERE/(name+".py"),dest)
             dest.chmod(0o644)
         sock=ipc/"broker.sock"
-        public=root/"signed_request.json"
+        public=ipc/"signed_request.json"
         env=dict(os.environ,PYTHONPATH=str(lib))
         proc=subprocess.Popen([sys.executable,"-c",SERVER,str(sock),str(private),
              str(public),str(client.pw_uid),str(client.pw_gid)],
