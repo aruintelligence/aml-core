@@ -140,10 +140,13 @@ class RecoveryAuthoritySigner:
         with sqlite3.connect(self.ledger_path,timeout=10) as con:
             con.execute("PRAGMA synchronous=FULL")
             con.execute("BEGIN IMMEDIATE")
-            row=con.execute("""SELECT payload_sha256,signature FROM recovery_approval_ledger_v2
-                WHERE policy_sha256=? AND authority_id=? AND witness_id=? AND generation=?""",scope).fetchone()
+            row=con.execute("""SELECT policy_sha256,previous_state_sha256,payload_sha256,signature
+                FROM recovery_approval_ledger_v3
+                WHERE policy_id=? AND authority_id=? AND witness_id=? AND generation=?""",scope).fetchone()
             if row:
-                if row[0]!=previous_state or row[1]!=digest: raise ValueError("recovery authority equivocation refused")
-                return row[1]
-            con.execute("INSERT INTO recovery_approval_ledger_v2 VALUES (?,?,?,?,?,?,?)",(*scope,previous_state,digest,signature))
+                if row[0]!=pd or row[1]!=previous_state or row[2]!=digest:
+                    raise ValueError("recovery authority equivocation refused")
+                return row[3]
+            con.execute("INSERT INTO recovery_approval_ledger_v3 VALUES (?,?,?,?,?,?,?,?)",
+                (*scope,pd,previous_state,digest,signature))
         return signature
