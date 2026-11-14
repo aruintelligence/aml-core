@@ -11,7 +11,7 @@ from witness_freshness import challenge,verify_fresh
 from verify_quorum import verify_with_quorum
 from verify_trusted import load_unique
 from external_witness_anchor import anchor_pin,unique
-from checkpoint_council import DOMAIN
+from checkpoint_council import DOMAIN,valid_checkpoint
 from signed_receipt import canonical
 from cryptography.exceptions import InvalidSignature
 
@@ -96,14 +96,22 @@ def verify_pinned_live(directory,manifest_path,manifest_pin,history_db,approver_
         keys={name:Ed25519PublicKey.from_public_bytes(bytes.fromhex(keys_hex[name]))
               for name in endpoints}
         expected=load_unique(checkpoint_path)
+        if not valid_checkpoint(expected):
+            return False
         for name in endpoints:
             anchor=json.loads(pathlib.Path(anchor_files[name]).read_text(),object_pairs_hook=unique)
             pin=anchor_pins[name]
-            if (type(pin) is not str or len(pin)!=64 or anchor_pin(anchor)!=pin
+            if (type(pin) is not str or len(pin)!=64
+                or type(anchor) is not dict
+                or set(anchor)!={"schema","witness_id","witness_public_hex","checkpoint","witness_envelope"}
+                or anchor["schema"]!="AML-SEF2-EXTERNAL-WITNESS-ANCHOR-V1"
+                or anchor_pin(anchor)!=pin
                 or anchor["witness_id"]!=name or anchor["witness_public_hex"]!=keys_hex[name]
                 or anchor["checkpoint"]!=expected):
                 return False
             envelope=anchor["witness_envelope"]
+            if type(envelope) is not dict or set(envelope)!={"payload","signature"}:
+                return False
             payload=envelope["payload"]
             if payload!={"version":1,"witness_id":name,"checkpoint":expected}:
                 return False
