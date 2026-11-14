@@ -8,11 +8,8 @@ from test_cross_uid_boundary import drop,HERE
 
 SERVER=r'''
 import json,os,pathlib,sys
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from pin_registry import PinRegistry
 from pin_replication import PinReplica
-from replica_attestation import attest
-from action_capability import issue_capability
 from capability_broker import CapabilityBroker
 from broker_socket import IsolatedBrokerServer,grant_client_socket_access
 socket_path,private,public,client_uid,client_gid=sys.argv[1:]
@@ -21,22 +18,36 @@ os.umask(0o077)
 registry=PinRegistry(root/"registry.sqlite")
 registry.enroll("north","a"*64)
 replicas=[PinReplica(root/("replica%d.sqlite"%i)) for i in range(3)]
-keys=[Ed25519PrivateKey.generate() for _ in replicas]
 for r in replicas:r.record("north",0,"a"*64)
-enrolled={"r%d"%i:k.public_key().public_bytes_raw().hex() for i,k in enumerate(keys)}
-issuer=Ed25519PrivateKey.generate()
-broker=CapabilityBroker(root/"effects.sqlite",registry,"north",replicas,2,enrolled,
-    "authority",issuer.public_key().public_bytes_raw().hex(),"broker-a")
-request={"operation_id":"full-uid-op","action":"payment:simulate",
-         "target":"fixture:merchant-a","amount_cents":100}
-attestations=[attest(r,"r%d"%i,"north",keys[i]) for i,r in enumerate(replicas)]
-capability=issue_capability(issuer,"authority","broker-a",request,0)
-envelope={"request":request,"attestations":attestations,"capability":capability}
+config=json.loads(pathlib.Path(public).read_text())
+broker=CapabilityBroker(root/"effects.sqlite",registry,"north",replicas,2,
+    config["enrolled"],"authority",config["issuer_public"],"broker-a")
 with IsolatedBrokerServer(socket_path,broker,frozenset({int(client_uid)})) as server:
     grant_client_socket_access(socket_path,int(client_gid))
-    pathlib.Path(public).write_text(json.dumps(envelope))
-    pathlib.Path(public).chmod(0o644)
     server.serve_forever(poll_interval=0.05)
+'''
+AUTHORITY=r'''
+import json,sys
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from action_capability import issue_capability
+from replica_attestation import DOMAIN
+from signed_receipt import canonical
+path=sys.argv[1]
+issuer=Ed25519PrivateKey.generate()
+keys=[Ed25519PrivateKey.generate() for _ in range(3)]
+request={"operation_id":"full-uid-op","action":"payment:simulate",
+         "target":"fixture:merchant-a","amount_cents":100}
+attestations=[]
+for i,key in enumerate(keys):
+    payload={"schema":"AML-SEF2-PIN-REPLICA-ATTESTATION-V1",
+             "replica_id":"r%d"%i,"witness_id":"north","generation":0,"pin":"a"*64}
+    attestations.append({"payload":payload,"signature":key.sign(DOMAIN+canonical(payload)).hex()})
+config={"issuer_public":issuer.public_key().public_bytes_raw().hex(),
+        "enrolled":{"r%d"%i:k.public_key().public_bytes_raw().hex() for i,k in enumerate(keys)},
+        "request":request,"attestations":attestations,
+        "capability":issue_capability(issuer,"authority","broker-a",request,0)}
+with open(path,"w") as output:json.dump(config,output)
+print("AUTHORITY_KEYS_HELD_OUTSIDE_BROKER")
 '''
 CLIENT=r'''
 import json,sqlite3,sys
@@ -89,6 +100,11 @@ def main():
         sock=ipc/"broker.sock"
         public=ipc/"signed_request.json"
         env=dict(os.environ,PYTHONPATH=str(lib))
+        authority=subprocess.run([sys.executable,"-c",AUTHORITY,str(public)],
+            env=env,capture_output=True,text=True,timeout=10)
+        assert authority.returncode==0,(authority.stdout,authority.stderr)
+        assert "AUTHORITY_KEYS_HELD_OUTSIDE_BROKER" in authority.stdout
+        public.chmod(0o644)
         proc=subprocess.Popen([sys.executable,"-c",SERVER,str(sock),str(private),
              str(public),str(client.pw_uid),str(client.pw_gid)],
              preexec_fn=drop(broker.pw_uid,broker.pw_gid,(client.pw_gid,)),
