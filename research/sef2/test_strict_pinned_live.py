@@ -210,3 +210,30 @@ class StrictPinnedLiveTests(unittest.TestCase):
         self.urls["south"]="http://127.0.0.1:1/latest"
         self.assertFalse(self.check())
         self.urls=original
+
+    def test_pinned_anchor_wrong_schema_rejected_even_with_matching_digest(self):
+        original=self.anchors["north"].read_text()
+        anchor=json.loads(original)
+        anchor["schema"]="UNRECOGNIZED"
+        self.anchors["north"].write_text(json.dumps(anchor))
+        pins=dict(self.pins,north=anchor_pin(anchor))
+        self.assertFalse(self.check(pins=pins))
+        self.anchors["north"].write_text(original)
+
+    def test_pinned_anchor_extra_field_rejected_even_with_matching_digest(self):
+        original=self.anchors["north"].read_text()
+        anchor=json.loads(original)
+        anchor["unexpected"]="injected"
+        self.anchors["north"].write_text(json.dumps(anchor))
+        pins=dict(self.pins,north=anchor_pin(anchor))
+        self.assertFalse(self.check(pins=pins))
+        self.anchors["north"].write_text(original)
+
+    def test_pinned_anchor_missing_signature_rejected(self):
+        original=self.anchors["north"].read_text()
+        anchor=json.loads(original)
+        del anchor["witness_envelope"]["signature"]
+        self.anchors["north"].write_text(json.dumps(anchor))
+        pins=dict(self.pins,north=anchor_pin(anchor))
+        self.assertFalse(self.check(pins=pins))
+        self.anchors["north"].write_text(original)
