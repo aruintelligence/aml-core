@@ -194,6 +194,22 @@ class RecoveryAuthorityLedgerTests(unittest.TestCase):
    RecoveryAuthoritySigner("authority-0",self.key,link)
 
 
+ def test_snapshot_rollback_demonstrates_local_guard_limit(self):
+  import shutil,pathlib
+  snapshot=str(pathlib.Path(self.temp.name)/"before-approval.sqlite")
+  shutil.copy2(self.ledger,snapshot)
+  first=self.signer.approve(self.payload,self.policy)
+  shutil.copy2(snapshot,self.ledger)
+  restarted=RecoveryAuthoritySigner("authority-0",self.key,self.ledger)
+  conflicting={**self.payload,"new_key":"9"*64}
+  second=restarted.approve(conflicting,self.policy)
+  from signed_receipt import canonical
+  first_statement=DOMAIN+canonical({"policy_sha256":policy_digest(self.policy),"payload_sha256":payload_digest(self.payload)})
+  second_statement=DOMAIN+canonical({"policy_sha256":policy_digest(self.policy),"payload_sha256":payload_digest(conflicting)})
+  self.key.public_key().verify(bytes.fromhex(first),first_statement)
+  self.key.public_key().verify(bytes.fromhex(second),second_statement)
+  self.assertNotEqual(first,second)
+
 class RecoveryQuorumModelTests(unittest.TestCase):
  def test_safe_thresholds_exhaustively_for_councils_four_through_nine(self):
   from recovery_quorum_model import exhaustively_check
