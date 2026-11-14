@@ -1,7 +1,8 @@
 """Full cryptographic broker across two real Linux UIDs in disposable CI.
 
-Synthetic-only. Authority keys are generated in the broker process and never
-exported; signed request fixture is public, private effects stay broker-owned.
+Synthetic-only. Authority private keys are generated in a separate short-lived
+process; broker receives only public keys and signed evidence. This is process
+separation, not yet a separate-UID or independently operated signer service.
 """
 import os,pathlib,pwd,shutil,sqlite3,subprocess,sys,tempfile,time
 from test_cross_uid_boundary import drop,HERE
@@ -106,6 +107,7 @@ def main():
         assert authority.returncode==0,(authority.stdout,authority.stderr)
         assert "AUTHORITY_KEYS_HELD_OUTSIDE_BROKER" in authority.stdout
         public.chmod(0o644)
+        assert all("private" not in key for key in __import__("json").loads(public.read_text()))
         proc=subprocess.Popen([sys.executable,"-c",SERVER,str(sock),str(private),
              str(public),str(client.pw_uid),str(client.pw_gid)],
              preexec_fn=drop(broker.pw_uid,broker.pw_gid,(client.pw_gid,)),
