@@ -73,3 +73,13 @@ python3 research/sef2/evaluation_kit/verify_bundle.py --input /tmp/aml-sef2-eval
 ```
 
 The first command provisions **ephemeral synthetic test identities** into a temporary private directory, launches `observer_pinned.py` as a subprocess, verifies provider-origin authentication and replay denial, generates signed authority/provider/witness receipts and negative controls, and writes `bundle.json` plus `report.json`. The second command independently rechecks the bundle using only its public keys and signatures. It does **not** prove those public keys belong to independently administered organizations: the same demonstration generated them all, and the report is unsigned. The bundle hash protects against accidental mismatch only; an attacker controlling both files can replace them. The local replay database is intentionally temporary and no persistent independent witness is created across separate demonstration invocations. No real-world effects, external independent source, durable checkpoint or rollback-resistant ledger are proven. The tests exercise tampered receipt, provider event, public key and report, and verify the bundle contains no private key fields.
+
+## Strict externally pinned trust manifest verifier
+
+The research evaluation adds `verify_trusted.py`. The evaluator must construct or obtain a `AML-SEF2-TRUST-MANIFEST-V1` JSON manifest containing **preapproved authority/provider/witness public keys** and independently approved SHA-256 digests of the bundle and report, and obtain the **manifest SHA-256 through a separate trusted channel**. Example:
+
+```bash
+python3 research/sef2/evaluation_kit/verify_trusted.py --input /tmp/aml-sef2-evaluation --trust-manifest /secure/trust-manifest.json --pinned-manifest-sha256 YOUR_SEPARATELY_VERIFIED_64_HEX_DIGEST
+```
+
+The verifier fails closed on missing or mismatched external manifest digest, public-key substitution, report/bundle replacement, invalid signatures, duplicate JSON keys and mismatched event bindings. The legacy `verify_bundle.py` only performs **self-contained** cryptographic checks and is not sufficient against coordinated key and report substitution. **Never accept a manifest hash supplied alongside the untrusted bundle as an independent trust root.** The demo does not enroll identities or issue a trusted manifest. An evaluator must perform out-of-band identity vetting and manifest approval. The manifest digest is not a timestamp, external publication, certificate, production trust infrastructure or real-effect proof.
