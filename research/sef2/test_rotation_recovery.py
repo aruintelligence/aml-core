@@ -67,6 +67,7 @@ class RegistryRecoveryTests(unittest.TestCase):
         self.assertEqual(self.store.publish(cp(3))[0],"PUBLISHED")
         self.assertEqual(recover(self.store,self.anchor,self.candidate,self.registry),"FAIL_CLOSED")
         self.assertIsNotNone(self.registry.state("north")["pending"])
+        self.assertEqual(anchor_pin(json.loads(self.anchor.read_text())),self.old)
     def test_registry_rejects_duplicate_enrollment(self):
         with self.assertRaises(ValueError):
             self.registry.enroll("north",self.old)
@@ -118,3 +119,12 @@ class RegistryRecoveryTests(unittest.TestCase):
         self.assertEqual(process.exitcode,37)
         self.assertIsNotNone(PinRegistry(self.registry_path).state("north")["pending"])
         self.assertEqual(recover(self.store,self.anchor,self.candidate,PinRegistry(self.registry_path)),"RECOVERED")
+
+    def test_invalid_successor_signature_preserves_active_anchor(self):
+        new=stage(self.store,self.anchor,self.candidate,self.registry)
+        candidate=json.loads(self.candidate.read_text())
+        candidate["witness_envelope"]["signature"]="00"*64
+        self.candidate.write_text(json.dumps(candidate))
+        self.assertEqual(recover(self.store,self.anchor,self.candidate,self.registry),"FAIL_CLOSED")
+        self.assertEqual(anchor_pin(json.loads(self.anchor.read_text())),self.old)
+        self.assertEqual(self.registry.state("north")["active"],self.old)

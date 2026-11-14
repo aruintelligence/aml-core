@@ -6,6 +6,7 @@ old or new anchor acceptable as a completed rotation until committed.
 """
 import json
 import pathlib
+from cryptography.exceptions import InvalidSignature
 from anchor_rotation import prepare_rotation,activate_prepared_rotation
 from external_witness_anchor import anchor_pin,unique,verify_anchor
 
@@ -32,6 +33,12 @@ def recover(store,anchor_path,candidate_path,registry):
         if current_pin==active:
             if not candidate.is_file():
                 return "FAIL_CLOSED"
+            # Never replace the active anchor with a successor that the
+            # current witness state cannot authenticate. An earlier version
+            # activated first and only then discovered a stale candidate.
+            if not verify_anchor(store.path,store.name,
+                store.private.public_key().public_bytes_raw().hex(),candidate,pending):
+                return "FAIL_CLOSED"
             activate_prepared_rotation(path,candidate,active,pending)
         elif current_pin==pending:
             # Crash after atomic replacement but before registry commit.
@@ -45,5 +52,5 @@ def recover(store,anchor_path,candidate_path,registry):
             return "FAIL_CLOSED"
         registry.commit(store.name,active,pending)
         return "RECOVERED"
-    except (OSError,ValueError,TypeError,KeyError):
+    except (OSError,ValueError,TypeError,KeyError,InvalidSignature):
         return "FAIL_CLOSED"
