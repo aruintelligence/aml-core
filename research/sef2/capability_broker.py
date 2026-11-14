@@ -7,7 +7,7 @@ import sqlite3
 import hashlib
 from gated_action_broker import canonical_request
 from strict_evaluator import verify_strict_evaluator
-from gated_action_broker import GatedBroker
+from gated_action_broker import canonical_request
 from action_capability import verify_capability
 
 class CapabilityBroker:
