@@ -105,11 +105,9 @@ class DurableQuorumTests(unittest.TestCase):
         self.assertFalse(self.check())
 
     def test_three_honest_witnesses_outvote_one_equivocating_witness(self):
-        self.receipts[1]["payload"]["checkpoint"]["head_hash"]="b"*64
         from checkpoint_council import publish
         fork=dict(self.checkpoint,head_hash="b"*64)
         self.receipts[1]=publish(self.privates["south"],"south",fork)
-        self.receipts=[self.receipts[0],self.receipts[2],self.receipts[3]]
         self.save()
         self.assertTrue(self.check())
 
