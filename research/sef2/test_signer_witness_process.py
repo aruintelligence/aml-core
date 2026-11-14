@@ -59,7 +59,7 @@ def main():
         env=dict(os.environ,PYTHONPATH=str(lib))
         proc=subprocess.Popen([sys.executable,str(lib/"signer_witness_service.py"),
             str(sock),str(db),str(signer.pw_uid),str(signer.pw_gid)],
-            preexec_fn=drop(witness.pw_uid,witness.pw_gid),env=env,
+            preexec_fn=drop(witness.pw_uid,witness.pw_gid,(signer.pw_gid,)),env=env,
             stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)
         try:
             for _ in range(200):
