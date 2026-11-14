@@ -157,7 +157,8 @@ def make_anchor_certificate(payload,policy,witnesses):
     return {"schema":CERT_SCHEMA,"policy_sha256":policy_digest(policy),
         "payload_sha256":hashlib.sha256(canonical(payload)).hexdigest(),"approvals":approvals}
 
-def verify_anchor_certificate(payload,certificate,policy,expected_sequence,expected_previous_pin):
+def verify_anchor_certificate(payload,certificate,policy,expected_sequence,expected_previous_pin,
+                               expected_target_authority_id,expected_authority_key_sha256):
     try:
         if not validate_anchor_policy(policy): return False
         if type(payload) is not dict or set(payload)!={"schema","policy_id","target_authority_id",
@@ -167,9 +168,14 @@ def verify_anchor_certificate(payload,certificate,policy,expected_sequence,expec
             or type(expected_sequence) is not int or expected_sequence<1 or payload["sequence"]!=expected_sequence
             or type(expected_previous_pin) is not str or len(expected_previous_pin)!=64
             or any(c not in "0123456789abcdef" for c in expected_previous_pin)
+            or type(expected_target_authority_id) is not str or not expected_target_authority_id
+            or type(expected_authority_key_sha256) is not str or len(expected_authority_key_sha256)!=64
+            or any(c not in "0123456789abcdef" for c in expected_authority_key_sha256)
+            or payload["target_authority_id"]!=expected_target_authority_id
             or payload["previous_pin_sha256"]!=expected_previous_pin
             or not valid_checkpoint(payload["checkpoint"])
             or payload["checkpoint"]["authority_id"]!=payload["target_authority_id"]
+            or payload["checkpoint"]["authority_key_sha256"]!=expected_authority_key_sha256
             or checkpoint_pin(payload["checkpoint"])!=payload["checkpoint_pin_sha256"]):
             return False
         if type(certificate) is not dict or set(certificate)!={"schema","policy_sha256","payload_sha256","approvals"}:
