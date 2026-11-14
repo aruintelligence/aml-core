@@ -45,7 +45,9 @@ def verified_state(registry,witness,replicas,threshold):
     availability for clear fail-closed semantics.
     """
     if (type(replicas) is not list or type(threshold) is not int or threshold<2
-        or len(replicas)<threshold or len({r.path for r in replicas})!=len(replicas)
+        or len(replicas)<threshold
+        or any(type(r) is not PinReplica for r in replicas)
+        or len({pathlib.Path(r.path).resolve() for r in replicas})!=len(replicas)
         or pathlib.Path(registry.path).resolve() in {pathlib.Path(r.path).resolve() for r in replicas}):
         raise ValueError("invalid independent replica configuration")
     state=registry.state(witness)
@@ -58,8 +60,15 @@ def verified_state(registry,witness,replicas,threshold):
 def replicate_committed(registry,witness,replicas,threshold):
     """Record a completed transition; any unavailable replica fails closed."""
     state=registry.state(witness)
-    if (type(replicas) is not list or len(replicas)<threshold or threshold<2):
+    if (type(replicas) is not list or type(threshold) is not int or len(replicas)<threshold or threshold<2):
         raise ValueError("insufficient replicas")
+    # Before writing, require all replicas to be at the same predecessor
+    # (or already at the target after an interrupted replication).
+    for replica in replicas:
+        latest=replica.latest(witness)
+        target=(state["generation"],state["active"])
+        if latest!=target and (latest[0]!=state["generation"]-1):
+            raise ValueError("replica cannot be advanced safely")
     for replica in replicas:
         replica.record(witness,state["generation"],state["active"])
     return verified_state(registry,witness,replicas,threshold)
