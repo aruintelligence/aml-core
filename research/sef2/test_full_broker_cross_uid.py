@@ -53,7 +53,8 @@ CLIENT=r'''
 import json,sqlite3,sys
 from broker_socket import request_action
 sock,db,public=sys.argv[1:]
-envelope=json.loads(open(public).read())
+config=json.loads(open(public).read())
+envelope={key:config[key] for key in ("request","attestations","capability")}
 assert request_action(sock,envelope)=="APPLIED"
 assert request_action(sock,envelope)=="ALREADY_APPLIED"
 forged=json.loads(json.dumps(envelope))
