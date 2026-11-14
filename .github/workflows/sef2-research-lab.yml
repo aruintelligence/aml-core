@@ -26,6 +26,6 @@ jobs:
         run: python3 -m compileall -q research/sef2
       - name: Execute synthetic-only adversarial and recovery suite
         working-directory: research/sef2
-        run: python3 -W error::ResourceWarning -m unittest -v test_sef2 test_receipt test_witness_chain test_pinned_witness test_durable_witness test_signed_receipt test_evidence_gate test_evaluation_kit
+        run: python3 -W error::ResourceWarning -m unittest -v test_sef2 test_receipt test_witness_chain test_pinned_witness test_durable_witness test_signed_receipt test_evidence_gate test_evaluation_kit test_observer_process
       - name: Execute enterprise synthetic evaluation demo
         run: python3 research/sef2/evaluation_kit/demo.py

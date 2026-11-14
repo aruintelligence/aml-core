@@ -44,3 +44,7 @@ The lab tests request binding, one-use authorization, replay denial, selected cr
 Implementation: `signed_receipt.py`, `evidence_gate.py`, `witness_chain.py`, `durable_witness.py`. Adversarial tests: `test_*.py`. CI: `.github/workflows/sef2-research-lab.yml`. Evaluation entrypoint: `evaluation_kit/demo.py`.
 
 **Disposition:** Research candidate. No live-effect permissions, customer data, deployment, or production security guarantee.
+
+## Separate-process synthetic observer adapter
+
+`observer_process.py --event PATH` reads a bounded, strictly validated local JSON event artifact, hashes the synthetic effect, generates an ephemeral Ed25519 key **inside its own OS process**, and outputs a signed witness receipt and its public key. `test_observer_process.py` exercises a separate subprocess, end-to-end gate corroboration, tampering, operation mismatch, duplicate keys, non-synthetic effects, missing and oversized files, and key separation. The observer's key is generated independently of the provider key, but its input is **not independent of the provider**: the local artifact can be forged or rewritten by whoever controls it. The returned public key is test-trusted by the caller and is not authenticated by PKI or an out-of-band pinned identity. Thus even a matching signed observation is only `THREE_SIGNED_CONSISTENT_CLAIMS`, not proof of real execution or independently sourced evidence. Production requires independently authenticated provider-origin records, key enrollment, durable provenance, replay/freshness controls, and separate administration.
