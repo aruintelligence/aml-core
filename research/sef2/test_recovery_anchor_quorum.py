@@ -20,7 +20,7 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
   self.certificate=make_anchor_certificate(self.payload,self.policy,
    {k:self.witnesses[k] for k in ("anchor-0","anchor-1","anchor-2")})
  def test_three_of_four_independent_anchor_votes_verify(self):
-  self.assertTrue(verify_anchor_certificate(self.payload,self.certificate,self.policy,1,"0"*64))
+  self.assertTrue(verify_anchor_certificate(self.payload,self.certificate,self.policy,1,"0"*64,"recovery-authority-1","a"*64))
  def test_two_votes_are_insufficient(self):
   c=copy.deepcopy(self.certificate); c["approvals"]=c["approvals"][:2]
   self.assertFalse(verify_anchor_certificate(self.payload,c,self.policy,1,"0"*64))
@@ -72,6 +72,12 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
   malformed["checkpoint"]["head_hash"]="not-a-hash"
   with self.assertRaisesRegex(ValueError,"invalid anchor payload"):
    self.witnesses["anchor-3"].approve(malformed,self.policy)
+ def test_wrong_target_authority_identity_rejected(self):
+  self.assertFalse(verify_anchor_certificate(self.payload,self.certificate,self.policy,
+   1,"0"*64,"different-authority","a"*64))
+ def test_wrong_target_authority_key_fingerprint_rejected(self):
+  self.assertFalse(verify_anchor_certificate(self.payload,self.certificate,self.policy,
+   1,"0"*64,"recovery-authority-1","f"*64))
  def test_policy_requires_byzantine_safe_quorum(self):
   bad=copy.deepcopy(self.policy); bad["threshold"]=2
   self.assertFalse(validate_anchor_policy(bad))
