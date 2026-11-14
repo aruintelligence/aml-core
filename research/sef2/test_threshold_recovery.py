@@ -107,6 +107,12 @@ class ThresholdRecoveryEnrollmentTests(unittest.TestCase):
   self.assertEqual(self.coordinator.recover("north",self.transition),"RECOVERED")
   self.assertEqual(self.coordinator.recover("north",self.transition),"INVALID_RECOVERY")
 
+
+ def test_transition_builder_rejects_ephemeral_raw_private_keys(self):
+  with self.assertRaisesRegex(ValueError,"durable RecoveryAuthoritySigner"):
+   make_threshold_transition(self.new,"north",self.state,self.next_checkpoint,self.policy,
+    {k:self.authorities[k] for k in ("council-0","council-1","council-2")})
+
 class RecoveryAuthorityLedgerTests(unittest.TestCase):
  def setUp(self):
   import tempfile,pathlib
@@ -247,8 +253,3 @@ class RecoveryQuorumModelTests(unittest.TestCase):
   with self.assertRaises(InvalidSignature):
    verifier.verify(bytes.fromhex(self.transition["recovery_signature"]),
     AUTH_DOMAIN+b'{"witness_id":"north","witness_id":"south"}')
-
- def test_transition_builder_rejects_ephemeral_raw_private_keys(self):
-  with self.assertRaisesRegex(ValueError,"durable RecoveryAuthoritySigner"):
-   make_threshold_transition(self.new,"north",self.state,self.next_checkpoint,self.policy,
-    {k:self.authorities[k] for k in ("council-0","council-1","council-2")})
