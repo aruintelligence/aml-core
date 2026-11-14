@@ -63,7 +63,7 @@ def prepare_rotation(store,anchor_path,trusted_old_pin,candidate_path):
     if candidate==active or candidate.exists():
         raise ValueError("candidate must be distinct and absent")
     old=json.loads(active.read_text(),object_pairs_hook=unique)
-    if anchor_pin(old)!=trusted_old_pin:
+    if type(old) is not dict or type(trusted_old_pin) is not str or anchor_pin(old)!=trusted_old_pin:
         raise ValueError("untrusted predecessor")
     new=issue_anchor(store)
     if (type(old) is not dict or old.get("witness_id")!=store.name
@@ -75,7 +75,8 @@ def prepare_rotation(store,anchor_path,trusted_old_pin,candidate_path):
     # checking the historical signed envelope without touching active state.
     envelope=old["witness_envelope"]
     payload={"version":1,"witness_id":store.name,"checkpoint":old["checkpoint"]}
-    if type(envelope) is not dict or envelope.get("payload")!=payload:
+    if (type(envelope) is not dict or set(envelope)!={"payload","signature"}
+        or envelope.get("payload")!=payload):
         raise ValueError("invalid predecessor envelope")
     store.private.public_key().verify(bytes.fromhex(envelope["signature"]),DOMAIN+canonical(payload))
     with candidate.open("x") as out:
@@ -104,7 +105,9 @@ def activate_prepared_rotation(anchor_path,candidate_path,trusted_old_pin,approv
     if (type(trusted_old_pin) is not str or type(approved_new_pin) is not str
         or anchor_pin(old)!=trusted_old_pin or anchor_pin(new)!=approved_new_pin
         or type(new) is not dict or type(old) is not dict
-        or set(new)!=set(old)
+        or set(new)!={"schema","witness_id","witness_public_hex","checkpoint","witness_envelope"}
+        or set(old)!=set(new)
+        or old["schema"]!="AML-SEF2-EXTERNAL-WITNESS-ANCHOR-V1"
         or new["witness_id"]!=old["witness_id"]
         or new["witness_public_hex"]!=old["witness_public_hex"]
         or new["schema"]!=old["schema"]
@@ -114,11 +117,18 @@ def activate_prepared_rotation(anchor_path,candidate_path,trusted_old_pin,approv
         raise ValueError("unapproved or inconsistent successor")
     payload={"version":1,"witness_id":new["witness_id"],"checkpoint":new["checkpoint"]}
     envelope=new["witness_envelope"]
-    if type(envelope) is not dict or envelope.get("payload")!=payload:
+    if (type(envelope) is not dict or set(envelope)!={"payload","signature"}
+        or envelope.get("payload")!=payload):
         raise ValueError("invalid successor envelope")
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
     key=Ed25519PublicKey.from_public_bytes(bytes.fromhex(new["witness_public_hex"]))
     key.verify(bytes.fromhex(envelope["signature"]),DOMAIN+canonical(payload))
+    old_envelope=old["witness_envelope"]
+    old_payload={"version":1,"witness_id":old["witness_id"],"checkpoint":old["checkpoint"]}
+    if (type(old_envelope) is not dict or set(old_envelope)!={"payload","signature"}
+        or old_envelope["payload"]!=old_payload):
+        raise ValueError("invalid predecessor envelope")
+    key.verify(bytes.fromhex(old_envelope["signature"]),DOMAIN+canonical(old_payload))
     os.replace(candidate,active)
     directory_fd=os.open(str(active.parent),os.O_RDONLY)
     try:
