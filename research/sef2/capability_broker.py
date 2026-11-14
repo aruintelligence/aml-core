@@ -1,28 +1,33 @@
-"""Capability-enforcing synthetic broker, with durable policy epochs.
+"""Synthetic capability broker: atomic policy-epoch revocation and effect commit.
 
-Research-only: revocation is local to the broker SQLite DB. External effect
-access and direct database writes remain outside this prototype boundary.
+This is an in-process research fixture. OS-level isolation and remote
+authority enrollment are not provided; filesystem access can bypass it.
 """
-import sqlite3
 import hashlib
+import sqlite3
 from gated_action_broker import canonical_request
 from strict_evaluator import verify_strict_evaluator
-from gated_action_broker import canonical_request
 from action_capability import verify_capability
 
 class CapabilityBroker:
     def __init__(self,path,registry,witness,replicas,threshold,enrolled_keys,
                  issuer,issuer_public_hex,audience):
-        # Initialize shared storage without inheriting the weaker execute API.\n        self._gate=GatedBroker(path,registry,witness,replicas,threshold,enrolled_keys)\n        self.path=str(path)
         if type(issuer) is not str or not issuer or type(audience) is not str or not audience:
             raise ValueError("invalid issuer or audience")
         if type(issuer_public_hex) is not str or len(bytes.fromhex(issuer_public_hex))!=32:
             raise ValueError("invalid issuer key")
+        self.path=str(path)
+        self.registry=registry
+        self.witness=witness
+        self.replicas=replicas
+        self.threshold=threshold
+        self.enrolled_keys=enrolled_keys
         self.issuer=issuer
         self.issuer_public_hex=issuer_public_hex
         self.audience=audience
         with sqlite3.connect(self.path) as db:
             db.execute("PRAGMA synchronous=FULL")
+            db.execute("CREATE TABLE IF NOT EXISTS effects (operation_id TEXT PRIMARY KEY, request_hash TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS policy_epoch (audience TEXT PRIMARY KEY, epoch INTEGER NOT NULL)")
             db.execute("INSERT OR IGNORE INTO policy_epoch VALUES (?,0)",(audience,))
     def revoke_all(self):
