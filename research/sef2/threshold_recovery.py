@@ -92,6 +92,9 @@ def make_threshold_transition(new_witness_private,witness_id,current_state,check
     from witness_key_recovery import SCHEMA,POP_DOMAIN,state_digest
     from checkpoint_council import valid_checkpoint
     if not valid_policy_checkpoint(checkpoint): raise ValueError("invalid checkpoint")
+    if (type(signers) is not dict or len(signers)<policy.get("threshold",10**9)
+        or any(not isinstance(signer,RecoveryAuthoritySigner) for signer in signers.values())):
+        raise ValueError("threshold transitions require durable RecoveryAuthoritySigner instances")
     payload={"schema":SCHEMA,"witness_id":witness_id,
         "generation":current_state["generation"]+1,
         "previous_state_sha256":state_digest(current_state),
