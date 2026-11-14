@@ -167,6 +167,35 @@ class Adversarial(unittest.TestCase):
         self.assertEqual(post(self.url + "/execute", r)["state"], "UNCERTAIN")
         self.assertEqual(self.count(), 0)
 
+    def test_forged_provider_evidence_conflict_is_uncertain(self):
+        r = self.request()
+        approve(self.a, r["operation_id"], digest(r))
+        self.assertEqual(post(self.url + "/execute", r)["state"], "PROVIDER_REPORTED")
+        with db(self.p) as con:
+            con.execute("UPDATE effects SET digest=? WHERE op=?",
+                ("0" * 64, r["operation_id"]))
+        result = post(self.url + "/status", r)
+        self.assertEqual(result["state"], "UNCERTAIN")
+        self.assertEqual(result["reason"], "evidence_conflict")
+        self.assertEqual(post(self.url + "/execute", r)["state"], "DENIED")
+        self.assertEqual(self.count(), 1)
+
+    def test_forged_effect_without_authority_is_uncertain(self):
+        r = self.request()
+        with db(self.p) as con:
+            con.execute("INSERT INTO effects VALUES (?,?,?)",
+                (r["operation_id"], digest(r), str(uuid.uuid4())))
+        result = post(self.url + "/status", r)
+        self.assertEqual(result["state"], "UNCERTAIN")
+        self.assertEqual(result["reason"], "authority_conflict")
+        self.assertEqual(post(self.url + "/execute", r)["state"], "DENIED")
+
+    def test_reconciliation_does_not_authorize_unconsumed_approval(self):
+        r = self.request()
+        approve(self.a, r["operation_id"], digest(r))
+        self.assertEqual(post(self.url + "/status", r)["state"], "INCOMPLETE")
+        self.assertEqual(self.count(), 0)
+
     def test_duplicate_keys_rejected(self):
         r = self.request()
         approve(self.a, r["operation_id"], digest(r))
