@@ -3,6 +3,8 @@ import json
 import pathlib
 import tempfile
 import unittest
+import multiprocessing
+import os
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from durable_checkpoint_witness import DurableWitness
 from external_witness_anchor import issue_anchor,anchor_pin,verify_anchor
@@ -13,6 +15,12 @@ from anchor_rotation import activate_prepared_rotation
 def cp(epoch):
     return {"schema":"AML-SEF2-SIGNED-HISTORY-CHECKPOINT-V1","epoch":epoch,
         "head_hash":format(epoch,"064x"),"count":epoch,"approver_key_id":"c"*64}
+
+def child_stage_and_exit(db,private_raw,anchor,candidate,registry_path):
+    key=Ed25519PrivateKey.from_private_bytes(private_raw)
+    store=DurableWitness(db,"north",key)
+    stage(store,anchor,candidate,PinRegistry(registry_path))
+    os._exit(37)
 
 class RegistryRecoveryTests(unittest.TestCase):
     def setUp(self):
@@ -96,3 +104,17 @@ class RegistryRecoveryTests(unittest.TestCase):
         self.assertEqual(recover(self.store,self.anchor,self.candidate,PinRegistry(self.registry_path)),"ACTIVE")
         self.assertEqual(self.registry.state("north")["active"],new)
         self.assertEqual(self.registry.state("north")["generation"],1)
+
+    def test_process_termination_after_durable_stage_recovers(self):
+        process=multiprocessing.Process(target=child_stage_and_exit,args=(
+            str(self.db),self.key.private_bytes_raw(),str(self.anchor),
+            str(self.candidate),str(self.registry_path)))
+        process.start()
+        process.join(timeout=10)
+        if process.is_alive():
+            process.kill()
+            process.join(timeout=5)
+            self.fail("child did not terminate")
+        self.assertEqual(process.exitcode,37)
+        self.assertIsNotNone(PinRegistry(self.registry_path).state("north")["pending"])
+        self.assertEqual(recover(self.store,self.anchor,self.candidate,PinRegistry(self.registry_path)),"RECOVERED")
