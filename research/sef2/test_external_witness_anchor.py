@@ -132,3 +132,35 @@ class ExternalAnchorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             activate_prepared_rotation(self.anchor_file,candidate,"0"*64,new)
         self.assertEqual(anchor_pin(json.loads(self.anchor_file.read_text())),self.pin)
+
+    def test_prepared_successor_signature_substitution_rejected(self):
+        self.assertEqual(self.store.publish(cp(3,"d"*64))[0],"PUBLISHED")
+        candidate=self.root/"candidate.json"
+        prepare_rotation(self.store,self.anchor_file,self.pin,candidate)
+        forged=json.loads(candidate.read_text())
+        forged["witness_envelope"]["signature"]="00"*64
+        candidate.write_text(json.dumps(forged))
+        with self.assertRaises(Exception):
+            activate_prepared_rotation(self.anchor_file,candidate,self.pin,anchor_pin(forged))
+        self.assertEqual(anchor_pin(json.loads(self.anchor_file.read_text())),self.pin)
+
+    def test_prepared_predecessor_signature_substitution_rejected(self):
+        self.assertEqual(self.store.publish(cp(3,"d"*64))[0],"PUBLISHED")
+        candidate=self.root/"candidate.json"
+        new=prepare_rotation(self.store,self.anchor_file,self.pin,candidate)
+        forged=json.loads(self.anchor_file.read_text())
+        forged["witness_envelope"]["signature"]="00"*64
+        self.anchor_file.write_text(json.dumps(forged))
+        with self.assertRaises(Exception):
+            activate_prepared_rotation(self.anchor_file,candidate,anchor_pin(forged),new)
+        self.assertTrue(candidate.exists())
+
+    def test_prepared_candidate_duplicate_json_rejected(self):
+        self.assertEqual(self.store.publish(cp(3,"d"*64))[0],"PUBLISHED")
+        candidate=self.root/"candidate.json"
+        new=prepare_rotation(self.store,self.anchor_file,self.pin,candidate)
+        original=candidate.read_text()
+        candidate.write_text(original[:-1]+',"witness_id":"north"}')
+        with self.assertRaises(ValueError):
+            activate_prepared_rotation(self.anchor_file,candidate,self.pin,new)
+        self.assertEqual(anchor_pin(json.loads(self.anchor_file.read_text())),self.pin)
