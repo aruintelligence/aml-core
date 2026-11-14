@@ -1,20 +1,26 @@
-"""Signer-side authorization policy and durable one-time challenge ledger.
+"""Signer-side policy for broker-authenticated, one-use action intent.
 
-Synthetic reference component. The policy is deliberately independent of the
-broker's decision: it validates an exact action schema and bounded fixture
-policy before issuing an action-bound capability.
+Synthetic reference only. Broker identity enrollment is an operator trust input;
+this module does not implement remote key discovery or key rotation.
 """
 import sqlite3
 from action_capability import issue_capability
+from broker_intent import verify_intent
 
 class SignerPolicy:
-    def __init__(self, database, private_key, issuer, audience, policy_epoch=0):
+    def __init__(self,database,private_key,issuer,audience,broker_id,broker_public_hex,policy_epoch=0):
+        if (type(broker_id) is not str or not broker_id or type(audience) is not str or not audience
+            or type(broker_public_hex) is not str or len(bytes.fromhex(broker_public_hex))!=32):
+            raise ValueError("invalid enrolled broker identity")
         self.database=database
         self.private_key=private_key
         self.issuer=issuer
         self.audience=audience
+        self.broker_id=broker_id
+        self.broker_public_hex=broker_public_hex
         self.policy_epoch=policy_epoch
         with sqlite3.connect(database) as db:
+            db.execute("PRAGMA synchronous=FULL")
             db.execute("CREATE TABLE IF NOT EXISTS signer_challenges (challenge TEXT PRIMARY KEY, operation_id TEXT UNIQUE NOT NULL)")
             db.commit()
 
@@ -31,18 +37,18 @@ class SignerPolicy:
             return False
         return True
 
-    def authorize(self, request, challenge):
+    def authorize(self,request,intent):
         if not self.validate_request(request):
             raise PermissionError("signer policy denied action")
-        if type(challenge) is not str or not 32<=len(challenge)<=128:
-            raise PermissionError("invalid signer challenge")
+        if not verify_intent(intent,self.broker_public_hex,self.broker_id,self.audience,request):
+            raise PermissionError("broker intent signature or scope invalid")
+        challenge=intent["payload"]["challenge"]
         try:
-            with sqlite3.connect(self.database, timeout=5, isolation_level=None) as db:
+            with sqlite3.connect(self.database,timeout=5,isolation_level=None) as db:
+                db.execute("PRAGMA synchronous=FULL")
                 db.execute("BEGIN IMMEDIATE")
-                db.execute("INSERT INTO signer_challenges VALUES (?,?)",
-                           (challenge,request["operation_id"]))
-                envelope=issue_capability(self.private_key,self.issuer,self.audience,
-                                          request,self.policy_epoch)
+                db.execute("INSERT INTO signer_challenges VALUES (?,?)",(challenge,request["operation_id"]))
+                envelope=issue_capability(self.private_key,self.issuer,self.audience,request,self.policy_epoch)
                 db.commit()
                 return envelope
         except sqlite3.IntegrityError as exc:
