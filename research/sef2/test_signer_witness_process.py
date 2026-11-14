@@ -62,7 +62,10 @@ def start_service(sock,db,private_key,public_key,lib,witness,signer,env):
                 pass
         time.sleep(.02)
     proc.terminate()
-    raise AssertionError("witness socket/key startup timeout")
+    try: stdout,stderr=proc.communicate(timeout=5)
+    except subprocess.TimeoutExpired:
+        proc.kill(); stdout,stderr=proc.communicate(timeout=5)
+    raise AssertionError("witness socket/key startup timeout; stderr="+stderr)
 
 def stop_service(proc):
     proc.terminate()
