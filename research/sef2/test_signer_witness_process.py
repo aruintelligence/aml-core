@@ -51,15 +51,10 @@ def start_service(sock,db,private_key,public_key,lib,witness,signer,env):
     for _ in range(200):
         if proc.poll() is not None: raise AssertionError("witness service exited: "+proc.stderr.read())
         if sock.exists() and public_key.exists():
-            try:
-                with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as probe:
-                    probe.settimeout(.2)
-                    probe.connect(str(sock))
-                    probe.sendall(struct.pack("!I",0))
-                    while probe.recv(4096): pass
-                return proc
-            except OSError:
-                pass
+            # The stale pathname is removed before launch, so this socket inode
+            # was created by this process. Allow bind() to be followed by listen().
+            time.sleep(.05)
+            if proc.poll() is None: return proc
         time.sleep(.02)
     proc.terminate()
     try: stdout,stderr=proc.communicate(timeout=5)
