@@ -62,3 +62,14 @@ The provider-origin key file is caller-provisioned: the test writes it locally a
 ## Persistent pinned witness identity (research path)
 
 `observer_pinned.py` requires **both** a pinned provider public key and a separately supplied pinned witness public key plus matching persistent witness private key. The witness private key is never taken from the event envelope. Before signing, the process checks witness private/public key agreement, rejects identical provider/witness keys, authenticates the provider event and atomically records the anti-replay identifier. Tests exercise witness private-key substitution, public-pin substitution, provider-pin substitution, missing key material, role collision, replay after restart, persistent witness identity across process restarts and tampered event denial. The caller must provision and protect all key files independently; the fixture has **no HSM, secure enrollment, hardware-backed custody, encrypted key at rest, rotation or revocation**. A local attacker able to edit both private key and pin can substitute identity; local compromise can roll back the replay database. The earlier `observer_authenticated.py` ephemeral-witness route is retained for compatibility and **does not provide persistent pinned witness identity**. Only `observer_pinned.py` demonstrates this stricter property. None of these local synthetic claims proves independent real-world execution.
+
+## One-command persistent witness enterprise demonstration
+
+From repository root, after installing `cryptography==46.0.3`:
+
+```bash
+python3 research/sef2/evaluation_kit/enterprise_demo.py --output /tmp/aml-sef2-evaluation
+python3 research/sef2/evaluation_kit/verify_bundle.py --input /tmp/aml-sef2-evaluation
+```
+
+The first command provisions **ephemeral synthetic test identities** into a temporary private directory, launches `observer_pinned.py` as a subprocess, verifies provider-origin authentication and replay denial, generates signed authority/provider/witness receipts and negative controls, and writes `bundle.json` plus `report.json`. The second command independently rechecks the bundle using only its public keys and signatures. It does **not** prove those public keys belong to independently administered organizations: the same demonstration generated them all, and the report is unsigned. The bundle hash protects against accidental mismatch only; an attacker controlling both files can replace them. The local replay database is intentionally temporary and no persistent independent witness is created across separate demonstration invocations. No real-world effects, external independent source, durable checkpoint or rollback-resistant ledger are proven. The tests exercise tampered receipt, provider event, public key and report, and verify the bundle contains no private key fields.
