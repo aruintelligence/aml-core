@@ -52,3 +52,7 @@ Additional tests inject forged rows into the **synthetic provider SQLite store**
 ## Witness checkpoint chain experiment
 
 `witness_chain.py` builds a deterministic domain-separated hash chain of receipt digests and checks an independently retained checkpoint (size + head). Tests cover mutation, reordering, truncation against a retained checkpoint, diverging same-size heads, append-only extension, and the intentional non-guarantee that duplicate receipts are still accepted. A local chain **does not provide an independent witness**; an adversary able to replace both the chain and trusted checkpoint can rewrite history. The checkpoint must be distributed and independently retained to gain rollback detection. A hash chain is not a Merkle transparency log, an asymmetric signature, or real execution proof.
+
+## Pinned witness simulation
+
+`pinned_witness.py` maintains a checkpoint in a separate Python object, checks full-prefix consistency before advancing, and rejects both same-size and longer divergent histories as well as truncation. Tests include checkpoint alias protection and invalid-chain nonadvancement. **The object is volatile and co-located with the test process**: this is a behavioral specification, not independently administered or durable witness infrastructure. A real witness needs separate access control, authenticated publication, durable monotonic state, independent key custody and anti-equivocation gossip.
