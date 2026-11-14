@@ -210,6 +210,35 @@ class RecoveryAuthorityLedgerTests(unittest.TestCase):
   self.key.public_key().verify(bytes.fromhex(second),second_statement)
   self.assertNotEqual(first,second)
 
+ def test_exported_approval_ledger_verifies_independently(self):
+  from threshold_recovery import verify_approval_ledger
+  self.signer.approve(self.payload,self.policy)
+  bundle=self.signer.export_approval_ledger()
+  self.assertTrue(verify_approval_ledger(bundle,self.key.public_key(),bundle["head_sha256"]))
+ def test_approval_ledger_detects_event_tampering(self):
+  from threshold_recovery import verify_approval_ledger
+  self.signer.approve(self.payload,self.policy)
+  bundle=self.signer.export_approval_ledger()
+  bundle["events"][0]["payload_sha256"]="f"*64
+  self.assertFalse(verify_approval_ledger(bundle,self.key.public_key()))
+ def test_external_head_detects_ledger_tail_truncation(self):
+  from threshold_recovery import verify_approval_ledger
+  self.signer.approve(self.payload,self.policy)
+  anchor=self.signer.export_approval_ledger()["head_sha256"]
+  self.signer.approve({**self.payload,"generation":2,"previous_state_sha256":"c"*64},self.policy)
+  truncated=self.signer.export_approval_ledger()
+  truncated["events"]=truncated["events"][:1]
+  truncated["head_sha256"]=truncated["events"][-1]["event_sha256"]
+  self.assertTrue(verify_approval_ledger(truncated,self.key.public_key()))
+  self.assertFalse(verify_approval_ledger(truncated,self.key.public_key(),self.signer.export_approval_ledger()["head_sha256"]))
+  self.assertNotEqual(anchor,self.signer.export_approval_ledger()["head_sha256"])
+ def test_idempotent_approval_does_not_append_second_event(self):
+  self.signer.approve(self.payload,self.policy)
+  first=self.signer.export_approval_ledger()
+  self.signer.approve(self.payload,self.policy)
+  second=self.signer.export_approval_ledger()
+  self.assertEqual(first,second)
+
 class RecoveryQuorumModelTests(unittest.TestCase):
  def test_safe_thresholds_exhaustively_for_councils_four_through_nine(self):
   from recovery_quorum_model import exhaustively_check
