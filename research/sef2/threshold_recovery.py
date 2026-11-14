@@ -180,7 +180,8 @@ class RecoveryAuthoritySigner:
                 (*scope,pd,previous_state,digest,signature))
             prior=con.execute("SELECT event_sha256 FROM recovery_approval_events ORDER BY sequence DESC LIMIT 1").fetchone()
             previous_event=prior[0] if prior else "0"*64
-            event={"previous_event_sha256":previous_event,"policy_id":scope[0],
+            next_sequence=con.execute("SELECT COALESCE(MAX(sequence),0)+1 FROM recovery_approval_events").fetchone()[0]
+            event={"sequence":next_sequence,"previous_event_sha256":previous_event,"policy_id":scope[0],
                 "authority_id":scope[1],"witness_id":scope[2],"generation":scope[3],
                 "policy_sha256":pd,"previous_state_sha256":previous_state,
                 "payload_sha256":digest,"signature":signature}
