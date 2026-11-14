@@ -72,3 +72,20 @@ class CheckpointCouncilTests(unittest.TestCase):
         different["approver_key_id"]="f"*64
         bad=[publish(self.private["north"],"north",different),self.first[1]]
         self.assertEqual(self.council.adjudicate(bad,cp()),"FORK_DETECTED")
+
+    def test_three_of_four_consistent_witnesses_tolerate_one_equivocation(self):
+        private={n:Ed25519PrivateKey.generate() for n in ("n","s","e","w")}
+        council=WitnessCouncil({n:k.public_key() for n,k in private.items()},3)
+        receipts=[publish(private[n],n,cp()) for n in ("n","e","w")]
+        receipts.append(publish(private["s"],"s",cp(head="b"*64)))
+        self.assertEqual(council.adjudicate(receipts,cp()),"WITNESS_QUORUM_CONSISTENT")
+        self.assertEqual(council.retain(receipts,cp()),"WITNESS_QUORUM_CONSISTENT")
+        self.assertNotIn("s",council.retained)
+        self.assertEqual(set(council.retained),{"n","e","w"})
+
+    def test_two_of_four_cannot_outvote_two_equivocators(self):
+        private={n:Ed25519PrivateKey.generate() for n in ("n","s","e","w")}
+        council=WitnessCouncil({n:k.public_key() for n,k in private.items()},3)
+        receipts=[publish(private[n],n,cp()) for n in ("n","s")]
+        receipts += [publish(private[n],n,cp(head="b"*64)) for n in ("e","w")]
+        self.assertEqual(council.adjudicate(receipts,cp()),"FORK_DETECTED")
