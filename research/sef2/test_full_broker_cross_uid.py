@@ -33,7 +33,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from signer_policy import SignerPolicy
 from replica_attestation import DOMAIN
 from signed_receipt import canonical
-path=sys.argv[1]
+path,signer_db=sys.argv[1:3]
 issuer=Ed25519PrivateKey.generate()
 keys=[Ed25519PrivateKey.generate() for _ in range(3)]
 request={"operation_id":"full-uid-op","action":"payment:simulate",
