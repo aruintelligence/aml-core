@@ -244,17 +244,35 @@ def verify_approval_ledger(bundle,authority_public_key,expected_head_sha256=None
     try:
         if type(bundle) is not dict or set(bundle)!={"schema","authority_id","events","head_sha256"}:
             return False
-        if bundle["schema"]!="AML-SEF2-RECOVERY-APPROVAL-LEDGER-V1" or type(bundle["authority_id"]) is not str:
+        if (bundle["schema"]!="AML-SEF2-RECOVERY-APPROVAL-LEDGER-V1"
+            or type(bundle["authority_id"]) is not str or not bundle["authority_id"]
+            or type(bundle["events"]) is not list or type(bundle["head_sha256"]) is not str
+            or len(bundle["head_sha256"])!=64
+            or any(c not in "0123456789abcdef" for c in bundle["head_sha256"])):
             return False
-        if type(bundle["events"]) is not list: return False
+        if expected_head_sha256 is not None and (type(expected_head_sha256) is not str
+            or len(expected_head_sha256)!=64 or any(c not in "0123456789abcdef" for c in expected_head_sha256)):
+            return False
         previous="0"*64
         seen=set()
         for sequence,event in enumerate(bundle["events"],1):
             required={"sequence","previous_event_sha256","policy_id","authority_id","witness_id",
                 "generation","policy_sha256","previous_state_sha256","payload_sha256","signature","event_sha256"}
             if type(event) is not dict or set(event)!=required: return False
-            if (event["sequence"]!=sequence or event["authority_id"]!=bundle["authority_id"]
-                or event["previous_event_sha256"]!=previous): return False
+            if (type(event["sequence"]) is not int or event["sequence"]!=sequence
+                or type(event["authority_id"]) is not str or event["authority_id"]!=bundle["authority_id"]
+                or type(event["policy_id"]) is not str or not event["policy_id"]
+                or type(event["witness_id"]) is not str or not event["witness_id"]
+                or type(event["generation"]) is not int or event["generation"]<1
+                or type(event["previous_event_sha256"]) is not str or len(event["previous_event_sha256"])!=64
+                or event["previous_event_sha256"]!=previous
+                or type(event["signature"]) is not str or len(event["signature"])!=128
+                or type(event["event_sha256"]) is not str or len(event["event_sha256"])!=64):
+                return False
+            for field in ("policy_sha256","previous_state_sha256","payload_sha256","event_sha256"):
+                value=event[field]
+                if type(value) is not str or len(value)!=64 or any(c not in "0123456789abcdef" for c in value):
+                    return False
             scope=(event["policy_id"],event["authority_id"],event["witness_id"],event["generation"])
             if scope in seen: return False
             seen.add(scope)
