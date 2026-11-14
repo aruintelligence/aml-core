@@ -105,13 +105,19 @@ def main():
             shutil.copyfile(HERE/(name+".py"),dest)
             dest.chmod(0o644)
         sock=ipc/"broker.sock"
-        public=authority_dir/"signed_request.json"\n        client_public=ipc/"signed_request.json"
+        public=authority_dir/"signed_request.json"
+        client_public=ipc/"signed_request.json"
         env=dict(os.environ,PYTHONPATH=str(lib))
         authority=subprocess.run([sys.executable,"-c",AUTHORITY,str(public)],
             env=env,capture_output=True,text=True,timeout=10)
         assert authority.returncode==0,(authority.stdout,authority.stderr)
-        assert "AUTHORITY_KEYS_HELD_OUTSIDE_BROKER" in authority.stdout\n        os.chown(public,-1,broker.pw_gid)\n        public.chmod(0o640)\n        assert public.stat().st_uid==signer.pw_uid and public.stat().st_gid==broker.pw_gid\n        assert public.stat().st_mode & 0o007 == 0\n        shutil.copyfile(public,client_public)\n        client_public.chmod(0o644)
-        public.chmod(0o644)
+        assert "AUTHORITY_KEYS_HELD_OUTSIDE_BROKER" in authority.stdout
+        os.chown(public,-1,broker.pw_gid)
+        public.chmod(0o640)
+        assert public.stat().st_uid==signer.pw_uid and public.stat().st_gid==broker.pw_gid
+        assert public.stat().st_mode & 0o007 == 0
+        shutil.copyfile(public,client_public)
+        client_public.chmod(0o644)
         assert all("private" not in key for key in __import__("json").loads(public.read_text()))
         proc=subprocess.Popen([sys.executable,"-c",SERVER,str(sock),str(private),
              str(public),str(client.pw_uid),str(client.pw_gid)],
