@@ -33,3 +33,7 @@ class IsolationGuardTests(unittest.TestCase):
         link.symlink_to(self.db)
         with self.assertRaises(ValueError):
             validate_isolation(link,self.uid,frozenset({self.uid+1}))
+
+    def test_claimed_broker_identity_must_match_process_uid(self):
+        with self.assertRaises(ValueError):
+            validate_isolation(self.db,self.uid+1,frozenset({self.uid+2}))
