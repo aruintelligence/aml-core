@@ -78,8 +78,11 @@ class ThresholdRecoveryEnrollmentTests(unittest.TestCase):
   self.checkpoint={"schema":"AML-SEF2-SIGNED-HISTORY-CHECKPOINT-V1","epoch":1,"head_hash":"a"*64,"count":1,"approver_key_id":"c"*64}
   self.state=self.coordinator.initialize("north",self.checkpoint)
   self.next_checkpoint={**self.checkpoint,"epoch":2,"head_hash":"b"*64,"count":2}
+  self.authority_signers={}
+  for aid,key in self.authorities.items():
+   self.authority_signers[aid]=RecoveryAuthoritySigner(aid,key,str(pathlib.Path(self.temp.name)/(aid+".sqlite")))
   self.transition=make_threshold_transition(self.new,"north",self.state,self.next_checkpoint,
-    self.policy,{k:self.authorities[k] for k in ("council-0","council-1","council-2")})
+    self.policy,{k:self.authority_signers[k] for k in ("council-0","council-1","council-2")})
  def test_threshold_recovery_replaces_and_revokes_old_witness_key(self):
   from witness_recovery_enrollment import WitnessRecoveryEnrollment
   self.assertEqual(self.coordinator.recover("north",self.transition),"RECOVERED")
@@ -244,3 +247,8 @@ class RecoveryQuorumModelTests(unittest.TestCase):
   with self.assertRaises(InvalidSignature):
    verifier.verify(bytes.fromhex(self.transition["recovery_signature"]),
     AUTH_DOMAIN+b'{"witness_id":"north","witness_id":"south"}')
+
+ def test_transition_builder_rejects_ephemeral_raw_private_keys(self):
+  with self.assertRaisesRegex(ValueError,"durable RecoveryAuthoritySigner"):
+   make_threshold_transition(self.new,"north",self.state,self.next_checkpoint,self.policy,
+    {k:self.authorities[k] for k in ("council-0","council-1","council-2")})
