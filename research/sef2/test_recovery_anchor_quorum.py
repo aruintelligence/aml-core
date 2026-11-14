@@ -36,7 +36,7 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
   self.assertFalse(verify_anchor_certificate(p,self.certificate,self.policy,1,"0"*64,"recovery-authority-1","a"*64))
  def test_policy_substitution_rejected(self):
   p=copy.deepcopy(self.policy); p["threshold"]=2
-  self.assertFalse(verify_anchor_certificate(self.payload,self.certificate,p,1,"0"*64))
+  self.assertFalse(verify_anchor_certificate(self.payload,self.certificate,p,1,"0"*64,"recovery-authority-1","a"*64))
  def test_stale_expected_pin_rejected(self):
   self.assertFalse(verify_anchor_certificate(self.payload,self.certificate,self.policy,1,"f"*64,"recovery-authority-1","a"*64))
  def test_stale_sequence_rejected(self):
