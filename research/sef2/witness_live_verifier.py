@@ -4,20 +4,27 @@ import pathlib
 import sys
 import urllib.error
 import urllib.request
+from urllib.parse import urlsplit
 sys.path.insert(0,str(pathlib.Path(__file__).resolve().parent/'evaluation_kit'))
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from witness_freshness import challenge,verify_fresh
 from verify_quorum import verify_with_quorum
 from verify_trusted import load_unique
 
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self,*args,**kwargs):
+        raise ValueError('witness redirect rejected')
+
+DIRECT=urllib.request.build_opener(urllib.request.ProxyHandler({}),NoRedirect())
+
 def collect_latest(endpoints,nonce,timeout=2):
     results=[]
     for url in endpoints:
-        if type(url) is not str or not url.startswith("http://127.0.0.1:"):
+        if type(url) is not str or not (urlsplit(url).scheme=="http" and urlsplit(url).hostname=="127.0.0.1" and urlsplit(url).port is not None and urlsplit(url).path=="/latest" and not urlsplit(url).query and not urlsplit(url).fragment and not urlsplit(url).username and not urlsplit(url).password):
             raise ValueError("research client accepts loopback witness URLs only")
         request=urllib.request.Request(url,data=json.dumps({"challenge":nonce}).encode(),
             headers={"Content-Type":"application/json"},method="POST")
-        with urllib.request.urlopen(request,timeout=timeout) as response:
+        with DIRECT.open(request,timeout=timeout) as response:
             if response.status!=200:
                 raise ValueError("witness failed")
             raw=response.read(8193)
