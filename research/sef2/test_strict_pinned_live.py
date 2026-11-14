@@ -8,12 +8,13 @@ from durable_checkpoint_witness import DurableWitness
 from external_witness_anchor import issue_anchor,anchor_pin,verify_anchor
 from witness_http_service import serve
 from witness_live_verifier import verify_pinned_live
-from test_durable_quorum import DurableQuorumTests,public_hex
+import test_durable_quorum as durable_fixture
+from test_durable_quorum import public_hex
 from signed_history import digest
 
 class StrictPinnedLiveTests(unittest.TestCase):
     def setUp(self):
-        self.fixture=DurableQuorumTests("test_durable_quorum_accepts")
+        self.fixture=durable_fixture.DurableQuorumTests("test_durable_quorum_accepts")
         self.fixture.setUp()
         self.addCleanup(self.fixture.doCleanups)
         f=self.fixture
@@ -70,3 +71,23 @@ class StrictPinnedLiveTests(unittest.TestCase):
         self.assertFalse(self.check())
         f.pin=original
         self.assertTrue(self.check())
+
+    def test_duplicate_witness_endpoint_rejected(self):
+        original=list(self.urls)
+        self.urls[1]=self.urls[0]
+        self.assertFalse(self.check())
+        self.urls=original
+        self.assertTrue(self.check())
+    def test_swapped_anchor_identity_rejected(self):
+        anchors={"north":self.anchors["south"],"south":self.anchors["north"]}
+        self.assertFalse(self.check(anchors=anchors))
+    def test_untrusted_anchor_key_rejected(self):
+        anchor=json.loads(self.anchors["north"].read_text())
+        anchor["witness_public_hex"]="0"*64
+        self.anchors["north"].write_text(json.dumps(anchor))
+        self.assertFalse(self.check())
+    def test_older_checkpoint_anchor_rejected(self):
+        anchor=json.loads(self.anchors["north"].read_text())
+        anchor["checkpoint"]["epoch"]=0
+        self.anchors["north"].write_text(json.dumps(anchor))
+        self.assertFalse(self.check())

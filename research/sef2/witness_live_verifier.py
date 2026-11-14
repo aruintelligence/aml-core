@@ -70,9 +70,11 @@ def verify_pinned_live(directory,manifest_path,manifest_pin,history_db,approver_
             or set(anchor_files)!=set(anchor_pins) or len(anchor_files)!=len(endpoints)):
             return False
         keys=load_unique(witness_keys_path)
-        if set(anchor_files)!=set(keys):
+        if not set(anchor_files).issubset(set(keys)) or len(set(endpoints))!=len(endpoints):
             return False
         expected=load_unique(checkpoint_path)
+        if len(anchor_files)<threshold:
+            return False
         for name,path in anchor_files.items():
             anchor=json.loads(pathlib.Path(path).read_text(),object_pairs_hook=unique)
             pin=anchor_pins[name]
