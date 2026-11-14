@@ -75,3 +75,21 @@ class PinReplicationTests(unittest.TestCase):
             db.execute("UPDATE pins SET generation=0,active=?,pending=NULL WHERE witness=?",(self.first,self.witness))
         with self.assertRaises(ValueError):
             replicate_committed(self.registry,self.witness,self.replicas,2)
+
+    def test_deterministic_crash_at_each_replica_boundary(self):
+        for index in range(4):
+            with self.subTest(boundary=index):
+                # Each iteration gets a fresh independent fixture.
+                import tempfile,pathlib
+                with tempfile.TemporaryDirectory() as folder:
+                    root=pathlib.Path(folder)
+                    registry=PinRegistry(root/"registry.sqlite")
+                    replicas=[PinReplica(root/("replica-%d.sqlite"%i)) for i in range(3)]
+                    registry.enroll("north",self.first)
+                    for replica in replicas:
+                        replica.record("north",0,self.first)
+                    registry.prepare("north",self.first,self.second)
+                    registry.commit("north",self.first,self.second)
+                    with self.assertRaises(RuntimeError):
+                        replicate_committed(registry,"north",replicas,2,crash_after=index)
+                    self.assertEqual(replicate_committed(registry,"north",replicas,2)["generation"],1)
