@@ -111,12 +111,12 @@ class RecoveryAuthoritySigner:
         with sqlite3.connect(self.ledger_path,timeout=10) as con:
             con.execute("PRAGMA journal_mode=DELETE")
             con.execute("PRAGMA synchronous=FULL")
-            con.execute("""CREATE TABLE IF NOT EXISTS recovery_approval_ledger_v2 (
-                policy_sha256 TEXT NOT NULL, authority_id TEXT NOT NULL,
+            con.execute("""CREATE TABLE IF NOT EXISTS recovery_approval_ledger_v3 (
+                policy_id TEXT NOT NULL, authority_id TEXT NOT NULL,
                 witness_id TEXT NOT NULL, generation INTEGER NOT NULL,
-                previous_state_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL,
-                signature TEXT NOT NULL,
-                PRIMARY KEY(policy_sha256,authority_id,witness_id,generation))""")
+                policy_sha256 TEXT NOT NULL, previous_state_sha256 TEXT NOT NULL,
+                payload_sha256 TEXT NOT NULL, signature TEXT NOT NULL,
+                PRIMARY KEY(policy_id,authority_id,witness_id,generation))""")
 
     def public_key(self):
         return self.private_key.public_key()
@@ -127,14 +127,15 @@ class RecoveryAuthoritySigner:
             raise ValueError("authority is not enrolled in pinned policy")
         if self.public_key().public_bytes_raw().hex()!=policy["authorities"][self.authority_id]:
             raise ValueError("authority private key does not match pinned identity")
-        scope=(policy_digest(policy),self.authority_id,payload.get("witness_id"),
+        scope=(policy["policy_id"],self.authority_id,payload.get("witness_id"),
             payload.get("generation"))
         previous_state=payload.get("previous_state_sha256")
         if (type(scope[2]) is not str or not scope[2] or type(scope[3]) is not int
             or scope[3]<1 or type(previous_state) is not str or len(previous_state)!=64):
             raise ValueError("payload lacks a valid recovery scope")
         digest=payload_digest(payload)
-        statement=DOMAIN+canonical({"policy_sha256":scope[0],"payload_sha256":digest})
+        pd=policy_digest(policy)
+        statement=DOMAIN+canonical({"policy_sha256":pd,"payload_sha256":digest})
         signature=self.private_key.sign(statement).hex()
         with sqlite3.connect(self.ledger_path,timeout=10) as con:
             con.execute("PRAGMA synchronous=FULL")
