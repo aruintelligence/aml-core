@@ -63,7 +63,7 @@ class BrokerProcessTests(unittest.TestCase):
         with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as client:
             client.settimeout(3)
             client.connect(str(self.socket_path))
-            client.sendall(b'{"request":{},"request":{},"attestations":[],"capability":null}\\n')
+            client.sendall(b'{"request":{},"request":{},"attestations":[],"capability":null}\n')
             self.assertEqual(json.loads(client.recv(1024))["status"],"DENIED")
         self.assertEqual(self.fixture.count(),0)
     def test_peer_uid_allowlist_rejects_unenrolled_client(self):
