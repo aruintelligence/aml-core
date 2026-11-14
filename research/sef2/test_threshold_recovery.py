@@ -146,3 +146,15 @@ class RecoveryAuthorityLedgerTests(unittest.TestCase):
   changed={**self.payload,"previous_state_sha256":"f"*64}
   with self.assertRaisesRegex(ValueError,"equivocation"):
    self.signer.approve(changed,self.policy)
+
+ def test_authority_refuses_same_generation_with_different_parent(self):
+  self.signer.approve(self.payload,self.policy)
+  changed={**self.payload,"previous_state_sha256":"c"*64}
+  with self.assertRaisesRegex(ValueError,"equivocation"):
+   self.signer.approve(changed,self.policy)
+ def test_authority_refuses_same_generation_after_policy_revision(self):
+  self.signer.approve(self.payload,self.policy)
+  revised=copy.deepcopy(self.policy)
+  revised["authorities"]["authority-3"]=Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex()
+  with self.assertRaisesRegex(ValueError,"equivocation"):
+   self.signer.approve(self.payload,revised)
