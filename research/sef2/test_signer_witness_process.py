@@ -42,13 +42,22 @@ else:
 '''
 
 def start_service(sock,db,private_key,public_key,lib,witness,signer,env):
+    try: sock.unlink()
+    except FileNotFoundError: pass
     proc=subprocess.Popen([sys.executable,str(lib/"signer_witness_service.py"),
         str(sock),str(db),str(signer.pw_uid),str(signer.pw_gid),str(private_key),str(public_key)],
         preexec_fn=drop(witness.pw_uid,witness.pw_gid,(signer.pw_gid,)),env=env,
         stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)
     for _ in range(200):
-        if sock.exists() and public_key.exists(): return proc
         if proc.poll() is not None: raise AssertionError("witness service exited: "+proc.stderr.read())
+        if sock.exists() and public_key.exists():
+            try:
+                with __import__("socket").socket(__import__("socket").AF_UNIX,__import__("socket").SOCK_STREAM) as probe:
+                    probe.settimeout(.2)
+                    probe.connect(str(sock))
+                return proc
+            except OSError:
+                pass
         time.sleep(.02)
     proc.terminate()
     raise AssertionError("witness socket/key startup timeout")
