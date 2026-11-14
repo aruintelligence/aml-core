@@ -132,12 +132,12 @@ class RecoveryAuthoritySigner:
         with sqlite3.connect(self.ledger_path,timeout=10) as con:
             con.execute("PRAGMA journal_mode=DELETE")
             con.execute("PRAGMA synchronous=FULL")
-            con.execute("""CREATE TABLE IF NOT EXISTS recovery_approval_ledger_v3 (
+            con.execute("""CREATE TABLE IF NOT EXISTS recovery_approval_ledger_v4 (
                 policy_id TEXT NOT NULL, authority_id TEXT NOT NULL,
                 witness_id TEXT NOT NULL, generation INTEGER NOT NULL,
                 policy_sha256 TEXT NOT NULL, previous_state_sha256 TEXT NOT NULL,
                 payload_sha256 TEXT NOT NULL, signature TEXT NOT NULL,
-                PRIMARY KEY(policy_id,authority_id,witness_id,generation))""")
+                PRIMARY KEY(authority_id,witness_id,generation))""")
             con.execute("""CREATE TABLE IF NOT EXISTS recovery_approval_events (
                 sequence INTEGER PRIMARY KEY AUTOINCREMENT,
                 previous_event_sha256 TEXT NOT NULL,
@@ -170,13 +170,13 @@ class RecoveryAuthoritySigner:
             con.execute("PRAGMA synchronous=FULL")
             con.execute("BEGIN IMMEDIATE")
             row=con.execute("""SELECT policy_sha256,previous_state_sha256,payload_sha256,signature
-                FROM recovery_approval_ledger_v3
-                WHERE policy_id=? AND authority_id=? AND witness_id=? AND generation=?""",scope).fetchone()
+                FROM recovery_approval_ledger_v4
+                WHERE authority_id=? AND witness_id=? AND generation=?""",scope[1:]).fetchone()
             if row:
                 if row[0]!=pd or row[1]!=previous_state or row[2]!=digest:
                     raise ValueError("recovery authority equivocation refused")
                 return row[3]
-            con.execute("INSERT INTO recovery_approval_ledger_v3 VALUES (?,?,?,?,?,?,?,?)",
+            con.execute("INSERT INTO recovery_approval_ledger_v4 VALUES (?,?,?,?,?,?,?,?)",
                 (*scope,pd,previous_state,digest,signature))
             prior=con.execute("SELECT event_sha256 FROM recovery_approval_events ORDER BY sequence DESC LIMIT 1").fetchone()
             previous_event=prior[0] if prior else "0"*64
