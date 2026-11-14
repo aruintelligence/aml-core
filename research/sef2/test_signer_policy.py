@@ -48,12 +48,14 @@ class SignerPolicyTests(unittest.TestCase):
             self.signer.authorize(dict(self.request,amount_cents=101),intent)
 
     def test_action_outside_allowlist_denied(self):
+        signed=self.intent()
         bad=dict(self.request,action="payment:transfer")
-        with self.assertRaises(PermissionError):self.signer.authorize(bad,self.intent(bad))
+        with self.assertRaises(PermissionError):self.signer.authorize(bad,signed)
 
     def test_target_substitution_denied(self):
+        signed=self.intent()
         bad=dict(self.request,target="fixture:attacker")
-        with self.assertRaises(PermissionError):self.signer.authorize(bad,self.intent(bad))
+        with self.assertRaises(PermissionError):self.signer.authorize(bad,signed)
 
     def test_amount_limit_and_bool_rejected(self):
         signed=self.intent()
