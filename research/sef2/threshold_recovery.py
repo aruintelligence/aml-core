@@ -146,6 +146,41 @@ class RecoveryAuthoritySigner:
                 policy_sha256 TEXT NOT NULL, previous_state_sha256 TEXT NOT NULL,
                 payload_sha256 TEXT NOT NULL, signature TEXT NOT NULL,
                 event_sha256 TEXT NOT NULL UNIQUE)""")
+            legacy=con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='recovery_approval_ledger_v3'").fetchone()
+            if legacy:
+                con.execute("BEGIN IMMEDIATE")
+                rows=con.execute("""SELECT policy_id,authority_id,witness_id,generation,
+                    policy_sha256,previous_state_sha256,payload_sha256,signature
+                    FROM recovery_approval_ledger_v3 ORDER BY policy_id,authority_id,witness_id,generation""").fetchall()
+                for row in rows:
+                    policy_id,authority_id,witness_id,generation,pd,parent,digest,signature=row
+                    prior=con.execute("""SELECT policy_id,policy_sha256,previous_state_sha256,
+                        payload_sha256,signature FROM recovery_approval_ledger_v4
+                        WHERE authority_id=? AND witness_id=? AND generation=?""",
+                        (authority_id,witness_id,generation)).fetchone()
+                    expected=(policy_id,pd,parent,digest,signature)
+                    if prior is not None and tuple(prior)!=expected:
+                        raise ValueError("legacy ledger has conflicting approvals; manual reconciliation required")
+                    if prior is None:
+                        con.execute("INSERT INTO recovery_approval_ledger_v4 VALUES (?,?,?,?,?,?,?,?)",row)
+                    event_row=con.execute("""SELECT 1 FROM recovery_approval_events
+                        WHERE policy_id=? AND authority_id=? AND witness_id=? AND generation=?""",
+                        (policy_id,authority_id,witness_id,generation)).fetchone()
+                    if event_row is None:
+                        tail=con.execute("SELECT event_sha256 FROM recovery_approval_events ORDER BY sequence DESC LIMIT 1").fetchone()
+                        previous=tail[0] if tail else "0"*64
+                        sequence=con.execute("SELECT COALESCE(MAX(sequence),0)+1 FROM recovery_approval_events").fetchone()[0]
+                        event={"sequence":sequence,"previous_event_sha256":previous,"policy_id":policy_id,
+                            "authority_id":authority_id,"witness_id":witness_id,"generation":generation,
+                            "policy_sha256":pd,"previous_state_sha256":parent,"payload_sha256":digest,
+                            "signature":signature}
+                        event_hash=hashlib.sha256(canonical(event)).hexdigest()
+                        con.execute("""INSERT INTO recovery_approval_events
+                            (sequence,previous_event_sha256,policy_id,authority_id,witness_id,generation,
+                             policy_sha256,previous_state_sha256,payload_sha256,signature,event_sha256)
+                             VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                            (sequence,previous,policy_id,authority_id,witness_id,generation,pd,parent,digest,signature,event_hash))
+                con.commit()
 
     def public_key(self):
         return self.private_key.public_key()
