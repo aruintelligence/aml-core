@@ -32,15 +32,18 @@ if __name__=="__main__":
     p=argparse.ArgumentParser()
     for flag in ("input","trust-manifest","pinned-manifest-sha256","history-db",
                  "approver-public-hex","checkpoint","pinned-checkpoint-sha256",
-                 "witness-keys","attestations"):
+                 "witness-keys","witness-domains","pinned-witness-domains-sha256",
+                 "attestations"):
         p.add_argument("--"+flag,required=True)
     p.add_argument("--active-epoch",type=int,required=True)
     p.add_argument("--threshold",type=int,required=True)
     p.add_argument("--max-faults",type=int,default=0)
     a=vars(p.parse_args())
-    ok=verify_with_quorum(a["input"],a["trust_manifest"],a["pinned_manifest_sha256"],
+    from verify_independent_quorum import verify_independent_quorum
+    ok=verify_independent_quorum(a["input"],a["trust_manifest"],a["pinned_manifest_sha256"],
         a["history_db"],a["approver_public_hex"],a["checkpoint"],
         a["pinned_checkpoint_sha256"],a["active_epoch"],a["witness_keys"],
+        a["witness_domains"],a["pinned_witness_domains_sha256"],
         a["attestations"],a["threshold"],a["max_faults"])
     print("HISTORICAL_BFT_WITNESS_QUORUM_VERIFIED" if ok else "HISTORICAL_BFT_WITNESS_QUORUM_REJECTED")
     sys.exit(0 if ok else 2)
