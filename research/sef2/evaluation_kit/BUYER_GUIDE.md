@@ -101,3 +101,13 @@ python3 research/sef2/evaluation_kit/verify_enrolled.py --input /tmp/aml-sef2-ev
 ## Signed trust-history and externally retained checkpoint research
 
 `signed_history.py` stores the **complete signed approver envelopes** in an append-only SQLite epoch chain, recomputes every domain-separated Ed25519 signature, enforces revocation and monotonic epoch transitions, and links entries with SHA-256 hashes. A checkpoint contains the latest epoch, chain head, record count and pinned approver key identifier. `verify_checkpoint(checkpoint, expected_sha256)` accepts only a checkpoint whose SHA-256 was separately retained by the evaluator and whose entire local signed history recomputes to the same head. Tests cover rollback, fork, signature replacement, hash forgery, revoked-key reuse and restart. This module is an additional research path, not yet a migration of legacy `trust_enrollment.py` or `verify_enrolled.py`; enterprise verification must explicitly invoke it to obtain history protection. **The external checkpoint is not automatically published or stored immutably**, and a privileged actor controlling both the database and external checkpoint can replace both. A checkpoint only proves consistency with its pinned head, not a globally unique or freshest epoch. No independent timestamping, quorum or transparency service is claimed.
+
+## End-to-end strict signed-history enterprise verifier
+
+`verify_historical.py` combines strict bundle verification with a **read-only** reconstruction of every signed enrollment epoch, signature verification under an independently supplied approver public key, chain-link verification, key rotation/revocation rules, active-epoch matching and externally retained checkpoint digest matching. It rejects rollback, stale checkpoints, competing forks, revoked witness identities and modified bundle reports. Usage:
+
+```bash
+python3 research/sef2/evaluation_kit/verify_historical.py --input /tmp/aml-sef2-evaluation --trust-manifest /secure/trust-manifest.json --pinned-manifest-sha256 MANIFEST_DIGEST --history-db /secure/history.sqlite --approver-public-hex INDEPENDENT_APPROVER_PUBLIC_KEY --checkpoint /secure/checkpoint.json --pinned-checkpoint-sha256 EXTERNALLY_RETAINED_CHECKPOINT_DIGEST --active-epoch 1
+```
+
+All trusted inputs must come from **independent, controlled provisioning**, not the evidence bundle. The verifier rejects inconsistent history but does not create independent publication, guarantee global freshness, or prevent a privileged attacker from replacing both the history and its external pin. The legacy `verify_enrolled.py` still exists for compatibility and does not perform full-history verification. This is synthetic research, not production-ready authorization.
