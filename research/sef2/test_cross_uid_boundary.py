@@ -16,9 +16,9 @@ import time
 
 HERE=pathlib.Path(__file__).resolve().parent
 
-def drop(uid,gid):
+def drop(uid,gid,supplementary_groups=()):
     def apply():
-        os.setgroups([])
+        os.setgroups(list(supplementary_groups))
         os.setgid(gid)
         os.setuid(uid)
     return apply
@@ -81,9 +81,11 @@ def main():
         ipc.chmod(0o711)
         sock=ipc/"broker.sock"
         env=dict(os.environ,PYTHONPATH=str(HERE))
+        # Broker can chgrp its own socket to the designated client group,
+        # without gaining the client's UID or database access privileges.
         proc=subprocess.Popen([sys.executable,"-c",SERVER,str(sock),str(db),
                                str(client.pw_uid),str(client.pw_gid)],
-                              preexec_fn=drop(broker.pw_uid,broker.pw_gid),env=env,
+                              preexec_fn=drop(broker.pw_uid,broker.pw_gid,(client.pw_gid,)),env=env,
                               stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
         try:
             for _ in range(150):
