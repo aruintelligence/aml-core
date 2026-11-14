@@ -173,3 +173,10 @@ The threshold adapter parses recovery payloads and approval bundles with duplica
 
 
 **Rollback falsification result:** a deterministic snapshot-restore test copies the local signer ledger before approval, records one valid approval, restores the earlier database snapshot, and then obtains a second valid signature for a conflicting payload at the same recovery generation. Both signatures independently verify. This is an intentional passing attack-demonstration test: it proves the local SQLite guard is bypassable if its ledger is rolled back. It does not represent a regression in the stated local guarantee; it identifies why an external monotonic witness or independently administered quorum checkpoint is required before claiming rollback-resistant anti-equivocation.
+
+
+### Directive 022 — exportable recovery approval evidence
+
+`RecoveryAuthoritySigner` now emits a per-authority hash-chained event history through `export_approval_ledger()`. `verify_approval_ledger()` is a separate verification path: it checks contiguous sequence numbers, authority identity, previous-event linkage, event hashes, Ed25519 approval signatures, duplicate recovery scopes, and an optional externally pinned head hash. A self-consistent exported chain without an independently retained expected head cannot detect deletion of a valid tail. With an expected head retained by an independent verifier or transparency service, truncation is detected. This prototype does not yet implement a remote transparency service or independently administered anchor.
+
+A deterministic snapshot-rollback experiment copies the local SQLite ledger before approval, restores it afterward, and demonstrates that the local anti-equivocation guard can then sign a conflicting payload. This is an intentional counterexample: local durable SQLite state is not a monotonic trust anchor. Protection requires an external append-only witness, hardware monotonic counter, or independently administered transparency log. The event chain improves tamper evidence and portable auditability but does not, by itself, prevent rollback.
