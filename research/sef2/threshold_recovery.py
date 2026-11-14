@@ -107,6 +107,16 @@ class RecoveryAuthoritySigner:
         self.authority_id=authority_id
         self.private_key=private_key
         self.ledger_path=str(ledger_path)
+        import sqlite3
+        with sqlite3.connect(self.ledger_path,timeout=10) as con:
+            con.execute("PRAGMA journal_mode=DELETE")
+            con.execute("PRAGMA synchronous=FULL")
+            con.execute("""CREATE TABLE IF NOT EXISTS recovery_approval_ledger (
+                policy_sha256 TEXT NOT NULL, authority_id TEXT NOT NULL,
+                witness_id TEXT NOT NULL, generation INTEGER NOT NULL,
+                previous_state_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL,
+                signature TEXT NOT NULL,
+                PRIMARY KEY(policy_sha256,authority_id,witness_id,generation,previous_state_sha256))""")
 
     def public_key(self):
         return self.private_key.public_key()
@@ -126,14 +136,7 @@ class RecoveryAuthoritySigner:
         statement=DOMAIN+canonical({"policy_sha256":scope[0],"payload_sha256":digest})
         signature=self.private_key.sign(statement).hex()
         with sqlite3.connect(self.ledger_path,timeout=10) as con:
-            con.execute("PRAGMA journal_mode=DELETE")
             con.execute("PRAGMA synchronous=FULL")
-            con.execute("""CREATE TABLE IF NOT EXISTS recovery_approval_ledger (
-                policy_sha256 TEXT NOT NULL, authority_id TEXT NOT NULL,
-                witness_id TEXT NOT NULL, generation INTEGER NOT NULL,
-                previous_state_sha256 TEXT NOT NULL, payload_sha256 TEXT NOT NULL,
-                signature TEXT NOT NULL,
-                PRIMARY KEY(policy_sha256,authority_id,witness_id,generation,previous_state_sha256))""")
             con.execute("BEGIN IMMEDIATE")
             row=con.execute("""SELECT payload_sha256,signature FROM recovery_approval_ledger
                 WHERE policy_sha256=? AND authority_id=? AND witness_id=? AND generation=? AND previous_state_sha256=?""",scope).fetchone()
