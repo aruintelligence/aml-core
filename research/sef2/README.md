@@ -199,3 +199,6 @@ This is an independent checkpoint quorum prototype, not a full Byzantine consens
 
 
 **Directive 023 identity-binding refinement:** anchor-certificate verification now requires the evaluator to supply the expected recovery-authority identifier and public-key fingerprint independently. A valid 3-of-4 anchor certificate for a different authority or replacement authority key is rejected, even when its internal signatures and checkpoint hash are valid. This prevents a certificate from being transplanted to another recovery authority namespace without an explicit trust update.
+
+
+**Formal quorum model refinement:** the bounded exhaustive quorum model now reports three independent results: honest-intersection safety, liveness under up to `f` unavailable/Byzantine authorities (`q <= n-f`), and validity of the classical crash/Byzantine quorum fault bound (`n >= 3f+1`). A policy is accepted only when all three hold. Tests separately demonstrate a quorum that is intersection-safe but unavailable, and a nominal threshold outside the assumed BFT fault model. This is finite-state combinatorial checking over the tested council sizes, not a proof of distributed consensus or implementation correctness.
