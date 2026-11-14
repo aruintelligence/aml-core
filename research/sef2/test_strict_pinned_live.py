@@ -25,7 +25,7 @@ class StrictPinnedLiveTests(unittest.TestCase):
         self.threads=[]
         self.urls={}
         self.addCleanup(self.stop)
-        for name in ("north","south"):
+        for name in ("north","south","east"):
             anchor=issue_anchor(f.witnesses[name])
             path=f.root/(name+"-external-anchor.json")
             path.write_text(json.dumps(anchor,sort_keys=True))
@@ -49,7 +49,7 @@ class StrictPinnedLiveTests(unittest.TestCase):
         f=self.fixture
         return verify_pinned_live(f.root,f.manifest_path,f.manifest_pin,f.history_db,
             public_hex(f.approver),f.checkpoint_path,f.pin,1,f.keys_path,
-            f.attestations,2,self.urls,self.anchors if anchors is None else anchors,
+            f.attestations,3,self.urls,self.anchors if anchors is None else anchors,
             self.pins if pins is None else pins)
     def test_full_pinned_enterprise_verification_passes(self):
         self.assertTrue(self.check())
