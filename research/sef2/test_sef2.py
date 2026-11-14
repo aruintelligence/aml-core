@@ -147,6 +147,26 @@ class Adversarial(unittest.TestCase):
         self.assertEqual(post(self.url + "/execute", r)["state"], "DENIED")
         self.assertEqual(self.count(), 1)
 
+    def test_authority_restart_retains_consumed_claim(self):
+        r = self.request()
+        approve(self.a, r["operation_id"], digest(r))
+        self.assertEqual(post(self.url + "/execute", r)["state"], "PROVIDER_REPORTED")
+        self.auth.shutdown()
+        self.auth.server_close()
+        self.auth, self.auth_url = start("authority", self.a, secret=self.secret)
+        self.restart_provider()
+        self.assertEqual(post(self.url + "/status", r)["state"], "PROVIDER_REPORTED")
+        self.assertEqual(post(self.url + "/execute", r)["state"], "DENIED")
+        self.assertEqual(self.count(), 1)
+
+    def test_authority_unavailable_must_not_execute(self):
+        r = self.request()
+        approve(self.a, r["operation_id"], digest(r))
+        self.auth.shutdown()
+        self.auth.server_close()
+        self.assertEqual(post(self.url + "/execute", r)["state"], "UNCERTAIN")
+        self.assertEqual(self.count(), 0)
+
     def test_duplicate_keys_rejected(self):
         r = self.request()
         approve(self.a, r["operation_id"], digest(r))
