@@ -14,8 +14,12 @@ CHECKPOINT_SCHEMA="AML-SEF2-RECOVERY-AUTHORITY-LEDGER-CHECKPOINT-V1"
 LEDGER_DOMAIN=b"AML-SEF2-RECOVERY-AUTHORITY-LEDGER-V1\x00"
 
 def ledger_checkpoint(database,authority_id,authority_public_hex):
+    if (type(authority_public_hex) is not str or len(authority_public_hex)!=64
+        or any(c not in "0123456789abcdef" for c in authority_public_hex)
+        or type(authority_id) is not str or not authority_id):
+        raise ValueError("invalid authority identity")
     raw=bytes.fromhex(authority_public_hex)
-    if len(raw)!=32 or type(authority_id) is not str or not authority_id:
+    if len(raw)!=32:
         raise ValueError("invalid authority identity")
     uri="file:"+pathlib.Path(database).resolve().as_posix()+"?mode=ro"
     with sqlite3.connect(uri,uri=True) as con:
@@ -36,15 +40,22 @@ def checkpoint_pin(checkpoint):
 
 def verify_ledger_checkpoint(database,authority_public_hex,expected_checkpoint,expected_pin):
     try:
+        if (type(authority_public_hex) is not str or len(authority_public_hex)!=64
+            or any(c not in "0123456789abcdef" for c in authority_public_hex)
+            or type(expected_pin) is not str or len(expected_pin)!=64
+            or any(c not in "0123456789abcdef" for c in expected_pin)):
+            return False
         raw=bytes.fromhex(authority_public_hex)
         if len(raw)!=32 or type(expected_checkpoint) is not dict:
             return False
         if set(expected_checkpoint)!={"schema","authority_id","authority_key_sha256","sequence","head_hash"}:
             return False
         if (expected_checkpoint["schema"]!=CHECKPOINT_SCHEMA
+            or type(expected_checkpoint["authority_id"]) is not str or not expected_checkpoint["authority_id"]
             or expected_checkpoint["authority_key_sha256"]!=hashlib.sha256(raw).hexdigest()
             or type(expected_checkpoint["sequence"]) is not int or expected_checkpoint["sequence"]<0
             or type(expected_checkpoint["head_hash"]) is not str or len(expected_checkpoint["head_hash"])!=64
+            or any(c not in "0123456789abcdef" for c in expected_checkpoint["head_hash"])
             or checkpoint_pin(expected_checkpoint)!=expected_pin):
             return False
         uri="file:"+pathlib.Path(database).resolve().as_posix()+"?mode=ro"
