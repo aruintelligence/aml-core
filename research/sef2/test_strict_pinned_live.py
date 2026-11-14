@@ -4,6 +4,7 @@ import pathlib
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
 from durable_checkpoint_witness import DurableWitness
 from external_witness_anchor import issue_anchor,anchor_pin,verify_anchor
 from witness_http_service import serve
@@ -169,3 +170,43 @@ class StrictPinnedLiveTests(unittest.TestCase):
         self.assertFalse(self.check())
         self.anchors["north"].write_text(original)
         self.assertTrue(self.check())
+
+    def test_live_duplicate_json_keys_rejected(self):
+        from witness_live_verifier import collect_latest
+        class FakeResponse:
+            status=200
+            def __enter__(self): return self
+            def __exit__(self,*args): return False
+            def read(self,n): return b'{"payload":{},"payload":{},"signature":"00"}'
+        with patch("witness_live_verifier.DIRECT.open",return_value=FakeResponse()):
+            with self.assertRaises(ValueError):
+                collect_latest([self.urls["north"]],"a"*64)
+            self.assertFalse(self.check())
+
+    def test_live_identity_substitution_in_response_rejected(self):
+        from witness_live_verifier import collect_latest
+        original=collect_latest
+        def substitute(urls,nonce,timeout=2):
+            response=original(urls,nonce,timeout)
+            response[0]["payload"]["witness_id"]="south" if urls[0]==self.urls["north"] else "north"
+            return response
+        with patch("witness_live_verifier.collect_latest",side_effect=substitute):
+            self.assertFalse(self.check())
+
+    def test_malformed_live_response_fails_closed(self):
+        with patch("witness_live_verifier.collect_latest",return_value=[{"payload":[]}]):
+            self.assertFalse(self.check())
+
+    def test_wrong_challenge_rejected(self):
+        from witness_live_verifier import collect_latest
+        original=collect_latest
+        def wrong_nonce(urls,nonce,timeout=2):
+            return original(urls,"0"*64,timeout)
+        with patch("witness_live_verifier.collect_latest",side_effect=wrong_nonce):
+            self.assertFalse(self.check())
+
+    def test_live_witness_unavailable_fails_closed(self):
+        original=dict(self.urls)
+        self.urls["south"]="http://127.0.0.1:1/latest"
+        self.assertFalse(self.check())
+        self.urls=original
