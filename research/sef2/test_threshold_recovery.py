@@ -291,6 +291,20 @@ class RecoveryAuthorityLedgerTests(unittest.TestCase):
   second=self.signer.export_approval_ledger()
   self.assertEqual(first,second)
 
+
+ def test_approval_ledger_rejects_boolean_sequence_number(self):
+  from threshold_recovery import verify_approval_ledger
+  self.signer.approve(self.payload,self.policy)
+  bundle=self.signer.export_approval_ledger()
+  bundle["events"][0]["sequence"]=True
+  self.assertFalse(verify_approval_ledger(bundle,self.key.public_key()))
+ def test_approval_ledger_rejects_malformed_digest_types(self):
+  from threshold_recovery import verify_approval_ledger
+  self.signer.approve(self.payload,self.policy)
+  bundle=self.signer.export_approval_ledger()
+  bundle["events"][0]["previous_state_sha256"]=123
+  self.assertFalse(verify_approval_ledger(bundle,self.key.public_key()))
+
 class RecoveryQuorumModelTests(unittest.TestCase):
  def test_safe_thresholds_exhaustively_for_councils_four_through_nine(self):
   from recovery_quorum_model import exhaustively_check
