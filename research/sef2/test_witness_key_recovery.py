@@ -81,6 +81,14 @@ class WitnessKeyRecoveryTests(unittest.TestCase):
     def test_malformed_current_state_fails_closed(self):
         self.assertFalse(verify_transition(self.envelope,{"witness_id":"north"},self.authority.public_key(),"offline-recovery-1"))
 
+    def test_malformed_current_key_fingerprint_rejected(self):
+        changed=dict(self.state,public_key_sha256="not-a-digest")
+        self.assertFalse(verify_transition(self.envelope,changed,self.authority.public_key(),"offline-recovery-1"))
+
+    def test_malformed_current_transition_digest_rejected(self):
+        changed=dict(self.state,transition_sha256="not-a-digest")
+        self.assertFalse(verify_transition(self.envelope,changed,self.authority.public_key(),"offline-recovery-1"))
+
     def test_transition_cannot_be_mutated_after_approval(self):
         changed=copy.deepcopy(self.envelope)
         changed["payload"]["checkpoint"]["head_hash"]="f"*64
