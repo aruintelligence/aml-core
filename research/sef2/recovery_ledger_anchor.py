@@ -21,7 +21,7 @@ def ledger_checkpoint(database,authority_id,authority_public_hex):
     with sqlite3.connect(uri,uri=True) as con:
         rows=con.execute("""SELECT policy_id,witness_id,generation,policy_sha256,
             previous_state_sha256,payload_sha256,signature
-            FROM recovery_approval_ledger_v3 WHERE authority_id=?
+            FROM recovery_approval_ledger_v4 WHERE authority_id=?
             ORDER BY policy_id,witness_id,generation""",(authority_id,)).fetchall()
     records=[{"policy_id":r[0],"witness_id":r[1],"generation":r[2],
         "policy_sha256":r[3],"previous_state_sha256":r[4],
@@ -51,7 +51,7 @@ def verify_ledger_checkpoint(database,authority_public_hex,expected_checkpoint,e
         with sqlite3.connect(uri,uri=True) as con:
             rows=con.execute("""SELECT policy_id,witness_id,generation,policy_sha256,
                 previous_state_sha256,payload_sha256,signature
-                FROM recovery_approval_ledger_v3 WHERE authority_id=?
+                FROM recovery_approval_ledger_v4 WHERE authority_id=?
                 ORDER BY policy_id,witness_id,generation""",(expected_checkpoint["authority_id"],)).fetchall()
         records=[{"policy_id":r[0],"witness_id":r[1],"generation":r[2],
             "policy_sha256":r[3],"previous_state_sha256":r[4],
