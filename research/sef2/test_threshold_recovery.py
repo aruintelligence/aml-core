@@ -361,7 +361,7 @@ class RecoveryLedgerAnchorTests(unittest.TestCase):
   import sqlite3
   from recovery_ledger_anchor import verify_ledger_checkpoint,ledger_checkpoint,checkpoint_pin
   with sqlite3.connect(self.ledger) as con:
-   con.execute("UPDATE recovery_approval_ledger_v3 SET signature=?",( "00"*64,))
+   con.execute("UPDATE recovery_approval_ledger_v4 SET signature=?",( "00"*64,))
   changed=ledger_checkpoint(self.ledger,"authority-0",self.public_hex)
   self.assertFalse(verify_ledger_checkpoint(self.ledger,self.public_hex,changed,checkpoint_pin(changed)))
  def test_wrong_authority_public_key_rejected(self):
