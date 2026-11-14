@@ -216,3 +216,30 @@ class RecoveryQuorumModelTests(unittest.TestCase):
   pathlib.Path(link).symlink_to(target)
   with self.assertRaisesRegex(ValueError,"private regular file"):
    RecoveryAuthoritySigner("authority-0",self.key,link)
+
+ def test_threshold_adapter_rejects_duplicate_json_keys(self):
+  from cryptography.exceptions import InvalidSignature
+  from threshold_recovery import ThresholdRecoveryPublicKey
+  from witness_key_recovery import AUTH_DOMAIN
+  from signed_receipt import canonical
+  verifier=ThresholdRecoveryPublicKey(self.policy)
+  message=AUTH_DOMAIN+canonical(self.transition["payload"])
+  with self.assertRaises(InvalidSignature):
+   verifier.verify(b'{"schema":"A","schema":"B"}',message)
+ def test_threshold_adapter_rejects_noncanonical_bundle_encoding(self):
+  from cryptography.exceptions import InvalidSignature
+  from threshold_recovery import ThresholdRecoveryPublicKey
+  from witness_key_recovery import AUTH_DOMAIN
+  from signed_receipt import canonical
+  verifier=ThresholdRecoveryPublicKey(self.policy)
+  message=AUTH_DOMAIN+canonical(self.transition["payload"])
+  with self.assertRaises(InvalidSignature):
+   verifier.verify(bytes.fromhex(self.transition["recovery_signature"])+b" ",message)
+ def test_threshold_adapter_rejects_duplicate_payload_json_keys(self):
+  from cryptography.exceptions import InvalidSignature
+  from threshold_recovery import ThresholdRecoveryPublicKey
+  from witness_key_recovery import AUTH_DOMAIN
+  verifier=ThresholdRecoveryPublicKey(self.policy)
+  with self.assertRaises(InvalidSignature):
+   verifier.verify(bytes.fromhex(self.transition["recovery_signature"]),
+    AUTH_DOMAIN+b'{"witness_id":"north","witness_id":"south"}')
