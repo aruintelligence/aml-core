@@ -56,10 +56,11 @@ class SignerPolicyTests(unittest.TestCase):
         with self.assertRaises(PermissionError):self.signer.authorize(bad,self.intent(bad))
 
     def test_amount_limit_and_bool_rejected(self):
+        signed=self.intent()
         for amount in (0,501,True):
             with self.subTest(amount=amount):
                 bad=dict(self.request,amount_cents=amount)
-                with self.assertRaises(PermissionError):self.signer.authorize(bad,self.intent(bad))
+                with self.assertRaises(PermissionError):self.signer.authorize(bad,signed)
 
     def test_signed_challenge_replay_denied(self):
         intent=self.intent(challenge="d"*32)
