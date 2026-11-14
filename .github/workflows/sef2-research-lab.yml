@@ -20,8 +20,8 @@ jobs:
           persist-credentials: false
       - name: Exact checkout SHA
         run: git rev-parse HEAD
-      - name: Compile fixture and tests
+      - name: Install pinned cryptographic dependency\n        run: python3 -m pip install cryptography==46.0.3\n      - name: Compile fixture and tests
         run: python3 -m compileall -q research/sef2
       - name: Execute synthetic-only adversarial and recovery suite
         working-directory: research/sef2
-        run: python3 -W error::ResourceWarning -m unittest -v test_sef2 test_receipt test_witness_chain test_pinned_witness test_durable_witness
+        run: python3 -W error::ResourceWarning -m unittest -v test_sef2 test_receipt test_witness_chain test_pinned_witness test_durable_witness test_signed_receipt

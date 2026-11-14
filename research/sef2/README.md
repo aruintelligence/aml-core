@@ -60,3 +60,7 @@ Additional tests inject forged rows into the **synthetic provider SQLite store**
 ## Durable checkpoint laboratory
 
 `durable_witness.py` persists a checkpoint in a separate SQLite file with `BEGIN IMMEDIATE` serialization and compares each candidate full history against the committed checkpoint before advancing. Tests cover object restart, competing concurrent forks, longer divergent histories, genesis, invalid input and legitimate extension. The witness DB must be independently protected; deleting/restoring that DB bypasses its monotonicity guarantee. SQLite commit is not proof against power loss or malicious host administrators. No remote witness, hardware monotonic counter or distributed consensus is claimed.
+
+## Ed25519 public-verifiable receipt laboratory
+
+`signed_receipt.py` uses Ed25519 (pinned `cryptography==46.0.3` in research CI), domain separation, strict canonical JSON, SHA-256 public-key identifiers, and role-scoped trust maps. Verification requires only public keys, not signing secrets. The key-rotation test demonstrates explicitly trusted multiple keys; it does **not** implement revocation, compromise recovery, transparency, timestamping, or production key lifecycle. The `SIGNED_CLAIMS_ONLY` result intentionally does not assert actual external execution. An attacker controlling an authorized provider signing key can sign a false execution claim. Production use requires independent key custody and trusted external effect evidence.
