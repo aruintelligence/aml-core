@@ -140,3 +140,9 @@ class RecoveryAuthorityLedgerTests(unittest.TestCase):
    signers[f"authority-{i}"]=key
    self.policy["authorities"][f"authority-{i}"]=key.public_key().public_bytes_raw().hex()
   self.assertTrue(verify_approval_bundle(self.payload,make_approval_bundle(self.payload,self.policy,signers),self.policy))
+
+ def test_conflicting_predecessor_state_at_same_generation_is_refused(self):
+  self.signer.approve(self.payload,self.policy)
+  changed={**self.payload,"previous_state_sha256":"f"*64}
+  with self.assertRaisesRegex(ValueError,"equivocation"):
+   self.signer.approve(changed,self.policy)
