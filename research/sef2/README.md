@@ -56,3 +56,7 @@ Additional tests inject forged rows into the **synthetic provider SQLite store**
 ## Pinned witness simulation
 
 `pinned_witness.py` maintains a checkpoint in a separate Python object, checks full-prefix consistency before advancing, and rejects both same-size and longer divergent histories as well as truncation. Tests include checkpoint alias protection and invalid-chain nonadvancement. **The object is volatile and co-located with the test process**: this is a behavioral specification, not independently administered or durable witness infrastructure. A real witness needs separate access control, authenticated publication, durable monotonic state, independent key custody and anti-equivocation gossip.
+
+## Durable checkpoint laboratory
+
+`durable_witness.py` persists a checkpoint in a separate SQLite file with `BEGIN IMMEDIATE` serialization and compares each candidate full history against the committed checkpoint before advancing. Tests cover object restart, competing concurrent forks, longer divergent histories, genesis, invalid input and legitimate extension. The witness DB must be independently protected; deleting/restoring that DB bypasses its monotonicity guarantee. SQLite commit is not proof against power loss or malicious host administrators. No remote witness, hardware monotonic counter or distributed consensus is claimed.
