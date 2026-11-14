@@ -8,7 +8,7 @@ def pub(k): return k.public_key().public_bytes(serialization.Encoding.Raw,serial
 def cp(e=1,h="a"*64): return {"schema":"AML-SEF2-SIGNED-HISTORY-CHECKPOINT-V1","epoch":e,"head_hash":h,"count":e,"approver_key_id":"c"*64}
 class RecoveryEnrollmentIntegrationTests(unittest.TestCase):
  def setUp(self):
-  t=tempfile.TemporaryDirectory(); self.addCleanup(t.cleanup); self.path=str(pathlib.Path(t.name)/"trust.sqlite")
+  t=tempfile.TemporaryDirectory(); self.tmp=t; self.addCleanup(t.cleanup); self.path=str(pathlib.Path(t.name)/"trust.sqlite")
   self.approver=Ed25519PrivateKey.generate(); self.root=Ed25519PrivateKey.generate(); self.old=Ed25519PrivateKey.generate(); self.new=Ed25519PrivateKey.generate()
   self.keys={"authority":pub(Ed25519PrivateKey.generate()),"provider":pub(Ed25519PrivateKey.generate()),"witness":pub(self.old)}
   self.enrollment=Enrollment(self.path,self.approver.public_key()); self.enrollment.accept(propose(self.approver,1,self.keys))
