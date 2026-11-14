@@ -466,3 +466,16 @@ class RecoveryLedgerAnchorTests(unittest.TestCase):
   self.assertTrue(verify_event_chain(self.ledger,self.public_hex,latest,pin))
   shutil.copy2(snapshot,self.ledger)
   self.assertFalse(verify_event_chain(self.ledger,self.public_hex,latest,pin))
+
+ def test_quorum_model_reports_safety_and_liveness_separately(self):
+  from recovery_quorum_model import exhaustively_check
+  result=exhaustively_check(4,4,1)
+  self.assertTrue(result["intersection_safe"])
+  self.assertFalse(result["liveness"])
+  self.assertFalse(result["safe"])
+ def test_quorum_model_rejects_fault_bound_outside_classical_bft_model(self):
+  from recovery_quorum_model import exhaustively_check
+  result=exhaustively_check(4,3,2)
+  self.assertTrue(result["intersection_safe"])
+  self.assertFalse(result["fault_bound_valid"])
+  self.assertFalse(result["safe"])
