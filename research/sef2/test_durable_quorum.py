@@ -46,7 +46,7 @@ class DurableQuorumTests(unittest.TestCase):
         self.witnesses={name:DurableWitness(self.root/(name+".sqlite"),name,k)
                         for name,k in self.privates.items()}
         self.receipts=[]
-        for name in ("north","south","east","west"):
+        for name in ("north","south","east"):
             status,receipt=self.witnesses[name].publish(self.checkpoint)
             self.assertEqual(status,"PUBLISHED")
             self.receipts.append(receipt)
@@ -105,6 +105,9 @@ class DurableQuorumTests(unittest.TestCase):
         self.assertFalse(self.check())
 
     def test_three_honest_witnesses_outvote_one_equivocating_witness(self):
+        status,receipt=self.witnesses["west"].publish(self.checkpoint)
+        self.assertEqual(status,"PUBLISHED")
+        self.receipts.append(receipt)
         from checkpoint_council import publish
         fork=dict(self.checkpoint,head_hash="b"*64)
         self.receipts[1]=publish(self.privates["south"],"south",fork)
