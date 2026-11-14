@@ -13,15 +13,23 @@ def find_equivocation_counterexample(n,q,f):
         raise ValueError("invalid model bounds")
     identities=tuple(range(n))
     quorums=list(combinations(identities,q))
+    candidates=[]
     for left,right in combinations(quorums,2):
         intersection=set(left)&set(right)
-        if len(intersection)<=f:
-            byzantine=sorted(intersection)
-            return {"first_quorum":list(left),"second_quorum":list(right),
-                "intersection":byzantine,"byzantine_set":byzantine,
-                "honest_first":sorted(set(left)-intersection),
-                "honest_second":sorted(set(right)-intersection)}
-    return None
+        candidates.append((len(intersection),left,right,intersection))
+    if not candidates:
+        return None
+    minimum=min(item[0] for item in candidates)
+    if minimum>f:
+        return None
+    _,left,right,intersection=min(
+        (item for item in candidates if item[0]==minimum),
+        key=lambda item:(item[1],item[2]))
+    byzantine=sorted(intersection)
+    return {"first_quorum":list(left),"second_quorum":list(right),
+        "intersection":byzantine,"byzantine_set":byzantine,
+        "honest_first":sorted(set(left)-intersection),
+        "honest_second":sorted(set(right)-intersection)}
 
 def exhaustively_check(n,q,f):
     counterexample=find_equivocation_counterexample(n,q,f)
