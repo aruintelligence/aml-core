@@ -131,3 +131,8 @@ The recovery authority key and the current witness state must be independently p
 
 
 **Storage boundary clarification:** the recovery adapter now stores the recovery generation/event history in a separate SQLite database file, attached to the trust-enrollment database for a single multi-database transaction. It configures SQLite rollback-journal mode and `synchronous=FULL` on both files; the atomicity claim is limited to SQLite's documented attached-database commit model under those conditions and ordinary filesystem guarantees. Separate files alone do not establish separate administrators, machines, backup domains, or anti-rollback protection. Operators must provision and protect the recovery database independently. WAL mode, network filesystems, filesystem snapshots that roll both files back, and correlated administrative compromise are outside this prototype's guarantee.
+
+
+### Directive 021 — threshold recovery authorization
+
+`threshold_recovery.py` adds a separate threshold-approval primitive for recovery payloads. A verifier pins a policy out of band containing a policy identifier, threshold, and distinct Ed25519 public keys. Each approval signs the digest of both the canonical policy and canonical recovery payload. Verification rejects duplicate identities, duplicate public keys in policy, unknown signers, key substitution, malformed signatures, unsorted approvals, threshold shortfalls, payload substitution, and policy substitution. This is currently a standalone authorization primitive; it is not yet wired into `WitnessRecoveryEnrollment`, and policy distribution, key custody, revocation freshness, and anti-rollback protection remain external trust assumptions.
