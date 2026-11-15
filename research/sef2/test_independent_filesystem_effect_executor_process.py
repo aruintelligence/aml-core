@@ -81,7 +81,7 @@ def start_witness(user,executor,sock,db,key,pub,lib,env):
   "filesystem-execution-witness",str(key),str(pub)],
   preexec_fn=drop(user.pw_uid,user.pw_gid,(executor.pw_gid,)),env=env,
   stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)
- return ready(proc,sock,"filesystem execution witness",pub)
+ return ready(proc,sock,"filesystem execution witness")
 
 def start_receipt_anchor(user,executor,sock,db,witness_pub,lib,env):
  proc=subprocess.Popen([sys.executable,str(lib/"execution_receipt_anchor_service.py"),
