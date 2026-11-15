@@ -4,6 +4,7 @@ The checkpoint provider must be independently hosted and its signing key pinned
 outside the untrusted agent. A valid signature alone cannot establish freshness.
 """
 import json
+import threading
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
@@ -52,18 +53,22 @@ class PinnedCheckpoint:
         self.fetch = fetch
         self.public_hex = public_hex
         self.authority_id = authority_id
+        self._lock = threading.Lock()
         self.last_sequence = -1
         self.last_generation = 0
 
     def __call__(self):
-        checked = verify_checkpoint(self.fetch(), self.public_hex, self.authority_id)
-        if checked is None:
-            raise ValueError("invalid signed checkpoint")
-        generation, sequence = checked
-        if sequence < self.last_sequence or generation < self.last_generation:
-            raise ValueError("checkpoint rollback detected")
-        if sequence == self.last_sequence and generation != self.last_generation:
-            raise ValueError("checkpoint equivocation detected")
-        self.last_sequence = sequence
-        self.last_generation = generation
-        return generation
+        # Fetch, verify, compare and advance must be one serialized operation.
+        # Otherwise an older concurrent response can overwrite a newer mark.
+        with self._lock:
+            checked = verify_checkpoint(self.fetch(), self.public_hex, self.authority_id)
+            if checked is None:
+                raise ValueError("invalid signed checkpoint")
+            generation, sequence = checked
+            if sequence < self.last_sequence or generation < self.last_generation:
+                raise ValueError("checkpoint rollback detected")
+            if sequence == self.last_sequence and generation != self.last_generation:
+                raise ValueError("checkpoint equivocation detected")
+            self.last_sequence = sequence
+            self.last_generation = generation
+            return generation
