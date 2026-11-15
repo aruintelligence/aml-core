@@ -158,3 +158,77 @@ class AnchoredRecoveryPolicyRegistryTests(unittest.TestCase):
   before=registry._local_state()
   self.assertEqual(registry.rotate(self.new,self.rotation),"ANCHOR_UNAVAILABLE")
   self.assertEqual(registry._local_state(),before)
+
+class EmergencyRecoveryPolicyRegistryTests(unittest.TestCase):
+ def setUp(self):
+  from recovery_emergency_rotation import make_emergency_rotation
+  self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+  self.path=str(pathlib.Path(self.temp.name)/"emergency-policy.sqlite")
+  self.old_keys=keys("e-old"); self.new_keys=keys("e-new")
+  self.old=mkpolicy(self.old_keys,"emergency-recovery-v1")
+  self.new=mkpolicy(self.new_keys,"emergency-recovery-v2")
+  self.new_signers={k:RecoveryAuthoritySigner(k,v,str(pathlib.Path(self.temp.name)/(k+".sqlite")))
+   for k,v in self.new_keys.items()}
+  self.guardian_keys={f"guardian-{i}":Ed25519PrivateKey.generate() for i in range(5)}
+  self.guardians={"schema":POLICY_SCHEMA,"policy_id":"break-glass-v1","threshold":4,
+   "max_faults":1,"authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in self.guardian_keys.items()},
+   "administrative_domains":{k:"break-glass-domain-"+k for k in self.guardian_keys}}
+  self.guardian_signers={k:RecoveryAuthoritySigner(k,v,str(pathlib.Path(self.temp.name)/(k+".sqlite")))
+   for k,v in self.guardian_keys.items()}
+  self.registry=RecoveryPolicyRegistry(self.path); self.registry.initialize(self.old)
+  head=self.registry.state()["head_sha256"]
+  self.rotation=make_emergency_rotation(self.old,self.new,self.guardians,2,head,"b"*64,
+   "QUORUM_LOSS",{k:self.guardian_signers[k] for k in list(self.guardian_signers)[:4]},
+   {k:self.new_signers[k] for k in list(self.new_signers)[:3]})
+ def test_emergency_rotation_persists_in_same_policy_history(self):
+  self.assertEqual(self.registry.emergency_rotate(self.new,self.guardians,self.rotation),"EMERGENCY_ROTATED")
+  state=self.registry.state()
+  self.assertEqual(state["generation"],2); self.assertEqual(state["policy"],self.new)
+  self.assertTrue(self.registry.verify_history())
+ def test_emergency_rotation_survives_restart_and_reverifies(self):
+  self.assertEqual(self.registry.emergency_rotate(self.new,self.guardians,self.rotation),"EMERGENCY_ROTATED")
+  restarted=RecoveryPolicyRegistry(self.path)
+  self.assertEqual(restarted.state()["policy"],self.new)
+  self.assertTrue(restarted.verify_history())
+ def test_emergency_rotation_replay_is_rejected(self):
+  self.registry.emergency_rotate(self.new,self.guardians,self.rotation)
+  self.assertEqual(self.registry.emergency_rotate(self.new,self.guardians,self.rotation),"INVALID_EMERGENCY_ROTATION")
+ def test_emergency_incident_tamper_does_not_mutate_registry(self):
+  bad=copy.deepcopy(self.rotation); bad["payload"]["incident_sha256"]="f"*64
+  before=self.registry.state()
+  self.assertEqual(self.registry.emergency_rotate(self.new,self.guardians,bad),"INVALID_EMERGENCY_ROTATION")
+  self.assertEqual(self.registry.state(),before)
+ def test_normal_rotation_can_follow_emergency_rotation(self):
+  self.assertEqual(self.registry.emergency_rotate(self.new,self.guardians,self.rotation),"EMERGENCY_ROTATED")
+  third_keys=keys("e-third"); third=mkpolicy(third_keys,"emergency-recovery-v3")
+  third_signers={k:RecoveryAuthoritySigner(k,v,str(pathlib.Path(self.temp.name)/(k+".sqlite")))
+   for k,v in third_keys.items()}
+  normal=make_policy_rotation(self.new,third,3,
+   {k:self.new_signers[k] for k in list(self.new_signers)[:3]},
+   {k:third_signers[k] for k in list(third_signers)[:3]})
+  self.assertEqual(self.registry.rotate(third,normal),"ROTATED")
+  self.assertEqual(self.registry.state()["generation"],3)
+  self.assertEqual(self.registry.state()["policy"],third)
+  self.assertTrue(self.registry.verify_history())
+ def test_emergency_storage_failure_rolls_back_state(self):
+  with sqlite3.connect(self.path) as con:
+   con.execute("""CREATE TRIGGER reject_emergency_event BEFORE INSERT ON recovery_policy_emergency_events
+    BEGIN SELECT RAISE(ABORT,'injected emergency event failure'); END""")
+  before=self.registry.state()
+  self.assertEqual(self.registry.emergency_rotate(self.new,self.guardians,self.rotation),"STORE_OR_STATE_ERROR")
+  self.assertEqual(self.registry.state(),before)
+ def test_anchored_emergency_rotation_detects_local_rollback(self):
+  import shutil
+  from threshold_recovery import MemoryRecoveryHeadAnchor
+  anchor=MemoryRecoveryHeadAnchor("emergency-policy-anchor")
+  path=str(pathlib.Path(self.temp.name)/"anchored-emergency.sqlite")
+  registry=RecoveryPolicyRegistry(path,anchor); registry.initialize(self.old)
+  from recovery_emergency_rotation import make_emergency_rotation
+  rotation=make_emergency_rotation(self.old,self.new,self.guardians,2,registry.state()["head_sha256"],
+   "c"*64,"QUORUM_LOSS",{k:self.guardian_signers[k] for k in list(self.guardian_signers)[:4]},
+   {k:self.new_signers[k] for k in list(self.new_signers)[:3]})
+  snapshot=str(pathlib.Path(self.temp.name)/"emergency-before.sqlite"); shutil.copy2(path,snapshot)
+  self.assertEqual(registry.emergency_rotate(self.new,self.guardians,rotation),"EMERGENCY_ROTATED")
+  shutil.copy2(snapshot,path)
+  with self.assertRaisesRegex(ValueError,"rolled-back"):
+   registry.state()
