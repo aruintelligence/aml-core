@@ -165,3 +165,12 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
   public=key.public_key().public_bytes_raw().hex()
   checkpoint=event_chain_checkpoint(path,authority_id,public)
   self.assertFalse(verify_event_chain(path,public,checkpoint,checkpoint_pin(checkpoint)))
+
+ def test_anchor_database_cannot_be_reused_under_different_identity(self):
+  path=str(pathlib.Path(self.temp.name)/"anchor-0.sqlite")
+  with self.assertRaisesRegex(ValueError,"another anchor identity"):
+   RecoveryAnchorWitness("anchor-1",self.keys["anchor-1"],path)
+ def test_anchor_database_cannot_be_reused_under_replacement_key(self):
+  path=str(pathlib.Path(self.temp.name)/"anchor-0.sqlite")
+  with self.assertRaisesRegex(ValueError,"another anchor identity"):
+   RecoveryAnchorWitness("anchor-0",Ed25519PrivateKey.generate(),path)
