@@ -578,3 +578,8 @@ Added `benchmark_recovery_cutover.py` and wired it into the SEF/2 CI benchmark s
 
 
 **Directive 029 completeness hardening:** the anchor state handoff is now bound to an externally expected tracked-target set. The signed handoff payload carries the sorted target list, and the state snapshot must cover that set exactly—no omissions and no extras. Verification and successor bootstrap both require the evaluator's expected target set. This prevents a reconfiguration from silently dropping one tracked recovery authority and later restarting that omitted target from genesis. The guarantee still depends on the expected target manifest itself being retained outside the rotating councils' unilateral control.
+
+
+### Directive 031 — independently reproducible activation history
+
+`RecoveryActivationRegistry.export_evidence()` now emits the monotonic activation state and complete cutover-event chain. `recovery_activation_evidence.py` independently verifies the chain from an initial policy pin and generation, re-checks every cutover certificate and verifier-independence manifest, validates predecessor/next-policy bindings and event hashes, and optionally requires an externally retained final head pin. Tests reject tampered cutover signatures, changed event hashes, predecessor-policy substitution, final-state rollback, missing history and head-pin mismatch.
