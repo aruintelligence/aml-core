@@ -43,6 +43,25 @@ class RecoveryPolicyRotationTests(unittest.TestCase):
  def test_outgoing_approval_tampering_rejected(self):
   b=copy.deepcopy(self.bundle); b["outgoing_approval"]["approvals"][0]["signature"]="00"*64
   self.assertFalse(verify_policy_rotation(self.current,self.next,b,2))
+ def test_successor_council_must_use_disjoint_public_keys(self):
+  overlapping={"old-0":self.old["old-0"],"new-1":self.new["new-1"],
+   "new-2":self.new["new-2"],"new-3":self.new["new-3"]}
+  successor=policy(overlapping,"council-v3")
+  with self.assertRaisesRegex(ValueError,"disjoint public keys"):
+   make_policy_rotation(self.current,successor,3,
+    {"old-0":self.old_signers["old-0"],"old-1":self.old_signers["old-1"],"old-2":self.old_signers["old-2"]},
+    {"old-0":self.old_signers["old-0"]})
+ def test_successor_policy_must_have_a_new_identifier(self):
+  successor=policy(self.new,"council-v1")
+  with self.assertRaisesRegex(ValueError,"new policy identifier"):
+   make_policy_rotation(self.current,successor,3,
+    {k:self.old_signers[k] for k in ("old-0","old-1","old-2")},
+    {k:self.new_signers[k] for k in ("new-0","new-1","new-2")})
+ def test_verifier_rejects_overlapping_successor_keys(self):
+  overlapping={"old-0":self.old["old-0"],"new-1":self.new["new-1"],
+   "new-2":self.new["new-2"],"new-3":self.new["new-3"]}
+  successor=policy(overlapping,"council-v3")
+  self.assertFalse(verify_policy_rotation(self.current,successor,self.bundle,2))
  def test_same_policy_cannot_rotate_to_itself(self):
   with self.assertRaises(ValueError):
    make_policy_rotation(self.current,self.current,2,
