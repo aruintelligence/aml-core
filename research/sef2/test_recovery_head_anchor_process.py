@@ -1,5 +1,5 @@
 """Real four-process recovery anchor quorum under distinct Linux UIDs."""
-import os,pathlib,pwd,shutil,sqlite3,subprocess,sys,tempfile,time
+import os,pathlib,pwd,shutil,socket,sqlite3,subprocess,sys,tempfile,time
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from test_cross_uid_boundary import drop,HERE
 from threshold_recovery import SignedRecoveryHeadAnchor,QuorumRecoveryHeadAnchor
@@ -14,7 +14,14 @@ def start(account,anchor_id,sock,state,lib,signer,env):
     for _ in range(200):
         if proc.poll() is not None: raise AssertionError("anchor exited: "+proc.stderr.read())
         if sock.exists() and public.exists():
-            time.sleep(.03); return proc,public,db
+            # bind() creates the socket path before listen(); probe readiness
+            # instead of relying on a fixed sleep that races under CI load.
+            try:
+                with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as probe:
+                    probe.settimeout(.2); probe.connect(str(sock))
+                return proc,public,db
+            except OSError:
+                pass
         time.sleep(.02)
     proc.terminate(); raise AssertionError("anchor startup timeout")
 def stop(proc):
