@@ -38,3 +38,39 @@ class SessionEpochAnchor:
             cur=db.execute("UPDATE session_epoch_anchor SET epoch=? WHERE audience=? AND epoch=?",
                 (new,audience,expected))
             return cur.rowcount==1
+
+
+class RemoteSessionEpochAnchor:
+    """Unix-socket client for a separately owned monotonic epoch anchor."""
+    def __init__(self,socket_path,timeout=3):
+        self.socket_path=str(socket_path); self.timeout=timeout
+    def _call(self,payload):
+        import json,socket,struct
+        body=json.dumps(payload,sort_keys=True,separators=(",",":")).encode()
+        with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as conn:
+            conn.settimeout(self.timeout); conn.connect(self.socket_path)
+            conn.sendall(struct.pack("!I",len(body))+body)
+            header=self._read(conn,4); size=struct.unpack("!I",header)[0]
+            if size>4096: raise PermissionError("epoch anchor response too large")
+            response=json.loads(self._read(conn,size))
+        if type(response) is not dict: raise PermissionError("invalid epoch anchor response")
+        return response
+    def initialize(self,audience,epoch=0):
+        response=self._call({"op":"INITIALIZE","audience":audience,"epoch":epoch})
+        if set(response)!={"status","epoch"} or response["status"]!="OK": raise PermissionError("anchor initialization denied")
+        return response["epoch"]
+    def read_epoch(self,audience):
+        response=self._call({"op":"READ","audience":audience})
+        if set(response)!={"status","epoch"} or response["status"]!="OK": raise PermissionError("anchor read denied")
+        return response["epoch"]
+    def compare_and_set(self,audience,expected,new):
+        response=self._call({"op":"CAS","audience":audience,"expected":expected,"new":new})
+        return response=={"status":"OK","accepted":True}
+    @staticmethod
+    def _read(conn,size):
+        parts=[]
+        while size:
+            chunk=conn.recv(size)
+            if not chunk: raise PermissionError("epoch anchor connection ended")
+            parts.append(chunk); size-=len(chunk)
+        return b"".join(parts)
