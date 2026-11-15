@@ -197,13 +197,64 @@ class RecoveryPolicyRegistry:
             return "STORE_OR_STATE_ERROR"
 
 
+    def emergency_rotate(self,next_policy,emergency_policy,rotation):
+        if not validate_policy(next_policy) or not validate_policy(emergency_policy):
+            return "INVALID_EMERGENCY_ROTATION"
+        try:
+            with sqlite3.connect(self.database_path,timeout=10) as con:
+                con.execute("PRAGMA synchronous=FULL"); con.execute("BEGIN IMMEDIATE")
+                try:
+                    state=self._verified_state(con)
+                except (ValueError,TypeError,KeyError,AttributeError):
+                    return "CORRUPT_STATE"
+                if state is None: return "UNINITIALIZED"
+                if self.head_anchor is not None:
+                    try:
+                        if self.head_anchor.read_head()!=state["head_sha256"]:
+                            return "ANCHOR_MISMATCH"
+                    except (RuntimeError,OSError,ValueError):
+                        return "ANCHOR_UNAVAILABLE"
+                generation=state["generation"]+1
+                current=state["policy"]
+                from recovery_emergency_rotation import verify_emergency_rotation
+                if not verify_emergency_rotation(current,next_policy,emergency_policy,
+                    rotation,generation,state["head_sha256"]):
+                    return "INVALID_EMERGENCY_ROTATION"
+                previous_raw=canonical(current).decode("utf-8")
+                next_raw=canonical(next_policy).decode("utf-8")
+                emergency_raw=canonical(emergency_policy).decode("utf-8")
+                rotation_raw=canonical(rotation).decode("utf-8")
+                event={"generation":generation,"previous_policy_sha256":state["policy_sha256"],
+                    "next_policy_sha256":policy_digest(next_policy),
+                    "rotation_sha256":_digest(rotation),"previous_event_sha256":state["head_sha256"]}
+                event_hash=_digest(event)
+                con.execute("""INSERT INTO recovery_policy_emergency_events VALUES (?,?,?,?,?,?,?)""",
+                    (generation,previous_raw,next_raw,emergency_raw,rotation_raw,
+                     state["head_sha256"],event_hash))
+                con.execute("""UPDATE recovery_policy_state SET generation=?,current_policy_json=?,
+                    current_policy_sha256=?,head_sha256=? WHERE singleton=1""",
+                    (generation,next_raw,policy_digest(next_policy),event_hash))
+            if self.head_anchor is not None:
+                try:
+                    if not self.head_anchor.compare_and_set(state["head_sha256"],event_hash):
+                        return "ANCHOR_UPDATE_FAILED"
+                except (RuntimeError,OSError,ValueError):
+                    return "ANCHOR_UPDATE_FAILED"
+            return "EMERGENCY_ROTATED"
+        except sqlite3.Error:
+            return "STORE_OR_STATE_ERROR"
+
+
     def reconcile_anchor(self,expected_predecessor=None):
         if self.head_anchor is None:
             raise ValueError("no independent recovery policy anchor configured")
         result=self._local_state()
         with sqlite3.connect(self.database_path,timeout=10) as con:
-            row=con.execute("""SELECT previous_event_sha256,event_sha256
-                FROM recovery_policy_events ORDER BY generation DESC LIMIT 1""").fetchone()
+            row=con.execute("""SELECT previous_event_sha256,event_sha256 FROM (
+                SELECT generation,previous_event_sha256,event_sha256 FROM recovery_policy_events
+                UNION ALL
+                SELECT generation,previous_event_sha256,event_sha256 FROM recovery_policy_emergency_events
+                ) ORDER BY generation DESC LIMIT 1""").fetchone()
         predecessor=row[0] if row else GENESIS
         try:
             anchored=self.head_anchor.read_head()
