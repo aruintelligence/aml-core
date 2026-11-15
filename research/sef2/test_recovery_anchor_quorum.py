@@ -93,7 +93,7 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
  def test_quorum_anchor_detects_rollback_of_real_authority_approval_ledger(self):
   import shutil
   from threshold_recovery import RecoveryAuthoritySigner,POLICY_SCHEMA
-  from recovery_ledger_anchor import event_chain_checkpoint,verify_event_chain,checkpoint_pin
+  from recovery_ledger_anchor import event_chain_checkpoint,verify_event_chain,checkpoint_pin,CHECKPOINT_SCHEMA
   authority_keys={f"recovery-{i}":Ed25519PrivateKey.generate() for i in range(4)}
   authority_policy={"schema":POLICY_SCHEMA,"policy_id":"recovery-ledger-council",
    "threshold":3,"max_faults":1,
@@ -104,7 +104,11 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
   snapshot=str(pathlib.Path(self.temp.name)/"pre-anchor-snapshot.sqlite")
   shutil.copy2(ledger,snapshot)
   signer.approve({"witness_id":"north","generation":2,"previous_state_sha256":"c"*64,"new_key":"d"*64},authority_policy)
-  checkpoint=event_chain_checkpoint(ledger,"recovery-0",authority_keys["recovery-0"].public_key().public_bytes_raw().hex())
+  event_checkpoint=event_chain_checkpoint(ledger,"recovery-0",authority_keys["recovery-0"].public_key().public_bytes_raw().hex())
+  event_pin=checkpoint_pin(event_checkpoint)
+  checkpoint={"schema":CHECKPOINT_SCHEMA,"authority_id":event_checkpoint["authority_id"],
+   "authority_key_sha256":event_checkpoint["authority_key_sha256"],
+   "sequence":event_checkpoint["sequence"],"head_hash":event_checkpoint["head_hash"]}
   pin=checkpoint_pin(checkpoint)
   anchor_keys={f"ledger-anchor-{i}":Ed25519PrivateKey.generate() for i in range(4)}
   anchor_policy=policy(anchor_keys)
@@ -114,7 +118,7 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
    {k:anchor_witnesses[k] for k in ("ledger-anchor-0","ledger-anchor-1","ledger-anchor-2")})
   self.assertTrue(verify_anchor_certificate(payload,certificate,anchor_policy,1,"0"*64,
    "recovery-0",checkpoint["authority_key_sha256"]))
-  self.assertTrue(verify_event_chain(ledger,authority_keys["recovery-0"].public_key().public_bytes_raw().hex(),checkpoint,pin))
+  self.assertTrue(verify_event_chain(ledger,authority_keys["recovery-0"].public_key().public_bytes_raw().hex(),event_checkpoint,event_pin))
   shutil.copy2(snapshot,ledger)
   self.assertFalse(verify_event_chain(ledger,authority_keys["recovery-0"].public_key().public_bytes_raw().hex(),checkpoint,pin))
   self.assertTrue(verify_anchor_certificate(payload,certificate,anchor_policy,1,"0"*64,
