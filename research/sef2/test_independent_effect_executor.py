@@ -1,4 +1,4 @@
-import concurrent.futures,copy,pathlib,sqlite3,tempfile,unittest
+import concurrent.futures,copy,pathlib,shutil,sqlite3,tempfile,unittest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from pin_registry import PinRegistry
 from pin_replication import PinReplica
@@ -8,6 +8,7 @@ from session_capability import issue_session_capability,make_holder_proof
 from authenticated_execution_challenge import make_execution_challenge
 from execution_gate_receipt import evaluate_and_issue
 from independent_effect_executor import IndependentEffectExecutor
+from execution_consumption_witness import ExecutionConsumptionWitness
 
 class IndependentEffectExecutorTests(unittest.TestCase):
  def setUp(self):
@@ -91,3 +92,41 @@ class IndependentEffectExecutorTests(unittest.TestCase):
   self.assertEqual(results.count("APPLIED"),1)
   self.assertEqual(results.count("ALREADY_APPLIED"),1)
   self.assertEqual(self.count(),1)
+
+ def test_executor_database_rollback_cannot_repeat_consumed_effect(self):
+  root=pathlib.Path(self.executor.path).parent
+  witness=ExecutionConsumptionWitness(root/"executor-consumption.sqlite")
+  executor=IndependentEffectExecutor(root/"rollback-executor.sqlite","authority",
+   self.authority.public_key().public_bytes_raw().hex(),"broker-a","broker-instance-1",
+   self.broker.public_key().public_bytes_raw().hex(),"evaluator-1",
+   self.evaluator.public_key().public_bytes_raw().hex(),"north",self.anchor,witness)
+  # Initialize database and snapshot before the first effect.
+  snapshot=root/"executor-before-effect.sqlite"; shutil.copy2(executor.path,snapshot)
+  self.assertEqual(executor.execute(self.request,self.capability,self.challenge,
+   self.holder_proof,self.evaluator_auth),"APPLIED")
+  shutil.copy2(snapshot,executor.path)
+  restarted=IndependentEffectExecutor(executor.path,"authority",
+   self.authority.public_key().public_bytes_raw().hex(),"broker-a","broker-instance-1",
+   self.broker.public_key().public_bytes_raw().hex(),"evaluator-1",
+   self.evaluator.public_key().public_bytes_raw().hex(),"north",self.anchor,witness)
+  self.assertEqual(restarted.execute(self.request,self.capability,self.challenge,
+   self.holder_proof,self.evaluator_auth),"DENIED")
+  with sqlite3.connect(executor.path) as db:
+   self.assertEqual(db.execute("SELECT COUNT(*) FROM independent_effects").fetchone()[0],0)
+ def test_executor_witness_consumption_then_local_failure_strands_operation(self):
+  root=pathlib.Path(self.executor.path).parent
+  witness=ExecutionConsumptionWitness(root/"stranded-consumption.sqlite")
+  executor=IndependentEffectExecutor(root/"stranded-executor.sqlite","authority",
+   self.authority.public_key().public_bytes_raw().hex(),"broker-a","broker-instance-1",
+   self.broker.public_key().public_bytes_raw().hex(),"evaluator-1",
+   self.evaluator.public_key().public_bytes_raw().hex(),"north",self.anchor,witness)
+  with sqlite3.connect(executor.path) as db:
+   db.execute("""CREATE TRIGGER reject_independent_effect BEFORE INSERT ON independent_effects
+    BEGIN SELECT RAISE(ABORT,'injected executor failure'); END""")
+  self.assertEqual(executor.execute(self.request,self.capability,self.challenge,
+   self.holder_proof,self.evaluator_auth),"DENIED")
+  self.assertIsNotNone(witness.lookup(self.request["operation_id"]))
+  with sqlite3.connect(executor.path) as db:
+   db.execute("DROP TRIGGER reject_independent_effect")
+  self.assertEqual(executor.execute(self.request,self.capability,self.challenge,
+   self.holder_proof,self.evaluator_auth),"DENIED")
