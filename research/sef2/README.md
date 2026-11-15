@@ -575,3 +575,6 @@ Tests reject snapshot tampering, outgoing or incoming quorum shortfalls, rotatio
 ### Directive 030 — cutover verification benchmark
 
 Added `benchmark_recovery_cutover.py` and wired it into the SEF/2 CI benchmark stage. It measures local verification latency for a 3-of-4 cutover certificate plus the pinned verifier-independence manifest and reports median, p95, mean, min/max and serialized evidence size. Results are explicitly runner-local microbenchmarks and exclude network, HSM, remote-anchor and real administrative-system latency.
+
+
+**Directive 029 completeness hardening:** the anchor state handoff is now bound to an externally expected tracked-target set. The signed handoff payload carries the sorted target list, and the state snapshot must cover that set exactly—no omissions and no extras. Verification and successor bootstrap both require the evaluator's expected target set. This prevents a reconfiguration from silently dropping one tracked recovery authority and later restarting that omitted target from genesis. The guarantee still depends on the expected target manifest itself being retained outside the rotating councils' unilateral control.
