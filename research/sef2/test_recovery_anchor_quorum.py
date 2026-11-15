@@ -119,3 +119,19 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
   self.assertFalse(verify_event_chain(ledger,authority_keys["recovery-0"].public_key().public_bytes_raw().hex(),checkpoint,pin))
   self.assertTrue(verify_anchor_certificate(payload,certificate,anchor_policy,1,"0"*64,
    "recovery-0",checkpoint["authority_key_sha256"]))
+
+ def test_certificate_succeeds_when_extra_witness_is_stale_after_quorum(self):
+  stale=make_anchor_payload({**self.checkpoint,"head_hash":"c"*64},1,"0"*64,self.policy)
+  with self.assertRaisesRegex(ValueError,"equivocation"):
+   self.witnesses["anchor-3"].approve(stale,self.policy)
+  certificate=make_anchor_certificate(self.payload,self.policy,self.witnesses)
+  self.assertEqual(len(certificate["approvals"]),3)
+  self.assertTrue(verify_anchor_certificate(self.payload,certificate,self.policy,
+   1,"0"*64,"recovery-authority-1","a"*64))
+ def test_certificate_fails_when_fewer_than_threshold_witnesses_can_vote(self):
+  stale=make_anchor_payload({**self.checkpoint,"head_hash":"c"*64},1,"0"*64,self.policy)
+  for aid in ("anchor-0","anchor-1"):
+   with self.assertRaisesRegex(ValueError,"equivocation"):
+    self.witnesses[aid].approve(stale,self.policy)
+  with self.assertRaisesRegex(ValueError,"insufficient valid anchor approvals"):
+   make_anchor_certificate(self.payload,self.policy,self.witnesses)
