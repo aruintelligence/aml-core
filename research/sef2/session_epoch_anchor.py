@@ -61,6 +61,7 @@ class RemoteSessionEpochAnchor:
         return response["epoch"]
     def read_epoch(self,audience):
         response=self._call({"op":"READ","audience":audience})
+        if response=={"status":"MISSING"}: raise ValueError("anchor audience not initialized")
         if set(response)!={"status","epoch"} or response["status"]!="OK": raise PermissionError("anchor read denied")
         return response["epoch"]
     def compare_and_set(self,audience,expected,new):
