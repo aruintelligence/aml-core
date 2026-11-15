@@ -78,7 +78,7 @@ def verify_ledger(bundle,public_key_hex,expected_head_sha256=None):
                 value=event[name]
                 if type(value) is not str or len(value)!=64 or any(c not in "0123456789abcdef" for c in value):
                     return False
-            scope=(event["policy_id"],event["witness_id"],event["generation"])
+            scope=(event["authority_id"],event["witness_id"],event["generation"])
             if scope in seen: return False
             seen.add(scope)
             statement=DOMAIN+canonical({"policy_sha256":event["policy_sha256"],
