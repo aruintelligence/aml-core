@@ -35,11 +35,25 @@ class EffectAuthority:
         if external_floor is not None and not callable(external_floor):
             raise TypeError("external floor must be callable")
         self.external_floor = external_floor
-        with sqlite3.connect(self.path) as db:
+        # Initialize only a genuinely empty database. Missing security state in
+        # an existing database is corruption/tampering, never a reset signal.
+        with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
             db.execute("PRAGMA synchronous=FULL")
-            db.execute("CREATE TABLE IF NOT EXISTS effects (operation_id TEXT PRIMARY KEY, digest TEXT NOT NULL, generation INTEGER NOT NULL, value INTEGER NOT NULL)")
-            db.execute("CREATE TABLE IF NOT EXISTS policy_floor (singleton INTEGER PRIMARY KEY CHECK (singleton=1), generation INTEGER NOT NULL CHECK (generation>=0))")
-            db.execute("INSERT OR IGNORE INTO policy_floor VALUES (1, 0)")
+            db.execute("BEGIN IMMEDIATE")
+            existing = {row[0] for row in db.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'")}
+            if not existing:
+                db.execute("CREATE TABLE effects (operation_id TEXT PRIMARY KEY, digest TEXT NOT NULL, generation INTEGER NOT NULL, value INTEGER NOT NULL)")
+                db.execute("CREATE TABLE policy_floor (singleton INTEGER PRIMARY KEY CHECK (singleton=1), generation INTEGER NOT NULL CHECK (generation>=0))")
+                db.execute("INSERT INTO policy_floor VALUES (1, 0)")
+            elif not {"effects", "policy_floor"}.issubset(existing):
+                db.execute("ROLLBACK")
+                raise ValueError("existing effect database has missing security tables")
+            floor = db.execute("SELECT generation FROM policy_floor WHERE singleton=1").fetchall()
+            if len(floor) != 1 or type(floor[0][0]) is not int or floor[0][0] < 0:
+                db.execute("ROLLBACK")
+                raise ValueError("existing effect database has invalid policy floor")
+            db.execute("COMMIT")
 
     def advance_policy_floor(self, generation):
         """Local monotonic revocation floor; NOT resistant to database rollback."""
