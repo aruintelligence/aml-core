@@ -78,12 +78,12 @@ def main():
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         try:
             for _ in range(150):
-                if sock.exists():
+                if sock.exists() and (sock.stat().st_mode & 0o777) == 0o666:
                     break
                 if proc.poll() is not None:
                     raise AssertionError("reservation server died: " + proc.stderr.read())
                 time.sleep(0.02)
-            assert sock.exists(), "reservation server not ready"
+            assert sock.exists() and (sock.stat().st_mode & 0o777) == 0o666, "reservation server not ready"
             outcome = subprocess.run([sys.executable, "-c", CLIENT, str(sock), str(db)],
                                      preexec_fn=drop(caller), env=env,
                                      capture_output=True, text=True, timeout=10)
