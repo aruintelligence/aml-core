@@ -28,7 +28,7 @@ class EffectAuthority:
     False; its state MUST be independently protected and monotonic. This adapter
     does not itself provide cryptographic authorization or external anti-rollback.
     """
-    def __init__(self, path, authorize, external_floor=None, require_existing=False):
+    def __init__(self, path, authorize, external_floor=None, require_existing=False, reserve_operation=None):
         if not callable(authorize):
             raise TypeError("trusted authorize callback required")
         self.path = str(path)
@@ -40,6 +40,9 @@ class EffectAuthority:
         if external_floor is not None and not callable(external_floor):
             raise TypeError("external floor must be callable")
         self.external_floor = external_floor
+        if reserve_operation is not None and not callable(reserve_operation):
+            raise TypeError('reservation callback must be callable')
+        self.reserve_operation = reserve_operation
         # Initialize only a genuinely empty database. Missing security state in
         # an existing database is corruption/tampering, never a reset signal.
         with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
@@ -105,6 +108,12 @@ class EffectAuthority:
                     return "ALREADY_APPLIED" if existing[0] == digest else "DENIED"
                 # Fail closed on authorization errors. No effects may occur first.
                 if self.authorize(effect["operation_id"], digest, policy_generation) is not True:
+                    db.execute("ROLLBACK")
+                    return "DENIED"
+                # Independently durable reservation must precede local effect.
+                # Failed reservation or exception denies without local effect.
+                if (self.reserve_operation is not None and
+                    self.reserve_operation(effect["operation_id"], digest, policy_generation) is not True):
                     db.execute("ROLLBACK")
                     return "DENIED"
                 db.execute("INSERT INTO effects VALUES (?,?,?,?)", (effect["operation_id"], digest, policy_generation, effect["value"]))
