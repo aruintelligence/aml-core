@@ -4,10 +4,15 @@ The database must be controlled by a separate trusted principal. This protects
 against verifier process restart, NOT coordinated rollback of the store itself.
 """
 import sqlite3
+import os
 
 class DurableCheckpointHighWater:
-    def __init__(self, path):
+    def __init__(self, path, require_existing=False):
         self.path = str(path)
+        if type(require_existing) is not bool:
+            raise TypeError('require_existing must be bool')
+        if require_existing and not os.path.isfile(self.path):
+            raise ValueError('checkpoint database absent: explicit bootstrap required')
         with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
             db.execute("PRAGMA synchronous=FULL")
             db.execute("BEGIN IMMEDIATE")
