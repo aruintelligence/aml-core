@@ -82,7 +82,7 @@ def main():
   private_key=state/"holder.pem"; public_key=shared/"holder.pub"; sock=ipc/"holder.sock"
   lib=root/"lib"; lib.mkdir(mode=0o755)
   for name in ("session_holder_service","session_capability","signed_receipt","gated_action_broker",
-      "strict_evaluator","pin_replication","replica_attestation"):
+      "strict_evaluator","pin_replication","pin_registry","replica_attestation"):
    source=HERE/(name+".py")
    if source.exists():
     target=lib/(name+".py"); shutil.copyfile(source,target); target.chmod(0o644)
