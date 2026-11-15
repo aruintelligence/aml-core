@@ -89,3 +89,30 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
   pathlib.Path(path).write_bytes(b""); os.chmod(path,0o644)
   with self.assertRaisesRegex(ValueError,"private regular file"):
    RecoveryAnchorWitness("anchor-0",self.keys["anchor-0"],path)
+
+ def test_quorum_anchor_detects_rollback_of_real_authority_approval_ledger(self):
+  import shutil
+  from threshold_recovery import RecoveryAuthoritySigner,POLICY_SCHEMA
+  from recovery_ledger_anchor import event_chain_checkpoint,verify_event_chain,checkpoint_pin
+  authority_keys={f"recovery-{i}":Ed25519PrivateKey.generate() for i in range(4)}
+  authority_policy={"schema":POLICY_SCHEMA,"policy_id":"recovery-ledger-council",
+   "threshold":3,"max_faults":1,
+   "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in authority_keys.items()}}
+  ledger=str(pathlib.Path(self.temp.name)/"recovery-authority.sqlite")
+  signer=RecoveryAuthoritySigner("recovery-0",authority_keys["recovery-0"],ledger)
+  signer.approve({"witness_id":"north","generation":1,"previous_state_sha256":"a"*64,"new_key":"b"*64},authority_policy)
+  snapshot=str(pathlib.Path(self.temp.name)/"pre-anchor-snapshot.sqlite")
+  shutil.copy2(ledger,snapshot)
+  signer.approve({"witness_id":"north","generation":2,"previous_state_sha256":"c"*64,"new_key":"d"*64},authority_policy)
+  checkpoint=event_chain_checkpoint(ledger,"recovery-0",authority_keys["recovery-0"].public_key().public_bytes_raw().hex())
+  pin=checkpoint_pin(checkpoint)
+  payload=make_anchor_payload(checkpoint,1,"0"*64,self.policy)
+  certificate=make_anchor_certificate(payload,self.policy,
+   {k:self.witnesses[k] for k in ("anchor-0","anchor-1","anchor-2")})
+  self.assertTrue(verify_anchor_certificate(payload,certificate,self.policy,1,"0"*64,
+   "recovery-0",checkpoint["authority_key_sha256"]))
+  self.assertTrue(verify_event_chain(ledger,authority_keys["recovery-0"].public_key().public_bytes_raw().hex(),checkpoint,pin))
+  shutil.copy2(snapshot,ledger)
+  self.assertFalse(verify_event_chain(ledger,authority_keys["recovery-0"].public_key().public_bytes_raw().hex(),checkpoint,pin))
+  self.assertTrue(verify_anchor_certificate(payload,certificate,self.policy,1,"0"*64,
+   "recovery-0",checkpoint["authority_key_sha256"]))
