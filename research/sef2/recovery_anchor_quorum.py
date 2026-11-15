@@ -22,20 +22,23 @@ def policy_digest(policy):
 
 def validate_anchor_policy(policy):
     try:
-        if type(policy) is not dict or set(policy)!={"schema","policy_id","threshold","max_faults","authorities"}:
+        if type(policy) is not dict or set(policy)!={"schema","policy_id","threshold","max_faults","authorities","administrative_domains"}:
             return False
         if policy["schema"]!=POLICY_SCHEMA or type(policy["policy_id"]) is not str or not policy["policy_id"]:
             return False
-        members=policy["authorities"]; q=policy["threshold"]; f=policy["max_faults"]
-        if type(members) is not dict or type(q) is not int or type(f) is not int: return False
+        members=policy["authorities"]; q=policy["threshold"]; f=policy["max_faults"]; domains=policy["administrative_domains"]
+        if (type(members) is not dict or type(q) is not int or type(f) is not int
+            or type(domains) is not dict or set(domains)!=set(members)): return False
         n=len(members)
         if f<0 or n<3*f+1 or q<1 or q>n-f or 2*q-n<=f: return False
-        seen=set()
+        seen=set(); seen_domains=set()
         for name,key_hex in members.items():
             if type(name) is not str or not name or type(key_hex) is not str: return False
             raw=bytes.fromhex(key_hex)
+            domain=domains[name]
+            if type(domain) is not str or not domain or domain in seen_domains: return False
             if len(raw)!=32 or raw in seen: return False
-            seen.add(raw)
+            seen.add(raw); seen_domains.add(domain)
         return True
     except (ValueError,TypeError,KeyError):
         return False
