@@ -6,7 +6,8 @@ from session_capability import verify_session_capability,verify_holder_proof
 
 class SessionCapabilityBroker:
     def __init__(self,path,registry,witness,replicas,threshold,enrolled_keys,
-                 issuer,issuer_public_hex,audience,broker_instance_id=None,broker_challenge_private=None):
+                 issuer,issuer_public_hex,audience,broker_instance_id=None,broker_challenge_private=None,
+                 epoch_anchor=None):
         if type(issuer) is not str or not issuer or type(audience) is not str or not audience:
             raise ValueError("invalid issuer or audience")
         if type(issuer_public_hex) is not str or len(bytes.fromhex(issuer_public_hex))!=32:
@@ -15,6 +16,7 @@ class SessionCapabilityBroker:
         self.replicas=replicas; self.threshold=threshold; self.enrolled_keys=enrolled_keys
         self.issuer=issuer; self.issuer_public_hex=issuer_public_hex; self.audience=audience
         self.broker_instance_id=broker_instance_id; self.broker_challenge_private=broker_challenge_private
+        self.epoch_anchor=epoch_anchor
         if (broker_instance_id is None)!=(broker_challenge_private is None):
             raise ValueError("broker challenge identity configuration must be complete")
         with sqlite3.connect(self.path) as db:
@@ -25,15 +27,56 @@ class SessionCapabilityBroker:
             db.execute("""CREATE TABLE IF NOT EXISTS execution_challenges (
                 operation_id TEXT PRIMARY KEY,challenge TEXT UNIQUE NOT NULL,
                 epoch INTEGER NOT NULL,consumed INTEGER NOT NULL CHECK(consumed IN (0,1)))""")
+            local_epoch=db.execute("SELECT epoch FROM session_policy_epoch WHERE audience=?",(audience,)).fetchone()[0]
+        if self.epoch_anchor is not None:
+            try:
+                anchored=self.epoch_anchor.read_epoch(audience)
+            except ValueError:
+                anchored=self.epoch_anchor.initialize(audience,local_epoch)
+            if anchored<local_epoch:
+                raise ValueError("session revocation anchor is behind broker state")
+            if anchored>local_epoch:
+                with sqlite3.connect(self.path,timeout=10) as db:
+                    db.execute("PRAGMA synchronous=FULL"); db.execute("BEGIN IMMEDIATE")
+                    db.execute("UPDATE session_policy_epoch SET epoch=? WHERE audience=?",(anchored,audience))
     def current_epoch(self):
-        with sqlite3.connect(self.path) as db:
-            row=db.execute("SELECT epoch FROM session_policy_epoch WHERE audience=?",(self.audience,)).fetchone()
-            if row is None: raise ValueError("missing policy epoch")
-            return row[0]
-    def revoke_all(self):
+        anchored=self.epoch_anchor.read_epoch(self.audience) if self.epoch_anchor is not None else None
         with sqlite3.connect(self.path,timeout=10) as db:
             db.execute("PRAGMA synchronous=FULL"); db.execute("BEGIN IMMEDIATE")
-            db.execute("UPDATE session_policy_epoch SET epoch=epoch+1 WHERE audience=?",(self.audience,))
+            row=db.execute("SELECT epoch FROM session_policy_epoch WHERE audience=?",(self.audience,)).fetchone()
+            if row is None: raise ValueError("missing policy epoch")
+            local=row[0]
+            if anchored is None: return local
+            if local>anchored: raise PermissionError("local session epoch is ahead of independent anchor")
+            if local<anchored:
+                db.execute("UPDATE session_policy_epoch SET epoch=? WHERE audience=?",(anchored,self.audience))
+            return anchored
+    def revoke_all(self):
+        anchored=self.epoch_anchor.read_epoch(self.audience) if self.epoch_anchor is not None else None
+        with sqlite3.connect(self.path,timeout=10) as db:
+            db.execute("PRAGMA synchronous=FULL"); db.execute("BEGIN IMMEDIATE")
+            local=db.execute("SELECT epoch FROM session_policy_epoch WHERE audience=?",(self.audience,)).fetchone()[0]
+            if anchored is not None:
+                if local>anchored: raise PermissionError("unreconciled session revocation")
+                if local<anchored:
+                    db.execute("UPDATE session_policy_epoch SET epoch=? WHERE audience=?",(anchored,self.audience))
+                    local=anchored
+            new_epoch=local+1
+            db.execute("UPDATE session_policy_epoch SET epoch=? WHERE audience=?",(new_epoch,self.audience))
+        if self.epoch_anchor is not None and not self.epoch_anchor.compare_and_set(self.audience,anchored,new_epoch):
+            raise RuntimeError("session revocation anchor update failed; broker is fail-closed")
+        return new_epoch
+
+    def reconcile_revocation_anchor(self):
+        if self.epoch_anchor is None:
+            return self.current_epoch()
+        anchored=self.epoch_anchor.read_epoch(self.audience)
+        with sqlite3.connect(self.path) as db:
+            local=db.execute("SELECT epoch FROM session_policy_epoch WHERE audience=?",(self.audience,)).fetchone()[0]
+        if local==anchored: return anchored
+        if local==anchored+1 and self.epoch_anchor.compare_and_set(self.audience,anchored,local):
+            return local
+        raise RuntimeError("session revocation state cannot be reconciled safely")
     def issue_authenticated_execution_challenge(self,request,capability):
         if self.broker_instance_id is None:
             raise PermissionError("broker challenge signing is not configured")
@@ -49,9 +92,15 @@ class SessionCapabilityBroker:
     def issue_execution_challenge(self,operation_id):
         if type(operation_id) is not str or not operation_id or len(operation_id)>128:
             raise ValueError("invalid operation id")
+        anchored=self.epoch_anchor.read_epoch(self.audience) if self.epoch_anchor is not None else None
         with sqlite3.connect(self.path,timeout=10) as db:
             db.execute("PRAGMA synchronous=FULL"); db.execute("BEGIN IMMEDIATE")
             epoch=db.execute("SELECT epoch FROM session_policy_epoch WHERE audience=?",(self.audience,)).fetchone()[0]
+            if anchored is not None:
+                if epoch>anchored: raise PermissionError("session revocation anchor not reconciled")
+                if epoch<anchored:
+                    db.execute("UPDATE session_policy_epoch SET epoch=? WHERE audience=?",(anchored,self.audience))
+                    epoch=anchored
             row=db.execute("SELECT challenge,epoch,consumed FROM execution_challenges WHERE operation_id=?",(operation_id,)).fetchone()
             if row:
                 if row[1]!=epoch or row[2]!=0: raise PermissionError("challenge unavailable")
@@ -66,11 +115,17 @@ class SessionCapabilityBroker:
                                             self.threshold,attestations,self.enrolled_keys):
                 return "DENIED"
             digest=hashlib.sha256(body).hexdigest()
+            anchored=self.epoch_anchor.read_epoch(self.audience) if self.epoch_anchor is not None else None
             with sqlite3.connect(self.path,timeout=10) as db:
                 db.execute("PRAGMA synchronous=FULL"); db.execute("BEGIN IMMEDIATE")
                 epoch_row=db.execute("SELECT epoch FROM session_policy_epoch WHERE audience=?",(self.audience,)).fetchone()
                 if epoch_row is None: return "DENIED"
                 epoch=epoch_row[0]
+                if anchored is not None:
+                    if epoch>anchored: return "DENIED"
+                    if epoch<anchored:
+                        db.execute("UPDATE session_policy_epoch SET epoch=? WHERE audience=?",(anchored,self.audience))
+                        epoch=anchored
                 if not verify_session_capability(capability,self.issuer_public_hex,self.issuer,
                     self.audience,request,epoch):
                     return "DENIED"
