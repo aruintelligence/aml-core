@@ -91,3 +91,13 @@ class RecoveryPolicyRegistryAnchorTests(unittest.TestCase):
   with self.assertRaisesRegex(ValueError,"stale or forked"):
    self.anchors["anchor-0"].approve(make_registry_anchor_payload(advanced,2,"f"*64,
       self.anchor_policy),self.anchor_policy)
+
+ def test_anchor_fingerprint_binds_quorum_and_fault_bound_not_only_member_keys(self):
+  from threshold_recovery import validate_policy,policy_digest
+  altered={**self.old,"max_faults":0}
+  self.assertTrue(validate_policy(altered))
+  self.assertEqual(altered["authorities"],self.old["authorities"])
+  self.assertNotEqual(authority_set_fingerprint(self.old),authority_set_fingerprint(altered))
+  changed_state={**self.first_state,"policy":altered,"policy_sha256":policy_digest(altered)}
+  self.assertFalse(verify_registry_anchor(changed_state,self.first_payload,self.first_certificate,
+      self.anchor_policy,1,"0"*64))
