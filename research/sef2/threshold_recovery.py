@@ -452,8 +452,11 @@ class SignedRecoveryHeadAnchor:
         head=response["head_sha256"]
         if type(head) is not str or len(head)!=64 or any(c not in "0123456789abcdef" for c in head):
             raise RuntimeError("invalid recovery anchor head")
+        signature=response["signature"]
+        if type(signature) is not str or len(signature)!=128 or any(c not in "0123456789abcdef" for c in signature):
+            raise RuntimeError("malformed recovery anchor signature encoding")
         try:
-            self.public_key.verify(bytes.fromhex(response["signature"]),
+            self.public_key.verify(bytes.fromhex(signature),
                 RECOVERY_ANCHOR_READ_DOMAIN+canonical(statement))
         except (InvalidSignature,ValueError,TypeError) as exc:
             raise RuntimeError("recovery anchor signature verification failed") from exc
@@ -471,8 +474,11 @@ class SignedRecoveryHeadAnchor:
             or response["new_head"]!=new_head or response["nonce"]!=nonce
             or type(response["accepted"]) is not bool):
             raise RuntimeError("recovery anchor CAS response binding mismatch")
+        signature=response["signature"]
+        if type(signature) is not str or len(signature)!=128 or any(c not in "0123456789abcdef" for c in signature):
+            raise RuntimeError("malformed recovery anchor signature encoding")
         try:
-            self.public_key.verify(bytes.fromhex(response["signature"]),
+            self.public_key.verify(bytes.fromhex(signature),
                 RECOVERY_ANCHOR_CAS_DOMAIN+canonical(statement))
         except (InvalidSignature,ValueError,TypeError) as exc:
             raise RuntimeError("recovery anchor CAS signature verification failed") from exc
