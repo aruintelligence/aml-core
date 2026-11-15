@@ -122,3 +122,34 @@ class CurrentRecoveryPolicyVerifierTests(unittest.TestCase):
     "--registry-anchor-sequence","1","--registry-previous-anchor-pin","0"*64],
     capture_output=True,text=True,check=False)
   self.assertEqual(result.returncode,2)
+
+ def test_validly_signed_but_unenrolled_authority_is_rejected(self):
+  from signed_receipt import canonical
+  from threshold_recovery import DOMAIN,policy_digest
+  from recovery_evidence_reference_verifier import verify_recovery_evidence
+  outsider=Ed25519PrivateKey.generate(); outsider_id="not-enrolled"
+  payload={"witness_id":"north","generation":1,"previous_state_sha256":"a"*64}
+  pd=policy_digest(self.policy)
+  payload_sha=hashlib.sha256(canonical(payload)).hexdigest()
+  signature=outsider.sign(DOMAIN+canonical({"policy_sha256":pd,"payload_sha256":payload_sha})).hex()
+  event={"sequence":1,"previous_event_sha256":"0"*64,"policy_id":self.policy["policy_id"],
+   "authority_id":outsider_id,"witness_id":"north","generation":1,"policy_sha256":pd,
+   "previous_state_sha256":"a"*64,"payload_sha256":payload_sha,"signature":signature}
+  event["event_sha256"]=hashlib.sha256(canonical(event)).hexdigest()
+  ledger={"schema":"AML-SEF2-RECOVERY-APPROVAL-LEDGER-V1","authority_id":outsider_id,
+   "events":[event],"head_sha256":event["event_sha256"]}
+  public=outsider.public_key().public_bytes_raw().hex()
+  checkpoint={"schema":CHECKPOINT_SCHEMA,"authority_id":outsider_id,
+   "authority_key_sha256":hashlib.sha256(bytes.fromhex(public)).hexdigest(),
+   "sequence":1,"head_hash":ledger["head_sha256"]}
+  anchor_payload=make_anchor_payload(checkpoint,1,"0"*64,self.authority_anchor_policy)
+  witnesses={k:RecoveryAnchorWitness(k,v,str(Path(self.temp.name)/("outsider-"+k+".sqlite")))
+      for k,v in self.authority_anchor_keys.items()}
+  certificate=make_anchor_certificate(anchor_payload,self.authority_anchor_policy,
+      {k:witnesses[k] for k in ("aa0","aa1","aa2")})
+  evidence={"schema":"AML-SEF2-RECOVERY-EVIDENCE-BUNDLE-V1","authority_id":outsider_id,
+   "ledger":ledger,"checkpoint":checkpoint,"anchor_payload":anchor_payload,
+   "anchor_certificate":certificate}
+  self.assertTrue(verify_recovery_evidence(evidence,public,self.authority_anchor_policy,1,"0"*64))
+  bundle={**self.bundle,"recovery_evidence":evidence}
+  self.assertFalse(self.check(bundle))
