@@ -542,3 +542,37 @@ class BoundedRecoveryStateModelTests(unittest.TestCase):
   result=bounded_recovery_state_check(4,2,1)
   self.assertFalse(result["safe"])
   self.assertIsNotNone(result["conflicting_commit_counterexample"])
+
+class RecoveryAuthorityConcurrencyTests(unittest.TestCase):
+ def setUp(self):
+  import pathlib,tempfile
+  self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+  self.keys={f"authority-{i}":Ed25519PrivateKey.generate() for i in range(4)}
+  self.policy=make_policy(self.keys,3)
+  self.ledger=str(pathlib.Path(self.temp.name)/"authority.sqlite")
+  self.signers=[RecoveryAuthoritySigner("authority-0",self.keys["authority-0"],self.ledger)
+      for _ in range(2)]
+  self.payload={"witness_id":"north","generation":9,"previous_state_sha256":"a"*64,"next_policy_sha256":"b"*64}
+ def test_concurrent_conflicting_approvals_have_exactly_one_winner(self):
+  import concurrent.futures,threading
+  barrier=threading.Barrier(2)
+  payloads=[self.payload,{**self.payload,"previous_state_sha256":"c"*64,"next_policy_sha256":"d"*64}]
+  def submit(i):
+   barrier.wait()
+   try: return ("approved",self.signers[i].approve(payloads[i],self.policy))
+   except ValueError as exc: return ("refused",str(exc))
+  with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+   results=list(pool.map(submit,(0,1)))
+  self.assertEqual(sum(status=="approved" for status,_ in results),1)
+  self.assertEqual(sum(status=="refused" for status,_ in results),1)
+  self.assertIn("equivocation",[value for status,value in results if status=="refused"][0])
+ def test_concurrent_identical_approvals_are_idempotent(self):
+  import concurrent.futures,threading
+  barrier=threading.Barrier(2)
+  def submit(signer):
+   barrier.wait()
+   return signer.approve(self.payload,self.policy)
+  with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+   signatures=list(pool.map(submit,self.signers))
+  self.assertEqual(signatures[0],signatures[1])
+  self.assertEqual(len(signatures[0]),128)
