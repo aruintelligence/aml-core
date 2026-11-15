@@ -6,6 +6,7 @@ performed by a separately trusted authority before calling commit().
 """
 import hashlib
 import json
+import os
 import sqlite3
 
 SCHEMA = "AML-SEF2-EFFECT-V1"
@@ -27,10 +28,14 @@ class EffectAuthority:
     False; its state MUST be independently protected and monotonic. This adapter
     does not itself provide cryptographic authorization or external anti-rollback.
     """
-    def __init__(self, path, authorize, external_floor=None):
+    def __init__(self, path, authorize, external_floor=None, require_existing=False):
         if not callable(authorize):
             raise TypeError("trusted authorize callback required")
         self.path = str(path)
+        if type(require_existing) is not bool:
+            raise TypeError("require_existing must be bool")
+        if require_existing and not os.path.isfile(self.path):
+            raise ValueError("effect database absent: explicit bootstrap required")
         self.authorize = authorize
         if external_floor is not None and not callable(external_floor):
             raise TypeError("external floor must be callable")
@@ -42,6 +47,9 @@ class EffectAuthority:
             db.execute("BEGIN IMMEDIATE")
             existing = {row[0] for row in db.execute(
                 "SELECT name FROM sqlite_master WHERE type='table'")}
+            if not existing and require_existing:
+                db.execute("ROLLBACK")
+                raise ValueError("existing effect database has no security state")
             if not existing:
                 db.execute("CREATE TABLE effects (operation_id TEXT PRIMARY KEY, digest TEXT NOT NULL, generation INTEGER NOT NULL, value INTEGER NOT NULL)")
                 db.execute("CREATE TABLE policy_floor (singleton INTEGER PRIMARY KEY CHECK (singleton=1), generation INTEGER NOT NULL CHECK (generation>=0))")
