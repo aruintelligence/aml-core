@@ -262,3 +262,8 @@ Added `recovery_anchor_reference_verifier.py`, a separate verifier for 3-of-4 (o
 
 
 **Directive 023 — anchor database identity binding:** each independent recovery-anchor witness database now pins exactly one anchor identifier and the SHA-256 fingerprint of its Ed25519 public key. Reopening the same SQLite file under another anchor identity or replacement key is rejected before vote processing. This closes a local identity-confusion and denial-of-service path caused by reusing persisted vote state under a different signer. Tests cover both identity substitution and key replacement. The metadata is still local and rollbackable; independent pins remain necessary against administrator-level storage rollback.
+
+
+### Recovery authorization performance baseline
+
+`benchmark_recovery_authority.py` runs a reproducible 25-iteration local microbenchmark for 3-of-4 durable threshold approval, threshold signature verification, independent anchor certificate generation, and both implementation-side and independent reference verification. It reports median, p95, mean, minimum and maximum latency together with Python/platform/dependency/storage metadata. CI runs the benchmark on each relevant PR. The measurements are single-host local-SQLite observations only; they do not predict networked, HSM-backed, multi-organization or production throughput.
