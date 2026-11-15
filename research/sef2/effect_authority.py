@@ -34,6 +34,22 @@ class EffectAuthority:
         with sqlite3.connect(self.path) as db:
             db.execute("PRAGMA synchronous=FULL")
             db.execute("CREATE TABLE IF NOT EXISTS effects (operation_id TEXT PRIMARY KEY, digest TEXT NOT NULL, generation INTEGER NOT NULL, value INTEGER NOT NULL)")
+            db.execute("CREATE TABLE IF NOT EXISTS policy_floor (singleton INTEGER PRIMARY KEY CHECK (singleton=1), generation INTEGER NOT NULL CHECK (generation>=0))")
+            db.execute("INSERT OR IGNORE INTO policy_floor VALUES (1, 0)")
+
+    def advance_policy_floor(self, generation):
+        """Local monotonic revocation floor; NOT resistant to database rollback."""
+        if type(generation) is not int or generation < 0:
+            return False
+        try:
+            with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
+                db.execute("PRAGMA synchronous=FULL")
+                db.execute("BEGIN IMMEDIATE")
+                db.execute("UPDATE policy_floor SET generation = MAX(generation, ?) WHERE singleton=1", (generation,))
+                db.execute("COMMIT")
+            return True
+        except sqlite3.Error:
+            return False
 
     def commit(self, effect, policy_generation):
         try:
@@ -44,6 +60,10 @@ class EffectAuthority:
             with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
                 db.execute("PRAGMA synchronous=FULL")
                 db.execute("BEGIN IMMEDIATE")
+                floor = db.execute("SELECT generation FROM policy_floor WHERE singleton=1").fetchone()
+                if floor is None or policy_generation < floor[0]:
+                    db.execute("ROLLBACK")
+                    return "DENIED"
                 existing = db.execute("SELECT digest FROM effects WHERE operation_id=?", (effect["operation_id"],)).fetchone()
                 if existing is not None:
                     db.execute("ROLLBACK")
