@@ -47,3 +47,20 @@ class RecoveryAnchorReconciliationTests(unittest.TestCase):
   signer=RecoveryAuthoritySigner("authority-0",self.key,self.path,head_anchor=self.anchor)
   self.assertEqual(reconcile_recovery_authority_anchor("authority-0",self.key,self.path,
       self.anchor,"0"*64),"ALREADY_CURRENT")
+
+ def test_multiple_unanchored_events_cannot_be_reconciled_as_one(self):
+  signer=RecoveryAuthoritySigner("authority-0",self.key,self.path)
+  signer.approve(self.payload,self.policy)
+  signer.approve({**self.payload,"generation":2,"previous_state_sha256":"c"*64},self.policy)
+  self.assertEqual(reconcile_recovery_authority_anchor("authority-0",self.key,self.path,
+      self.anchor,"0"*64),"EXPECTED_PREDECESSOR_MISMATCH")
+  self.assertEqual(self.anchor.read_head(),"0"*64)
+ def test_tampered_local_ledger_cannot_be_reconciled(self):
+  import sqlite3
+  signer=RecoveryAuthoritySigner("authority-0",self.key,self.path)
+  signer.approve(self.payload,self.policy)
+  with sqlite3.connect(self.path) as con:
+   con.execute("UPDATE recovery_approval_events SET payload_sha256=? WHERE sequence=1",("f"*64,))
+  self.assertEqual(reconcile_recovery_authority_anchor("authority-0",self.key,self.path,
+      self.anchor,"0"*64),"INVALID_LOCAL_LEDGER")
+  self.assertEqual(self.anchor.read_head(),"0"*64)
