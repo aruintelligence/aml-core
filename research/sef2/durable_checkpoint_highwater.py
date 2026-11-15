@@ -31,6 +31,24 @@ class DurableCheckpointHighWater:
                 raise ValueError("existing checkpoint database missing security table")
             db.execute("COMMIT")
 
+    def enroll(self, authority_id, sequence, generation):
+        """Explicit bootstrap only; never silently replace an enrolled authority."""
+        if (type(authority_id) is not str or not authority_id
+            or type(sequence) is not int or sequence < 0
+            or type(generation) is not int or generation < 0):
+            raise ValueError("invalid checkpoint enrollment")
+        with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
+            db.execute("PRAGMA synchronous=FULL")
+            db.execute("BEGIN IMMEDIATE")
+            try:
+                db.execute("INSERT INTO checkpoint_marks (authority_id,sequence,generation) VALUES (?,?,?)",
+                           (authority_id, sequence, generation))
+            except sqlite3.IntegrityError as exc:
+                db.execute("ROLLBACK")
+                raise ValueError("checkpoint authority already enrolled") from exc
+            db.execute("COMMIT")
+        return True
+
     def observe(self, authority_id, sequence, generation):
         if (type(authority_id) is not str or not authority_id
             or type(sequence) is not int or sequence < 0
