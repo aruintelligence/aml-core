@@ -61,6 +61,8 @@ class WitnessSeparateUIDTests(unittest.TestCase):
                         env=env, capture_output=True, text=True, timeout=10,
                         preexec_fn=demote, check=True).stdout.strip()
                 self.assertEqual(run_as(denied_uid, request), '{"advance": false}')
+                self.assertEqual(run_as(allowed_uid, dict(request, authority_id="foreign")), '{"advance": false}')
+                self.assertEqual(run_as(allowed_uid, dict(request, head="f" * 64)), '{"advance": false}')
                 self.assertEqual(store.inspect(), (0, GENESIS))
                 self.assertEqual(run_as(allowed_uid, request), '{"advance": true}')
                 self.assertEqual(store.inspect(), (1, head))
