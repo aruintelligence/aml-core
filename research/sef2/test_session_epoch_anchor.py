@@ -15,3 +15,9 @@ class SessionEpochAnchorTests(unittest.TestCase):
   self.assertEqual(SessionEpochAnchor(self.root/"anchor.sqlite").read_epoch("broker-a"),1)
  def test_conflicting_initialization_rejected(self):
   with self.assertRaises(ValueError): self.anchor.initialize("broker-a",1)
+
+ def test_remote_client_treats_explicit_missing_as_uninitialized_not_denied(self):
+  from session_epoch_anchor import RemoteSessionEpochAnchor
+  class Fake(RemoteSessionEpochAnchor):
+   def _call(self,payload): return {"status":"MISSING"}
+  with self.assertRaises(ValueError): Fake("unused").read_epoch("new-audience")
