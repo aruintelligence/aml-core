@@ -9,6 +9,7 @@ from session_capability import issue_session_capability,make_holder_proof
 from session_epoch_anchor import SessionEpochAnchor
 from independent_filesystem_effect_executor import (IndependentFilesystemEffectExecutor,
  InjectedIndependentFilesystemCrash)
+from authorized_execution_consumption import AuthorizedExecutionConsumptionWitness
 
 class IndependentFilesystemEffectExecutorTests(unittest.TestCase):
  def setUp(self):
@@ -31,12 +32,15 @@ class IndependentFilesystemEffectExecutorTests(unittest.TestCase):
   attestations=[attest(r,f"r{i}","north",self.replica_keys[i]) for i,r in enumerate(self.replicas)]
   self.eval=evaluate_and_issue(self.registry,"north",self.replicas,2,attestations,self.enrolled,
    self.evaluator,"evaluator-real","broker-a",self.request,self.cap,self.challenge,0)
-  self.db=root/"executor.sqlite"; self.effects=root/"effects"; self.executor=self.make()
+  self.db=root/"executor.sqlite"; self.effects=root/"effects"
+  self.execution_witness=AuthorizedExecutionConsumptionWitness(root/"execution-consumption-v3.sqlite")
+  self.executor=self.make()
  def make(self,fault=None):
   return IndependentFilesystemEffectExecutor(self.db,self.effects,"authority",
    self.authority.public_key().public_bytes_raw().hex(),"broker-a","broker-instance-real",
    self.broker.public_key().public_bytes_raw().hex(),"evaluator-real",
-   self.evaluator.public_key().public_bytes_raw().hex(),"north",self.anchor,fault)
+   self.evaluator.public_key().public_bytes_raw().hex(),"north",self.anchor,fault,
+   self.execution_witness)
  def execute(self,cap=None,challenge=None,proof=None,evaluator=None,request=None):
   return self.executor.execute(request or self.request,cap or self.cap,challenge or self.challenge,
    proof or self.proof,evaluator or self.eval)
@@ -83,3 +87,36 @@ class IndependentFilesystemEffectExecutorTests(unittest.TestCase):
   self.assertEqual(self.execute(),"DENIED")
  def test_effect_directory_is_private(self):
   self.assertEqual(self.effects.stat().st_mode & 0o077,0)
+
+ def test_crash_after_consumption_before_pending_strands_safely(self):
+  def fault(point):
+   if point=="after_consumption": raise InjectedIndependentFilesystemCrash(point)
+  self.executor=self.make(fault)
+  with self.assertRaises(InjectedIndependentFilesystemCrash): self.execute()
+  self.assertEqual(self.execution_witness.head()["sequence"],1)
+  with sqlite3.connect(self.db) as db:
+   self.assertEqual(db.execute("SELECT COUNT(*) FROM independent_filesystem_effects").fetchone()[0],0)
+  self.assertFalse(any(self.effects.iterdir()))
+  self.executor=self.make()
+  self.assertEqual(self.execute(),"DENIED")
+  self.assertFalse(any(self.effects.iterdir()))
+
+ def test_executor_database_rollback_cannot_reauthorize_real_effect(self):
+  import shutil
+  snapshot=pathlib.Path(self.tmp.name)/"executor-before.sqlite"; shutil.copy2(self.db,snapshot)
+  self.assertEqual(self.execute(),"APPLIED")
+  self.assertEqual(self.execution_witness.head()["sequence"],1)
+  shutil.copy2(snapshot,self.db)
+  self.executor=self.make()
+  self.assertEqual(self.execute(),"DENIED")
+  self.assertEqual(len(list(self.effects.glob("*.effect.json"))),1)
+
+ def test_coordinated_effect_file_and_executor_db_rollback_cannot_repeat_consumed_effect(self):
+  import shutil
+  snapshot=pathlib.Path(self.tmp.name)/"executor-before-both.sqlite"; shutil.copy2(self.db,snapshot)
+  self.assertEqual(self.execute(),"APPLIED")
+  next(self.effects.glob("*.effect.json")).unlink()
+  shutil.copy2(snapshot,self.db)
+  self.executor=self.make()
+  self.assertEqual(self.execute(),"DENIED")
+  self.assertFalse(any(self.effects.iterdir()))
