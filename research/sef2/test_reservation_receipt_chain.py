@@ -37,6 +37,16 @@ class ReservationReceiptChainTests(unittest.TestCase):
         self.assertFalse(verify_reservation_chain([self.first], self.head1, True))
         self.assertFalse(verify_reservation_chain([("a", "bad\\n", "a" * 64, 1)], self.head1, 1))
 
+    def test_oversized_stream_stops_before_processing_extra_record(self):
+        class GuardedStream:
+            def __iter__(self):
+                yield self.first
+                raise AssertionError("unexpected read beyond expected count")
+        # The first item is enough to exceed expected_count=0.
+        stream = GuardedStream()
+        stream.first = self.first
+        self.assertFalse(verify_reservation_chain(stream, GENESIS, 0))
+
     def test_duplicate_operation_identity_rejected_even_with_matching_hash(self):
         duplicate_head = reservation_chain_hash(self.head1, *self.first)
         self.assertFalse(verify_reservation_chain(
