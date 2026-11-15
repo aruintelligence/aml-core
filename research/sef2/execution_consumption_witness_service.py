@@ -3,6 +3,7 @@ import json,os,socket,struct,sys
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from execution_consumption_witness import ExecutionConsumptionWitness,make_consumption_receipt_from_entry
+from authorized_execution_consumption import AuthorizedExecutionConsumptionWitness,make_authorized_consumption_receipt
 MAX_FRAME=131072
 
 def read_exact(conn,size):
@@ -42,6 +43,7 @@ def load_or_create_key(private_path,public_path):
 
 def serve(sock_path,database,allowed_uid,allowed_gid,witness_id=None,private_key_path=None,public_key_path=None):
     witness=ExecutionConsumptionWitness(database)
+    authorized_witness=AuthorizedExecutionConsumptionWitness(database)
     signed=all(value is not None for value in (witness_id,private_key_path,public_key_path))
     if any(value is not None for value in (witness_id,private_key_path,public_key_path)) and not signed:
         raise ValueError("signed execution witness configuration must be complete")
@@ -61,15 +63,28 @@ def serve(sock_path,database,allowed_uid,allowed_gid,witness_id=None,private_key
                     size=struct.unpack("!I",read_exact(conn,4))[0]
                     if size<2 or size>MAX_FRAME: raise ValueError("invalid frame size")
                     req=json.loads(read_exact(conn,size),object_pairs_hook=reject_duplicate_keys)
-                    if type(req) is not dict or set(req)!={"op","request","capability","challenge"} or req["op"]!="CONSUME":
+                    if type(req) is not dict or "op" not in req:
                         raise ValueError("invalid consume request")
-                    if signed:
-                        entry=witness.consume_record(req["request"],req["capability"],req["challenge"])
-                        receipt=make_consumption_receipt_from_entry(key,witness_id,entry)
+                    if req["op"]=="CONSUME":
+                        if set(req)!={"op","request","capability","challenge"}:
+                            raise ValueError("invalid legacy consume request")
+                        if signed:
+                            entry=witness.consume_record(req["request"],req["capability"],req["challenge"])
+                            receipt=make_consumption_receipt_from_entry(key,witness_id,entry)
+                            response={"status":"CONSUMED","receipt":receipt}
+                        else:
+                            witness.consume(req["request"],req["capability"],req["challenge"])
+                            response={"status":"CONSUMED"}
+                    elif req["op"]=="CONSUME_AUTHORIZED":
+                        required={"op","request","capability","challenge","holder_proof","evaluator_authorization"}
+                        if set(req)!=required or not signed:
+                            raise ValueError("invalid full-authorization consume request")
+                        entry=authorized_witness.consume_record(req["request"],req["capability"],
+                            req["challenge"],req["holder_proof"],req["evaluator_authorization"])
+                        receipt=make_authorized_consumption_receipt(key,witness_id,entry)
                         response={"status":"CONSUMED","receipt":receipt}
                     else:
-                        witness.consume(req["request"],req["capability"],req["challenge"])
-                        response={"status":"CONSUMED"}
+                        raise ValueError("unsupported execution consumption operation")
                 except Exception:
                     response={"status":"DENIED"}
                 body=json.dumps(response,separators=(",",":")).encode()
