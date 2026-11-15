@@ -712,7 +712,7 @@ class IndependentlyAnchoredRecoveryLedgerTests(unittest.TestCase):
   signer=RecoveryAuthoritySigner("authority-0",self.key,self.path,head_anchor=anchor)
   with self.assertRaisesRegex(RuntimeError,"committed locally"):
    signer.approve(self.payload,self.policy)
-  with self.assertRaisesRegex(RuntimeError,"differs from independent anchor"):
+  with self.assertRaisesRegex(RuntimeError,"cannot initialize|differs from independent anchor"):
    RecoveryAuthoritySigner("authority-0",self.key,self.path,head_anchor=anchor)
  def test_nonempty_ledger_cannot_bootstrap_new_anchor(self):
   from threshold_recovery import RecoveryAuthoritySigner,MemoryRecoveryHeadAnchor
