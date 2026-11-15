@@ -105,3 +105,17 @@ class RemoteExecutionReceiptAnchor:
             if not chunk: raise PermissionError("execution anchor connection ended")
             parts.append(chunk); size-=len(chunk)
         return b"".join(parts)
+
+
+class AnchoredRemoteExecutionConsumptionWitness:
+    """Composite boundary: signed consumption witness + independent head anchor."""
+    def __init__(self,witness_socket,witness_id,witness_public_hex,anchor_socket,timeout=3):
+        from execution_consumption_witness import SignedRemoteExecutionConsumptionWitness
+        self.witness=SignedRemoteExecutionConsumptionWitness(
+            witness_socket,witness_id,witness_public_hex,timeout=timeout)
+        self.anchor=RemoteExecutionReceiptAnchor(anchor_socket,timeout)
+    def consume(self,request,capability,challenge):
+        receipt=self.witness.consume(request,capability,challenge)
+        if self.anchor.accept(receipt)!="ANCHORED":
+            raise PermissionError("execution consumption head not independently anchored")
+        return receipt
