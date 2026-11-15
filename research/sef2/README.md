@@ -505,3 +505,10 @@ This makes recovery evidence independently reproducible under explicit trust ass
 ### Directive 023 — standalone recovery evidence evaluator
 
 Added `evaluation_kit/verify_recovery_transparency.py`, a standalone command-line verifier for outside engineering teams. It consumes five explicit inputs: the recovery evidence bundle, predecessor state, pinned recovery policy, out-of-band policy digest, and per-authority ledger-head pins. It rejects duplicate JSON keys and malformed/tampered evidence, and exits nonzero on verification failure. This narrows the trust surface of independent evaluation by removing the need for evaluators to invoke the live recovery coordinator or trust its success message.
+
+
+### Directive 025 — independently verifiable completed recovery transaction
+
+Added `evaluation_kit/verify_recovery_transaction.py`, which verifies a completed witness-key recovery from exported before/after evidence rather than the live database. It checks that the trust-manifest epoch advances exactly once; authority and provider keys remain unchanged; the old witness key matches the pre-recovery state; the new witness key matches the signed transition and successor proof; the recovery state advances exactly as the transition dictates; prior revocations are preserved; the old witness key is newly revoked; and no unexplained revocations are introduced.
+
+The adversarial suite rejects missing old-key revocation, extra unexplained revocation, provider/authority key substitution, epoch skips, new witness substitution, stale current-state binding, next-state substitution, and transition proof tampering. This closes the gap between "recovery was authorized" and "the intended trust-state mutation actually occurred" for the exported evidence. It still relies on trustworthy export of the before/after manifests or separately pinned hashes of them.
