@@ -21,6 +21,14 @@ def make_policy_rotation(current_policy,next_policy,generation,old_signers,new_s
     next_keys={bytes.fromhex(value) for value in next_policy["authorities"].values()}
     if old_keys & next_keys:
         raise ValueError("successor recovery council must use disjoint public keys")
+    if "administrative_domains" not in current_policy or "administrative_domains" not in next_policy:
+        raise ValueError("planned rotation requires explicit administrative domains")
+    old_domains=set(current_policy["administrative_domains"].values())
+    next_domains=set(next_policy["administrative_domains"].values())
+    if old_domains & next_domains:
+        raise ValueError("successor recovery council must use disjoint administrative domains")
+    if next_policy["max_faults"]<current_policy["max_faults"]:
+        raise ValueError("planned rotation cannot reduce Byzantine fault bound")
     if (type(old_signers) is not dict or type(new_signers) is not dict
         or any(not isinstance(s,RecoveryAuthoritySigner) for s in old_signers.values())
         or any(not isinstance(s,RecoveryAuthoritySigner) for s in new_signers.values())):
@@ -55,7 +63,12 @@ def verify_policy_rotation(current_policy,next_policy,rotation,expected_generati
             or current_policy["policy_id"]==next_policy["policy_id"]
             or policy_digest(current_policy)==policy_digest(next_policy)
             or ({bytes.fromhex(v) for v in current_policy["authorities"].values()}
-                & {bytes.fromhex(v) for v in next_policy["authorities"].values()})):
+                & {bytes.fromhex(v) for v in next_policy["authorities"].values()})
+            or "administrative_domains" not in current_policy
+            or "administrative_domains" not in next_policy
+            or (set(current_policy["administrative_domains"].values())
+                & set(next_policy["administrative_domains"].values()))
+            or next_policy["max_faults"]<current_policy["max_faults"]):
             return False
         return (verify_approval_bundle(payload,rotation["outgoing_approval"],current_policy)
             and verify_approval_bundle(payload,rotation["incoming_acceptance"],next_policy))
