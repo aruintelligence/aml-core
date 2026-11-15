@@ -8,9 +8,17 @@ import sqlite3
 class DurableCheckpointHighWater:
     def __init__(self, path):
         self.path = str(path)
-        with sqlite3.connect(self.path) as db:
+        with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
             db.execute("PRAGMA synchronous=FULL")
-            db.execute("CREATE TABLE IF NOT EXISTS checkpoint_marks (authority_id TEXT PRIMARY KEY, sequence INTEGER NOT NULL CHECK(sequence>=0), generation INTEGER NOT NULL CHECK(generation>=0))")
+            db.execute("BEGIN IMMEDIATE")
+            existing = {row[0] for row in db.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'")}
+            if not existing:
+                db.execute("CREATE TABLE checkpoint_marks (authority_id TEXT PRIMARY KEY, sequence INTEGER NOT NULL CHECK(sequence>=0), generation INTEGER NOT NULL CHECK(generation>=0))")
+            elif "checkpoint_marks" not in existing:
+                db.execute("ROLLBACK")
+                raise ValueError("existing checkpoint database missing security table")
+            db.execute("COMMIT")
 
     def observe(self, authority_id, sequence, generation):
         if (type(authority_id) is not str or not authority_id
