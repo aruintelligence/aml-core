@@ -35,12 +35,18 @@ def verify_reservation_chain(entries, expected_head, expected_count):
     """
     if type(expected_count) is not int or expected_count < 0:
         return False
-    if type(expected_head) is not str or len(expected_head) != 64:
+    if (type(expected_head) is not str or len(expected_head) != 64
+        or any(c not in "0123456789abcdef" for c in expected_head)):
         return False
     head = GENESIS
     count = 0
+    seen = set()
     try:
         for authority_id, operation_id, digest, generation in entries:
+            identity = (authority_id, operation_id)
+            if identity in seen:
+                return False
+            seen.add(identity)
             head = reservation_chain_hash(
                 head, authority_id, operation_id, digest, generation)
             count += 1
