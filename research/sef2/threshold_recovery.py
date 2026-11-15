@@ -112,8 +112,11 @@ def valid_policy_checkpoint(checkpoint):
 
 class MemoryRecoveryHeadAnchor:
     """Thread-safe independent-anchor test double; not durable or production storage."""
-    def __init__(self,initial_head="0"*64):
+    def __init__(self,anchor_id="memory-anchor",initial_head="0"*64):
         import threading
+        if type(anchor_id) is not str or not anchor_id:
+            raise ValueError("invalid memory anchor identity")
+        self.anchor_id=anchor_id
         self._head=initial_head
         self._lock=threading.Lock()
     def read_head(self):
@@ -365,6 +368,22 @@ class QuorumRecoveryHeadAnchor:
             raise ValueError("head anchor quorum violates Byzantine safety or liveness bounds")
         if len({id(anchor) for anchor in anchors})!=n:
             raise ValueError("head anchors must be distinct instances")
+        identities=[getattr(anchor,"anchor_id",None) for anchor in anchors]
+        if any(type(identity) is not str or not identity for identity in identities):
+            raise ValueError("every recovery head anchor must expose a stable anchor_id")
+        if len(set(identities))!=n:
+            raise ValueError("recovery head anchor identities must be unique")
+        fingerprints=[]
+        for anchor in anchors:
+            public_key=getattr(anchor,"public_key",None)
+            if public_key is not None:
+                try:
+                    fingerprint=public_key.public_bytes_raw()
+                except (AttributeError,TypeError):
+                    raise ValueError("anchor public_key must expose raw Ed25519 bytes")
+                fingerprints.append(fingerprint)
+        if len(set(fingerprints))!=len(fingerprints):
+            raise ValueError("recovery head anchors must use distinct public keys")
         self.anchors=list(anchors)
         self.threshold=threshold
         self.max_faults=max_faults
