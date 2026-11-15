@@ -5,7 +5,7 @@ acceptance. Verifiers must pin the current policy and last accepted generation
 outside the rotating council's unilateral control.
 """
 from threshold_recovery import (policy_digest,validate_policy,make_approval_bundle,
-    verify_approval_bundle)
+    verify_approval_bundle,RecoveryAuthoritySigner)
 
 ROTATION_SCHEMA="AML-SEF2-RECOVERY-POLICY-ROTATION-V1"
 
@@ -16,8 +16,14 @@ def make_policy_rotation(current_policy,next_policy,generation,old_signers,new_s
         raise ValueError("invalid policy generation")
     if policy_digest(current_policy)==policy_digest(next_policy):
         raise ValueError("successor policy must differ")
+    if (type(old_signers) is not dict or type(new_signers) is not dict
+        or any(not isinstance(s,RecoveryAuthoritySigner) for s in old_signers.values())
+        or any(not isinstance(s,RecoveryAuthoritySigner) for s in new_signers.values())):
+        raise ValueError("policy rotation requires durable anti-equivocation signers")
+    previous=policy_digest(current_policy)
     payload={"schema":ROTATION_SCHEMA,"generation":generation,
-        "previous_policy_sha256":policy_digest(current_policy),
+        "witness_id":"recovery-policy","previous_state_sha256":previous,
+        "previous_policy_sha256":previous,
         "next_policy_sha256":policy_digest(next_policy)}
     old_approval=make_approval_bundle(payload,current_policy,old_signers)
     new_acceptance=make_approval_bundle(payload,next_policy,new_signers)
@@ -33,10 +39,12 @@ def verify_policy_rotation(current_policy,next_policy,rotation,expected_generati
         if type(rotation) is not dict or set(rotation)!={"schema","payload","outgoing_approval","incoming_acceptance"}:
             return False
         payload=rotation["payload"]
-        if type(payload) is not dict or set(payload)!={"schema","generation","previous_policy_sha256","next_policy_sha256"}:
+        if type(payload) is not dict or set(payload)!={"schema","generation","witness_id","previous_state_sha256","previous_policy_sha256","next_policy_sha256"}:
             return False
         if (rotation["schema"]!=ROTATION_SCHEMA or payload["schema"]!=ROTATION_SCHEMA
             or type(payload["generation"]) is not int or payload["generation"]!=expected_generation
+            or payload["witness_id"]!="recovery-policy"
+            or payload["previous_state_sha256"]!=policy_digest(current_policy)
             or payload["previous_policy_sha256"]!=policy_digest(current_policy)
             or payload["next_policy_sha256"]!=policy_digest(next_policy)
             or policy_digest(current_policy)==policy_digest(next_policy)):
