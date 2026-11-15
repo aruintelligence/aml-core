@@ -47,9 +47,13 @@ class PinnedCheckpoint:
     The sequence/generation high-water marks live only in this process.
     Persistence and independent anti-rollback are outside this prototype.
     """
-    def __init__(self, fetch, public_hex, authority_id, durable_store=None):
+    def __init__(self, fetch, public_hex, authority_id, durable_store=None, require_durable=False):
         if not callable(fetch):
             raise TypeError("checkpoint fetch must be callable")
+        if type(require_durable) is not bool:
+            raise TypeError("require_durable must be bool")
+        if require_durable and durable_store is None:
+            raise ValueError("durable checkpoint state required")
         self.fetch = fetch
         self.public_hex = public_hex
         self.authority_id = authority_id
