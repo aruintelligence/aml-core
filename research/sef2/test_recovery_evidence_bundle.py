@@ -19,7 +19,8 @@ class RecoveryEvidenceBundleTests(unittest.TestCase):
    "sequence":1,"head_hash":self.ledger["head_sha256"]}
   self.anchor_keys={f"a{i}":Ed25519PrivateKey.generate() for i in range(4)}
   self.anchor_policy={"schema":ANCHOR_SCHEMA,"policy_id":"anchors","threshold":3,"max_faults":1,
-   "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in self.anchor_keys.items()}}
+   "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in self.anchor_keys.items()},
+   "administrative_domains":{k:"operator-domain-"+k for k in self.anchor_keys}}
   self.anchor_witnesses={k:RecoveryAnchorWitness(k,v,str(root/(k+".sqlite"))) for k,v in self.anchor_keys.items()}
   self.payload=make_anchor_payload(self.checkpoint,1,"0"*64,self.anchor_policy)
   self.cert=make_anchor_certificate(self.payload,self.anchor_policy,{k:self.anchor_witnesses[k] for k in ("a0","a1","a2")})
