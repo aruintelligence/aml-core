@@ -28,6 +28,26 @@ class CheckpointSocketTests(unittest.TestCase):
         self.thread.start()
         self.addCleanup(self.server.shutdown)
 
+    def test_capacity_exhaustion_denies_checkpoint(self):
+        import time
+        self.server._slots = threading.BoundedSemaphore(2)
+        clients = []
+        try:
+            for _ in range(2):
+                client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                client.settimeout(2)
+                client.connect(self.path)
+                clients.append(client)
+            deadline = time.monotonic() + 2
+            while self.server._slots._value != 0 and time.monotonic() < deadline:
+                time.sleep(0.01)
+            self.assertEqual(self.server._slots._value, 0)
+            with self.assertRaises((OSError, ValueError)):
+                fetch_checkpoint(self.path, "tenant-a", timeout=1)
+        finally:
+            for client in clients:
+                client.close()
+
     def test_authorized_client_receives_verifiable_checkpoint(self):
         envelope = fetch_checkpoint(self.path, "tenant-a")
         self.assertEqual(verify_checkpoint(envelope, self.public, "tenant-a"), (7, 3))
