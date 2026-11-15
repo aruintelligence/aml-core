@@ -228,3 +228,12 @@ Recovery council rotations now require durable `RecoveryAuthoritySigner` instanc
 ### Directive 024 — bounded dual-consent recovery-rotation model
 
 `recovery_policy_rotation_model.py` exhaustively enumerates old-council quorum pairs and checks whether any two conflicting successor rotations could be certified when at most `f` old-council identities are Byzantine and honest authorities durably sign at most one transition per current policy/generation. It separately models the incoming council's acceptance as a mandatory commit precondition and checks liveness under up to `f` unavailable authorities. The model returns a concrete conflicting-quorum counterexample for unsafe parameters (for example n=4, q=2, f=1), and validates n=4/q=3/f=1 and n=7/q=5/f=2. Tests exhaustively enumerate the dual-certificate commit gate for all subsets of a four-member old and incoming council. This is bounded combinatorial model checking, not a proof of implementation correctness, network consensus, or storage durability.
+
+
+### Independent recovery-ledger reference verifier
+
+`recovery_ledger_reference_verifier.py` is a deliberately separate verifier for portable recovery approval-ledger exports. It does not import the signer or threshold-recovery implementation. It independently parses strict JSON (rejecting duplicate object keys), checks event sequence continuity, unique authority/policy/witness/generation scopes, previous-event hash links, event hashes, Ed25519 signatures, and the exported head. An independently retained `--expected-head` pin detects truncation or rollback; without that pin the tool explicitly reports integrity-only verification. Example:
+
+`python3 research/sef2/recovery_ledger_reference_verifier.py ledger.json --public-key <trusted-ed25519-public-key-hex> --expected-head <independently-retained-head-hex>`
+
+The reference verifier depends only on Python's standard library and the Ed25519 verification primitive. The external trust anchor and public-key distribution remain the evaluator's responsibility.
