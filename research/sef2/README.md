@@ -519,3 +519,10 @@ The adversarial suite rejects missing old-key revocation, extra unexplained revo
 Planned recovery-council rotation now requires more than fresh public keys. Both the outgoing and successor policies must declare explicit administrative domains, and every successor domain must be disjoint from the outgoing council's declared domains. The verifier also rejects planned rotations that reduce the declared Byzantine fault bound. The existing dual-quorum requirement remains: the outgoing council must authorize succession and the incoming council must independently accept the exact same rotation payload. Tests attack shared administrative control and silent fault-bound downgrade in addition to key overlap, quorum shortfall, replay and signature tampering.
 
 These administrative-domain labels are declarations, not proof of independent ownership or control. Real deployment still requires external validation of operators, cloud accounts, recovery administrators, identity providers and key custody. Emergency recovery from a completely lost or compromised council remains a separate trust problem and is intentionally not solved by planned rotation.
+
+
+### Directive 026 — independently verifiable recovery-policy history
+
+Added `recovery_policy_evidence.py` to export and independently verify the complete recovery-council policy registry history. The verifier reconstructs the policy chain from the genesis policy, validates every dual-consent rotation, recomputes every event hash, checks generation continuity, verifies the final policy and digest, and optionally enforces an externally retained registry-head pin. Tests reject truncated history, stale or wrong head pins, rotation-signature tampering, event-hash tampering, current-policy substitution, generation substitution, and broken predecessor links.
+
+This removes the need to trust a compact registry-state summary when auditing policy evolution. Rollback detection still requires an independently retained expected head or quorum anchor outside the registry's own rollback domain.
