@@ -22,6 +22,7 @@ def _unique_pairs(pairs):
 class ReservationHandler(socketserver.StreamRequestHandler):
     def handle(self):
         try:
+            self.request.settimeout(3)
             peer = self.request.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12)
             _, uid, _ = struct.unpack("3i", peer)
             if uid != self.server.allowed_uid:
@@ -40,6 +41,7 @@ class ReservationHandler(socketserver.StreamRequestHandler):
 
 class ReservationServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
     daemon_threads = True
+    block_on_close = False
     allow_reuse_address = False
 
     def __init__(self, path, *, allowed_uid, store):
