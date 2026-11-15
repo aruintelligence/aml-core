@@ -72,3 +72,27 @@ class EmergencyRecoveryRotationTests(unittest.TestCase):
  def test_generation_replay_rejected(self):
   self.assertFalse(verify_emergency_rotation(self.old,self.new,self.guardians,
    self.rotation,8,self.head))
+
+ def test_guardian_keys_must_be_independent_from_recovery_councils(self):
+  overlap=dict(self.guardian_keys)
+  overlap["guardian-0"]=self.old_keys["old-0"]
+  bad=policy(overlap,"break-glass-overlap",4,1)
+  with self.assertRaisesRegex(ValueError,"guardians must use keys disjoint"):
+   make_emergency_rotation(self.old,self.new,bad,7,self.head,self.incident,
+    "QUORUM_LOSS",{}, {})
+ def test_guardian_administrative_domains_must_be_independent(self):
+  bad=copy.deepcopy(self.guardians)
+  bad["administrative_domains"]["guardian-0"]=self.new["administrative_domains"]["new-0"]
+  with self.assertRaisesRegex(ValueError,"guardians must use disjoint administrative domains"):
+   make_emergency_rotation(self.old,self.new,bad,7,self.head,self.incident,
+    "QUORUM_LOSS",{}, {})
+ def test_emergency_guardian_fault_bound_cannot_be_weaker(self):
+  stronger_old=copy.deepcopy(self.old)
+  # A 7-member old council can legitimately declare f=2.
+  extra={f"old-extra-{i}":Ed25519PrivateKey.generate() for i in range(3)}
+  stronger_old["authorities"].update({k:v.public_key().public_bytes_raw().hex() for k,v in extra.items()})
+  stronger_old["administrative_domains"].update({k:"recovery-v1-domain-"+k for k in extra})
+  stronger_old["threshold"]=5; stronger_old["max_faults"]=2
+  with self.assertRaisesRegex(ValueError,"guardian council cannot reduce Byzantine fault bound"):
+   make_emergency_rotation(stronger_old,self.new,self.guardians,7,self.head,self.incident,
+    "QUORUM_LOSS",{}, {})
