@@ -62,13 +62,17 @@ CLIENT=r'''
 import json,pathlib,sys
 from broker_authenticated_holder_service import request_authenticated_holder_proof
 from session_capability import verify_holder_proof,verify_session_capability
-sock,config_path,challenge_path=sys.argv[1:4]
+sock,config_path,challenge_path,evidence_path=sys.argv[1:5]
 config=json.loads(pathlib.Path(config_path).read_text())
 challenge=json.loads(pathlib.Path(challenge_path).read_text())
 assert verify_session_capability(config["capability"],config["authority_public_hex"],
  "authority","broker-a",config["request"],0)
 proof=request_authenticated_holder_proof(sock,challenge,config["capability"],config["request"])
 assert verify_holder_proof(proof,config["capability"],config["request"],"c"*64)
+evidence={"schema":"AML-SEF2-SESSION-AUTHORIZATION-EVIDENCE-V1",
+ "request":config["request"],"capability":config["capability"],
+ "broker_challenge":challenge,"holder_proof":proof}
+pathlib.Path(evidence_path).write_text(json.dumps(evidence)); pathlib.Path(evidence_path).chmod(0o644)
 print("FULL_SESSION_AUTHORITY_CHAIN_OK")
 '''
 
@@ -113,7 +117,8 @@ def main():
  if sys.platform!="linux" or os.geteuid()!=0: raise SystemExit("requires disposable Linux root CI")
  broker=pwd.getpwnam("aml_broker_test"); holder=pwd.getpwnam("aml_holder_test")
  client=pwd.getpwnam("aml_client_test"); signer=pwd.getpwnam("aml_signer_test")
- assert len({broker.pw_uid,holder.pw_uid,client.pw_uid,signer.pw_uid})==4
+ auditor=pwd.getpwnam("aml_auditor_test")
+ assert len({broker.pw_uid,holder.pw_uid,client.pw_uid,signer.pw_uid,auditor.pw_uid})==5
  with tempfile.TemporaryDirectory(prefix="aml-full-session-authority-") as tmp:
   root=pathlib.Path(tmp); root.chmod(0o755)
   broker_state=root/"broker"; broker_state.mkdir(mode=0o700); os.chown(broker_state,broker.pw_uid,broker.pw_gid)
@@ -147,9 +152,20 @@ def main():
    challenged=subprocess.run([sys.executable,"-c",BROKER_CHALLENGE,str(broker_private),str(config),str(challenge)],
     preexec_fn=drop(broker.pw_uid,broker.pw_gid),env=env,capture_output=True,text=True,timeout=10)
    assert challenged.returncode==0,(challenged.stdout,challenged.stderr)
-   valid=subprocess.run([sys.executable,"-c",CLIENT,str(sock),str(config),str(challenge)],
+   evidence=shared/"session-evidence.json"
+   valid=subprocess.run([sys.executable,"-c",CLIENT,str(sock),str(config),str(challenge),str(evidence)],
     preexec_fn=drop(client.pw_uid,client.pw_gid),env=env,capture_output=True,text=True,timeout=10)
    assert valid.returncode==0,(valid.stdout,valid.stderr)
+   config_data=__import__("json").loads(config.read_text())
+   audited=subprocess.run([sys.executable,str(HERE/"evaluation_kit"/"verify_session_authorization.py"),
+    "--input",str(evidence),"--authority-public-hex",config_data["authority_public_hex"],
+    "--broker-public-hex",broker_public.read_text().strip(),"--issuer","authority",
+    "--audience","broker-a","--broker-instance-id","broker-session-process","--policy-epoch","0"],
+    preexec_fn=drop(auditor.pw_uid,auditor.pw_gid),env=dict(os.environ,PYTHONPATH=str(HERE)),
+    capture_output=True,text=True,timeout=10)
+   assert audited.returncode==0,(audited.stdout,audited.stderr)
+   assert "SESSION_AUTHORIZATION_EVIDENCE_VERIFIED" in audited.stdout
+   assert "external_execution_proven=false" in audited.stdout
    forged=subprocess.run([sys.executable,"-c",FORGER,str(sock),str(config)],
     preexec_fn=drop(client.pw_uid,client.pw_gid),env=env,capture_output=True,text=True,timeout=10)
    assert forged.returncode==0,(forged.stdout,forged.stderr)
@@ -164,6 +180,6 @@ print("FULL_SESSION_PRIVATE_STATE_DENIED")
     str(authority_private),str(signer_db)],preexec_fn=drop(client.pw_uid,client.pw_gid),
     env=env,capture_output=True,text=True,timeout=10)
    assert denied.returncode==0,(denied.stdout,denied.stderr)
-   print(valid.stdout.strip()); print(forged.stdout.strip()); print(denied.stdout.strip())
+   print(valid.stdout.strip()); print(audited.stdout.strip()); print(forged.stdout.strip()); print(denied.stdout.strip())
   finally: stop(proc)
 if __name__=="__main__": main()
