@@ -58,7 +58,7 @@ class RecoveryAnchorStateHandoffTests(unittest.TestCase):
   witness=RecoveryAnchorWitness("new-0",self.new_keys["new-0"],
     pathlib.Path(self.tmp.name)/"new-0-anchor-genesis.sqlite")
   bootstrap_successor_anchor(witness,self.old,self.new,self.rotation,self.handoff,2,"a"*64,self.targets)
-  checkpoint={"schema":"AML-SEF2-RECOVERY-LEDGER-CHECKPOINT-V1",
+  checkpoint={"schema":"AML-SEF2-RECOVERY-AUTHORITY-LEDGER-CHECKPOINT-V1",
    "authority_id":"authority-a","authority_key_sha256":"d"*64,
    "sequence":1,"head_hash":"e"*64}
   with self.assertRaisesRegex(ValueError,"stale or forked"):
@@ -71,7 +71,7 @@ class RecoveryAnchorStateHandoffTests(unittest.TestCase):
  def test_nonempty_successor_database_rejected(self):
   witness=RecoveryAnchorWitness("new-0",self.new_keys["new-0"],
     pathlib.Path(self.tmp.name)/"used.sqlite")
-  checkpoint={"schema":"AML-SEF2-RECOVERY-LEDGER-CHECKPOINT-V1",
+  checkpoint={"schema":"AML-SEF2-RECOVERY-AUTHORITY-LEDGER-CHECKPOINT-V1",
    "authority_id":"other","authority_key_sha256":"d"*64,"sequence":1,"head_hash":"e"*64}
   witness.approve(make_anchor_payload(checkpoint,1,"0"*64,self.new),self.new)
   with self.assertRaisesRegex(ValueError,"already contains state"):
