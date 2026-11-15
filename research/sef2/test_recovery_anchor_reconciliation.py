@@ -36,7 +36,7 @@ class RecoveryAnchorReconciliationTests(unittest.TestCase):
   signer=RecoveryAuthoritySigner("authority-0",self.key,self.path)
   signer.approve(self.payload,self.policy)
   self.assertEqual(reconcile_recovery_authority_anchor("authority-0",self.key,self.path,
-      self.anchor,"f"*64),"EXPECTED_PREDECESSOR_MISMATCH")
+      self.anchor,"f"*64),"EXTERNAL_PREDECESSOR_MISMATCH")
   self.assertEqual(self.anchor.read_head(),"0"*64)
  def test_wrong_authority_identity_rejected(self):
   signer=RecoveryAuthoritySigner("authority-0",self.key,self.path)
@@ -64,3 +64,31 @@ class RecoveryAnchorReconciliationTests(unittest.TestCase):
   self.assertEqual(reconcile_recovery_authority_anchor("authority-0",self.key,self.path,
       self.anchor,"0"*64),"INVALID_LOCAL_LEDGER")
   self.assertEqual(self.anchor.read_head(),"0"*64)
+
+ def test_cas_success_with_lost_response_is_idempotently_reconciled(self):
+  class ApplyThenLoseResponse:
+   def __init__(self,inner): self.inner=inner
+   def read_head(self): return self.inner.read_head()
+   def compare_and_set(self,old,new):
+    self.inner.compare_and_set(old,new)
+    return False
+  lost=ApplyThenLoseResponse(self.anchor)
+  signer=RecoveryAuthoritySigner("authority-0",self.key,self.path,head_anchor=lost)
+  with self.assertRaisesRegex(RuntimeError,"committed locally"):
+   signer.approve(self.payload,self.policy)
+  self.assertNotEqual(self.anchor.read_head(),"0"*64)
+  result=reconcile_recovery_authority_anchor("authority-0",self.key,self.path,lost,"0"*64)
+  self.assertEqual(result,"ALREADY_CURRENT")
+ def test_external_anchor_divergence_is_not_reported_as_current(self):
+  signer=RecoveryAuthoritySigner("authority-0",self.key,self.path)
+  signer.approve(self.payload,self.policy)
+  self.anchor.compare_and_set("0"*64,"f"*64)
+  self.assertEqual(reconcile_recovery_authority_anchor("authority-0",self.key,self.path,
+      self.anchor,"0"*64),"EXTERNAL_PREDECESSOR_MISMATCH")
+ def test_already_anchored_local_head_is_idempotent(self):
+  signer=RecoveryAuthoritySigner("authority-0",self.key,self.path,head_anchor=self.anchor)
+  signer.approve(self.payload,self.policy)
+  head=signer.export_approval_ledger()["head_sha256"]
+  self.assertEqual(self.anchor.read_head(),head)
+  self.assertEqual(reconcile_recovery_authority_anchor("authority-0",self.key,self.path,
+      self.anchor,"0"*64),"ALREADY_CURRENT")
