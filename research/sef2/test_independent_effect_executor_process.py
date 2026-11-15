@@ -110,8 +110,9 @@ def main():
   lib=root/"lib"; lib.mkdir(mode=0o755)
   names=("independent_effect_executor","independent_effect_executor_service",
    "independent_effect_executor_client","session_epoch_anchor","session_epoch_anchor_service",
-   "execution_consumption_witness","execution_consumption_witness_service",
-   "execution_receipt_anchor","execution_receipt_anchor_service","execution_gate_receipt",
+   "execution_consumption_witness","authorized_execution_consumption",
+   "execution_consumption_witness_service","execution_receipt_anchor",
+   "execution_receipt_anchor_service","execution_gate_receipt",
    "authenticated_execution_challenge","session_capability","gated_action_broker",
    "strict_evaluator","pin_registry","pin_replication","replica_attestation","signed_receipt")
   for name in names:
