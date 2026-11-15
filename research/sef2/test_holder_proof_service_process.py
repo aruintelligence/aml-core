@@ -29,10 +29,10 @@ else:
  raise AssertionError("untrusted model UID obtained holder proof")
 '''
 
-def start(sock,state,key_path,pub_path,lib,holder,runtime,env,broker_id,broker_pub,audience):
+def start(sock,state,key_path,pub_path,lib,holder,runtime,env,broker_id,broker_pub,audience,issuer_pub,issuer):
     proc=subprocess.Popen([sys.executable,str(lib/"holder_proof_service.py"),
         str(sock),str(state),str(key_path),str(pub_path),str(runtime.pw_uid),str(runtime.pw_gid),
-        broker_id,broker_pub,audience],
+        broker_id,broker_pub,audience,issuer_pub,issuer],
         preexec_fn=drop(holder.pw_uid,holder.pw_gid,(runtime.pw_gid,)),env=env,
         stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)
     for _ in range(200):
@@ -68,11 +68,12 @@ def main():
         key_path=private/"holder_ed25519.pem"; pub_path=ipc/"holder.pub"
         env=dict(os.environ,PYTHONPATH=str(lib))
         broker_key=Ed25519PrivateKey.generate(); broker_id="broker-instance-uid"; audience="broker-a"
+        authority=Ed25519PrivateKey.generate(); issuer="authority"
         proc=start(sock,state,key_path,pub_path,lib,holder,runtime,env,broker_id,
-            broker_key.public_key().public_bytes_raw().hex(),audience)
+            broker_key.public_key().public_bytes_raw().hex(),audience,
+            authority.public_key().public_bytes_raw().hex(),issuer)
         try:
             holder_pub=pub_path.read_text().strip()
-            authority=Ed25519PrivateKey.generate()
             request={"operation_id":"isolated-session","action":"payment:simulate",
                      "target":"fixture:merchant-a","amount_cents":100}
             cap=issue_session_capability(authority,"authority","broker-a",request,0,holder_pub)
