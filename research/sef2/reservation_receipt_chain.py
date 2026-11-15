@@ -43,15 +43,15 @@ def verify_reservation_chain(entries, expected_head, expected_count):
     seen = set()
     try:
         for authority_id, operation_id, digest, generation in entries:
+            count += 1
+            if count > expected_count:
+                return False
             identity = (authority_id, operation_id)
             if identity in seen:
                 return False
             seen.add(identity)
             head = reservation_chain_hash(
                 head, authority_id, operation_id, digest, generation)
-            count += 1
-            if count > expected_count:
-                return False
         return count == expected_count and head == expected_head
     except (TypeError, ValueError):
         return False
