@@ -72,6 +72,33 @@ def make_anchor_payload(checkpoint,sequence,previous_pin_sha256,policy):
         "previous_pin_sha256":previous_pin_sha256,"checkpoint":checkpoint,
         "checkpoint_pin_sha256":checkpoint_pin(checkpoint)}
 
+
+def validate_anchor_database_schema(con,anchor_id,public_key):
+    """Fail closed on untrusted SQLite schema objects or altered layouts."""
+    objects=con.execute("""SELECT type,name FROM sqlite_master
+        WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name""").fetchall()
+    allowed={"anchor_meta","anchor_state","anchor_votes","anchor_policy_handoff"}
+    if any(kind!="table" or name not in allowed for kind,name in objects):
+        raise ValueError("anchor database contains unexpected schema objects")
+    names={name for kind,name in objects}
+    required={"anchor_meta","anchor_state","anchor_votes"}
+    if not required.issubset(names):
+        raise ValueError("anchor database schema is incomplete")
+    expected={
+        "anchor_meta":("key","value"),
+        "anchor_state":("target_authority_id","sequence","pin_sha256","policy_id","policy_sha256"),
+        "anchor_votes":("target_authority_id","sequence","policy_id","policy_sha256",
+            "previous_pin_sha256","checkpoint_pin_sha256","payload_sha256","signature"),
+        "anchor_policy_handoff":("generation","handoff_sha256","rotation_sha256")}
+    for table in names:
+        columns=tuple(row[1] for row in con.execute("PRAGMA table_info("+table+")"))
+        if columns!=expected[table]:
+            raise ValueError("anchor database table layout is not canonical")
+    metadata=dict(con.execute("SELECT key,value FROM anchor_meta").fetchall())
+    key_hash=hashlib.sha256(public_key.public_bytes_raw()).hexdigest()
+    if metadata!={"anchor_id":anchor_id,"anchor_key_sha256":key_hash}:
+        raise ValueError("anchor database identity metadata mismatch")
+
 class RecoveryAnchorWitness:
     """One independent anchor identity with a durable local monotonic vote ledger."""
     def __init__(self,anchor_id,private_key,database_path):
@@ -109,6 +136,7 @@ class RecoveryAnchorWitness:
                 previous_pin_sha256 TEXT NOT NULL, checkpoint_pin_sha256 TEXT NOT NULL,
                 payload_sha256 TEXT NOT NULL, signature TEXT NOT NULL,
                 PRIMARY KEY(target_authority_id,sequence))""")
+            validate_anchor_database_schema(con,anchor_id,self.public_key())
             con.commit()
     def public_key(self): return self.private_key.public_key()
     def approve(self,payload,policy):
