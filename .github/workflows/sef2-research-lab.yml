@@ -59,6 +59,7 @@ jobs:
           sudo useradd --system --no-create-home --user-group aml_epoch_anchor_test
           sudo useradd --system --no-create-home --user-group aml_execution_witness_test
           sudo useradd --system --no-create-home --user-group aml_execution_anchor_test
+          sudo useradd --system --no-create-home --user-group aml_effect_executor_test
           sudo useradd --system --no-create-home --user-group aml_auditor_test
           sudo useradd --system --no-create-home --user-group aml_ra0_test
           sudo useradd --system --no-create-home --user-group aml_ra1_test
@@ -79,3 +80,4 @@ jobs:
           sudo python3 research/sef2/test_remote_execution_rollback_process.py
           sudo python3 research/sef2/test_execution_witness_rollback_process.py
           sudo python3 research/sef2/test_execution_receipt_anchor_process.py
+          sudo python3 research/sef2/test_independent_effect_executor_process.py
