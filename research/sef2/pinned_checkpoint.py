@@ -47,12 +47,13 @@ class PinnedCheckpoint:
     The sequence/generation high-water marks live only in this process.
     Persistence and independent anti-rollback are outside this prototype.
     """
-    def __init__(self, fetch, public_hex, authority_id):
+    def __init__(self, fetch, public_hex, authority_id, durable_store=None):
         if not callable(fetch):
             raise TypeError("checkpoint fetch must be callable")
         self.fetch = fetch
         self.public_hex = public_hex
         self.authority_id = authority_id
+        self.durable_store = durable_store
         self._lock = threading.Lock()
         self.last_sequence = -1
         self.last_generation = 0
@@ -69,6 +70,10 @@ class PinnedCheckpoint:
                 raise ValueError("checkpoint rollback detected")
             if sequence == self.last_sequence and generation != self.last_generation:
                 raise ValueError("checkpoint equivocation detected")
+            # Durable store atomically checks and records observations from
+            # other processes and previous verifier instances.
+            if self.durable_store is not None:
+                self.durable_store.observe(self.authority_id, sequence, generation)
             self.last_sequence = sequence
             self.last_generation = generation
             return generation
