@@ -22,6 +22,16 @@ class DurableHighWaterTests(unittest.TestCase):
         return PinnedCheckpoint(lambda: envelope, self.public, authority_id,
                                 DurableCheckpointHighWater(self.path))
 
+    def test_protected_verifier_requires_durable_store(self):
+        envelope = issue_checkpoint(self.key, "tenant-a", 5, 2)
+        with self.assertRaises(ValueError):
+            PinnedCheckpoint(lambda: envelope, self.public, "tenant-a",
+                             require_durable=True)
+        store = DurableCheckpointHighWater(self.path)
+        verifier = PinnedCheckpoint(lambda: envelope, self.public, "tenant-a",
+                                    durable_store=store, require_durable=True)
+        self.assertEqual(verifier(), 5)
+
     def test_restart_cannot_accept_older_signed_checkpoint(self):
         self.assertEqual(self.verifier(8, 4)(), 8)
         with self.assertRaises(ValueError):
