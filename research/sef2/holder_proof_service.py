@@ -49,12 +49,17 @@ def load_or_create_key(path,public_path):
     return key
 
 class HolderProofState:
-    def __init__(self,database,key,broker_public_hex=None,broker_id=None,audience=None):
+    def __init__(self,database,key,broker_public_hex=None,broker_id=None,audience=None,
+                 issuer_public_hex=None,issuer=None):
         self.database=str(database); self.key=key
         self.broker_public_hex=broker_public_hex; self.broker_id=broker_id; self.audience=audience
-        configured=[broker_public_hex is not None,broker_id is not None,audience is not None]
-        if any(configured) and not all(configured):
+        self.issuer_public_hex=issuer_public_hex; self.issuer=issuer
+        broker_config=[broker_public_hex is not None,broker_id is not None,audience is not None]
+        authority_config=[issuer_public_hex is not None,issuer is not None]
+        if any(broker_config) and not all(broker_config):
             raise ValueError("authenticated broker challenge configuration must be complete")
+        if any(authority_config) and not all(authority_config):
+            raise ValueError("authority verification configuration must be complete")
         with sqlite3.connect(self.database) as db:
             db.execute("PRAGMA synchronous=FULL")
             db.execute("""CREATE TABLE IF NOT EXISTS enrolled_sessions (
@@ -70,6 +75,12 @@ class HolderProofState:
         p=capability.get("payload") if type(capability) is dict else None
         if type(p) is not dict or p.get("holder_public_key_hex")!=self.key.public_key().public_bytes_raw().hex():
             raise PermissionError("capability is not bound to holder service key")
+        if self.issuer_public_hex is not None:
+            from session_capability import verify_session_capability
+            epoch=p.get("policy_epoch")
+            if not verify_session_capability(capability,self.issuer_public_hex,self.issuer,
+                self.audience,request,epoch):
+                raise PermissionError("capability authority signature or scope invalid")
         operation=request.get("operation_id") if type(request) is dict else None
         if type(operation) is not str or not operation or p.get("operation_id")!=operation:
             raise PermissionError("operation binding mismatch")
@@ -122,9 +133,9 @@ class HolderProofState:
             return proof
 
 def serve(sock_path,database,key_path,public_path,allowed_uid,allowed_gid,
-          broker_id=None,broker_public_hex=None,audience=None):
+          broker_id=None,broker_public_hex=None,audience=None,issuer_public_hex=None,issuer=None):
     key=load_or_create_key(key_path,public_path)
-    state=HolderProofState(database,key,broker_public_hex,broker_id,audience)
+    state=HolderProofState(database,key,broker_public_hex,broker_id,audience,issuer_public_hex,issuer)
     try: os.unlink(sock_path)
     except FileNotFoundError: pass
     with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as server:
@@ -155,6 +166,6 @@ def serve(sock_path,database,key_path,public_path,allowed_uid,allowed_gid,
                 conn.sendall(struct.pack("!I",len(body))+body)
 
 if __name__=="__main__":
-    extra=sys.argv[7:10]
+    extra=sys.argv[7:12]
     serve(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],int(sys.argv[5]),int(sys.argv[6]),
-          *(extra if extra else (None,None,None)))
+          *(extra if extra else (None,None,None,None,None)))
