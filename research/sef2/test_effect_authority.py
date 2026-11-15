@@ -196,7 +196,7 @@ class EffectAuthorityTests(unittest.TestCase):
 
     def test_operation_identifier_is_bounded_and_printable(self):
         authority = EffectAuthority(self.path, lambda *args: True)
-        for identifier in ("x" * 129, "op\\nattack", "op\\x00attack", "op-☃"):
+        for identifier in ("x" * 129, "op\nattack", "op\x00attack", "op-☃"):
             self.assertEqual(authority.commit(effect(identifier), 1), "DENIED")
         self.assertEqual(self.rows(), [])
 
