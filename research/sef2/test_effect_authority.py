@@ -52,6 +52,34 @@ class EffectAuthorityTests(unittest.TestCase):
         self.assertEqual(authority.commit(effect(), 1), "DENIED")
         self.assertEqual(self.rows(), [])
 
+    def test_stale_generation_rejected_even_with_permissive_authorizer(self):
+        authority = EffectAuthority(self.path, lambda *args: True)
+        self.assertTrue(authority.advance_policy_floor(4))
+        self.assertEqual(authority.commit(effect(), 3), "DENIED")
+        self.assertEqual(authority.commit(effect(), 4), "APPLIED")
+        self.assertEqual(self.rows(), [("op-1", 7)])
+
+    def test_floor_never_decreases_across_restart(self):
+        authority = EffectAuthority(self.path, lambda *args: True)
+        self.assertTrue(authority.advance_policy_floor(9))
+        self.assertTrue(authority.advance_policy_floor(2))
+        restarted = EffectAuthority(self.path, lambda *args: True)
+        self.assertEqual(restarted.commit(effect(), 8), "DENIED")
+        self.assertEqual(restarted.commit(effect(), 9), "APPLIED")
+
+    def test_floor_rejects_invalid_values(self):
+        authority = EffectAuthority(self.path, lambda *args: True)
+        self.assertFalse(authority.advance_policy_floor(True))
+        self.assertFalse(authority.advance_policy_floor(-1))
+        self.assertEqual(authority.commit(effect(), 0), "APPLIED")
+
+    def test_authorizer_exception_denies_without_effect(self):
+        def broken(*args):
+            raise RuntimeError("authority offline")
+        authority = EffectAuthority(self.path, broken)
+        self.assertEqual(authority.commit(effect(), 1), "DENIED")
+        self.assertEqual(self.rows(), [])
+
     def test_invalid_effect_cannot_reach_authorizer(self):
         def unexpected(*args):
             raise AssertionError("called")
