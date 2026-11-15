@@ -131,7 +131,7 @@ def make_consumption_receipt(private_key,witness_id,request,capability,challenge
         raise ValueError("invalid execution witness chain position")
     record=ExecutionConsumptionWitness._record(request,capability,challenge)
     entry=ExecutionConsumptionWitness._entry(sequence,previous_hash,record)
-    payload={"schema":EXECUTION_RECEIPT_SCHEMA,"witness_id":witness_id,**entry}
+    payload={**entry,"schema":EXECUTION_RECEIPT_SCHEMA,"witness_id":witness_id}
     return {"payload":payload,
         "signature":private_key.sign(EXECUTION_RECEIPT_DOMAIN+canonical(payload)).hex()}
 
