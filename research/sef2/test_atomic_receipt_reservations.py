@@ -32,6 +32,8 @@ class AtomicReceiptReservationTests(unittest.TestCase):
         with sqlite3.connect(self.path) as db:
             db.execute("UPDATE receipt_reservations SET digest=? WHERE sequence=1", ("b" * 64,))
         self.assertFalse(self.store.reserve("op-2", "c" * 64, 2))
+        with self.assertRaises(ValueError):
+            self.store.evidence()
 
     def test_deleted_receipt_prevents_future_reservation(self):
         self.assertTrue(self.store.reserve("op-1", "a" * 64, 1))
