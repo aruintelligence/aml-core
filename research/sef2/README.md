@@ -202,3 +202,6 @@ This is an independent checkpoint quorum prototype, not a full Byzantine consens
 
 
 **Formal quorum model refinement:** the bounded exhaustive quorum model now reports three independent results: honest-intersection safety, liveness under up to `f` unavailable/Byzantine authorities (`q <= n-f`), and validity of the classical crash/Byzantine quorum fault bound (`n >= 3f+1`). A policy is accepted only when all three hold. Tests separately demonstrate a quorum that is intersection-safe but unavailable, and a nominal threshold outside the assumed BFT fault model. This is finite-state combinatorial checking over the tested council sizes, not a proof of distributed consensus or implementation correctness.
+
+
+**Authority-ledger identity binding:** each local approval-ledger database now pins exactly one authority identifier and the SHA-256 fingerprint of its Ed25519 public key. Reusing the same SQLite file under a different authority identity is rejected, which also makes the event sequence's per-ledger ordering assumptions explicit. A test verifies cross-identity reuse is rejected. This local metadata is not itself a hardware-protected trust anchor; the externally retained signed checkpoint remains necessary to detect whole-file rollback or replacement.
