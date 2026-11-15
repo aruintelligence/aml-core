@@ -11,6 +11,7 @@ from independent_effect_reservations import IndependentEffectReservations
 from test_reservation_receipt_chain import ReservationReceiptChainTests
 from test_atomic_receipt_reservations import AtomicReceiptReservationTests
 from test_witnessed_receipt_history import WitnessedReceiptHistoryTests
+from test_durable_receipt_witness import DurableReceiptWitnessTests
 
 def effect(op="op-1"):
     return {"operation_id": op, "kind": "fixture:write",
