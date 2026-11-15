@@ -583,3 +583,8 @@ Added `benchmark_recovery_cutover.py` and wired it into the SEF/2 CI benchmark s
 ### Directive 031 — independently reproducible activation history
 
 `RecoveryActivationRegistry.export_evidence()` now emits the monotonic activation state and complete cutover-event chain. `recovery_activation_evidence.py` independently verifies the chain from an initial policy pin and generation, re-checks every cutover certificate and verifier-independence manifest, validates predecessor/next-policy bindings and event hashes, and optionally requires an externally retained final head pin. Tests reject tampered cutover signatures, changed event hashes, predecessor-policy substitution, final-state rollback, missing history and head-pin mismatch.
+
+
+### Directive 032 — standalone activation-history evaluator
+
+Added `evaluation_kit/verify_recovery_activation.py`. An outside evaluator can now verify the complete recovery-policy activation history from a JSON evidence bundle, initial policy pin/generation, pinned verifier keys, quorum fault parameters, verifier-independence manifest and optional final head pin. The CLI rejects duplicate JSON keys, tampered state/history and external-head mismatch and exits nonzero on failure.
