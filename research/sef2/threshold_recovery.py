@@ -16,7 +16,8 @@ def policy_digest(policy): return hashlib.sha256(canonical(policy)).hexdigest()
 def payload_digest(payload): return hashlib.sha256(canonical(payload)).hexdigest()
 def validate_policy(policy):
  try:
-  if type(policy) is not dict or set(policy)!={"schema","policy_id","threshold","max_faults","authorities"}: return False
+  base_fields={"schema","policy_id","threshold","max_faults","authorities"}
+  if type(policy) is not dict or set(policy) not in (base_fields,base_fields|{"administrative_domains"}): return False
   if policy["schema"]!=POLICY_SCHEMA or type(policy["policy_id"]) is not str or not policy["policy_id"]: return False
   authorities=policy["authorities"]; threshold=policy["threshold"]; faults=policy["max_faults"]
   if type(authorities) is not dict or type(threshold) is not int or type(faults) is not int: return False
@@ -29,6 +30,11 @@ def validate_policy(policy):
    raw=bytes.fromhex(key_hex)
    if len(raw)!=32 or raw in keys: return False
    keys.add(raw)
+  if "administrative_domains" in policy:
+   domains=policy["administrative_domains"]
+   if type(domains) is not dict or set(domains)!=set(authorities): return False
+   if any(type(domain) is not str or not domain for domain in domains.values()): return False
+   if len(set(domains.values()))!=len(domains): return False
   return True
  except (ValueError,TypeError,KeyError): return False
 def make_approval_bundle(payload,policy,signers):
