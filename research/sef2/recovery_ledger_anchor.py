@@ -134,10 +134,14 @@ def verify_event_chain(database,authority_public_hex,expected_checkpoint,expecte
                 WHERE authority_id=? ORDER BY sequence""",(expected_checkpoint["authority_id"],)).fetchall()
         key=Ed25519PublicKey.from_public_bytes(raw)
         previous="0"*64
+        seen=set()
         for index,row in enumerate(rows,1):
             sequence,prev,policy_id,aid,witness,generation,pd,parent,digest,sig,event_hash=row
             if sequence!=index or prev!=previous or aid!=expected_checkpoint["authority_id"]:
                 return False
+            scope=(aid,witness,generation)
+            if scope in seen: return False
+            seen.add(scope)
             event={"sequence":sequence,"previous_event_sha256":prev,"policy_id":policy_id,
                 "authority_id":aid,"witness_id":witness,"generation":generation,
                 "policy_sha256":pd,"previous_state_sha256":parent,
