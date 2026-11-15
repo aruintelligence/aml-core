@@ -17,6 +17,7 @@ class IndependentEffectReservations:
         self.path = str(path)
         self.authority_id = authority_id
         self._existing_uri = Path(self.path).absolute().as_uri() + '?mode=rw'
+        self._identity = None
         if require_existing:
             import os
             if not os.path.isfile(self.path):
@@ -34,6 +35,20 @@ class IndependentEffectReservations:
                 db.execute("ROLLBACK")
                 raise ValueError("reservation security table missing")
             db.execute("COMMIT")
+        # Pin the inode so an unprivileged deletion/replacement cannot silently
+        # turn an active service into a fresh reservation namespace.
+        self._identity = self._file_identity()
+
+    def _file_identity(self):
+        import os
+        info = os.stat(self.path, follow_symlinks=False)
+        if not os.path.isfile(self.path) or os.path.islink(self.path):
+            raise ValueError("reservation database is not a regular file")
+        return info.st_dev, info.st_ino
+
+    def _assert_identity(self):
+        if self._file_identity() != self._identity:
+            raise ValueError("reservation database replaced")
 
     def reserve(self, operation_id, digest, generation):
         if (type(operation_id) is not str or not 1 <= len(operation_id) <= 128
@@ -43,14 +58,16 @@ class IndependentEffectReservations:
             or type(generation) is not int or generation < 0):
             return False
         try:
+            self._assert_identity()
             with sqlite3.connect(self._existing_uri, uri=True, timeout=10, isolation_level=None) as db:
+                self._assert_identity()
                 db.execute("PRAGMA synchronous=FULL")
                 db.execute("BEGIN IMMEDIATE")
                 db.execute("INSERT INTO reservations VALUES (?,?,?,?)",
                            (self.authority_id, operation_id, digest, generation))
                 db.execute("COMMIT")
             return True
-        except sqlite3.Error:
+        except (sqlite3.Error, OSError, ValueError):
             return False
 
     def inspect(self, operation_id):
@@ -62,7 +79,9 @@ class IndependentEffectReservations:
         if (type(operation_id) is not str or not 1 <= len(operation_id) <= 128
             or not operation_id.isascii() or not operation_id.isprintable()):
             raise ValueError("invalid operation identifier")
+        self._assert_identity()
         with sqlite3.connect(self._existing_uri, uri=True, timeout=10, isolation_level=None) as db:
+            self._assert_identity()
             db.execute("BEGIN")
             row = db.execute(
                 "SELECT digest,generation FROM reservations WHERE authority_id=? AND operation_id=?",
