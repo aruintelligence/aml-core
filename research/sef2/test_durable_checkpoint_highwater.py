@@ -1,5 +1,6 @@
 """Durable checkpoint replay, restart and multi-verifier adversarial tests."""
 import os
+import sqlite3
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 import unittest
@@ -40,6 +41,15 @@ class DurableHighWaterTests(unittest.TestCase):
     def test_independent_authority_namespaces(self):
         self.assertEqual(self.verifier(8, 4, "tenant-a")(), 8)
         self.assertEqual(self.verifier(2, 1, "tenant-b")(), 2)
+
+    def test_restart_rejects_missing_checkpoint_table(self):
+        store = DurableCheckpointHighWater(self.path)
+        self.assertEqual(store.observe("tenant-a", 5, 5), 5)
+        with sqlite3.connect(self.path) as db:
+            db.execute("DROP TABLE checkpoint_marks")
+            db.execute("CREATE TABLE unrelated (value INTEGER)")
+        with self.assertRaises(ValueError):
+            DurableCheckpointHighWater(self.path)
 
     def test_invalid_store_input_rejected(self):
         store = DurableCheckpointHighWater(self.path)
