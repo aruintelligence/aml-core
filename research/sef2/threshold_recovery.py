@@ -132,6 +132,7 @@ class RecoveryAuthoritySigner:
         with sqlite3.connect(self.ledger_path,timeout=10) as con:
             con.execute("PRAGMA journal_mode=DELETE")
             con.execute("PRAGMA synchronous=FULL")
+            con.execute("BEGIN IMMEDIATE")
             con.execute("CREATE TABLE IF NOT EXISTS recovery_ledger_meta (key TEXT PRIMARY KEY,value TEXT NOT NULL)")
             authority_key_hash=hashlib.sha256(self.public_key().public_bytes_raw()).hexdigest()
             existing=con.execute("SELECT value FROM recovery_ledger_meta WHERE key='authority_id'").fetchone()
@@ -159,7 +160,6 @@ class RecoveryAuthoritySigner:
                 event_sha256 TEXT NOT NULL UNIQUE)""")
             legacy=con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='recovery_approval_ledger_v3'").fetchone()
             if legacy:
-                con.execute("BEGIN IMMEDIATE")
                 rows=con.execute("""SELECT policy_id,authority_id,witness_id,generation,
                     policy_sha256,previous_state_sha256,payload_sha256,signature
                     FROM recovery_approval_ledger_v3 ORDER BY policy_id,authority_id,witness_id,generation""").fetchall()
