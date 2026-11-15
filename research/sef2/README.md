@@ -335,3 +335,8 @@ This closes an important integration gap in the prototype: the independent ancho
 
 
 **Directive 025 auditor CLI:** `recovery_current_policy_reference_verifier.py` now runs as a standalone command-line verifier. It strictly parses the evidence and both anchor policies with duplicate-key rejection, accepts only explicitly supplied authority public key / anchor sequences / predecessor pins, and returns nonzero on any linkage, freshness or trust-plane failure. This gives an outside team a reproducible verification path without invoking the producer or signer implementations.
+
+
+### Directive 027 — idempotent reconciliation after interrupted anchor compare-and-set
+
+`recovery_anchor_reconciliation.py` now reads the external anchor head before deciding whether a locally committed approval ledger is current. It rejects an external head that differs from the caller-supplied independently retained predecessor, recognizes the case where the anchor CAS succeeded but its response was lost, and only attempts to advance a single pending local event whose predecessor exactly matches the retained pin. If a CAS reports failure, it re-reads the anchor before classifying the outcome, returning `ALREADY_CURRENT` when the remote update actually succeeded. It never creates a new signature or edits the local ledger. Tests cover CAS refusal then successful retry, CAS success with lost response, already-current idempotency, external-anchor divergence, wrong authority identity, multi-event pending histories, and tampered local evidence. This does not solve distributed atomic commit; it provides fail-closed recovery from one pending, externally anchored head transition.
