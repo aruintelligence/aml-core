@@ -11,7 +11,7 @@ class IndependentRecoveryLedgerVerifierTests(unittest.TestCase):
   self.public=self.key.public_key().public_bytes_raw().hex()
   self.signer=RecoveryAuthoritySigner("authority-x",self.key,str(Path(self.temp.name)/"authority.sqlite"))
   self.policy={"schema":"AML-SEF2-RECOVERY-QUORUM-POLICY-V1","policy_id":"council-x",
-   "threshold":3,"max_faults":1,"authorities":{f"authority-{i}":Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex() for i in range(4)}}
+   "threshold":3,"max_faults":1,"authorities":{f"authority-{i}":Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex() for i in range(3)}}
   self.policy["authorities"]["authority-x"]=self.public
   self.payload={"witness_id":"north","generation":1,"previous_state_sha256":"a"*64,"new_key":"b"*64}
   self.signer.approve(self.payload,self.policy)
