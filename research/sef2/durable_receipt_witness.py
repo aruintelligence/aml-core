@@ -6,6 +6,7 @@ witness service. A privileged witness administrator can still roll it back.
 """
 import sqlite3
 from pathlib import Path
+from reservation_receipt_chain import reservation_chain_hash, GENESIS
 
 def _valid_head(head):
     return (type(head) is str and len(head) == 64
@@ -31,7 +32,7 @@ class DurableReceiptWitness:
                 raise ValueError("witness security table missing")
             db.execute("COMMIT")
 
-    def observe(self, sequence, head, previous_sequence, previous_head):
+    def observe(self, sequence, head, previous_sequence, previous_head, entry=None):
         """CAS-advance from exact prior witnessed state, never skip an update.
 
         The caller must separately establish that the proposed head genuinely
@@ -48,6 +49,8 @@ class DurableReceiptWitness:
                 current = db.execute("SELECT sequence,head FROM witness_heads WHERE authority_id=?",
                                      (self.authority_id,)).fetchone()
                 if current is None:
+                    if entry is not None:
+                        return False
                     if previous_sequence != 0 or previous_head != "0" * 64 or sequence != 0 or head != "0" * 64:
                         return False
                     db.execute("INSERT INTO witness_heads VALUES (?,?,?)",
@@ -56,6 +59,10 @@ class DurableReceiptWitness:
                     if current != (previous_sequence, previous_head):
                         return False
                     if sequence != previous_sequence + 1:
+                        return False
+                    if type(entry) not in (tuple, list) or len(entry) != 4:
+                        return False
+                    if reservation_chain_hash(previous_head, *entry) != head:
                         return False
                     db.execute("UPDATE witness_heads SET sequence=?,head=? WHERE authority_id=?",
                                (sequence, head, self.authority_id))
