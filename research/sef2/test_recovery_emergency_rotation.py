@@ -87,12 +87,8 @@ class EmergencyRecoveryRotationTests(unittest.TestCase):
    make_emergency_rotation(self.old,self.new,bad,7,self.head,self.incident,
     "QUORUM_LOSS",{}, {})
  def test_emergency_guardian_fault_bound_cannot_be_weaker(self):
-  stronger_old=copy.deepcopy(self.old)
-  # A 7-member old council can legitimately declare f=2.
-  extra={f"old-extra-{i}":Ed25519PrivateKey.generate() for i in range(3)}
-  stronger_old["authorities"].update({k:v.public_key().public_bytes_raw().hex() for k,v in extra.items()})
-  stronger_old["administrative_domains"].update({k:"recovery-v1-domain-"+k for k in extra})
-  stronger_old["threshold"]=5; stronger_old["max_faults"]=2
+  weak_guardians=copy.deepcopy(self.guardians)
+  weak_guardians["max_faults"]=0
   with self.assertRaisesRegex(ValueError,"guardian council cannot reduce Byzantine fault bound"):
-   make_emergency_rotation(stronger_old,self.new,self.guardians,7,self.head,self.incident,
+   make_emergency_rotation(self.old,self.new,weak_guardians,7,self.head,self.incident,
     "QUORUM_LOSS",{}, {})
