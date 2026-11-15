@@ -1,5 +1,5 @@
 """Separate-UID Unix-socket recovery head anchor service and client transport."""
-import json,os,socket,sqlite3,struct,sys
+import hashlib,json,os,socket,sqlite3,struct,sys
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from signed_receipt import canonical
@@ -47,10 +47,35 @@ class UnixRecoveryHeadAnchorTransport:
 def serve(anchor_id,socket_path,database,private_path,public_path,allowed_uid,allowed_gid):
     if type(anchor_id) is not str or not anchor_id: raise ValueError("invalid anchor id")
     key=_load_key(private_path,public_path)
-    with sqlite3.connect(database) as db:
+    with sqlite3.connect(database,timeout=10) as db:
         db.execute("PRAGMA journal_mode=DELETE"); db.execute("PRAGMA synchronous=FULL")
+        db.execute("BEGIN IMMEDIATE")
+        db.execute("CREATE TABLE IF NOT EXISTS anchor_meta (key TEXT PRIMARY KEY,value TEXT NOT NULL)")
         db.execute("CREATE TABLE IF NOT EXISTS anchor_state (singleton INTEGER PRIMARY KEY CHECK(singleton=1),head TEXT NOT NULL)")
-        db.execute("INSERT OR IGNORE INTO anchor_state VALUES (1,?)",(ZERO,)); db.commit()
+        objects=db.execute("""SELECT type,name FROM sqlite_master
+            WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name""").fetchall()
+        if any(kind!="table" or name not in {"anchor_meta","anchor_state"} for kind,name in objects):
+            raise ValueError("recovery head anchor database contains unexpected schema objects")
+        names={name for kind,name in objects}
+        if names!={"anchor_meta","anchor_state"}:
+            raise ValueError("recovery head anchor database schema is incomplete")
+        if tuple(row[1] for row in db.execute("PRAGMA table_info(anchor_meta)"))!=("key","value"):
+            raise ValueError("recovery head anchor metadata layout is not canonical")
+        if tuple(row[1] for row in db.execute("PRAGMA table_info(anchor_state)"))!=("singleton","head"):
+            raise ValueError("recovery head anchor state layout is not canonical")
+        identity={"anchor_id":anchor_id,
+            "anchor_key_sha256":hashlib.sha256(key.public_key().public_bytes(
+                serialization.Encoding.Raw,serialization.PublicFormat.Raw)).hexdigest()}
+        existing=dict(db.execute("SELECT key,value FROM anchor_meta").fetchall())
+        if existing and existing!=identity:
+            raise ValueError("recovery head anchor database belongs to another identity")
+        if not existing:
+            db.executemany("INSERT INTO anchor_meta VALUES (?,?)",identity.items())
+        db.execute("INSERT OR IGNORE INTO anchor_state VALUES (1,?)",(ZERO,))
+        rows=db.execute("SELECT singleton,head FROM anchor_state").fetchall()
+        if len(rows)!=1 or rows[0][0]!=1 or not _valid_hash(rows[0][1]):
+            raise ValueError("recovery head anchor database state is malformed")
+        db.commit()
     try: os.unlink(socket_path)
     except FileNotFoundError: pass
     with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as server:
