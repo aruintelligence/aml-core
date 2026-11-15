@@ -563,3 +563,10 @@ The registry does not itself provide a remote durable anchor service, force ever
 
 
 **Directive 029 quorum-anchor extension:** activation-state rollback protection now has explicit 3-of-4 anchor fault tests. With one stale external anchor, the remaining three can advance and later reproduce the unique quorum head. With two divergent anchors, the configured one-Byzantine fault assumption is exceeded and activation fails closed before local mutation. This remains a synthetic same-process anchor test; independent hosting and signed remote transport must be provided by real anchor services.
+
+
+### Directive 029 — dual-consent anchor state handoff
+
+Anchor-policy rotation now has a state-continuity protocol. The outgoing and incoming anchor councils both approve an exact canonical snapshot mapping every tracked recovery authority to its last accepted anchor sequence and pin. A fresh successor `RecoveryAnchorWitness` can be bootstrapped only from a valid dual-consent handoff and only into an empty database; it then continues from the inherited sequence/pin under the new policy instead of restarting at genesis.
+
+Tests reject snapshot tampering, outgoing or incoming quorum shortfalls, rotation substitution, wrong successor keys, nonempty successor databases, and attempts to restart an inherited target at sequence 1/genesis. This closes a reconfiguration rollback path where new anchor members could otherwise forget the old council's monotonic history. The handoff still assumes the snapshot presented to both councils is complete for every relevant target authority.
