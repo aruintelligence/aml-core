@@ -628,3 +628,12 @@ The emergency guardian policy is stored with the emergency event so historical v
 ### Directive 036 — unified activation path for planned and emergency succession
 
 `RecoveryActivationRegistry` now accepts both planned rotations (`previous_policy_sha256`) and emergency rotations (`current_policy_sha256`) through the same cutover-certificate, verifier-independence, generation, hash-chain and external-anchor controls. The parser requires exactly one predecessor-policy field, preventing an ambiguous payload from satisfying both paths. This removes a dangerous operational split where break-glass recovery could update the policy registry but bypass the normal verifier activation/rollback discipline.
+
+
+### Recovery transparency hardening — governed targets, complete histories and quorum publication
+
+The recovery-anchor handoff no longer trusts an arbitrary snapshot key set. A quorum-authorized tracked-target registry governs which recovery authorities must appear, and handoff verification requires an externally expected target set to match the signed snapshot exactly. A target cannot be silently omitted during anchor-council succession and later restarted from genesis. `recovery_target_evidence.py` independently reconstructs that target registry from its signed change history and optional retained head pin; handoff integration derives membership from verified history rather than a mutable live-state row.
+
+Recovery transparency checkpoints now have V2 and V3 forms. V2 commits to recovery policy generation/digest, policy-registry head, every recovery-authority ledger head, target-registry generation/head and the tracked-target digest. `recovery_transparency_evidence.py` verifies the complete policy history, target history and every authority ledger before recomputing that root. V3 adds a monotonically increasing sequence and previous-checkpoint hash, making exported transparency checkpoints an auditable chain rather than independent snapshots.
+
+`recovery_transparency_log.py` persists that V3 chain and requires an independent compare-and-set head anchor before publication. A local append followed by failed external anchor advancement is intentionally stranded and fails closed until exact-predecessor reconciliation. Tests cover local database rollback behind the anchor, replay, anchor mismatch/outage, reconciliation, 3-of-4 anchor quorum operation and 2/2 partition failure. These mechanisms remain synthetic and single-host in CI; their rollback guarantees depend on the anchor quorum not sharing the same restore/admin domain.
