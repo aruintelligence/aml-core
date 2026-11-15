@@ -41,6 +41,16 @@ class IndependentReservationTests(unittest.TestCase):
         self.assertFalse(self.store.reserve("op-1", "a" * 64, 0))
         self.assertFalse(self.store.reserve("op-1", "b" * 64, 0))
 
+    def test_replaced_live_reservation_store_cannot_rebootstrap(self):
+        authority = self.authority()
+        os.unlink(self.reservations)
+        replacement = IndependentEffectReservations(self.reservations, "authority-a")
+        self.assertFalse(self.store.reserve("op-1", "a" * 64, 0))
+        self.assertEqual(authority.commit(effect(), 0), "DENIED")
+        with self.assertRaises(ValueError):
+            self.store.inspect("op-1")
+        self.assertTrue(replacement.reserve("op-2", "a" * 64, 0))
+
     def test_deleted_live_reservation_store_cannot_rebootstrap(self):
         authority = self.authority()
         os.unlink(self.reservations)
