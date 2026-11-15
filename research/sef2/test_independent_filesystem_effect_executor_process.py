@@ -75,11 +75,30 @@ def start_epoch(epoch_user,executor,sock,db,lib,env):
   stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)
  return ready(proc,sock,"epoch anchor")
 
-def start_executor(executor,broker,sock,db,effect_dir,config,epoch_sock,lib,env):
+def start_witness(user,executor,sock,db,key,pub,lib,env):
+ proc=subprocess.Popen([sys.executable,str(lib/"execution_consumption_witness_service.py"),
+  str(sock),str(db),str(executor.pw_uid),str(executor.pw_gid),
+  "filesystem-execution-witness",str(key),str(pub)],
+  preexec_fn=drop(user.pw_uid,user.pw_gid,(executor.pw_gid,)),env=env,
+  stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)
+ return ready(proc,sock,"filesystem execution witness",pub)
+
+def start_receipt_anchor(user,executor,sock,db,witness_pub,lib,env):
+ proc=subprocess.Popen([sys.executable,str(lib/"execution_receipt_anchor_service.py"),
+  str(sock),str(db),str(executor.pw_uid),str(executor.pw_gid),
+  "filesystem-execution-witness",pathlib.Path(witness_pub).read_text().strip()],
+  preexec_fn=drop(user.pw_uid,user.pw_gid,(executor.pw_gid,)),env=env,
+  stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)
+ return ready(proc,sock,"filesystem receipt anchor")
+
+def start_executor(executor,broker,sock,db,effect_dir,config,epoch_sock,
+                   witness_sock,witness_pub,anchor_sock,lib,env):
  c=json.loads(pathlib.Path(config).read_text())
  args=[str(sock),str(db),str(effect_dir),str(broker.pw_uid),str(broker.pw_gid),
   "authority",c["authority_public"],"broker-a","broker-instance-real-process",
-  c["broker_public"],"evaluator-real-process",c["evaluator_public"],"north",str(epoch_sock)]
+  c["broker_public"],"evaluator-real-process",c["evaluator_public"],"north",str(epoch_sock),
+  str(witness_sock),"filesystem-execution-witness",pathlib.Path(witness_pub).read_text().strip(),
+  str(anchor_sock)]
  proc=subprocess.Popen([sys.executable,str(lib/"independent_filesystem_effect_executor_service.py"),*args],
   preexec_fn=drop(executor.pw_uid,executor.pw_gid,(broker.pw_gid,)),env=env,
   stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)
@@ -91,7 +110,9 @@ def main():
  broker=pwd.getpwnam("aml_broker_test")
  attacker=pwd.getpwnam("aml_client_test")
  epoch_user=pwd.getpwnam("aml_epoch_anchor_test")
- assert len({x.pw_uid for x in (executor,broker,attacker,epoch_user)})==4
+ witness_user=pwd.getpwnam("aml_execution_witness_test")
+ receipt_user=pwd.getpwnam("aml_execution_anchor_test")
+ assert len({x.pw_uid for x in (executor,broker,attacker,epoch_user,witness_user,receipt_user)})==6
  with tempfile.TemporaryDirectory(prefix="aml-independent-real-effect-") as tmp:
   root=pathlib.Path(tmp); root.chmod(0o755)
   def private(name,user):
@@ -99,14 +120,18 @@ def main():
   def ipc(name,user):
    p=root/name; p.mkdir(mode=0o711); os.chown(p,user.pw_uid,user.pw_gid); return p
   estate=private("executor",executor); epstate=private("epoch",epoch_user)
+  wstate=private("witness",witness_user); astate=private("receipt-anchor",receipt_user)
   eipc=ipc("eipc",executor); epipc=ipc("epipc",epoch_user)
+  wipc=ipc("wipc",witness_user); aipc=ipc("aipc",receipt_user)
   shared=root/"shared"; shared.mkdir(mode=0o755)
   lib=root/"lib"; lib.mkdir(mode=0o755)
   names=("independent_filesystem_effect_executor","independent_filesystem_effect_executor_service",
    "independent_effect_executor_client","session_epoch_anchor","session_epoch_anchor_service",
-   "authenticated_execution_challenge","execution_gate_receipt","session_capability",
-   "gated_action_broker","strict_evaluator","pin_registry","pin_replication",
-   "replica_attestation","signed_receipt")
+   "execution_consumption_witness","authorized_execution_consumption",
+   "execution_consumption_witness_service","execution_receipt_anchor",
+   "execution_receipt_anchor_service","authenticated_execution_challenge",
+   "execution_gate_receipt","session_capability","gated_action_broker","strict_evaluator",
+   "pin_registry","pin_replication","replica_attestation","signed_receipt")
   for name in names:
    src=HERE/(name+".py"); dst=lib/(name+".py"); shutil.copyfile(src,dst); dst.chmod(0o644)
   env=dict(os.environ,PYTHONPATH=str(lib))
@@ -143,8 +168,14 @@ import sys
 assert RemoteSessionEpochAnchor(sys.argv[1]).initialize("broker-a",0)==0
 '''
   run(init,[epoch_sock],executor,env)
+  witness_sock=wipc/"witness.sock"; witness_db=wstate/"witness.sqlite"
+  witness_key=wstate/"witness.pem"; witness_pub=shared/"filesystem-witness.pub"
+  wp=start_witness(witness_user,executor,witness_sock,witness_db,witness_key,witness_pub,lib,env)
+  anchor_sock=aipc/"anchor.sock"; anchor_db=astate/"anchor.sqlite"
+  ap=start_receipt_anchor(receipt_user,executor,anchor_sock,anchor_db,witness_pub,lib,env)
   effect_sock=eipc/"effect.sock"; effect_db=estate/"effect.sqlite"; effect_dir=estate/"effects"
-  xp=start_executor(executor,broker,effect_sock,effect_db,effect_dir,config_path,epoch_sock,lib,env)
+  xp=start_executor(executor,broker,effect_sock,effect_db,effect_dir,config_path,epoch_sock,
+   witness_sock,witness_pub,anchor_sock,lib,env)
   try:
    snapshot=shared/"executor-before.sqlite"; shutil.copy2(effect_db,snapshot)
    first=run(BROKER,[effect_sock,evidence_path,effect_dir,effect_db],broker,env)
@@ -159,7 +190,8 @@ assert RemoteSessionEpochAnchor(sys.argv[1]).initialize("broker-a",0)==0
    # Restore only the executor DB. The already durable external file survives;
    # re-execution must reconcile that same deterministic consequence, not create a second file.
    shutil.copy2(snapshot,effect_db); os.chown(effect_db,executor.pw_uid,executor.pw_gid)
-   xp=start_executor(executor,broker,effect_sock,effect_db,effect_dir,config_path,epoch_sock,lib,env)
+   xp=start_executor(executor,broker,effect_sock,effect_db,effect_dir,config_path,epoch_sock,
+    witness_sock,witness_pub,anchor_sock,lib,env)
    replay=run(BROKER,[effect_sock,evidence_path,effect_dir,effect_db],broker,env)
    assert replay=="APPLIED",replay
    files=list(effect_dir.glob("*.effect.json")); assert len(files)==1
@@ -168,7 +200,7 @@ assert RemoteSessionEpochAnchor(sys.argv[1]).initialize("broker-a",0)==0
    print("EXECUTOR_DB_ROLLBACK_DID_NOT_DUPLICATE_DURABLE_EFFECT")
    print(denied)
   finally:
-   for proc in (xp,ep):
+   for proc in (xp,ap,wp,ep):
     if proc.poll() is None: stop(proc)
 
 if __name__=="__main__": main()
