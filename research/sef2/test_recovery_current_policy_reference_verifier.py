@@ -80,3 +80,45 @@ class CurrentRecoveryPolicyVerifierTests(unittest.TestCase):
   p["authorities"][first_registry]=self.authority_anchor_policy["authorities"][first_authority]
   self.assertFalse(verify_current_recovery_evidence(self.bundle,self.public,
    self.authority_anchor_policy,1,"0"*64,p,1,"0"*64))
+
+ def test_standalone_cli_accepts_current_policy_bound_bundle(self):
+  import json,subprocess,sys
+  from pathlib import Path
+  bundle=Path(self.temp.name)/"current-recovery.json"
+  authority_policy=Path(self.temp.name)/"authority-anchor-policy.json"
+  registry_policy=Path(self.temp.name)/"registry-anchor-policy.json"
+  bundle.write_text(json.dumps(self.bundle),encoding="utf-8")
+  authority_policy.write_text(json.dumps(self.authority_anchor_policy),encoding="utf-8")
+  registry_policy.write_text(json.dumps(self.registry_anchor_policy),encoding="utf-8")
+  script=Path(__file__).with_name("recovery_current_policy_reference_verifier.py")
+  result=subprocess.run([sys.executable,str(script),str(bundle),
+    "--authority-public-key",self.public,
+    "--authority-anchor-policy",str(authority_policy),
+    "--authority-anchor-sequence","1",
+    "--authority-previous-anchor-pin","0"*64,
+    "--registry-anchor-policy",str(registry_policy),
+    "--registry-anchor-sequence","1",
+    "--registry-previous-anchor-pin","0"*64],
+    capture_output=True,text=True,check=False)
+  self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+  self.assertIn("independently anchored current policy",result.stdout)
+
+ def test_standalone_cli_rejects_duplicate_json_keys(self):
+  import json,subprocess,sys
+  from pathlib import Path
+  raw=json.dumps(self.bundle).replace('"schema":', '"schema":"shadow","schema":',1)
+  bundle=Path(self.temp.name)/"duplicate.json"
+  authority_policy=Path(self.temp.name)/"authority-anchor-policy-dup.json"
+  registry_policy=Path(self.temp.name)/"registry-anchor-policy-dup.json"
+  bundle.write_text(raw,encoding="utf-8")
+  authority_policy.write_text(json.dumps(self.authority_anchor_policy),encoding="utf-8")
+  registry_policy.write_text(json.dumps(self.registry_anchor_policy),encoding="utf-8")
+  script=Path(__file__).with_name("recovery_current_policy_reference_verifier.py")
+  result=subprocess.run([sys.executable,str(script),str(bundle),
+    "--authority-public-key",self.public,
+    "--authority-anchor-policy",str(authority_policy),
+    "--authority-anchor-sequence","1","--authority-previous-anchor-pin","0"*64,
+    "--registry-anchor-policy",str(registry_policy),
+    "--registry-anchor-sequence","1","--registry-previous-anchor-pin","0"*64],
+    capture_output=True,text=True,check=False)
+  self.assertEqual(result.returncode,2)
