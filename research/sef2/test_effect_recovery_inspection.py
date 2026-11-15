@@ -25,7 +25,7 @@ class RecoveryInspectionTests(unittest.TestCase):
         class ExplodingStore:
             def inspect(self, operation_id):
                 raise AssertionError("invalid identifier reached storage")
-        for invalid in ("", "x" * 129, "bad\\nline", "nonascii-\u00e9", 42, None):
+        for invalid in ("", "x" * 129, "bad\nline", "nonascii-\u00e9", 42, None):
             self.assertEqual(classify_recovery(self.db, ExplodingStore(), invalid), "UNKNOWN")
 
     def test_absent_operation_is_not_authorized_by_classifier(self):
