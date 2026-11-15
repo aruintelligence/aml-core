@@ -1073,3 +1073,32 @@ class RecoveryAnchorCASInputValidationTests(unittest.TestCase):
   self.assertFalse(quorum.compare_and_set("0"*64,"bad"))
   self.assertFalse(quorum.compare_and_set("0"*64,"0"*64))
   self.assertEqual([a.read_head() for a in anchors],["0"*64]*4)
+
+class BoundedRecoveryQuorumModelTests(unittest.TestCase):
+ def test_all_small_quorum_parameters_match_intersection_and_liveness_model(self):
+  import itertools
+  for n in range(4,9):
+   keys={f"authority-{i}":Ed25519PrivateKey.generate() for i in range(n)}
+   authorities={name:key.public_key().public_bytes_raw().hex() for name,key in keys.items()}
+   for faults in range((n-1)//3+1):
+    for threshold in range(1,n+1):
+     policy={"schema":POLICY_SCHEMA,"policy_id":f"bounded-{n}-{faults}-{threshold}",
+       "threshold":threshold,"max_faults":faults,"authorities":authorities}
+     expected=(n>=3*faults+1 and threshold<=n-faults and 2*threshold-n>faults)
+     self.assertEqual(validate_policy(policy),expected,
+       (n,faults,threshold,"policy validation disagrees with quorum model"))
+     if not expected: continue
+     quorums=list(itertools.combinations(authorities,threshold))
+     for left,right in itertools.combinations(quorums,2):
+      intersection=set(left)&set(right)
+      self.assertGreater(len(intersection),faults,
+        (n,faults,threshold,left,right,"no honest intersection"))
+ def test_minimal_quorum_formula_is_exact_for_classical_fault_bound(self):
+  for n in range(4,13):
+   for faults in range((n-1)//3+1):
+    if n<3*faults+1: continue
+    minimum=(n+faults)//2+1
+    self.assertGreater(2*minimum-n,faults)
+    self.assertLessEqual(minimum,n-faults)
+    if minimum>1:
+     self.assertLessEqual(2*(minimum-1)-n,faults)
