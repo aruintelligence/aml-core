@@ -62,7 +62,7 @@ def main():
                      "signed_receipt.py","gated_action_broker.py"):
             target=lib/name; shutil.copyfile(HERE/name,target); target.chmod(0o644)
         sock=ipc/"holder.sock"; state=private/"holder.sqlite"
-        key_path=private/"holder_ed25519.pem"; pub_path=root/"holder.pub"
+        key_path=private/"holder_ed25519.pem"; pub_path=ipc/"holder.pub"
         env=dict(os.environ,PYTHONPATH=str(lib))
         proc=start(sock,state,key_path,pub_path,lib,holder,runtime,env)
         try:
@@ -84,10 +84,20 @@ def main():
                 preexec_fn=drop(attacker.pw_uid,attacker.pw_gid),env=env,capture_output=True,text=True,timeout=10)
             assert attack.returncode==0,(attack.stdout,attack.stderr)
             assert "UNTRUSTED_HOLDER_PROOF_DENIED" in attack.stdout
-            for path in (key_path,state):
-                try: path.read_bytes()
-                except PermissionError: pass
-                else: raise AssertionError("root harness expected private holder state to be holder-owned only")
+            reader=r'''
+import pathlib,sys
+for value in sys.argv[1:]:
+    try: pathlib.Path(value).read_bytes()
+    except PermissionError: continue
+    raise AssertionError("non-holder UID read holder-owned private state")
+print("HOLDER_PRIVATE_STATE_DENIED")
+'''
+            for account in (runtime,attacker):
+                denied=subprocess.run([sys.executable,"-c",reader,str(key_path),str(state)],
+                    preexec_fn=drop(account.pw_uid,account.pw_gid),env=env,
+                    capture_output=True,text=True,timeout=10)
+                assert denied.returncode==0,(denied.stdout,denied.stderr)
+                assert "HOLDER_PRIVATE_STATE_DENIED" in denied.stdout
         finally:
             stop(proc)
         print("HOLDER_PROOF_UID_OK: holder key stayed in separate UID service; untrusted model UID denied")
