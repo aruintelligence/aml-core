@@ -461,3 +461,10 @@ session_revocation_model.py expresses the anchored session-revocation protocol a
 Added `evaluation_kit/verify_recovery_authority.py`, a verifier that does not trust the recovery-authority process that produced its evidence. It validates the exported approval ledger's hash chain, Ed25519 signatures, optional externally retained head pin, and optional pinned threshold-recovery policy membership. The adversarial suite rejects wrong head pins, wrong public keys, policy key substitution, altered event payload digests, altered signatures, predecessor-chain tampering, truncated history under a retained head pin, unknown authority identities, and malformed policies.
 
 This creates a reproducible auditor path for one recovery authority's approval history. It still depends on an externally retained head pin for rollback/truncation detection and on the truth of the pinned policy. It does not prove that administrative domains are independent or that the head pin itself cannot be rolled back.
+
+
+### Directive 023 — council-level recovery transparency
+
+Added `recovery_council_evidence.py`, which joins an accepted threshold approval bundle to the independently verifiable approval ledger of every authority counted toward the threshold. The verifier requires an externally retained head for each approving authority, validates each authority ledger and signature chain, and proves that the exact signature appearing in the threshold bundle is present exactly once in that authority's retained history for the same policy and payload digest.
+
+The adversarial suite rejects missing authority ledgers, missing or stale head pins, altered approval signatures, modified ledger payload digests, recovery-policy key substitution, payload substitution, and extra unapproved authority evidence. This makes a successful threshold authorization externally auditable across the authorities that actually formed the quorum. It still relies on separately retained authority-head pins and does not itself provide a globally ordered transparency log or prove administrative independence.
