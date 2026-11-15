@@ -32,3 +32,7 @@ Move the verifier, protected state, and execution adapter into a separate operat
 ## Evidence requirements
 
 The workflow `.github/workflows/sef2-research-lab.yml` includes `test_effect_authority` and `test_signed_policy_floor`. Claims of passing tests require a completed workflow run at the exact commit SHA, not merely source committed to GitHub.
+
+## Initialization and missing-state handling
+
+An empty SQLite database may be initialized with floor zero. An existing database missing either required security table or its singleton policy-floor row is rejected on restart, rather than silently recreated. The check is performed under a write transaction to avoid a concurrent initializer race. This does **not** distinguish a legitimately empty first boot from deletion of the entire database file, and it does **not** detect rollback to a complete older snapshot. Deployment must protect the database path and use an independently controlled checkpoint with trustworthy freshness for those cases.
