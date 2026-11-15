@@ -42,6 +42,26 @@ class DurableReceiptWitnessTests(unittest.TestCase):
         self.assertFalse(self.store.observe(1, self.h1, 0, GENESIS))
         self.assertEqual(self.store.inspect(), (0, GENESIS))
 
+    def test_live_witness_replacement_denies(self):
+        self.assertTrue(self.store.observe(0, GENESIS, 0, GENESIS))
+        os.unlink(self.path)
+        fresh = DurableReceiptWitness(self.path, "authority")
+        self.assertFalse(self.store.observe(1, self.h1, 0, GENESIS, self.first))
+        with self.assertRaises((OSError, ValueError)):
+            self.store.inspect()
+        self.assertTrue(fresh.observe(0, GENESIS, 0, GENESIS))
+
+    def test_symlink_witness_bootstrap_denied(self):
+        target = os.path.join(self.temp.name, "target.sqlite")
+        with open(target, "wb") as out:
+            out.write(b"witness-sentinel")
+        link = os.path.join(self.temp.name, "link.sqlite")
+        os.symlink(target, link)
+        with self.assertRaises(ValueError):
+            DurableReceiptWitness(link, "authority")
+        with open(target, "rb") as source:
+            self.assertEqual(source.read(), b"witness-sentinel")
+
     def test_invalid_checkpoint_denied(self):
         self.assertFalse(self.store.observe(True, GENESIS, 0, GENESIS))
         self.assertFalse(self.store.observe(0, "bad", 0, GENESIS))
