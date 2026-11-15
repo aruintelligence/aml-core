@@ -5,6 +5,21 @@ from recovery_policy_registry_anchor import verify_registry_anchor
 
 SCHEMA="AML-SEF2-CURRENT-RECOVERY-EVIDENCE-V1"
 
+def anchor_planes_independent(first,second):
+    try:
+        if type(first) is not dict or type(second) is not dict:
+            return False
+        if first.get("policy_id")==second.get("policy_id"):
+            return False
+        a=first.get("authorities"); b=second.get("authorities")
+        if type(a) is not dict or type(b) is not dict:
+            return False
+        first_keys={bytes.fromhex(value) for value in a.values()}
+        second_keys={bytes.fromhex(value) for value in b.values()}
+        return bool(first_keys) and bool(second_keys) and not (first_keys & second_keys)
+    except (ValueError,TypeError,AttributeError):
+        return False
+
 def verify_current_recovery_evidence(bundle,authority_public_key_hex,
         authority_anchor_policy,authority_anchor_sequence,authority_previous_anchor_pin,
         registry_anchor_policy,registry_anchor_sequence,registry_previous_anchor_pin,
@@ -14,6 +29,8 @@ def verify_current_recovery_evidence(bundle,authority_public_key_hex,
             "registry_state","registry_anchor_payload","registry_anchor_certificate"}:
             return False
         if bundle["schema"]!=SCHEMA:
+            return False
+        if not anchor_planes_independent(authority_anchor_policy,registry_anchor_policy):
             return False
         recovery=bundle["recovery_evidence"]
         if not verify_recovery_evidence(recovery,authority_public_key_hex,
