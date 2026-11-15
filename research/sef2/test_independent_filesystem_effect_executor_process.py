@@ -5,7 +5,7 @@ different Linux identities. The broker can submit evidence but cannot access
 the executor's database or effect directory directly. Restoring only the
 executor DB after a committed file effect must not duplicate the file.
 """
-import json,os,pathlib,pwd,shutil,subprocess,sys,tempfile,time
+import json,os,pathlib,pwd,shutil,sqlite3,subprocess,sys,tempfile,time
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from authenticated_execution_challenge import make_execution_challenge
 from execution_gate_receipt import evaluate_and_issue
@@ -180,6 +180,15 @@ assert RemoteSessionEpochAnchor(sys.argv[1]).initialize("broker-a",0)==0
    snapshot=shared/"executor-before.sqlite"; shutil.copy2(effect_db,snapshot)
    first=run(BROKER,[effect_sock,evidence_path,effect_dir,effect_db],broker,env)
    assert first=="APPLIED",first
+   with sqlite3.connect(witness_db) as db:
+    assert db.execute("SELECT COUNT(*) FROM authorized_execution_consumption").fetchone()[0]==1
+    assert db.execute("SELECT COUNT(*) FROM execution_consumption").fetchone()[0]==0
+   with sqlite3.connect(anchor_db) as db:
+    v3=db.execute("""SELECT sequence FROM authorized_execution_receipt_anchor
+     WHERE witness_id='filesystem-execution-witness'""").fetchone()[0]
+    v2=db.execute("""SELECT sequence FROM execution_receipt_anchor
+     WHERE witness_id='filesystem-execution-witness'""").fetchone()[0]
+    assert v3==1 and v2==0
    second=run(BROKER,[effect_sock,evidence_path,effect_dir,effect_db],broker,env)
    assert second=="ALREADY_APPLIED",second
    denied=run(ATTACKER,[effect_sock,evidence_path],attacker,env,(broker.pw_gid,))
@@ -193,11 +202,21 @@ assert RemoteSessionEpochAnchor(sys.argv[1]).initialize("broker-a",0)==0
    xp=start_executor(executor,broker,effect_sock,effect_db,effect_dir,config_path,epoch_sock,
     witness_sock,witness_pub,anchor_sock,lib,env)
    replay=run(BROKER,[effect_sock,evidence_path,effect_dir,effect_db],broker,env)
-   assert replay=="APPLIED",replay
+   assert replay=="DENIED",replay
    files=list(effect_dir.glob("*.effect.json")); assert len(files)==1
+   stop(xp)
+   files[0].unlink()
+   shutil.copy2(snapshot,effect_db); os.chown(effect_db,executor.pw_uid,executor.pw_gid)
+   xp=start_executor(executor,broker,effect_sock,effect_db,effect_dir,config_path,epoch_sock,
+    witness_sock,witness_pub,anchor_sock,lib,env)
+   replay_both=run(BROKER,[effect_sock,evidence_path,effect_dir,effect_db],broker,env)
+   assert replay_both=="DENIED",replay_both
+   assert len(list(effect_dir.glob("*.effect.json")))==0
    print("INDEPENDENT_REAL_FILESYSTEM_EFFECT_APPLIED_ONCE")
    print("BROKER_DIRECT_EFFECT_ACCESS_DENIED")
-   print("EXECUTOR_DB_ROLLBACK_DID_NOT_DUPLICATE_DURABLE_EFFECT")
+   print("V3_CONSUMPTION_AND_ANCHOR_CONFIRMED")
+   print("EXECUTOR_DB_ROLLBACK_BLOCKED_BY_INDEPENDENT_CONSUMPTION")
+   print("EXECUTOR_DB_AND_EFFECT_FILE_ROLLBACK_COULD_NOT_REPEAT_CONSUMED_EFFECT")
    print(denied)
   finally:
    for proc in (xp,ap,wp,ep):
