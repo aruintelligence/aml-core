@@ -72,3 +72,10 @@ def verify_target_registry_history(bundle,policy,expected_head_sha256=None):
         return True
     except (ValueError,TypeError,KeyError,AttributeError,OverflowError):
         return False
+
+
+def verified_current_targets(bundle,policy,expected_head_sha256):
+    """Return the current tracked target tuple only after full history verification."""
+    if not verify_target_registry_history(bundle,policy,expected_head_sha256):
+        raise ValueError("target registry history or retained head is invalid")
+    return tuple(bundle["current_targets"])
