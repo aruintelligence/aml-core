@@ -42,6 +42,17 @@ class DurableHighWaterTests(unittest.TestCase):
         self.assertEqual(self.verifier(8, 4, "tenant-a")(), 8)
         self.assertEqual(self.verifier(2, 1, "tenant-b")(), 2)
 
+    def test_strict_startup_rejects_deleted_checkpoint_database(self):
+        with self.assertRaises(ValueError):
+            DurableCheckpointHighWater(self.path, require_existing=True)
+        store = DurableCheckpointHighWater(self.path)
+        self.assertEqual(store.observe("tenant-a", 5, 5), 5)
+        self.assertIsInstance(DurableCheckpointHighWater(self.path, require_existing=True),
+                              DurableCheckpointHighWater)
+        os.unlink(self.path)
+        with self.assertRaises(ValueError):
+            DurableCheckpointHighWater(self.path, require_existing=True)
+
     def test_restart_rejects_missing_checkpoint_table(self):
         store = DurableCheckpointHighWater(self.path)
         self.assertEqual(store.observe("tenant-a", 5, 5), 5)
