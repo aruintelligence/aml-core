@@ -18,6 +18,9 @@ class DurableCheckpointHighWater:
             db.execute("BEGIN IMMEDIATE")
             existing = {row[0] for row in db.execute(
                 "SELECT name FROM sqlite_master WHERE type='table'")}
+            if not existing and require_existing:
+                db.execute("ROLLBACK")
+                raise ValueError("existing checkpoint database has no security state")
             if not existing:
                 db.execute("CREATE TABLE checkpoint_marks (authority_id TEXT PRIMARY KEY, sequence INTEGER NOT NULL CHECK(sequence>=0), generation INTEGER NOT NULL CHECK(generation>=0))")
             elif "checkpoint_marks" not in existing:
