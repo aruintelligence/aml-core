@@ -49,8 +49,18 @@ def main():
             stop(procs[3]); procs[3]=None
             assert quorum.compare_and_set(first,second)
             assert quorum.read_head()==second
-            # A stale fourth anchor that missed the second transition cannot override the live quorum.
             assert anchors[0].read_head()==second and anchors[1].read_head()==second and anchors[2].read_head()==second
+            # Restart the fourth process from its durable stale state. Its response
+            # is correctly signed but must remain a minority and cannot roll back the quorum.
+            stale_state=root/"state-3"; stale_sock=(root/"ipc-3")/"anchor.sock"
+            proc,public,_=start(accounts[3],"anchor-3",stale_sock,stale_state,lib,signer,env)
+            procs[3]=proc
+            stale_key=Ed25519PublicKey.from_public_bytes(bytes.fromhex(public.read_text().strip()))
+            anchors[3]=SignedRecoveryHeadAnchor("anchor-3",stale_key,UnixRecoveryHeadAnchorTransport(stale_sock))
+            assert anchors[3].read_head()==first
+            restarted_quorum=QuorumRecoveryHeadAnchor(anchors,3,1)
+            assert restarted_quorum.read_head()==second
+            print("RECOVERY_ANCHOR_STALE_MINORITY_REJECTED: signed stale restart could not roll back quorum")
             # Untrusted client UID cannot use the signer-group socket.
             sock=pathlib.Path(anchors[0].transport.socket_path)
             code='from recovery_head_anchor_service import UnixRecoveryHeadAnchorTransport\nimport sys\ntry: UnixRecoveryHeadAnchorTransport(sys.argv[1]).read_head("x"*64)\nexcept Exception: print("UNTRUSTED_RECOVERY_ANCHOR_CLIENT_DENIED")\nelse: raise SystemExit(3)'
