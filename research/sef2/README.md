@@ -367,3 +367,8 @@ This closes an important integration gap in the prototype: the independent ancho
 
 
 **Current-policy signer-membership verification:** the independent current-policy verifier now requires the recovery authority identifier and public key in the evidence bundle to match an enrolled member of the independently anchored current recovery policy. This closes a gap where a valid Ed25519 signature over the current policy digest could otherwise be supplied by a key not actually present in that policy. An adversarial test constructs a cryptographically valid, correctly anchored ledger from an unenrolled key: the lower-level evidence verifier accepts the internally consistent bundle, while the current-policy verifier correctly rejects it.
+
+
+### Directive 030 — dual-consent recovery anchor council rotation
+
+`recovery_anchor_policy_rotation.py` introduces an explicit succession proof for the recovery anchor council. The outgoing anchor policy and the incoming anchor policy must have different policy identifiers and disjoint public keys, and both councils must produce threshold approvals over the exact same rotation payload: generation, predecessor anchor pin, outgoing policy digest and incoming policy digest. Durable per-authority anti-equivocation signers are reused for the rotation approvals. Tests reject outgoing or incoming quorum shortfall, forged signatures, generation/pin substitution, payload substitution, reused anchor keys and same-policy-id replacement. This proves dual-consent handoff authorization but does not yet mutate live `RecoveryAnchorWitness` enrollment state; operational re-enrollment remains a separate integration step.
