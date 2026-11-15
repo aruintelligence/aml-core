@@ -157,11 +157,19 @@ def main():
     preexec_fn=drop(client.pw_uid,client.pw_gid),env=env,capture_output=True,text=True,timeout=10)
    assert valid.returncode==0,(valid.stdout,valid.stderr)
    config_data=__import__("json").loads(config.read_text())
-   audited=subprocess.run([sys.executable,str(HERE/"evaluation_kit"/"verify_session_authorization.py"),
+   # Give the independent auditor a standalone, world-readable verifier kit;
+   # it must not depend on traversing the repository checkout as another UID.
+   auditor_root=shared/"auditor-kit"; auditor_root.mkdir(mode=0o755)
+   auditor_kit=auditor_root/"evaluation_kit"; auditor_kit.mkdir(mode=0o755)
+   verifier=auditor_kit/"verify_session_authorization.py"
+   shutil.copyfile(HERE/"evaluation_kit"/"verify_session_authorization.py",verifier); verifier.chmod(0o644)
+   for module in ("session_capability.py","authenticated_execution_challenge.py","signed_receipt.py"):
+    shutil.copyfile(HERE/module,auditor_root/module); (auditor_root/module).chmod(0o644)
+   audited=subprocess.run([sys.executable,str(verifier),
     "--input",str(evidence),"--authority-public-hex",config_data["authority_public_hex"],
     "--broker-public-hex",broker_public.read_text().strip(),"--issuer","authority",
     "--audience","broker-a","--broker-instance-id","broker-session-process","--policy-epoch","0"],
-    preexec_fn=drop(auditor.pw_uid,auditor.pw_gid),env=dict(os.environ,PYTHONPATH=str(HERE)),
+    preexec_fn=drop(auditor.pw_uid,auditor.pw_gid),env=dict(os.environ,PYTHONPATH=str(auditor_root)),
     capture_output=True,text=True,timeout=10)
    assert audited.returncode==0,(audited.stdout,audited.stderr)
    assert "SESSION_AUTHORIZATION_EVIDENCE_VERIFIED" in audited.stdout
