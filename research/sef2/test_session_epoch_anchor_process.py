@@ -25,7 +25,10 @@ def main():
         private=root/"private"; private.mkdir(mode=0o700); os.chown(private,anchor_user.pw_uid,anchor_user.pw_gid)
         ipc=root/"ipc"; ipc.mkdir(mode=0o711); os.chown(ipc,anchor_user.pw_uid,anchor_user.pw_gid)
         lib=root/"lib"; lib.mkdir(mode=0o755)
-        for name in ("session_epoch_anchor.py","session_epoch_anchor_service.py"):
+        for name in ("session_epoch_anchor.py","session_epoch_anchor_service.py",
+                     "session_capability_broker.py","session_capability.py","gated_action_broker.py",
+                     "strict_evaluator.py","pin_replication.py","replica_attestation.py",
+                     "pin_registry.py","signed_receipt.py","authenticated_execution_challenge.py"):
             target=lib/name; shutil.copyfile(HERE/name,target); target.chmod(0o644)
         sock=ipc/"epoch.sock"; db=private/"epoch.sqlite"
         env=dict(os.environ,PYTHONPATH=str(lib))
@@ -39,21 +42,30 @@ def main():
                 if sock.exists(): time.sleep(.05); break
                 time.sleep(.02)
             else: raise AssertionError("epoch anchor startup timeout")
+            broker_state=root/"broker-state"; broker_state.mkdir(mode=0o700); os.chown(broker_state,broker.pw_uid,broker.pw_gid)
+            broker_db=broker_state/"broker.sqlite"
             code=r'''
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from session_epoch_anchor import RemoteSessionEpochAnchor
+from session_capability_broker import SessionCapabilityBroker
 import sys
-a=RemoteSessionEpochAnchor(sys.argv[1])
-assert a.initialize("broker-a",0)==0
-assert a.read_epoch("broker-a")==0
-assert a.compare_and_set("broker-a",0,1)
-assert a.read_epoch("broker-a")==1
-assert not a.compare_and_set("broker-a",0,1)
-print("REMOTE_SESSION_EPOCH_ANCHOR_OK")
+sock,db=sys.argv[1:3]
+anchor=RemoteSessionEpochAnchor(sock)
+issuer=Ed25519PrivateKey.generate()
+broker=SessionCapabilityBroker(db,None,"north",[],0,{},"authority",
+    issuer.public_key().public_bytes_raw().hex(),"broker-a",epoch_anchor=anchor)
+assert broker.current_epoch()==0
+assert broker.revoke_all()==1
+assert anchor.read_epoch("broker-a")==1
+restarted=SessionCapabilityBroker(db,None,"north",[],0,{},"authority",
+    issuer.public_key().public_bytes_raw().hex(),"broker-a",epoch_anchor=anchor)
+assert restarted.current_epoch()==1
+print("REMOTE_SESSION_EPOCH_BROKER_OK")
 '''
-            result=subprocess.run([sys.executable,"-c",code,str(sock)],preexec_fn=drop(broker.pw_uid,broker.pw_gid),
+            result=subprocess.run([sys.executable,"-c",code,str(sock),str(broker_db)],preexec_fn=drop(broker.pw_uid,broker.pw_gid),
                 env=env,capture_output=True,text=True,timeout=10)
             assert result.returncode==0,(result.stdout,result.stderr)
-            assert "REMOTE_SESSION_EPOCH_ANCHOR_OK" in result.stdout
+            assert "REMOTE_SESSION_EPOCH_BROKER_OK" in result.stdout
             denied=subprocess.run([sys.executable,"-c",ATTACK,str(sock)],preexec_fn=drop(attacker.pw_uid,attacker.pw_gid),
                 env=env,capture_output=True,text=True,timeout=10)
             assert denied.returncode==0,(denied.stdout,denied.stderr)
