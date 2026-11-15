@@ -9,6 +9,7 @@ from independent_effect_reservations import IndependentEffectReservations
 # The SEF2 workflow explicitly runs this module; include the receipt-chain
 # test class until the workflow invokes its own test module directly.
 from test_reservation_receipt_chain import ReservationReceiptChainTests
+from test_atomic_receipt_reservations import AtomicReceiptReservationTests
 
 def effect(op="op-1"):
     return {"operation_id": op, "kind": "fixture:write",
