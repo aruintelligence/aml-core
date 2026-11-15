@@ -504,3 +504,20 @@ class RecoveryLedgerAnchorTests(unittest.TestCase):
   other=Ed25519PrivateKey.generate()
   with self.assertRaisesRegex(ValueError,"another authority identity"):
    RecoveryAuthoritySigner("authority-1",other,self.ledger)
+
+ def test_authority_refuses_second_parent_fork_for_same_generation(self):
+  self.signer.approve(self.payload,self.policy)
+  fork={**self.payload,"previous_state_sha256":"c"*64,"new_key":"d"*64}
+  with self.assertRaisesRegex(ValueError,"equivocation"):
+   self.signer.approve(fork,self.policy)
+ def test_authority_refuses_policy_revision_reuse_for_same_generation(self):
+  self.signer.approve(self.payload,self.policy)
+  revised=copy.deepcopy(self.policy)
+  revised["authorities"]["authority-3"]=Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex()
+  with self.assertRaisesRegex(ValueError,"equivocation"):
+   self.signer.approve(self.payload,revised)
+ def test_recovery_ledger_is_scoped_to_authority_and_witness_generation(self):
+  self.signer.approve(self.payload,self.policy)
+  other={**self.payload,"witness_id":"south"}
+  self.assertNotEqual(self.signer.approve(other,self.policy),
+      self.signer.approve(self.payload,self.policy))
