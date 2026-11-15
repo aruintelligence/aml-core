@@ -31,7 +31,7 @@ class DurableReceiptWitnessTests(unittest.TestCase):
 
     def test_restart_keeps_high_water(self):
         self.assertTrue(self.store.observe(0, GENESIS, 0, GENESIS))
-        self.assertTrue(self.store.observe(1, self.h1, 0, GENESIS))
+        self.assertTrue(self.store.observe(1, self.h1, 0, GENESIS, self.first))
         reopened = DurableReceiptWitness(self.path, "authority", require_existing=True)
         self.assertEqual(reopened.inspect(), (1, self.h1))
         self.assertFalse(reopened.observe(1, self.h1, 0, GENESIS, self.first))
