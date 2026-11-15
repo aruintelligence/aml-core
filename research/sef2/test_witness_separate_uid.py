@@ -8,6 +8,7 @@ Never run this against a production witness database.
 import os
 import pwd
 import socket
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -26,6 +27,8 @@ class WitnessSeparateUIDTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             base = Path(root)
             os.chmod(base, 0o755)
+            for module in ("witness_socket.py", "witness_protocol.py", "reservation_receipt_chain.py"):
+                shutil.copy2(Path(__file__).resolve().parent / module, base / module)
             db = base / "witness.sqlite"
             sock = base / "witness.sock"
             store = DurableReceiptWitness(db, "authority")
@@ -47,7 +50,7 @@ class WitnessSeparateUIDTests(unittest.TestCase):
                 )
                 import json
                 env = dict(os.environ)
-                env["PYTHONPATH"] = str(Path(__file__).resolve().parent)
+                env["PYTHONPATH"] = str(base)
                 def run_as(uid, req):
                     def demote():
                         os.setgroups([])
