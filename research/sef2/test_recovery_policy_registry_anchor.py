@@ -80,13 +80,14 @@ class RecoveryPolicyRegistryAnchorTests(unittest.TestCase):
  def test_wrong_previous_pin_cannot_advance_anchor_witness(self):
   bad=make_registry_anchor_payload(self.first_state,1,"1"*64,self.anchor_policy)
   with self.assertRaisesRegex(ValueError,"stale or forked"):
-   self.anchors["anchor-0"].approve(bad,self.anchor_policy)
+   self.anchors["anchor-3"].approve(bad,self.anchor_policy)
  def test_wrong_registry_identity_rejected(self):
   self.assertFalse(verify_registry_anchor(self.first_state,self.first_payload,
       self.first_certificate,self.anchor_policy,1,"0"*64,"another-registry"))
  def test_restart_keeps_anchor_quorum_sequence(self):
   self.anchors["anchor-0"]=RecoveryAnchorWitness("anchor-0",self.anchor_keys["anchor-0"],
       str(self.root/"anchor-0.anchor.sqlite"))
+  advanced={**self.first_state,"generation":2,"head_sha256":"c"*64}
   with self.assertRaisesRegex(ValueError,"stale or forked"):
-   self.anchors["anchor-0"].approve(make_registry_anchor_payload(self.first_state,1,"1"*64,
+   self.anchors["anchor-0"].approve(make_registry_anchor_payload(advanced,2,"f"*64,
       self.anchor_policy),self.anchor_policy)
