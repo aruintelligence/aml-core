@@ -15,6 +15,7 @@ class AtomicReceiptReservations:
         self.path = str(path)
         self.authority_id = authority_id
         self.uri = Path(path).absolute().as_uri() + "?mode=rw"
+        self._identity = None
         if require_existing and not Path(path).is_file():
             raise ValueError("missing ledger")
         with sqlite3.connect(self.path, isolation_level=None) as db:
@@ -29,12 +30,27 @@ class AtomicReceiptReservations:
                 db.execute("ROLLBACK")
                 raise ValueError("missing receipt security tables")
             db.execute("COMMIT")
+        self._identity = self._file_identity()
+
+    def _file_identity(self):
+        import os
+        import stat
+        info = os.stat(self.path, follow_symlinks=False)
+        if not stat.S_ISREG(info.st_mode):
+            raise ValueError("ledger is not a regular file")
+        return info.st_dev, info.st_ino
+
+    def _assert_identity(self):
+        if self._file_identity() != self._identity:
+            raise ValueError("ledger replaced")
 
     def reserve(self, operation_id, digest, generation):
         try:
             # Validation happens before any storage write.
             reservation_chain_hash(GENESIS, self.authority_id, operation_id, digest, generation)
+            self._assert_identity()
             with sqlite3.connect(self.uri, uri=True, timeout=10, isolation_level=None) as db:
+                self._assert_identity()
                 db.execute("PRAGMA synchronous=FULL")
                 db.execute("BEGIN IMMEDIATE")
                 heads = db.execute("SELECT sequence,chain_hash FROM receipt_head WHERE singleton=1").fetchall()
@@ -68,7 +84,9 @@ class AtomicReceiptReservations:
 
     def evidence(self):
         """Return local ordered evidence; caller MUST compare to trusted external head."""
+        self._assert_identity()
         with sqlite3.connect(self.uri, uri=True, timeout=10) as db:
+            self._assert_identity()
             head = db.execute("SELECT sequence,chain_hash FROM receipt_head WHERE singleton=1").fetchone()
             entries = db.execute("SELECT authority_id,operation_id,digest,generation FROM receipt_reservations ORDER BY sequence").fetchall()
         return head, entries
