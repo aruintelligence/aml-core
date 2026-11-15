@@ -5,23 +5,24 @@ from test_cross_uid_boundary import drop,HERE
 BROKER=r'''
 import json,pathlib,sys
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from execution_consumption_witness import RemoteExecutionConsumptionWitness
+from execution_consumption_witness import SignedRemoteExecutionConsumptionWitness
 from session_capability import issue_session_capability
-sock,record_path=sys.argv[1:3]
+sock,record_path,public_path=sys.argv[1:4]
 authority=Ed25519PrivateKey.generate(); holder=Ed25519PrivateKey.generate()
 request={"operation_id":"remote-exec-once","action":"payment:simulate",
  "target":"fixture:merchant-a","amount_cents":100}
 cap=issue_session_capability(authority,"authority","broker-a",request,0,
  holder.public_key().public_bytes_raw().hex())
-w=RemoteExecutionConsumptionWitness(sock)
-assert w.consume(request,cap,"c"*64)=="CONSUMED"
+w=SignedRemoteExecutionConsumptionWitness(sock,"execution-witness-1",pathlib.Path(public_path).read_text().strip())
+receipt=w.consume(request,cap,"c"*64)
+assert receipt["payload"]["witness_id"]=="execution-witness-1"
 try:
  w.consume(request,cap,"c"*64)
 except PermissionError:
  pass
 else:
  raise AssertionError("execution witness accepted duplicate operation")
-pathlib.Path(record_path).write_text(json.dumps({"request":request,"capability":cap}))
+pathlib.Path(record_path).write_text(json.dumps({"request":request,"capability":cap,"challenge":"c"*64,"receipt":receipt}))
 print("REMOTE_EXECUTION_CONSUMPTION_OK")
 '''
 
@@ -56,20 +57,21 @@ def main():
    source=HERE/name
    if not source.exists(): source=HERE/(name if name.endswith(".py") else name+".py")
    target=lib/source.name; shutil.copyfile(source,target); target.chmod(0o644)
-  sock=ipc/"execution.sock"; db=state/"execution.sqlite"
+  sock=ipc/"execution.sock"; db=state/"execution.sqlite"; private_key=state/"execution.pem"; public_key=shared/"execution.pub"
   env=dict(os.environ,PYTHONPATH=str(lib))
   proc=subprocess.Popen([sys.executable,str(lib/"execution_consumption_witness_service.py"),
-   str(sock),str(db),str(broker.pw_uid),str(broker.pw_gid)],
+   str(sock),str(db),str(broker.pw_uid),str(broker.pw_gid),
+   "execution-witness-1",str(private_key),str(public_key)],
    preexec_fn=drop(witness.pw_uid,witness.pw_gid,(broker.pw_gid,)),env=env,
    stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)
   try:
    for _ in range(200):
     if proc.poll() is not None: raise AssertionError("execution witness died: "+proc.stderr.read())
-    if sock.exists(): time.sleep(.05); break
+    if sock.exists() and public_key.exists(): time.sleep(.05); break
     time.sleep(.02)
    else: raise AssertionError("execution witness startup timeout")
    record=shared/"record.json"
-   good=subprocess.run([sys.executable,"-c",BROKER,str(sock),str(record)],
+   good=subprocess.run([sys.executable,"-c",BROKER,str(sock),str(record),str(public_key)],
     preexec_fn=drop(broker.pw_uid,broker.pw_gid),env=env,capture_output=True,text=True,timeout=10)
    assert good.returncode==0,(good.stdout,good.stderr)
    bad=subprocess.run([sys.executable,"-c",ATTACKER,str(sock)],
@@ -77,12 +79,14 @@ def main():
     capture_output=True,text=True,timeout=10)
    assert bad.returncode==0,(bad.stdout,bad.stderr)
    reader=r'''import pathlib,sys
-try: pathlib.Path(sys.argv[1]).read_bytes()
-except PermissionError: print("EXECUTION_WITNESS_DB_PRIVATE")
-else: raise AssertionError("non-witness UID read execution witness DB")
+for value in sys.argv[1:]:
+ try: pathlib.Path(value).read_bytes()
+except PermissionError: continue
+ raise AssertionError("non-witness UID read execution witness private state")
+print("EXECUTION_WITNESS_PRIVATE_STATE")
 '''
    for account in (broker,attacker):
-    check=subprocess.run([sys.executable,"-c",reader,str(db)],
+    check=subprocess.run([sys.executable,"-c",reader,str(db),str(private_key)],
      preexec_fn=drop(account.pw_uid,account.pw_gid),env=env,capture_output=True,text=True,timeout=10)
     assert check.returncode==0,(check.stdout,check.stderr)
    print(good.stdout.strip()); print(bad.stdout.strip()); print("EXECUTION_WITNESS_UID_OK")
