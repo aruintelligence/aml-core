@@ -61,7 +61,8 @@ def main():
         ipc=root/"ipc"; ipc.mkdir(mode=0o711); os.chown(ipc,holder.pw_uid,holder.pw_gid)
         lib=root/"lib"; lib.mkdir(mode=0o755)
         for name in ("holder_proof_service.py","holder_proof_client.py","session_capability.py",
-                     "signed_receipt.py","gated_action_broker.py","authenticated_execution_challenge.py"):
+                     "signed_receipt.py","gated_action_broker.py","authenticated_execution_challenge.py",
+                     "strict_evaluator.py","pin_replication.py","replica_attestation.py","pin_registry.py"):
             target=lib/name; shutil.copyfile(HERE/name,target); target.chmod(0o644)
         sock=ipc/"holder.sock"; state=private/"holder.sqlite"
         key_path=private/"holder_ed25519.pem"; pub_path=ipc/"holder.pub"
