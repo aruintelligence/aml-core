@@ -16,7 +16,7 @@ class DurableReceiptWitnessTests(unittest.TestCase):
 
     def test_initialize_then_advance(self):
         self.assertTrue(self.store.observe(0, GENESIS, 0, GENESIS))
-        self.assertTrue(self.store.observe(1, self.h1, 0, GENESIS))
+        self.assertTrue(self.store.observe(1, self.h1, 0, GENESIS, self.first))
         self.assertEqual(self.store.inspect(), (1, self.h1))
 
     def test_stale_cas_rejected(self):
@@ -34,7 +34,13 @@ class DurableReceiptWitnessTests(unittest.TestCase):
         self.assertTrue(self.store.observe(1, self.h1, 0, GENESIS))
         reopened = DurableReceiptWitness(self.path, "authority", require_existing=True)
         self.assertEqual(reopened.inspect(), (1, self.h1))
-        self.assertFalse(reopened.observe(1, self.h1, 0, GENESIS))
+        self.assertFalse(reopened.observe(1, self.h1, 0, GENESIS, self.first))
+
+    def test_invented_checkpoint_rejected(self):
+        self.assertTrue(self.store.observe(0, GENESIS, 0, GENESIS))
+        self.assertFalse(self.store.observe(1, "f" * 64, 0, GENESIS, self.first))
+        self.assertFalse(self.store.observe(1, self.h1, 0, GENESIS))
+        self.assertEqual(self.store.inspect(), (0, GENESIS))
 
     def test_invalid_checkpoint_denied(self):
         self.assertFalse(self.store.observe(True, GENESIS, 0, GENESIS))
