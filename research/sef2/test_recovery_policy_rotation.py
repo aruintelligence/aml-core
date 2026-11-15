@@ -78,3 +78,14 @@ class RecoveryPolicyRotationTests(unittest.TestCase):
   competing={**self.bundle["payload"],"next_policy_sha256":"f"*64}
   with self.assertRaisesRegex(ValueError,"equivocation"):
    self.old_signers["old-0"].approve(competing,self.current)
+
+ def test_successor_council_must_use_disjoint_public_keys(self):
+  overlapping={"new-0":self.old["old-0"],"new-1":self.new["new-1"],
+    "new-2":self.new["new-2"],"new-3":self.new["new-3"]}
+  successor=policy(overlapping,"council-v3")
+  with self.assertRaisesRegex(ValueError,"disjoint public keys"):
+   make_policy_rotation(self.current,successor,3,{}, {})
+ def test_successor_policy_must_have_a_new_identifier(self):
+  successor=policy(self.new,"council-v1")
+  with self.assertRaisesRegex(ValueError,"new policy identifier"):
+   make_policy_rotation(self.current,successor,3,{}, {})
