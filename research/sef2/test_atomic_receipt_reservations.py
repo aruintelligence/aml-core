@@ -1,5 +1,6 @@
 """Atomic reservation and receipt-chain fixture tests."""
 import os
+import sqlite3
 import tempfile
 import unittest
 from atomic_receipt_reservations import AtomicReceiptReservations
@@ -25,6 +26,24 @@ class AtomicReceiptReservationTests(unittest.TestCase):
         self.assertFalse(self.store.reserve("bad\\n", "a" * 64, 1) if False else
                          self.store.reserve("bad" + chr(10), "a" * 64, 1))
         self.assertEqual(self.store.evidence(), ((0, GENESIS), []))
+
+    def test_tampered_receipt_prevents_future_reservation(self):
+        self.assertTrue(self.store.reserve("op-1", "a" * 64, 1))
+        with sqlite3.connect(self.path) as db:
+            db.execute("UPDATE receipt_reservations SET digest=? WHERE sequence=1", ("b" * 64,))
+        self.assertFalse(self.store.reserve("op-2", "c" * 64, 2))
+
+    def test_deleted_receipt_prevents_future_reservation(self):
+        self.assertTrue(self.store.reserve("op-1", "a" * 64, 1))
+        with sqlite3.connect(self.path) as db:
+            db.execute("DELETE FROM receipt_reservations WHERE sequence=1")
+        self.assertFalse(self.store.reserve("op-2", "c" * 64, 2))
+
+    def test_corrupted_stored_hash_prevents_future_reservation(self):
+        self.assertTrue(self.store.reserve("op-1", "a" * 64, 1))
+        with sqlite3.connect(self.path) as db:
+            db.execute("UPDATE receipt_reservations SET chain_hash=? WHERE sequence=1", ("b" * 64,))
+        self.assertFalse(self.store.reserve("op-2", "c" * 64, 2))
 
     def test_restart_preserves_chain(self):
         self.assertTrue(self.store.reserve("op-1", "a" * 64, 1))
