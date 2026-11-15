@@ -138,9 +138,15 @@ class RecoveryActivationRegistry:
                     except (RuntimeError,OSError,ValueError): return "ANCHOR_UNAVAILABLE"
                 if generation!=state["generation"]+1: return "GENERATION_MISMATCH"
                 payload=rotation.get("payload") if type(rotation) is dict else None
-                if (type(payload) is not dict
-                    or payload.get("generation")!=generation
-                    or payload.get("previous_policy_sha256")!=state["policy_sha256"]
+                if type(payload) is not dict:
+                    return "ROTATION_STATE_MISMATCH"
+                predecessor_fields=[name for name in ("previous_policy_sha256","current_policy_sha256")
+                    if name in payload]
+                if len(predecessor_fields)!=1:
+                    return "ROTATION_STATE_MISMATCH"
+                predecessor=payload[predecessor_fields[0]]
+                if (payload.get("generation")!=generation
+                    or predecessor!=state["policy_sha256"]
                     or payload.get("next_policy_sha256")!=next_policy_sha256):
                     return "ROTATION_STATE_MISMATCH"
                 cutover_sha=_digest(certificate)
