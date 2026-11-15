@@ -53,3 +53,40 @@ class RecoveryCutoverTests(unittest.TestCase):
   cert=build_cutover_certificate(self.rotation,self.policy_sha,self.generation,acks)
   self.assertFalse(verify_cutover_certificate(cert,self.rotation,self.policy_sha,
    self.generation,self.pins,4,1))
+
+class IndependentRecoveryCutoverTests(unittest.TestCase):
+ def setUp(self):
+  import hashlib
+  from witness_independence import DIMENSIONS,independence_digest
+  self.base=RecoveryCutoverTests("test_three_of_four_activation_certificate_accepts")
+  self.base.setUp()
+  self.manifest={"witnesses":{name:{
+    **{d:name+"-"+d for d in DIMENSIONS},
+    "public_key_sha256":hashlib.sha256(bytes.fromhex(raw)).hexdigest()}
+    for name,raw in self.base.pins.items()}}
+  self.pin=independence_digest(self.manifest)
+ def check(self,manifest=None,pin=None):
+  from recovery_cutover import verify_independent_cutover_certificate
+  return verify_independent_cutover_certificate(self.base.cert,self.base.rotation,
+   self.base.policy_sha,self.base.generation,self.base.pins,3,1,
+   self.manifest if manifest is None else manifest,self.pin if pin is None else pin)
+ def test_independent_verifier_manifest_accepts(self):
+  self.assertTrue(self.check())
+ def test_shared_verifier_operator_rejected(self):
+  import copy
+  m=copy.deepcopy(self.manifest)
+  m["witnesses"]["verifier-1"]["operator"]=m["witnesses"]["verifier-0"]["operator"]
+  self.assertFalse(self.check(m))
+ def test_shared_key_custody_rejected(self):
+  import copy
+  m=copy.deepcopy(self.manifest)
+  m["witnesses"]["verifier-1"]["key_custody"]=m["witnesses"]["verifier-0"]["key_custody"]
+  self.assertFalse(self.check(m))
+ def test_manifest_pin_substitution_rejected(self):
+  self.assertFalse(self.check(pin="f"*64))
+ def test_verifier_key_substitution_rejected_by_manifest(self):
+  pins=dict(self.base.pins)
+  pins["verifier-0"]=Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex()
+  from recovery_cutover import verify_independent_cutover_certificate
+  self.assertFalse(verify_independent_cutover_certificate(self.base.cert,self.base.rotation,
+   self.base.policy_sha,self.base.generation,pins,3,1,self.manifest,self.pin))
