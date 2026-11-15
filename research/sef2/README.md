@@ -348,3 +348,6 @@ This closes an important integration gap in the prototype: the independent ancho
 
 
 **Remote-anchor quorum transport evaluation:** the new transport suite composes four independently keyed nonce-authenticated remote anchor adapters under a 3-of-4 CAS quorum. Deterministic experiments cover one unavailable service, one forged responder, wrong pinned key, a 2–2 split head, and concurrent conflicting head updates. These are simulated transport/process behaviors; they do not replace tests against independently deployed remote services or prove that operators actually maintain separate administrative domains.
+
+
+**Directive 029 — explicit anchor administrative failure domains:** the recovery-anchor policy schema now includes a complete `administrative_domains` map. Policy validation requires exactly one distinct, non-empty domain identifier per enrolled anchor; duplicate or missing domain assignments are rejected by both the certificate producer and independent reference verifier. This makes the BFT fault-bound assumption explicit at policy enrollment and prevents one declared failure domain from being counted as multiple independent anchors. Domain labels remain externally attested configuration, not cryptographic proof of separate ownership or administration; the verifier must obtain the policy from a trusted governance channel.
