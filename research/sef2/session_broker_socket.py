@@ -21,12 +21,18 @@ class _Handler(socketserver.StreamRequestHandler):
             self.wfile.write(b'{"status":"DENIED"}\n'); return
         try:
             env=json.loads(line,object_pairs_hook=reject_duplicate_keys)
-            if type(env) is not dict or env.get("op") not in ("challenge","execute"):
+            if type(env) is not dict or env.get("op") not in ("challenge","authenticated_challenge","execute"):
                 raise ValueError("invalid operation")
             if env["op"]=="challenge":
                 if set(env)!={"op","operation_id"}: raise ValueError("invalid challenge envelope")
                 challenge=self.server.broker.issue_execution_challenge(env["operation_id"])
                 response={"status":"CHALLENGE","challenge":challenge}
+            elif env["op"]=="authenticated_challenge":
+                if set(env)!={"op","request","capability"}:
+                    raise ValueError("invalid authenticated challenge envelope")
+                challenge=self.server.broker.issue_authenticated_execution_challenge(
+                    env["request"],env["capability"])
+                response={"status":"AUTHENTICATED_CHALLENGE","execution_challenge":challenge}
             else:
                 required={"op","request","attestations","capability","holder_proof","challenge"}
                 if set(env)!=required: raise ValueError("invalid execute envelope")
@@ -81,3 +87,11 @@ def request_execute(socket_path,request,attestations,capability,holder_proof,cha
     response=_call(socket_path,{"op":"execute","request":request,"attestations":attestations,
         "capability":capability,"holder_proof":holder_proof,"challenge":challenge},timeout)
     return response.get("status","DENIED") if type(response) is dict else "DENIED"
+
+def request_authenticated_challenge(socket_path,request,capability,timeout=3):
+    response=_call(socket_path,{"op":"authenticated_challenge",
+        "request":request,"capability":capability},timeout)
+    if (type(response) is dict and set(response)=={"status","execution_challenge"}
+        and response["status"]=="AUTHENTICATED_CHALLENGE"):
+        return response["execution_challenge"]
+    raise PermissionError("authenticated challenge denied")
