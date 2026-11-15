@@ -75,6 +75,7 @@ class RecoveryPolicyRegistryTests(unittest.TestCase):
    con.execute("UPDATE recovery_policy_state SET current_policy_sha256=? WHERE singleton=1",("0"*64,))
   with self.assertRaisesRegex(ValueError,"corrupt"): self.registry.state()
   self.assertEqual(self.registry.rotate(self.new,self.rotation),"CORRUPT_STATE")
+  with self.assertRaisesRegex(ValueError,"corrupt"): self.registry.initialize(self.old)
  def test_history_event_tampering_detected(self):
   self.registry.rotate(self.new,self.rotation)
   with sqlite3.connect(self.path) as con:
