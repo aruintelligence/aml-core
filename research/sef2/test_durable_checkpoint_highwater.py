@@ -1,6 +1,7 @@
 """Durable checkpoint replay, restart and multi-verifier adversarial tests."""
 import os
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 import unittest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
@@ -45,6 +46,21 @@ class DurableHighWaterTests(unittest.TestCase):
         for sequence, generation in ((True, 1), (-1, 1), (1, True), (1, -1)):
             with self.assertRaises(ValueError):
                 store.observe("tenant-a", sequence, generation)
+
+    def test_concurrent_conflicting_observations_cannot_regress(self):
+        store = DurableCheckpointHighWater(self.path)
+        self.assertEqual(store.observe("tenant-a", 10, 10), 10)
+        def attempt(i):
+            try:
+                return store.observe("tenant-a", i, i)
+            except ValueError:
+                return "DENIED"
+        with ThreadPoolExecutor(max_workers=12) as pool:
+            results = list(pool.map(attempt, range(1, 21)))
+        self.assertIn(20, results)
+        self.assertEqual(store.observe("tenant-a", 20, 20), 20)
+        with self.assertRaises(ValueError):
+            store.observe("tenant-a", 19, 19)
 
     def test_repeated_identical_checkpoint_is_idempotent(self):
         self.assertEqual(self.verifier(8, 4)(), 8)
