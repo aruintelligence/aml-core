@@ -61,3 +61,17 @@ class AnchorReenrollmentTests(unittest.TestCase):
   payload=make_anchor_payload(checkpoint,6,"b"*64,self.new)
   cert=make_anchor_certificate(payload,self.new,witnesses)
   self.assertTrue(verify_anchor_certificate(payload,cert,self.new,6,"b"*64,"authority-x","c"*64))
+
+ def test_two_successor_witnesses_cannot_form_new_quorum(self):
+  from recovery_anchor_quorum import make_anchor_certificate
+  witnesses={}
+  for name in ("new-0","new-1"):
+   witness=RecoveryAnchorWitness(name,self.new_keys[name],str(Path(self.temp.name)/(name+".short.sqlite")))
+   self.assertEqual(install_anchor_reenrollment(witness,self.old,self.new,self.rotation,self.proof,
+    2,"a"*64,"authority-x",5,"b"*64),"INSTALLED")
+   witnesses[name]=witness
+  checkpoint={"schema":"AML-SEF2-RECOVERY-AUTHORITY-LEDGER-CHECKPOINT-V1",
+   "authority_id":"authority-x","authority_key_sha256":"c"*64,"sequence":6,"head_hash":"e"*64}
+  payload=make_anchor_payload(checkpoint,6,"b"*64,self.new)
+  with self.assertRaises(ValueError):
+   make_anchor_certificate(payload,self.new,witnesses)
