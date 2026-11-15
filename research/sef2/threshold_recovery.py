@@ -165,6 +165,13 @@ class RecoveryAuthoritySigner:
                     FROM recovery_approval_ledger_v3 ORDER BY policy_id,authority_id,witness_id,generation""").fetchall()
                 for row in rows:
                     policy_id,authority_id,witness_id,generation,pd,parent,digest,signature=row
+                    if authority_id!=self.authority_id:
+                        raise ValueError("legacy ledger contains a different authority identity")
+                    try:
+                        self.public_key().verify(bytes.fromhex(signature),
+                            DOMAIN+canonical({"policy_sha256":pd,"payload_sha256":digest}))
+                    except (InvalidSignature,ValueError,TypeError):
+                        raise ValueError("legacy ledger signature does not match pinned authority key")
                     prior=con.execute("""SELECT policy_id,policy_sha256,previous_state_sha256,
                         payload_sha256,signature FROM recovery_approval_ledger_v4
                         WHERE authority_id=? AND witness_id=? AND generation=?""",
