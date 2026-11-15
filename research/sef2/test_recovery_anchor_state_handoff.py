@@ -40,7 +40,7 @@ class RecoveryAnchorStateHandoffTests(unittest.TestCase):
   self.assertFalse(verify_anchor_state_handoff(self.old,self.new,self.rotation,h,2,"a"*64,self.targets))
  def test_incoming_state_quorum_shortfall_rejected(self):
   h=copy.deepcopy(self.handoff); h["incoming_state_acceptance"]["approvals"]=h["incoming_state_acceptance"]["approvals"][:2]
-  self.assertFalse(verify_anchor_state_handoff(self.old,self.new,self.rotation,h,2,"a"*64))
+  self.assertFalse(verify_anchor_state_handoff(self.old,self.new,self.rotation,h,2,"a"*64,self.targets))
  def test_rotation_substitution_rejected(self):
   r=copy.deepcopy(self.rotation); r["payload"]["previous_anchor_pin"]="f"*64
   self.assertFalse(verify_anchor_state_handoff(self.old,self.new,r,self.handoff,2,"a"*64,self.targets))
