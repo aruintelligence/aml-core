@@ -1,6 +1,8 @@
 """Separate-UID single-use execution consumption witness service."""
 import json,os,socket,struct,sys
-from execution_consumption_witness import ExecutionConsumptionWitness
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from execution_consumption_witness import ExecutionConsumptionWitness,make_consumption_receipt
 MAX_FRAME=131072
 
 def read_exact(conn,size):
@@ -18,8 +20,32 @@ def reject_duplicate_keys(pairs):
         out[key]=value
     return out
 
-def serve(sock_path,database,allowed_uid,allowed_gid):
+def load_or_create_key(private_path,public_path):
+    if os.path.exists(private_path):
+        info=os.stat(private_path,follow_symlinks=False)
+        if info.st_mode & 0o077:
+            raise PermissionError("execution witness key permissions too broad")
+        key=serialization.load_pem_private_key(open(private_path,"rb").read(),password=None)
+        if not isinstance(key,Ed25519PrivateKey): raise ValueError("wrong execution witness key type")
+    else:
+        key=Ed25519PrivateKey.generate()
+        data=key.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,
+            serialization.NoEncryption())
+        fd=os.open(private_path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+        with os.fdopen(fd,"wb") as stream:
+            stream.write(data); stream.flush(); os.fsync(stream.fileno())
+    public_hex=key.public_key().public_bytes(serialization.Encoding.Raw,serialization.PublicFormat.Raw).hex()
+    fd=os.open(public_path,os.O_WRONLY|os.O_CREAT|os.O_TRUNC,0o644)
+    with os.fdopen(fd,"w") as stream:
+        stream.write(public_hex); stream.flush(); os.fsync(stream.fileno())
+    return key
+
+def serve(sock_path,database,allowed_uid,allowed_gid,witness_id=None,private_key_path=None,public_key_path=None):
     witness=ExecutionConsumptionWitness(database)
+    signed=all(value is not None for value in (witness_id,private_key_path,public_key_path))
+    if any(value is not None for value in (witness_id,private_key_path,public_key_path)) and not signed:
+        raise ValueError("signed execution witness configuration must be complete")
+    key=load_or_create_key(private_key_path,public_key_path) if signed else None
     try: os.unlink(sock_path)
     except FileNotFoundError: pass
     with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as server:
@@ -38,10 +64,16 @@ def serve(sock_path,database,allowed_uid,allowed_gid):
                     if type(req) is not dict or set(req)!={"op","request","capability","challenge"} or req["op"]!="CONSUME":
                         raise ValueError("invalid consume request")
                     witness.consume(req["request"],req["capability"],req["challenge"])
-                    response={"status":"CONSUMED"}
+                    if signed:
+                        receipt=make_consumption_receipt(key,witness_id,req["request"],req["capability"],req["challenge"])
+                        response={"status":"CONSUMED","receipt":receipt}
+                    else:
+                        response={"status":"CONSUMED"}
                 except Exception:
                     response={"status":"DENIED"}
                 body=json.dumps(response,separators=(",",":")).encode()
                 conn.sendall(struct.pack("!I",len(body))+body)
 if __name__=="__main__":
-    serve(sys.argv[1],sys.argv[2],int(sys.argv[3]),int(sys.argv[4]))
+    extra=sys.argv[5:8]
+    serve(sys.argv[1],sys.argv[2],int(sys.argv[3]),int(sys.argv[4]),
+          *(extra if extra else (None,None,None)))
