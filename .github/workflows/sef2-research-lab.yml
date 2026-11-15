@@ -56,6 +56,7 @@ jobs:
           sudo useradd --system --no-create-home --user-group aml_session_attacker_test
           sudo useradd --system --no-create-home --user-group aml_holder_test
           sudo useradd --system --no-create-home --user-group aml_epoch_anchor_test
+          sudo useradd --system --no-create-home --user-group aml_auditor_test
           sudo useradd --system --no-create-home --user-group aml_ra0_test
           sudo useradd --system --no-create-home --user-group aml_ra1_test
           sudo useradd --system --no-create-home --user-group aml_ra2_test
