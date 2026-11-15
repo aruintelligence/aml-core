@@ -72,3 +72,23 @@ class IndependentRecoveryLedgerVerifierTests(unittest.TestCase):
   bundle={"schema":"AML-SEF2-RECOVERY-APPROVAL-LEDGER-V1","authority_id":"authority-A",
    "events":events,"head_sha256":previous}
   self.assertFalse(verify_ledger(bundle,public,previous))
+
+ def test_standalone_cli_verifies_pinned_export(self):
+  import subprocess,sys
+  bundle_path=Path(self.temp.name)/"ledger.json"
+  bundle_path.write_text(json.dumps(self.bundle),encoding="utf-8")
+  script=Path(__file__).with_name("recovery_ledger_reference_verifier.py")
+  result=subprocess.run([sys.executable,str(script),str(bundle_path),
+    "--public-key",self.public,"--expected-head",self.bundle["head_sha256"]],
+    capture_output=True,text=True,check=False)
+  self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+  self.assertIn("externally pinned ledger head matches",result.stdout)
+ def test_standalone_cli_warns_when_external_pin_is_omitted(self):
+  import subprocess,sys
+  bundle_path=Path(self.temp.name)/"ledger-no-pin.json"
+  bundle_path.write_text(json.dumps(self.bundle),encoding="utf-8")
+  script=Path(__file__).with_name("recovery_ledger_reference_verifier.py")
+  result=subprocess.run([sys.executable,str(script),str(bundle_path),
+    "--public-key",self.public],capture_output=True,text=True,check=False)
+  self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+  self.assertIn("truncation/rollback is not excluded",result.stdout)
