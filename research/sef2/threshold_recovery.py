@@ -206,7 +206,9 @@ class RecoveryAuthoritySigner:
 
     def approve(self,payload,policy):
         import sqlite3
-        if not validate_policy(policy) or self.authority_id not in policy["authorities"]:
+        if not validate_policy(policy):
+            raise ValueError("invalid recovery authority policy")
+        if self.authority_id not in policy["authorities"]:
             raise ValueError("authority is not enrolled in pinned policy")
         if self.public_key().public_bytes_raw().hex()!=policy["authorities"][self.authority_id]:
             raise ValueError("authority private key does not match pinned identity")
