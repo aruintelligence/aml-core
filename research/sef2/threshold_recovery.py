@@ -502,3 +502,36 @@ class SignedRecoveryHeadAnchor:
             raise RuntimeError("recovery anchor CAS signature verification failed") from exc
         return response["accepted"]
 
+
+
+def reconcile_recovery_head_anchor(authority_id,private_key,ledger_path,head_anchor):
+    """Advance an external anchor over a verified local suffix after an interrupted CAS.
+
+    The external head must be a prefix of the locally verified signed event
+    chain. A local rollback, fork, invalid signature, or non-prefix anchor
+    fails closed. This never moves an external anchor backward.
+    """
+    signer=RecoveryAuthoritySigner(authority_id,private_key,ledger_path)
+    bundle=signer.export_approval_ledger()
+    local_head=bundle["head_sha256"]
+    if not verify_approval_ledger(bundle,signer.public_key(),local_head):
+        raise RuntimeError("local recovery approval ledger failed signature or chain verification")
+    events=bundle["events"]
+    known_heads=["0"*64]+[event["event_sha256"] for event in events]
+    anchored=head_anchor.read_head()
+    if type(anchored) is not str or anchored not in known_heads:
+        raise RuntimeError("external recovery anchor is not a prefix of the verified local ledger")
+    index=known_heads.index(anchored)
+    current=anchored
+    for event in events[index:]:
+        if event["previous_event_sha256"]!=current:
+            raise RuntimeError("local recovery ledger suffix is not contiguous")
+        accepted=head_anchor.compare_and_set(current,event["event_sha256"])
+        if not accepted:
+            observed=head_anchor.read_head()
+            if observed!=event["event_sha256"]:
+                raise RuntimeError("external anchor reconciliation did not reach the next verified event")
+        current=event["event_sha256"]
+    if head_anchor.read_head()!=local_head:
+        raise RuntimeError("external recovery anchor does not match verified local ledger head")
+    return local_head
