@@ -14,8 +14,13 @@ def make_policy_rotation(current_policy,next_policy,generation,old_signers,new_s
         raise ValueError("invalid current or successor recovery policy")
     if type(generation) is not int or generation<1:
         raise ValueError("invalid policy generation")
-    if policy_digest(current_policy)==policy_digest(next_policy):
-        raise ValueError("successor policy must differ")
+    if (current_policy["policy_id"]==next_policy["policy_id"]
+        or policy_digest(current_policy)==policy_digest(next_policy)):
+        raise ValueError("successor policy must use a new policy identifier and differ")
+    old_keys={bytes.fromhex(value) for value in current_policy["authorities"].values()}
+    next_keys={bytes.fromhex(value) for value in next_policy["authorities"].values()}
+    if old_keys & next_keys:
+        raise ValueError("successor recovery council must use disjoint public keys")
     if (type(old_signers) is not dict or type(new_signers) is not dict
         or any(not isinstance(s,RecoveryAuthoritySigner) for s in old_signers.values())
         or any(not isinstance(s,RecoveryAuthoritySigner) for s in new_signers.values())):
@@ -47,7 +52,10 @@ def verify_policy_rotation(current_policy,next_policy,rotation,expected_generati
             or payload["previous_state_sha256"]!=policy_digest(current_policy)
             or payload["previous_policy_sha256"]!=policy_digest(current_policy)
             or payload["next_policy_sha256"]!=policy_digest(next_policy)
-            or policy_digest(current_policy)==policy_digest(next_policy)):
+            or current_policy["policy_id"]==next_policy["policy_id"]
+            or policy_digest(current_policy)==policy_digest(next_policy)
+            or ({bytes.fromhex(v) for v in current_policy["authorities"].values()}
+                & {bytes.fromhex(v) for v in next_policy["authorities"].values()})):
             return False
         return (verify_approval_bundle(payload,rotation["outgoing_approval"],current_policy)
             and verify_approval_bundle(payload,rotation["incoming_acceptance"],next_policy))
