@@ -67,5 +67,6 @@ jobs:
           sudo python3 research/sef2/test_session_broker_cross_uid.py
           sudo python3 research/sef2/test_session_holder_process.py
           sudo python3 research/sef2/test_session_holder_pid_process.py
+          sudo python3 research/sef2/test_broker_authenticated_holder_process.py
           sudo python3 research/sef2/test_holder_proof_service_process.py
           sudo python3 research/sef2/test_session_epoch_anchor_process.py
