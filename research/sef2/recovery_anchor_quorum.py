@@ -149,11 +149,22 @@ def make_anchor_certificate(payload,policy,witnesses):
     if type(witnesses) is not dict or len(witnesses)<policy["threshold"]:
         raise ValueError("insufficient anchor witnesses")
     approvals=[]
-    for anchor_id,witness in witnesses.items():
-        if not isinstance(witness,RecoveryAnchorWitness) or witness.anchor_id!=anchor_id:
-            raise ValueError("invalid anchor witness object")
-        approvals.append({"anchor_id":anchor_id,"signature":witness.approve(payload,policy)})
-    approvals.sort(key=lambda x:x["anchor_id"])
+    # Stop once a valid quorum is assembled. An extra, stale witness must not
+    # invalidate an already complete certificate or consume unnecessary votes.
+    for anchor_id in sorted(witnesses):
+        witness=witnesses[anchor_id]
+        if (not isinstance(witness,RecoveryAnchorWitness) or witness.anchor_id!=anchor_id
+            or anchor_id not in policy["authorities"]):
+            continue
+        try:
+            signature=witness.approve(payload,policy)
+        except (ValueError,sqlite3.Error):
+            continue
+        approvals.append({"anchor_id":anchor_id,"signature":signature})
+        if len(approvals)>=policy["threshold"]:
+            break
+    if len(approvals)<policy["threshold"]:
+        raise ValueError("insufficient valid anchor approvals")
     return {"schema":CERT_SCHEMA,"policy_sha256":policy_digest(policy),
         "payload_sha256":hashlib.sha256(canonical(payload)).hexdigest(),"approvals":approvals}
 
