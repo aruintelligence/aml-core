@@ -29,6 +29,26 @@ class ReservationSocketTests(unittest.TestCase):
         self.server.allowed_uid = os.getuid() + 10000
         self.assertFalse(reserve_via_socket(self.path, "op-1", "a" * 64, 2))
 
+    def test_handler_capacity_rejects_excess_connections(self):
+        self.server.MAX_ACTIVE = 2
+        self.server._slots = threading.BoundedSemaphore(2)
+        clients = []
+        try:
+            for _ in range(2):
+                client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                client.settimeout(2)
+                client.connect(self.path)
+                clients.append(client)
+            # Wait until both server handlers have acquired their slots.
+            deadline = __import__("time").monotonic() + 2
+            while self.server._slots._value != 0 and __import__("time").monotonic() < deadline:
+                __import__("time").sleep(0.01)
+            self.assertEqual(self.server._slots._value, 0)
+            self.assertFalse(reserve_via_socket(self.path, "op-capacity", "a" * 64, 1))
+        finally:
+            for client in clients:
+                client.close()
+
     def test_idle_client_has_bounded_socket_timeout(self):
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
             client.connect(self.path)
