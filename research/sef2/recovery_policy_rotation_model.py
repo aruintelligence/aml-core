@@ -55,6 +55,8 @@ def dual_consent_commit_allowed(old_approvals,new_approvals,n,q):
         raise ValueError("invalid dual-consent bounds")
     if type(old_approvals) is not set or type(new_approvals) is not set:
         return False
+    if any(type(identity) is not int for identity in old_approvals | new_approvals):
+        return False
     old=set(range(n)); new=set(range(n,2*n))
     return (len(old_approvals)>=q and old_approvals<=old
         and len(new_approvals)>=q and new_approvals<=new)
