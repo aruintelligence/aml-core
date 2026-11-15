@@ -624,3 +624,28 @@ except ValueError as exc:
   refused=[item for item in results if item["status"]=="refused"]
   self.assertEqual(len(refused),1)
   self.assertIn("equivocation",refused[0]["reason"])
+
+ def test_crash_after_commit_before_response_is_idempotently_recoverable(self):
+  import json,subprocess,sys
+  from cryptography.hazmat.primitives import serialization
+  from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+  from threshold_recovery import DOMAIN
+  from signed_receipt import canonical
+  private_raw=self.keys["authority-0"].private_bytes(
+   serialization.Encoding.Raw,serialization.PrivateFormat.Raw,serialization.NoEncryption()).hex()
+  code="""import json,os,sys
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from threshold_recovery import RecoveryAuthoritySigner
+ledger,private_hex,policy_json,payload_json=sys.argv[1:]
+signer=RecoveryAuthoritySigner('authority-0',Ed25519PrivateKey.from_private_bytes(bytes.fromhex(private_hex)),ledger)
+signer.approve(json.loads(payload_json),json.loads(policy_json))
+os._exit(77)  # durable commit completed; simulated response lost with process death
+"""
+  proc=subprocess.run([sys.executable,"-c",code,self.ledger,private_raw,
+      json.dumps(self.policy),json.dumps(self.payload)],capture_output=True,text=True,timeout=15)
+  self.assertEqual(proc.returncode,77,proc.stderr)
+  recovered=RecoveryAuthoritySigner("authority-0",self.keys["authority-0"],self.ledger).approve(self.payload,self.policy)
+  statement=DOMAIN+canonical({"policy_sha256":__import__("threshold_recovery").policy_digest(self.policy),
+      "payload_sha256":__import__("threshold_recovery").payload_digest(self.payload)})
+  Ed25519PublicKey.from_public_bytes(self.keys["authority-0"].public_key().public_bytes_raw()).verify(
+      bytes.fromhex(recovered),statement)
