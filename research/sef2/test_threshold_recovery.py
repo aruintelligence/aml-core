@@ -998,7 +998,7 @@ class RecoveryHeadAnchorReconciliationTests(unittest.TestCase):
   second=self.signer.export_approval_ledger()["head_sha256"]
   self.anchor.compare_and_set(first,second)
   shutil.copy2(snapshot,self.path)
-  with self.assertRaisesRegex(RuntimeError,"not a prefix"):
+  with self.assertRaisesRegex(RuntimeError,"EXPECTED_PREDECESSOR_MISMATCH"):
    reconcile_recovery_head_anchor("authority-0",self.key,self.path,self.anchor)
   self.assertEqual(self.anchor.read_head(),second)
  def test_reconcile_refuses_tampered_local_signature(self):
@@ -1008,5 +1008,5 @@ class RecoveryHeadAnchorReconciliationTests(unittest.TestCase):
   with sqlite3.connect(self.path) as con:
    con.execute("UPDATE recovery_approval_ledger_v4 SET signature=?",("00"*64,))
    con.execute("UPDATE recovery_approval_events SET signature=?",("00"*64,))
-  with self.assertRaisesRegex(RuntimeError,"failed signature or chain"):
+  with self.assertRaisesRegex(RuntimeError,"INVALID_LOCAL_LEDGER"):
    reconcile_recovery_head_anchor("authority-0",self.key,self.path,self.anchor)
