@@ -388,3 +388,8 @@ This closes an important integration gap in the prototype: the independent ancho
 
 
 **Anchor council administrative-domain separation:** anchor policy validation now requires an explicit unique administrative-domain label for every enrolled anchor. Dual-consent anchor-council rotation rejects not only overlapping public keys but also any overlap in declared administrative domains between outgoing and incoming councils. This narrows the risk of nominally different keys remaining under one operator. These labels are attestations supplied by operators; the verifier cannot independently prove corporate or infrastructure ownership boundaries.
+
+
+### Directive 033 — bounded anchor succession model
+
+`recovery_anchor_rotation_model.py` exhaustively enumerates outgoing and incoming quorum pairs for anchor council succession. A conflicting state transfer is considered possible only when a pair of conflicting quorums in either council can overlap entirely in Byzantine identities; the 4-member, 3-of-4, f=1 profile is conflict-free under the stated durable anti-equivocation assumption. The model separately checks classical n >= 3f+1 and q <= n-f bounds, and a commit predicate requires exact rotation generation, current sequence/pin, valid enrolled signer sets, and threshold approval from both old and new councils. Tests expose unsafe 2-of-4 counterexamples and show 4-of-4 is safe but not live under one failure. This is bounded explicit-state/quorum modeling, not implementation proof or network-liveness proof.
