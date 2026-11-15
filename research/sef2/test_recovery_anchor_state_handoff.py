@@ -49,7 +49,7 @@ class RecoveryAnchorStateHandoffTests(unittest.TestCase):
     pathlib.Path(self.tmp.name)/"new-0-anchor.sqlite")
   self.assertEqual(bootstrap_successor_anchor(witness,self.old,self.new,self.rotation,
     self.handoff,2,"a"*64,self.targets),"BOOTSTRAPPED")
-  checkpoint={"schema":"AML-SEF2-RECOVERY-LEDGER-CHECKPOINT-V1",
+  checkpoint={"schema":"AML-SEF2-RECOVERY-AUTHORITY-LEDGER-CHECKPOINT-V1",
    "authority_id":"authority-a","authority_key_sha256":"d"*64,
    "sequence":8,"head_hash":"e"*64}
   payload=make_anchor_payload(checkpoint,8,"b"*64,self.new)
