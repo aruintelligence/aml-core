@@ -8,8 +8,7 @@ from recovery_quorum_transparency_verifier import verify_transparent_recovery_qu
 
 def policy(keys,name):
  return {"schema":POLICY_SCHEMA,"policy_id":name,"threshold":3,"max_faults":1,
-  "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()},
-  "administrative_domains":{k:"domain-"+k for k in keys}}
+  "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()},}
 def anchor_policy(keys,name):
  return {"schema":ANCHOR_SCHEMA,"policy_id":name,"threshold":3,"max_faults":1,
   "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()},
