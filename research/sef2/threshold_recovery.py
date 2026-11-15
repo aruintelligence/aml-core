@@ -268,7 +268,7 @@ class RecoveryAuthoritySigner:
         scope_id=(protocol_schema+":"+raw_scope_id
             if type(protocol_schema) is str and type(raw_scope_id) is str else raw_scope_id)
         generation=payload.get("generation")
-        previous_state=payload.get("previous_state_sha256",payload.get("previous_head_sha256"))
+        previous_state=payload.get("previous_state_sha256",payload.get("previous_head_sha256",payload.get("previous_policy_sha256")))
         scope=(policy["policy_id"],self.authority_id,scope_id,generation)
         if (type(scope[2]) is not str or not scope[2] or type(scope[3]) is not int
             or scope[3]<1 or type(previous_state) is not str or len(previous_state)!=64
