@@ -38,6 +38,12 @@ class WitnessedReceiptHistoryTests(unittest.TestCase):
         self.assertEqual(classify_witnessed_history(
             [self.one], (1, self.h1), ("1", self.h1)), "UNKNOWN")
 
+    def test_malformed_witness_hash_is_unknown(self):
+        for invalid in ("z" * 64, "A" * 64, "bad", None, 42):
+            with self.subTest(invalid=invalid):
+                self.assertEqual(classify_witnessed_history(
+                    [self.one], (1, self.h1), (1, invalid)), "UNKNOWN")
+
     def test_genesis_witness_with_local_tail(self):
         self.assertEqual(classify_witnessed_history(
             [self.one], (1, self.h1), (0, GENESIS)), "AHEAD_UNANCHORED")
