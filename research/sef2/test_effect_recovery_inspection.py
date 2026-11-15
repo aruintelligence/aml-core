@@ -24,6 +24,13 @@ class RecoveryInspectionTests(unittest.TestCase):
     def test_absent_operation_is_not_authorized_by_classifier(self):
         self.assertEqual(classify_recovery(self.db, self.reservations, "op-1"), "ABSENT")
 
+    def test_recovery_path_with_spaces_and_query_characters(self):
+        unusual = os.path.join(self.temp.name, "effect #1? backup.sqlite")
+        authority = EffectAuthority(
+            unusual, lambda *args: True, reserve_operation=self.reservations.reserve)
+        self.assertEqual(authority.commit(effect(), 0), "APPLIED")
+        self.assertEqual(classify_recovery(unusual, self.reservations, "op-1"), "COMMITTED")
+
     def test_committed_operation(self):
         self.assertEqual(self.authority.commit(effect(), 0), "APPLIED")
         self.assertEqual(classify_recovery(self.db, self.reservations, "op-1"), "COMMITTED")
