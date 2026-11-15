@@ -469,8 +469,8 @@ class QuorumRecoveryHeadAnchor:
                 continue
         return accepted>=self.threshold
 
-RECOVERY_ANCHOR_READ_DOMAIN=b"AML-SEF2-RECOVERY-ANCHOR-READ-V1\\x00"
-RECOVERY_ANCHOR_CAS_DOMAIN=b"AML-SEF2-RECOVERY-ANCHOR-CAS-V1\\x00"
+RECOVERY_ANCHOR_READ_DOMAIN=b"AML-SEF2-RECOVERY-ANCHOR-READ-V1\x00"
+RECOVERY_ANCHOR_CAS_DOMAIN=b"AML-SEF2-RECOVERY-ANCHOR-CAS-V1\x00"
 
 class SignedRecoveryHeadAnchor:
     """Verify nonce-bound signed responses from one externally operated anchor.
