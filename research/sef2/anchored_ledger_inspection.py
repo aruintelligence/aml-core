@@ -17,6 +17,10 @@ def inspect_anchored_ledger(witness, pinned_bridge):
         if not pinned_bridge.source_is_current():
             return "UNKNOWN"
         local_head, entries = pinned_bridge.ledger.evidence()
+        if not pinned_bridge.source_is_current():
+            return "UNKNOWN"
+        if witness.inspect() != witness_head:
+            return "UNKNOWN"
         return classify_witnessed_history(entries, local_head, witness_head)
     except (OSError, ValueError, TypeError, AttributeError):
         return "UNKNOWN"
