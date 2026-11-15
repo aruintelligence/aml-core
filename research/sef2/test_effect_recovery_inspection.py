@@ -6,6 +6,9 @@ import unittest
 from effect_authority import EffectAuthority
 from effect_recovery_inspection import classify_recovery
 from independent_effect_reservations import IndependentEffectReservations
+# The SEF2 workflow explicitly runs this module; include the receipt-chain
+# test class until the workflow invokes its own test module directly.
+from test_reservation_receipt_chain import ReservationReceiptChainTests
 
 def effect(op="op-1"):
     return {"operation_id": op, "kind": "fixture:write",
