@@ -83,3 +83,22 @@ class AnchoredThresholdRecoveryTests(unittest.TestCase):
  def test_anchor_pin_is_returned_for_independent_verifier_state(self):
   self.assertEqual(len(self.next_pin),64)
   self.assertNotEqual(self.next_pin,self.initial_pin)
+
+ def test_two_successive_anchored_recoveries_advance_both_quorums(self):
+  self.assertEqual(self.coordinator.recover("north",self.transition),"RECOVERED")
+  second_key=Ed25519PrivateKey.generate()
+  current=self.coordinator.state("north")
+  second,second_pin=make_anchored_threshold_transition(second_key,"north",current,
+   checkpoint(3,"c"*64),self.recovery_policy,
+   {k:self.recovery_signers[k] for k in ("recovery-0","recovery-1","recovery-2")},
+   self.anchor_policy,{k:self.anchor_witnesses[k] for k in ("anchor-0","anchor-1","anchor-2")},
+   self.next_pin)
+  next_coordinator=WitnessRecoveryEnrollment(self.trust_path,self.recovery_path,
+   AnchoredThresholdRecoveryPublicKey(self.recovery_policy,self.anchor_policy,self.next_pin),
+   self.recovery_policy["policy_id"])
+  self.assertEqual(next_coordinator.recover("north",second),"RECOVERED")
+  self.assertEqual(next_coordinator.state("north")["generation"],2)
+  self.assertNotEqual(second_pin,self.next_pin)
+  manifest=self.enrollment.manifest()
+  self.assertEqual(manifest["public_keys"]["witness"],second_key.public_key().public_bytes_raw().hex())
+  self.assertIn(self.old.public_key().public_bytes_raw().hex(),manifest["revoked_key_hex"])
