@@ -684,3 +684,6 @@ The disposable Linux integration now requires the protected execution-witness da
 
 
 **Persistent anchor startup hardening:** the successor-handoff schema check is now a shared validator invoked every time `RecoveryAnchorWitness` opens its database, not only during bootstrap. This closes the adjacent startup path where a database could contain an unexpected trigger, view, table, or altered column layout before a witness began accepting votes. Startup rejects these conditions and verifies the metadata binds the file to the configured anchor ID and Ed25519 key. The same schema validator is used during successor state handoff, avoiding divergent rules between initialization and migration.
+
+
+**Remote anchor service database binding:** the separate-UID Unix-socket head-anchor service now binds its durable head database to the configured anchor ID and Ed25519 key fingerprint at startup. It rejects triggers, views, extra tables, altered table layouts, malformed singleton state, and identity mismatch before listening on the socket. A cross-UID process test pre-seeds a trigger and verifies the service refuses to start. The service remains a synthetic local-process demonstration; production deployment would require independently administered hosts, key provisioning, service supervision, network threat analysis, and external backup/rollback controls.
