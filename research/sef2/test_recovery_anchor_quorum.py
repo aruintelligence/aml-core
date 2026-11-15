@@ -135,3 +135,33 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
     self.witnesses[aid].approve(stale,self.policy)
   with self.assertRaisesRegex(ValueError,"insufficient valid anchor approvals"):
    make_anchor_certificate(self.payload,self.policy,self.witnesses)
+
+ def test_independent_checkpoint_verifier_rejects_cross_policy_same_generation_equivocation(self):
+  import hashlib,sqlite3
+  from signed_receipt import canonical
+  from threshold_recovery import DOMAIN,RecoveryAuthoritySigner
+  from recovery_ledger_anchor import event_chain_checkpoint,verify_event_chain,checkpoint_pin
+  key=Ed25519PrivateKey.generate()
+  authority_id="authority-cross-policy"
+  path=str(pathlib.Path(self.temp.name)/"cross-policy.sqlite")
+  signer=RecoveryAuthoritySigner(authority_id,key,path)
+  policy={"schema":"AML-SEF2-RECOVERY-QUORUM-POLICY-V1","policy_id":"policy-old",
+   "threshold":3,"max_faults":1,"authorities":{authority_id:key.public_key().public_bytes_raw().hex(),
+    "a1":Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex(),
+    "a2":Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex(),
+    "a3":Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex()}}
+  signer.approve({"witness_id":"north","generation":4,"previous_state_sha256":"a"*64,"new_key":"b"*64},policy)
+  with sqlite3.connect(path) as con:
+   previous=con.execute("SELECT event_sha256 FROM recovery_approval_events ORDER BY sequence DESC").fetchone()[0]
+   policy_id="policy-new"; pd=hashlib.sha256(policy_id.encode()).hexdigest()
+   digest=hashlib.sha256(b"second signed payload").hexdigest()
+   signature=key.sign(DOMAIN+canonical({"policy_sha256":pd,"payload_sha256":digest})).hex()
+   event={"sequence":2,"previous_event_sha256":previous,"policy_id":policy_id,
+    "authority_id":authority_id,"witness_id":"north","generation":4,
+    "policy_sha256":pd,"previous_state_sha256":"c"*64,"payload_sha256":digest,"signature":signature}
+   event_hash=hashlib.sha256(canonical(event)).hexdigest()
+   con.execute("INSERT INTO recovery_approval_events VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+    (2,previous,policy_id,authority_id,"north",4,pd,"c"*64,digest,signature,event_hash))
+  public=key.public_key().public_bytes_raw().hex()
+  checkpoint=event_chain_checkpoint(path,authority_id,public)
+  self.assertFalse(verify_event_chain(path,public,checkpoint,checkpoint_pin(checkpoint)))
