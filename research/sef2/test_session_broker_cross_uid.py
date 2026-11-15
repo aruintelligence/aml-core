@@ -144,7 +144,7 @@ def main():
   client_private=root/"client-private"; client_private.mkdir(mode=0o700)
   os.chown(client_private,client.pw_uid,client.pw_gid)
   holder_private=client_private/"holder.pem"
-  shared_dir=root/"shared"; shared_dir.mkdir(mode=0o755)
+  shared_dir=root/"shared"; shared_dir.mkdir(mode=0o1777); shared_dir.chmod(0o1777)
   holder_public=shared_dir/"holder.json"; public_config=shared_dir/"config.json"
   attack_record=shared_dir/"attack-record.json"
   lib=root/"lib"; lib.mkdir(mode=0o755)
