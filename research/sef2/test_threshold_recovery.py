@@ -785,3 +785,70 @@ class QuorumRecoveryHeadAnchorTests(unittest.TestCase):
    payload={"witness_id":"north","generation":1,"previous_state_sha256":"a"*64}
    signer.approve(payload,policy)
    self.assertEqual(self.quorum.read_head(),signer.export_approval_ledger()["head_sha256"])
+
+class SignedRecoveryHeadAnchorTests(unittest.TestCase):
+ def setUp(self):
+  from threshold_recovery import (RECOVERY_ANCHOR_READ_DOMAIN,RECOVERY_ANCHOR_CAS_DOMAIN,
+      SignedRecoveryHeadAnchor)
+  from signed_receipt import canonical
+  self.read_domain=RECOVERY_ANCHOR_READ_DOMAIN; self.cas_domain=RECOVERY_ANCHOR_CAS_DOMAIN
+  self.canonical=canonical; self.key=Ed25519PrivateKey.generate()
+  class Server:
+   def __init__(inner): inner.head="0"*64
+   def read_head(inner,nonce):
+    body={"anchor_id":"anchor-east","head_sha256":inner.head,"nonce":nonce}
+    return {**body,"signature":self.key.sign(self.read_domain+self.canonical(body)).hex()}
+   def compare_and_set(inner,expected,new,nonce):
+    accepted=inner.head==expected
+    if accepted: inner.head=new
+    body={"anchor_id":"anchor-east","expected_head":expected,"new_head":new,"accepted":accepted,"nonce":nonce}
+    return {**body,"signature":self.key.sign(self.cas_domain+self.canonical(body)).hex()}
+  self.server=Server()
+  from threshold_recovery import SignedRecoveryHeadAnchor
+  self.anchor=SignedRecoveryHeadAnchor("anchor-east",self.key.public_key(),self.server)
+ def test_signed_nonce_bound_read_and_cas_succeed(self):
+  old=self.anchor.read_head(); new="a"*64
+  self.assertTrue(self.anchor.compare_and_set(old,new))
+  self.assertEqual(self.anchor.read_head(),new)
+ def test_wrong_pinned_key_rejects_signed_response(self):
+  from threshold_recovery import SignedRecoveryHeadAnchor
+  bad=SignedRecoveryHeadAnchor("anchor-east",Ed25519PrivateKey.generate().public_key(),self.server)
+  with self.assertRaisesRegex(RuntimeError,"signature verification failed"): bad.read_head()
+ def test_wrong_anchor_identity_rejected(self):
+  from threshold_recovery import SignedRecoveryHeadAnchor
+  bad=SignedRecoveryHeadAnchor("anchor-west",self.key.public_key(),self.server)
+  with self.assertRaisesRegex(RuntimeError,"identity or freshness"): bad.read_head()
+ def test_replayed_read_response_rejected_by_nonce(self):
+  class Replay:
+   def __init__(inner): inner.saved=None
+   def read_head(inner,nonce):
+    if inner.saved is None: inner.saved=self.server.read_head(nonce)
+    return inner.saved
+   def compare_and_set(inner,*args): return self.server.compare_and_set(*args)
+  from threshold_recovery import SignedRecoveryHeadAnchor
+  anchor=SignedRecoveryHeadAnchor("anchor-east",self.key.public_key(),Replay())
+  self.assertEqual(anchor.read_head(),"0"*64)
+  with self.assertRaisesRegex(RuntimeError,"identity or freshness"): anchor.read_head()
+ def test_tampered_cas_result_rejected(self):
+  class Tamper:
+   def read_head(inner,nonce): return self.server.read_head(nonce)
+   def compare_and_set(inner,expected,new,nonce):
+    response=self.server.compare_and_set(expected,new,nonce)
+    response["accepted"]=not response["accepted"]
+    return response
+  from threshold_recovery import SignedRecoveryHeadAnchor
+  anchor=SignedRecoveryHeadAnchor("anchor-east",self.key.public_key(),Tamper())
+  with self.assertRaisesRegex(RuntimeError,"binding mismatch|signature verification failed"):
+   anchor.compare_and_set("0"*64,"b"*64)
+ def test_replayed_cas_receipt_rejected_by_nonce(self):
+  class Replay:
+   def __init__(inner): inner.saved=None
+   def read_head(inner,nonce): return self.server.read_head(nonce)
+   def compare_and_set(inner,expected,new,nonce):
+    if inner.saved is None: inner.saved=self.server.compare_and_set(expected,new,nonce)
+    return inner.saved
+  from threshold_recovery import SignedRecoveryHeadAnchor
+  anchor=SignedRecoveryHeadAnchor("anchor-east",self.key.public_key(),Replay())
+  self.assertTrue(anchor.compare_and_set("0"*64,"c"*64))
+  with self.assertRaisesRegex(RuntimeError,"binding mismatch"):
+   anchor.compare_and_set("c"*64,"d"*64)
