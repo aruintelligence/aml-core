@@ -50,3 +50,15 @@ class AnchorPolicyRotationTests(unittest.TestCase):
  def test_same_policy_id_rejected(self):
   changed=copy.deepcopy(self.new); changed["policy_id"]=self.old["policy_id"]
   self.assertFalse(self.check(new=changed))
+
+ def test_successor_council_must_use_disjoint_administrative_domains(self):
+  overlapping=copy.deepcopy(self.new)
+  overlapping["administrative_domains"]["new-0"]=self.old["administrative_domains"]["old-0"]
+  with self.assertRaisesRegex(ValueError,"disjoint administrative domains"):
+   make_anchor_policy_rotation(self.old,overlapping,3,"b"*64,
+    {k:self.old_signers[k] for k in ("old-0","old-1","old-2")},
+    {k:self.new_signers[k] for k in ("new-0","new-1","new-2")})
+ def test_verifier_rejects_overlapping_administrative_domains(self):
+  overlapping=copy.deepcopy(self.new)
+  overlapping["administrative_domains"]["new-0"]=self.old["administrative_domains"]["old-0"]
+  self.assertFalse(self.check(new=overlapping))
