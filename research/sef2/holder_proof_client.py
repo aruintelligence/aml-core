@@ -18,6 +18,12 @@ class HolderProofClient:
         if type(response) is not dict or set(response)!={"status","proof"} or response["status"]!="PROVED":
             raise PermissionError("holder proof denied")
         return response["proof"]
+    def prove_authenticated(self,capability,request,challenge_envelope):
+        response=self._call({"op":"PROVE_AUTH","capability":capability,"request":request,
+            "challenge_envelope":challenge_envelope})
+        if type(response) is not dict or set(response)!={"status","proof"} or response["status"]!="PROVED":
+            raise PermissionError("authenticated holder proof denied")
+        return response["proof"]
     @staticmethod
     def _read(conn,size):
         parts=[]
