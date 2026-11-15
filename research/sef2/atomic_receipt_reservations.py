@@ -92,6 +92,22 @@ class AtomicReceiptReservations:
         self._assert_identity()
         with sqlite3.connect(self.read_uri, uri=True, timeout=10) as db:
             self._assert_identity()
-            head = db.execute("SELECT sequence,chain_hash FROM receipt_head WHERE singleton=1").fetchone()
-            entries = db.execute("SELECT authority_id,operation_id,digest,generation FROM receipt_reservations ORDER BY sequence").fetchall()
-        return head, entries
+            db.execute("BEGIN")
+            heads = db.execute("SELECT sequence,chain_hash FROM receipt_head WHERE singleton=1").fetchall()
+            rows = db.execute("SELECT sequence,authority_id,operation_id,digest,generation,chain_hash FROM receipt_reservations ORDER BY sequence").fetchall()
+            db.execute("COMMIT")
+        if len(heads) != 1:
+            raise ValueError("missing or duplicated receipt head")
+        head = heads[0]
+        if type(head[0]) is not int or head[0] < 0 or len(rows) != head[0]:
+            raise ValueError("receipt count mismatch")
+        cursor = GENESIS
+        for expected_sequence, row in enumerate(rows, 1):
+            if row[0] != expected_sequence:
+                raise ValueError("receipt sequence gap")
+            cursor = reservation_chain_hash(cursor, *row[1:5])
+            if cursor != row[5]:
+                raise ValueError("receipt chain mismatch")
+        if cursor != head[1]:
+            raise ValueError("receipt head mismatch")
+        return head, [row[1:5] for row in rows]
