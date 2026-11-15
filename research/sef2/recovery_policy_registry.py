@@ -52,6 +52,11 @@ class RecoveryPolicyRegistry:
                 previous_policy_json TEXT NOT NULL, next_policy_json TEXT NOT NULL,
                 rotation_json TEXT NOT NULL, previous_event_sha256 TEXT NOT NULL,
                 event_sha256 TEXT NOT NULL UNIQUE)""")
+            con.execute("""CREATE TABLE IF NOT EXISTS recovery_policy_emergency_events (
+                generation INTEGER PRIMARY KEY,
+                previous_policy_json TEXT NOT NULL, next_policy_json TEXT NOT NULL,
+                emergency_policy_json TEXT NOT NULL, rotation_json TEXT NOT NULL,
+                previous_event_sha256 TEXT NOT NULL,event_sha256 TEXT NOT NULL UNIQUE)""")
 
     def initialize(self,policy):
         if not validate_policy(policy): raise ValueError("invalid initial recovery policy")
