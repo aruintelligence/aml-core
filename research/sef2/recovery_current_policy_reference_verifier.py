@@ -1,7 +1,7 @@
 """Independent verifier that binds recovery evidence to the current anchored recovery policy."""
 import argparse,sys
 from pathlib import Path
-from threshold_recovery import policy_digest
+from threshold_recovery import policy_digest,validate_policy
 from recovery_evidence_reference_verifier import verify_recovery_evidence
 from recovery_policy_registry_anchor import verify_registry_anchor
 
@@ -42,6 +42,12 @@ def verify_current_recovery_evidence(bundle,authority_public_key_hex,
         if not verify_registry_anchor(state,bundle["registry_anchor_payload"],
             bundle["registry_anchor_certificate"],registry_anchor_policy,
             registry_anchor_sequence,registry_previous_anchor_pin,registry_id):
+            return False
+        current_policy=state.get("policy")
+        recovery_authority_id=recovery.get("authority_id")
+        if (not validate_policy(current_policy)
+            or type(recovery_authority_id) is not str
+            or current_policy["authorities"].get(recovery_authority_id)!=authority_public_key_hex):
             return False
         ledger=recovery["ledger"]
         events=ledger.get("events")
