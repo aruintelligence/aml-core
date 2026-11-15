@@ -48,3 +48,25 @@ class IndependentRecoveryLedgerVerifierTests(unittest.TestCase):
   self.assertFalse(verify_ledger(b,self.public))
  def test_missing_external_pin_is_explicitly_integrity_only(self):
   self.assertTrue(verify_ledger(self.bundle,self.public))
+
+ def test_reference_verifier_rejects_same_authority_generation_under_two_policy_ids(self):
+  import hashlib
+  from signed_receipt import canonical
+  from recovery_ledger_reference_verifier import verify_ledger
+  from threshold_recovery import DOMAIN
+  from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+  key=Ed25519PrivateKey.generate(); public=key.public_key().public_bytes_raw().hex()
+  events=[]; previous="0"*64
+  for seq,policy_id in ((1,"policy-old"),(2,"policy-new")):
+   pd=hashlib.sha256(policy_id.encode()).hexdigest()
+   payload_sha=hashlib.sha256((policy_id+"payload").encode()).hexdigest()
+   signature=key.sign(DOMAIN+canonical({"policy_sha256":pd,"payload_sha256":payload_sha})).hex()
+   event={"sequence":seq,"previous_event_sha256":previous,"policy_id":policy_id,
+    "authority_id":"authority-A","witness_id":"north","generation":4,
+    "policy_sha256":pd,"previous_state_sha256":"a"*64,
+    "payload_sha256":payload_sha,"signature":signature}
+   event["event_sha256"]=hashlib.sha256(canonical(event)).hexdigest()
+   previous=event["event_sha256"]; events.append({**event})
+  bundle={"schema":"AML-SEF2-RECOVERY-APPROVAL-LEDGER-V1","authority_id":"authority-A",
+   "events":events,"head_sha256":previous}
+  self.assertFalse(verify_ledger(bundle,public,previous))
