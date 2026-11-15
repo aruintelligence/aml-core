@@ -1102,3 +1102,11 @@ class BoundedRecoveryQuorumModelTests(unittest.TestCase):
     self.assertLessEqual(minimum,n-faults)
     if minimum>1:
      self.assertLessEqual(2*(minimum-1)-n,faults)
+
+class RecoveryAnchorProtocolDomainTests(unittest.TestCase):
+ def test_signed_remote_anchor_domain_tags_are_nul_terminated(self):
+  from threshold_recovery import RECOVERY_ANCHOR_READ_DOMAIN,RECOVERY_ANCHOR_CAS_DOMAIN
+  self.assertTrue(RECOVERY_ANCHOR_READ_DOMAIN.endswith(b"\\x00"))
+  self.assertTrue(RECOVERY_ANCHOR_CAS_DOMAIN.endswith(b"\\x00"))
+  self.assertNotIn(b"\\\\x00",RECOVERY_ANCHOR_READ_DOMAIN)
+  self.assertNotIn(b"\\\\x00",RECOVERY_ANCHOR_CAS_DOMAIN)
