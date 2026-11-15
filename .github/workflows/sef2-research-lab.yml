@@ -55,6 +55,7 @@ jobs:
           sudo groupadd --system aml_session_clients
           sudo useradd --system --no-create-home --user-group aml_session_attacker_test
           sudo useradd --system --no-create-home --user-group aml_holder_test
+          sudo useradd --system --no-create-home --user-group aml_epoch_anchor_test
           sudo useradd --system --no-create-home --user-group aml_ra0_test
           sudo useradd --system --no-create-home --user-group aml_ra1_test
           sudo useradd --system --no-create-home --user-group aml_ra2_test
@@ -67,3 +68,4 @@ jobs:
           sudo python3 research/sef2/test_session_holder_process.py
           sudo python3 research/sef2/test_session_holder_pid_process.py
           sudo python3 research/sef2/test_holder_proof_service_process.py
+          sudo python3 research/sef2/test_session_epoch_anchor_process.py
