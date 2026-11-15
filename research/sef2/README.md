@@ -553,3 +553,10 @@ Added `evaluation_kit/verify_recovery_cutover.py`, a command-line verifier for r
 ### Directive 028 — independent cutover verifier quorum
 
 Recovery-policy activation now distinguishes cryptographic quorum size from actual administrative independence. `verify_independent_cutover_certificate` requires the cutover verifier keys to be bound to a separately pinned independence manifest covering operator, hosting, key custody, network path and recovery-administration domains. The standalone cutover CLI now makes this manifest and its SHA-256 pin mandatory. Tests reject shared verifier operators, shared key custody, substituted verifier keys and changed independence pins. These are externally pinned declarations and still do not prove real-world ownership or prevent cross-domain collusion.
+
+
+### Directive 029 — externally anchored verifier activation state
+
+Added `recovery_activation_registry.py`, a verifier-side monotonic activation registry. A verifier may advance to a successor recovery policy only after independently verifying the cutover certificate and its verifier-independence manifest, matching the rotation's predecessor policy to the currently active policy, and advancing exactly one generation. The activation history is hash-chained and may be pinned to an independent compare-and-set head anchor. Tests restore the local SQLite registry to a pre-cutover snapshot and verify that the retained anchor detects the rollback; they also cover partial cutover, generation replay, predecessor-policy mismatch, anchor mismatch and local history tampering.
+
+The registry does not itself provide a remote durable anchor service, force every verifier to activate simultaneously, or prevent rollback if both the registry and its anchor are restored together. It establishes a fail-closed verifier-local state machine under an independently retained head assumption.
