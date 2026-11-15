@@ -1,9 +1,48 @@
 """Real four-process recovery anchor quorum under distinct Linux UIDs."""
-import os,pathlib,pwd,shutil,socket,sqlite3,subprocess,sys,tempfile,time
+import json,os,pathlib,pwd,shutil,socket,sqlite3,subprocess,sys,tempfile,time
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from test_cross_uid_boundary import drop,HERE
 from threshold_recovery import SignedRecoveryHeadAnchor,QuorumRecoveryHeadAnchor
 from recovery_head_anchor_service import UnixRecoveryHeadAnchorTransport
+
+
+CLIENT_PHASE=r'''
+import json,sys
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+from threshold_recovery import SignedRecoveryHeadAnchor,QuorumRecoveryHeadAnchor
+from recovery_head_anchor_service import UnixRecoveryHeadAnchorTransport
+items=json.loads(sys.argv[1]); phase=sys.argv[2]
+anchors=[]
+for item in items:
+    key=Ed25519PublicKey.from_public_bytes(bytes.fromhex(item["public_key"]))
+    anchors.append(SignedRecoveryHeadAnchor(item["anchor_id"],key,
+        UnixRecoveryHeadAnchorTransport(item["socket_path"])))
+quorum=QuorumRecoveryHeadAnchor(anchors,3,1)
+zero="0"*64; first="a"*64; second="b"*64
+if phase=="initial":
+    assert quorum.read_head()==zero
+    assert quorum.compare_and_set(zero,first)
+    assert quorum.read_head()==first
+elif phase=="second":
+    assert quorum.compare_and_set(first,second)
+    assert quorum.read_head()==second
+    assert all(anchor.read_head()==second for anchor in anchors[:3])
+elif phase=="stale":
+    assert anchors[3].read_head()==first
+    assert quorum.read_head()==second
+else:
+    raise AssertionError("unknown client phase")
+print("RECOVERY_ANCHOR_CLIENT_PHASE_OK:"+phase)
+'''
+def run_as_signer(signer,env,anchors,phase):
+    items=[{"anchor_id":anchor.anchor_id,
+        "public_key":anchor.public_key.public_bytes_raw().hex(),
+        "socket_path":anchor.transport.socket_path} for anchor in anchors]
+    result=subprocess.run([sys.executable,"-c",CLIENT_PHASE,json.dumps(items),phase],
+        preexec_fn=drop(signer.pw_uid,signer.pw_gid),env=env,
+        capture_output=True,text=True,timeout=20)
+    assert result.returncode==0,(phase,result.stdout,result.stderr)
+    assert "RECOVERY_ANCHOR_CLIENT_PHASE_OK:"+phase in result.stdout,result.stdout
 
 def start(account,anchor_id,sock,state,lib,signer,env):
     private=state/"key.pem"; public=state/"key.pub"; db=state/"anchor.sqlite"
@@ -48,26 +87,9 @@ def main():
                 proc,public,db=start(account,f"anchor-{i}",sock,state,lib,signer,env); procs.append(proc); dbs.append(db)
                 key=Ed25519PublicKey.from_public_bytes(bytes.fromhex(public.read_text().strip()))
                 anchors.append(SignedRecoveryHeadAnchor(f"anchor-{i}",key,UnixRecoveryHeadAnchorTransport(sock)))
-            quorum=QuorumRecoveryHeadAnchor(anchors,3,1)
-            zero="0"*64; first="a"*64; second="b"*64
-            # The anchor services intentionally accept only the signer UID.
-            # Exercise the client as that principal rather than root; root is
-            # reserved for provisioning and lifecycle management in this harness.
-            os.setegid(signer.pw_gid); os.seteuid(signer.pw_uid)
-            try:
-                assert quorum.read_head()==zero
-                assert quorum.compare_and_set(zero,first)
-                assert quorum.read_head()==first
-            finally:
-                os.seteuid(0); os.setegid(0)
+            run_as_signer(signer,env,anchors,"initial")
             stop(procs[3]); procs[3]=None
-            os.setegid(signer.pw_gid); os.seteuid(signer.pw_uid)
-            try:
-                assert quorum.compare_and_set(first,second)
-                assert quorum.read_head()==second
-                assert anchors[0].read_head()==second and anchors[1].read_head()==second and anchors[2].read_head()==second
-            finally:
-                os.seteuid(0); os.setegid(0)
+            run_as_signer(signer,env,anchors,"second")
             # Restart the fourth process from its durable stale state. Its response
             # is correctly signed but must remain a minority and cannot roll back the quorum.
             stale_state=root/"state-3"; stale_sock=(root/"ipc-3")/"anchor.sock"
@@ -75,13 +97,7 @@ def main():
             procs[3]=proc
             stale_key=Ed25519PublicKey.from_public_bytes(bytes.fromhex(public.read_text().strip()))
             anchors[3]=SignedRecoveryHeadAnchor("anchor-3",stale_key,UnixRecoveryHeadAnchorTransport(stale_sock))
-            restarted_quorum=QuorumRecoveryHeadAnchor(anchors,3,1)
-            os.setegid(signer.pw_gid); os.seteuid(signer.pw_uid)
-            try:
-                assert anchors[3].read_head()==first
-                assert restarted_quorum.read_head()==second
-            finally:
-                os.seteuid(0); os.setegid(0)
+            run_as_signer(signer,env,anchors,"stale")
             print("RECOVERY_ANCHOR_STALE_MINORITY_REJECTED: signed stale restart could not roll back quorum")
             # Untrusted client UID cannot use the signer-group socket.
             sock=pathlib.Path(anchors[0].transport.socket_path)
