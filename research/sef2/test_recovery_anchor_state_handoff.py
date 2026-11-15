@@ -24,16 +24,17 @@ class RecoveryAnchorStateHandoffTests(unittest.TestCase):
   self.old_q={n:self.old_signers[n] for n in ("old-0","old-1","old-2")}
   self.new_q={n:self.new_signers[n] for n in ("new-0","new-1","new-2")}
   self.rotation=make_anchor_policy_rotation(self.old,self.new,2,"a"*64,self.old_q,self.new_q)
+  self.targets=("authority-a","authority-b")
   self.snapshot={"authority-a":{"sequence":7,"pin_sha256":"b"*64},
                  "authority-b":{"sequence":3,"pin_sha256":"c"*64}}
   self.handoff=make_anchor_state_handoff(self.old,self.new,self.rotation,2,"a"*64,
-    self.snapshot,self.old_q,self.new_q)
+    self.targets,self.snapshot,self.old_q,self.new_q)
  def test_dual_council_state_handoff_verifies(self):
   self.assertTrue(verify_anchor_state_handoff(self.old,self.new,self.rotation,
-    self.handoff,2,"a"*64))
+    self.handoff,2,"a"*64,self.targets))
  def test_snapshot_tampering_rejected(self):
   h=copy.deepcopy(self.handoff); h["payload"]["state_snapshot"]["authority-a"]["pin_sha256"]="f"*64
-  self.assertFalse(verify_anchor_state_handoff(self.old,self.new,self.rotation,h,2,"a"*64))
+  self.assertFalse(verify_anchor_state_handoff(self.old,self.new,self.rotation,h,2,"a"*64,self.targets))
  def test_outgoing_state_quorum_shortfall_rejected(self):
   h=copy.deepcopy(self.handoff); h["outgoing_state_approval"]["approvals"]=h["outgoing_state_approval"]["approvals"][:2]
   self.assertFalse(verify_anchor_state_handoff(self.old,self.new,self.rotation,h,2,"a"*64))
@@ -42,12 +43,12 @@ class RecoveryAnchorStateHandoffTests(unittest.TestCase):
   self.assertFalse(verify_anchor_state_handoff(self.old,self.new,self.rotation,h,2,"a"*64))
  def test_rotation_substitution_rejected(self):
   r=copy.deepcopy(self.rotation); r["payload"]["previous_anchor_pin"]="f"*64
-  self.assertFalse(verify_anchor_state_handoff(self.old,self.new,r,self.handoff,2,"a"*64))
+  self.assertFalse(verify_anchor_state_handoff(self.old,self.new,r,self.handoff,2,"a"*64,self.targets))
  def test_successor_bootstrap_continues_exact_monotonic_sequence(self):
   witness=RecoveryAnchorWitness("new-0",self.new_keys["new-0"],
     pathlib.Path(self.tmp.name)/"new-0-anchor.sqlite")
   self.assertEqual(bootstrap_successor_anchor(witness,self.old,self.new,self.rotation,
-    self.handoff,2,"a"*64),"BOOTSTRAPPED")
+    self.handoff,2,"a"*64,self.targets),"BOOTSTRAPPED")
   checkpoint={"schema":"AML-SEF2-RECOVERY-LEDGER-CHECKPOINT-V1",
    "authority_id":"authority-a","authority_key_sha256":"d"*64,
    "sequence":8,"head_hash":"e"*64}
@@ -56,7 +57,7 @@ class RecoveryAnchorStateHandoffTests(unittest.TestCase):
  def test_successor_cannot_restart_target_from_genesis(self):
   witness=RecoveryAnchorWitness("new-0",self.new_keys["new-0"],
     pathlib.Path(self.tmp.name)/"new-0-anchor-genesis.sqlite")
-  bootstrap_successor_anchor(witness,self.old,self.new,self.rotation,self.handoff,2,"a"*64)
+  bootstrap_successor_anchor(witness,self.old,self.new,self.rotation,self.handoff,2,"a"*64,self.targets)
   checkpoint={"schema":"AML-SEF2-RECOVERY-LEDGER-CHECKPOINT-V1",
    "authority_id":"authority-a","authority_key_sha256":"d"*64,
    "sequence":1,"head_hash":"e"*64}
@@ -75,3 +76,20 @@ class RecoveryAnchorStateHandoffTests(unittest.TestCase):
   witness.approve(make_anchor_payload(checkpoint,1,"0"*64,self.new),self.new)
   with self.assertRaisesRegex(ValueError,"already contains state"):
    bootstrap_successor_anchor(witness,self.old,self.new,self.rotation,self.handoff,2,"a"*64)
+
+ def test_snapshot_omission_is_rejected_against_expected_target_set(self):
+  incomplete={"authority-a":dict(self.snapshot["authority-a"])}
+  with self.assertRaisesRegex(ValueError,"incomplete"):
+   make_anchor_state_handoff(self.old,self.new,self.rotation,2,"a"*64,
+    self.targets,incomplete,self.old_q,self.new_q)
+ def test_verifier_rejects_external_target_set_with_missing_or_extra_target(self):
+  self.assertFalse(verify_anchor_state_handoff(self.old,self.new,self.rotation,
+   self.handoff,2,"a"*64,("authority-a",)))
+  self.assertFalse(verify_anchor_state_handoff(self.old,self.new,self.rotation,
+   self.handoff,2,"a"*64,("authority-a","authority-b","authority-c")))
+ def test_bootstrap_rejects_different_external_target_manifest(self):
+  witness=RecoveryAnchorWitness("new-0",self.new_keys["new-0"],
+    pathlib.Path(self.tmp.name)/"target-mismatch.sqlite")
+  with self.assertRaisesRegex(ValueError,"invalid anchor state handoff"):
+   bootstrap_successor_anchor(witness,self.old,self.new,self.rotation,
+    self.handoff,2,"a"*64,("authority-a",))
