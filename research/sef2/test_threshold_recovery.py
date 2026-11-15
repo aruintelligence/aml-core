@@ -576,3 +576,51 @@ class RecoveryAuthorityConcurrencyTests(unittest.TestCase):
    signatures=list(pool.map(submit,self.signers))
   self.assertEqual(signatures[0],signatures[1])
   self.assertEqual(len(signatures[0]),128)
+
+ def test_separate_processes_cannot_commit_conflicting_approvals(self):
+  import json,os,pathlib,subprocess,sys,time
+  from cryptography.hazmat.primitives import serialization
+  # Initialize schema and authority identity before racing the independent clients.
+  private_raw=self.keys["authority-0"].private_bytes(
+   serialization.Encoding.Raw,serialization.PrivateFormat.Raw,serialization.NoEncryption()).hex()
+  ready=[str(pathlib.Path(self.temp.name)/f"ready-{i}") for i in range(2)]
+  go=str(pathlib.Path(self.temp.name)/"go")
+  payloads=[self.payload,{**self.payload,"previous_state_sha256":"e"*64,"next_policy_sha256":"f"*64}]
+  code="""import json,os,sys,time
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from threshold_recovery import RecoveryAuthoritySigner
+ledger,aid,private_hex,policy_json,payload_json,ready,go=sys.argv[1:]
+key=Ed25519PrivateKey.from_private_bytes(bytes.fromhex(private_hex))
+signer=RecoveryAuthoritySigner(aid,key,ledger)
+open(ready,'w').close()
+deadline=time.monotonic()+10
+while not os.path.exists(go):
+ if time.monotonic()>deadline: raise SystemExit(3)
+ time.sleep(.005)
+try:
+ signature=signer.approve(json.loads(payload_json),json.loads(policy_json))
+ print(json.dumps({'status':'approved','signature':signature}))
+except ValueError as exc:
+ print(json.dumps({'status':'refused','reason':str(exc)}))
+"""
+  procs=[]
+  for i in range(2):
+   args=[sys.executable,"-c",code,self.ledger,"authority-0",private_raw,
+      json.dumps(self.policy),json.dumps(payloads[i]),ready[i],go]
+   procs.append(subprocess.Popen(args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True))
+  deadline=time.monotonic()+10
+  while not all(os.path.exists(path) for path in ready):
+   if time.monotonic()>deadline:
+    for p in procs: p.kill()
+    self.fail("subprocess approval clients did not reach start barrier")
+   time.sleep(.005)
+  pathlib.Path(go).touch()
+  results=[]
+  for proc in procs:
+   stdout,stderr=proc.communicate(timeout=15)
+   self.assertEqual(proc.returncode,0,stderr)
+   results.append(json.loads(stdout.strip()))
+  self.assertEqual(sum(item["status"]=="approved" for item in results),1)
+  refused=[item for item in results if item["status"]=="refused"]
+  self.assertEqual(len(refused),1)
+  self.assertIn("equivocation",refused[0]["reason"])
