@@ -444,3 +444,8 @@ A second integration moves the epoch anchor into a dedicated Linux UID with a pr
 
 
 **Failure-domain policy compatibility:** ordinary threshold recovery policies retain backward-compatible optional `administrative_domains` metadata. When present, the map must cover every authority exactly and use unique non-empty domain identifiers. The higher-assurance transparent-quorum and complete-authorization verifiers require this map because their security claim depends on counting independent authority domains, not merely keys. Legacy threshold authorization remains verifiable without domain metadata, but cannot be promoted into a transparent multi-domain quorum claim until the policy is explicitly enriched and re-approved.
+
+
+### Directive 038 — bounded model checking for session revocation rollback
+
+session_revocation_model.py expresses the anchored session-revocation protocol as a finite transition system with local broker epoch, independently retained anchor epoch, durable challenge epoch, revocation commit, local rollback and upward reconciliation transitions. The bounded explorer searches for any path that permits a capability from epoch 0 to commit after the independent anchor has advanced. No such path is accepted by the modeled anchored protocol within the configured depth. A deliberately broken variant removes the anchor check; the same explorer then finds a short reproducible counterexample containing anchor commit, local rollback and old-capability execution. This validates that the model/harness is capable of falsifying the exact property it is intended to test. The result is bounded explicit-state verification only, not a mathematical proof of the Python/SQLite implementation, scheduler, kernel or storage stack.
