@@ -52,6 +52,14 @@ class AtomicReceiptReservationTests(unittest.TestCase):
         head, entries = reopened.evidence()
         self.assertTrue(verify_reservation_chain(entries, head[1], head[0]))
 
+    def test_live_ledger_replacement_denies_reservations(self):
+        os.unlink(self.path)
+        fresh = AtomicReceiptReservations(self.path, "authority-a")
+        self.assertFalse(self.store.reserve("op-old", "a" * 64, 1))
+        with self.assertRaises((OSError, ValueError)):
+            self.store.evidence()
+        self.assertTrue(fresh.reserve("op-new", "b" * 64, 1))
+
     def test_missing_existing_ledger_denied(self):
         with self.assertRaises(ValueError):
             AtomicReceiptReservations(self.path + ".missing", "authority-a", require_existing=True)
