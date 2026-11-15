@@ -1,7 +1,7 @@
 import copy,json,tempfile,unittest
 from pathlib import Path
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from threshold_recovery import RecoveryAuthoritySigner
+from threshold_recovery import RecoveryAuthoritySigner,validate_policy
 from recovery_ledger_reference_verifier import verify_ledger,canonical
 
 class IndependentRecoveryLedgerVerifierTests(unittest.TestCase):
@@ -14,6 +14,8 @@ class IndependentRecoveryLedgerVerifierTests(unittest.TestCase):
    "threshold":3,"max_faults":1,"authorities":{f"authority-{i}":Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex() for i in range(3)}}
   self.policy["authorities"]["authority-x"]=self.public
   self.payload={"witness_id":"north","generation":1,"previous_state_sha256":"a"*64,"new_key":"b"*64}
+  assert validate_policy(self.policy), repr(self.policy)
+  assert self.signer.authority_id in self.policy["authorities"]
   self.signer.approve(self.payload,self.policy)
   self.bundle=self.signer.export_approval_ledger()
  def test_independent_verifier_accepts_exported_ledger(self):
