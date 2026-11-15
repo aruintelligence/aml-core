@@ -32,3 +32,22 @@ class ExecutionConsumptionWitnessTests(unittest.TestCase):
   self.w.consume(self.request,self.cap,"c"*64)
   restarted=ExecutionConsumptionWitness(self.root/"execution.sqlite")
   with self.assertRaises(PermissionError): restarted.consume(self.request,self.cap,"c"*64)
+
+ def test_consumption_log_forms_one_monotonic_hash_chain(self):
+  first=self.w.consume_record(self.request,self.cap,"c"*64)
+  request2=dict(self.request,operation_id="consume-op-2")
+  cap2=issue_session_capability(self.authority,"authority","broker-a",request2,0,
+   self.holder.public_key().public_bytes_raw().hex())
+  second=self.w.consume_record(request2,cap2,"d"*64)
+  self.assertEqual(first["sequence"],1)
+  self.assertEqual(first["previous_hash"],"0"*64)
+  self.assertEqual(second["sequence"],2)
+  self.assertEqual(second["previous_hash"],first["entry_hash"])
+  self.assertEqual(self.w.head(),{"sequence":2,"head_hash":second["entry_hash"]})
+ def test_incomplete_log_state_fails_closed_on_restart(self):
+  self.w.consume(self.request,self.cap,"c"*64)
+  import sqlite3
+  with sqlite3.connect(self.root/"execution.sqlite") as db:
+   db.execute("DELETE FROM execution_consumption_log")
+  with self.assertRaises(ValueError):
+   ExecutionConsumptionWitness(self.root/"execution.sqlite")
