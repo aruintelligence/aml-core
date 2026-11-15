@@ -543,3 +543,8 @@ The verifier rejects missing or extra authorities, malformed heads, generation s
 ### Directive 026 — recovery policy cutover certificate
 
 Added `recovery_cutover.py`, which prevents a planned recovery-council rotation from being treated as globally activated merely because the registry accepted it locally. A portable cutover certificate now requires a Byzantine-safe quorum of independently pinned verifier identities to sign the exact rotation digest, successor policy digest and generation. Verification reuses the explicit quorum fault bounds and rejects partial rollout, duplicate acknowledgments, unknown verifiers, substituted keys, altered rotation/policy/generation and unsafe quorum configurations. This is an activation-evidence protocol, not distributed consensus: it does not force lagging verifiers to install the policy or guarantee message delivery under arbitrary partitions.
+
+
+### Directive 027 — standalone recovery cutover evaluator
+
+Added `evaluation_kit/verify_recovery_cutover.py`, a command-line verifier for recovery-policy activation certificates. It consumes the cutover certificate, exact rotation evidence, successor policy digest, generation, pinned verifier keys, threshold and declared Byzantine fault bound. It rejects partial activation and malformed/duplicate-key inputs and returns a nonzero exit code when the certificate is not independently verifiable.
