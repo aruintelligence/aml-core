@@ -237,3 +237,8 @@ Recovery council rotations now require durable `RecoveryAuthoritySigner` instanc
 `python3 research/sef2/recovery_ledger_reference_verifier.py ledger.json --public-key <trusted-ed25519-public-key-hex> --expected-head <independently-retained-head-hex>`
 
 The reference verifier depends only on Python's standard library and the Ed25519 verification primitive. The external trust anchor and public-key distribution remain the evaluator's responsibility.
+
+
+**Directive 025 — durable dual-consent policy registry:** `recovery_policy_registry.py` installs successor recovery policies only after validating both the outgoing council's approval and the incoming council's acceptance for the exact successor policy and generation. It serializes concurrent rotations with `BEGIN IMMEDIATE`, stores canonical old/new policy documents and the full dual-consent certificate, and maintains a hash-chained transition history. Restart verification recomputes policy digests, validates every rotation certificate, checks generation continuity, and checks the event head against current state. Tests cover successful rotation, restart, stale replay, rollback attempts, invalid-certificate nonmutation, competing Byzantine certificates racing for one state transition, injected storage failure rollback, state corruption, event tampering, and uninitialized state.
+
+The registry is still a local SQLite state machine. Its hash chain is not an external anchor, and a coordinated rollback of registry and its local history can restore an old policy unless an independent recovery-anchor quorum pins the latest generation/head. The anchor quorum and registry must be operated in distinct administrative domains; no distributed atomic commit or production reconfiguration protocol is claimed.
