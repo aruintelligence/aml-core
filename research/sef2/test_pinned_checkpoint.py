@@ -1,6 +1,8 @@
 """Adversarial tests for signed checkpoint verification and effect gating."""
 import os
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 import unittest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
@@ -64,6 +66,31 @@ class PinnedCheckpointTests(unittest.TestCase):
         self.assertEqual(checkpoint(), 4)
         self.envelope = issue_checkpoint(self.key, "authority-a", 5, 2)
         self.assertEqual(checkpoint(), 5)
+
+    def test_concurrent_fetches_cannot_regress_high_water(self):
+        entered = Event()
+        release = Event()
+        older = issue_checkpoint(self.key, "authority-a", 4, 1)
+        newer = issue_checkpoint(self.key, "authority-a", 5, 2)
+        calls = [0]
+        def fetch():
+            calls[0] += 1
+            if calls[0] == 1:
+                entered.set()
+                if not release.wait(timeout=5):
+                    raise RuntimeError("test synchronization timed out")
+                return older
+            return newer
+        checkpoint = PinnedCheckpoint(fetch, self.public, "authority-a")
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            first = pool.submit(checkpoint)
+            self.assertTrue(entered.wait(timeout=5))
+            second = pool.submit(checkpoint)
+            release.set()
+            self.assertEqual(first.result(timeout=10), 4)
+            self.assertEqual(second.result(timeout=10), 5)
+        self.assertEqual(checkpoint.last_sequence, 2)
+        self.assertEqual(checkpoint.last_generation, 5)
 
     def test_malformed_checkpoint_fails_closed(self):
         self.envelope = {"payload": [], "signature": "zz"}
