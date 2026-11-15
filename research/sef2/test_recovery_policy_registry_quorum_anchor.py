@@ -8,7 +8,8 @@ def keys(prefix):
  return {f"{prefix}-{i}":Ed25519PrivateKey.generate() for i in range(4)}
 def policy(member_keys,name):
  return {"schema":POLICY_SCHEMA,"policy_id":name,"threshold":3,"max_faults":1,
-  "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in member_keys.items()},\n  "administrative_domains":{k:name+"-domain-"+k for k in member_keys}}
+  "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in member_keys.items()},
+  "administrative_domains":{k:name+"-domain-"+k for k in member_keys}}
 
 class QuorumAnchoredRecoveryPolicyRegistryTests(unittest.TestCase):
  def setUp(self):
