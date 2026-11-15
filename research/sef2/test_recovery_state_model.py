@@ -39,3 +39,29 @@ class RecoveryStateModelTests(unittest.TestCase):
  def test_invalid_model_bounds_rejected(self):
   with self.assertRaises(ValueError): analyze_recovery_quorums(True,3,1)
   with self.assertRaises(ValueError): explore_recovery_sequence(0)
+
+
+class RecoveryPolicyImplementationConsistencyTests(unittest.TestCase):
+ def test_every_bounded_policy_accepted_by_implementation_is_model_safe(self):
+  from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+  from threshold_recovery import POLICY_SCHEMA,validate_policy
+  for n in range(1,9):
+   keys={f"a{i}":Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex() for i in range(n)}
+   domains={name:"domain-"+name for name in keys}
+   for f in range(0,n+1):
+    for q in range(1,n+1):
+     policy={"schema":POLICY_SCHEMA,"policy_id":f"p-{n}-{q}-{f}",
+       "threshold":q,"max_faults":f,"authorities":keys,
+       "administrative_domains":domains}
+     accepted=validate_policy(policy)
+     modeled=analyze_recovery_quorums(n,q,f)["safe"]
+     self.assertEqual(accepted,modeled,(n,q,f))
+
+ def test_known_unsafe_configurations_remain_rejected(self):
+  from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+  from threshold_recovery import POLICY_SCHEMA,validate_policy
+  for n,q,f in ((3,2,1),(4,2,1),(4,4,1),(6,4,2)):
+   keys={f"a{i}":Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex() for i in range(n)}
+   policy={"schema":POLICY_SCHEMA,"policy_id":"unsafe","threshold":q,"max_faults":f,
+      "authorities":keys,"administrative_domains":{name:"d-"+name for name in keys}}
+   self.assertFalse(validate_policy(policy),(n,q,f))
