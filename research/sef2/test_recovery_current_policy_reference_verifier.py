@@ -69,3 +69,14 @@ class CurrentRecoveryPolicyVerifierTests(unittest.TestCase):
  def test_empty_ledger_rejected(self):
   b=copy.deepcopy(self.bundle); b["recovery_evidence"]["ledger"]["events"]=[]
   self.assertFalse(self.check(b))
+
+ def test_same_anchor_policy_for_both_planes_rejected(self):
+  self.assertFalse(verify_current_recovery_evidence(self.bundle,self.public,
+   self.authority_anchor_policy,1,"0"*64,self.authority_anchor_policy,1,"0"*64))
+ def test_overlapping_anchor_key_rejected(self):
+  p=copy.deepcopy(self.registry_anchor_policy)
+  first_registry=sorted(p["authorities"])[0]
+  first_authority=sorted(self.authority_anchor_policy["authorities"])[0]
+  p["authorities"][first_registry]=self.authority_anchor_policy["authorities"][first_authority]
+  self.assertFalse(verify_current_recovery_evidence(self.bundle,self.public,
+   self.authority_anchor_policy,1,"0"*64,p,1,"0"*64))
