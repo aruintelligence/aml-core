@@ -2,7 +2,8 @@
 import json,os,pathlib,pwd,shutil,subprocess,sys,tempfile,time
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from session_capability import issue_session_capability,make_holder_proof
-from replica_attestation import attest
+from replica_attestation import DOMAIN
+from signed_receipt import canonical
 from test_cross_uid_boundary import drop,HERE
 
 PREPARE=r'''
@@ -85,10 +86,11 @@ def main():
   cap=issue_session_capability(issuer,"authority","broker-a",request,0,
    holder.public_key().public_bytes_raw().hex())
   # Attestations match the durable replica fixture initialized by PREPARE.
-  class ReplicaView:
-   def __init__(self,i): self.i=i
-   def read(self,witness_id): return (0,"a"*64)
-  attestations=[attest(ReplicaView(i),f"r{i}","north",replica_keys[i]) for i in range(3)]
+  attestations=[]
+  for i,key_i in enumerate(replica_keys):
+   payload={"schema":"AML-SEF2-PIN-REPLICA-ATTESTATION-V1","replica_id":f"r{i}",
+    "witness_id":"north","generation":0,"pin":"a"*64}
+   attestations.append({"payload":payload,"signature":key_i.sign(DOMAIN+canonical(payload)).hex()})
   config={"issuer_public":issuer.public_key().public_bytes_raw().hex(),
    "enrolled":{f"r{i}":k.public_key().public_bytes_raw().hex() for i,k in enumerate(replica_keys)},
    "request":request,"capability":cap,"attestations":attestations}
