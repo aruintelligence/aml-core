@@ -570,3 +570,8 @@ The registry does not itself provide a remote durable anchor service, force ever
 Anchor-policy rotation now has a state-continuity protocol. The outgoing and incoming anchor councils both approve an exact canonical snapshot mapping every tracked recovery authority to its last accepted anchor sequence and pin. A fresh successor `RecoveryAnchorWitness` can be bootstrapped only from a valid dual-consent handoff and only into an empty database; it then continues from the inherited sequence/pin under the new policy instead of restarting at genesis.
 
 Tests reject snapshot tampering, outgoing or incoming quorum shortfalls, rotation substitution, wrong successor keys, nonempty successor databases, and attempts to restart an inherited target at sequence 1/genesis. This closes a reconfiguration rollback path where new anchor members could otherwise forget the old council's monotonic history. The handoff still assumes the snapshot presented to both councils is complete for every relevant target authority.
+
+
+### Directive 030 — cutover verification benchmark
+
+Added `benchmark_recovery_cutover.py` and wired it into the SEF/2 CI benchmark stage. It measures local verification latency for a 3-of-4 cutover certificate plus the pinned verifier-independence manifest and reports median, p95, mean, min/max and serialized evidence size. Results are explicitly runner-local microbenchmarks and exclude network, HSM, remote-anchor and real administrative-system latency.
