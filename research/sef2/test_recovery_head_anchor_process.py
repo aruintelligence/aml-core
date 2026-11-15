@@ -58,10 +58,13 @@ def start(account,anchor_id,sock,state,lib,signer,env):
             # the server attempt to reply to a closed peer and exit on EPIPE.
             probe_code=('from recovery_head_anchor_service import UnixRecoveryHeadAnchorTransport; '
                 'import sys; print(UnixRecoveryHeadAnchorTransport(sys.argv[1]).read_head("a"*64)["anchor_id"])')
-            probe=subprocess.run([sys.executable,"-c",probe_code,str(sock)],
-                preexec_fn=drop(signer.pw_uid,signer.pw_gid),env=env,
-                capture_output=True,text=True,timeout=2)
-            if probe.returncode==0 and probe.stdout.strip()==anchor_id:
+            try:
+                probe=subprocess.run([sys.executable,"-c",probe_code,str(sock)],
+                    preexec_fn=drop(signer.pw_uid,signer.pw_gid),env=env,
+                    capture_output=True,text=True,timeout=1)
+            except (subprocess.TimeoutExpired,OSError):
+                probe=None
+            if probe is not None and probe.returncode==0 and probe.stdout.strip()==anchor_id:
                 return proc,public,db
         time.sleep(.02)
     proc.terminate(); raise AssertionError("anchor startup timeout")
