@@ -146,8 +146,9 @@ class RecoveryAnchorWitness:
 
 def make_anchor_certificate(payload,policy,witnesses):
     if not validate_anchor_policy(policy): raise ValueError("invalid anchor policy")
-    if type(witnesses) is not dict or len(witnesses)<policy["threshold"]:
-        raise ValueError("insufficient anchor witnesses")
+    if (type(witnesses) is not dict or len(witnesses)<policy["threshold"]
+        or any(type(identity) is not str for identity in witnesses)):
+        raise ValueError("insufficient or malformed anchor witnesses")
     approvals=[]
     # Stop once a valid quorum is assembled. An extra, stale witness must not
     # invalidate an already complete certificate or consume unnecessary votes.
