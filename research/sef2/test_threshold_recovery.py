@@ -146,6 +146,26 @@ class RecoveryAuthorityLedgerTests(unittest.TestCase):
   self.assertTrue(verify_approval_ledger(ledger,self.key.public_key(),ledger["head_sha256"]))
   with sqlite3.connect(path) as con:
    self.assertEqual(con.execute("SELECT COUNT(*) FROM recovery_approval_ledger_v4").fetchone()[0],1)
+ def test_legacy_migration_rejects_approval_signed_by_another_key(self):
+  import sqlite3,pathlib,os
+  from signed_receipt import canonical
+  from threshold_recovery import RecoveryAuthoritySigner
+  path=str(pathlib.Path(self.temp.name)/"wrong-key-legacy.sqlite")
+  with sqlite3.connect(path) as con:
+   con.execute("""CREATE TABLE recovery_approval_ledger_v3 (
+    policy_id TEXT NOT NULL,authority_id TEXT NOT NULL,witness_id TEXT NOT NULL,
+    generation INTEGER NOT NULL,policy_sha256 TEXT NOT NULL,previous_state_sha256 TEXT NOT NULL,
+    payload_sha256 TEXT NOT NULL,signature TEXT NOT NULL,
+    PRIMARY KEY(policy_id,authority_id,witness_id,generation))""")
+   pd=policy_digest(self.policy); digest=payload_digest(self.payload)
+   wrong=Ed25519PrivateKey.generate()
+   sig=wrong.sign(DOMAIN+canonical({"policy_sha256":pd,"payload_sha256":digest})).hex()
+   con.execute("INSERT INTO recovery_approval_ledger_v3 VALUES (?,?,?,?,?,?,?,?)",
+    (self.policy["policy_id"],"authority-0","north",1,pd,"a"*64,digest,sig))
+  os.chmod(path,0o600)
+  with self.assertRaisesRegex(ValueError,"does not match pinned authority key"):
+   RecoveryAuthoritySigner("authority-0",self.key,path)
+
  def test_legacy_migration_fails_closed_on_conflicting_policy_rows(self):
   import sqlite3,pathlib
   from signed_receipt import canonical
