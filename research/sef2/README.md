@@ -256,3 +256,6 @@ Added `recovery_anchor_reference_verifier.py`, a separate verifier for 3-of-4 (o
 
 
 **Directive 022 anchor-certificate assembly correction:** quorum collection now sorts candidate identities deterministically and stops immediately after reaching the configured threshold. A stale or unavailable extra witness can no longer invalidate an already complete certificate by being consulted unnecessarily. If fewer than the threshold can approve, construction fails closed. Regression tests cover a stale fourth witness after a valid 3-of-4 quorum, and the case where only two of four can vote. This is an availability improvement that preserves the certificate safety threshold; it does not weaken verification.
+
+
+**Directive 022 reference-verifier consistency:** the read-only SQLite event-chain verifier now enforces the same authority-wide `(authority_id, witness_id, generation)` uniqueness rule as the portable exported-ledger verifier and the signer database. A regression test manually injects a second, cryptographically valid event under a different policy ID for the same authority/witness/generation, recomputes the event hash chain and checkpoint pin, and confirms the independent checkpoint verifier still rejects it. Recomputing a local hash or pin is not a substitute for the external verifier's signer-scope invariant.
