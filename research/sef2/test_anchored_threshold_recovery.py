@@ -102,3 +102,11 @@ class AnchoredThresholdRecoveryTests(unittest.TestCase):
   manifest=self.enrollment.manifest()
   self.assertEqual(manifest["public_keys"]["witness"],second_key.public_key().public_bytes_raw().hex())
   self.assertIn(self.old.public_key().public_bytes_raw().hex(),manifest["revoked_key_hex"])
+
+ def test_anchor_certificate_is_independently_verified(self):
+  from recovery_anchor_reference_verifier import verify_anchor_certificate
+  composite=json.loads(bytes.fromhex(self.transition["recovery_signature"]))
+  self.assertTrue(verify_anchor_certificate(composite["anchor_payload"],
+   composite["anchor_certificate"],self.anchor_policy,1,self.initial_pin,
+   self.recovery_policy["policy_id"],
+   __import__("anchored_threshold_recovery").authority_set_fingerprint(self.recovery_policy)))
