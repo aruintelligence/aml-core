@@ -15,9 +15,11 @@ class SessionCapabilityBrokerTests(unittest.TestCase):
   self.enrolled={f"r{i}":k.public_key().public_bytes_raw().hex() for i,k in enumerate(self.replica_keys)}
   for r in self.replicas: r.record("north",0,"a"*64)
   self.issuer=Ed25519PrivateKey.generate(); self.holder=Ed25519PrivateKey.generate(); self.other=Ed25519PrivateKey.generate()
+  self.broker_instance_key=Ed25519PrivateKey.generate()
   self.request={"operation_id":"session-op","action":"payment:simulate","target":"fixture:merchant-a","amount_cents":100}
   self.broker=SessionCapabilityBroker(root/"effects.sqlite",self.registry,"north",self.replicas,2,
-   self.enrolled,"authority",self.issuer.public_key().public_bytes_raw().hex(),"broker-a")
+   self.enrolled,"authority",self.issuer.public_key().public_bytes_raw().hex(),"broker-a",
+   "broker-instance-test",self.broker_instance_key)
  def signed(self):
   return [attest(r,f"r{i}","north",self.replica_keys[i]) for i,r in enumerate(self.replicas)]
  def capability(self,request=None,epoch=None,holder=None):
@@ -82,3 +84,22 @@ class SessionCapabilityBrokerTests(unittest.TestCase):
   self.assertEqual(results.count("APPLIED"),1)
   self.assertEqual(sum(r in ("APPLIED","DENIED") for r in results),2)
   self.assertEqual(self.count(),1)
+
+ def test_broker_authenticated_challenge_binds_exact_capability_and_request(self):
+  from authenticated_execution_challenge import verify_execution_challenge
+  cap=self.capability()
+  envelope=self.broker.issue_authenticated_execution_challenge(self.request,cap)
+  self.assertTrue(verify_execution_challenge(envelope,
+   self.broker_instance_key.public_key().public_bytes_raw().hex(),"broker-instance-test",
+   "broker-a",self.request,cap,self.broker.current_epoch()))
+ def test_broker_refuses_to_sign_challenge_for_invalid_capability(self):
+  cap=self.capability(); cap["signature"]="00"*64
+  with self.assertRaises(PermissionError):
+   self.broker.issue_authenticated_execution_challenge(self.request,cap)
+ def test_broker_authenticated_challenge_invalidated_by_policy_revocation(self):
+  cap=self.capability(); envelope=self.broker.issue_authenticated_execution_challenge(self.request,cap)
+  self.broker.revoke_all()
+  from authenticated_execution_challenge import verify_execution_challenge
+  self.assertFalse(verify_execution_challenge(envelope,
+   self.broker_instance_key.public_key().public_bytes_raw().hex(),"broker-instance-test",
+   "broker-a",self.request,cap,self.broker.current_epoch()))
