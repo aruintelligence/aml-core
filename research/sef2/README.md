@@ -531,3 +531,10 @@ This removes the need to trust a compact registry-state summary when auditing po
 ### Directive 025 — standalone recovery council rotation evaluator
 
 Added `evaluation_kit/verify_recovery_policy_rotation.py`, which verifies a planned council succession from explicit JSON files, an out-of-band pin for the currently trusted recovery policy, and an expected rotation generation. It re-verifies the dual outgoing/incoming quorums, successor policy/key/domain separation, generation, and current policy digest, and fails nonzero on malformed or tampered evidence. This gives an external reviewer a reproducible path for planned trust-root succession without invoking the live recovery coordinator.
+
+
+### Directive 027 — unified recovery transparency checkpoint
+
+Added `recovery_transparency_checkpoint.py`, which deterministically commits to the active recovery-policy digest, policy-registry generation/head, and every recovery-authority approval-ledger head in one canonical SHA-256 checkpoint. This gives operators and external evaluators one value that can be pinned by an independent 3-of-4 anchor quorum while still covering all council members and the policy registry.
+
+The verifier rejects missing or extra authorities, malformed heads, generation substitution, policy substitution, noncanonical authority ordering, checkpoint hash tampering, and mismatched externally retained checkpoint pins. Any change to one authority history or the policy registry changes the checkpoint. This is a commitment layer, not a transparency network; its rollback resistance depends on independently retaining or quorum-anchoring the checkpoint hash.
