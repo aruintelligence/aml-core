@@ -32,6 +32,13 @@ def reconcile_recovery_authority_anchor(authority_id,private_key,ledger_path,
         if not verify_approval_ledger(bundle,public_key):
             return "INVALID_LOCAL_LEDGER"
         events=bundle["events"]; local_head=bundle["head_sha256"]
+        external_head=head_anchor.read_head()
+        if type(external_head) is not str or len(external_head)!=64:
+            return "INVALID_EXTERNAL_ANCHOR_STATE"
+        if external_head==local_head:
+            return "ALREADY_CURRENT"
+        if external_head!=expected_previous_head:
+            return "EXTERNAL_PREDECESSOR_MISMATCH"
         if local_head==expected_previous_head:
             return "ALREADY_CURRENT"
         pending=[event for event in events
@@ -39,6 +46,10 @@ def reconcile_recovery_authority_anchor(authority_id,private_key,ledger_path,
         if len(pending)!=1 or not events or pending[0]!=events[-1]:
             return "EXPECTED_PREDECESSOR_MISMATCH"
         if not head_anchor.compare_and_set(expected_previous_head,local_head):
+            # The remote CAS may have succeeded while its response was lost.
+            # Re-read before reporting failure; never issue a second event.
+            if head_anchor.read_head()==local_head:
+                return "ALREADY_CURRENT"
             return "ANCHOR_RECONCILIATION_FAILED"
         return "RECONCILED"
     except (sqlite3.Error,OSError,ValueError,TypeError,KeyError,AttributeError,
