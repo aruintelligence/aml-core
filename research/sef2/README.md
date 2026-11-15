@@ -623,3 +623,8 @@ The newest Linux integration composes independently owned revocation-anchor, con
 The break-glass protocol is now integrated into `RecoveryPolicyRegistry` instead of maintaining a second recovery-policy source of truth. Normal dual-consent rotations and emergency guardian rotations occupy one strictly increasing generation sequence and one hash-chained registry head. History verification dispatches to the appropriate verifier for each event type and recomputes the common event hash. The emergency path updates the same current-policy state and the same independent head anchor. Tests cover restart/reverification, replay, incident tampering, injected storage failure, local database rollback against an external anchor, and a subsequent normal rotation after emergency recovery.
 
 The emergency guardian policy is stored with the emergency event so historical verification can reproduce the authorization. The registry remains synthetic SQLite state; rollback safety still depends on an independent external head anchor that is not restored with the database.
+
+
+### Directive 036 — unified activation path for planned and emergency succession
+
+`RecoveryActivationRegistry` now accepts both planned rotations (`previous_policy_sha256`) and emergency rotations (`current_policy_sha256`) through the same cutover-certificate, verifier-independence, generation, hash-chain and external-anchor controls. The parser requires exactly one predecessor-policy field, preventing an ambiguous payload from satisfying both paths. This removes a dangerous operational split where break-glass recovery could update the policy registry but bypass the normal verifier activation/rollback discipline.
