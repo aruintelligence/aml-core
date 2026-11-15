@@ -20,7 +20,8 @@ def summary(values):
   "mean_ms":round(statistics.mean(values),3),"min_ms":round(min(values),3),"max_ms":round(max(values),3)}
 def policy(keys,name,schema=POLICY_SCHEMA):
  return {"schema":schema,"policy_id":name,"threshold":3,"max_faults":1,
-  "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()}}
+  "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()},
+  "administrative_domains":{k:"benchmark-domain-"+k for k in keys}}
 def main():
  p=argparse.ArgumentParser(); p.add_argument("--iterations",type=int,default=25); a=p.parse_args()
  if type(a.iterations) is not int or not 5<=a.iterations<=500: p.error("--iterations must be 5..500")
