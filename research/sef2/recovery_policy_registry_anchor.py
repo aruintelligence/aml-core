@@ -15,8 +15,10 @@ REGISTRY_ID_DEFAULT="aml-sef2-recovery-policy-registry-v1"
 
 def authority_set_fingerprint(policy):
     if not validate_policy(policy): raise ValueError("invalid recovery policy")
-    members=sorted(policy["authorities"].items())
-    return hashlib.sha256(canonical({"policy_id":policy["policy_id"],"members":members})).hexdigest()
+    # Bind threshold, fault bound, policy identifier, member identities and keys.
+    # The checkpoint field is a fingerprint of the complete council trust root,
+    # not merely the unordered set of member public keys.
+    return policy_digest(policy)
 
 def registry_checkpoint(state,registry_id=REGISTRY_ID_DEFAULT):
     if type(state) is not dict or set(state)!={"generation","policy","policy_sha256","head_sha256"}:
