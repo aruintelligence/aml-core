@@ -20,7 +20,9 @@ class AuthenticatedExecutionChallengeTests(unittest.TestCase):
  def test_request_substitution_rejected(self):
   self.assertFalse(verify_execution_challenge(self.env,self.pub,"broker-instance-1","broker-a",dict(self.request,amount_cents=101),self.cap,4))
  def test_capability_substitution_rejected(self):
-  cap2=issue_session_capability(self.authority,"issuer","broker-a",self.request,4,self.holder.public_key().public_bytes_raw().hex())
+  replacement_holder=Ed25519PrivateKey.generate()
+  cap2=issue_session_capability(self.authority,"issuer","broker-a",self.request,4,replacement_holder.public_key().public_bytes_raw().hex())
+  self.assertNotEqual(cap2,self.cap)
   self.assertFalse(verify_execution_challenge(self.env,self.pub,"broker-instance-1","broker-a",self.request,cap2,4))
  def test_epoch_substitution_rejected(self):
   self.assertFalse(verify_execution_challenge(self.env,self.pub,"broker-instance-1","broker-a",self.request,self.cap,5))
