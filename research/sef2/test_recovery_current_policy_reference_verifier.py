@@ -14,7 +14,8 @@ def make_policy(keys,name):
   "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()}}
 def make_anchor_policy(keys,name):
  return {"schema":ANCHOR_SCHEMA,"policy_id":name,"threshold":3,"max_faults":1,
-  "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()}}
+  "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()},
+  "administrative_domains":{k:"operator-domain-"+k for k in keys}}
 
 class CurrentRecoveryPolicyVerifierTests(unittest.TestCase):
  def setUp(self):
