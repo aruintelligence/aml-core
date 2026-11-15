@@ -15,6 +15,34 @@ def _read_exact(conn,size):
     return b"".join(chunks)
 def _valid_hash(value):
     return type(value) is str and len(value)==64 and all(c in "0123456789abcdef" for c in value)
+
+def _strict_object(pairs):
+    result={}
+    for key,value in pairs:
+        if key in result: raise ValueError("duplicate JSON object key")
+        result[key]=value
+    return result
+def _strict_json_loads(raw):
+    return json.loads(raw,object_pairs_hook=_strict_object)
+def _valid_nonce(value):
+    return (type(value) is str and len(value)==64
+        and all(c in "0123456789abcdef" for c in value))
+def _parse_request(body):
+    request=_strict_json_loads(body)
+    if type(request) is not dict: raise ValueError("request must be a JSON object")
+    operation=request.get("op")
+    if operation=="read":
+        if set(request)!={"op","nonce"}: raise ValueError("read request fields are not canonical")
+    elif operation=="cas":
+        if set(request)!={"op","expected_head","new_head","nonce"}:
+            raise ValueError("CAS request fields are not canonical")
+        if (not _valid_hash(request["expected_head"]) or not _valid_hash(request["new_head"])
+            or request["expected_head"]==request["new_head"]):
+            raise ValueError("invalid or no-op CAS head transition")
+    else:
+        raise ValueError("unknown recovery anchor operation")
+    if not _valid_nonce(request["nonce"]): raise ValueError("invalid freshness nonce")
+    return request
 def _load_key(private_path,public_path):
     if os.path.exists(private_path):
         if os.stat(private_path).st_mode & 0o077: raise PermissionError("anchor key permissions too broad")
@@ -40,7 +68,7 @@ class UnixRecoveryHeadAnchorTransport:
             conn.sendall(struct.pack("!I",len(body))+body)
             size=struct.unpack("!I",_read_exact(conn,4))[0]
             if size>8192: raise OSError("response too large")
-            return json.loads(_read_exact(conn,size))
+            return _strict_json_loads(_read_exact(conn,size))
     def read_head(self,nonce): return self._call({"op":"read","nonce":nonce})
     def compare_and_set(self,expected,new,nonce):
         return self._call({"op":"cas","expected_head":expected,"new_head":new,"nonce":nonce})
@@ -91,10 +119,8 @@ def serve(anchor_id,socket_path,database,private_path,public_path,allowed_uid,al
                     if uid!=allowed_uid: raise PermissionError("untrusted client uid")
                     size=struct.unpack("!I",_read_exact(conn,4))[0]
                     if size>4096: raise ValueError("request too large")
-                    req=json.loads(_read_exact(conn,size))
-                    if type(req) is not dict or req.get("op") not in ("read","cas"): raise ValueError("bad request")
-                    nonce=req.get("nonce")
-                    if type(nonce) is not str or len(nonce)<32 or len(nonce)>128: raise ValueError("bad nonce")
+                    req=_parse_request(_read_exact(conn,size))
+                    nonce=req["nonce"]
                     if req["op"]=="read":
                         with sqlite3.connect(database) as db:
                             head=db.execute("SELECT head FROM anchor_state WHERE singleton=1").fetchone()[0]
@@ -102,7 +128,7 @@ def serve(anchor_id,socket_path,database,private_path,public_path,allowed_uid,al
                         response["signature"]=key.sign(RECOVERY_ANCHOR_READ_DOMAIN+canonical(response)).hex()
                     else:
                         expected=req.get("expected_head"); new=req.get("new_head")
-                        if not _valid_hash(expected) or not _valid_hash(new): raise ValueError("bad hash")
+                        if not _valid_hash(expected) or not _valid_hash(new) or expected==new: raise ValueError("bad hash or no-op transition")
                         with sqlite3.connect(database,timeout=5,isolation_level=None) as db:
                             db.execute("PRAGMA synchronous=FULL"); db.execute("BEGIN IMMEDIATE")
                             current=db.execute("SELECT head FROM anchor_state WHERE singleton=1").fetchone()[0]
