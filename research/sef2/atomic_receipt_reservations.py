@@ -5,7 +5,7 @@ attacker restoring this whole database can restore its chain as well.
 """
 import sqlite3
 from pathlib import Path
-from reservation_receipt_chain import GENESIS, reservation_chain_hash
+from reservation_receipt_chain import GENESIS, reservation_chain_hash, verify_reservation_chain
 
 class AtomicReceiptReservations:
     def __init__(self, path, authority_id, *, require_existing=False):
@@ -43,6 +43,17 @@ class AtomicReceiptReservations:
                 sequence, previous = heads[0]
                 if type(sequence) is not int or sequence < 0:
                     return False
+                rows = db.execute("SELECT sequence,authority_id,operation_id,digest,generation,chain_hash FROM receipt_reservations ORDER BY sequence").fetchall()
+                if len(rows) != sequence or any(row[0] != index for index, row in enumerate(rows, 1)):
+                    return False
+                entries = [row[1:5] for row in rows]
+                if not verify_reservation_chain(entries, previous, sequence):
+                    return False
+                cursor = GENESIS
+                for row in rows:
+                    cursor = reservation_chain_hash(cursor, *row[1:5])
+                    if cursor != row[5]:
+                        return False
                 chain_hash = reservation_chain_hash(previous, self.authority_id, operation_id, digest, generation)
                 db.execute("INSERT INTO receipt_reservations VALUES (?,?,?,?,?,?)",
                            (sequence + 1, self.authority_id, operation_id, digest, generation, chain_hash))
