@@ -224,9 +224,7 @@ class EmergencyRecoveryPolicyRegistryTests(unittest.TestCase):
   path=str(pathlib.Path(self.temp.name)/"anchored-emergency.sqlite")
   registry=RecoveryPolicyRegistry(path,anchor); registry.initialize(self.old)
   from recovery_emergency_rotation import make_emergency_rotation
-  rotation=make_emergency_rotation(self.old,self.new,self.guardians,2,registry.state()["head_sha256"],
-   "c"*64,"QUORUM_LOSS",{k:self.guardian_signers[k] for k in list(self.guardian_signers)[:4]},
-   {k:self.new_signers[k] for k in list(self.new_signers)[:3]})
+  rotation=self.rotation
   snapshot=str(pathlib.Path(self.temp.name)/"emergency-before.sqlite"); shutil.copy2(path,snapshot)
   self.assertEqual(registry.emergency_rotate(self.new,self.guardians,rotation),"EMERGENCY_ROTATED")
   shutil.copy2(snapshot,path)
