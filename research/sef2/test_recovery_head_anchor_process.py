@@ -118,7 +118,7 @@ def main():
             poison_db=poison_state/"anchor.sqlite"
             with sqlite3.connect(poison_db) as db:
                 db.execute("CREATE TABLE anchor_state (singleton INTEGER PRIMARY KEY CHECK(singleton=1),head TEXT NOT NULL)")
-                db.execute("INSERT INTO anchor_state VALUES (1,?)",(zero,))
+                db.execute("INSERT INTO anchor_state VALUES (1,?)",("0"*64,))
                 db.execute("""CREATE TRIGGER poison_head BEFORE UPDATE ON anchor_state
                     BEGIN SELECT RAISE(ABORT,'poisoned anchor database'); END""")
             os.chown(poison_db,accounts[0].pw_uid,accounts[0].pw_gid); poison_db.chmod(0o600)
