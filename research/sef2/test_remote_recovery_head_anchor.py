@@ -6,15 +6,18 @@ from threshold_recovery import (SignedRecoveryHeadAnchor,QuorumRecoveryHeadAncho
 
 class RemoteAnchorTransport:
  def __init__(self,anchor_id,key):
-  self.anchor_id=anchor_id; self.key=key; self.head="0"*64; self.available=True
+  self.anchor_id=anchor_id; self.key=key; self.head="0"*64; self.available=True; self.lock=threading.Lock()
  def read_head(self,nonce):
   if not self.available: raise OSError("simulated remote anchor outage")
-  body={"anchor_id":self.anchor_id,"head_sha256":self.head,"nonce":nonce}
+  with self.lock:
+   head=self.head
+  body={"anchor_id":self.anchor_id,"head_sha256":head,"nonce":nonce}
   return {**body,"signature":self.key.sign(RECOVERY_ANCHOR_READ_DOMAIN+canonical(body)).hex()}
  def compare_and_set(self,expected,new,nonce):
   if not self.available: raise OSError("simulated remote anchor outage")
-  accepted=self.head==expected
-  if accepted: self.head=new
+  with self.lock:
+   accepted=self.head==expected
+   if accepted: self.head=new
   body={"anchor_id":self.anchor_id,"expected_head":expected,"new_head":new,
     "accepted":accepted,"nonce":nonce}
   return {**body,"signature":self.key.sign(RECOVERY_ANCHOR_CAS_DOMAIN+canonical(body)).hex()}
