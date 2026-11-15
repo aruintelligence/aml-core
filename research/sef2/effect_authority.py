@@ -40,7 +40,7 @@ class EffectAuthority:
             body = canonical(effect)
             if type(policy_generation) is not int or policy_generation < 0:
                 return "DENIED"
-            digest = hashlib.sha256(SCHEMA.encode() + b"\\x00" + body).hexdigest()
+            digest = hashlib.sha256(SCHEMA.encode() + bytes([0]) + body).hexdigest()
             with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
                 db.execute("PRAGMA synchronous=FULL")
                 db.execute("BEGIN IMMEDIATE")
@@ -55,5 +55,5 @@ class EffectAuthority:
                 db.execute("INSERT INTO effects VALUES (?,?,?,?)", (effect["operation_id"], digest, policy_generation, effect["value"]))
                 db.execute("COMMIT")
             return "APPLIED"
-        except (ValueError, TypeError, KeyError, sqlite3.Error, OSError):
+        except Exception:  # A failing trusted authorizer must never commit an effect
             return "DENIED"
