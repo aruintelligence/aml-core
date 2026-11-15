@@ -1041,3 +1041,35 @@ class RecoveryHeadAnchorQuorumReconciliationTests(unittest.TestCase):
   quorum=QuorumRecoveryHeadAnchor(anchors,3,1)
   with self.assertRaisesRegex(RuntimeError,"predecessor pin required"):
    reconcile_recovery_head_anchor("authority-0",self.key,self.path,quorum)
+
+class RecoveryAnchorCASInputValidationTests(unittest.TestCase):
+ def test_memory_anchor_rejects_malformed_or_noop_head_updates(self):
+  from threshold_recovery import MemoryRecoveryHeadAnchor
+  anchor=MemoryRecoveryHeadAnchor("memory-cas")
+  for expected,new in (("bad","a"*64),("0"*64,"bad"),("0"*64,"0"*64)):
+   self.assertFalse(anchor.compare_and_set(expected,new))
+  self.assertEqual(anchor.read_head(),"0"*64)
+ def test_memory_anchor_rejects_malformed_initial_head(self):
+  from threshold_recovery import MemoryRecoveryHeadAnchor
+  with self.assertRaisesRegex(ValueError,"initial head"):
+   MemoryRecoveryHeadAnchor("memory-cas","not-a-digest")
+ def test_signed_remote_anchor_rejects_invalid_cas_before_transport(self):
+  from threshold_recovery import SignedRecoveryHeadAnchor
+  class NoCall:
+   anchor_id="remote"
+   called=False
+   def compare_and_set(inner,*args):
+    inner.called=True
+    raise AssertionError("transport must not be called")
+  transport=NoCall(); anchor=SignedRecoveryHeadAnchor("remote",Ed25519PrivateKey.generate().public_key(),transport)
+  for expected,new in (("bad","a"*64),("0"*64,"bad"),("0"*64,"0"*64)):
+   with self.assertRaisesRegex(ValueError,"head digests"):
+    anchor.compare_and_set(expected,new)
+  self.assertFalse(transport.called)
+ def test_quorum_anchor_rejects_invalid_cas_without_mutating_replicas(self):
+  from threshold_recovery import MemoryRecoveryHeadAnchor,QuorumRecoveryHeadAnchor
+  anchors=[MemoryRecoveryHeadAnchor(f"anchor-{i}") for i in range(4)]
+  quorum=QuorumRecoveryHeadAnchor(anchors,3,1)
+  self.assertFalse(quorum.compare_and_set("0"*64,"bad"))
+  self.assertFalse(quorum.compare_and_set("0"*64,"0"*64))
+  self.assertEqual([a.read_head() for a in anchors],["0"*64]*4)
