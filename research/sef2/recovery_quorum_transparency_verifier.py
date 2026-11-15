@@ -24,8 +24,15 @@ def verify_transparent_recovery_quorum(payload,recovery_policy,authority_records
     try:
         if not validate_policy(recovery_policy) or type(authority_records) is not list:
             return False
+        recovery_domains=recovery_policy.get("administrative_domains")
+        if (type(recovery_domains) is not dict
+            or set(recovery_domains)!=set(recovery_policy["authorities"])
+            or any(type(domain) is not str or not domain for domain in recovery_domains.values())
+            or len(set(recovery_domains.values()))!=len(recovery_domains)):
+            return False
+        recovery_domain_set=set(recovery_domains.values())
         pd=policy_digest(recovery_policy); md=payload_digest(payload)
-        seen=set(); anchor_planes=[]; valid=0
+        seen=set(); anchor_planes=[]; anchor_domains_seen=set(); valid=0
         for record in authority_records:
             required={"authority_id","authority_public_key_hex","evidence",
                 "anchor_policy","anchor_sequence","previous_anchor_pin"}
@@ -36,10 +43,17 @@ def verify_transparent_recovery_quorum(payload,recovery_policy,authority_records
                 return False
             if record["authority_public_key_hex"]!=recovery_policy["authorities"][aid]:
                 return False
-            anchor_keys=_policy_keys(record["anchor_policy"])
-            if not anchor_keys:
+            anchor_policy=record["anchor_policy"]
+            anchor_keys=_policy_keys(anchor_policy)
+            domains=anchor_policy.get("administrative_domains") if type(anchor_policy) is dict else None
+            if (not anchor_keys or type(domains) is not dict
+                or set(domains)!=set(anchor_policy.get("authorities",{}))
+                or any(type(domain) is not str or not domain for domain in domains.values())
+                or len(set(domains.values()))!=len(domains)):
                 return False
-            if any(anchor_keys & prior for prior in anchor_planes):
+            domain_set=set(domains.values())
+            if (recovery_domain_set & domain_set or anchor_domains_seen & domain_set
+                or any(anchor_keys & prior for prior in anchor_planes)):
                 return False
             if not verify_recovery_evidence(record["evidence"],record["authority_public_key_hex"],
                 record["anchor_policy"],record["anchor_sequence"],record["previous_anchor_pin"]):
@@ -53,7 +67,8 @@ def verify_transparent_recovery_quorum(payload,recovery_policy,authority_records
             latest=events[-1]
             if latest.get("policy_sha256")!=pd or latest.get("payload_sha256")!=md:
                 return False
-            seen.add(aid); anchor_planes.append(anchor_keys); valid+=1
+            seen.add(aid); anchor_planes.append(anchor_keys)
+            anchor_domains_seen.update(domain_set); valid+=1
         return valid>=recovery_policy["threshold"]
     except (ValueError,TypeError,KeyError,AttributeError,OverflowError):
         return False
