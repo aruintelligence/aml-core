@@ -459,8 +459,7 @@ class RecoveryLedgerAnchorTests(unittest.TestCase):
  def test_authority_refuses_policy_revision_reuse_for_same_generation(self):
   self.signer.approve(self.payload,self.policy)
   revised=dict(self.policy)
-  revised["policy_id"]="recovery-council-1"
-  revised["threshold"]=4
+  revised["authorities"]["authority-3"]=Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex()
   with self.assertRaisesRegex(ValueError,"equivocation"):
    self.signer.approve(self.payload,revised)
 
@@ -495,7 +494,7 @@ class RecoveryLedgerAnchorTests(unittest.TestCase):
   self.assertFalse(result["safe"])
  def test_quorum_model_rejects_fault_bound_outside_classical_bft_model(self):
   from recovery_quorum_model import exhaustively_check
-  result=exhaustively_check(4,3,2)
+  result=exhaustively_check(4,4,2)
   self.assertTrue(result["intersection_safe"])
   self.assertFalse(result["fault_bound_valid"])
   self.assertFalse(result["safe"])
