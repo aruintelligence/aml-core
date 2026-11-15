@@ -84,6 +84,9 @@ class AuthorizedExecutionConsumptionWitness:
                 return entry
         except sqlite3.IntegrityError as exc:
             raise PermissionError("operation already crossed full authorization execution boundary") from exc
+    def consume_authorized(self,request,capability,challenge,holder_proof,evaluator_authorization):
+        return self.consume_record(request,capability,challenge,holder_proof,evaluator_authorization)
+
     def head(self):
         with sqlite3.connect(self.path) as db:
             sequence,head=db.execute(
