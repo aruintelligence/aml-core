@@ -12,7 +12,8 @@ SCHEMA = "AML-SEF2-EFFECT-V1"
 
 def canonical(effect):
     if (type(effect) is not dict or set(effect) != {"operation_id", "kind", "target", "value"}
-        or type(effect["operation_id"]) is not str or not effect["operation_id"]
+        or type(effect["operation_id"]) is not str or not 1 <= len(effect["operation_id"]) <= 128
+        or not effect["operation_id"].isascii() or not effect["operation_id"].isprintable()
         or effect["kind"] != "fixture:write"
         or effect["target"] != "fixture:protected"
         or type(effect["value"]) is not int or not 0 <= effect["value"] <= 100):
