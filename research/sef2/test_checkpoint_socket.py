@@ -8,7 +8,9 @@ import unittest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from checkpoint_socket import CheckpointServer, fetch_checkpoint
-from pinned_checkpoint import verify_checkpoint
+from pinned_checkpoint import verify_checkpoint, PinnedCheckpoint
+from durable_checkpoint_highwater import DurableCheckpointHighWater
+from effect_authority import EffectAuthority
 
 @unittest.skipUnless(hasattr(socket, "SO_PEERCRED"), "Linux peer credentials required")
 class CheckpointSocketTests(unittest.TestCase):
@@ -29,6 +31,21 @@ class CheckpointSocketTests(unittest.TestCase):
     def test_authorized_client_receives_verifiable_checkpoint(self):
         envelope = fetch_checkpoint(self.path, "tenant-a")
         self.assertEqual(verify_checkpoint(envelope, self.public, "tenant-a"), (7, 3))
+
+    def test_socket_checkpoint_blocks_stale_effect_and_allows_updated_floor(self):
+        effect_path = os.path.join(self.tmp.name, "effects.sqlite")
+        marks_path = os.path.join(self.tmp.name, "marks.sqlite")
+        store = DurableCheckpointHighWater(marks_path)
+        verifier = PinnedCheckpoint(
+            lambda: fetch_checkpoint(self.path, "tenant-a"),
+            self.public, "tenant-a", durable_store=store, require_durable=True)
+        authority = EffectAuthority(effect_path, lambda *args: True, verifier)
+        effect = {"operation_id": "socket-op", "kind": "fixture:write",
+                  "target": "fixture:protected", "value": 7}
+        self.assertEqual(authority.commit(effect, 7), "DENIED")
+        self.assertTrue(authority.advance_policy_floor(7))
+        self.assertEqual(authority.commit(effect, 7), "APPLIED")
+        self.assertEqual(authority.commit(effect, 7), "ALREADY_APPLIED")
 
     def test_wrong_authority_request_fails_closed(self):
         with self.assertRaises((ValueError, OSError)):
