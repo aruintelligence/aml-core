@@ -161,7 +161,7 @@ def verify_consumption_receipt(receipt,public_hex,witness_id,request,capability,
             return False
         record=ExecutionConsumptionWitness._record(request,capability,challenge)
         entry=ExecutionConsumptionWitness._entry(p["sequence"],p["previous_hash"],record)
-        expected={"schema":EXECUTION_RECEIPT_SCHEMA,"witness_id":witness_id,**entry}
+        expected={**entry,"schema":EXECUTION_RECEIPT_SCHEMA,"witness_id":witness_id}
         if p!=expected:
             return False
         raw=bytes.fromhex(public_hex); sig=bytes.fromhex(receipt["signature"])
