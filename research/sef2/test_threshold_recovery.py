@@ -768,8 +768,10 @@ class QuorumRecoveryHeadAnchorTests(unittest.TestCase):
      return False
     return self.inner.compare_and_set(old,new)
   from threshold_recovery import QuorumRecoveryHeadAnchor
-  anchors=self.replicas[:3]+[FailOnce(self.replicas[3])]
+  anchors=[FailOnce(self.replicas[0]),FailOnce(self.replicas[1]),
+      self.replicas[2],self.replicas[3]]
   q=QuorumRecoveryHeadAnchor(anchors,3,1)
+  self.assertFalse(q.compare_and_set(self.old,self.new))
   self.assertTrue(q.compare_and_set(self.old,self.new))
   self.assertEqual(q.read_head(),self.new)
  def test_signer_uses_quorum_anchor_for_rollback_detection(self):
