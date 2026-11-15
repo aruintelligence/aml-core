@@ -2,6 +2,7 @@
 import json,os,socket,struct,sys
 from independent_filesystem_effect_executor import IndependentFilesystemEffectExecutor
 from session_epoch_anchor import RemoteSessionEpochAnchor
+from authorized_execution_consumption import AnchoredRemoteAuthorizedExecutionConsumptionWitness
 
 MAX_FRAME=262144
 def read_exact(conn,size):
@@ -19,10 +20,13 @@ def unique(pairs):
     return out
 def serve(sock_path,database,effect_dir,allowed_uid,allowed_gid,issuer,issuer_public_hex,
           audience,broker_id,broker_public_hex,evaluator_id,evaluator_public_hex,witness,
-          epoch_anchor_socket):
+          epoch_anchor_socket,execution_witness_socket,execution_witness_id,
+          execution_witness_public_hex,execution_anchor_socket):
     executor=IndependentFilesystemEffectExecutor(database,effect_dir,issuer,issuer_public_hex,
         audience,broker_id,broker_public_hex,evaluator_id,evaluator_public_hex,witness,
-        RemoteSessionEpochAnchor(epoch_anchor_socket))
+        RemoteSessionEpochAnchor(epoch_anchor_socket),None,
+        AnchoredRemoteAuthorizedExecutionConsumptionWitness(execution_witness_socket,
+            execution_witness_id,execution_witness_public_hex,execution_anchor_socket))
     try: os.unlink(sock_path)
     except FileNotFoundError: pass
     with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as server:
