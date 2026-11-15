@@ -35,7 +35,10 @@ def serve(sock_path,database,allowed_uid,allowed_gid):
                     if req.get("op")=="INITIALIZE" and set(req)=={"op","audience","epoch"}:
                         response={"status":"OK","epoch":anchor.initialize(req["audience"],req["epoch"])}
                     elif req.get("op")=="READ" and set(req)=={"op","audience"}:
-                        response={"status":"OK","epoch":anchor.read_epoch(req["audience"])}
+                        try:
+                            response={"status":"OK","epoch":anchor.read_epoch(req["audience"])}
+                        except ValueError:
+                            response={"status":"MISSING"}
                     elif req.get("op")=="CAS" and set(req)=={"op","audience","expected","new"}:
                         response={"status":"OK","accepted":anchor.compare_and_set(req["audience"],req["expected"],req["new"])}
                     else: raise ValueError("invalid operation")
