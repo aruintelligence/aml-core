@@ -332,3 +332,6 @@ This closes an important integration gap in the prototype: the independent ancho
 ### Directive 026 — full recovery verification benchmark
 
 `benchmark_recovery_evidence.py` measures the local cost and artifact size of the complete current-policy-bound verification path: authority ledger signatures and hash chain, authority checkpoint, authority anchor quorum, recovery-policy registry state, registry anchor quorum, and disjoint anchor trust-plane check. CI records median, p95, mean, min/max verification latency plus canonical bundle size and the exact runner environment. The benchmark is intentionally labeled as a single-host synthetic microbenchmark; it excludes network, HSM/TPM, remote witness, distributed storage, contention and operator latency.
+
+
+**Directive 025 auditor CLI:** `recovery_current_policy_reference_verifier.py` now runs as a standalone command-line verifier. It strictly parses the evidence and both anchor policies with duplicate-key rejection, accepts only explicitly supplied authority public key / anchor sequences / predecessor pins, and returns nonzero on any linkage, freshness or trust-plane failure. This gives an outside team a reproducible verification path without invoking the producer or signer implementations.
