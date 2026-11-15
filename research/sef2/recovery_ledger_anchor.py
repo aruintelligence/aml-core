@@ -85,7 +85,7 @@ def verify_ledger_checkpoint(database,authority_public_hex,expected_checkpoint,e
     except (OSError,sqlite3.Error,ValueError,TypeError,KeyError,InvalidSignature,OverflowError):
         return False
 
-EVENT_CHECKPOINT_SCHEMA="AML-SEF2-RECOVERY-AUTHORITY-EVENT-CHECKPOINT-V1"
+EVENT_CHECKPOINT_SCHEMA=CHECKPOINT_SCHEMA
 
 def event_chain_checkpoint(database,authority_id,authority_public_hex):
     """Return a deterministic event-chain head for one authority."""
