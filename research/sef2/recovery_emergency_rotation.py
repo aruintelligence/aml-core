@@ -26,6 +26,24 @@ def _require_disjoint(old_policy,new_policy):
     if new_policy["max_faults"]<old_policy["max_faults"]:
         raise ValueError("emergency rotation cannot reduce Byzantine fault bound")
 
+def _require_emergency_independence(current_policy,next_policy,emergency_policy):
+    guardian_keys={bytes.fromhex(v) for v in emergency_policy["authorities"].values()}
+    other_keys={bytes.fromhex(v) for p in (current_policy,next_policy) for v in p["authorities"].values()}
+    if guardian_keys & other_keys:
+        raise ValueError("emergency guardians must use keys disjoint from active and successor councils")
+    if "administrative_domains" not in emergency_policy:
+        raise ValueError("emergency guardian policy requires explicit administrative domains")
+    guardian_domains=set(emergency_policy["administrative_domains"].values())
+    other_domains=set()
+    for policy in (current_policy,next_policy):
+        if "administrative_domains" not in policy:
+            raise ValueError("recovery policies require explicit administrative domains")
+        other_domains.update(policy["administrative_domains"].values())
+    if guardian_domains & other_domains:
+        raise ValueError("emergency guardians must use disjoint administrative domains")
+    if emergency_policy["max_faults"]<current_policy["max_faults"]:
+        raise ValueError("emergency guardian council cannot reduce Byzantine fault bound")
+
 def make_emergency_rotation(current_policy,next_policy,emergency_policy,generation,
         current_registry_head,incident_sha256,reason,guardian_signers,incoming_signers):
     if not all(validate_policy(p) for p in (current_policy,next_policy,emergency_policy)):
@@ -41,6 +59,7 @@ def make_emergency_rotation(current_policy,next_policy,emergency_policy,generati
     if reason not in REASONS:
         raise ValueError("invalid emergency reason")
     _require_disjoint(current_policy,next_policy)
+    _require_emergency_independence(current_policy,next_policy,emergency_policy)
     if (type(guardian_signers) is not dict or type(incoming_signers) is not dict
         or any(not isinstance(s,RecoveryAuthoritySigner) for s in guardian_signers.values())
         or any(not isinstance(s,RecoveryAuthoritySigner) for s in incoming_signers.values())):
@@ -62,6 +81,7 @@ def verify_emergency_rotation(current_policy,next_policy,emergency_policy,rotati
         if not all(validate_policy(p) for p in (current_policy,next_policy,emergency_policy)):
             return False
         _require_disjoint(current_policy,next_policy)
+        _require_emergency_independence(current_policy,next_policy,emergency_policy)
         if type(rotation) is not dict or set(rotation)!={"schema","payload","guardian_approval","incoming_acceptance"}:
             return False
         p=rotation["payload"]
