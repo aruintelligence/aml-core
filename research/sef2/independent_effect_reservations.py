@@ -6,6 +6,7 @@ between reservation and effect commit may permanently strand an operation;
 this deliberately favors safety over availability. Not external effect proof.
 """
 import sqlite3
+from pathlib import Path
 
 class IndependentEffectReservations:
     def __init__(self, path, authority_id, require_existing=False):
@@ -15,6 +16,7 @@ class IndependentEffectReservations:
             raise TypeError("require_existing must be bool")
         self.path = str(path)
         self.authority_id = authority_id
+        self._existing_uri = Path(self.path).absolute().as_uri() + '?mode=rw'
         if require_existing:
             import os
             if not os.path.isfile(self.path):
@@ -41,7 +43,7 @@ class IndependentEffectReservations:
             or type(generation) is not int or generation < 0):
             return False
         try:
-            with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
+            with sqlite3.connect(self._existing_uri, uri=True, timeout=10, isolation_level=None) as db:
                 db.execute("PRAGMA synchronous=FULL")
                 db.execute("BEGIN IMMEDIATE")
                 db.execute("INSERT INTO reservations VALUES (?,?,?,?)",
@@ -60,7 +62,7 @@ class IndependentEffectReservations:
         if (type(operation_id) is not str or not 1 <= len(operation_id) <= 128
             or not operation_id.isascii() or not operation_id.isprintable()):
             raise ValueError("invalid operation identifier")
-        with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
+        with sqlite3.connect(self._existing_uri, uri=True, timeout=10, isolation_level=None) as db:
             db.execute("BEGIN")
             row = db.execute(
                 "SELECT digest,generation FROM reservations WHERE authority_id=? AND operation_id=?",
