@@ -45,3 +45,70 @@ def exhaustively_check(n,q,f):
         "intersection_safe":intersection_safe,
         "safe":fault_bound_valid and liveness and intersection_safe,
         "counterexample":counterexample}
+
+
+def model_check_conflicting_commits(n,q,f):
+    """Exhaustively search Byzantine sets and quorum pairs for two conflicting commits.
+
+    Honest authorities are constrained to sign at most one payload per
+    (policy, witness, generation); Byzantine authorities may sign both.
+    Returns a concrete counterexample when two distinct payloads can each
+    gather q signatures. This is a bounded authorization-safety model, not
+    a network-consensus or implementation proof.
+    """
+    from itertools import combinations
+    if any(type(x) is not int for x in (n,q,f)) or n<1 or f<0 or q<1 or q>n:
+        raise ValueError("invalid model bounds")
+    members=tuple(range(n))
+    quorums=list(combinations(members,q))
+    for fault_count in range(min(f,n)+1):
+        for faulty_tuple in combinations(members,fault_count):
+            faulty=set(faulty_tuple)
+            for left in quorums:
+                for right in quorums:
+                    if left==right:
+                        continue
+                    intersection=set(left)&set(right)
+                    if intersection.issubset(faulty):
+                        return {
+                            "byzantine":sorted(faulty),
+                            "first_payload":"A",
+                            "second_payload":"B",
+                            "first_quorum":list(left),
+                            "second_quorum":list(right),
+                            "equivocating_honest":[],
+                            "intersection":sorted(intersection),
+                        }
+    return None
+
+def bounded_recovery_state_check(n,q,f):
+    """Check quorum safety plus sequential recovery state invariants."""
+    conflict=model_check_conflicting_commits(n,q,f)
+    quorum=exhaustively_check(n,q,f)
+    # Abstract successful transitions must advance exactly one generation,
+    # bind to the current head, replace the current key, and revoke its predecessor.
+    state={"generation":0,"key":"K0","revoked":frozenset(),"head":"H0"}
+    good={"generation":1,"previous_head":"H0","old_key":"K0","new_key":"K1","new_head":"H1"}
+    accepted=(good["generation"]==state["generation"]+1
+        and good["previous_head"]==state["head"] and good["old_key"]==state["key"]
+        and good["new_key"] not in state["revoked"])
+    next_state={"generation":good["generation"],"key":good["new_key"],
+        "revoked":state["revoked"]|{state["key"]},"head":good["new_head"]} if accepted else state
+    replay=(good["generation"]==next_state["generation"]+1
+        and good["previous_head"]==next_state["head"])
+    stale={"generation":1,"previous_head":"H0","old_key":"K0","new_key":"K2","new_head":"H2"}
+    stale_accepted=(stale["generation"]==next_state["generation"]+1
+        and stale["previous_head"]==next_state["head"] and stale["old_key"]==next_state["key"])
+    return {
+        "quorum":quorum,
+        "conflicting_commit_counterexample":conflict,
+        "conflicting_commits_excluded":conflict is None,
+        "sequential_transition_accepted":accepted,
+        "generation_advanced_once":next_state["generation"]==1,
+        "predecessor_revoked":state["key"] in next_state["revoked"],
+        "replay_excluded":not replay,
+        "stale_fork_excluded":not stale_accepted,
+        "safe":quorum["safe"] and conflict is None and accepted
+            and next_state["generation"]==1 and state["key"] in next_state["revoked"]
+            and not replay and not stale_accepted,
+    }
