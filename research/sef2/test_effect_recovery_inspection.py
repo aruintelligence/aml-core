@@ -15,6 +15,7 @@ from test_durable_receipt_witness import DurableReceiptWitnessTests
 from test_witness_protocol import WitnessProtocolTests
 from test_witness_socket import WitnessSocketTests
 from test_committed_witness_bridge import CommittedWitnessBridgeTests
+from test_pinned_ledger_witness_bridge import PinnedLedgerWitnessBridgeTests
 
 def effect(op="op-1"):
     return {"operation_id": op, "kind": "fixture:write",
