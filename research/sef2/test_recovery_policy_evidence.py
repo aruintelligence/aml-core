@@ -8,7 +8,8 @@ from recovery_policy_evidence import export_policy_registry_history,verify_polic
 def keys(prefix): return {f"{prefix}-{i}":Ed25519PrivateKey.generate() for i in range(4)}
 def policy(member_keys,name):
  return {"schema":POLICY_SCHEMA,"policy_id":name,"threshold":3,"max_faults":1,
-  "authorities":{n:k.public_key().public_bytes_raw().hex() for n,k in member_keys.items()},\n  "administrative_domains":{n:name+"-domain-"+n for n in member_keys}}
+  "authorities":{n:k.public_key().public_bytes_raw().hex() for n,k in member_keys.items()},
+  "administrative_domains":{n:name+"-domain-"+n for n in member_keys}}
 
 class RecoveryPolicyHistoryEvidenceTests(unittest.TestCase):
  def setUp(self):
