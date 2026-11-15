@@ -52,6 +52,17 @@ class AtomicReceiptReservationTests(unittest.TestCase):
         head, entries = reopened.evidence()
         self.assertTrue(verify_reservation_chain(entries, head[1], head[0]))
 
+    def test_symlink_bootstrap_rejected_without_target_modification(self):
+        target = os.path.join(self.tmp.name, "target.sqlite")
+        with open(target, "wb") as out:
+            out.write(b"sentinel-not-a-database")
+        link = os.path.join(self.tmp.name, "link.sqlite")
+        os.symlink(target, link)
+        with self.assertRaises(ValueError):
+            AtomicReceiptReservations(link, "authority-a")
+        with open(target, "rb") as source:
+            self.assertEqual(source.read(), b"sentinel-not-a-database")
+
     def test_live_ledger_replacement_denies_reservations(self):
         os.unlink(self.path)
         fresh = AtomicReceiptReservations(self.path, "authority-a")
