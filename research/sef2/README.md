@@ -253,3 +253,6 @@ Added `recovery_anchor_reference_verifier.py`, a separate verifier for 3-of-4 (o
 
 
 **Recovery-ledger anchor integration experiment:** the anchor-quorum suite now checkpoints an actual recovery authority's signed approval event chain. Three independent anchor witnesses certify the sequence and head hash; restoring the authority ledger to a pre-checkpoint snapshot causes the independent event-chain verifier to reject the restored database against the externally retained pin, while the anchor certificate itself remains verifiable. This demonstrates detection relative to an already retained external quorum certificate; it does not prevent an attacker from suppressing the latest certificate or compromising the anchor quorum.
+
+
+**Directive 022 anchor-certificate assembly correction:** quorum collection now sorts candidate identities deterministically and stops immediately after reaching the configured threshold. A stale or unavailable extra witness can no longer invalidate an already complete certificate by being consulted unnecessarily. If fewer than the threshold can approve, construction fails closed. Regression tests cover a stale fourth witness after a valid 3-of-4 quorum, and the case where only two of four can vote. This is an availability improvement that preserves the certificate safety threshold; it does not weaken verification.
