@@ -70,6 +70,12 @@ class CheckpointSocketTests(unittest.TestCase):
             client.sendall(b"x" * 600 + bytes([10]))
             self.assertEqual(client.recv(4096), b"")
 
+    def test_idle_client_is_disconnected_after_timeout(self):
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.connect(self.path)
+            client.settimeout(5)
+            self.assertEqual(client.recv(128), b"")
+
     def test_unavailable_service_fails_closed(self):
         with self.assertRaises((ValueError, OSError)):
             fetch_checkpoint(os.path.join(self.tmp.name, "missing.sock"), "tenant-a")
