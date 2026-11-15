@@ -46,3 +46,31 @@ class ExecutionConsumptionWitness:
         if row is None: return None
         return {"operation_id":operation_id,"request_sha256":row[0],
             "capability_sha256":row[1],"challenge_sha256":row[2]}
+
+
+class RemoteExecutionConsumptionWitness:
+    """Unix-socket client for separately owned execution consumption state."""
+    def __init__(self,socket_path,timeout=3):
+        self.socket_path=str(socket_path); self.timeout=timeout
+    def consume(self,request,capability,challenge):
+        import json,socket,struct
+        body=json.dumps({"op":"CONSUME","request":request,"capability":capability,
+            "challenge":challenge},sort_keys=True,separators=(",",":")).encode()
+        if len(body)>131072: raise PermissionError("execution witness request too large")
+        with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as conn:
+            conn.settimeout(self.timeout); conn.connect(self.socket_path)
+            conn.sendall(struct.pack("!I",len(body))+body)
+            header=self._read(conn,4); size=struct.unpack("!I",header)[0]
+            if size>4096: raise PermissionError("execution witness response too large")
+            response=json.loads(self._read(conn,size))
+        if response!={"status":"CONSUMED"}:
+            raise PermissionError("independent execution witness denied operation")
+        return "CONSUMED"
+    @staticmethod
+    def _read(conn,size):
+        parts=[]
+        while size:
+            chunk=conn.recv(size)
+            if not chunk: raise PermissionError("execution witness connection ended")
+            parts.append(chunk); size-=len(chunk)
+        return b"".join(parts)
