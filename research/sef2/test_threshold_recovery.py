@@ -1006,7 +1006,7 @@ class RecoveryHeadAnchorReconciliationTests(unittest.TestCase):
   from threshold_recovery import reconcile_recovery_head_anchor
   self.signer.approve(self.payload,self.policy)
   with sqlite3.connect(self.path) as con:
-   con.execute("UPDATE recovery_approval_ledger_v4 SET signature=?",
-    ("00"*64,))
+   con.execute("UPDATE recovery_approval_ledger_v4 SET signature=?",("00"*64,))
+   con.execute("UPDATE recovery_approval_events SET signature=?",("00"*64,))
   with self.assertRaisesRegex(RuntimeError,"failed signature or chain"):
    reconcile_recovery_head_anchor("authority-0",self.key,self.path,self.anchor)
