@@ -6,7 +6,8 @@ from recovery_ledger_anchor import CHECKPOINT_SCHEMA
 
 def policy(keys,q=3,f=1):
  return {"schema":POLICY_SCHEMA,"policy_id":"independent-anchor-council-v1",
-  "threshold":q,"max_faults":f,"authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()}}
+  "threshold":q,"max_faults":f,"authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()},
+  "administrative_domains":{k:"operator-domain-"+k for k in keys}}
 
 class RecoveryAnchorQuorumTests(unittest.TestCase):
  def setUp(self):
@@ -180,3 +181,10 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
   path=str(pathlib.Path(self.temp.name)/"anchor-0.sqlite")
   with self.assertRaisesRegex(ValueError,"another anchor identity"):
    RecoveryAnchorWitness("anchor-0",Ed25519PrivateKey.generate(),path)
+
+ def test_policy_rejects_two_anchor_keys_in_one_administrative_domain(self):
+  p=copy.deepcopy(self.policy); p["administrative_domains"]["anchor-1"]=p["administrative_domains"]["anchor-0"]
+  self.assertFalse(validate_anchor_policy(p))
+ def test_policy_requires_complete_administrative_domain_map(self):
+  p=copy.deepcopy(self.policy); del p["administrative_domains"]["anchor-3"]
+  self.assertFalse(validate_anchor_policy(p))
