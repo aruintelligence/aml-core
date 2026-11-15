@@ -40,7 +40,8 @@ def main():
         anchors={f"anchor-{i}":Ed25519PrivateKey.generate() for i in range(4)}
         anchor_policy={"schema":ANCHOR_SCHEMA,"policy_id":"benchmark-anchor-v1",
             "threshold":3,"max_faults":1,
-            "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in anchors.items()}}
+            "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in anchors.items()},
+            "administrative_domains":{k:"benchmark-domain-"+k for k in anchors}}
         witnesses={k:RecoveryAnchorWitness(k,v,str(root/(k+".anchor.sqlite"))) for k,v in anchors.items()}
         target_key=Ed25519PrivateKey.generate().public_key().public_bytes_raw()
         target_fingerprint=hashlib.sha256(target_key).hexdigest()
