@@ -526,3 +526,8 @@ These administrative-domain labels are declarations, not proof of independent ow
 Added `recovery_policy_evidence.py` to export and independently verify the complete recovery-council policy registry history. The verifier reconstructs the policy chain from the genesis policy, validates every dual-consent rotation, recomputes every event hash, checks generation continuity, verifies the final policy and digest, and optionally enforces an externally retained registry-head pin. Tests reject truncated history, stale or wrong head pins, rotation-signature tampering, event-hash tampering, current-policy substitution, generation substitution, and broken predecessor links.
 
 This removes the need to trust a compact registry-state summary when auditing policy evolution. Rollback detection still requires an independently retained expected head or quorum anchor outside the registry's own rollback domain.
+
+
+### Directive 025 — standalone recovery council rotation evaluator
+
+Added `evaluation_kit/verify_recovery_policy_rotation.py`, which verifies a planned council succession from explicit JSON files, an out-of-band pin for the currently trusted recovery policy, and an expected rotation generation. It re-verifies the dual outgoing/incoming quorums, successor policy/key/domain separation, generation, and current policy digest, and fails nonzero on malformed or tampered evidence. This gives an external reviewer a reproducible path for planned trust-root succession without invoking the live recovery coordinator.
