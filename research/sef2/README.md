@@ -488,3 +488,10 @@ A reconciliation method verifies the complete local registry history, derives th
 
 
 **Directive 032 — anchor CAS input integrity:** memory, signed-remote and quorum head-anchor interfaces now validate both predecessor and successor as distinct lowercase 64-character SHA-256 digests before any state mutation or network call. Malformed and no-op transitions fail closed. This prevents a caller/configuration error from writing an unreadable anchor head and permanently stranding a quorum. Tests verify malformed input is rejected without transport invocation or replica mutation.
+
+
+### Directive 022 — independent recovery transparency proof
+
+`recovery_transparency.py` creates and verifies a self-contained recovery evidence bundle for an outside evaluator. Verification requires the exact predecessor-state digest, pinned recovery-policy digest, threshold-authorized recovery transition, each approving authority's signed anti-equivocation ledger, and an independently retained head pin for every approving authority. The evaluator re-verifies the threshold transition, approval signatures, authority ledger chains, pinned ledger heads, and the exact matching approval event for the witness identity/generation/parent state. Tests reject missing or extra ledgers, stale head pins, altered policy keys, changed predecessor state, transition tampering, ledger event tampering and approval signatures that are absent from the authority's retained log.
+
+This makes recovery evidence independently reproducible under explicit trust assumptions. It still does not prove real-world operator independence, secure distribution of policy/head pins, hardware-backed monotonicity, or the truth of administrative declarations. An attacker able to rewrite both an authority ledger and every external pin for that ledger remains outside this prototype's guarantee.
