@@ -74,3 +74,4 @@ jobs:
           sudo python3 research/sef2/test_holder_proof_service_process.py
           sudo python3 research/sef2/test_session_epoch_anchor_process.py
           sudo python3 research/sef2/test_execution_consumption_witness_process.py
+          sudo python3 research/sef2/test_remote_execution_rollback_process.py
