@@ -2,7 +2,7 @@
 import json,os,socket,struct,sys
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from execution_consumption_witness import ExecutionConsumptionWitness,make_consumption_receipt
+from execution_consumption_witness import ExecutionConsumptionWitness,make_consumption_receipt_from_entry
 MAX_FRAME=131072
 
 def read_exact(conn,size):
@@ -63,11 +63,12 @@ def serve(sock_path,database,allowed_uid,allowed_gid,witness_id=None,private_key
                     req=json.loads(read_exact(conn,size),object_pairs_hook=reject_duplicate_keys)
                     if type(req) is not dict or set(req)!={"op","request","capability","challenge"} or req["op"]!="CONSUME":
                         raise ValueError("invalid consume request")
-                    witness.consume(req["request"],req["capability"],req["challenge"])
                     if signed:
-                        receipt=make_consumption_receipt(key,witness_id,req["request"],req["capability"],req["challenge"])
+                        entry=witness.consume_record(req["request"],req["capability"],req["challenge"])
+                        receipt=make_consumption_receipt_from_entry(key,witness_id,entry)
                         response={"status":"CONSUMED","receipt":receipt}
                     else:
+                        witness.consume(req["request"],req["capability"],req["challenge"])
                         response={"status":"CONSUMED"}
                 except Exception:
                     response={"status":"DENIED"}
