@@ -1,0 +1,32 @@
+name: AML SEF2 Witness Real UID Isolation
+
+on:
+  push:
+    branches:
+      - operation-aml/directive-011-sef2-independent-authority-20261114
+  pull_request:
+    paths:
+      - 'research/sef2/durable_receipt_witness.py'
+      - 'research/sef2/witness_socket.py'
+      - 'research/sef2/witness_protocol.py'
+      - 'research/sef2/reservation_receipt_chain.py'
+      - 'research/sef2/test_witness_separate_uid.py'
+      - '.github/workflows/aml-sef2-witness-real-uid.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  witness-real-uid:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm Linux and isolated test UIDs
+        run: |
+          test "$(uname -s)" = Linux
+          ! getent passwd 65533
+          ! getent passwd 65534 || test "$(getent passwd 65534 | cut -d: -f1)" = nobody
+      - name: Execute actual peer-credential and file-permission isolation
+        run: sudo -n python3 research/sef2/test_witness_separate_uid.py -v
