@@ -210,3 +210,6 @@ This is an independent checkpoint quorum prototype, not a full Byzantine consens
 ### Directive 022 — dual-consent recovery council rotation
 
 `recovery_policy_rotation.py` requires both the outgoing recovery council and the proposed incoming council to approve the same exact policy-transition payload. The payload binds a monotonically expected generation, the currently pinned policy digest, and the successor policy digest. This prevents an incoming council from self-installing and prevents an outgoing council from unilaterally rotating to keys that have not demonstrated possession and acceptance. Verification requires the caller to supply the currently pinned policy and expected generation; durable storage of that generation and independent distribution of the new policy remain external requirements. Tests cover dual-quorum success, either quorum missing, policy substitution, generation rollback, payload tampering, signature tampering, and no-op rotations.
+
+
+**Migration verification refinement:** v3-to-v4 migration now verifies every legacy Ed25519 approval against the authority key fingerprint being bound to the ledger and rejects rows attributed to a different authority identity. Invalid or foreign-key-signed legacy evidence is preserved in the original database and causes initialization to fail closed; it is never silently imported under a new key.
