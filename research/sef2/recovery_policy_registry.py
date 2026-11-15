@@ -28,8 +28,9 @@ def _digest(value):
     return hashlib.sha256(canonical(value)).hexdigest()
 
 class RecoveryPolicyRegistry:
-    def __init__(self,database_path):
+    def __init__(self,database_path,head_anchor=None):
         self.database_path=str(database_path)
+        self.head_anchor=head_anchor
         flags=os.O_CREAT|os.O_EXCL|os.O_RDWR|getattr(os,"O_NOFOLLOW",0)
         try:
             fd=os.open(self.database_path,flags,0o600); os.close(fd)
@@ -108,22 +109,32 @@ class RecoveryPolicyRegistry:
         return {"generation":generation,"policy":current,
             "policy_sha256":current_digest,"head_sha256":head}
 
+    def _local_state(self):
+        uri="file:"+os.path.abspath(self.database_path)+"?mode=ro"
+        with sqlite3.connect(uri,uri=True,timeout=10) as con:
+            result=self._verified_state(con)
+        if result is None:
+            raise ValueError("recovery policy registry uninitialized")
+        return result
+
     def state(self):
         try:
-            uri="file:"+os.path.abspath(self.database_path)+"?mode=ro"
-            with sqlite3.connect(uri,uri=True,timeout=10) as con:
-                result=self._verified_state(con)
-            if result is None: raise ValueError("recovery policy registry uninitialized")
+            result=self._local_state()
+            if self.head_anchor is not None:
+                anchored=self.head_anchor.read_head()
+                if anchored!=result["head_sha256"]:
+                    raise ValueError("recovery policy registry differs from independent anchor")
             return result
-        except (sqlite3.Error,ValueError,TypeError,KeyError):
-            raise ValueError("corrupt or unavailable recovery policy registry state")
+        except (sqlite3.Error,ValueError,TypeError,KeyError,RuntimeError,OSError):
+            raise ValueError("corrupt, rolled-back, or unavailable recovery policy registry state")
 
     def verify_history(self):
         try:
-            uri="file:"+os.path.abspath(self.database_path)+"?mode=ro"
-            with sqlite3.connect(uri,uri=True,timeout=10) as con:
-                return self._verified_state(con) is not None
-        except (sqlite3.Error,ValueError,TypeError,KeyError,AttributeError):
+            result=self._local_state()
+            if self.head_anchor is not None and self.head_anchor.read_head()!=result["head_sha256"]:
+                return False
+            return True
+        except (sqlite3.Error,ValueError,TypeError,KeyError,AttributeError,RuntimeError,OSError):
             return False
 
     def rotate(self,next_policy,rotation):
@@ -136,6 +147,12 @@ class RecoveryPolicyRegistry:
                 except (ValueError,TypeError,KeyError,AttributeError):
                     return "CORRUPT_STATE"
                 if state is None: return "UNINITIALIZED"
+                if self.head_anchor is not None:
+                    try:
+                        if self.head_anchor.read_head()!=state["head_sha256"]:
+                            return "ANCHOR_MISMATCH"
+                    except (RuntimeError,OSError,ValueError):
+                        return "ANCHOR_UNAVAILABLE"
                 generation=state["generation"]+1
                 current=state["policy"]
                 if not verify_policy_rotation(current,next_policy,rotation,generation):
@@ -152,6 +169,35 @@ class RecoveryPolicyRegistry:
                 con.execute("""UPDATE recovery_policy_state SET generation=?,current_policy_json=?,
                     current_policy_sha256=?,head_sha256=? WHERE singleton=1""",
                     (generation,next_raw,policy_digest(next_policy),event_hash))
+            if self.head_anchor is not None:
+                try:
+                    if not self.head_anchor.compare_and_set(state["head_sha256"],event_hash):
+                        return "ANCHOR_UPDATE_FAILED"
+                except (RuntimeError,OSError,ValueError):
+                    return "ANCHOR_UPDATE_FAILED"
             return "ROTATED"
         except sqlite3.Error:
             return "STORE_OR_STATE_ERROR"
+
+
+    def reconcile_anchor(self,expected_predecessor=None):
+        if self.head_anchor is None:
+            raise ValueError("no independent recovery policy anchor configured")
+        result=self._local_state()
+        with sqlite3.connect(self.database_path,timeout=10) as con:
+            row=con.execute("""SELECT previous_event_sha256,event_sha256
+                FROM recovery_policy_events ORDER BY generation DESC LIMIT 1""").fetchone()
+        predecessor=row[0] if row else GENESIS
+        try:
+            anchored=self.head_anchor.read_head()
+        except (RuntimeError,OSError,ValueError):
+            if expected_predecessor is None:
+                raise RuntimeError("anchor unreadable; externally retained predecessor pin required")
+            anchored=expected_predecessor
+        if anchored==result["head_sha256"]:
+            return result["head_sha256"]
+        if anchored!=predecessor:
+            raise RuntimeError("EXPECTED_PREDECESSOR_MISMATCH")
+        if not self.head_anchor.compare_and_set(predecessor,result["head_sha256"]):
+            raise RuntimeError("recovery policy anchor reconciliation CAS failed")
+        return result["head_sha256"]
