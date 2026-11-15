@@ -11,7 +11,8 @@ class IndependentAnchorReferenceVerifierTests(unittest.TestCase):
   self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
   self.keys={f"anchor-{i}":Ed25519PrivateKey.generate() for i in range(4)}
   self.policy={"schema":POLICY_SCHEMA,"policy_id":"anchor-ref-v1","threshold":3,"max_faults":1,
-   "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in self.keys.items()}}
+   "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in self.keys.items()},
+   "administrative_domains":{k:"operator-domain-"+k for k in self.keys}}
   self.witnesses={k:RecoveryAnchorWitness(k,v,str(pathlib.Path(self.temp.name)/(k+".sqlite"))) for k,v in self.keys.items()}
   self.checkpoint={"schema":CHECKPOINT_SCHEMA,"authority_id":"recovery-authority-1",
    "authority_key_sha256":"a"*64,"sequence":8,"head_hash":"b"*64}
@@ -47,3 +48,7 @@ class IndependentAnchorReferenceVerifierTests(unittest.TestCase):
  def test_reference_json_parser_rejects_duplicate_keys(self):
   self.assertIsNone(verify_json_bundle('{"schema":"A","schema":"B"}'))
  def test_reference_json_parser_rejects_malformed_json(self): self.assertIsNone(verify_json_bundle("{"))
+
+ def test_reference_verifier_rejects_duplicate_administrative_domains(self):
+  p=copy.deepcopy(self.policy); p["administrative_domains"]["anchor-2"]=p["administrative_domains"]["anchor-0"]
+  self.assertFalse(self.verify(policy=p))
