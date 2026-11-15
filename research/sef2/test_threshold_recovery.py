@@ -479,3 +479,8 @@ class RecoveryLedgerAnchorTests(unittest.TestCase):
   self.assertTrue(result["intersection_safe"])
   self.assertFalse(result["fault_bound_valid"])
   self.assertFalse(result["safe"])
+
+ def test_ledger_cannot_be_reused_by_another_authority_identity(self):
+  other=Ed25519PrivateKey.generate()
+  with self.assertRaisesRegex(ValueError,"another authority identity"):
+   RecoveryAuthoritySigner("authority-1",other,self.ledger)
