@@ -13,6 +13,9 @@ def classify_recovery(effect_db_path, reservation_store, operation_id):
     ABSENT is informational only; it is NOT authorization to execute.
     """
     try:
+        if (type(operation_id) is not str or not 1 <= len(operation_id) <= 128
+            or not operation_id.isascii() or not operation_id.isprintable()):
+            return "UNKNOWN"
         reserved = reservation_store.inspect(operation_id)
         uri = Path(effect_db_path).absolute().as_uri() + "?mode=ro"
         with sqlite3.connect(uri, uri=True, timeout=5) as db:
