@@ -80,8 +80,10 @@ def main():
    assert bad.returncode==0,(bad.stdout,bad.stderr)
    reader=r'''import pathlib,sys
 for value in sys.argv[1:]:
- try: pathlib.Path(value).read_bytes()
-except PermissionError: continue
+ try:
+  pathlib.Path(value).read_bytes()
+ except PermissionError:
+  continue
  raise AssertionError("non-witness UID read execution witness private state")
 print("EXECUTION_WITNESS_PRIVATE_STATE")
 '''
