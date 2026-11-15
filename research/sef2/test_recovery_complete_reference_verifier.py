@@ -10,8 +10,7 @@ from recovery_complete_reference_verifier import verify_complete_recovery_author
 
 def recovery_policy(keys,name):
  return {"schema":POLICY_SCHEMA,"policy_id":name,"threshold":3,"max_faults":1,
-  "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()},
-  "administrative_domains":{k:"domain-"+k for k in keys}}
+  "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()},}
 def anchor_policy(keys,name):
  return {"schema":ANCHOR_SCHEMA,"policy_id":name,"threshold":3,"max_faults":1,
   "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()},
