@@ -42,6 +42,29 @@ class AnchoredLedgerInspectionTests(unittest.TestCase):
         self.assertEqual(inspect_anchored_ledger(self.witness, self.bridge), "BEHIND")
         self.assertFalse(anchored_ledger_is_current(self.witness, self.bridge))
 
+    def test_replacement_during_evidence_read_denied(self):
+        self.assertTrue(self.ledger.reserve("op-1", "a" * 64, 1))
+        self.assertTrue(self.bridge.advance(self.witness))
+        original_evidence = self.bridge.ledger.evidence
+        def swap_after_snapshot():
+            snapshot = original_evidence()
+            os.unlink(self.path)
+            AtomicReceiptReservations(self.path, "authority")
+            return snapshot
+        self.bridge.ledger.evidence = swap_after_snapshot
+        self.assertEqual(inspect_anchored_ledger(self.witness, self.bridge), "UNKNOWN")
+        self.assertFalse(anchored_ledger_is_current(self.witness, self.bridge))
+
+    def test_witness_changes_during_evidence_read_denied(self):
+        self.assertTrue(self.ledger.reserve("op-1", "a" * 64, 1))
+        original_evidence = self.bridge.ledger.evidence
+        def advance_witness_after_snapshot():
+            snapshot = original_evidence()
+            self.assertTrue(self.witness.observe(1, snapshot[0][1], 0, GENESIS, snapshot[1][0]))
+            return snapshot
+        self.bridge.ledger.evidence = advance_witness_after_snapshot
+        self.assertEqual(inspect_anchored_ledger(self.witness, self.bridge), "UNKNOWN")
+
     def test_replaced_ledger_is_unknown(self):
         os.unlink(self.path)
         AtomicReceiptReservations(self.path, "authority")
