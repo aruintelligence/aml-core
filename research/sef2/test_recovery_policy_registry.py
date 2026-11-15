@@ -90,3 +90,70 @@ class RecoveryPolicyRegistryTests(unittest.TestCase):
   self.assertEqual(self.registry.initialize(self.old),"ALREADY_INITIALIZED")
   with self.assertRaisesRegex(ValueError,"already initialized"):
    self.registry.initialize(self.new)
+
+
+class AnchoredRecoveryPolicyRegistryTests(unittest.TestCase):
+ def setUp(self):
+  from threshold_recovery import MemoryRecoveryHeadAnchor
+  self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+  self.path=str(pathlib.Path(self.temp.name)/"anchored-policy.sqlite")
+  self.anchor=MemoryRecoveryHeadAnchor("policy-anchor")
+  self.old_keys=keys("anchor-old"); self.new_keys=keys("anchor-new")
+  self.old=mkpolicy(self.old_keys,"anchored-v1"); self.new=mkpolicy(self.new_keys,"anchored-v2")
+  self.old_signers={k:RecoveryAuthoritySigner(k,v,str(pathlib.Path(self.temp.name)/(k+".sqlite"))) for k,v in self.old_keys.items()}
+  self.new_signers={k:RecoveryAuthoritySigner(k,v,str(pathlib.Path(self.temp.name)/(k+".sqlite"))) for k,v in self.new_keys.items()}
+  self.registry=RecoveryPolicyRegistry(self.path,self.anchor); self.registry.initialize(self.old)
+  self.rotation=make_policy_rotation(self.old,self.new,2,
+   {k:self.old_signers[k] for k in ("anchor-old-0","anchor-old-1","anchor-old-2")},
+   {k:self.new_signers[k] for k in ("anchor-new-0","anchor-new-1","anchor-new-2")})
+ def test_rotation_updates_independent_anchor(self):
+  self.assertEqual(self.registry.rotate(self.new,self.rotation),"ROTATED")
+  self.assertEqual(self.anchor.read_head(),self.registry.state()["head_sha256"])
+ def test_local_database_rollback_is_detected_against_anchor(self):
+  import shutil
+  snapshot=str(pathlib.Path(self.temp.name)/"before.sqlite"); shutil.copy2(self.path,snapshot)
+  self.assertEqual(self.registry.rotate(self.new,self.rotation),"ROTATED")
+  shutil.copy2(snapshot,self.path)
+  with self.assertRaisesRegex(ValueError,"rolled-back"):
+   self.registry.state()
+  self.assertFalse(self.registry.verify_history())
+ def test_anchor_update_failure_strands_local_commit_fail_closed(self):
+  class Refuse:
+   def __init__(inner): inner.anchor_id="refuse"; inner.head="0"*64
+   def read_head(inner): return inner.head
+   def compare_and_set(inner,old,new): return False
+  anchor=Refuse()
+  path=str(pathlib.Path(self.temp.name)/"refuse.sqlite")
+  registry=RecoveryPolicyRegistry(path,anchor); registry.initialize(self.old)
+  self.assertEqual(registry.rotate(self.new,self.rotation),"ANCHOR_UPDATE_FAILED")
+  with self.assertRaisesRegex(ValueError,"rolled-back"):
+   registry.state()
+ def test_reconcile_completes_committed_rotation_after_anchor_failure(self):
+  class FailOnce:
+   def __init__(inner): inner.anchor_id="once"; inner.head="0"*64; inner.fail=True
+   def read_head(inner): return inner.head
+   def compare_and_set(inner,old,new):
+    if inner.fail: inner.fail=False; return False
+    if inner.head!=old: return False
+    inner.head=new; return True
+  anchor=FailOnce()
+  path=str(pathlib.Path(self.temp.name)/"once.sqlite")
+  registry=RecoveryPolicyRegistry(path,anchor); registry.initialize(self.old)
+  self.assertEqual(registry.rotate(self.new,self.rotation),"ANCHOR_UPDATE_FAILED")
+  head=registry.reconcile_anchor()
+  self.assertEqual(anchor.read_head(),head)
+  self.assertEqual(registry.state()["head_sha256"],head)
+ def test_reconcile_refuses_anchor_on_unrelated_history(self):
+  self.assertTrue(self.anchor.compare_and_set("0"*64,"f"*64))
+  with self.assertRaisesRegex(RuntimeError,"EXPECTED_PREDECESSOR_MISMATCH"):
+   self.registry.reconcile_anchor()
+ def test_unavailable_anchor_blocks_rotation_before_mutation(self):
+  class Down:
+   anchor_id="down"
+   def read_head(self): raise OSError("offline")
+   def compare_and_set(self,*args): raise OSError("offline")
+  path=str(pathlib.Path(self.temp.name)/"down.sqlite")
+  registry=RecoveryPolicyRegistry(path,Down()); registry.initialize(self.old)
+  before=registry._local_state()
+  self.assertEqual(registry.rotate(self.new,self.rotation),"ANCHOR_UNAVAILABLE")
+  self.assertEqual(registry._local_state(),before)
