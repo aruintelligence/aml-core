@@ -221,10 +221,10 @@ class RecoveryAuthoritySigner:
         if self.head_anchor is not None:
             local_head=self._local_head()
             anchored=self.head_anchor.read_head()
-            if anchored is None:
+            if anchored is None or anchored=="0"*64:
                 if local_head!="0"*64:
                     raise RuntimeError("cannot initialize an independent anchor from a nonempty local ledger")
-                if not self.head_anchor.compare_and_set("0"*64,local_head):
+                if anchored is None and not self.head_anchor.compare_and_set("0"*64,local_head):
                     raise RuntimeError("recovery ledger anchor initialization raced; reopen and verify")
             elif anchored!=local_head:
                 raise RuntimeError("recovery ledger head differs from independent anchor; rollback or incomplete anchor update detected")
