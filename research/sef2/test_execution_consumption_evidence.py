@@ -19,7 +19,9 @@ class ExecutionConsumptionEvidenceTests(unittest.TestCase):
   self.pub=self.witness.public_key().public_bytes_raw().hex()
  def check(self,b=None,pub=None,witness_id="execution-witness-1"):
   return verify_bundle(self.bundle if b is None else b,pub or self.pub,witness_id)
- def test_exact_public_evidence_verifies(self): self.assertTrue(self.check())
+ def test_exact_public_evidence_verifies(self):
+  self.assertEqual(self.receipt["payload"]["schema"],"AML-SEF2-EXECUTION-CONSUMPTION-RECEIPT-V2")
+  self.assertTrue(self.check())
  def test_wrong_witness_key_rejected(self):
   self.assertFalse(self.check(pub=Ed25519PrivateKey.generate().public_key().public_bytes_raw().hex()))
  def test_wrong_witness_identity_rejected(self): self.assertFalse(self.check(witness_id="other"))
