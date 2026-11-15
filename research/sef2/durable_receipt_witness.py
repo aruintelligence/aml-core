@@ -79,6 +79,8 @@ class DurableReceiptWitness:
                         return False
                     if type(entry) not in (tuple, list) or len(entry) != 4:
                         return False
+                    if entry[0] != self.authority_id:
+                        return False
                     if reservation_chain_hash(previous_head, *entry) != head:
                         return False
                     db.execute("UPDATE witness_heads SET sequence=?,head=? WHERE authority_id=?",
