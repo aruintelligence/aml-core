@@ -454,3 +454,10 @@ session_revocation_model.py expresses the anchored session-revocation protocol a
 ### Directive 039 — broker-authenticated holder proof
 
 `broker_authenticated_holder.py` prevents the holder key from acting as a generic challenge-signing oracle. Before producing a holder proof, it verifies an Ed25519 execution challenge from the pinned broker instance and requires that challenge to bind the exact request digest, capability digest, audience, operation ID and policy epoch. Tests reject forged broker signatures, wrong broker keys/identity, request or capability substitution, epoch substitution and raw unauthenticated challenge strings. This narrows confused-deputy exposure at the holder boundary; the next deployment step is to require this mode inside the separate-UID holder service.
+
+
+### Directive 022 — independent recovery-authority evidence verifier
+
+Added `evaluation_kit/verify_recovery_authority.py`, a verifier that does not trust the recovery-authority process that produced its evidence. It validates the exported approval ledger's hash chain, Ed25519 signatures, optional externally retained head pin, and optional pinned threshold-recovery policy membership. The adversarial suite rejects wrong head pins, wrong public keys, policy key substitution, altered event payload digests, altered signatures, predecessor-chain tampering, truncated history under a retained head pin, unknown authority identities, and malformed policies.
+
+This creates a reproducible auditor path for one recovery authority's approval history. It still depends on an externally retained head pin for rollback/truncation detection and on the truth of the pinned policy. It does not prove that administrative domains are independent or that the head pin itself cannot be rolled back.
