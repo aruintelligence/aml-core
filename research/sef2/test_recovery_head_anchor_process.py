@@ -1,5 +1,5 @@
 """Real four-process recovery anchor quorum under distinct Linux UIDs."""
-import os,pathlib,pwd,shutil,subprocess,sys,tempfile,time
+import os,pathlib,pwd,shutil,sqlite3,subprocess,sys,tempfile,time
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from test_cross_uid_boundary import drop,HERE
 from threshold_recovery import SignedRecoveryHeadAnchor,QuorumRecoveryHeadAnchor
@@ -84,6 +84,26 @@ def main():
             assert denied.returncode==0,(denied.stdout,denied.stderr)
             assert "UNTRUSTED_RECOVERY_ANCHOR_CLIENT_DENIED" in denied.stdout
             print("RECOVERY_ANCHOR_PROCESS_QUORUM_OK: 3-of-4 signed separate-UID anchors")
+            # A pre-seeded SQLite trigger must not survive service startup.
+            poison_state=root/"poison-state"; poison_state.mkdir(mode=0o700)
+            os.chown(poison_state,accounts[0].pw_uid,accounts[0].pw_gid)
+            poison_db=poison_state/"anchor.sqlite"
+            with sqlite3.connect(poison_db) as db:
+                db.execute("CREATE TABLE anchor_state (singleton INTEGER PRIMARY KEY CHECK(singleton=1),head TEXT NOT NULL)")
+                db.execute("INSERT INTO anchor_state VALUES (1,?)",(zero,))
+                db.execute("""CREATE TRIGGER poison_head BEFORE UPDATE ON anchor_state
+                    BEGIN SELECT RAISE(ABORT,'poisoned anchor database'); END""")
+            os.chown(poison_db,accounts[0].pw_uid,accounts[0].pw_gid); poison_db.chmod(0o600)
+            poison_ipc=root/"poison-ipc"; poison_ipc.mkdir(mode=0o711)
+            os.chown(poison_ipc,accounts[0].pw_uid,accounts[0].pw_gid)
+            try:
+                start(accounts[0],"poisoned-anchor",poison_ipc/"anchor.sock",
+                    poison_state,lib,signer,env)
+            except AssertionError as exc:
+                assert "unexpected schema objects" in str(exc),str(exc)
+                print("RECOVERY_ANCHOR_SCHEMA_POISON_REJECTED: startup rejected pre-seeded SQLite trigger")
+            else:
+                raise AssertionError("recovery anchor accepted a poisoned database trigger")
         finally:
             for proc in procs:
                 if proc is not None and proc.poll() is None: stop(proc)
