@@ -388,6 +388,24 @@ class QuorumRecoveryHeadAnchor:
         self.threshold=threshold
         self.max_faults=max_faults
 
+    @classmethod
+    def from_policy(cls,policy,anchors):
+        """Construct a quorum only from the exact independently pinned membership."""
+        from recovery_anchor_quorum import validate_anchor_policy
+        if not validate_anchor_policy(policy):
+            raise ValueError("invalid pinned recovery anchor policy")
+        if type(anchors) is not dict or set(anchors)!=set(policy["authorities"]):
+            raise ValueError("anchor clients must exactly match pinned policy membership")
+        for identity,client in anchors.items():
+            if getattr(client,"anchor_id",None)!=identity:
+                raise ValueError("anchor client identity differs from pinned policy")
+            public_key=getattr(client,"public_key",None)
+            if public_key is None:
+                raise ValueError("pinned anchor clients must expose an Ed25519 public key")
+            if public_key.public_bytes_raw().hex()!=policy["authorities"][identity]:
+                raise ValueError("anchor client public key differs from pinned policy")
+        return cls([anchors[k] for k in sorted(anchors)],policy["threshold"],policy["max_faults"])
+
     def read_head(self):
         from collections import Counter
         observed=[]
