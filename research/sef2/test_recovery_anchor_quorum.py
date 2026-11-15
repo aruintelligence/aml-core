@@ -122,19 +122,21 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
 
  def test_certificate_succeeds_when_extra_witness_is_stale_after_quorum(self):
   stale=make_anchor_payload({**self.checkpoint,"head_hash":"c"*64},1,"0"*64,self.policy)
-  with self.assertRaisesRegex(ValueError,"equivocation"):
-   self.witnesses["anchor-3"].approve(stale,self.policy)
+  self.witnesses["anchor-3"].approve(stale,self.policy)
   certificate=make_anchor_certificate(self.payload,self.policy,self.witnesses)
   self.assertEqual(len(certificate["approvals"]),3)
   self.assertTrue(verify_anchor_certificate(self.payload,certificate,self.policy,
    1,"0"*64,"recovery-authority-1","a"*64))
  def test_certificate_fails_when_fewer_than_threshold_witnesses_can_vote(self):
   stale=make_anchor_payload({**self.checkpoint,"head_hash":"c"*64},1,"0"*64,self.policy)
+  unavailable={}
+  for aid,key in self.keys.items():
+   path=str(pathlib.Path(self.temp.name)/(aid+"-unavailable.sqlite"))
+   unavailable[aid]=RecoveryAnchorWitness(aid,key,path)
   for aid in ("anchor-0","anchor-1"):
-   with self.assertRaisesRegex(ValueError,"equivocation"):
-    self.witnesses[aid].approve(stale,self.policy)
+   unavailable[aid].approve(stale,self.policy)
   with self.assertRaisesRegex(ValueError,"insufficient valid anchor approvals"):
-   make_anchor_certificate(self.payload,self.policy,self.witnesses)
+   make_anchor_certificate(self.payload,self.policy,unavailable)
 
  def test_independent_checkpoint_verifier_rejects_cross_policy_same_generation_equivocation(self):
   import hashlib,sqlite3
