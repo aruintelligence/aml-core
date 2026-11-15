@@ -109,16 +109,34 @@ def valid_policy_checkpoint(checkpoint):
     from checkpoint_council import valid_checkpoint
     return valid_checkpoint(checkpoint)
 
+
+class MemoryRecoveryHeadAnchor:
+    """Thread-safe independent-anchor test double; not durable or production storage."""
+    def __init__(self,initial_head="0"*64):
+        import threading
+        self._head=initial_head
+        self._lock=threading.Lock()
+    def read_head(self):
+        with self._lock:
+            return self._head
+    def compare_and_set(self,expected_head,new_head):
+        with self._lock:
+            if self._head!=expected_head:
+                return False
+            self._head=new_head
+            return True
+
 class RecoveryAuthoritySigner:
     """Local durable anti-equivocation guard for one authority identity.
 
     This is not rollback-resistant. The ledger must be independently protected
     and anchored to prevent snapshot restoration from erasing prior approvals.
     """
-    def __init__(self,authority_id,private_key,ledger_path):
+    def __init__(self,authority_id,private_key,ledger_path,head_anchor=None):
         self.authority_id=authority_id
         self.private_key=private_key
         self.ledger_path=str(ledger_path)
+        self.head_anchor=head_anchor
         import os,stat,sqlite3
         flags=os.O_CREAT|os.O_EXCL|os.O_RDWR|getattr(os,"O_NOFOLLOW",0)
         try:
@@ -200,6 +218,20 @@ class RecoveryAuthoritySigner:
                              VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
                             (sequence,previous,policy_id,authority_id,witness_id,generation,pd,parent,digest,signature,event_hash))
                 con.commit()
+        if self.head_anchor is not None:
+            local_head=self._local_head()
+            anchored=self.head_anchor.read_head()
+            if anchored is None:
+                if not self.head_anchor.compare_and_set("0"*64,local_head):
+                    raise RuntimeError("recovery ledger anchor initialization raced; reopen and verify")
+            elif anchored!=local_head:
+                raise RuntimeError("recovery ledger head differs from independent anchor; rollback or incomplete anchor update detected")
+
+    def _local_head(self):
+        import sqlite3
+        with sqlite3.connect(self.ledger_path,timeout=10) as con:
+            row=con.execute("SELECT event_sha256 FROM recovery_approval_events ORDER BY sequence DESC LIMIT 1").fetchone()
+        return row[0] if row else "0"*64
 
     def public_key(self):
         return self.private_key.public_key()
@@ -222,6 +254,8 @@ class RecoveryAuthoritySigner:
         pd=policy_digest(policy)
         statement=DOMAIN+canonical({"policy_sha256":pd,"payload_sha256":digest})
         signature=self.private_key.sign(statement).hex()
+        if self.head_anchor is not None and self.head_anchor.read_head()!=self._local_head():
+            raise RuntimeError("recovery ledger differs from independent anchor; refusing to sign")
         with sqlite3.connect(self.ledger_path,timeout=10) as con:
             con.execute("PRAGMA synchronous=FULL")
             con.execute("BEGIN IMMEDIATE")
@@ -247,6 +281,9 @@ class RecoveryAuthoritySigner:
                  policy_sha256,previous_state_sha256,payload_sha256,signature,event_sha256)
                  VALUES (?,?,?,?,?,?,?,?,?,?)""",
                 (previous_event,scope[0],scope[1],scope[2],scope[3],pd,previous_state,digest,signature,event_hash))
+        if self.head_anchor is not None:
+            if not self.head_anchor.compare_and_set(previous_event,event_hash):
+                raise RuntimeError("approval committed locally but independent anchor update failed; ledger is fail-closed pending reconciliation")
         return signature
 
     def export_approval_ledger(self):
