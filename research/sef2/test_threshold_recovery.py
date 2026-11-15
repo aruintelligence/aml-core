@@ -914,7 +914,11 @@ class SignedRemoteQuorumIntegrationTests(unittest.TestCase):
     return {**body,"signature":inner.key.sign(self.cas_domain+self.canonical(body)).hex()}
   self.servers={k:Server(k,v) for k,v in self.keys.items()}
   self.clients={k:SignedRecoveryHeadAnchor(k,self.keys[k].public_key(),self.servers[k]) for k in self.keys}
-  self.quorum=QuorumRecoveryHeadAnchor(list(self.clients.values()),3,1)
+  self.anchor_policy={"schema":"AML-SEF2-RECOVERY-ANCHOR-POLICY-V1","policy_id":"remote-anchor-policy",
+   "threshold":3,"max_faults":1,"authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in self.keys.items()},
+   "administrative_domains":{k:"remote-domain-"+k for k in self.keys}}
+  from threshold_recovery import QuorumRecoveryHeadAnchor
+  self.quorum=QuorumRecoveryHeadAnchor.from_policy(self.anchor_policy,self.clients)
  def test_three_of_four_signed_remote_anchors_commit_and_read(self):
   self.assertTrue(self.quorum.compare_and_set("0"*64,"a"*64))
   self.assertEqual(self.quorum.read_head(),"a"*64)
@@ -944,3 +948,15 @@ class SignedRemoteQuorumIntegrationTests(unittest.TestCase):
   quorum=QuorumRecoveryHeadAnchor([self.clients[k] for k in ("remote-0","remote-1","remote-2")]+[Offline()],3,1)
   self.assertTrue(quorum.compare_and_set("0"*64,"c"*64))
   self.assertEqual(quorum.read_head(),"c"*64)
+
+ def test_from_policy_rejects_missing_anchor_client(self):
+  from threshold_recovery import QuorumRecoveryHeadAnchor
+  incomplete=dict(self.clients); incomplete.pop("remote-3")
+  with self.assertRaisesRegex(ValueError,"exactly match pinned policy"):
+   QuorumRecoveryHeadAnchor.from_policy(self.anchor_policy,incomplete)
+ def test_from_policy_rejects_key_not_matching_pinned_member(self):
+  from threshold_recovery import QuorumRecoveryHeadAnchor,SignedRecoveryHeadAnchor
+  wrong=dict(self.clients)
+  wrong["remote-0"]=SignedRecoveryHeadAnchor("remote-0",Ed25519PrivateKey.generate().public_key(),self.servers["remote-0"])
+  with self.assertRaisesRegex(ValueError,"public key differs"):
+   QuorumRecoveryHeadAnchor.from_policy(self.anchor_policy,wrong)
