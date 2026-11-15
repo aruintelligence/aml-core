@@ -101,3 +101,36 @@ class QuorumAnchoredRecoveryActivationTests(unittest.TestCase):
   self.assertTrue(self.anchors[3].compare_and_set("0"*64,"f"*64))
   self.assertEqual(self.activate(),"ANCHOR_UNAVAILABLE")
   self.assertEqual(self.registry._verified_state(__import__("sqlite3").connect(self.path))["generation"],1)
+
+class EmergencyRecoveryActivationCompatibilityTests(unittest.TestCase):
+ def setUp(self):
+  import hashlib
+  self.tmp=tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
+  self.old="a"*64; self.new="b"*64
+  self.rotation={"schema":"AML-SEF2-EMERGENCY-RECOVERY-ROTATION-V1",
+   "payload":{"schema":"AML-SEF2-EMERGENCY-RECOVERY-ROTATION-V1","generation":2,
+    "current_policy_sha256":self.old,"next_policy_sha256":self.new,
+    "previous_state_sha256":"0"*64,"witness_id":"emergency-recovery-policy",
+    "emergency_policy_sha256":"c"*64,"incident_sha256":"d"*64,"reason":"QUORUM_LOSS"}}
+  self.keys={f"verifier-{i}":Ed25519PrivateKey.generate() for i in range(4)}
+  self.pins={n:k.public_key().public_bytes_raw().hex() for n,k in self.keys.items()}
+  acks=[make_cutover_ack(self.keys[n],n,self.rotation,self.new,2)
+   for n in ("verifier-0","verifier-1","verifier-2")]
+  self.cert=build_cutover_certificate(self.rotation,self.new,2,acks)
+  self.manifest={"witnesses":{name:{**{d:name+"-"+d for d in DIMENSIONS},
+   "public_key_sha256":hashlib.sha256(bytes.fromhex(raw)).hexdigest()}
+   for name,raw in self.pins.items()}}
+  self.pin=independence_digest(self.manifest)
+  self.registry=RecoveryActivationRegistry(pathlib.Path(self.tmp.name)/"emergency-activation.sqlite")
+  self.registry.initialize(self.old,1)
+ def test_emergency_shaped_rotation_uses_same_activation_gate(self):
+  self.assertEqual(self.registry.activate(self.cert,self.rotation,self.new,2,
+   self.pins,3,1,self.manifest,self.pin),"ACTIVATED")
+  self.assertEqual(self.registry.state()["policy_sha256"],self.new)
+ def test_ambiguous_rotation_with_both_predecessor_fields_rejected(self):
+  rotation=copy.deepcopy(self.rotation); rotation["payload"]["previous_policy_sha256"]=self.old
+  acks=[make_cutover_ack(self.keys[n],n,rotation,self.new,2)
+   for n in ("verifier-0","verifier-1","verifier-2")]
+  cert=build_cutover_certificate(rotation,self.new,2,acks)
+  self.assertEqual(self.registry.activate(cert,rotation,self.new,2,
+   self.pins,3,1,self.manifest,self.pin),"ROTATION_STATE_MISMATCH")
