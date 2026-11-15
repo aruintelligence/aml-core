@@ -32,6 +32,7 @@ jobs:
         run: |
           python3 benchmark_recovery_authority.py --iterations 25
           python3 benchmark_recovery_evidence.py --iterations 25
+          python3 benchmark_recovery_cutover.py --iterations 25
       - name: Execute enterprise synthetic evaluation demo
         run: python3 research/sef2/evaluation_kit/demo.py
       - name: Produce and independently verify enterprise evaluation bundle
