@@ -872,3 +872,24 @@ class SignedRecoveryHeadAnchorTests(unittest.TestCase):
    def compare_and_set(self,*args): return True
   with self.assertRaisesRegex(ValueError,"stable anchor_id"):
    QuorumRecoveryHeadAnchor([Anonymous(),Anonymous(),Anonymous(),Anonymous()],3,1)
+
+ def test_noncanonical_read_signature_hex_rejected(self):
+  class WhitespaceSignature:
+   def read_head(inner,nonce):
+    response=self.server.read_head(nonce); response["signature"]=" "+response["signature"]
+    return response
+   def compare_and_set(inner,*args): return self.server.compare_and_set(*args)
+  from threshold_recovery import SignedRecoveryHeadAnchor
+  anchor=SignedRecoveryHeadAnchor("anchor-east",self.key.public_key(),WhitespaceSignature())
+  with self.assertRaisesRegex(RuntimeError,"signature encoding"):
+   anchor.read_head()
+ def test_noncanonical_cas_signature_hex_rejected(self):
+  class WhitespaceSignature:
+   def read_head(inner,nonce): return self.server.read_head(nonce)
+   def compare_and_set(inner,*args):
+    response=self.server.compare_and_set(*args); response["signature"]=" "+response["signature"]
+    return response
+  from threshold_recovery import SignedRecoveryHeadAnchor
+  anchor=SignedRecoveryHeadAnchor("anchor-east",self.key.public_key(),WhitespaceSignature())
+  with self.assertRaisesRegex(RuntimeError,"signature encoding"):
+   anchor.compare_and_set("0"*64,"e"*64)
