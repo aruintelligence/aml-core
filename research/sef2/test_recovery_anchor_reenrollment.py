@@ -47,3 +47,17 @@ class AnchorReenrollmentTests(unittest.TestCase):
   checkpoint={"schema":"AML-SEF2-RECOVERY-AUTHORITY-LEDGER-CHECKPOINT-V1","authority_id":"authority-x","authority_key_sha256":"c"*64,"sequence":1,"head_hash":"d"*64}
   self.witness.approve(make_anchor_payload(checkpoint,1,"0"*64,self.new),self.new)
   self.assertEqual(install_anchor_reenrollment(self.witness,self.old,self.new,self.rotation,self.proof,2,"a"*64,"authority-x",5,"b"*64),"STATE_CONFLICT")
+
+ def test_three_successor_witnesses_resume_quorum_at_next_sequence(self):
+  from recovery_anchor_quorum import make_anchor_certificate,verify_anchor_certificate
+  witnesses={}
+  for name in ("new-0","new-1","new-2"):
+   witness=RecoveryAnchorWitness(name,self.new_keys[name],str(Path(self.temp.name)/(name+".resume.sqlite")))
+   self.assertEqual(install_anchor_reenrollment(witness,self.old,self.new,self.rotation,self.proof,
+    2,"a"*64,"authority-x",5,"b"*64),"INSTALLED")
+   witnesses[name]=witness
+  checkpoint={"schema":"AML-SEF2-RECOVERY-AUTHORITY-LEDGER-CHECKPOINT-V1",
+   "authority_id":"authority-x","authority_key_sha256":"c"*64,"sequence":6,"head_hash":"e"*64}
+  payload=make_anchor_payload(checkpoint,6,"b"*64,self.new)
+  cert=make_anchor_certificate(payload,self.new,witnesses)
+  self.assertTrue(verify_anchor_certificate(payload,cert,self.new,6,"b"*64,"authority-x","c"*64))
