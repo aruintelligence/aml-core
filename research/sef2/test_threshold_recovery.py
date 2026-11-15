@@ -960,3 +960,53 @@ class SignedRemoteQuorumIntegrationTests(unittest.TestCase):
   wrong["remote-0"]=SignedRecoveryHeadAnchor("remote-0",Ed25519PrivateKey.generate().public_key(),self.servers["remote-0"])
   with self.assertRaisesRegex(ValueError,"public key differs"):
    QuorumRecoveryHeadAnchor.from_policy(self.anchor_policy,wrong)
+
+class RecoveryHeadAnchorReconciliationTests(unittest.TestCase):
+ def setUp(self):
+  import pathlib,tempfile
+  from threshold_recovery import MemoryRecoveryHeadAnchor,RecoveryAuthoritySigner
+  self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+  self.path=str(pathlib.Path(self.temp.name)/"recovery.sqlite")
+  self.key=Ed25519PrivateKey.generate()
+  self.keys={"authority-0":self.key,**{f"authority-{i}":Ed25519PrivateKey.generate() for i in range(1,4)}}
+  self.policy=make_policy(self.keys,3)
+  self.anchor=MemoryRecoveryHeadAnchor("recovery-anchor")
+  self.signer=RecoveryAuthoritySigner("authority-0",self.key,self.path)
+  self.payload={"witness_id":"north","generation":1,"previous_state_sha256":"a"*64}
+ def test_reconcile_completes_local_commit_when_anchor_cas_was_interrupted(self):
+  from threshold_recovery import reconcile_recovery_head_anchor
+  self.signer.approve(self.payload,self.policy)
+  self.assertEqual(self.anchor.read_head(),"0"*64)
+  head=reconcile_recovery_head_anchor("authority-0",self.key,self.path,self.anchor)
+  self.assertEqual(self.anchor.read_head(),head)
+  self.assertEqual(head,self.signer.export_approval_ledger()["head_sha256"])
+ def test_reconcile_is_idempotent_when_anchor_already_matches(self):
+  from threshold_recovery import reconcile_recovery_head_anchor
+  self.signer.approve(self.payload,self.policy)
+  head=self.signer.export_approval_ledger()["head_sha256"]
+  self.anchor.compare_and_set("0"*64,head)
+  self.assertEqual(reconcile_recovery_head_anchor("authority-0",self.key,self.path,self.anchor),head)
+ def test_reconcile_refuses_local_rollback_behind_external_anchor(self):
+  import pathlib,shutil
+  from threshold_recovery import reconcile_recovery_head_anchor
+  snapshot=str(pathlib.Path(self.temp.name)/"snapshot.sqlite")
+  self.signer.approve(self.payload,self.policy); shutil.copy2(self.path,snapshot)
+  first=self.signer.export_approval_ledger()["head_sha256"]
+  self.anchor.compare_and_set("0"*64,first)
+  second_payload={**self.payload,"generation":2,"previous_state_sha256":"b"*64}
+  self.signer.approve(second_payload,self.policy)
+  second=self.signer.export_approval_ledger()["head_sha256"]
+  self.anchor.compare_and_set(first,second)
+  shutil.copy2(snapshot,self.path)
+  with self.assertRaisesRegex(RuntimeError,"not a prefix"):
+   reconcile_recovery_head_anchor("authority-0",self.key,self.path,self.anchor)
+  self.assertEqual(self.anchor.read_head(),second)
+ def test_reconcile_refuses_tampered_local_signature(self):
+  import sqlite3
+  from threshold_recovery import reconcile_recovery_head_anchor
+  self.signer.approve(self.payload,self.policy)
+  with sqlite3.connect(self.path) as con:
+   con.execute("UPDATE recovery_approval_ledger_v4 SET signature=?",
+    ("00"*64,))
+  with self.assertRaisesRegex(RuntimeError,"failed signature or chain"):
+   reconcile_recovery_head_anchor("authority-0",self.key,self.path,self.anchor)
