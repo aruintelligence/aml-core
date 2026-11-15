@@ -69,6 +69,18 @@ class EffectAuthorityTests(unittest.TestCase):
         self.assertEqual(restarted.commit(effect(), 8), "DENIED")
         self.assertEqual(restarted.commit(effect(), 9), "APPLIED")
 
+    def test_strict_restart_refuses_absent_or_empty_database(self):
+        with self.assertRaises(ValueError):
+            EffectAuthority(self.path, lambda *args: True, require_existing=True)
+        with open(self.path, "wb"):
+            pass
+        with self.assertRaises(ValueError):
+            EffectAuthority(self.path, lambda *args: True, require_existing=True)
+        authority = EffectAuthority(self.path, lambda *args: True)
+        self.assertTrue(authority.advance_policy_floor(7))
+        restarted = EffectAuthority(self.path, lambda *args: True, require_existing=True)
+        self.assertEqual(restarted.commit(effect(), 6), "DENIED")
+
     def test_restart_refuses_deleted_policy_floor_row(self):
         authority = EffectAuthority(self.path, lambda *args: True)
         self.assertTrue(authority.advance_policy_floor(11))
