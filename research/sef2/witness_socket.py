@@ -1,0 +1,104 @@
+"""Linux SO_PEERCRED-protected witness service (synthetic SEF2 research).
+
+Run as a distinct UID from the authorized reservation authority. The Unix
+socket directory and witness database must be protected from that caller.
+No remote access or self-declared caller identity is accepted.
+"""
+import json
+import socket
+import socketserver
+import struct
+import threading
+
+from witness_protocol import validate_witness_advance
+
+MAX_REQUEST = 1024
+MAX_RESPONSE = 64
+
+def _unique_pairs(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON key")
+        result[key] = value
+    return result
+
+class WitnessHandler(socketserver.StreamRequestHandler):
+    def handle(self):
+        try:
+            self.request.settimeout(3)
+            raw = self.request.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12)
+            _, uid, _ = struct.unpack("3i", raw)
+            if uid != self.server.allowed_uid:
+                return
+            line = self.rfile.readline(MAX_REQUEST + 1)
+            if len(line) > MAX_REQUEST or not line.endswith(b"\n"):
+                return
+            request = json.loads(line, object_pairs_hook=_unique_pairs)
+            args = validate_witness_advance(request, self.server.store.authority_id)
+            if args is None:
+                accepted = False
+            else:
+                accepted = self.server.store.observe(*args) is True
+            self.wfile.write(json.dumps({"accepted": accepted}).encode() + b"\n")
+        except (OSError, ValueError, TypeError, OverflowError):
+            return
+
+class WitnessServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
+    daemon_threads = True
+    block_on_close = False
+    allow_reuse_address = False
+    request_queue_size = 16
+    MAX_ACTIVE = 32
+
+    def process_request(self, request, client_address):
+        if not self._slots.acquire(blocking=False):
+            self.shutdown_request(request)
+            return
+        try:
+            super().process_request(request, client_address)
+        except BaseException:
+            self._slots.release()
+            raise
+
+    def process_request_thread(self, request, client_address):
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self._slots.release()
+
+    def __init__(self, path, *, allowed_uid, store):
+        if not hasattr(socket, "SO_PEERCRED"):
+            raise RuntimeError("Linux SO_PEERCRED required")
+        if type(allowed_uid) is not int or allowed_uid < 0:
+            raise ValueError("invalid allowed UID")
+        if not callable(getattr(store, "observe", None)):
+            raise TypeError("witness store required")
+        self.allowed_uid = allowed_uid
+        self.store = store
+        self._slots = threading.BoundedSemaphore(self.MAX_ACTIVE)
+        super().__init__(str(path), WitnessHandler)
+
+def advance_via_socket(path, request, timeout=2):
+    """Fail closed on any transport, schema or acknowledgement failure."""
+    try:
+        encoded = json.dumps(request, separators=(",", ":"), allow_nan=False).encode() + b"\n"
+        if len(encoded) > MAX_REQUEST:
+            return False
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+            sock.settimeout(timeout)
+            sock.connect(str(path))
+            sock.sendall(encoded)
+            response = bytearray()
+            while len(response) <= MAX_RESPONSE:
+                chunk = sock.recv(1)
+                if not chunk:
+                    return False
+                response.extend(chunk)
+                if chunk == b"\n":
+                    obj = json.loads(response, object_pairs_hook=_unique_pairs)
+                    return (type(obj) is dict and set(obj) == {"accepted"}
+                            and obj["accepted"] is True)
+        return False
+    except (OSError, ValueError, TypeError, OverflowError):
+        return False
