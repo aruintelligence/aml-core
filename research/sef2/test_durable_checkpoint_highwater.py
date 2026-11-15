@@ -22,6 +22,30 @@ class DurableHighWaterTests(unittest.TestCase):
         return PinnedCheckpoint(lambda: envelope, self.public, authority_id,
                                 DurableCheckpointHighWater(self.path))
 
+    def test_enrolled_authority_rejects_missing_row_after_restart(self):
+        bootstrap = DurableCheckpointHighWater(self.path)
+        self.assertTrue(bootstrap.enroll("tenant-a", 3, 5))
+        protected = DurableCheckpointHighWater(
+            self.path, require_existing=True, require_enrolled=True)
+        self.assertEqual(protected.observe("tenant-a", 4, 6), 6)
+        with sqlite3.connect(self.path) as db:
+            db.execute("DELETE FROM checkpoint_marks WHERE authority_id=?", ("tenant-a",))
+        restarted = DurableCheckpointHighWater(
+            self.path, require_existing=True, require_enrolled=True)
+        with self.assertRaises(ValueError):
+            restarted.observe("tenant-a", 5, 7)
+
+    def test_duplicate_enrollment_is_rejected(self):
+        store = DurableCheckpointHighWater(self.path)
+        self.assertTrue(store.enroll("tenant-a", 0, 0))
+        with self.assertRaises(ValueError):
+            store.enroll("tenant-a", 0, 0)
+
+    def test_unenrolled_authority_denied(self):
+        store = DurableCheckpointHighWater(self.path, require_enrolled=True)
+        with self.assertRaises(ValueError):
+            store.observe("tenant-a", 1, 1)
+
     def test_protected_verifier_requires_durable_store(self):
         envelope = issue_checkpoint(self.key, "tenant-a", 5, 2)
         with self.assertRaises(ValueError):
