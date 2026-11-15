@@ -72,6 +72,8 @@ def make_anchor_payload(checkpoint,sequence,previous_pin_sha256,policy):
 class RecoveryAnchorWitness:
     """One independent anchor identity with a durable local monotonic vote ledger."""
     def __init__(self,anchor_id,private_key,database_path):
+        if type(anchor_id) is not str or not anchor_id:
+            raise ValueError("invalid anchor identity")
         self.anchor_id=anchor_id; self.private_key=private_key; self.database_path=str(database_path)
         flags=os.O_CREAT|os.O_EXCL|os.O_RDWR|getattr(os,"O_NOFOLLOW",0)
         try:
@@ -83,6 +85,18 @@ class RecoveryAnchorWitness:
         os.chmod(self.database_path,0o600,follow_symlinks=False)
         with sqlite3.connect(self.database_path,timeout=10) as con:
             con.execute("PRAGMA journal_mode=DELETE"); con.execute("PRAGMA synchronous=FULL")
+            con.execute("BEGIN IMMEDIATE")
+            con.execute("CREATE TABLE IF NOT EXISTS anchor_meta (key TEXT PRIMARY KEY,value TEXT NOT NULL)")
+            key_hash=hashlib.sha256(self.public_key().public_bytes_raw()).hexdigest()
+            old_id=con.execute("SELECT value FROM anchor_meta WHERE key='anchor_id'").fetchone()
+            old_key=con.execute("SELECT value FROM anchor_meta WHERE key='anchor_key_sha256'").fetchone()
+            if old_id is not None and (old_id[0]!=anchor_id or old_key is None or old_key[0]!=key_hash):
+                raise ValueError("anchor database is already bound to another anchor identity")
+            if old_id is None:
+                if old_key is not None:
+                    raise ValueError("incomplete anchor database identity binding")
+                con.execute("INSERT INTO anchor_meta VALUES ('anchor_id',?)",(anchor_id,))
+                con.execute("INSERT INTO anchor_meta VALUES ('anchor_key_sha256',?)",(key_hash,))
             con.execute("""CREATE TABLE IF NOT EXISTS anchor_state (
                 target_authority_id TEXT PRIMARY KEY, sequence INTEGER NOT NULL,
                 pin_sha256 TEXT NOT NULL, policy_id TEXT NOT NULL, policy_sha256 TEXT NOT NULL)""")
@@ -92,6 +106,7 @@ class RecoveryAnchorWitness:
                 previous_pin_sha256 TEXT NOT NULL, checkpoint_pin_sha256 TEXT NOT NULL,
                 payload_sha256 TEXT NOT NULL, signature TEXT NOT NULL,
                 PRIMARY KEY(target_authority_id,sequence))""")
+            con.commit()
     def public_key(self): return self.private_key.public_key()
     def approve(self,payload,policy):
         if not validate_anchor_policy(policy) or self.anchor_id not in policy["authorities"]:
