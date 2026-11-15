@@ -308,3 +308,8 @@ This closes an important integration gap in the prototype: the independent ancho
 
 
 **Directive 027 — strict remote anchor response encoding:** nonce-bound remote anchor reads and compare-and-set receipts now require exactly 128 lowercase hexadecimal characters for Ed25519 signatures before decoding. This rejects whitespace-tolerant or otherwise noncanonical signature representations at the protocol boundary. Regression tests cover both read and CAS responses. Signature verification still depends on the evaluator's out-of-band pinned anchor public key and the remote service's durable linearizable CAS implementation.
+
+
+### Directive 024 — deterministic recovery evidence packaging
+
+`recovery_evidence_bundle.py` produces one canonical JSON artifact containing the authority ledger, authority checkpoint, anchor payload and anchor quorum certificate, but only after the independent verifier accepts the full linkage. The bundle SHA-256 is deterministic for transport/inventory and the writer uses create-only file semantics so an existing evidence file is not silently overwritten. Tests verify deterministic output, transport round-trip, refusal to package truncated evidence, and independent verification of the produced artifact. The producer does not replace independent verification; auditors should verify the bundle with the reference verifier and their own out-of-band authority key, anchor policy and predecessor pin.
