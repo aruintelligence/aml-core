@@ -7,7 +7,7 @@ receipt-anchor services make the effect single-use across executor DB rollback.
 import json,os,socket,struct,sys
 from independent_effect_executor import IndependentEffectExecutor
 from session_epoch_anchor import RemoteSessionEpochAnchor
-from execution_receipt_anchor import AnchoredRemoteExecutionConsumptionWitness
+from authorized_execution_consumption import AnchoredRemoteAuthorizedExecutionConsumptionWitness
 
 MAX_FRAME=262144
 
@@ -37,7 +37,7 @@ def serve(sock_path,database,allowed_uid,allowed_gid,issuer,issuer_public_hex,au
     if any(v is not None for v in supplied):
         if not all(v is not None for v in supplied):
             raise ValueError("execution witness configuration must be complete")
-        execution_witness=AnchoredRemoteExecutionConsumptionWitness(
+        execution_witness=AnchoredRemoteAuthorizedExecutionConsumptionWitness(
             execution_witness_socket,execution_witness_id,
             execution_witness_public_hex,execution_anchor_socket)
     executor=IndependentEffectExecutor(database,issuer,issuer_public_hex,audience,
