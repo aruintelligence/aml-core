@@ -5,7 +5,8 @@ from recovery_policy_rotation import make_policy_rotation,verify_policy_rotation
 
 def policy(keys,policy_id):
  return {"schema":POLICY_SCHEMA,"policy_id":policy_id,"threshold":3,"max_faults":1,
-   "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()}}
+   "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()},
+   "administrative_domains":{k:policy_id+"-domain-"+k for k in keys}}
 
 class RecoveryPolicyRotationTests(unittest.TestCase):
  def setUp(self):
@@ -89,3 +90,21 @@ class RecoveryPolicyRotationTests(unittest.TestCase):
   successor=policy(self.new,"council-v1")
   with self.assertRaisesRegex(ValueError,"new policy identifier"):
    make_policy_rotation(self.current,successor,3,{}, {})
+
+ def test_successor_council_must_change_administrative_domains(self):
+  successor=copy.deepcopy(self.next)
+  successor["administrative_domains"]["new-0"]=self.current["administrative_domains"]["old-0"]
+  with self.assertRaisesRegex(ValueError,"disjoint administrative domains"):
+   make_policy_rotation(self.current,successor,3,
+    {k:self.old_signers[k] for k in ("old-0","old-1","old-2")},
+    {k:self.new_signers[k] for k in ("new-0","new-1","new-2")})
+ def test_verifier_rejects_shared_administrative_domain(self):
+  successor=copy.deepcopy(self.next)
+  successor["administrative_domains"]["new-0"]=self.current["administrative_domains"]["old-0"]
+  self.assertFalse(verify_policy_rotation(self.current,successor,self.bundle,2))
+ def test_planned_rotation_cannot_reduce_byzantine_fault_bound(self):
+  weak=copy.deepcopy(self.next); weak["max_faults"]=0; weak["threshold"]=3
+  with self.assertRaisesRegex(ValueError,"reduce Byzantine fault bound"):
+   make_policy_rotation(self.current,weak,3,
+    {k:self.old_signers[k] for k in ("old-0","old-1","old-2")},
+    {k:self.new_signers[k] for k in ("new-0","new-1","new-2")})
