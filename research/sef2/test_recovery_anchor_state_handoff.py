@@ -93,3 +93,27 @@ class RecoveryAnchorStateHandoffTests(unittest.TestCase):
   with self.assertRaisesRegex(ValueError,"invalid anchor state handoff"):
    bootstrap_successor_anchor(witness,self.old,self.new,self.rotation,
     self.handoff,2,"a"*64,("authority-a",))
+
+ def test_bootstrap_rejects_preseeded_sqlite_trigger(self):
+  import sqlite3
+  witness=RecoveryAnchorWitness("new-0",self.new_keys["new-0"],
+    pathlib.Path(self.tmp.name)/"trigger-poisoned.sqlite")
+  with sqlite3.connect(witness.database_path) as con:
+   con.execute("""CREATE TRIGGER poison_anchor_state BEFORE INSERT ON anchor_state
+    BEGIN SELECT RAISE(ABORT,'poisoned successor database'); END""")
+  with self.assertRaisesRegex(ValueError,"unexpected schema objects"):
+   bootstrap_successor_anchor(witness,self.old,self.new,self.rotation,
+    self.handoff,2,"a"*64,self.targets)
+  with sqlite3.connect(witness.database_path) as con:
+   self.assertEqual(con.execute("SELECT COUNT(*) FROM anchor_state").fetchone()[0],0)
+ def test_bootstrap_rejects_unexpected_preseeded_table(self):
+  import sqlite3
+  witness=RecoveryAnchorWitness("new-0",self.new_keys["new-0"],
+    pathlib.Path(self.tmp.name)/"extra-table.sqlite")
+  with sqlite3.connect(witness.database_path) as con:
+   con.execute("CREATE TABLE attacker_controlled_state (value TEXT)")
+  with self.assertRaisesRegex(ValueError,"unexpected schema objects"):
+   bootstrap_successor_anchor(witness,self.old,self.new,self.rotation,
+    self.handoff,2,"a"*64,self.targets)
+  with sqlite3.connect(witness.database_path) as con:
+   self.assertEqual(con.execute("SELECT COUNT(*) FROM anchor_state").fetchone()[0],0)
