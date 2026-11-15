@@ -52,6 +52,16 @@ class AtomicReceiptReservationTests(unittest.TestCase):
         head, entries = reopened.evidence()
         self.assertTrue(verify_reservation_chain(entries, head[1], head[0]))
 
+    def test_evidence_uses_read_only_database_connection(self):
+        self.assertTrue(self.store.reserve("op-1", "a" * 64, 1))
+        # A read-only SQLite URI must reject writes even when the OS user
+        # could otherwise write to the underlying file.
+        with sqlite3.connect(self.store.read_uri, uri=True) as db:
+            with self.assertRaises(sqlite3.OperationalError):
+                db.execute("DELETE FROM receipt_reservations")
+        head, entries = self.store.evidence()
+        self.assertTrue(verify_reservation_chain(entries, head[1], head[0]))
+
     def test_symlink_bootstrap_rejected_without_target_modification(self):
         target = os.path.join(self.tmp.name, "target.sqlite")
         with open(target, "wb") as out:
