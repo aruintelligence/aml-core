@@ -4,6 +4,15 @@ Run under an independently controlled UID with a separately protected signing
 key and database. This service does not itself prove independent administration.
 """
 import json
+
+def _unique_pairs(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError('duplicate JSON field')
+        result[key] = value
+    return result
+
 import os
 import socket
 import socketserver
@@ -23,7 +32,7 @@ class CheckpointHandler(socketserver.StreamRequestHandler):
             line = self.rfile.readline(MAX_REQUEST + 1)
             if not line.endswith(b"\n") or len(line) > MAX_REQUEST:
                 return
-            req = json.loads(line)
+            req = json.loads(line, object_pairs_hook=_unique_pairs)
             if type(req) is not dict or set(req) != {"authority_id"}:
                 return
             if req["authority_id"] != self.server.authority_id:
@@ -68,5 +77,5 @@ def fetch_checkpoint(path, authority_id, timeout=2):
                 break
             response.extend(chunk)
             if chunk == b"\n":
-                return json.loads(response)
+                return json.loads(response, object_pairs_hook=_unique_pairs)
         raise ValueError("missing or oversized checkpoint response")
