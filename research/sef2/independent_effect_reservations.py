@@ -6,6 +6,8 @@ between reservation and effect commit may permanently strand an operation;
 this deliberately favors safety over availability. Not external effect proof.
 """
 import sqlite3
+import os
+import stat
 from pathlib import Path
 
 class IndependentEffectReservations:
@@ -40,9 +42,8 @@ class IndependentEffectReservations:
         self._identity = self._file_identity()
 
     def _file_identity(self):
-        import os
         info = os.stat(self.path, follow_symlinks=False)
-        if not os.path.isfile(self.path) or os.path.islink(self.path):
+        if not stat.S_ISREG(info.st_mode):
             raise ValueError("reservation database is not a regular file")
         return info.st_dev, info.st_ino
 
