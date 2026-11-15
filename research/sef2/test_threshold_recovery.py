@@ -720,3 +720,66 @@ class IndependentlyAnchoredRecoveryLedgerTests(unittest.TestCase):
   unanchored.approve(self.payload,self.policy)
   with self.assertRaisesRegex(RuntimeError,"cannot initialize"):
    RecoveryAuthoritySigner("authority-0",self.key,self.path,head_anchor=MemoryRecoveryHeadAnchor())
+
+class QuorumRecoveryHeadAnchorTests(unittest.TestCase):
+ def setUp(self):
+  from threshold_recovery import MemoryRecoveryHeadAnchor,QuorumRecoveryHeadAnchor
+  self.replicas=[MemoryRecoveryHeadAnchor() for _ in range(4)]
+  self.quorum=QuorumRecoveryHeadAnchor(self.replicas,3,1)
+  self.old="0"*64; self.new="a"*64
+ def test_three_of_four_anchors_accept_head_transition(self):
+  self.assertTrue(self.quorum.compare_and_set(self.old,self.new))
+  self.assertEqual(self.quorum.read_head(),self.new)
+ def test_one_unavailable_anchor_does_not_prevent_quorum(self):
+  class Down:
+   def read_head(self): raise OSError("offline")
+   def compare_and_set(self,*args): raise OSError("offline")
+  from threshold_recovery import QuorumRecoveryHeadAnchor
+  q=QuorumRecoveryHeadAnchor(self.replicas[:3]+[Down()],3,1)
+  self.assertTrue(q.compare_and_set(self.old,self.new))
+  self.assertEqual(q.read_head(),self.new)
+ def test_conflicting_head_without_quorum_fails_closed(self):
+  for replica,head in zip(self.replicas,("a"*64,"b"*64,"c"*64,"d"*64)):
+   replica.compare_and_set(self.old,head)
+  with self.assertRaisesRegex(RuntimeError,"no unique quorum"):
+   self.quorum.read_head()
+ def test_invalid_quorum_bounds_are_rejected(self):
+  from threshold_recovery import QuorumRecoveryHeadAnchor
+  with self.assertRaises(ValueError): QuorumRecoveryHeadAnchor(self.replicas,2,1)
+  with self.assertRaises(ValueError): QuorumRecoveryHeadAnchor(self.replicas,4,1)
+ def test_concurrent_conflicting_head_updates_cannot_both_reach_quorum(self):
+  import concurrent.futures,threading
+  barrier=threading.Barrier(2)
+  candidates=["a"*64,"b"*64]
+  def update(candidate):
+   barrier.wait()
+   return self.quorum.compare_and_set(self.old,candidate)
+  with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+   results=list(pool.map(update,candidates))
+  self.assertEqual(sum(results),1)
+  self.assertIn(self.quorum.read_head(),candidates)
+ def test_partial_anchor_update_can_be_completed_idempotently(self):
+  class FailOnce:
+   def __init__(self,inner): self.inner=inner; self.fail=True
+   def read_head(self): return self.inner.read_head()
+   def compare_and_set(self,old,new):
+    if self.fail:
+     self.fail=False
+     return False
+    return self.inner.compare_and_set(old,new)
+  from threshold_recovery import QuorumRecoveryHeadAnchor
+  anchors=self.replicas[:3]+[FailOnce(self.replicas[3])]
+  q=QuorumRecoveryHeadAnchor(anchors,3,1)
+  self.assertTrue(q.compare_and_set(self.old,self.new))
+  self.assertEqual(q.read_head(),self.new)
+ def test_signer_uses_quorum_anchor_for_rollback_detection(self):
+  import pathlib,tempfile,shutil
+  from threshold_recovery import RecoveryAuthoritySigner
+  with tempfile.TemporaryDirectory() as directory:
+   key=Ed25519PrivateKey.generate()
+   keys={"authority-0":key,**{f"authority-{i}":Ed25519PrivateKey.generate() for i in range(1,4)}}
+   policy=make_policy(keys,3); path=str(pathlib.Path(directory)/"ledger.sqlite")
+   signer=RecoveryAuthoritySigner("authority-0",key,path,head_anchor=self.quorum)
+   payload={"witness_id":"north","generation":1,"previous_state_sha256":"a"*64}
+   signer.approve(payload,policy)
+   self.assertEqual(self.quorum.read_head(),signer.export_approval_ledger()["head_sha256"])
