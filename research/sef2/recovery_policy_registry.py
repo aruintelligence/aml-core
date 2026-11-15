@@ -57,9 +57,14 @@ class RecoveryPolicyRegistry:
         raw=canonical(policy).decode("utf-8"); digest=policy_digest(policy)
         with sqlite3.connect(self.database_path,timeout=10) as con:
             con.execute("PRAGMA synchronous=FULL"); con.execute("BEGIN IMMEDIATE")
-            row=con.execute("SELECT current_policy_sha256 FROM recovery_policy_state WHERE singleton=1").fetchone()
+            row=con.execute("SELECT 1 FROM recovery_policy_state WHERE singleton=1").fetchone()
             if row:
-                if row[0]==digest: return "ALREADY_INITIALIZED"
+                try:
+                    existing=self._verified_state(con)
+                except (ValueError,TypeError,KeyError,AttributeError):
+                    raise ValueError("corrupt recovery policy registry cannot be reinitialized")
+                if existing is not None and existing["policy_sha256"]==digest:
+                    return "ALREADY_INITIALIZED"
                 raise ValueError("recovery policy registry already initialized")
             con.execute("""INSERT INTO recovery_policy_state VALUES (1,?,?,?,?,?,?,?)""",
                 (STATE_SCHEMA,1,raw,digest,raw,digest,GENESIS))
