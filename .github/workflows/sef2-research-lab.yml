@@ -50,3 +50,4 @@ jobs:
           sudo python3 research/sef2/test_cross_uid_boundary.py
           sudo python3 research/sef2/test_full_broker_cross_uid.py
           sudo python3 research/sef2/test_signer_witness_process.py
+          sudo python3 research/sef2/test_reservation_cross_uid.py
