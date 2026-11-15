@@ -43,4 +43,7 @@ class PinnedLedgerWitnessBridge:
             return False
         if witness.authority_id != self.authority_id:
             return False
-        # Reject path swaps that occur while evidence is being read. This is\n        # not a substitute for an OS-enforced directory and descriptor boundary.\n        result = advance_from_committed_evidence(witness, self.ledger)\n        return result and self.source_is_current()
+        # Recheck path identity after the evidence read.
+        # This is not a race-free descriptor-based filesystem boundary.
+        result = advance_from_committed_evidence(witness, self.ledger)
+        return bool(result and self.source_is_current())
