@@ -74,7 +74,11 @@ class IndependentEffectExecutor:
                 if self.epoch_anchor.read_epoch(self.audience)!=epoch:
                     return "DENIED"
                 if self.execution_witness is not None:
-                    self.execution_witness.consume(request,capability,raw_challenge)
+                    if hasattr(self.execution_witness,"consume_authorized"):
+                        self.execution_witness.consume_authorized(request,capability,raw_challenge,
+                            holder_proof,evaluator_authorization)
+                    else:
+                        self.execution_witness.consume(request,capability,raw_challenge)
                 db.execute("INSERT INTO independent_effects VALUES (?,?,?,?)",
                     (request["operation_id"],request_hash,evidence_hash,epoch))
             return "APPLIED"
