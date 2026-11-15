@@ -29,21 +29,24 @@ def _hash(value):
     return type(value) is str and len(value)==64 and all(c in "0123456789abcdef" for c in value)
 
 def _policy_ok(policy):
-    if type(policy) is not dict or set(policy)!={"schema","policy_id","threshold","max_faults","authorities"}:
+    if type(policy) is not dict or set(policy)!={"schema","policy_id","threshold","max_faults","authorities","administrative_domains"}:
         return False
     if policy["schema"]!=POLICY_SCHEMA or type(policy["policy_id"]) is not str or not policy["policy_id"]:
         return False
-    members=policy["authorities"]; q=policy["threshold"]; f=policy["max_faults"]
-    if type(members) is not dict or type(q) is not int or type(f) is not int: return False
+    members=policy["authorities"]; q=policy["threshold"]; f=policy["max_faults"]; domains=policy["administrative_domains"]
+    if (type(members) is not dict or type(q) is not int or type(f) is not int
+        or type(domains) is not dict or set(domains)!=set(members)): return False
     n=len(members)
     if f<0 or n<3*f+1 or q<1 or q>n-f or 2*q-n<=f: return False
-    keys=set()
+    keys=set(); seen_domains=set()
     for name,encoded in members.items():
         if type(name) is not str or not name or type(encoded) is not str: return False
         try: raw=bytes.fromhex(encoded)
         except ValueError: return False
+        domain=domains[name]
+        if type(domain) is not str or not domain or domain in seen_domains: return False
         if len(raw)!=32 or raw in keys: return False
-        keys.add(raw)
+        keys.add(raw); seen_domains.add(domain)
     return True
 
 def verify_anchor_certificate(payload,certificate,policy,expected_sequence,
