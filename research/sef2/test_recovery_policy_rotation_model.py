@@ -42,3 +42,6 @@ class RecoveryPolicyRotationModelTests(unittest.TestCase):
    for new in new_sets:
     expected=len(old)>=3 and len(new)>=3
     self.assertEqual(dual_consent_commit_allowed(old,new,4,3),expected)
+
+ def test_boolean_authority_identifiers_are_not_integer_aliases(self):
+  self.assertFalse(dual_consent_commit_allowed({True,1,2},{4,5,6},4,3))
