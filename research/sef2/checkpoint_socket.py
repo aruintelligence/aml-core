@@ -16,6 +16,7 @@ def _unique_pairs(pairs):
 import os
 import socket
 import socketserver
+import threading
 import struct
 from pinned_checkpoint import issue_checkpoint
 
@@ -49,6 +50,24 @@ class CheckpointServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServe
     daemon_threads = True
     block_on_close = False
     allow_reuse_address = False
+    request_queue_size = 16
+    MAX_ACTIVE = 32
+
+    def process_request(self, request, client_address):
+        if not self._slots.acquire(blocking=False):
+            self.shutdown_request(request)
+            return
+        try:
+            super().process_request(request, client_address)
+        except BaseException:
+            self._slots.release()
+            raise
+
+    def process_request_thread(self, request, client_address):
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self._slots.release()
 
     def __init__(self, path, *, allowed_uid, authority_id, signing_key, read_state):
         if not hasattr(socket, "SO_PEERCRED"):
@@ -63,6 +82,7 @@ class CheckpointServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServe
         self.authority_id = authority_id
         self.signing_key = signing_key
         self.read_state = read_state
+        self._slots = threading.BoundedSemaphore(self.MAX_ACTIVE)
         super().__init__(str(path), CheckpointHandler)
 
 def fetch_checkpoint(path, authority_id, timeout=2):
