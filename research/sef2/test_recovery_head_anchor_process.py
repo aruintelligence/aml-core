@@ -43,13 +43,24 @@ def main():
                 anchors.append(SignedRecoveryHeadAnchor(f"anchor-{i}",key,UnixRecoveryHeadAnchorTransport(sock)))
             quorum=QuorumRecoveryHeadAnchor(anchors,3,1)
             zero="0"*64; first="a"*64; second="b"*64
-            assert quorum.read_head()==zero
-            assert quorum.compare_and_set(zero,first)
-            assert quorum.read_head()==first
+            # The anchor services intentionally accept only the signer UID.
+            # Exercise the client as that principal rather than root; root is
+            # reserved for provisioning and lifecycle management in this harness.
+            os.setegid(signer.pw_gid); os.seteuid(signer.pw_uid)
+            try:
+                assert quorum.read_head()==zero
+                assert quorum.compare_and_set(zero,first)
+                assert quorum.read_head()==first
+            finally:
+                os.seteuid(0); os.setegid(0)
             stop(procs[3]); procs[3]=None
-            assert quorum.compare_and_set(first,second)
-            assert quorum.read_head()==second
-            assert anchors[0].read_head()==second and anchors[1].read_head()==second and anchors[2].read_head()==second
+            os.setegid(signer.pw_gid); os.seteuid(signer.pw_uid)
+            try:
+                assert quorum.compare_and_set(first,second)
+                assert quorum.read_head()==second
+                assert anchors[0].read_head()==second and anchors[1].read_head()==second and anchors[2].read_head()==second
+            finally:
+                os.seteuid(0); os.setegid(0)
             # Restart the fourth process from its durable stale state. Its response
             # is correctly signed but must remain a minority and cannot roll back the quorum.
             stale_state=root/"state-3"; stale_sock=(root/"ipc-3")/"anchor.sock"
@@ -57,9 +68,13 @@ def main():
             procs[3]=proc
             stale_key=Ed25519PublicKey.from_public_bytes(bytes.fromhex(public.read_text().strip()))
             anchors[3]=SignedRecoveryHeadAnchor("anchor-3",stale_key,UnixRecoveryHeadAnchorTransport(stale_sock))
-            assert anchors[3].read_head()==first
             restarted_quorum=QuorumRecoveryHeadAnchor(anchors,3,1)
-            assert restarted_quorum.read_head()==second
+            os.setegid(signer.pw_gid); os.seteuid(signer.pw_uid)
+            try:
+                assert anchors[3].read_head()==first
+                assert restarted_quorum.read_head()==second
+            finally:
+                os.seteuid(0); os.setegid(0)
             print("RECOVERY_ANCHOR_STALE_MINORITY_REJECTED: signed stale restart could not roll back quorum")
             # Untrusted client UID cannot use the signer-group socket.
             sock=pathlib.Path(anchors[0].transport.socket_path)
