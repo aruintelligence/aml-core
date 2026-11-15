@@ -29,6 +29,12 @@ class ReservationSocketTests(unittest.TestCase):
         self.server.allowed_uid = os.getuid() + 10000
         self.assertFalse(reserve_via_socket(self.path, "op-1", "a" * 64, 2))
 
+    def test_idle_client_has_bounded_socket_timeout(self):
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.connect(self.path)
+            client.settimeout(5)
+            self.assertEqual(client.recv(128), b"")
+
     def test_unavailable_service_denies(self):
         self.assertFalse(reserve_via_socket(self.path + ".missing", "op-1", "a" * 64, 2))
 
