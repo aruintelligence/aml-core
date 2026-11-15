@@ -106,13 +106,16 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
   signer.approve({"witness_id":"north","generation":2,"previous_state_sha256":"c"*64,"new_key":"d"*64},authority_policy)
   checkpoint=event_chain_checkpoint(ledger,"recovery-0",authority_keys["recovery-0"].public_key().public_bytes_raw().hex())
   pin=checkpoint_pin(checkpoint)
-  payload=make_anchor_payload(checkpoint,1,"0"*64,self.policy)
-  certificate=make_anchor_certificate(payload,self.policy,
-   {k:self.witnesses[k] for k in ("anchor-0","anchor-1","anchor-2")})
-  self.assertTrue(verify_anchor_certificate(payload,certificate,self.policy,1,"0"*64,
+  anchor_keys={f"ledger-anchor-{i}":Ed25519PrivateKey.generate() for i in range(4)}
+  anchor_policy=policy(anchor_keys)
+  anchor_witnesses={k:RecoveryAnchorWitness(k,v,str(pathlib.Path(self.temp.name)/(k+".sqlite"))) for k,v in anchor_keys.items()}
+  payload=make_anchor_payload(checkpoint,1,"0"*64,anchor_policy)
+  certificate=make_anchor_certificate(payload,anchor_policy,
+   {k:anchor_witnesses[k] for k in ("ledger-anchor-0","ledger-anchor-1","ledger-anchor-2")})
+  self.assertTrue(verify_anchor_certificate(payload,certificate,anchor_policy,1,"0"*64,
    "recovery-0",checkpoint["authority_key_sha256"]))
   self.assertTrue(verify_event_chain(ledger,authority_keys["recovery-0"].public_key().public_bytes_raw().hex(),checkpoint,pin))
   shutil.copy2(snapshot,ledger)
   self.assertFalse(verify_event_chain(ledger,authority_keys["recovery-0"].public_key().public_bytes_raw().hex(),checkpoint,pin))
-  self.assertTrue(verify_anchor_certificate(payload,certificate,self.policy,1,"0"*64,
+  self.assertTrue(verify_anchor_certificate(payload,certificate,anchor_policy,1,"0"*64,
    "recovery-0",checkpoint["authority_key_sha256"]))
