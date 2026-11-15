@@ -11,8 +11,7 @@ from recovery_policy_registry_anchor import (make_registry_anchor_payload,
 def policy(keys,name,schema=POLICY_SCHEMA):
  result={"schema":schema,"policy_id":name,"threshold":3,"max_faults":1,
   "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()}}
- if schema==ANCHOR_POLICY_SCHEMA:
-  result["administrative_domains"]={k:"operator-domain-"+k for k in keys}
+ result["administrative_domains"]={k:"operator-domain-"+name+"-"+k for k in keys}
  return result
 def keyset(prefix): return {f"{prefix}-{i}":Ed25519PrivateKey.generate() for i in range(4)}
 
