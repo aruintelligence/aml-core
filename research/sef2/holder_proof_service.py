@@ -49,8 +49,12 @@ def load_or_create_key(path,public_path):
     return key
 
 class HolderProofState:
-    def __init__(self,database,key):
+    def __init__(self,database,key,broker_public_hex=None,broker_id=None,audience=None):
         self.database=str(database); self.key=key
+        self.broker_public_hex=broker_public_hex; self.broker_id=broker_id; self.audience=audience
+        configured=[broker_public_hex is not None,broker_id is not None,audience is not None]
+        if any(configured) and not all(configured):
+            raise ValueError("authenticated broker challenge configuration must be complete")
         with sqlite3.connect(self.database) as db:
             db.execute("PRAGMA synchronous=FULL")
             db.execute("""CREATE TABLE IF NOT EXISTS enrolled_sessions (
@@ -81,6 +85,22 @@ class HolderProofState:
             db.execute("INSERT INTO enrolled_sessions VALUES (?,?,?)",(operation,cap_hash,request_hash))
         return "REGISTERED"
     def prove(self,capability,request,challenge):
+        if self.broker_public_hex is not None:
+            raise PermissionError("raw challenges disabled when broker authentication is configured")
+        return self._prove_exact(capability,request,challenge)
+
+    def prove_authenticated(self,capability,request,challenge_envelope):
+        if self.broker_public_hex is None:
+            raise PermissionError("broker authentication is not configured")
+        from authenticated_execution_challenge import verify_execution_challenge
+        p=challenge_envelope.get("payload") if type(challenge_envelope) is dict else None
+        epoch=p.get("policy_epoch") if type(p) is dict else None
+        if not verify_execution_challenge(challenge_envelope,self.broker_public_hex,
+            self.broker_id,self.audience,request,capability,epoch):
+            raise PermissionError("authenticated broker challenge invalid")
+        return self._prove_exact(capability,request,p["challenge"])
+
+    def _prove_exact(self,capability,request,challenge):
         operation=request.get("operation_id") if type(request) is dict else None
         if type(operation) is not str or type(challenge) is not str:
             raise PermissionError("invalid proof request")
@@ -101,8 +121,10 @@ class HolderProofState:
                 (challenge,operation,json.dumps(proof,sort_keys=True,separators=(",",":"))))
             return proof
 
-def serve(sock_path,database,key_path,public_path,allowed_uid,allowed_gid):
-    key=load_or_create_key(key_path,public_path); state=HolderProofState(database,key)
+def serve(sock_path,database,key_path,public_path,allowed_uid,allowed_gid,
+          broker_id=None,broker_public_hex=None,audience=None):
+    key=load_or_create_key(key_path,public_path)
+    state=HolderProofState(database,key,broker_public_hex,broker_id,audience)
     try: os.unlink(sock_path)
     except FileNotFoundError: pass
     with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as server:
@@ -118,13 +140,14 @@ def serve(sock_path,database,key_path,public_path,allowed_uid,allowed_gid):
                     size=struct.unpack("!I",read_exact(conn,4))[0]
                     if size<2 or size>MAX_FRAME: raise ValueError("invalid frame size")
                     req=json.loads(read_exact(conn,size),object_pairs_hook=reject_duplicate_keys)
-                    if type(req) is not dict or set(req) not in (
-                        {"op","capability","request"},{"op","capability","request","challenge"}):
+                    if type(req) is not dict:
                         raise ValueError("invalid request schema")
-                    if req["op"]=="REGISTER" and set(req)=={"op","capability","request"}:
+                    if req.get("op")=="REGISTER" and set(req)=={"op","capability","request"}:
                         result={"status":state.register(req["capability"],req["request"])}
-                    elif req["op"]=="PROVE" and set(req)=={"op","capability","request","challenge"}:
+                    elif req.get("op")=="PROVE" and set(req)=={"op","capability","request","challenge"}:
                         result={"status":"PROVED","proof":state.prove(req["capability"],req["request"],req["challenge"])}
+                    elif req.get("op")=="PROVE_AUTH" and set(req)=={"op","capability","request","challenge_envelope"}:
+                        result={"status":"PROVED","proof":state.prove_authenticated(req["capability"],req["request"],req["challenge_envelope"])}
                     else: raise ValueError("unsupported operation")
                 except Exception:
                     result={"status":"DENIED"}
@@ -132,4 +155,6 @@ def serve(sock_path,database,key_path,public_path,allowed_uid,allowed_gid):
                 conn.sendall(struct.pack("!I",len(body))+body)
 
 if __name__=="__main__":
-    serve(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],int(sys.argv[5]),int(sys.argv[6]))
+    extra=sys.argv[7:10]
+    serve(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],int(sys.argv[5]),int(sys.argv[6]),
+          *(extra if extra else (None,None,None)))
