@@ -7,7 +7,8 @@ from recovery_policy_registry import RecoveryPolicyRegistry
 
 def mkpolicy(keys,name):
  return {"schema":POLICY_SCHEMA,"policy_id":name,"threshold":3,"max_faults":1,
-  "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()}}
+  "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()},
+  "administrative_domains":{k:name+"-domain-"+k for k in keys}}
 def keys(prefix): return {f"{prefix}-{i}":Ed25519PrivateKey.generate() for i in range(4)}
 def unsafe_rotation(old,new,g,old_keys,new_keys):
  # Deliberately models a fully equivocating outgoing council to test that the
