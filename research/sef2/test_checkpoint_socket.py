@@ -39,6 +39,13 @@ class CheckpointSocketTests(unittest.TestCase):
         with self.assertRaises((ValueError, OSError)):
             fetch_checkpoint(self.path, "tenant-a")
 
+    def test_duplicate_authority_fields_are_rejected(self):
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.settimeout(2)
+            client.connect(self.path)
+            client.sendall(b'{"authority_id":"tenant-a","authority_id":"tenant-a"}' + bytes([10]))
+            self.assertEqual(client.recv(4096), b"")
+
     def test_oversized_request_is_rejected(self):
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
             client.settimeout(2)
