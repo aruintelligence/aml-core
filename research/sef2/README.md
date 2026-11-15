@@ -205,3 +205,8 @@ This is an independent checkpoint quorum prototype, not a full Byzantine consens
 
 
 **Authority-ledger identity binding:** each local approval-ledger database now pins exactly one authority identifier and the SHA-256 fingerprint of its Ed25519 public key. Reusing the same SQLite file under a different authority identity is rejected, which also makes the event sequence's per-ledger ordering assumptions explicit. A test verifies cross-identity reuse is rejected. This local metadata is not itself a hardware-protected trust anchor; the externally retained signed checkpoint remains necessary to detect whole-file rollback or replacement.
+
+
+### Directive 022 — dual-consent recovery council rotation
+
+`recovery_policy_rotation.py` requires both the outgoing recovery council and the proposed incoming council to approve the same exact policy-transition payload. The payload binds a monotonically expected generation, the currently pinned policy digest, and the successor policy digest. This prevents an incoming council from self-installing and prevents an outgoing council from unilaterally rotating to keys that have not demonstrated possession and acceptance. Verification requires the caller to supply the currently pinned policy and expected generation; durable storage of that generation and independent distribution of the new policy remain external requirements. Tests cover dual-quorum success, either quorum missing, policy substitution, generation rollback, payload tampering, signature tampering, and no-op rotations.
