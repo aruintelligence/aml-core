@@ -106,7 +106,7 @@ def main():
   root=pathlib.Path(tmp); root.chmod(0o755)
   private=root/"broker-private"; private.mkdir(mode=0o700); os.chown(private,broker.pw_uid,broker.pw_gid)
   client_dir=root/"client-private"; client_dir.mkdir(mode=0o700); os.chown(client_dir,client.pw_uid,client.pw_gid)
-  holder_private=client_dir/"holder.pem"; shared_dir=root/"shared"; shared_dir.mkdir(mode=0o755)
+  holder_private=client_dir/"holder.pem"; shared_dir=root/"shared"; shared_dir.mkdir(mode=0o770); os.chown(shared_dir,0,shared.gr_gid); shared_dir.chmod(0o770)
   holder_public=shared_dir/"holder.json"; config=shared_dir/"config.json"
   lib=root/"lib"; lib.mkdir(mode=0o755)
   for name in ("filesystem_effect_broker","session_capability_broker","session_broker_socket",
@@ -115,10 +115,10 @@ def main():
    dest=lib/(name+".py"); shutil.copyfile(HERE/(name+".py"),dest); dest.chmod(0o644)
   env=dict(os.environ,PYTHONPATH=str(lib))
   result=subprocess.run([sys.executable,"-c",HOLDER,str(holder_private),str(holder_public)],
-   preexec_fn=drop(client.pw_uid,client.pw_gid),env=env,capture_output=True,text=True,timeout=10)
+   preexec_fn=drop(client.pw_uid,client.pw_gid,(shared.gr_gid,)),env=env,capture_output=True,text=True,timeout=10)
   assert result.returncode==0,(result.stdout,result.stderr)
   result=subprocess.run([sys.executable,"-c",AUTHORITY,str(holder_public),str(config)],
-   preexec_fn=drop(signer.pw_uid,signer.pw_gid),env=env,capture_output=True,text=True,timeout=10)
+   preexec_fn=drop(signer.pw_uid,signer.pw_gid,(shared.gr_gid,)),env=env,capture_output=True,text=True,timeout=10)
   assert result.returncode==0,(result.stdout,result.stderr)
   ipc=root/"ipc"; ipc.mkdir(mode=0o711); os.chown(ipc,broker.pw_uid,broker.pw_gid)
   sock=ipc/"effect.sock"
