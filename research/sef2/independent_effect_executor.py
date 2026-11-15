@@ -20,7 +20,7 @@ from execution_gate_receipt import verify_evaluator_authorization
 
 class IndependentEffectExecutor:
     def __init__(self,path,issuer,issuer_public_hex,audience,broker_id,broker_public_hex,
-                 evaluator_id,evaluator_public_hex,witness,epoch_anchor):
+                 evaluator_id,evaluator_public_hex,witness,epoch_anchor,execution_witness=None):
         for value,name in ((issuer,"issuer"),(audience,"audience"),(broker_id,"broker_id"),
                            (evaluator_id,"evaluator_id"),(witness,"witness")):
             if type(value) is not str or not value:
@@ -32,6 +32,7 @@ class IndependentEffectExecutor:
         self.audience=audience; self.broker_id=broker_id; self.broker_public_hex=broker_public_hex
         self.evaluator_id=evaluator_id; self.evaluator_public_hex=evaluator_public_hex
         self.witness=witness; self.epoch_anchor=epoch_anchor
+        self.execution_witness=execution_witness
         with sqlite3.connect(self.path) as db:
             db.execute("PRAGMA journal_mode=DELETE"); db.execute("PRAGMA synchronous=FULL")
             db.execute("""CREATE TABLE IF NOT EXISTS independent_effects (
@@ -72,6 +73,8 @@ class IndependentEffectExecutor:
                 # advanced between verification and the transaction, fail closed.
                 if self.epoch_anchor.read_epoch(self.audience)!=epoch:
                     return "DENIED"
+                if self.execution_witness is not None:
+                    self.execution_witness.consume(request,capability,raw_challenge)
                 db.execute("INSERT INTO independent_effects VALUES (?,?,?,?)",
                     (request["operation_id"],request_hash,evidence_hash,epoch))
             return "APPLIED"
