@@ -103,3 +103,26 @@ class SessionCapabilityBrokerTests(unittest.TestCase):
   self.assertFalse(verify_execution_challenge(envelope,
    self.broker_instance_key.public_key().public_bytes_raw().hex(),"broker-instance-test",
    "broker-a",self.request,cap,self.broker.current_epoch()))
+
+ def test_authenticated_challenge_holder_proof_executes(self):
+  from broker_authenticated_holder import make_broker_authenticated_holder_proof
+  cap=self.capability()
+  envelope=self.broker.issue_authenticated_execution_challenge(self.request,cap)
+  proof=make_broker_authenticated_holder_proof(self.holder,envelope,
+   self.broker_instance_key.public_key().public_bytes_raw().hex(),
+   "broker-instance-test","broker-a",cap,self.request)
+  challenge=envelope["payload"]["challenge"]
+  self.assertEqual(self.broker.execute(self.request,self.signed(),cap,proof,challenge),"APPLIED")
+  self.assertEqual(self.count(),1)
+
+ def test_forged_broker_challenge_never_reaches_effect(self):
+  from broker_authenticated_holder import make_broker_authenticated_holder_proof
+  import copy
+  cap=self.capability()
+  envelope=self.broker.issue_authenticated_execution_challenge(self.request,cap)
+  envelope=copy.deepcopy(envelope); envelope["signature"]="00"*64
+  with self.assertRaises(PermissionError):
+   make_broker_authenticated_holder_proof(self.holder,envelope,
+    self.broker_instance_key.public_key().public_bytes_raw().hex(),
+    "broker-instance-test","broker-a",cap,self.request)
+  self.assertEqual(self.count(),0)
