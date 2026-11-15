@@ -118,6 +118,33 @@ class EffectAuthorityTests(unittest.TestCase):
         self.assertEqual(authority.commit(effect("op-2"), 1), "DENIED")
         self.assertEqual(self.rows(), [("op-1", 7)])
 
+    def test_external_checkpoint_detects_rolled_back_local_floor(self):
+        external = [0]
+        authority = EffectAuthority(self.path, lambda *args: True, lambda: external[0])
+        self.assertTrue(authority.advance_policy_floor(3))
+        external[0] = 5
+        self.assertEqual(authority.commit(effect(), 5), "DENIED")
+        self.assertEqual(self.rows(), [])
+        self.assertTrue(authority.advance_policy_floor(5))
+        self.assertEqual(authority.commit(effect(), 5), "APPLIED")
+
+    def test_unavailable_external_checkpoint_fails_closed(self):
+        def unavailable():
+            raise ConnectionError("checkpoint offline")
+        authority = EffectAuthority(self.path, lambda *args: True, unavailable)
+        self.assertEqual(authority.commit(effect(), 1), "DENIED")
+        self.assertEqual(self.rows(), [])
+
+    def test_malformed_external_checkpoint_fails_closed(self):
+        for value in (True, -1, None, "5"):
+            authority = EffectAuthority(self.path, lambda *args: True, lambda value=value: value)
+            self.assertEqual(authority.commit(effect(), 1), "DENIED")
+        self.assertEqual(self.rows(), [])
+
+    def test_external_checkpoint_cannot_be_a_static_untrusted_value(self):
+        with self.assertRaises(TypeError):
+            EffectAuthority(self.path, lambda *args: True, external_floor=7)
+
     def test_invalid_effect_cannot_reach_authorizer(self):
         def unexpected(*args):
             raise AssertionError("called")
