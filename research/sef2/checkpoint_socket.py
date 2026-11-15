@@ -21,7 +21,7 @@ class CheckpointHandler(socketserver.StreamRequestHandler):
             if uid != self.server.allowed_uid:
                 return
             line = self.rfile.readline(MAX_REQUEST + 1)
-            if not line.endswith(b"\\n") or len(line) > MAX_REQUEST:
+            if not line.endswith(b"\n") or len(line) > MAX_REQUEST:
                 return
             req = json.loads(line)
             if type(req) is not dict or set(req) != {"authority_id"}:
@@ -31,7 +31,7 @@ class CheckpointHandler(socketserver.StreamRequestHandler):
             generation, sequence = self.server.read_state()
             envelope = issue_checkpoint(self.server.signing_key, self.server.authority_id,
                                         generation, sequence)
-            self.wfile.write(json.dumps(envelope, sort_keys=True).encode() + b"\\n")
+            self.wfile.write(json.dumps(envelope, sort_keys=True).encode() + b"\n")
         except (OSError, ValueError, TypeError, json.JSONDecodeError):
             return
 
@@ -60,13 +60,13 @@ def fetch_checkpoint(path, authority_id, timeout=2):
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
         sock.settimeout(timeout)
         sock.connect(str(path))
-        sock.sendall(json.dumps({"authority_id": authority_id}).encode() + b"\\n")
+        sock.sendall(json.dumps({"authority_id": authority_id}).encode() + b"\n")
         response = bytearray()
         while len(response) <= 4096:
             chunk = sock.recv(1)
             if not chunk:
                 break
             response.extend(chunk)
-            if chunk == b"\\n":
+            if chunk == b"\n":
                 return json.loads(response)
         raise ValueError("missing or oversized checkpoint response")
