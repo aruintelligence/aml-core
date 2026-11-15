@@ -1,0 +1,63 @@
+"""Opt-in atomic reservation + hash-chain ledger for synthetic SEF2 research.
+
+Do not substitute this fixture for an independently anchored witness. An
+attacker restoring this whole database can restore its chain as well.
+"""
+import sqlite3
+from pathlib import Path
+from reservation_receipt_chain import GENESIS, reservation_chain_hash
+
+class AtomicReceiptReservations:
+    def __init__(self, path, authority_id, *, require_existing=False):
+        if (type(authority_id) is not str or not 1 <= len(authority_id) <= 128
+            or not authority_id.isascii() or not authority_id.isprintable()):
+            raise ValueError("invalid authority")
+        self.path = str(path)
+        self.authority_id = authority_id
+        self.uri = Path(path).absolute().as_uri() + "?mode=rw"
+        if require_existing and not Path(path).is_file():
+            raise ValueError("missing ledger")
+        with sqlite3.connect(self.path, isolation_level=None) as db:
+            db.execute("BEGIN IMMEDIATE")
+            names = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            required = {"receipt_reservations", "receipt_head"}
+            if not names and not require_existing:
+                db.execute("CREATE TABLE receipt_reservations (sequence INTEGER PRIMARY KEY, authority_id TEXT NOT NULL, operation_id TEXT NOT NULL, digest TEXT NOT NULL, generation INTEGER NOT NULL, chain_hash TEXT NOT NULL, UNIQUE(authority_id, operation_id))")
+                db.execute("CREATE TABLE receipt_head (singleton INTEGER PRIMARY KEY CHECK(singleton=1), sequence INTEGER NOT NULL, chain_hash TEXT NOT NULL)")
+                db.execute("INSERT INTO receipt_head VALUES (1,0,?)", (GENESIS,))
+            elif not required.issubset(names):
+                db.execute("ROLLBACK")
+                raise ValueError("missing receipt security tables")
+            db.execute("COMMIT")
+
+    def reserve(self, operation_id, digest, generation):
+        try:
+            # Validation happens before any storage write.
+            reservation_chain_hash(GENESIS, self.authority_id, operation_id, digest, generation)
+            with sqlite3.connect(self.uri, uri=True, timeout=10, isolation_level=None) as db:
+                db.execute("PRAGMA synchronous=FULL")
+                db.execute("BEGIN IMMEDIATE")
+                heads = db.execute("SELECT sequence,chain_hash FROM receipt_head WHERE singleton=1").fetchall()
+                if len(heads) != 1:
+                    return False
+                sequence, previous = heads[0]
+                if type(sequence) is not int or sequence < 0:
+                    return False
+                chain_hash = reservation_chain_hash(previous, self.authority_id, operation_id, digest, generation)
+                db.execute("INSERT INTO receipt_reservations VALUES (?,?,?,?,?,?)",
+                           (sequence + 1, self.authority_id, operation_id, digest, generation, chain_hash))
+                updated = db.execute("UPDATE receipt_head SET sequence=?,chain_hash=? WHERE singleton=1 AND sequence=? AND chain_hash=?",
+                                     (sequence + 1, chain_hash, sequence, previous))
+                if updated.rowcount != 1:
+                    return False
+                db.execute("COMMIT")
+                return True
+        except (sqlite3.Error, OSError, TypeError, ValueError):
+            return False
+
+    def evidence(self):
+        """Return local ordered evidence; caller MUST compare to trusted external head."""
+        with sqlite3.connect(self.uri, uri=True, timeout=10) as db:
+            head = db.execute("SELECT sequence,chain_hash FROM receipt_head WHERE singleton=1").fetchone()
+            entries = db.execute("SELECT authority_id,operation_id,digest,generation FROM receipt_reservations ORDER BY sequence").fetchall()
+        return head, entries
