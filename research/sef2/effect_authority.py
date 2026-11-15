@@ -26,11 +26,14 @@ class EffectAuthority:
     False; its state MUST be independently protected and monotonic. This adapter
     does not itself provide cryptographic authorization or external anti-rollback.
     """
-    def __init__(self, path, authorize):
+    def __init__(self, path, authorize, external_floor=None):
         if not callable(authorize):
             raise TypeError("trusted authorize callback required")
         self.path = str(path)
         self.authorize = authorize
+        if external_floor is not None and not callable(external_floor):
+            raise TypeError("external floor must be callable")
+        self.external_floor = external_floor
         with sqlite3.connect(self.path) as db:
             db.execute("PRAGMA synchronous=FULL")
             db.execute("CREATE TABLE IF NOT EXISTS effects (operation_id TEXT PRIMARY KEY, digest TEXT NOT NULL, generation INTEGER NOT NULL, value INTEGER NOT NULL)")
@@ -61,7 +64,13 @@ class EffectAuthority:
                 db.execute("PRAGMA synchronous=FULL")
                 db.execute("BEGIN IMMEDIATE")
                 floor = db.execute("SELECT generation FROM policy_floor WHERE singleton=1").fetchone()
-                if floor is None or policy_generation < floor[0]:
+                # A separately trusted monotonic checkpoint detects stale local
+                # state. Refuse execution until local state catches up.
+                external = self.external_floor() if self.external_floor is not None else None
+                if (floor is None
+                    or (self.external_floor is not None and
+                        (type(external) is not int or external < 0 or floor[0] < external))
+                    or policy_generation < floor[0]):
                     db.execute("ROLLBACK")
                     return "DENIED"
                 existing = db.execute("SELECT digest FROM effects WHERE operation_id=?", (effect["operation_id"],)).fetchone()
