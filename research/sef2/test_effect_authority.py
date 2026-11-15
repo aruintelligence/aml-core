@@ -69,6 +69,14 @@ class EffectAuthorityTests(unittest.TestCase):
         self.assertEqual(restarted.commit(effect(), 8), "DENIED")
         self.assertEqual(restarted.commit(effect(), 9), "APPLIED")
 
+    def test_missing_policy_floor_row_never_acknowledges_revocation(self):
+        authority = EffectAuthority(self.path, lambda *args: True)
+        with sqlite3.connect(self.path) as db:
+            db.execute("DELETE FROM policy_floor WHERE singleton=1")
+        self.assertFalse(authority.advance_policy_floor(7))
+        self.assertEqual(authority.commit(effect(), 7), "DENIED")
+        self.assertEqual(self.rows(), [])
+
     def test_floor_rejects_invalid_values(self):
         authority = EffectAuthority(self.path, lambda *args: True)
         self.assertFalse(authority.advance_policy_floor(True))
