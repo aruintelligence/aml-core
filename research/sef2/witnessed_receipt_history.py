@@ -21,6 +21,9 @@ def classify_witnessed_history(entries, local_head, witness_head):
         if (type(local_count) is not int or local_count < 0
             or type(witness_count) is not int or witness_count < 0):
             return "UNKNOWN"
+        if (type(witness_hash) is not str or len(witness_hash) != 64
+            or any(c not in "0123456789abcdef" for c in witness_hash)):
+            return "UNKNOWN"
         if not verify_reservation_chain(entries, local_hash, local_count):
             return "DIVERGED"
         if local_count < witness_count:
