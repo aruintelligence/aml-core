@@ -548,3 +548,8 @@ Added `recovery_cutover.py`, which prevents a planned recovery-council rotation 
 ### Directive 027 — standalone recovery cutover evaluator
 
 Added `evaluation_kit/verify_recovery_cutover.py`, a command-line verifier for recovery-policy activation certificates. It consumes the cutover certificate, exact rotation evidence, successor policy digest, generation, pinned verifier keys, threshold and declared Byzantine fault bound. It rejects partial activation and malformed/duplicate-key inputs and returns a nonzero exit code when the certificate is not independently verifiable.
+
+
+### Directive 028 — independent cutover verifier quorum
+
+Recovery-policy activation now distinguishes cryptographic quorum size from actual administrative independence. `verify_independent_cutover_certificate` requires the cutover verifier keys to be bound to a separately pinned independence manifest covering operator, hosting, key custody, network path and recovery-administration domains. The standalone cutover CLI now makes this manifest and its SHA-256 pin mandatory. Tests reject shared verifier operators, shared key custody, substituted verifier keys and changed independence pins. These are externally pinned declarations and still do not prove real-world ownership or prevent cross-domain collusion.
