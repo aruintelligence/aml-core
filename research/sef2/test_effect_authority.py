@@ -2,6 +2,8 @@
 import os
 import sqlite3
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 import unittest
 from effect_authority import EffectAuthority
 
@@ -79,6 +81,42 @@ class EffectAuthorityTests(unittest.TestCase):
         authority = EffectAuthority(self.path, broken)
         self.assertEqual(authority.commit(effect(), 1), "DENIED")
         self.assertEqual(self.rows(), [])
+
+    def test_concurrent_identical_requests_apply_once(self):
+        authority = EffectAuthority(self.path, lambda *args: True)
+        with ThreadPoolExecutor(max_workers=12) as pool:
+            results = list(pool.map(lambda _: authority.commit(effect(), 1), range(32)))
+        self.assertEqual(results.count("APPLIED"), 1)
+        self.assertEqual(results.count("ALREADY_APPLIED"), 31)
+        self.assertEqual(self.rows(), [("op-1", 7)])
+
+    def test_concurrent_conflicting_requests_cannot_overwrite(self):
+        authority = EffectAuthority(self.path, lambda *args: True)
+        with ThreadPoolExecutor(max_workers=12) as pool:
+            results = list(pool.map(lambda i: authority.commit(effect(value=i % 2 + 1), 1), range(24)))
+        self.assertEqual(results.count("APPLIED"), 1)
+        self.assertEqual(results.count("DENIED"), 12)
+        self.assertEqual(results.count("ALREADY_APPLIED"), 11)
+        self.assertEqual(len(self.rows()), 1)
+
+    def test_revocation_serializes_with_inflight_execution(self):
+        entered = Event()
+        release = Event()
+        def authorize(*args):
+            entered.set()
+            if not release.wait(timeout=5):
+                raise RuntimeError("authorization timed out")
+            return True
+        authority = EffectAuthority(self.path, authorize)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            committing = pool.submit(authority.commit, effect(), 1)
+            self.assertTrue(entered.wait(timeout=5))
+            revoking = pool.submit(authority.advance_policy_floor, 2)
+            release.set()
+            self.assertEqual(committing.result(timeout=10), "APPLIED")
+            self.assertTrue(revoking.result(timeout=10))
+        self.assertEqual(authority.commit(effect("op-2"), 1), "DENIED")
+        self.assertEqual(self.rows(), [("op-1", 7)])
 
     def test_invalid_effect_cannot_reach_authorizer(self):
         def unexpected(*args):
