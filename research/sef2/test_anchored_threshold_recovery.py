@@ -9,8 +9,11 @@ from anchored_threshold_recovery import (AnchoredThresholdRecoveryPublicKey,
     make_anchored_threshold_transition)
 
 def make_policy(keys,policy_id,schema=POLICY_SCHEMA):
- return {"schema":schema,"policy_id":policy_id,"threshold":3,"max_faults":1,
+ result={"schema":schema,"policy_id":policy_id,"threshold":3,"max_faults":1,
    "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in keys.items()}}
+ if schema==ANCHOR_POLICY_SCHEMA:
+  result["administrative_domains"]={k:"operator-domain-"+k for k in keys}
+ return result
 def checkpoint(epoch=1,head="a"*64):
  return {"schema":"AML-SEF2-SIGNED-HISTORY-CHECKPOINT-V1","epoch":epoch,
    "head_hash":head,"count":epoch,"approver_key_id":"c"*64}
