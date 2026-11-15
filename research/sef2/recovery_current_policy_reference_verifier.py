@@ -1,4 +1,6 @@
 """Independent verifier that binds recovery evidence to the current anchored recovery policy."""
+import argparse,sys
+from pathlib import Path
 from threshold_recovery import policy_digest
 from recovery_evidence_reference_verifier import verify_recovery_evidence
 from recovery_policy_registry_anchor import verify_registry_anchor
@@ -55,3 +57,44 @@ def verify_current_recovery_evidence(bundle,authority_public_key_hex,
         return True
     except (ValueError,TypeError,KeyError,AttributeError,OverflowError):
         return False
+
+def _unique_object(pairs):
+    result={}
+    for key,value in pairs:
+        if key in result: raise ValueError("duplicate JSON key")
+        result[key]=value
+    return result
+
+def _load(path):
+    import json
+    return json.loads(Path(path).read_text(encoding="utf-8"),object_pairs_hook=_unique_object)
+
+def main(argv=None):
+    p=argparse.ArgumentParser(description="Verify current-policy-bound AML recovery evidence")
+    p.add_argument("bundle",type=Path)
+    p.add_argument("--authority-public-key",required=True)
+    p.add_argument("--authority-anchor-policy",type=Path,required=True)
+    p.add_argument("--authority-anchor-sequence",type=int,required=True)
+    p.add_argument("--authority-previous-anchor-pin",required=True)
+    p.add_argument("--registry-anchor-policy",type=Path,required=True)
+    p.add_argument("--registry-anchor-sequence",type=int,required=True)
+    p.add_argument("--registry-previous-anchor-pin",required=True)
+    p.add_argument("--registry-id",default="aml-sef2-recovery-policy-registry-v1")
+    a=p.parse_args(argv)
+    try:
+        bundle=_load(a.bundle)
+        authority_policy=_load(a.authority_anchor_policy)
+        registry_policy=_load(a.registry_anchor_policy)
+    except (OSError,ValueError,TypeError) as exc:
+        print("UNREADABLE:",exc,file=sys.stderr); return 2
+    ok=verify_current_recovery_evidence(bundle,a.authority_public_key,
+        authority_policy,a.authority_anchor_sequence,a.authority_previous_anchor_pin,
+        registry_policy,a.registry_anchor_sequence,a.registry_previous_anchor_pin,a.registry_id)
+    if not ok:
+        print("INVALID: current recovery policy, authority evidence, anchors, or trust-plane separation failed")
+        return 1
+    print("VALID: recovery evidence is linked to the independently anchored current policy")
+    return 0
+
+if __name__=="__main__":
+    raise SystemExit(main())
