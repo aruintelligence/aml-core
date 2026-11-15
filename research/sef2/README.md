@@ -588,3 +588,8 @@ Added `benchmark_recovery_cutover.py` and wired it into the SEF/2 CI benchmark s
 ### Directive 032 — standalone activation-history evaluator
 
 Added `evaluation_kit/verify_recovery_activation.py`. An outside evaluator can now verify the complete recovery-policy activation history from a JSON evidence bundle, initial policy pin/generation, pinned verifier keys, quorum fault parameters, verifier-independence manifest and optional final head pin. The CLI rejects duplicate JSON keys, tampered state/history and external-head mismatch and exits nonzero on failure.
+
+
+### Directive 033 — post-commit activation quorum
+
+Added `recovery_activation_attestation.py`. Cutover preparation and durable activation are now distinguishable: a `RecoveryActivationAttestor` signs only after its local monotonic activation registry reports the exact new generation, policy digest and activation head. A Byzantine-safe quorum of these post-commit attestations is portable evidence that the configured attestor software observed committed local state. Tests show an unactivated verifier cannot attest, three committed verifiers can form a 3-of-4 quorum, two cannot, and duplicate or tampered attestations are rejected. The attestation signature does not prove the attestor binary or host was uncompromised; deployment attestation and independent operations remain external assumptions.
