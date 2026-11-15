@@ -259,3 +259,6 @@ Added `recovery_anchor_reference_verifier.py`, a separate verifier for 3-of-4 (o
 
 
 **Directive 022 reference-verifier consistency:** the read-only SQLite event-chain verifier now enforces the same authority-wide `(authority_id, witness_id, generation)` uniqueness rule as the portable exported-ledger verifier and the signer database. A regression test manually injects a second, cryptographically valid event under a different policy ID for the same authority/witness/generation, recomputes the event hash chain and checkpoint pin, and confirms the independent checkpoint verifier still rejects it. Recomputing a local hash or pin is not a substitute for the external verifier's signer-scope invariant.
+
+
+**Directive 023 — anchor database identity binding:** each independent recovery-anchor witness database now pins exactly one anchor identifier and the SHA-256 fingerprint of its Ed25519 public key. Reopening the same SQLite file under another anchor identity or replacement key is rejected before vote processing. This closes a local identity-confusion and denial-of-service path caused by reusing persisted vote state under a different signer. Tests cover both identity substitution and key replacement. The metadata is still local and rollbackable; independent pins remain necessary against administrator-level storage rollback.
