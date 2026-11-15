@@ -92,3 +92,31 @@ class RecoveryAnchorReconciliationTests(unittest.TestCase):
   self.assertEqual(self.anchor.read_head(),head)
   self.assertEqual(reconcile_recovery_authority_anchor("authority-0",self.key,self.path,
       self.anchor,"0"*64),"ALREADY_CURRENT")
+
+ def test_two_two_partial_quorum_cas_is_repaired_from_retained_predecessor(self):
+  from threshold_recovery import MemoryRecoveryHeadAnchor,QuorumRecoveryHeadAnchor
+  signer=RecoveryAuthoritySigner("authority-0",self.key,self.path)
+  signer.approve(self.payload,self.policy)
+  local_head=signer.export_approval_ledger()["head_sha256"]
+  anchors=[MemoryRecoveryHeadAnchor() for _ in range(4)]
+  for anchor in anchors[:2]:
+   self.assertTrue(anchor.compare_and_set("0"*64,local_head))
+  quorum=QuorumRecoveryHeadAnchor(anchors,3,1)
+  with self.assertRaisesRegex(RuntimeError,"no unique quorum"):
+   quorum.read_head()
+  result=reconcile_recovery_authority_anchor("authority-0",self.key,self.path,quorum,"0"*64)
+  self.assertEqual(result,"RECONCILED")
+  self.assertEqual(quorum.read_head(),local_head)
+  self.assertTrue(all(anchor.read_head()==local_head for anchor in anchors))
+ def test_conflicting_two_two_anchor_split_fails_closed_without_mutation(self):
+  from threshold_recovery import MemoryRecoveryHeadAnchor,QuorumRecoveryHeadAnchor
+  signer=RecoveryAuthoritySigner("authority-0",self.key,self.path)
+  signer.approve(self.payload,self.policy)
+  local_head=signer.export_approval_ledger()["head_sha256"]
+  anchors=[MemoryRecoveryHeadAnchor() for _ in range(4)]
+  for anchor in anchors[:2]: anchor.compare_and_set("0"*64,local_head)
+  for anchor in anchors[2:]: anchor.compare_and_set("0"*64,"f"*64)
+  quorum=QuorumRecoveryHeadAnchor(anchors,3,1)
+  self.assertEqual(reconcile_recovery_authority_anchor("authority-0",self.key,self.path,
+      quorum,"0"*64),"ANCHOR_RECONCILIATION_FAILED")
+  self.assertEqual([anchor.read_head() for anchor in anchors],[local_head,local_head,"f"*64,"f"*64])
