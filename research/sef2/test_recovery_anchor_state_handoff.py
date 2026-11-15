@@ -75,7 +75,7 @@ class RecoveryAnchorStateHandoffTests(unittest.TestCase):
    "authority_id":"other","authority_key_sha256":"d"*64,"sequence":1,"head_hash":"e"*64}
   witness.approve(make_anchor_payload(checkpoint,1,"0"*64,self.new),self.new)
   with self.assertRaisesRegex(ValueError,"already contains state"):
-   bootstrap_successor_anchor(witness,self.old,self.new,self.rotation,self.handoff,2,"a"*64)
+   bootstrap_successor_anchor(witness,self.old,self.new,self.rotation,self.handoff,2,"a"*64,self.targets)
 
  def test_snapshot_omission_is_rejected_against_expected_target_set(self):
   incomplete={"authority-a":dict(self.snapshot["authority-a"])}
