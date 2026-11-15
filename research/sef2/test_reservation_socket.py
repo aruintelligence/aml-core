@@ -3,6 +3,7 @@ import os
 import socket
 import tempfile
 import threading
+import time
 import unittest
 from independent_effect_reservations import IndependentEffectReservations
 from reservation_socket import ReservationServer, reserve_via_socket
@@ -40,9 +41,9 @@ class ReservationSocketTests(unittest.TestCase):
                 client.connect(self.path)
                 clients.append(client)
             # Wait until both server handlers have acquired their slots.
-            deadline = __import__("time").monotonic() + 2
-            while self.server._slots._value != 0 and __import__("time").monotonic() < deadline:
-                __import__("time").sleep(0.01)
+            deadline = time.monotonic() + 2
+            while self.server._slots._value != 0 and time.monotonic() < deadline:
+                time.sleep(0.01)
             self.assertEqual(self.server._slots._value, 0)
             self.assertFalse(reserve_via_socket(self.path, "op-capacity", "a" * 64, 1))
         finally:
