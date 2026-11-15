@@ -2,16 +2,17 @@
 import json,os,pathlib,pwd,shutil,socket,subprocess,sys,tempfile,time
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from session_capability import issue_session_capability,verify_holder_proof
+from authenticated_execution_challenge import make_execution_challenge
 from test_cross_uid_boundary import drop,HERE
 
 RUNTIME=r'''
 import json,sys
 from holder_proof_client import HolderProofClient
-socket_path,cap_path,request_path,challenge=sys.argv[1:5]
-cap=json.load(open(cap_path)); request=json.load(open(request_path))
+socket_path,cap_path,request_path,envelope_path=sys.argv[1:5]
+cap=json.load(open(cap_path)); request=json.load(open(request_path)); envelope=json.load(open(envelope_path))
 client=HolderProofClient(socket_path)
 client.register(cap,request)
-proof=client.prove(cap,request,challenge)
+proof=client.prove_authenticated(cap,request,envelope)
 print(json.dumps(proof,separators=(",",":")))
 '''
 
@@ -28,9 +29,10 @@ else:
  raise AssertionError("untrusted model UID obtained holder proof")
 '''
 
-def start(sock,state,key_path,pub_path,lib,holder,runtime,env):
+def start(sock,state,key_path,pub_path,lib,holder,runtime,env,broker_id,broker_pub,audience):
     proc=subprocess.Popen([sys.executable,str(lib/"holder_proof_service.py"),
-        str(sock),str(state),str(key_path),str(pub_path),str(runtime.pw_uid),str(runtime.pw_gid)],
+        str(sock),str(state),str(key_path),str(pub_path),str(runtime.pw_uid),str(runtime.pw_gid),
+        broker_id,broker_pub,audience],
         preexec_fn=drop(holder.pw_uid,holder.pw_gid,(runtime.pw_gid,)),env=env,
         stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)
     for _ in range(200):
@@ -59,12 +61,14 @@ def main():
         ipc=root/"ipc"; ipc.mkdir(mode=0o711); os.chown(ipc,holder.pw_uid,holder.pw_gid)
         lib=root/"lib"; lib.mkdir(mode=0o755)
         for name in ("holder_proof_service.py","holder_proof_client.py","session_capability.py",
-                     "signed_receipt.py","gated_action_broker.py"):
+                     "signed_receipt.py","gated_action_broker.py","authenticated_execution_challenge.py"):
             target=lib/name; shutil.copyfile(HERE/name,target); target.chmod(0o644)
         sock=ipc/"holder.sock"; state=private/"holder.sqlite"
         key_path=private/"holder_ed25519.pem"; pub_path=ipc/"holder.pub"
         env=dict(os.environ,PYTHONPATH=str(lib))
-        proc=start(sock,state,key_path,pub_path,lib,holder,runtime,env)
+        broker_key=Ed25519PrivateKey.generate(); broker_id="broker-instance-uid"; audience="broker-a"
+        proc=start(sock,state,key_path,pub_path,lib,holder,runtime,env,broker_id,
+            broker_key.public_key().public_bytes_raw().hex(),audience)
         try:
             holder_pub=pub_path.read_text().strip()
             authority=Ed25519PrivateKey.generate()
@@ -75,7 +79,9 @@ def main():
             cap_path.write_text(json.dumps(cap)); request_path.write_text(json.dumps(request))
             cap_path.chmod(0o644); request_path.chmod(0o644)
             challenge="c"*64
-            result=subprocess.run([sys.executable,"-c",RUNTIME,str(sock),str(cap_path),str(request_path),challenge],
+            envelope=make_execution_challenge(broker_key,broker_id,audience,request,cap,0,challenge)
+            envelope_path=root/"challenge.json"; envelope_path.write_text(json.dumps(envelope)); envelope_path.chmod(0o644)
+            result=subprocess.run([sys.executable,"-c",RUNTIME,str(sock),str(cap_path),str(request_path),str(envelope_path)],
                 preexec_fn=drop(runtime.pw_uid,runtime.pw_gid),env=env,capture_output=True,text=True,timeout=10)
             assert result.returncode==0,(result.stdout,result.stderr)
             proof=json.loads(result.stdout.strip())
