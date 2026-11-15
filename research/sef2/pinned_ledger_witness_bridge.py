@@ -25,7 +25,7 @@ class PinnedLedgerWitnessBridge:
         self.ledger = AtomicReceiptReservations(
             self.ledger_path, authority_id, require_existing=True)
 
-    def advance(self, witness):
+    def source_is_current(self):
         try:
             info = os.stat(self.ledger_path, follow_symlinks=False)
             if not stat.S_ISREG(info.st_mode):
@@ -34,8 +34,13 @@ class PinnedLedgerWitnessBridge:
                 return False
             if self.expected_uid is not None and info.st_uid != self.expected_uid:
                 return False
-            if witness.authority_id != self.authority_id:
-                return False
-            return advance_from_committed_evidence(witness, self.ledger)
+            return True
         except (OSError, TypeError, ValueError, AttributeError):
             return False
+
+    def advance(self, witness):
+        if not self.source_is_current():
+            return False
+        if witness.authority_id != self.authority_id:
+            return False
+        return advance_from_committed_evidence(witness, self.ledger)
