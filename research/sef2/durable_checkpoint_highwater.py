@@ -7,8 +7,11 @@ import sqlite3
 import os
 
 class DurableCheckpointHighWater:
-    def __init__(self, path, require_existing=False):
+    def __init__(self, path, require_existing=False, require_enrolled=False):
         self.path = str(path)
+        if type(require_enrolled) is not bool:
+            raise TypeError('require_enrolled must be bool')
+        self.require_enrolled = require_enrolled
         if type(require_existing) is not bool:
             raise TypeError('require_existing must be bool')
         if require_existing and not os.path.isfile(self.path):
@@ -39,6 +42,9 @@ class DurableCheckpointHighWater:
             prior = db.execute(
                 "SELECT sequence, generation FROM checkpoint_marks WHERE authority_id=?",
                 (authority_id,)).fetchone()
+            if prior is None and self.require_enrolled:
+                db.execute("ROLLBACK")
+                raise ValueError("checkpoint authority not enrolled or security row missing")
             if prior is not None:
                 old_sequence, old_generation = prior
                 if (sequence < old_sequence or generation < old_generation
