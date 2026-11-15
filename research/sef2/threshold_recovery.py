@@ -292,7 +292,7 @@ def verify_approval_ledger(bundle,authority_public_key,expected_head_sha256=None
                 value=event[field]
                 if type(value) is not str or len(value)!=64 or any(c not in "0123456789abcdef" for c in value):
                     return False
-            scope=(event["policy_id"],event["authority_id"],event["witness_id"],event["generation"])
+            scope=(event["authority_id"],event["witness_id"],event["generation"])
             if scope in seen: return False
             seen.add(scope)
             signed=DOMAIN+canonical({"policy_sha256":event["policy_sha256"],
