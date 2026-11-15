@@ -1,0 +1,37 @@
+"""Durable checkpoint high-water store for the SEF2 research fixture.
+
+The database must be controlled by a separate trusted principal. This protects
+against verifier process restart, NOT coordinated rollback of the store itself.
+"""
+import sqlite3
+
+class DurableCheckpointHighWater:
+    def __init__(self, path):
+        self.path = str(path)
+        with sqlite3.connect(self.path) as db:
+            db.execute("PRAGMA synchronous=FULL")
+            db.execute("CREATE TABLE IF NOT EXISTS checkpoint_marks (authority_id TEXT PRIMARY KEY, sequence INTEGER NOT NULL CHECK(sequence>=0), generation INTEGER NOT NULL CHECK(generation>=0))")
+
+    def observe(self, authority_id, sequence, generation):
+        if (type(authority_id) is not str or not authority_id
+            or type(sequence) is not int or sequence < 0
+            or type(generation) is not int or generation < 0):
+            raise ValueError("invalid checkpoint observation")
+        with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
+            db.execute("PRAGMA synchronous=FULL")
+            db.execute("BEGIN IMMEDIATE")
+            prior = db.execute(
+                "SELECT sequence, generation FROM checkpoint_marks WHERE authority_id=?",
+                (authority_id,)).fetchone()
+            if prior is not None:
+                old_sequence, old_generation = prior
+                if (sequence < old_sequence or generation < old_generation
+                    or (sequence == old_sequence and generation != old_generation)):
+                    db.execute("ROLLBACK")
+                    raise ValueError("checkpoint rollback or equivocation")
+            db.execute(
+                "INSERT INTO checkpoint_marks (authority_id,sequence,generation) VALUES (?,?,?) "
+                "ON CONFLICT(authority_id) DO UPDATE SET sequence=excluded.sequence,generation=excluded.generation",
+                (authority_id, sequence, generation))
+            db.execute("COMMIT")
+        return generation
