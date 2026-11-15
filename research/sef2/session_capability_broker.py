@@ -6,7 +6,7 @@ from session_capability import verify_session_capability,verify_holder_proof
 
 class SessionCapabilityBroker:
     def __init__(self,path,registry,witness,replicas,threshold,enrolled_keys,
-                 issuer,issuer_public_hex,audience):
+                 issuer,issuer_public_hex,audience,broker_instance_id=None,broker_challenge_private=None):
         if type(issuer) is not str or not issuer or type(audience) is not str or not audience:
             raise ValueError("invalid issuer or audience")
         if type(issuer_public_hex) is not str or len(bytes.fromhex(issuer_public_hex))!=32:
@@ -14,6 +14,9 @@ class SessionCapabilityBroker:
         self.path=str(path); self.registry=registry; self.witness=witness
         self.replicas=replicas; self.threshold=threshold; self.enrolled_keys=enrolled_keys
         self.issuer=issuer; self.issuer_public_hex=issuer_public_hex; self.audience=audience
+        self.broker_instance_id=broker_instance_id; self.broker_challenge_private=broker_challenge_private
+        if (broker_instance_id is None)!=(broker_challenge_private is None):
+            raise ValueError("broker challenge identity configuration must be complete")
         with sqlite3.connect(self.path) as db:
             db.execute("PRAGMA synchronous=FULL")
             db.execute("CREATE TABLE IF NOT EXISTS session_effects (operation_id TEXT PRIMARY KEY,request_hash TEXT NOT NULL)")
@@ -31,6 +34,18 @@ class SessionCapabilityBroker:
         with sqlite3.connect(self.path,timeout=10) as db:
             db.execute("PRAGMA synchronous=FULL"); db.execute("BEGIN IMMEDIATE")
             db.execute("UPDATE session_policy_epoch SET epoch=epoch+1 WHERE audience=?",(self.audience,))
+    def issue_authenticated_execution_challenge(self,request,capability):
+        if self.broker_instance_id is None:
+            raise PermissionError("broker challenge signing is not configured")
+        epoch=self.current_epoch()
+        if not verify_session_capability(capability,self.issuer_public_hex,self.issuer,
+            self.audience,request,epoch):
+            raise PermissionError("cannot authenticate challenge for invalid capability")
+        challenge=self.issue_execution_challenge(request["operation_id"])
+        from authenticated_execution_challenge import make_execution_challenge
+        return make_execution_challenge(self.broker_challenge_private,self.broker_instance_id,
+            self.audience,request,capability,epoch,challenge)
+
     def issue_execution_challenge(self,operation_id):
         if type(operation_id) is not str or not operation_id or len(operation_id)>128:
             raise ValueError("invalid operation id")
