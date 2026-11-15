@@ -313,3 +313,8 @@ This closes an important integration gap in the prototype: the independent ancho
 ### Directive 024 — deterministic recovery evidence packaging
 
 `recovery_evidence_bundle.py` produces one canonical JSON artifact containing the authority ledger, authority checkpoint, anchor payload and anchor quorum certificate, but only after the independent verifier accepts the full linkage. The bundle SHA-256 is deterministic for transport/inventory and the writer uses create-only file semantics so an existing evidence file is not silently overwritten. Tests verify deterministic output, transport round-trip, refusal to package truncated evidence, and independent verification of the produced artifact. The producer does not replace independent verification; auditors should verify the bundle with the reference verifier and their own out-of-band authority key, anchor policy and predecessor pin.
+
+
+### Directive 025 — current-policy-bound recovery evidence
+
+`recovery_current_policy_reference_verifier.py` prevents a cryptographically valid recovery approved under an obsolete council from being accepted as current. It composes the independent recovery-evidence verifier with the independently anchored recovery-policy registry. Verification requires the newest approval in the authority ledger to carry the SHA-256 digest of the policy that the anchored registry currently declares active. Tests reject stale policy digests, policy substitution, registry-head tampering, forged registry-anchor signatures, empty approval ledgers, and ordinary recovery-evidence tampering. This adds policy freshness to the recovery proof, but still assumes the registry anchor quorum and the authority-ledger anchor quorum are administratively independent as declared.
