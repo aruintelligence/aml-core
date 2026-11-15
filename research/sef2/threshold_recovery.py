@@ -263,12 +263,14 @@ class RecoveryAuthoritySigner:
             raise ValueError("authority is not enrolled in pinned policy")
         if self.public_key().public_bytes_raw().hex()!=policy["authorities"][self.authority_id]:
             raise ValueError("authority private key does not match pinned identity")
-        scope=(policy["policy_id"],self.authority_id,payload.get("witness_id"),
-            payload.get("generation"))
-        previous_state=payload.get("previous_state_sha256")
+        scope_id=payload.get("witness_id",payload.get("schema"))
+        generation=payload.get("generation")
+        previous_state=payload.get("previous_state_sha256",payload.get("previous_head_sha256"))
+        scope=(policy["policy_id"],self.authority_id,scope_id,generation)
         if (type(scope[2]) is not str or not scope[2] or type(scope[3]) is not int
-            or scope[3]<1 or type(previous_state) is not str or len(previous_state)!=64):
-            raise ValueError("payload lacks a valid recovery scope")
+            or scope[3]<1 or type(previous_state) is not str or len(previous_state)!=64
+            or any(c not in "0123456789abcdef" for c in previous_state)):
+            raise ValueError("payload lacks a valid protocol scope, generation, and parent hash")
         digest=payload_digest(payload)
         pd=policy_digest(policy)
         statement=DOMAIN+canonical({"policy_sha256":pd,"payload_sha256":digest})
