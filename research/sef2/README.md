@@ -300,3 +300,8 @@ This closes an important integration gap in the prototype: the independent ancho
 
 
 **Directive 026 — recovery-anchor quorum identity de-duplication:** `QuorumRecoveryHeadAnchor` now requires every member to expose a stable unique `anchor_id`, rejects duplicate identities even when wrapped by distinct client objects, and rejects duplicate Ed25519 public keys across signed-anchor clients. This closes a quorum-counting configuration error where one underlying signing identity could otherwise be represented by multiple wrappers and counted more than once. Tests cover duplicate IDs, duplicate signing keys and anonymous anchor objects. Distinct identifiers/keys do not prove distinct legal or administrative operators; independent operation remains a deployment assumption that requires external governance and evidence.
+
+
+### Directive 023 — bounded recovery state model
+
+`recovery_state_model.py` performs bounded exhaustive analysis of threshold recovery quorums and generation/parent-state transitions. The model searches all q-sized quorum pairs and reports a counterexample whenever their overlap could consist entirely of Byzantine authorities; it also checks the classical n >= 3f+1 and q <= n-f assumptions. A separate transition predicate requires exactly the next generation, the current predecessor-state digest, a distinct enrolled approval set, and the configured threshold before commit. Bounded sequence exploration rejects replayed generations, skipped generations, and stale-parent transitions. This is explicit-state model checking over a bounded abstraction, not a proof of the Python/SQLite implementation, network behavior, key custody, or unbounded executions.
