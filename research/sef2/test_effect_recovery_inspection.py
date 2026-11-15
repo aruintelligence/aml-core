@@ -17,6 +17,7 @@ from test_witness_socket import WitnessSocketTests
 from test_committed_witness_bridge import CommittedWitnessBridgeTests
 from test_pinned_ledger_witness_bridge import PinnedLedgerWitnessBridgeTests
 from test_anchored_ledger_inspection import AnchoredLedgerInspectionTests
+from test_witness_integrity_preflight import WitnessIntegrityPreflightTests
 
 def effect(op="op-1"):
     return {"operation_id": op, "kind": "fixture:write",
