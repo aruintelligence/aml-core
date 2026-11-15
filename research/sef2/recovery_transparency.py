@@ -74,7 +74,9 @@ def verify_recovery_transparency_bundle(bundle,current_state,policy,
                 return False
             matching=[event for event in ledger["events"]
                 if event["authority_id"]==authority_id
-                and event["witness_id"]==payload["witness_id"]
+                and event["witness_id"] in (
+                    payload["schema"]+":"+payload["witness_id"],
+                    payload["witness_id"])
                 and event["generation"]==payload["generation"]
                 and event["policy_sha256"]==pd
                 and event["previous_state_sha256"]==payload["previous_state_sha256"]
