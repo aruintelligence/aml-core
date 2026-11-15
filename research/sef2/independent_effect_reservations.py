@@ -50,3 +50,20 @@ class IndependentEffectReservations:
             return True
         except sqlite3.Error:
             return False
+
+    def inspect(self, operation_id):
+        """Read-only recovery evidence; never grants a retry or clears a reservation.
+
+        Returns a stored digest/generation or None if no reservation exists.
+        An unavailable or damaged store raises instead of implying absence.
+        """
+        if (type(operation_id) is not str or not 1 <= len(operation_id) <= 128
+            or not operation_id.isascii() or not operation_id.isprintable()):
+            raise ValueError("invalid operation identifier")
+        with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
+            db.execute("BEGIN")
+            row = db.execute(
+                "SELECT digest,generation FROM reservations WHERE authority_id=? AND operation_id=?",
+                (self.authority_id, operation_id)).fetchone()
+            db.execute("COMMIT")
+        return None if row is None else {"digest": row[0], "generation": row[1]}
