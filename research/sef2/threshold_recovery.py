@@ -402,3 +402,60 @@ class QuorumRecoveryHeadAnchor:
             except Exception:
                 continue
         return accepted>=self.threshold
+
+RECOVERY_ANCHOR_READ_DOMAIN=b"AML-SEF2-RECOVERY-ANCHOR-READ-V1\\x00"
+RECOVERY_ANCHOR_CAS_DOMAIN=b"AML-SEF2-RECOVERY-ANCHOR-CAS-V1\\x00"
+
+class SignedRecoveryHeadAnchor:
+    """Verify nonce-bound signed responses from one externally operated anchor.
+
+    The transport may be untrusted; the anchor's Ed25519 public key must be
+    pinned out of band. The remote service must still implement durable,
+    linearizable compare-and-set semantics.
+    """
+    def __init__(self,anchor_id,public_key,transport):
+        if type(anchor_id) is not str or not anchor_id:
+            raise ValueError("invalid recovery anchor identity")
+        self.anchor_id=anchor_id
+        self.public_key=public_key
+        self.transport=transport
+
+    def read_head(self):
+        import secrets
+        nonce=secrets.token_hex(32)
+        response=self.transport.read_head(nonce)
+        required={"anchor_id","head_sha256","nonce","signature"}
+        if type(response) is not dict or set(response)!=required:
+            raise RuntimeError("malformed signed recovery anchor response")
+        statement={"anchor_id":self.anchor_id,"head_sha256":response["head_sha256"],"nonce":nonce}
+        if response["anchor_id"]!=self.anchor_id or response["nonce"]!=nonce:
+            raise RuntimeError("recovery anchor identity or freshness challenge mismatch")
+        head=response["head_sha256"]
+        if type(head) is not str or len(head)!=64 or any(c not in "0123456789abcdef" for c in head):
+            raise RuntimeError("invalid recovery anchor head")
+        try:
+            self.public_key.verify(bytes.fromhex(response["signature"]),
+                RECOVERY_ANCHOR_READ_DOMAIN+canonical(statement))
+        except (InvalidSignature,ValueError,TypeError) as exc:
+            raise RuntimeError("recovery anchor signature verification failed") from exc
+        return head
+
+    def compare_and_set(self,expected_head,new_head):
+        import secrets
+        nonce=secrets.token_hex(32)
+        response=self.transport.compare_and_set(expected_head,new_head,nonce)
+        required={"anchor_id","expected_head","new_head","accepted","nonce","signature"}
+        if type(response) is not dict or set(response)!=required:
+            raise RuntimeError("malformed signed recovery anchor CAS response")
+        statement={k:response[k] for k in ("anchor_id","expected_head","new_head","accepted","nonce")}
+        if (response["anchor_id"]!=self.anchor_id or response["expected_head"]!=expected_head
+            or response["new_head"]!=new_head or response["nonce"]!=nonce
+            or type(response["accepted"]) is not bool):
+            raise RuntimeError("recovery anchor CAS response binding mismatch")
+        try:
+            self.public_key.verify(bytes.fromhex(response["signature"]),
+                RECOVERY_ANCHOR_CAS_DOMAIN+canonical(statement))
+        except (InvalidSignature,ValueError,TypeError) as exc:
+            raise RuntimeError("recovery anchor CAS signature verification failed") from exc
+        return response["accepted"]
+
