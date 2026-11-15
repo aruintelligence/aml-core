@@ -25,6 +25,7 @@ class CheckpointHandler(socketserver.StreamRequestHandler):
     def handle(self):
         # Linux SO_PEERCRED: pid, uid, gid. Peer authentication is mandatory.
         try:
+            self.request.settimeout(3)
             raw = self.request.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12)
             _, uid, _ = struct.unpack("3i", raw)
             if uid != self.server.allowed_uid:
@@ -46,6 +47,7 @@ class CheckpointHandler(socketserver.StreamRequestHandler):
 
 class CheckpointServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
     daemon_threads = True
+    block_on_close = False
     allow_reuse_address = False
 
     def __init__(self, path, *, allowed_uid, authority_id, signing_key, read_state):
