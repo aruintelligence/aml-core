@@ -90,16 +90,28 @@ class RecoveryPolicyRegistry:
             or policy_digest(genesis)!=genesis_digest or policy_digest(current)!=current_digest):
             raise ValueError("corrupt policy registry state")
         previous_policy=genesis; previous_digest=genesis_digest; previous_event=GENESIS
-        events=con.execute("""SELECT generation,previous_policy_json,next_policy_json,
+        normal=[("NORMAL",row) for row in con.execute("""SELECT generation,previous_policy_json,next_policy_json,
             rotation_json,previous_event_sha256,event_sha256
-            FROM recovery_policy_events ORDER BY generation""").fetchall()
+            FROM recovery_policy_events""").fetchall()]
+        emergency=[("EMERGENCY",row) for row in con.execute("""SELECT generation,previous_policy_json,next_policy_json,
+            emergency_policy_json,rotation_json,previous_event_sha256,event_sha256
+            FROM recovery_policy_emergency_events""").fetchall()]
+        events=sorted(normal+emergency,key=lambda item:item[1][0])
         expected_generation=2
-        for event_row in events:
-            event_generation,previous_raw,next_raw,rotation_raw,previous_event_hash,event_hash=event_row
-            old=_strict_json(previous_raw); new=_strict_json(next_raw); rotation=_strict_json(rotation_raw)
+        for event_type,event_row in events:
+            if event_type=="NORMAL":
+                event_generation,previous_raw,next_raw,rotation_raw,previous_event_hash,event_hash=event_row
+                old=_strict_json(previous_raw); new=_strict_json(next_raw); rotation=_strict_json(rotation_raw)
+                valid_transition=verify_policy_rotation(old,new,rotation,event_generation)
+            else:
+                event_generation,previous_raw,next_raw,emergency_raw,rotation_raw,previous_event_hash,event_hash=event_row
+                old=_strict_json(previous_raw); new=_strict_json(next_raw)
+                emergency_policy=_strict_json(emergency_raw); rotation=_strict_json(rotation_raw)
+                from recovery_emergency_rotation import verify_emergency_rotation
+                valid_transition=verify_emergency_rotation(old,new,emergency_policy,rotation,
+                    event_generation,previous_event)
             if (event_generation!=expected_generation or previous_event_hash!=previous_event
-                or policy_digest(old)!=previous_digest
-                or not verify_policy_rotation(old,new,rotation,event_generation)):
+                or policy_digest(old)!=previous_digest or not valid_transition):
                 raise ValueError("corrupt policy registry history")
             event={"generation":event_generation,"previous_policy_sha256":previous_digest,
                 "next_policy_sha256":policy_digest(new),"rotation_sha256":_digest(rotation),
