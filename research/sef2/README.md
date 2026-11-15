@@ -687,3 +687,6 @@ The disposable Linux integration now requires the protected execution-witness da
 
 
 **Remote anchor service database binding:** the separate-UID Unix-socket head-anchor service now binds its durable head database to the configured anchor ID and Ed25519 key fingerprint at startup. It rejects triggers, views, extra tables, altered table layouts, malformed singleton state, and identity mismatch before listening on the socket. A cross-UID process test pre-seeds a trigger and verifies the service refuses to start. The service remains a synthetic local-process demonstration; production deployment would require independently administered hosts, key provisioning, service supervision, network threat analysis, and external backup/rollback controls.
+
+
+**Remote recovery-anchor wire-protocol hardening:** the Unix-socket service and transport now reject duplicate JSON keys, unknown or extra fields, noncanonical freshness nonces, malformed digests and no-op CAS transitions. Responses are parsed with the same duplicate-key rejection before signature verification. A dedicated test module is included in the CI suite. This reduces parser ambiguity and prevents malformed requests from being treated as equivalent authorization messages; peer-UID authentication and Ed25519 response signatures remain separate required controls.
