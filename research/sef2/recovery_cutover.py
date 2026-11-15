@@ -78,3 +78,12 @@ def verify_cutover_certificate(certificate,rotation,next_policy_sha256,generatio
         return valid>=threshold
     except (InvalidSignature,ValueError,TypeError,KeyError,OverflowError,AttributeError):
         return False
+
+def verify_independent_cutover_certificate(certificate,rotation,next_policy_sha256,generation,
+        pinned_verifier_keys,threshold,max_faults,independence_manifest,independence_pin):
+    from witness_independence import verify_independence
+    if not verify_independence(independence_manifest,tuple(pinned_verifier_keys),
+        independence_pin,pinned_verifier_keys):
+        return False
+    return verify_cutover_certificate(certificate,rotation,next_policy_sha256,generation,
+        pinned_verifier_keys,threshold,max_faults)
