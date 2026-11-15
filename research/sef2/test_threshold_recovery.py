@@ -520,3 +520,25 @@ class RecoveryLedgerAnchorTests(unittest.TestCase):
   other={**self.payload,"witness_id":"south"}
   self.assertNotEqual(self.signer.approve(other,self.policy),
       self.signer.approve(self.payload,self.policy))
+
+class BoundedRecoveryStateModelTests(unittest.TestCase):
+ def test_three_of_four_with_one_byzantine_excludes_conflicting_commits(self):
+  from recovery_quorum_model import model_check_conflicting_commits,bounded_recovery_state_check
+  self.assertIsNone(model_check_conflicting_commits(4,3,1))
+  result=bounded_recovery_state_check(4,3,1)
+  self.assertTrue(result["safe"])
+  self.assertTrue(result["predecessor_revoked"])
+  self.assertTrue(result["replay_excluded"])
+  self.assertTrue(result["stale_fork_excluded"])
+ def test_two_of_four_exposes_concrete_conflicting_commit_counterexample(self):
+  from recovery_quorum_model import model_check_conflicting_commits
+  result=model_check_conflicting_commits(4,2,1)
+  self.assertIsNotNone(result)
+  self.assertLessEqual(len(result["byzantine"]),1)
+  self.assertEqual(result["first_payload"],"A")
+  self.assertEqual(result["second_payload"],"B")
+ def test_bounded_state_model_rejects_faulty_quorum_even_when_transition_shape_is_valid(self):
+  from recovery_quorum_model import bounded_recovery_state_check
+  result=bounded_recovery_state_check(4,2,1)
+  self.assertFalse(result["safe"])
+  self.assertIsNotNone(result["conflicting_commit_counterexample"])
