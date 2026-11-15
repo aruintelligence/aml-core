@@ -41,6 +41,15 @@ class IndependentReservationTests(unittest.TestCase):
         self.assertFalse(self.store.reserve("op-1", "a" * 64, 0))
         self.assertFalse(self.store.reserve("op-1", "b" * 64, 0))
 
+    def test_deleted_live_reservation_store_cannot_rebootstrap(self):
+        authority = self.authority()
+        os.unlink(self.reservations)
+        self.assertEqual(authority.commit(effect(), 0), "DENIED")
+        self.assertFalse(self.store.reserve("op-2", "a" * 64, 0))
+        with self.assertRaises(sqlite3.OperationalError):
+            self.store.inspect("op-2")
+        self.assertFalse(os.path.exists(self.reservations))
+
     def test_missing_reservation_store_fails_strict_restart(self):
         with self.assertRaises(ValueError):
             IndependentEffectReservations(os.path.join(self.tmp.name, "absent"),
