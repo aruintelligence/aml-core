@@ -302,6 +302,16 @@ class RecoveryAuthoritySigner:
                     if legacy[0]==pd and legacy[1]==previous_state and legacy[2]==digest:
                         return legacy[3]
                     raise ValueError("legacy recovery ledger scope conflicts; manual migration required")
+            if scope_id!=raw_scope_id:
+                latest=con.execute("""SELECT MAX(generation) FROM recovery_approval_ledger_v4
+                    WHERE authority_id=? AND witness_id IN (?,?)""",
+                    (self.authority_id,scope_id,raw_scope_id)).fetchone()[0]
+            else:
+                latest=con.execute("""SELECT MAX(generation) FROM recovery_approval_ledger_v4
+                    WHERE authority_id=? AND witness_id=?""",
+                    (self.authority_id,scope_id)).fetchone()[0]
+            if latest is not None and generation!=latest+1:
+                raise ValueError("recovery generation must advance exactly one step")
             con.execute("INSERT INTO recovery_approval_ledger_v4 VALUES (?,?,?,?,?,?,?,?)",
                 (*scope,pd,previous_state,digest,signature))
             prior=con.execute("SELECT event_sha256 FROM recovery_approval_events ORDER BY sequence DESC LIMIT 1").fetchone()
