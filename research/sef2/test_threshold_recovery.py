@@ -893,3 +893,54 @@ class SignedRecoveryHeadAnchorTests(unittest.TestCase):
   anchor=SignedRecoveryHeadAnchor("anchor-east",self.key.public_key(),WhitespaceSignature())
   with self.assertRaisesRegex(RuntimeError,"signature encoding"):
    anchor.compare_and_set("0"*64,"e"*64)
+
+class SignedRemoteQuorumIntegrationTests(unittest.TestCase):
+ def setUp(self):
+  from threshold_recovery import (RECOVERY_ANCHOR_READ_DOMAIN,RECOVERY_ANCHOR_CAS_DOMAIN,
+   SignedRecoveryHeadAnchor,QuorumRecoveryHeadAnchor)
+  from signed_receipt import canonical
+  self.read_domain=RECOVERY_ANCHOR_READ_DOMAIN; self.cas_domain=RECOVERY_ANCHOR_CAS_DOMAIN
+  self.canonical=canonical; self.keys={f"remote-{i}":Ed25519PrivateKey.generate() for i in range(4)}
+  class Server:
+   def __init__(inner,identity,key):
+    inner.anchor_id=identity; inner.key=key; inner.head="0"*64
+   def read_head(inner,nonce):
+    body={"anchor_id":inner.anchor_id,"head_sha256":inner.head,"nonce":nonce}
+    return {**body,"signature":inner.key.sign(self.read_domain+self.canonical(body)).hex()}
+   def compare_and_set(inner,expected,new,nonce):
+    accepted=inner.head==expected
+    if accepted: inner.head=new
+    body={"anchor_id":inner.anchor_id,"expected_head":expected,"new_head":new,"accepted":accepted,"nonce":nonce}
+    return {**body,"signature":inner.key.sign(self.cas_domain+self.canonical(body)).hex()}
+  self.servers={k:Server(k,v) for k,v in self.keys.items()}
+  self.clients={k:SignedRecoveryHeadAnchor(k,self.keys[k].public_key(),self.servers[k]) for k in self.keys}
+  self.quorum=QuorumRecoveryHeadAnchor(list(self.clients.values()),3,1)
+ def test_three_of_four_signed_remote_anchors_commit_and_read(self):
+  self.assertTrue(self.quorum.compare_and_set("0"*64,"a"*64))
+  self.assertEqual(self.quorum.read_head(),"a"*64)
+ def test_replayed_remote_read_is_excluded_while_three_fresh_anchors_form_quorum(self):
+  original=self.servers["remote-0"]
+  class Replay:
+   anchor_id="remote-0"
+   def __init__(inner): inner.saved=None
+   def read_head(inner,nonce):
+    if inner.saved is None: inner.saved=original.read_head(nonce)
+    return inner.saved
+   def compare_and_set(inner,expected,new,nonce):
+    return original.compare_and_set(expected,new,nonce)
+  from threshold_recovery import SignedRecoveryHeadAnchor,QuorumRecoveryHeadAnchor
+  clients=[SignedRecoveryHeadAnchor("remote-0",self.keys["remote-0"].public_key(),Replay())]
+  clients.extend(self.clients[k] for k in ("remote-1","remote-2","remote-3"))
+  quorum=QuorumRecoveryHeadAnchor(clients,3,1)
+  self.assertEqual(quorum.read_head(),"0"*64)
+  self.assertTrue(quorum.compare_and_set("0"*64,"b"*64))
+  self.assertEqual(quorum.read_head(),"b"*64)
+ def test_one_unavailable_signed_remote_anchor_does_not_block_quorum(self):
+  class Offline:
+   anchor_id="offline"
+   def read_head(self): raise OSError("offline")
+   def compare_and_set(self,*args): raise OSError("offline")
+  from threshold_recovery import QuorumRecoveryHeadAnchor
+  quorum=QuorumRecoveryHeadAnchor([self.clients[k] for k in ("remote-0","remote-1","remote-2")]+[Offline()],3,1)
+  self.assertTrue(quorum.compare_and_set("0"*64,"c"*64))
+  self.assertEqual(quorum.read_head(),"c"*64)
