@@ -113,7 +113,7 @@ class RecoveryAnchorReconciliationTests(unittest.TestCase):
   signer=RecoveryAuthoritySigner("authority-0",self.key,self.path)
   signer.approve(self.payload,self.policy)
   local_head=signer.export_approval_ledger()["head_sha256"]
-  anchors=[MemoryRecoveryHeadAnchor() for _ in range(4)]
+  anchors=[MemoryRecoveryHeadAnchor(f"anchor-{i}") for i in range(4)]
   for anchor in anchors[:2]: anchor.compare_and_set("0"*64,local_head)
   for anchor in anchors[2:]: anchor.compare_and_set("0"*64,"f"*64)
   quorum=QuorumRecoveryHeadAnchor(anchors,3,1)
