@@ -1,6 +1,7 @@
 """Separate-UID anchor for signed execution-consumption receipt heads."""
 import json,os,socket,struct,sys
 from execution_receipt_anchor import ExecutionReceiptAnchor
+from authorized_execution_consumption import AuthorizedExecutionReceiptAnchor
 MAX_FRAME=131072
 
 def read_exact(conn,size):
@@ -20,6 +21,7 @@ def reject_duplicate_keys(pairs):
 
 def serve(sock_path,database,allowed_uid,allowed_gid,witness_id,witness_public_hex):
     anchor=ExecutionReceiptAnchor(database,witness_id,witness_public_hex)
+    authorized_anchor=AuthorizedExecutionReceiptAnchor(database,witness_id,witness_public_hex)
     try: os.unlink(sock_path)
     except FileNotFoundError: pass
     with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as server:
@@ -35,9 +37,14 @@ def serve(sock_path,database,allowed_uid,allowed_gid,witness_id,witness_public_h
                     size=struct.unpack("!I",read_exact(conn,4))[0]
                     if size<2 or size>MAX_FRAME: raise ValueError("invalid frame")
                     req=json.loads(read_exact(conn,size),object_pairs_hook=reject_duplicate_keys)
-                    if type(req) is not dict or set(req)!={"op","receipt"} or req["op"]!="ANCHOR":
+                    if type(req) is not dict or set(req)!={"op","receipt"}:
                         raise ValueError("invalid anchor request")
-                    anchor.accept(req["receipt"])
+                    if req["op"]=="ANCHOR":
+                        anchor.accept(req["receipt"])
+                    elif req["op"]=="ANCHOR_AUTHORIZED":
+                        authorized_anchor.accept(req["receipt"])
+                    else:
+                        raise ValueError("unsupported execution anchor operation")
                     response={"status":"ANCHORED"}
                 except Exception:
                     response={"status":"DENIED"}
