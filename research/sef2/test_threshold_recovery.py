@@ -649,3 +649,23 @@ os._exit(77)  # durable commit completed; simulated response lost with process d
       "payload_sha256":__import__("threshold_recovery").payload_digest(self.payload)})
   Ed25519PublicKey.from_public_bytes(self.keys["authority-0"].public_key().public_bytes_raw()).verify(
       bytes.fromhex(recovered),statement)
+
+class RecoveryLedgerVerifierEquivocationTests(unittest.TestCase):
+ def test_export_verifier_rejects_same_generation_reauthorized_under_new_policy(self):
+  import hashlib
+  from signed_receipt import canonical
+  from threshold_recovery import DOMAIN,verify_approval_ledger
+  key=Ed25519PrivateKey.generate(); events=[]; previous="0"*64
+  for seq,policy_id in ((1,"policy-old"),(2,"policy-new")):
+   pd=hashlib.sha256(policy_id.encode()).hexdigest()
+   payload_sha=hashlib.sha256((policy_id+"payload").encode()).hexdigest()
+   signature=key.sign(DOMAIN+canonical({"policy_sha256":pd,"payload_sha256":payload_sha})).hex()
+   event={"sequence":seq,"previous_event_sha256":previous,"policy_id":policy_id,
+    "authority_id":"authority-A","witness_id":"north","generation":4,
+    "policy_sha256":pd,"previous_state_sha256":"a"*64,
+    "payload_sha256":payload_sha,"signature":signature}
+   event["event_sha256"]=hashlib.sha256(canonical(event)).hexdigest()
+   previous=event["event_sha256"]; events.append(event)
+  bundle={"schema":"AML-SEF2-RECOVERY-APPROVAL-LEDGER-V1",
+   "authority_id":"authority-A","events":events,"head_sha256":previous}
+  self.assertFalse(verify_approval_ledger(bundle,key.public_key(),previous))
