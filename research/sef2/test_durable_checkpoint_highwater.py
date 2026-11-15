@@ -42,6 +42,12 @@ class DurableHighWaterTests(unittest.TestCase):
         self.assertEqual(self.verifier(8, 4, "tenant-a")(), 8)
         self.assertEqual(self.verifier(2, 1, "tenant-b")(), 2)
 
+    def test_strict_startup_rejects_existing_empty_database_file(self):
+        with open(self.path, "wb"):
+            pass
+        with self.assertRaises(ValueError):
+            DurableCheckpointHighWater(self.path, require_existing=True)
+
     def test_strict_startup_rejects_deleted_checkpoint_database(self):
         with self.assertRaises(ValueError):
             DurableCheckpointHighWater(self.path, require_existing=True)
