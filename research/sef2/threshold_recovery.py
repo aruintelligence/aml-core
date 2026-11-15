@@ -132,6 +132,17 @@ class RecoveryAuthoritySigner:
         with sqlite3.connect(self.ledger_path,timeout=10) as con:
             con.execute("PRAGMA journal_mode=DELETE")
             con.execute("PRAGMA synchronous=FULL")
+            con.execute("CREATE TABLE IF NOT EXISTS recovery_ledger_meta (key TEXT PRIMARY KEY,value TEXT NOT NULL)")
+            authority_key_hash=hashlib.sha256(self.public_key().public_bytes_raw()).hexdigest()
+            existing=con.execute("SELECT value FROM recovery_ledger_meta WHERE key='authority_id'").fetchone()
+            key_existing=con.execute("SELECT value FROM recovery_ledger_meta WHERE key='authority_key_sha256'").fetchone()
+            if existing is not None and (existing[0]!=self.authority_id or key_existing is None or key_existing[0]!=authority_key_hash):
+                raise ValueError("recovery ledger is already bound to another authority identity")
+            if existing is None:
+                if key_existing is not None:
+                    raise ValueError("incomplete recovery ledger identity binding")
+                con.execute("INSERT INTO recovery_ledger_meta VALUES ('authority_id',?)",(self.authority_id,))
+                con.execute("INSERT INTO recovery_ledger_meta VALUES ('authority_key_sha256',?)",(authority_key_hash,))
             con.execute("""CREATE TABLE IF NOT EXISTS recovery_approval_ledger_v4 (
                 policy_id TEXT NOT NULL, authority_id TEXT NOT NULL,
                 witness_id TEXT NOT NULL, generation INTEGER NOT NULL,
