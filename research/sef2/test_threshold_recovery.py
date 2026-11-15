@@ -724,7 +724,7 @@ class IndependentlyAnchoredRecoveryLedgerTests(unittest.TestCase):
 class QuorumRecoveryHeadAnchorTests(unittest.TestCase):
  def setUp(self):
   from threshold_recovery import MemoryRecoveryHeadAnchor,QuorumRecoveryHeadAnchor
-  self.replicas=[MemoryRecoveryHeadAnchor() for _ in range(4)]
+  self.replicas=[MemoryRecoveryHeadAnchor(f"anchor-{i}") for i in range(4)]
   self.quorum=QuorumRecoveryHeadAnchor(self.replicas,3,1)
   self.old="0"*64; self.new="a"*64
  def test_three_of_four_anchors_accept_head_transition(self):
@@ -732,6 +732,7 @@ class QuorumRecoveryHeadAnchorTests(unittest.TestCase):
   self.assertEqual(self.quorum.read_head(),self.new)
  def test_one_unavailable_anchor_does_not_prevent_quorum(self):
   class Down:
+   anchor_id="anchor-down"
    def read_head(self): raise OSError("offline")
    def compare_and_set(self,*args): raise OSError("offline")
   from threshold_recovery import QuorumRecoveryHeadAnchor
@@ -760,7 +761,7 @@ class QuorumRecoveryHeadAnchorTests(unittest.TestCase):
   self.assertIn(self.quorum.read_head(),candidates)
  def test_partial_anchor_update_can_be_completed_idempotently(self):
   class FailOnce:
-   def __init__(self,inner): self.inner=inner; self.fail=True
+   def __init__(self,inner): self.inner=inner; self.anchor_id=inner.anchor_id; self.fail=True
    def read_head(self): return self.inner.read_head()
    def compare_and_set(self,old,new):
     if self.fail:
@@ -852,3 +853,22 @@ class SignedRecoveryHeadAnchorTests(unittest.TestCase):
   self.assertTrue(anchor.compare_and_set("0"*64,"c"*64))
   with self.assertRaisesRegex(RuntimeError,"binding mismatch"):
    anchor.compare_and_set("c"*64,"d"*64)
+
+ def test_duplicate_anchor_ids_are_rejected_even_for_distinct_instances(self):
+  from threshold_recovery import MemoryRecoveryHeadAnchor,QuorumRecoveryHeadAnchor
+  replicas=[MemoryRecoveryHeadAnchor("same") for _ in range(4)]
+  with self.assertRaisesRegex(ValueError,"identities must be unique"):
+   QuorumRecoveryHeadAnchor(replicas,3,1)
+ def test_duplicate_ed25519_keys_are_rejected_under_different_anchor_ids(self):
+  from threshold_recovery import SignedRecoveryHeadAnchor,QuorumRecoveryHeadAnchor
+  key=Ed25519PrivateKey.generate()
+  anchors=[SignedRecoveryHeadAnchor(f"anchor-{i}",key.public_key(),object()) for i in range(4)]
+  with self.assertRaisesRegex(ValueError,"distinct public keys"):
+   QuorumRecoveryHeadAnchor(anchors,3,1)
+ def test_anchor_without_stable_identity_is_rejected(self):
+  from threshold_recovery import QuorumRecoveryHeadAnchor
+  class Anonymous:
+   def read_head(self): return "0"*64
+   def compare_and_set(self,*args): return True
+  with self.assertRaisesRegex(ValueError,"stable anchor_id"):
+   QuorumRecoveryHeadAnchor([Anonymous(),Anonymous(),Anonymous(),Anonymous()],3,1)
