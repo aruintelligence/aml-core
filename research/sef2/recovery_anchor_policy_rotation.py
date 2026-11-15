@@ -30,6 +30,9 @@ def make_anchor_policy_rotation(current_policy,next_policy,generation,
     new_keys={bytes.fromhex(v) for v in next_policy["authorities"].values()}
     if old_keys & new_keys:
         raise ValueError("successor anchor council must use disjoint public keys")
+    if (set(current_policy["administrative_domains"].values())
+        & set(next_policy["administrative_domains"].values())):
+        raise ValueError("successor anchor council must use disjoint administrative domains")
     payload={"schema":SCHEMA,"generation":generation,"witness_id":"recovery-anchor-policy",
         "previous_state_sha256":policy_digest(current_policy),
         "previous_policy_sha256":policy_digest(current_policy),
@@ -68,6 +71,9 @@ def verify_anchor_policy_rotation(current_policy,next_policy,rotation,
             return False
         if ({bytes.fromhex(v) for v in current_policy["authorities"].values()}
             & {bytes.fromhex(v) for v in next_policy["authorities"].values()}):
+            return False
+        if (set(current_policy["administrative_domains"].values())
+            & set(next_policy["administrative_domains"].values())):
             return False
         return (verify_approval_bundle(p,rotation["outgoing_approval"],_shadow(current_policy))
             and verify_approval_bundle(p,rotation["incoming_acceptance"],_shadow(next_policy)))
