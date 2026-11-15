@@ -116,12 +116,17 @@ def valid_policy_checkpoint(checkpoint):
     return valid_checkpoint(checkpoint)
 
 
+def _valid_head_digest(value):
+    return (type(value) is str and len(value)==64
+        and all(character in "0123456789abcdef" for character in value))
+
+
 class MemoryRecoveryHeadAnchor:
     """Thread-safe independent-anchor test double; not durable or production storage."""
     def __init__(self,anchor_id="memory-anchor",initial_head="0"*64):
         import threading
-        if type(anchor_id) is not str or not anchor_id:
-            raise ValueError("invalid memory anchor identity")
+        if type(anchor_id) is not str or not anchor_id or not _valid_head_digest(initial_head):
+            raise ValueError("invalid memory anchor identity or initial head")
         self.anchor_id=anchor_id
         self._head=initial_head
         self._lock=threading.Lock()
@@ -129,6 +134,9 @@ class MemoryRecoveryHeadAnchor:
         with self._lock:
             return self._head
     def compare_and_set(self,expected_head,new_head):
+        if (not _valid_head_digest(expected_head) or not _valid_head_digest(new_head)
+            or expected_head==new_head):
+            return False
         with self._lock:
             if self._head!=expected_head:
                 return False
@@ -429,9 +437,7 @@ class QuorumRecoveryHeadAnchor:
         return winners[0]
 
     def compare_and_set(self,expected_head,new_head):
-        if (type(expected_head) is not str or type(new_head) is not str
-            or len(expected_head)!=64 or len(new_head)!=64
-            or any(c not in "0123456789abcdef" for c in expected_head+new_head)
+        if (not _valid_head_digest(expected_head) or not _valid_head_digest(new_head)
             or expected_head==new_head):
             return False
         accepted=0
@@ -487,6 +493,9 @@ class SignedRecoveryHeadAnchor:
         return head
 
     def compare_and_set(self,expected_head,new_head):
+        if (not _valid_head_digest(expected_head) or not _valid_head_digest(new_head)
+            or expected_head==new_head):
+            raise ValueError("invalid recovery anchor CAS head digests")
         import secrets
         nonce=secrets.token_hex(32)
         response=self.transport.compare_and_set(expected_head,new_head,nonce)
