@@ -65,3 +65,39 @@ class RecoveryActivationRegistryTests(unittest.TestCase):
    con.execute("UPDATE recovery_activation_events SET next_policy_sha256=? WHERE generation=2",("f"*64,))
   with self.assertRaisesRegex(ValueError,"corrupt"):
    self.registry.state()
+
+class QuorumAnchoredRecoveryActivationTests(unittest.TestCase):
+ def setUp(self):
+  import hashlib
+  from threshold_recovery import MemoryRecoveryHeadAnchor,QuorumRecoveryHeadAnchor
+  self.tmp=tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
+  self.old="a"*64; self.new="b"*64
+  self.rotation={"schema":"rotation","payload":{"generation":2,
+   "previous_policy_sha256":self.old,"next_policy_sha256":self.new}}
+  self.keys={f"verifier-{i}":Ed25519PrivateKey.generate() for i in range(4)}
+  self.pins={n:k.public_key().public_bytes_raw().hex() for n,k in self.keys.items()}
+  self.acks=[make_cutover_ack(self.keys[n],n,self.rotation,self.new,2)
+   for n in ("verifier-0","verifier-1","verifier-2")]
+  self.cert=build_cutover_certificate(self.rotation,self.new,2,self.acks)
+  self.manifest={"witnesses":{name:{**{d:name+"-"+d for d in DIMENSIONS},
+   "public_key_sha256":hashlib.sha256(bytes.fromhex(raw)).hexdigest()}
+   for name,raw in self.pins.items()}}
+  self.manifest_pin=independence_digest(self.manifest)
+  self.anchors=[MemoryRecoveryHeadAnchor(f"activation-anchor-{i}") for i in range(4)]
+  self.quorum=QuorumRecoveryHeadAnchor(self.anchors,3,1)
+  self.path=str(pathlib.Path(self.tmp.name)/"quorum-activation.sqlite")
+  self.registry=RecoveryActivationRegistry(self.path,self.quorum)
+  self.registry.initialize(self.old,1)
+ def activate(self):
+  return self.registry.activate(self.cert,self.rotation,self.new,2,
+   self.pins,3,1,self.manifest,self.manifest_pin)
+ def test_three_of_four_anchor_quorum_tolerates_one_stale_anchor(self):
+  self.assertTrue(self.anchors[3].compare_and_set("0"*64,"f"*64))
+  self.assertEqual(self.activate(),"ACTIVATED")
+  self.assertEqual(self.registry.state()["policy_sha256"],self.new)
+  self.assertEqual(sum(a.read_head()==self.registry.state()["head_sha256"] for a in self.anchors),3)
+ def test_two_stale_anchors_exceed_fault_bound_and_fail_closed(self):
+  self.assertTrue(self.anchors[2].compare_and_set("0"*64,"e"*64))
+  self.assertTrue(self.anchors[3].compare_and_set("0"*64,"f"*64))
+  self.assertEqual(self.activate(),"ANCHOR_UNAVAILABLE")
+  self.assertEqual(self.registry._verified_state(__import__("sqlite3").connect(self.path))["generation"],1)
