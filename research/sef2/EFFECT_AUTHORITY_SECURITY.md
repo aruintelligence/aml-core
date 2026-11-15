@@ -40,3 +40,7 @@ An empty SQLite database may be initialized with floor zero. An existing databas
 ## Protected verifier configuration
 
 Use `PinnedCheckpoint(..., durable_store=store, require_durable=True)` to prohibit an accidental in-memory-only verifier. For protected restarts, instantiate the durable store with `require_existing=True`; bootstrap it explicitly in a separate setup operation. These switches prevent certain accidental resets, but do not independently prove that the store is administered separately or is resistant to a complete consistent snapshot rollback. CI tests are synthetic; no production external effect or independently administered checkpoint has been demonstrated.
+
+## Unix-domain checkpoint research fixture
+
+`checkpoint_socket.py` implements a bounded newline-delimited JSON checkpoint reader that verifies Linux `SO_PEERCRED` against a configured UID, requires an exact authority identifier, and signs a checkpoint under a supplied Ed25519 private key. The client can feed `PinnedCheckpoint`, which verifies the pinned public key and persists high-water observations if configured. Duplicate JSON fields are rejected. The test fixture currently runs the server and client as threads in one test process; peer-UID rejection is simulated by configuring a mismatched UID. **It does not demonstrate separate Linux identities, actual cross-UID filesystem denial, independently protected key custody, or independently administered state.** A real separate-UID deployment and failure-injection proof remain required.
