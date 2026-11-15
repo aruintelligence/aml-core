@@ -7,7 +7,7 @@ from session_capability import verify_session_capability,verify_holder_proof
 class SessionCapabilityBroker:
     def __init__(self,path,registry,witness,replicas,threshold,enrolled_keys,
                  issuer,issuer_public_hex,audience,broker_instance_id=None,broker_challenge_private=None,
-                 epoch_anchor=None):
+                 epoch_anchor=None,execution_witness=None):
         if type(issuer) is not str or not issuer or type(audience) is not str or not audience:
             raise ValueError("invalid issuer or audience")
         if type(issuer_public_hex) is not str or len(bytes.fromhex(issuer_public_hex))!=32:
@@ -17,6 +17,7 @@ class SessionCapabilityBroker:
         self.issuer=issuer; self.issuer_public_hex=issuer_public_hex; self.audience=audience
         self.broker_instance_id=broker_instance_id; self.broker_challenge_private=broker_challenge_private
         self.epoch_anchor=epoch_anchor
+        self.execution_witness=execution_witness
         if (broker_instance_id is None)!=(broker_challenge_private is None):
             raise ValueError("broker challenge identity configuration must be complete")
         with sqlite3.connect(self.path) as db:
@@ -139,6 +140,11 @@ class SessionCapabilityBroker:
                     (request["operation_id"],)).fetchone()
                 if existing is not None:
                     return "ALREADY_APPLIED" if existing[0]==digest else "DENIED"
+                # Consume the independent execution boundary before the local effect.
+                # A crash after this point may strand the operation, but rollback of
+                # the broker DB cannot safely execute it a second time.
+                if self.execution_witness is not None:
+                    self.execution_witness.consume(request,capability,challenge)
                 db.execute("INSERT INTO session_effects VALUES (?,?)",(request["operation_id"],digest))
                 db.execute("UPDATE execution_challenges SET consumed=1 WHERE operation_id=?",
                     (request["operation_id"],))
