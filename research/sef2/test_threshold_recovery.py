@@ -718,7 +718,7 @@ class IndependentlyAnchoredRecoveryLedgerTests(unittest.TestCase):
   from threshold_recovery import RecoveryAuthoritySigner,MemoryRecoveryHeadAnchor
   unanchored=RecoveryAuthoritySigner("authority-0",self.key,self.path)
   unanchored.approve(self.payload,self.policy)
-  with self.assertRaisesRegex(RuntimeError,"cannot initialize"):
+  with self.assertRaisesRegex(RuntimeError,"differs from independent anchor"):
    RecoveryAuthoritySigner("authority-0",self.key,self.path,head_anchor=MemoryRecoveryHeadAnchor())
 
 class QuorumRecoveryHeadAnchorTests(unittest.TestCase):
