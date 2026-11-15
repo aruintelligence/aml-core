@@ -292,3 +292,8 @@ This closes an important integration gap in the prototype: the independent ancho
 
 
 **Directive 022 authenticated anchor transport:** `SignedRecoveryHeadAnchor` wraps a remote anchor transport with pinned Ed25519 verification and fresh 256-bit nonce challenges. Read responses sign the anchor identity, head digest, and request nonce; compare-and-set receipts sign the exact expected/new heads, acceptance result, identity, and nonce. This detects response tampering, wrong-anchor substitution, and replayed responses even over an untrusted transport. It authenticates what the remote anchor says; it does not make the remote service honest, durable, or linearizable. Those remain requirements of the anchor service and its operational trust domain.
+
+
+### Directive 022 — independently linked recovery evidence bundle
+
+`recovery_evidence_reference_verifier.py` composes the standalone recovery-ledger and anchor-certificate verifiers into one external-auditor path. It requires the authority public key, recovery approval ledger, authority checkpoint, anchor payload, anchor certificate, anchor policy, expected anchor sequence, and predecessor anchor pin to agree on one authority identity and one externally pinned ledger head. The verifier rejects ledger truncation, checkpoint substitution, authority-key substitution, forged or below-threshold anchor certificates, wrong predecessor pins, sequence substitution, and mismatches between the checkpoint embedded in the anchor payload and the supplied authority checkpoint. This closes a verification gap between previously separate evidence artifacts. It still does not prove the real-world independence of anchor operators or the truth of administrative declarations.
