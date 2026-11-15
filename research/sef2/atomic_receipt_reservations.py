@@ -4,6 +4,8 @@ Do not substitute this fixture for an independently anchored witness. An
 attacker restoring this whole database can restore its chain as well.
 """
 import sqlite3
+import os
+import stat
 from pathlib import Path
 from reservation_receipt_chain import GENESIS, reservation_chain_hash, verify_reservation_chain
 
@@ -16,6 +18,10 @@ class AtomicReceiptReservations:
         self.authority_id = authority_id
         self.uri = Path(path).absolute().as_uri() + "?mode=rw"
         self._identity = None
+        # Refuse pre-existing symlinks before SQLite can open their target.
+        # This is a preflight check, not a race-free openat2/O_NOFOLLOW boundary.
+        if os.path.lexists(self.path) and not stat.S_ISREG(os.lstat(self.path).st_mode):
+            raise ValueError("ledger path is not a regular file")
         if require_existing and not Path(path).is_file():
             raise ValueError("missing ledger")
         with sqlite3.connect(self.path, isolation_level=None) as db:
@@ -33,8 +39,6 @@ class AtomicReceiptReservations:
         self._identity = self._file_identity()
 
     def _file_identity(self):
-        import os
-        import stat
         info = os.stat(self.path, follow_symlinks=False)
         if not stat.S_ISREG(info.st_mode):
             raise ValueError("ledger is not a regular file")
