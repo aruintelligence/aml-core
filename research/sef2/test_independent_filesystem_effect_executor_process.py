@@ -123,7 +123,7 @@ def main():
   wstate=private("witness",witness_user); astate=private("receipt-anchor",receipt_user)
   eipc=ipc("eipc",executor); epipc=ipc("epipc",epoch_user)
   wipc=ipc("wipc",witness_user); aipc=ipc("aipc",receipt_user)
-  shared=root/"shared"; shared.mkdir(mode=0o755)
+  shared=root/"shared"; shared.mkdir(mode=0o2775); os.chown(shared,0,executor.pw_gid); shared.chmod(0o2775)
   lib=root/"lib"; lib.mkdir(mode=0o755)
   names=("independent_filesystem_effect_executor","independent_filesystem_effect_executor_service",
    "independent_effect_executor_client","session_epoch_anchor","session_epoch_anchor_service",
