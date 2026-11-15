@@ -11,6 +11,18 @@ def _keys(policy):
     except (ValueError,TypeError,KeyError,AttributeError):
         return set()
 
+def _domains(policy):
+    try:
+        values=policy["administrative_domains"]
+        if type(values) is not dict or set(values)!=set(policy["authorities"]):
+            return set()
+        domains=list(values.values())
+        if any(type(value) is not str or not value for value in domains) or len(set(domains))!=len(domains):
+            return set()
+        return set(domains)
+    except (ValueError,TypeError,KeyError,AttributeError):
+        return set()
+
 def verify_complete_recovery_authorization(bundle,registry_anchor_policy,
         registry_anchor_sequence,registry_previous_anchor_pin,
         registry_id="aml-sef2-recovery-policy-registry-v1"):
@@ -30,10 +42,16 @@ def verify_complete_recovery_authorization(bundle,registry_anchor_policy,
             bundle["authority_records"]):
             return False
         registry_keys=_keys(registry_anchor_policy)
-        if not registry_keys:
+        registry_domains=_domains(registry_anchor_policy)
+        recovery_domains=_domains(policy)
+        if (not registry_keys or not registry_domains or not recovery_domains
+            or registry_domains & recovery_domains):
             return False
         for record in bundle["authority_records"]:
-            if registry_keys & _keys(record["anchor_policy"]):
+            authority_anchor_domains=_domains(record["anchor_policy"])
+            if (registry_keys & _keys(record["anchor_policy"])
+                or registry_domains & authority_anchor_domains
+                or recovery_domains & authority_anchor_domains):
                 return False
         return True
     except (ValueError,TypeError,KeyError,AttributeError,OverflowError):
