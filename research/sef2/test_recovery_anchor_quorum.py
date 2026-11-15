@@ -188,3 +188,29 @@ class RecoveryAnchorQuorumTests(unittest.TestCase):
  def test_policy_requires_complete_administrative_domain_map(self):
   p=copy.deepcopy(self.policy); del p["administrative_domains"]["anchor-3"]
   self.assertFalse(validate_anchor_policy(p))
+
+class RecoveryAnchorDatabaseSchemaHardeningTests(unittest.TestCase):
+ def setUp(self):
+  self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+  self.key=Ed25519PrivateKey.generate()
+  self.path=str(pathlib.Path(self.temp.name)/"anchor.sqlite")
+  self.anchor=RecoveryAnchorWitness("anchor-schema",self.key,self.path)
+ def test_startup_rejects_preseeded_trigger(self):
+  import sqlite3
+  with sqlite3.connect(self.path) as con:
+   con.execute("""CREATE TRIGGER poisoned_vote BEFORE INSERT ON anchor_votes
+    BEGIN SELECT RAISE(ABORT,'poisoned anchor database'); END""")
+  with self.assertRaisesRegex(ValueError,"unexpected schema objects"):
+   RecoveryAnchorWitness("anchor-schema",self.key,self.path)
+ def test_startup_rejects_unexpected_table(self):
+  import sqlite3
+  with sqlite3.connect(self.path) as con:
+   con.execute("CREATE TABLE attacker_state (value TEXT)")
+  with self.assertRaisesRegex(ValueError,"unexpected schema objects"):
+   RecoveryAnchorWitness("anchor-schema",self.key,self.path)
+ def test_startup_rejects_altered_vote_table_layout(self):
+  import sqlite3
+  with sqlite3.connect(self.path) as con:
+   con.execute("ALTER TABLE anchor_votes ADD COLUMN attacker_controlled TEXT")
+  with self.assertRaisesRegex(ValueError,"layout is not canonical"):
+   RecoveryAnchorWitness("anchor-schema",self.key,self.path)
