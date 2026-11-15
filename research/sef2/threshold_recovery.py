@@ -263,7 +263,10 @@ class RecoveryAuthoritySigner:
             raise ValueError("authority is not enrolled in pinned policy")
         if self.public_key().public_bytes_raw().hex()!=policy["authorities"][self.authority_id]:
             raise ValueError("authority private key does not match pinned identity")
-        scope_id=payload.get("witness_id",payload.get("schema"))
+        raw_scope_id=payload.get("witness_id",payload.get("schema"))
+        protocol_schema=payload.get("schema")
+        scope_id=(protocol_schema+":"+raw_scope_id
+            if type(protocol_schema) is str and type(raw_scope_id) is str else raw_scope_id)
         generation=payload.get("generation")
         previous_state=payload.get("previous_state_sha256",payload.get("previous_head_sha256"))
         scope=(policy["policy_id"],self.authority_id,scope_id,generation)
@@ -287,6 +290,18 @@ class RecoveryAuthoritySigner:
                 if row[0]!=pd or row[1]!=previous_state or row[2]!=digest:
                     raise ValueError("recovery authority equivocation refused")
                 return row[3]
+            # Preserve old un-namespaced ledger semantics during migration:
+            # an exact prior approval is idempotent; a conflicting legacy row
+            # blocks signing rather than silently bypassing historical evidence.
+            if scope_id!=raw_scope_id:
+                legacy=con.execute("""SELECT policy_sha256,previous_state_sha256,payload_sha256,signature
+                    FROM recovery_approval_ledger_v4
+                    WHERE authority_id=? AND witness_id=? AND generation=?""",
+                    (self.authority_id,raw_scope_id,generation)).fetchone()
+                if legacy:
+                    if legacy[0]==pd and legacy[1]==previous_state and legacy[2]==digest:
+                        return legacy[3]
+                    raise ValueError("legacy recovery ledger scope conflicts; manual migration required")
             con.execute("INSERT INTO recovery_approval_ledger_v4 VALUES (?,?,?,?,?,?,?,?)",
                 (*scope,pd,previous_state,digest,signature))
             prior=con.execute("SELECT event_sha256 FROM recovery_approval_events ORDER BY sequence DESC LIMIT 1").fetchone()
