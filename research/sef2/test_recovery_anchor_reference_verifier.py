@@ -12,6 +12,7 @@ class IndependentAnchorReferenceVerifierTests(unittest.TestCase):
   self.keys={f"anchor-{i}":Ed25519PrivateKey.generate() for i in range(4)}
   self.policy={"schema":POLICY_SCHEMA,"policy_id":"anchor-ref-v1","threshold":3,"max_faults":1,
    "authorities":{k:v.public_key().public_bytes_raw().hex() for k,v in self.keys.items()},
+   "administrative_domains":{k:"domain-"+k for k in self.keys},
    "administrative_domains":{k:"operator-domain-"+k for k in self.keys}}
   self.witnesses={k:RecoveryAnchorWitness(k,v,str(pathlib.Path(self.temp.name)/(k+".sqlite"))) for k,v in self.keys.items()}
   self.checkpoint={"schema":CHECKPOINT_SCHEMA,"authority_id":"recovery-authority-1",
