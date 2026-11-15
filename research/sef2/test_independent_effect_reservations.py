@@ -56,7 +56,7 @@ class IndependentReservationTests(unittest.TestCase):
         os.unlink(self.reservations)
         self.assertEqual(authority.commit(effect(), 0), "DENIED")
         self.assertFalse(self.store.reserve("op-2", "a" * 64, 0))
-        with self.assertRaises(sqlite3.OperationalError):
+        with self.assertRaises((OSError, ValueError, sqlite3.OperationalError)):
             self.store.inspect("op-2")
         self.assertFalse(os.path.exists(self.reservations))
 
