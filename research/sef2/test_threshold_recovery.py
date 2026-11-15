@@ -669,3 +669,54 @@ class RecoveryLedgerVerifierEquivocationTests(unittest.TestCase):
   bundle={"schema":"AML-SEF2-RECOVERY-APPROVAL-LEDGER-V1",
    "authority_id":"authority-A","events":events,"head_sha256":previous}
   self.assertFalse(verify_approval_ledger(bundle,key.public_key(),previous))
+
+class IndependentlyAnchoredRecoveryLedgerTests(unittest.TestCase):
+ def setUp(self):
+  import pathlib,tempfile
+  from threshold_recovery import MemoryRecoveryHeadAnchor,RecoveryAuthoritySigner
+  self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+  self.key=Ed25519PrivateKey.generate()
+  self.keys={"authority-0":self.key,**{f"authority-{i}":Ed25519PrivateKey.generate() for i in range(1,4)}}
+  self.policy=make_policy(self.keys,3)
+  self.path=str(pathlib.Path(self.temp.name)/"anchored.sqlite")
+  self.anchor=MemoryRecoveryHeadAnchor()
+  self.signer=RecoveryAuthoritySigner("authority-0",self.key,self.path,head_anchor=self.anchor)
+  self.payload={"witness_id":"north","generation":1,"previous_state_sha256":"a"*64,"next_policy_sha256":"b"*64}
+ def test_approval_advances_external_anchor_to_ledger_head(self):
+  self.signer.approve(self.payload,self.policy)
+  self.assertEqual(self.anchor.read_head(),self.signer.export_approval_ledger()["head_sha256"])
+ def test_snapshot_rollback_is_detected_by_independent_anchor(self):
+  import shutil,pathlib
+  from threshold_recovery import RecoveryAuthoritySigner
+  snapshot=str(pathlib.Path(self.temp.name)/"empty-snapshot.sqlite")
+  shutil.copy2(self.path,snapshot)
+  self.signer.approve(self.payload,self.policy)
+  shutil.copy2(snapshot,self.path)
+  with self.assertRaisesRegex(RuntimeError,"differs from independent anchor"):
+   RecoveryAuthoritySigner("authority-0",self.key,self.path,head_anchor=self.anchor)
+ def test_anchor_disagreement_prevents_new_approval(self):
+  self.signer.approve(self.payload,self.policy)
+  current=self.anchor.read_head()
+  self.assertTrue(self.anchor.compare_and_set(current,"f"*64))
+  with self.assertRaisesRegex(RuntimeError,"differs from independent anchor"):
+   self.signer.approve({**self.payload,"generation":2},self.policy)
+ def test_anchor_cas_race_leaves_local_commit_fail_closed(self):
+  class RefusingAnchor:
+   def __init__(self): self.head="0"*64
+   def read_head(self): return self.head
+   def compare_and_set(self,expected,new):
+    if expected=="0"*64 and new=="0"*64: return True
+    return False
+  from threshold_recovery import RecoveryAuthoritySigner
+  anchor=RefusingAnchor()
+  signer=RecoveryAuthoritySigner("authority-0",self.key,self.path,head_anchor=anchor)
+  with self.assertRaisesRegex(RuntimeError,"committed locally"):
+   signer.approve(self.payload,self.policy)
+  with self.assertRaisesRegex(RuntimeError,"differs from independent anchor"):
+   RecoveryAuthoritySigner("authority-0",self.key,self.path,head_anchor=anchor)
+ def test_nonempty_ledger_cannot_bootstrap_new_anchor(self):
+  from threshold_recovery import RecoveryAuthoritySigner,MemoryRecoveryHeadAnchor
+  unanchored=RecoveryAuthoritySigner("authority-0",self.key,self.path)
+  unanchored.approve(self.payload,self.policy)
+  with self.assertRaisesRegex(RuntimeError,"cannot initialize"):
+   RecoveryAuthoritySigner("authority-0",self.key,self.path,head_anchor=MemoryRecoveryHeadAnchor())
