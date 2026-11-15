@@ -62,6 +62,13 @@ class DurableReceiptWitnessTests(unittest.TestCase):
         with open(target, "rb") as source:
             self.assertEqual(source.read(), b"witness-sentinel")
 
+    def test_direct_store_foreign_authority_denied(self):
+        self.assertTrue(self.store.observe(0, GENESIS, 0, GENESIS))
+        foreign = ("foreign", "op-1", "a" * 64, 1)
+        foreign_head = reservation_chain_hash(GENESIS, *foreign)
+        self.assertFalse(self.store.observe(1, foreign_head, 0, GENESIS, foreign))
+        self.assertEqual(self.store.inspect(), (0, GENESIS))
+
     def test_invalid_checkpoint_denied(self):
         self.assertFalse(self.store.observe(True, GENESIS, 0, GENESIS))
         self.assertFalse(self.store.observe(0, "bad", 0, GENESIS))
