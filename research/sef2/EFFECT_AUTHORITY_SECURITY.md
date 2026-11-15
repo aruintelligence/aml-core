@@ -17,6 +17,10 @@ The effect database, the pinned verification key, and the process executing the 
 
 A signed floor transition proves possession of the corresponding signing key. It does not establish that the key holder is authorized under an independently verified governance policy, that the floor is fresh, or that the database has not been restored. Replay of a signed transition at an equal or lower generation does not decrease the floor, but restoring the entire database can.
 
+## Independent checkpoint option
+
+When `external_floor` is configured, the authority calls this separately trusted function inside the local effect transaction. If the checkpoint is unavailable, malformed, or higher than the local floor, new execution is denied until the local floor is advanced. This is a **rollback detector under an independent monotonic checkpoint assumption**, not an independently implemented anchor. The callback may block while holding the SQLite write lock; deployers must bound latency and isolate the checkpoint service. An attacker able to replace both the database and checkpoint defeats this protection. A malicious or stale callback also defeats freshness.
+
 ## Concurrency and linearization
 
 A successful synthetic effect linearizes at the SQLite transaction commit. Revocation linearizes at the floor-update transaction commit. If an effect transaction acquires the write lock before a revocation transaction, the effect can commit first; this is **not** a post-revocation violation. The reverse ordering must deny stale-generation execution. A crashed caller may not know whether a successful transaction committed; retrying the same operation ID returns `ALREADY_APPLIED` if it did.
