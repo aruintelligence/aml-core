@@ -87,6 +87,33 @@ def verify_anchor_state_handoff(current_policy,next_policy,rotation,handoff,
     except (ValueError,TypeError,KeyError,AttributeError,OverflowError):
         return False
 
+
+def _validate_successor_database_schema(con,witness):
+    """Reject pre-seeded triggers, views, tables, and altered table layouts."""
+    objects=con.execute("""SELECT type,name FROM sqlite_master
+        WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name""").fetchall()
+    allowed={"anchor_meta","anchor_state","anchor_votes","anchor_policy_handoff"}
+    if any(kind!="table" or name not in allowed for kind,name in objects):
+        raise ValueError("successor anchor database contains unexpected schema objects")
+    names={name for kind,name in objects}
+    required={"anchor_meta","anchor_state","anchor_votes"}
+    if not required.issubset(names):
+        raise ValueError("successor anchor database schema is incomplete")
+    expected={
+        "anchor_meta":("key","value"),
+        "anchor_state":("target_authority_id","sequence","pin_sha256","policy_id","policy_sha256"),
+        "anchor_votes":("target_authority_id","sequence","policy_id","policy_sha256",
+            "previous_pin_sha256","checkpoint_pin_sha256","payload_sha256","signature"),
+        "anchor_policy_handoff":("generation","handoff_sha256","rotation_sha256")}
+    for table in names:
+        columns=tuple(row[1] for row in con.execute("PRAGMA table_info("+table+")"))
+        if columns!=expected[table]:
+            raise ValueError("successor anchor database table layout is not canonical")
+    metadata=dict(con.execute("SELECT key,value FROM anchor_meta").fetchall())
+    key_hash=hashlib.sha256(witness.public_key().public_bytes_raw()).hexdigest()
+    if metadata!={"anchor_id":witness.anchor_id,"anchor_key_sha256":key_hash}:
+        raise ValueError("successor anchor database identity metadata mismatch")
+
 def bootstrap_successor_anchor(witness,current_policy,next_policy,rotation,handoff,
                                expected_generation,expected_previous_anchor_pin,
                                expected_targets):
@@ -101,6 +128,7 @@ def bootstrap_successor_anchor(witness,current_policy,next_policy,rotation,hando
     snapshot=handoff["payload"]["state_snapshot"]
     with sqlite3.connect(witness.database_path,timeout=10) as con:
         con.execute("PRAGMA synchronous=FULL"); con.execute("BEGIN IMMEDIATE")
+        _validate_successor_database_schema(con,witness)
         if con.execute("SELECT COUNT(*) FROM anchor_state").fetchone()[0]:
             raise ValueError("successor anchor database already contains state")
         if con.execute("SELECT COUNT(*) FROM anchor_votes").fetchone()[0]:
