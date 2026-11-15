@@ -348,3 +348,57 @@ def verify_approval_ledger(bundle,authority_public_key,expected_head_sha256=None
         return True
     except (InvalidSignature,ValueError,TypeError,KeyError,OverflowError,AttributeError):
         return False
+
+class QuorumRecoveryHeadAnchor:
+    """Quorum wrapper for independently operated linearizable head anchors.
+
+    Anchors must persist compare-and-set across restarts and be independently
+    administered. Partial updates can leave no readable quorum; this wrapper
+    then fails closed rather than guessing or rolling any anchor backward.
+    """
+    def __init__(self,anchors,threshold,max_faults):
+        if type(anchors) is not list or type(threshold) is not int or type(max_faults) is not int:
+            raise ValueError("invalid recovery head anchor configuration")
+        n=len(anchors)
+        if (n<3*max_faults+1 or max_faults<0 or threshold<1
+            or threshold>n-max_faults or 2*threshold-n<=max_faults):
+            raise ValueError("head anchor quorum violates Byzantine safety or liveness bounds")
+        if len({id(anchor) for anchor in anchors})!=n:
+            raise ValueError("head anchors must be distinct instances")
+        self.anchors=list(anchors)
+        self.threshold=threshold
+        self.max_faults=max_faults
+
+    def read_head(self):
+        from collections import Counter
+        observed=[]
+        for anchor in self.anchors:
+            try:
+                head=anchor.read_head()
+                if type(head) is str and len(head)==64 and all(c in "0123456789abcdef" for c in head):
+                    observed.append(head)
+            except Exception:
+                continue
+        counts=Counter(observed)
+        winners=[head for head,count in counts.items() if count>=self.threshold]
+        if len(winners)!=1:
+            raise RuntimeError("independent recovery anchors have no unique quorum head")
+        return winners[0]
+
+    def compare_and_set(self,expected_head,new_head):
+        if (type(expected_head) is not str or type(new_head) is not str
+            or len(expected_head)!=64 or len(new_head)!=64
+            or any(c not in "0123456789abcdef" for c in expected_head+new_head)
+            or expected_head==new_head):
+            return False
+        accepted=0
+        for anchor in self.anchors:
+            try:
+                current=anchor.read_head()
+                if current==new_head:
+                    accepted+=1
+                elif current==expected_head and anchor.compare_and_set(expected_head,new_head):
+                    accepted+=1
+            except Exception:
+                continue
+        return accepted>=self.threshold
