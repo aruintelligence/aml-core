@@ -1110,3 +1110,33 @@ class RecoveryAnchorProtocolDomainTests(unittest.TestCase):
   self.assertTrue(RECOVERY_ANCHOR_CAS_DOMAIN.endswith(b"\\x00"))
   self.assertNotIn(b"\\\\x00",RECOVERY_ANCHOR_READ_DOMAIN)
   self.assertNotIn(b"\\\\x00",RECOVERY_ANCHOR_CAS_DOMAIN)
+
+class RecoveryAuthorityGenerationMonotonicityTests(unittest.TestCase):
+ def setUp(self):
+  import pathlib,tempfile
+  self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+  self.key=Ed25519PrivateKey.generate()
+  self.policy=make_policy({"authority-0":self.key,
+   "authority-1":Ed25519PrivateKey.generate(),"authority-2":Ed25519PrivateKey.generate(),
+   "authority-3":Ed25519PrivateKey.generate()},3)
+  self.signer=RecoveryAuthoritySigner("authority-0",self.key,
+   str(pathlib.Path(self.temp.name)/"generation.sqlite"))
+ def payload(self,generation,parent):
+  return {"witness_id":"generation-test","generation":generation,
+   "previous_state_sha256":parent*64,"new_key":"f"*64}
+ def test_authority_rejects_skipped_generation(self):
+  self.signer.approve(self.payload(4,"a"),self.policy)
+  with self.assertRaisesRegex(ValueError,"advance exactly one step"):
+   self.signer.approve(self.payload(6,"b"),self.policy)
+ def test_authority_rejects_lower_unseen_generation_after_higher_one(self):
+  self.signer.approve(self.payload(8,"a"),self.policy)
+  with self.assertRaisesRegex(ValueError,"advance exactly one step"):
+   self.signer.approve(self.payload(7,"b"),self.policy)
+ def test_authority_accepts_exact_next_generation(self):
+  self.signer.approve(self.payload(4,"a"),self.policy)
+  self.signer.approve(self.payload(5,"b"),self.policy)
+  self.assertEqual(len(self.signer.export_approval_ledger()["events"]),2)
+ def test_exact_replay_remains_idempotent_at_latest_generation(self):
+  payload=self.payload(4,"a")
+  first=self.signer.approve(payload,self.policy)
+  self.assertEqual(self.signer.approve(payload,self.policy),first)
