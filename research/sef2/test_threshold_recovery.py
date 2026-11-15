@@ -1010,3 +1010,34 @@ class RecoveryHeadAnchorReconciliationTests(unittest.TestCase):
    con.execute("UPDATE recovery_approval_events SET signature=?",("00"*64,))
   with self.assertRaisesRegex(RuntimeError,"INVALID_LOCAL_LEDGER"):
    reconcile_recovery_head_anchor("authority-0",self.key,self.path,self.anchor)
+
+class RecoveryHeadAnchorQuorumReconciliationTests(unittest.TestCase):
+ def setUp(self):
+  import pathlib,tempfile
+  from threshold_recovery import RecoveryAuthoritySigner
+  self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+  self.path=str(pathlib.Path(self.temp.name)/"authority.sqlite")
+  self.key=Ed25519PrivateKey.generate()
+  self.keys={"authority-0":self.key,**{f"authority-{i}":Ed25519PrivateKey.generate() for i in range(1,4)}}
+  self.policy=make_policy(self.keys,3)
+  self.signer=RecoveryAuthoritySigner("authority-0",self.key,self.path)
+  self.payload={"witness_id":"north","generation":1,"previous_state_sha256":"a"*64}
+ def test_reconcile_repairs_two_two_partial_anchor_quorum_with_external_predecessor_pin(self):
+  from threshold_recovery import MemoryRecoveryHeadAnchor,QuorumRecoveryHeadAnchor,reconcile_recovery_head_anchor
+  self.signer.approve(self.payload,self.policy)
+  local_head=self.signer.export_approval_ledger()["head_sha256"]
+  anchors=[MemoryRecoveryHeadAnchor(f"recovery-anchor-{i}") for i in range(4)]
+  for anchor in anchors[:2]: self.assertTrue(anchor.compare_and_set("0"*64,local_head))
+  quorum=QuorumRecoveryHeadAnchor(anchors,3,1)
+  with self.assertRaisesRegex(RuntimeError,"no unique quorum"): quorum.read_head()
+  result=reconcile_recovery_head_anchor("authority-0",self.key,self.path,quorum,"0"*64)
+  self.assertEqual(result,local_head); self.assertEqual(quorum.read_head(),local_head)
+ def test_reconcile_requires_external_predecessor_when_anchor_quorum_is_unreadable(self):
+  from threshold_recovery import MemoryRecoveryHeadAnchor,QuorumRecoveryHeadAnchor,reconcile_recovery_head_anchor
+  self.signer.approve(self.payload,self.policy)
+  local_head=self.signer.export_approval_ledger()["head_sha256"]
+  anchors=[MemoryRecoveryHeadAnchor(f"recovery-anchor-{i}") for i in range(4)]
+  for anchor in anchors[:2]: anchor.compare_and_set("0"*64,local_head)
+  quorum=QuorumRecoveryHeadAnchor(anchors,3,1)
+  with self.assertRaisesRegex(RuntimeError,"predecessor pin required"):
+   reconcile_recovery_head_anchor("authority-0",self.key,self.path,quorum)
