@@ -45,7 +45,8 @@ class AuthenticatedHolderProofStateTests(unittest.TestCase):
   self.request={"operation_id":"holder-auth-op","action":"payment:simulate","target":"fixture:merchant-a","amount_cents":100}
   self.cap=issue_session_capability(self.authority,"issuer","broker",self.request,3,self.key.public_key().public_bytes_raw().hex())
   self.state=HolderProofState(self.root/"holder-auth.sqlite",self.key,
-   self.broker.public_key().public_bytes_raw().hex(),"broker-instance","broker")
+   self.broker.public_key().public_bytes_raw().hex(),"broker-instance","broker",
+   self.authority.public_key().public_bytes_raw().hex(),"issuer")
   self.state.register(self.cap,self.request)
  def env(self,key=None,request=None,cap=None,epoch=3):
   return make_execution_challenge(key or self.broker,"broker-instance","broker",request or self.request,
@@ -64,3 +65,12 @@ class AuthenticatedHolderProofStateTests(unittest.TestCase):
   other_holder=Ed25519PrivateKey.generate()
   cap2=issue_session_capability(self.authority,"issuer","broker",self.request,3,other_holder.public_key().public_bytes_raw().hex())
   with self.assertRaises(PermissionError): self.state.prove_authenticated(cap2,self.request,self.env())
+
+ def test_forged_authority_capability_rejected_at_holder_registration(self):
+  forged_authority=Ed25519PrivateKey.generate()
+  cap=issue_session_capability(forged_authority,"issuer","broker",self.request,3,
+   self.key.public_key().public_bytes_raw().hex())
+  fresh=HolderProofState(self.root/"holder-forged.sqlite",self.key,
+   self.broker.public_key().public_bytes_raw().hex(),"broker-instance","broker",
+   self.authority.public_key().public_bytes_raw().hex(),"issuer")
+  with self.assertRaises(PermissionError): fresh.register(cap,self.request)
