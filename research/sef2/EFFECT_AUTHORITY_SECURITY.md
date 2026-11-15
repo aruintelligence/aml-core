@@ -36,3 +36,7 @@ The workflow `.github/workflows/sef2-research-lab.yml` includes `test_effect_aut
 ## Initialization and missing-state handling
 
 An empty SQLite database may be initialized with floor zero. An existing database missing either required security table or its singleton policy-floor row is rejected on restart, rather than silently recreated. The check is performed under a write transaction to avoid a concurrent initializer race. This does **not** distinguish a legitimately empty first boot from deletion of the entire database file, and it does **not** detect rollback to a complete older snapshot. Deployment must protect the database path and use an independently controlled checkpoint with trustworthy freshness for those cases.
+
+## Protected verifier configuration
+
+Use `PinnedCheckpoint(..., durable_store=store, require_durable=True)` to prohibit an accidental in-memory-only verifier. For protected restarts, instantiate the durable store with `require_existing=True`; bootstrap it explicitly in a separate setup operation. These switches prevent certain accidental resets, but do not independently prove that the store is administered separately or is resistant to a complete consistent snapshot rollback. CI tests are synthetic; no production external effect or independently administered checkpoint has been demonstrated.
