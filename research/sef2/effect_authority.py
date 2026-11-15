@@ -49,7 +49,10 @@ class EffectAuthority:
             with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
                 db.execute("PRAGMA synchronous=FULL")
                 db.execute("BEGIN IMMEDIATE")
-                db.execute("UPDATE policy_floor SET generation = MAX(generation, ?) WHERE singleton=1", (generation,))
+                updated = db.execute("UPDATE policy_floor SET generation = MAX(generation, ?) WHERE singleton=1", (generation,))
+                if updated.rowcount != 1:
+                    db.execute("ROLLBACK")
+                    return False
                 db.execute("COMMIT")
             return True
         except sqlite3.Error:
