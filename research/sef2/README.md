@@ -213,3 +213,8 @@ This is an independent checkpoint quorum prototype, not a full Byzantine consens
 
 
 **Migration verification refinement:** v3-to-v4 migration now verifies every legacy Ed25519 approval against the authority key fingerprint being bound to the ledger and rejects rows attributed to a different authority identity. Invalid or foreign-key-signed legacy evidence is preserved in the original database and causes initialization to fail closed; it is never silently imported under a new key.
+
+
+### Directive 023 — durable dual-consent recovery policy registry
+
+`recovery_policy_registry.py` makes council succession stateful rather than relying only on a caller-supplied expected generation. The registry serializes competing rotations with `BEGIN IMMEDIATE`, verifies both outgoing and incoming threshold quorums against the currently stored policy, and atomically updates the active policy and appends a signed, hash-chained event containing both policy documents and the rotation evidence. Its independent history verifier rechecks each policy digest, each dual-quorum transition, generation continuity, event-chain links, and the active terminal state. Tests cover restart, replay, rollback, concurrent competing rotations, failed event persistence, state corruption, and event tampering. The SQLite registry remains rollbackable as a whole; a separate external checkpoint is still required to detect restoration of an earlier valid database snapshot.
