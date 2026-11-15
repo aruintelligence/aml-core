@@ -37,6 +37,15 @@ class ReservationReceiptChainTests(unittest.TestCase):
         self.assertFalse(verify_reservation_chain([self.first], self.head1, True))
         self.assertFalse(verify_reservation_chain([("a", "bad\\n", "a" * 64, 1)], self.head1, 1))
 
+    def test_duplicate_operation_identity_rejected_even_with_matching_hash(self):
+        duplicate_head = reservation_chain_hash(self.head1, *self.first)
+        self.assertFalse(verify_reservation_chain(
+            [self.first, self.first], duplicate_head, 2))
+
+    def test_malformed_external_head_rejected(self):
+        self.assertFalse(verify_reservation_chain([self.first], "G" * 64, 1))
+        self.assertFalse(verify_reservation_chain([self.first], "A" * 64, 1))
+
     def test_one_thousand_deterministic_tamper_cases(self):
         """1,000 independent attack variations across four mutation families."""
         for i in range(250):
