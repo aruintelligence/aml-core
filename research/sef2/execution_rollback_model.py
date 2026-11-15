@@ -1,8 +1,8 @@
 """Bounded model for single-use execution under broker rollback.
 
-The independent witness is monotonic. The broker's local effect/challenge state
-may roll back. Safe protocol consumes the witness before the local effect.
-A broken protocol that trusts only local effect state exposes double execution.
+Persistent witness consumption and the one-shot in-flight commit permit are
+modeled separately. Broker rollback can restore local effect/challenge state,
+but cannot restore a consumed witness permit.
 """
 from collections import deque
 from dataclasses import dataclass
@@ -10,22 +10,27 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class State:
     witness_consumed:bool=False
+    commit_permit:bool=False
     local_effect:bool=False
     challenge_available:bool=True
     external_effect_count:int=0
 
 def successors(state,broken=False):
     out=[]
-    w,l,c,count=state.witness_consumed,state.local_effect,state.challenge_available,state.external_effect_count
+    w,permit,l,c,count=(state.witness_consumed,state.commit_permit,
+                        state.local_effect,state.challenge_available,
+                        state.external_effect_count)
     if c and not l:
         if broken:
-            out.append(("execute",State(w,True,False,count+1)))
+            out.append(("execute",State(w,permit,True,False,count+1)))
         elif not w:
-            out.append(("consume_witness",State(True,l,c,count)))
-    if w and c and not l and not broken:
-        out.append(("commit_effect",State(w,True,False,count+1)))
+            out.append(("consume_witness",State(True,True,l,c,count)))
+    if permit and c and not l and not broken:
+        out.append(("commit_effect",State(w,False,True,False,count+1)))
     if l or not c:
-        out.append(("rollback_broker",State(w,False,True,count)))
+        # Rollback restores broker-local effect/challenge state only. It cannot
+        # recreate the already-spent independent witness permit.
+        out.append(("rollback_broker",State(w,False,False,True,count)))
     return out
 
 def explore(depth=8,broken=False):
