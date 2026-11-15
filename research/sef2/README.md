@@ -327,3 +327,8 @@ This closes an important integration gap in the prototype: the independent ancho
 
 
 **Directive 025 trust-plane separation:** the current-policy verifier now rejects reuse of the same anchor policy or any overlapping anchor public key between the recovery-authority ledger anchor plane and the policy-registry anchor plane. This prevents one compromised anchor key set from satisfying both freshness and authority-history checks. The guarantee is about pinned key separation, not organizational independence: distinct keys controlled by the same administrator, HSM account, cloud tenant, recovery process, or upstream identity provider remain a common-mode risk.
+
+
+### Directive 026 — full recovery verification benchmark
+
+`benchmark_recovery_evidence.py` measures the local cost and artifact size of the complete current-policy-bound verification path: authority ledger signatures and hash chain, authority checkpoint, authority anchor quorum, recovery-policy registry state, registry anchor quorum, and disjoint anchor trust-plane check. CI records median, p95, mean, min/max verification latency plus canonical bundle size and the exact runner environment. The benchmark is intentionally labeled as a single-host synthetic microbenchmark; it excludes network, HSM/TPM, remote witness, distributed storage, contention and operator latency.
