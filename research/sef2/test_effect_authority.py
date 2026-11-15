@@ -69,6 +69,35 @@ class EffectAuthorityTests(unittest.TestCase):
         self.assertEqual(restarted.commit(effect(), 8), "DENIED")
         self.assertEqual(restarted.commit(effect(), 9), "APPLIED")
 
+    def test_restart_refuses_deleted_policy_floor_row(self):
+        authority = EffectAuthority(self.path, lambda *args: True)
+        self.assertTrue(authority.advance_policy_floor(11))
+        with sqlite3.connect(self.path) as db:
+            db.execute("DELETE FROM policy_floor WHERE singleton=1")
+        with self.assertRaises(ValueError):
+            EffectAuthority(self.path, lambda *args: True)
+
+    def test_restart_refuses_deleted_policy_table(self):
+        EffectAuthority(self.path, lambda *args: True)
+        with sqlite3.connect(self.path) as db:
+            db.execute("DROP TABLE policy_floor")
+        with self.assertRaises(ValueError):
+            EffectAuthority(self.path, lambda *args: True)
+
+    def test_restart_refuses_deleted_effects_table(self):
+        EffectAuthority(self.path, lambda *args: True)
+        with sqlite3.connect(self.path) as db:
+            db.execute("DROP TABLE effects")
+        with self.assertRaises(ValueError):
+            EffectAuthority(self.path, lambda *args: True)
+
+    def test_restart_preserves_existing_policy_floor(self):
+        authority = EffectAuthority(self.path, lambda *args: True)
+        self.assertTrue(authority.advance_policy_floor(11))
+        restarted = EffectAuthority(self.path, lambda *args: True)
+        self.assertEqual(restarted.commit(effect(), 10), "DENIED")
+        self.assertEqual(restarted.commit(effect(), 11), "APPLIED")
+
     def test_missing_policy_floor_row_never_acknowledges_revocation(self):
         authority = EffectAuthority(self.path, lambda *args: True)
         with sqlite3.connect(self.path) as db:
