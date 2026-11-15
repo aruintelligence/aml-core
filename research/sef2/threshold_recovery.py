@@ -144,6 +144,7 @@ class RecoveryAuthoritySigner:
                     raise ValueError("incomplete recovery ledger identity binding")
                 con.execute("INSERT INTO recovery_ledger_meta VALUES ('authority_id',?)",(self.authority_id,))
                 con.execute("INSERT INTO recovery_ledger_meta VALUES ('authority_key_sha256',?)",(authority_key_hash,))
+            con.commit()
             con.execute("""CREATE TABLE IF NOT EXISTS recovery_approval_ledger_v4 (
                 policy_id TEXT NOT NULL, authority_id TEXT NOT NULL,
                 witness_id TEXT NOT NULL, generation INTEGER NOT NULL,
