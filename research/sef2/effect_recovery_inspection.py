@@ -4,6 +4,7 @@ No classifier result authorizes execution or releases a reservation. The
 independent reservation ledger is authoritative for replay prevention.
 """
 import sqlite3
+from pathlib import Path
 
 def classify_recovery(effect_db_path, reservation_store, operation_id):
     """Return COMMITTED, STRANDED, ABSENT, CONFLICT, or UNKNOWN.
@@ -13,7 +14,7 @@ def classify_recovery(effect_db_path, reservation_store, operation_id):
     """
     try:
         reserved = reservation_store.inspect(operation_id)
-        uri = "file:" + str(effect_db_path) + "?mode=ro"
+        uri = Path(effect_db_path).absolute().as_uri() + "?mode=ro"
         with sqlite3.connect(uri, uri=True, timeout=5) as db:
             rows = db.execute(
                 "SELECT digest,generation FROM effects WHERE operation_id=?",
