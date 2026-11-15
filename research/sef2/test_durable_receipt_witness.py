@@ -21,7 +21,7 @@ class DurableReceiptWitnessTests(unittest.TestCase):
 
     def test_stale_cas_rejected(self):
         self.assertTrue(self.store.observe(0, GENESIS, 0, GENESIS))
-        self.assertTrue(self.store.observe(1, self.h1, 0, GENESIS))
+        self.assertTrue(self.store.observe(1, self.h1, 0, GENESIS, self.first))
         self.assertFalse(self.store.observe(1, self.h1, 0, GENESIS))
         self.assertEqual(self.store.inspect(), (1, self.h1))
 
