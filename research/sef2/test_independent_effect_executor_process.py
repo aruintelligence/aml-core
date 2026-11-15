@@ -1,5 +1,5 @@
 """Five-service/UID independent effect execution and rollback experiment."""
-import json,os,pathlib,pwd,shutil,subprocess,sys,tempfile,time
+import json,os,pathlib,pwd,shutil,sqlite3,subprocess,sys,tempfile,time
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from authenticated_execution_challenge import make_execution_challenge
 from execution_gate_receipt import evaluate_and_issue
@@ -163,6 +163,17 @@ assert RemoteSessionEpochAnchor(sys.argv[1]).initialize("broker-a",0)==0
    snapshot=shared/"effect-before.sqlite"; shutil.copy2(effect_db,snapshot)
    first=run(BROKER_CLIENT,[effect_sock,evidence_path],broker,env)
    assert first=="APPLIED",first
+   with sqlite3.connect(witness_db) as db:
+    assert db.execute("SELECT COUNT(*) FROM authorized_execution_consumption").fetchone()[0]==1
+    assert db.execute("SELECT COUNT(*) FROM execution_consumption").fetchone()[0]==0
+   with sqlite3.connect(anchor_db) as db:
+    seq=db.execute("""SELECT sequence FROM authorized_execution_receipt_anchor
+     WHERE witness_id='effect-execution-witness'""").fetchone()[0]
+    assert seq==1
+    legacy=db.execute("""SELECT sequence FROM execution_receipt_anchor
+     WHERE witness_id='effect-execution-witness'""").fetchone()[0]
+    assert legacy==0
+   print("FULL_AUTHORIZATION_V3_CONSUMPTION_ANCHORED")
    second=run(BROKER_CLIENT,[effect_sock,evidence_path],broker,env)
    assert second=="ALREADY_APPLIED",second
    denied=run(ATTACKER,[effect_sock,evidence_path],attacker,env,(broker.pw_gid,))
