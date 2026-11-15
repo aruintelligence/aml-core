@@ -51,6 +51,11 @@ jobs:
           sudo useradd --system --no-create-home --user-group aml_client_test
           sudo useradd --system --no-create-home --user-group aml_signer_test
           sudo useradd --system --no-create-home --user-group aml_witness_test
+          sudo useradd --system --no-create-home --user-group aml_ra0_test
+          sudo useradd --system --no-create-home --user-group aml_ra1_test
+          sudo useradd --system --no-create-home --user-group aml_ra2_test
+          sudo useradd --system --no-create-home --user-group aml_ra3_test
           sudo python3 research/sef2/test_cross_uid_boundary.py
           sudo python3 research/sef2/test_full_broker_cross_uid.py
           sudo python3 research/sef2/test_signer_witness_process.py
+          sudo python3 research/sef2/test_recovery_head_anchor_process.py
