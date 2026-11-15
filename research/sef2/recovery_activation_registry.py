@@ -104,6 +104,23 @@ class RecoveryActivationRegistry:
         except (sqlite3.Error,ValueError,TypeError,KeyError,RuntimeError,OSError):
             raise ValueError("corrupt, rolled-back, or unavailable activation registry")
 
+    def export_evidence(self):
+        with sqlite3.connect(self.path) as con:
+            state=self._verified_state(con)
+            if state is None: raise ValueError("activation registry uninitialized")
+            rows=con.execute("""SELECT generation,previous_policy_sha256,next_policy_sha256,
+                cutover_sha256,previous_event_sha256,event_sha256,certificate_json,rotation_json
+                FROM recovery_activation_events ORDER BY generation""").fetchall()
+        events=[]
+        for row in rows:
+            g,old_sha,new_sha,cutover_sha,prev,event_sha,cert_raw,rotation_raw=row
+            events.append({"generation":g,"previous_policy_sha256":old_sha,
+                "next_policy_sha256":new_sha,"cutover_sha256":cutover_sha,
+                "previous_event_sha256":prev,"event_sha256":event_sha,
+                "certificate":json.loads(cert_raw),"rotation":json.loads(rotation_raw)})
+        return {"schema":"AML-SEF2-RECOVERY-ACTIVATION-EVIDENCE-V1",
+            "state":state,"events":events}
+
     def activate(self,certificate,rotation,next_policy_sha256,generation,
             verifier_keys,threshold,max_faults,independence_manifest,independence_pin):
         if not verify_independent_cutover_certificate(certificate,rotation,next_policy_sha256,
