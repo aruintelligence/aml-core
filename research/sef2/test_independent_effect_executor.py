@@ -130,3 +130,27 @@ class IndependentEffectExecutorTests(unittest.TestCase):
    db.execute("DROP TRIGGER reject_independent_effect")
   self.assertEqual(executor.execute(self.request,self.capability,self.challenge,
    self.holder_proof,self.evaluator_auth),"DENIED")
+
+ def test_two_independent_executor_databases_racing_same_operation_commit_once(self):
+  root=pathlib.Path(self.executor.path).parent
+  witness=ExecutionConsumptionWitness(root/"shared-cross-executor-consumption.sqlite")
+  first=IndependentEffectExecutor(root/"executor-a.sqlite","authority",
+   self.authority.public_key().public_bytes_raw().hex(),"broker-a","broker-instance-1",
+   self.broker.public_key().public_bytes_raw().hex(),"evaluator-1",
+   self.evaluator.public_key().public_bytes_raw().hex(),"north",self.anchor,witness)
+  second=IndependentEffectExecutor(root/"executor-b.sqlite","authority",
+   self.authority.public_key().public_bytes_raw().hex(),"broker-a","broker-instance-1",
+   self.broker.public_key().public_bytes_raw().hex(),"evaluator-1",
+   self.evaluator.public_key().public_bytes_raw().hex(),"north",self.anchor,witness)
+  def call(executor):
+   return executor.execute(self.request,self.capability,self.challenge,
+    self.holder_proof,self.evaluator_auth)
+  with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+   results=list(pool.map(call,(first,second)))
+  self.assertEqual(results.count("APPLIED"),1)
+  self.assertEqual(results.count("DENIED"),1)
+  total=0
+  for executor in (first,second):
+   with sqlite3.connect(executor.path) as db:
+    total+=db.execute("SELECT COUNT(*) FROM independent_effects").fetchone()[0]
+  self.assertEqual(total,1)
