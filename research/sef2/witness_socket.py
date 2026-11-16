@@ -44,9 +44,19 @@ class WitnessHandler(socketserver.StreamRequestHandler):
                 else:
                     # Verify the requested next checkpoint against independently
                     # opened committed evidence; do not trust a caller entry.
-                    accepted = self.server.committed_bridge.advance(self.server.store) is True
-                    if accepted:
-                        accepted = self.server.store.inspect() == (args[0], args[1])
+                    bridge = self.server.committed_bridge
+                    accepted = False
+                    if bridge.source_is_current():
+                        try:
+                            evidence_head, evidence_entries = bridge.ledger.evidence()
+                            if (evidence_head == (args[0], args[1])
+                                and len(evidence_entries) == args[0]
+                                and tuple(evidence_entries[-1]) == args[4]):
+                                accepted = bridge.advance(self.server.store) is True
+                                if accepted:
+                                    accepted = self.server.store.inspect() == (args[0], args[1])
+                        except (OSError, ValueError, TypeError, IndexError):
+                            accepted = False
             self.wfile.write(json.dumps({"accepted": accepted}).encode() + b"\n")
         except (OSError, ValueError, TypeError, OverflowError):
             return
