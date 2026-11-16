@@ -137,6 +137,21 @@ class WitnessSocketTests(unittest.TestCase):
                           require_committed_evidence=True)
         self.assertEqual(self.store.inspect(), (0, GENESIS))
 
+    def test_strict_startup_detects_checkpoint_change_during_evidence_read(self):
+        ledger_path = os.path.join(self.tmp.name, "ledger.db")
+        ledger = AtomicReceiptReservations(ledger_path, "authority")
+        bridge = PinnedLedgerWitnessBridge(ledger_path, "authority", expected_uid=os.getuid())
+        original_evidence = bridge.ledger.evidence
+        def change_checkpoint_after_snapshot():
+            snapshot = original_evidence()
+            self.assertTrue(self.store.observe(1, self.request["head"], 0, GENESIS, tuple(self.entry)))
+            return snapshot
+        bridge.ledger.evidence = change_checkpoint_after_snapshot
+        with self.assertRaises(ValueError):
+            WitnessServer(self.path + ".race", allowed_uid=os.getuid(),
+                          store=self.store, committed_bridge=bridge,
+                          require_committed_evidence=True)
+
     def test_unavailable_socket_denies(self):
         self.assertFalse(advance_via_socket(self.path + ".missing", self.request))
 
