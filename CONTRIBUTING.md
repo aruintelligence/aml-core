@@ -2,11 +2,33 @@
 
 Thank you for your interest in ĀML™ — ĀRU Meaning Language™.
 
-ĀML is a working research prototype exploring meaning-native interfaces, accountable rendering, policy-aware execution, verifiable receipts, and cross-system interoperability.
+ĀML is a working research prototype exploring meaning-native interfaces, accountable rendering, policy-aware execution, verifiable receipts, and cross-system interoperability. Please read this guide, the [Code of Conduct](CODE_OF_CONDUCT.md), and [SECURITY.md](SECURITY.md) before contributing.
 
 ## Project status
 
-The project is under active development. Interfaces, schemas, RFCs, conformance requirements, and policies may evolve.
+The project is under active development. Interfaces, schemas, RFCs, conformance requirements, and policies may evolve. `v1.3.0` remains the stable package/CLI/capability contract; later work on this branch may include breaking authorization semantics. See [CHANGELOG.md](CHANGELOG.md).
+
+## Development setup
+
+1. Install [Node.js](https://nodejs.org/) 20 or 24 (see `.nvmrc`). Python 3 and Go are required for the independent verifier checks that CI runs.
+2. Clone the repository and install package metadata without running package lifecycle scripts:
+
+   ```bash
+   git clone https://github.com/aruintelligence/aml-core.git
+   cd aml-core
+   npm install --ignore-scripts
+   npm test
+   ```
+
+3. Useful local checks, also used in CI:
+
+   ```bash
+   npm run check:links
+   node scripts/check-project-contract.mjs
+   node scripts/check-workflow-safety.mjs
+   ```
+
+Keep changes focused. Do not commit secrets, private keys, or unreleased credential material. Do not add production signing material to the repository.
 
 ## Contribution areas
 
@@ -43,7 +65,11 @@ Please:
 3. include rationale for major additions;
 4. include tests when behavior changes;
 5. call out compatibility and security implications;
-6. avoid unsupported scientific, ethical, legal, or compliance claims.
+6. avoid unsupported scientific, ethical, legal, or compliance claims;
+7. follow the [pull request template](.github/pull_request_template.md);
+8. be respectful and follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+Maintainers may ask for changes so public claims, versioning, and authorization exit semantics stay consistent with the project contracts.
 
 ## Contribution licensing
 

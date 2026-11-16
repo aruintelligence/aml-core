@@ -23,6 +23,12 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 - New `authorizeCapabilityToken` / `createCapabilityConsumptionGuard` bind capability tokens to a pinned issuer key, audience, executor, session, intent and a single-use nonce; `verifyCapabilityToken().valid` is documented as non-authorizing.
 - New CodeQL data-flow queries (`tooling/codeql/`) and `scripts/check-authorization-dataflow.mjs` cover call arguments, containers, computed property names, multi-line expressions, imports and Go aliases; the lexical checker fails any shipped success gated only on verification fields.
 
+### Repository hygiene
+
+- Added community files expected of a public reference repository: Contributor Covenant code of conduct, support guide, issue forms, Dependabot config, and editor defaults.
+- Hardened GitHub Actions workflows: pin official actions to full commit SHAs, declare top-level least-privilege permissions, add concurrency groups, and set job timeouts. CI now runs the test suite on Node.js 20 and 24.
+- Rewrote the root README for an honest status and security-model summary. No change to product code or tests in this hygiene work.
+
 ### 2026-11-04 action-boundary pilot hardening
 
 - Prevented the local one-use grant pilot from silently recreating a missing spent-marker directory. New stores carry a version-2 state marker; existing unmarked stores require operator reconciliation and a fresh directory after grants expire.

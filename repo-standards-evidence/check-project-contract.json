@@ -1,0 +1,7 @@
+{
+  "valid": true,
+  "schema": "aml-project-contract/1",
+  "stableVersion": "1.3.0",
+  "checks": 85,
+  "failures": []
+}
