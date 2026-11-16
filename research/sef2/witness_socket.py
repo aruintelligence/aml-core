@@ -102,6 +102,9 @@ class WitnessServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
             raise ValueError("invalid committed evidence bridge")
         if type(require_committed_evidence) is not bool:
             raise ValueError("invalid evidence requirement")
+        if require_committed_evidence and (not hasattr(store, "inspect")
+            or not callable(store.inspect)):
+            raise TypeError("strict mode requires an inspectable witness store")
         if require_committed_evidence and committed_bridge is None:
             raise ValueError("committed evidence required")
 
