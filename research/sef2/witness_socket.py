@@ -46,7 +46,7 @@ class WitnessHandler(socketserver.StreamRequestHandler):
                     # opened committed evidence; do not trust a caller entry.
                     bridge = self.server.committed_bridge
                     accepted = False
-                    if bridge.source_is_current():
+                    if bridge.source_is_current() and self.server.store.inspect() == (args[2], args[3]):
                         try:
                             evidence_head, evidence_entries = bridge.ledger.evidence()
                             if (evidence_head == (args[0], args[1])
