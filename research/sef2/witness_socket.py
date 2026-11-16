@@ -39,7 +39,14 @@ class WitnessHandler(socketserver.StreamRequestHandler):
             if args is None:
                 accepted = False
             else:
-                accepted = self.server.store.observe(*args) is True
+                if self.server.committed_bridge is None:
+                    accepted = self.server.store.observe(*args) is True
+                else:
+                    # Verify the requested next checkpoint against independently
+                    # opened committed evidence; do not trust a caller entry.
+                    accepted = self.server.committed_bridge.advance(self.server.store) is True
+                    if accepted:
+                        accepted = self.server.store.inspect() == (args[0], args[1])
             self.wfile.write(json.dumps({"accepted": accepted}).encode() + b"\n")
         except (OSError, ValueError, TypeError, OverflowError):
             return
@@ -67,13 +74,17 @@ class WitnessServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
         finally:
             self._slots.release()
 
-    def __init__(self, path, *, allowed_uid, store):
+    def __init__(self, path, *, allowed_uid, store, committed_bridge=None):
         if not hasattr(socket, "SO_PEERCRED"):
             raise RuntimeError("Linux SO_PEERCRED required")
         if type(allowed_uid) is not int or allowed_uid < 0:
             raise ValueError("invalid allowed UID")
         if not callable(getattr(store, "observe", None)):
             raise TypeError("witness store required")
+        if committed_bridge is not None and (not callable(getattr(committed_bridge, "advance", None))
+            or committed_bridge.authority_id != store.authority_id):
+            raise ValueError("invalid committed evidence bridge")
+        self.committed_bridge = committed_bridge
         self.allowed_uid = allowed_uid
         self.store = store
         self._slots = threading.BoundedSemaphore(self.MAX_ACTIVE)
