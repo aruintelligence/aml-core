@@ -45,5 +45,6 @@ class PinnedLedgerWitnessBridge:
             return False
         # Recheck path identity after the evidence read.
         # This is not a race-free descriptor-based filesystem boundary.
-        result = advance_from_committed_evidence(witness, self.ledger)
+        result = advance_from_committed_evidence(
+            witness, self.ledger, evidence_guard=self.source_is_current)
         return bool(result and self.source_is_current())
