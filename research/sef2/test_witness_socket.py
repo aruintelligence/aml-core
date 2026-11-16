@@ -152,6 +152,22 @@ class WitnessSocketTests(unittest.TestCase):
                           store=self.store, committed_bridge=bridge,
                           require_committed_evidence=True)
 
+    def test_committed_mode_rejects_source_swap_during_socket_snapshot(self):
+        ledger_path = os.path.join(self.tmp.name, "ledger.db")
+        ledger = AtomicReceiptReservations(ledger_path, "authority")
+        self.assertTrue(ledger.reserve("op-1", "a" * 64, 1))
+        bridge = PinnedLedgerWitnessBridge(ledger_path, "authority", expected_uid=os.getuid())
+        original_evidence = bridge.ledger.evidence
+        def swap_after_snapshot():
+            snapshot = original_evidence()
+            os.unlink(ledger_path)
+            AtomicReceiptReservations(ledger_path, "authority")
+            return snapshot
+        bridge.ledger.evidence = swap_after_snapshot
+        self.server.committed_bridge = bridge
+        self.assertFalse(advance_via_socket(self.path, self.request))
+        self.assertEqual(self.store.inspect(), (0, GENESIS))
+
     def test_unavailable_socket_denies(self):
         self.assertFalse(advance_via_socket(self.path + ".missing", self.request))
 
