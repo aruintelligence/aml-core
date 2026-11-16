@@ -107,6 +107,9 @@ class WitnessServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
             raise TypeError("strict mode requires an inspectable witness store")
         if require_committed_evidence and committed_bridge is None:
             raise ValueError("committed evidence required")
+        if require_committed_evidence and (not hasattr(committed_bridge, "ledger")
+            or not callable(getattr(committed_bridge.ledger, "evidence", None))):
+            raise TypeError("strict mode requires readable committed evidence")
 
         if require_committed_evidence and (not callable(getattr(committed_bridge, "source_is_current", None))
             or committed_bridge.source_is_current() is not True):
