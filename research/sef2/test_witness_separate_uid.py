@@ -52,14 +52,10 @@ class WitnessSeparateUIDTests(unittest.TestCase):
                 env = dict(os.environ)
                 env["PYTHONPATH"] = str(base)
                 def run_as(uid, req):
-                    def demote():
-                        os.setgroups([])
-                        os.setgid(uid)
-                        os.setuid(uid)
                     return subprocess.run(
                         [sys.executable, "-c", script, str(sock), json.dumps(req)],
                         env=env, capture_output=True, text=True, timeout=10,
-                        preexec_fn=demote, check=True).stdout.strip()
+                        user=uid, group=uid, extra_groups=[], check=True).stdout.strip()
                 self.assertEqual(run_as(denied_uid, request), '{"advance": false}')
                 self.assertEqual(run_as(allowed_uid, dict(request, authority_id="foreign")), '{"advance": false}')
                 self.assertEqual(run_as(allowed_uid, dict(request, head="f" * 64)), '{"advance": false}')
@@ -72,7 +68,7 @@ class WitnessSeparateUIDTests(unittest.TestCase):
                      "import sqlite3,sys; sqlite3.connect(sys.argv[1]).execute('DELETE FROM witness_heads')",
                      str(db)],
                     env=env, capture_output=True, text=True, timeout=10,
-                    preexec_fn=lambda: (os.setgroups([]), os.setgid(allowed_uid), os.setuid(allowed_uid)))
+                    user=allowed_uid, group=allowed_uid, extra_groups=[])
                 self.assertNotEqual(direct.returncode, 0)
                 self.assertEqual(store.inspect(), (1, head))
             finally:
