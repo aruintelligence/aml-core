@@ -21,6 +21,18 @@ class PinnedLedgerWitnessBridgeTests(unittest.TestCase):
         self.assertTrue(self.ledger.reserve("op-1", "a" * 64, 1))
         self.assertTrue(self.bridge.advance(self.witness))
 
+    def test_substitution_during_evidence_read_does_not_advance_witness(self):
+        self.assertTrue(self.ledger.reserve("op-1", "a" * 64, 1))
+        original_evidence = self.bridge.ledger.evidence
+        def substitute_after_snapshot():
+            snapshot = original_evidence()
+            os.unlink(self.path)
+            AtomicReceiptReservations(self.path, "authority")
+            return snapshot
+        self.bridge.ledger.evidence = substitute_after_snapshot
+        self.assertFalse(self.bridge.advance(self.witness))
+        self.assertEqual(self.witness.inspect(), (0, GENESIS))
+
     def test_missing_ledger_rejected(self):
         os.unlink(self.path)
         self.assertFalse(self.bridge.advance(self.witness))
