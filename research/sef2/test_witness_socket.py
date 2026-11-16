@@ -6,6 +6,8 @@ import threading
 import unittest
 
 from durable_receipt_witness import DurableReceiptWitness
+from atomic_receipt_reservations import AtomicReceiptReservations
+from pinned_ledger_witness_bridge import PinnedLedgerWitnessBridge
 from reservation_receipt_chain import GENESIS, reservation_chain_hash
 from witness_socket import WitnessServer, advance_via_socket
 
@@ -45,6 +47,28 @@ class WitnessSocketTests(unittest.TestCase):
     def test_forged_authority_denied(self):
         request = dict(self.request, authority_id="foreign")
         self.assertFalse(advance_via_socket(self.path, request))
+        self.assertEqual(self.store.inspect(), (0, GENESIS))
+
+    def test_committed_mode_rejects_fabricated_uncommitted_record(self):
+        ledger_path = os.path.join(self.tmp.name, "ledger.db")
+        ledger = AtomicReceiptReservations(ledger_path, "authority")
+        self.server.committed_bridge = PinnedLedgerWitnessBridge(
+            ledger_path, "authority", expected_uid=os.getuid())
+        self.assertFalse(advance_via_socket(self.path, self.request))
+        self.assertEqual(self.store.inspect(), (0, GENESIS))
+        self.assertTrue(ledger.reserve("op-1", "a" * 64, 1))
+        self.assertTrue(advance_via_socket(self.path, self.request))
+        self.assertEqual(self.store.inspect(), (1, self.request["head"]))
+
+    def test_committed_mode_rejects_mismatched_request_without_mutation(self):
+        ledger_path = os.path.join(self.tmp.name, "ledger.db")
+        ledger = AtomicReceiptReservations(ledger_path, "authority")
+        self.assertTrue(ledger.reserve("op-1", "a" * 64, 1))
+        self.server.committed_bridge = PinnedLedgerWitnessBridge(
+            ledger_path, "authority", expected_uid=os.getuid())
+        forged = dict(self.request, entry=["authority", "op-forged", "b" * 64, 1])
+        forged["head"] = reservation_chain_hash(GENESIS, *forged["entry"])
+        self.assertFalse(advance_via_socket(self.path, forged))
         self.assertEqual(self.store.inspect(), (0, GENESIS))
 
     def test_unavailable_socket_denies(self):
