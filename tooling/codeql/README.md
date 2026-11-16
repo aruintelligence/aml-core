@@ -4,7 +4,7 @@
 (exit 0, HTTP 2xx, or a condition guarding a privileged call) that depends on
 a verification field (`valid`, `verified`, `accepted`, `quorum_met`,
 `official`, ...) when no `authorized` decision controls the same outcome
-(see docs/COMMAND_AUTHORIZATION.md for the exact rule and known gaps). A
+(see docs/COMMAND_AUTHORIZATION.md for the exact rule). A
 verification result is a precondition, never permission.
 
 ```sh
@@ -18,4 +18,7 @@ CODEQL_CLI=/path/to/codeql node scripts/check-authorization-dataflow.mjs --repo-
 
 No network is needed: the packs depend on `codeql/<language>-all`, which
 ships with the CodeQL CLI bundle. Without a CLI the check exits 2 (fail
-closed). Known gaps are listed in docs/COMMAND_AUTHORIZATION.md.
+closed). The queries are a defense-in-depth aid with known blind spots
+(for example dynamically computed property access and flows across process
+boundaries); runtime authorization is the enforcement boundary. See
+docs/COMMAND_AUTHORIZATION.md.

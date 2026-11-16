@@ -38,7 +38,7 @@ GitHub community profile health was **85%**. Missing or undetected items: Code o
 
 ### Settings and process gaps (unchanged until founder approval)
 
-Read-only API snapshot (16 November 2026, America/Los_Angeles):
+Read-only API inspection (16 November 2026, America/Los_Angeles):
 
 - Default branch is `main`. There is **no** branch named `development`.
 - Classic branch-protection API returns “not protected” for `main`.
@@ -109,4 +109,4 @@ The private Directive 010 worktree and `directive010.bundle` were not modified.
 
 See [SETTINGS_CHANGE_PLAN.md](SETTINGS_CHANGE_PLAN.md). In short: tighten the `main` ruleset (reviews and required checks), decide how to protect the real integration branch rather than inventing a `development` branch, enable private vulnerability reporting, enable Dependabot alerts, optionally require signed commits, clean 447 stale branches from a written list, and rewrite the public description/topics. Counsel or founder review is still required before any merge or additional public disclosure.
 
-Raw logs, Scorecard JSON, and API snapshots are in `repo-standards-evidence/`.
+Raw logs and Scorecard JSON are in `repo-standards-evidence/`. Repository settings and ruleset API snapshots are not published on this branch.

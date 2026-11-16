@@ -167,16 +167,14 @@ any alert that is not in the reviewed inventory, on any stale inventory entry,
 and on any CodeQL/LGTM source suppression comment. The workflow
 `.github/workflows/codeql-authorization-dataflow.yml` runs both.
 
-Known gaps (probed, not caught): property names known only at run time
-(`r[process.argv[2]]`, `getattr(r, sys.argv[1])`); negated authorization
-inside a conditional status (`ok ? (auth ? 1 : 0) : 1`); an authorization read
-combined arithmetically (`(ok ? 0 : 1) + (auth ? 0 : 0)`); a negation held in a
-variable (`const deny = !r.authorized; if (r.valid && deny)`); a `Map` filled
-inside another function; iteration such as `Object.entries(r)`; values that
-cross a process or file boundary. Python and Go do not yet credit a dominating
-early-return authorization guard (reported as a false positive instead). The
-reviewed inventory is per sink line: a later change that adds a second flow
-into an already reviewed sink is not separately reported.
+These queries and the lexical check are a defense-in-depth aid, not the
+enforcement boundary, and they have known blind spots — for example
+dynamically computed property access and flows across process or file
+boundaries. Runtime authorization is the enforcement boundary: a success
+outcome is permitted only when the complete authorization decision is
+explicitly true. The reviewed inventory is per sink line: a later change
+that adds a second flow into an already reviewed sink is not separately
+reported.
 
 ## Remaining exceptions
 
