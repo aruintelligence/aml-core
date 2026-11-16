@@ -53,7 +53,12 @@ class WitnessHandler(socketserver.StreamRequestHandler):
                             if (evidence_head == (args[0], args[1])
                                 and len(evidence_entries) == args[0]
                                 and tuple(evidence_entries[-1]) == args[4]):
-                                accepted = bridge.advance(self.server.store) is True
+                                # Recheck both sources after the request-specific snapshot.
+                                if (bridge.source_is_current() is not True
+                                    or self.server.store.inspect() != (args[2], args[3])):
+                                    accepted = False
+                                else:
+                                    accepted = bridge.advance(self.server.store) is True
                                 if accepted:
                                     accepted = self.server.store.inspect() == (args[0], args[1])
                         except (OSError, ValueError, TypeError, IndexError):
