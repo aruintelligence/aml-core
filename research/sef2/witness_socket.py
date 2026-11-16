@@ -102,8 +102,18 @@ class WitnessServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
         if require_committed_evidence and (not callable(getattr(committed_bridge, "source_is_current", None))
             or committed_bridge.source_is_current() is not True):
             raise ValueError("committed ledger unavailable or replaced")
-        if require_committed_evidence and store.inspect() is None:
-            raise ValueError("witness checkpoint unavailable")
+        if require_committed_evidence:
+            checkpoint = store.inspect()
+            if checkpoint is None:
+                raise ValueError("witness checkpoint unavailable")
+            from witnessed_receipt_history import classify_witnessed_history
+            try:
+                ledger_head, ledger_entries = committed_bridge.ledger.evidence()
+                status = classify_witnessed_history(ledger_entries, ledger_head, checkpoint)
+            except (OSError, ValueError, TypeError, IndexError):
+                raise ValueError("committed ledger evidence unavailable") from None
+            if committed_bridge.source_is_current() is not True or status != "MATCH":
+                raise ValueError("ledger and witness checkpoint disagree")
         self.require_committed_evidence = require_committed_evidence
         self.committed_bridge = committed_bridge
         self.allowed_uid = allowed_uid
