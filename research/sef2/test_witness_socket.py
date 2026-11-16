@@ -82,6 +82,29 @@ class WitnessSocketTests(unittest.TestCase):
         self.assertFalse(advance_via_socket(self.path, forged))
         self.assertEqual(self.store.inspect(), (0, GENESIS))
 
+    def test_strict_mode_refuses_start_without_committed_evidence(self):
+        with self.assertRaises(ValueError):
+            WitnessServer(self.path + ".strict", allowed_uid=os.getuid(),
+                          store=self.store, require_committed_evidence=True)
+
+    def test_strict_mode_accepts_pinned_committed_evidence(self):
+        ledger_path = os.path.join(self.tmp.name, "ledger.db")
+        ledger = AtomicReceiptReservations(ledger_path, "authority")
+        bridge = PinnedLedgerWitnessBridge(ledger_path, "authority", expected_uid=os.getuid())
+        strict_path = os.path.join(self.tmp.name, "strict.sock")
+        strict = WitnessServer(strict_path, allowed_uid=os.getuid(), store=self.store,
+                               committed_bridge=bridge, require_committed_evidence=True)
+        thread = threading.Thread(target=strict.serve_forever, daemon=True)
+        thread.start()
+        try:
+            self.assertFalse(advance_via_socket(strict_path, self.request))
+            self.assertTrue(ledger.reserve("op-1", "a" * 64, 1))
+            self.assertTrue(advance_via_socket(strict_path, self.request))
+        finally:
+            strict.shutdown()
+            strict.server_close()
+            thread.join(timeout=2)
+
     def test_unavailable_socket_denies(self):
         self.assertFalse(advance_via_socket(self.path + ".missing", self.request))
 
