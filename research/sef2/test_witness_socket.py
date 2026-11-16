@@ -180,6 +180,21 @@ class WitnessSocketTests(unittest.TestCase):
                           store=self.store, committed_bridge=BrokenBridge(),
                           require_committed_evidence=True)
 
+    def test_strict_startup_rejects_noncallable_identity_guard(self):
+        class BrokenBridge:
+            authority_id = "authority"
+            source_is_current = True
+            def advance(self, store):
+                return True
+            class ledger:
+                @staticmethod
+                def evidence():
+                    return ((0, GENESIS), [])
+        with self.assertRaises(TypeError):
+            WitnessServer(self.path + ".noguard", allowed_uid=os.getuid(),
+                          store=self.store, committed_bridge=BrokenBridge(),
+                          require_committed_evidence=True)
+
     def test_unavailable_socket_denies(self):
         self.assertFalse(advance_via_socket(self.path + ".missing", self.request))
 
