@@ -7,7 +7,7 @@ last witnessed checkpoint and the prefix is anchored.
 """
 from reservation_receipt_chain import GENESIS, reservation_chain_hash, verify_reservation_chain
 
-def advance_from_committed_evidence(witness, reservation_store):
+def advance_from_committed_evidence(witness, reservation_store, *, evidence_guard=None):
     """Advance witness only after validating an independently obtained snapshot.
 
     Both objects must be provisioned under separate access-control boundaries.
@@ -38,6 +38,8 @@ def advance_from_committed_evidence(witness, reservation_store):
             return False
         entry = entries[-1]
         if entry[0] != witness.authority_id:
+            return False
+        if evidence_guard is not None and evidence_guard() is not True:
             return False
         return witness.observe(sequence + 1, snapshot_head[1],
                                sequence, previous_head, entry) is True
