@@ -33,6 +33,20 @@ class PinnedLedgerWitnessBridgeTests(unittest.TestCase):
         self.assertFalse(self.bridge.advance(self.witness))
         self.assertEqual(self.witness.inspect(), (0, GENESIS))
 
+    def test_substitution_after_guard_is_reported_but_checkpoint_may_advance(self):
+        # Documents the residual TOCTOU boundary: the guard is not a lock.
+        self.assertTrue(self.ledger.reserve("op-1", "a" * 64, 1))
+        original_observe = self.witness.observe
+        def substitute_before_witness_commit(*args, **kwargs):
+            os.unlink(self.path)
+            AtomicReceiptReservations(self.path, "authority")
+            return original_observe(*args, **kwargs)
+        self.witness.observe = substitute_before_witness_commit
+        self.assertFalse(self.bridge.advance(self.witness))
+        # Even though the bridge denied, the checkpoint was already advanced.
+        # Production must not claim atomic ledger/witness consistency.
+        self.assertEqual(self.witness.inspect()[0], 1)
+
     def test_missing_ledger_rejected(self):
         os.unlink(self.path)
         self.assertFalse(self.bridge.advance(self.witness))
