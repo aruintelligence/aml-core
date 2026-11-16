@@ -198,6 +198,172 @@
    "expect_flagged": true,
    "field": "valid"
   },
+  "js-map-container": {
+   "language": "javascript",
+   "category": "map-container",
+   "files": {
+    "main.js": "const m = new Map();\nm.set('go', r.valid);\nif (m.get('go')) execute();\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "js-map-unknown-key": {
+   "language": "javascript",
+   "category": "map-container",
+   "files": {
+    "main.js": "const m = new Map();\nm.set(keyOf(r), r.verified);\nif (m.get('x')) execute();\n"
+   },
+   "expect_flagged": true,
+   "field": "verified"
+  },
+  "js-reflect-get": {
+   "language": "javascript",
+   "category": "reflect",
+   "files": {
+    "main.js": "if (Reflect.get(r, 'valid')) execute();\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "js-reflect-get-computed": {
+   "language": "javascript",
+   "category": "reflect",
+   "files": {
+    "main.js": "const k = 'quorum' + '_met';\nprocess.exit(Reflect.get(r, k) ? 0 : 1);\n"
+   },
+   "expect_flagged": true,
+   "field": "quorum_met"
+  },
+  "py-getattr-computed": {
+   "language": "python",
+   "category": "getattr",
+   "files": {
+    "main.py": "k = 'val' + 'id'\nif getattr(r, k):\n    execute()\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "py-getattr-exit": {
+   "language": "python",
+   "category": "getattr",
+   "files": {
+    "main.py": "import sys\nsys.exit(0 if getattr(r, 'accepted', False) else 1)\n"
+   },
+   "expect_flagged": true,
+   "field": "accepted"
+  },
+  "go-reflect-fieldbyname": {
+   "language": "go",
+   "category": "reflect",
+   "files": {
+    "go.mod": "module fixture\n\ngo 1.21\n",
+    "main.go": "package main\n\nimport (\n\t\"os\"\n\t\"reflect\"\n)\n\ntype Result struct{ Valid bool }\n\nfunc main() {\n\tvar r Result\n\tif reflect.ValueOf(r).FieldByName(\"Valid\").Bool() {\n\t\tos.Exit(0)\n\t}\n\tos.Exit(1)\n}\n"
+   },
+   "expect_flagged": true,
+   "field": "Valid"
+  },
+  "js-authorized-other-branch": {
+   "language": "javascript",
+   "category": "authorization-not-controlling",
+   "files": {
+    "main.js": "const ok = r.valid;\nconst auth = r.authorized;\nprocess.exit(ok ? 0 : (auth ? 0 : 1));\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "js-authorized-other-branch-variable": {
+   "language": "javascript",
+   "category": "authorization-not-controlling",
+   "files": {
+    "main.js": "const code = r.accepted ? 200 : r.authorized ? 200 : 403;\nfunction h(res) { res.writeHead(code); }\nprocess.exitCode = r.verified ? 0 : r.authorized ? 0 : 1;\n"
+   },
+   "expect_flagged": true,
+   "field": "verified"
+  },
+  "js-authorized-read-but-unused": {
+   "language": "javascript",
+   "category": "authorization-not-controlling",
+   "files": {
+    "main.js": "if (r.valid) {\n  if (r.authorized) log('ok');\n  execute();\n}\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "py-authorized-other-branch": {
+   "language": "python",
+   "category": "authorization-not-controlling",
+   "files": {
+    "main.py": "import sys\nsys.exit(0 if r['valid'] else (0 if r['authorized'] else 1))\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "py-authorized-other-branch-variable": {
+   "language": "python",
+   "category": "authorization-not-controlling",
+   "files": {
+    "main.py": "import sys\ncode = 0 if r['verified'] else 0 if r['authorized'] else 1\nsys.exit(code)\n"
+   },
+   "expect_flagged": true,
+   "field": "verified"
+  },
+  "go-or-authorized": {
+   "language": "go",
+   "category": "authorization-alternative",
+   "files": {
+    "go.mod": "module fixture\n\ngo 1.21\n",
+    "main.go": "package main\n\nimport \"os\"\n\ntype Result struct{ Valid bool; Authorized bool }\n\nfunc main() {\n\tvar r Result\n\tif r.Valid || r.Authorized {\n\t\tos.Exit(0)\n\t}\n\tos.Exit(1)\n}\n"
+   },
+   "expect_flagged": true,
+   "field": "Valid"
+  },
+  "go-authorized-read-but-unused": {
+   "language": "go",
+   "category": "authorization-not-controlling",
+   "files": {
+    "go.mod": "module fixture\n\ngo 1.21\n",
+    "main.go": "package main\n\nimport (\n\t\"fmt\"\n\t\"os\"\n)\n\ntype Result struct{ Valid bool; Authorized bool }\n\nfunc main() {\n\tvar r Result\n\tif r.Authorized {\n\t\tfmt.Println(\"ok\")\n\t}\n\tif r.Valid {\n\t\tos.Exit(0)\n\t}\n\tos.Exit(1)\n}\n"
+   },
+   "expect_flagged": true,
+   "field": "Valid"
+  },
+  "js-guard-negated-authorized": {
+   "language": "javascript",
+   "category": "authorization-not-controlling",
+   "files": {
+    "main.js": "if (r.valid && !r.authorized) execute();\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "py-guard-negated-authorized": {
+   "language": "python",
+   "category": "authorization-not-controlling",
+   "files": {
+    "main.py": "if getattr(r, 'verified') and not r['authorized']:\n    execute()\n"
+   },
+   "expect_flagged": true,
+   "field": "verified"
+  },
+  "go-guard-negated-authorized": {
+   "language": "go",
+   "category": "authorization-not-controlling",
+   "files": {
+    "go.mod": "module fixture\n\ngo 1.21\n",
+    "main.go": "package main\n\nimport \"os\"\n\ntype Result struct{ Valid bool; Authorized bool }\n\nfunc main() {\n\tvar r Result\n\tif r.Valid && !r.Authorized {\n\t\tos.Exit(0)\n\t}\n\tos.Exit(1)\n}\n"
+   },
+   "expect_flagged": true,
+   "field": "Valid"
+  },
+  "js-early-return-wrong-polarity": {
+   "language": "javascript",
+   "category": "authorization-not-controlling",
+   "files": {
+    "main.js": "function f(r) {\n  if (r.authorized === true) return;\n  if (r.valid) execute();\n}\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
   "js-control-authorized": {
    "language": "javascript",
    "category": "control",
@@ -222,6 +388,62 @@
    "files": {
     "go.mod": "module fixture\n\ngo 1.21\n",
     "main.go": "package main\n\nimport \"os\"\n\ntype Result struct{ Valid bool; Authorized bool }\n\nfunc main() {\n\tvar r Result\n\tif r.Authorized && r.Valid {\n\t\tos.Exit(0)\n\t}\n\tos.Exit(3)\n}\n"
+   },
+   "expect_flagged": false,
+   "field": null
+  },
+  "js-control-map-authorized": {
+   "language": "javascript",
+   "category": "control",
+   "files": {
+    "main.js": "const m = new Map();\nm.set('go', r.authorized === true && r.valid);\nif (m.get('go')) execute();\n"
+   },
+   "expect_flagged": false,
+   "field": null
+  },
+  "js-control-ternary-chain": {
+   "language": "javascript",
+   "category": "control",
+   "files": {
+    "main.js": "process.exit(r.authorized === true ? 0 : Reflect.get(r, 'verified') ? 3 : 1);\n"
+   },
+   "expect_flagged": false,
+   "field": null
+  },
+  "py-control-ternary-chain": {
+   "language": "python",
+   "category": "control",
+   "files": {
+    "main.py": "import sys\nsys.exit(0 if r['authorized'] is True else 3 if getattr(r, 'verified') else 1)\n"
+   },
+   "expect_flagged": false,
+   "field": null
+  },
+  "go-control-reflect-authorized": {
+   "language": "go",
+   "category": "control",
+   "files": {
+    "go.mod": "module fixture\n\ngo 1.21\n",
+    "main.go": "package main\n\nimport (\n\t\"os\"\n\t\"reflect\"\n)\n\ntype Result struct{ Valid bool; Authorized bool }\n\nfunc main() {\n\tvar r Result\n\tv := reflect.ValueOf(r)\n\tif v.FieldByName(\"Authorized\").Bool() && v.FieldByName(\"Valid\").Bool() {\n\t\tos.Exit(0)\n\t}\n\tos.Exit(3)\n}\n"
+   },
+   "expect_flagged": false,
+   "field": null
+  },
+  "js-control-early-return-deny": {
+   "language": "javascript",
+   "category": "control",
+   "files": {
+    "main.js": "function f(r) {\n  if (r.authorized !== true) return deny();\n  if (r.valid) execute();\n}\n"
+   },
+   "expect_flagged": false,
+   "field": null
+  },
+  "py-control-named-nonzero-exit": {
+   "language": "python",
+   "category": "control",
+   "files": {
+    "main.py": "import sys\nEXIT_NOT_AUTHORIZED = 3\n\ndef main():\n    return EXIT_NOT_AUTHORIZED if r['verified'] else 2\n\nsys.exit(main())\n",
+    "other.py": "EXIT_NOT_AUTHORIZED = 3\n"
    },
    "expect_flagged": false,
    "field": null

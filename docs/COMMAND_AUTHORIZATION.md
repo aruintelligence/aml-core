@@ -141,27 +141,51 @@ split across lines are not followed; Go is matched lexically.
 
 `tooling/codeql/{javascript,python,go}/VerificationWithoutAuthorization.ql`
 use CodeQL global taint tracking from verification-field reads (including
-computed names such as `r[k]` with a constant `k`) through calls, returns,
-containers, imports and multi-line expressions to exit/HTTP status sinks and
-to conditions guarding privileged calls, and report a sink only when no
-`authorized` read reaches it. `node scripts/check-authorization-dataflow.mjs`
-(needs `CODEQL_CLI`; fails closed with exit 2 otherwise) runs them on the
-seeded corpus `tooling/codeql/authz-bypass-fixtures.json` (19 bypasses in six
-categories plus authorized controls); `--repo` runs them on this repository.
-Known gaps: `Map`/`Set` contents, reflection (`Reflect.get`, `getattr` with a
-computed name), values that cross a process or file boundary, and
-authorization checks that are present but do not dominate the sink (the
-query accepts any `authorized` flow into the same sink, except through
-`||` / `or`, which never count as an authorization). Exit statuses that can
-never be a success (for example `3 if ok else 1`) are not sinks. It is not
-yet wired into CI.
+computed names such as `r[k]` with a constant `k`, `Reflect.get(r, k)`,
+`getattr(r, k)` and Go `reflect.Value.FieldByName`) through calls, returns,
+containers (including JavaScript `Map` set/get), imports and multi-line
+expressions to exit/HTTP status sinks and to conditions guarding privileged
+calls. A sink is reported unless the authorization decision controls it:
+
+- a guarding condition is split into operands; it is accepted only when an
+  operand that must hold (an `&&` / `and` conjunct, not an `||` / `or`
+  alternative and not a negation) carries `authorized`;
+- a conditional status (`a ? 0 : b ? 0 : 1`, `0 if a else 1`) is checked per
+  success branch: an `authorized` read on another branch does not count;
+- in JavaScript, a dominating guard such as
+  `if (r.authorized !== true) return deny();` counts (polarity-aware);
+- exit statuses that can never be a success (`3 if ok else 1`, a module
+  constant such as `EXIT_NOT_AUTHORIZED = 3`, or a call to a function that
+  only returns such values) are not sinks.
+
+`node scripts/check-authorization-dataflow.mjs` (needs `CODEQL_CLI`; fails
+closed with exit 2 otherwise) runs them on the seeded corpus
+`tooling/codeql/authz-bypass-fixtures.json` (bypasses in eleven categories
+plus authorized controls for every language); `--repo` prints every alert in
+this repository and `--repo-gate audit/AML_AUTHZ_DATAFLOW_REVIEW.json` fails on
+any alert that is not in the reviewed inventory, on any stale inventory entry,
+and on any CodeQL/LGTM source suppression comment. The workflow
+`.github/workflows/codeql-authorization-dataflow.yml` runs both.
+
+Known gaps (probed, not caught): property names known only at run time
+(`r[process.argv[2]]`, `getattr(r, sys.argv[1])`); negated authorization
+inside a conditional status (`ok ? (auth ? 1 : 0) : 1`); an authorization read
+combined arithmetically (`(ok ? 0 : 1) + (auth ? 0 : 0)`); a negation held in a
+variable (`const deny = !r.authorized; if (r.valid && deny)`); a `Map` filled
+inside another function; iteration such as `Object.entries(r)`; values that
+cross a process or file boundary. Python and Go do not yet credit a dominating
+early-return authorization guard (reported as a false positive instead). The
+reviewed inventory is per sink line: a later change that adds a second flow
+into an already reviewed sink is not separately reported.
 
 ## Remaining exceptions
 
 The commands previously listed here are covered by "Directive 010
-additions". Still open: `POST /v1/deployment/batch` reports per-item results
-without an `authorized` field; Python evidence verifiers take a
-trusted-policy file whose own digest is not pinned; the reviewed
+additions". `POST /v1/deployment/batch` now reports per-item and batch-level
+`authorized` (server-locked policy only), and the Python evidence verifiers
+exit 0 only with `--expected-policy-sha256` matching the canonical trusted
+policy (`python3 independent/python/authorization_cli.py policy-sha256
+<policy.json>`); verified-but-unpinned exits 3. Still open: the reviewed
 non-authorization sinks in `scripts/check-valid-field-decisions.mjs`
 (repair, drill, doctor, support-bundle, pilots) exit 0 on consistency by
 design and must not be used as gates.

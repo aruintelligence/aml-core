@@ -308,15 +308,21 @@ def verify(capsule, policy=None):
 
 
 if __name__ == "__main__":
+    from authorization_cli import split_flags, decide
+    policy, pin, diagnostic = None, None, "--diagnostic-only" in sys.argv
     try:
-        if len(sys.argv) not in (2, 3):
-            raise ValueError("Usage: python3 independent/python/verify_evidence_capsule.py <capsule.json> [trusted-policy.json]")
-        capsule = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"),
+        argv, pin, diagnostic = split_flags(sys.argv[1:])
+        if len(argv) not in (1, 2):
+            raise ValueError("Usage: python3 independent/python/verify_evidence_capsule.py <capsule.json> [trusted-policy.json] [--expected-policy-sha256 HEX] [--diagnostic-only]")
+        capsule = json.loads(pathlib.Path(argv[0]).read_text(encoding="utf-8"),
                              object_pairs_hook=unique_pairs, parse_constant=reject_constant, parse_int=parse_js_int)
-        policy = json.loads(pathlib.Path(sys.argv[2]).read_text(encoding="utf-8"),
-                            object_pairs_hook=unique_pairs, parse_constant=reject_constant, parse_int=parse_js_int) if len(sys.argv) == 3 else None
+        policy = json.loads(pathlib.Path(argv[1]).read_text(encoding="utf-8"),
+                            object_pairs_hook=unique_pairs, parse_constant=reject_constant, parse_int=parse_js_int) if len(argv) == 2 else None
         report = verify(capsule, policy)
     except (ValueError, KeyError, TypeError, OSError, OverflowError, RecursionError) as error:
         report = {"protocol": "aml-evidence-capsule-python-report/1", "verified": False, "reason": str(error)}
+    # Directive 010: without a trusted policy whose digest is pinned, a
+    # verified capsule is consistent but never authorized (exit 3).
+    report, code = decide(report, policy, pin, diagnostic)
     print(json.dumps(report, indent=2, ensure_ascii=False))
-    sys.exit(0 if report["verified"] else 1)
+    sys.exit(code)

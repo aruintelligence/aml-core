@@ -9,6 +9,13 @@ import { createEvidenceRenewal, attestEvidenceRenewal } from "../runtime/evidenc
 import { createEvidenceArchive, verifyEvidenceArchive } from "../runtime/evidenceArchive.js";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 
+// Directive 010: the relying party pins the digest of its own trusted policy.
+const policyPinOf = file => {
+  const out = spawnSync("python3", [path.resolve("independent/python/authorization_cli.py"), "policy-sha256", file], { encoding: "utf8" });
+  if (out.status !== 0) throw new Error(`policy pin: ${out.stderr}`);
+  return out.stdout.trim();
+};
+
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-archive-python-"));
 const verifier = path.resolve("independent/python/verify_evidence_archive.py");
 const intent = JSON.parse(fs.readFileSync("pilots/enterprise-30min/intent-allowed.json", "utf8"));
@@ -45,7 +52,7 @@ function check(name, archive, trusted, expected, reason = null) {
   const policyFile = path.join(directory, `${name}-policy.json`);
   fs.writeFileSync(archiveFile, typeof archive === "string" ? archive : JSON.stringify(archive));
   fs.writeFileSync(policyFile, JSON.stringify(trusted));
-  const result = spawnSync("python3", [verifier, archiveFile, policyFile], { encoding: "utf8" });
+  const result = spawnSync("python3", [verifier, archiveFile, policyFile, "--expected-policy-sha256", policyPinOf(policyFile)], { encoding: "utf8" });
   if (result.error) throw result.error;
   const report = JSON.parse(result.stdout);
   if (report.verified !== expected || result.status !== (expected ? 0 : 1) || (reason && report.reason !== reason)) {
@@ -58,6 +65,22 @@ try {
   const archive = createEvidenceArchive(capsule, entries, policy);
   if (!verifyEvidenceArchive(archive, policy).verified) throw new Error("JavaScript baseline failed");
   const results = [check("valid-rotated-quorum", archive, policy, true)];
+  {
+    // Directive 010: verified with an unpinned or wrong policy pin exits 3; diagnostic exits 0 non-authorizing.
+    const archiveFile = path.join(directory, "authz-archive.json");
+    const policyFile = path.join(directory, "authz-policy.json");
+    fs.writeFileSync(archiveFile, JSON.stringify(archive));
+    fs.writeFileSync(policyFile, JSON.stringify(policy));
+    for (const [extra, status, authorized] of [[[], 3, false], [["--expected-policy-sha256", "0".repeat(64)], 3, false],
+      [["--diagnostic-only"], 0, false], [["--expected-policy-sha256", policyPinOf(policyFile)], 0, true]]) {
+      const out = spawnSync("python3", [verifier, archiveFile, policyFile, ...extra], { encoding: "utf8" });
+      const report = JSON.parse(out.stdout);
+      if (out.status !== status || report.verified !== true || report.authorized !== authorized) {
+        throw new Error(`authorization ${extra.join(" ")}: ${out.status} ${out.stdout}`);
+      }
+    }
+    results.push({ name: "authorization-requires-policy-pin", verified: true });
+  }
 
   const wrongTrust = { ...policy, trusted_fingerprints_by_sequence: { 1: fingerprints.slice(0, 2), 2: fingerprints.slice(0, 2) } };
   results.push(check("wrong-rotated-trust", archive, wrongTrust, false, "quorum_not_met"));

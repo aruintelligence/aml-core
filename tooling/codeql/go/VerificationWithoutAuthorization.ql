@@ -28,6 +28,10 @@ predicate fieldRead(DataFlow::Node n, string name) {
   exists(DataFlow::FieldReadNode r | n = r and r.getField().getName() = name)
   or
   exists(IndexExpr ix | n.asExpr() = ix and ix.getIndex().getStringValue() = name)
+  or
+  // reflect.ValueOf(r).FieldByName("Valid") (and .Bool() on it via taint)
+  exists(DataFlow::MethodCallNode c | n = c and c.getTarget().getName() = "FieldByName" and
+    c.getArgument(0).getStringValue() = name)
 }
 
 predicate exitSink(DataFlow::Node n) {
@@ -45,11 +49,45 @@ predicate privilegedStmt(Stmt s) {
   exists(ReturnStmt r | r = s and r.getNumExpr() > 0 and r.getExpr(r.getNumExpr() - 1).getIntValue() = 0)
 }
 
+/** An `if` whose then-branch contains a privileged statement. */
+predicate guardingIf(IfStmt i) { exists(Stmt s | s.getParent*() = i.getThen() and privilegedStmt(s)) }
+
+/** The non-logical operands of a condition (`a`, `b`, `c` in `a && (b || !c)`). */
+Expr atom(Expr e) {
+  not e instanceof LogicalBinaryExpr and not e instanceof NotExpr and not e instanceof ParenExpr and result = e
+  or
+  result = atom(e.(LogicalBinaryExpr).getAnOperand())
+  or
+  result = atom(e.(NotExpr).getOperand())
+  or
+  result = atom(e.(ParenExpr).getExpr())
+}
+
+/** An operand that must hold for the condition to hold (reached through `&&` and parentheses only). */
+Expr conjunct(Expr e) {
+  result = e
+  or
+  result = conjunct(e).(LandExpr).getAnOperand()
+  or
+  result = conjunct(e).(ParenExpr).getExpr()
+}
+
+/**
+ * Each operand of a guarding condition is a sink: Go lowers `&&`/`||` to
+ * control flow, so the whole condition has no single data-flow node.
+ */
 predicate guardSink(DataFlow::Node n) {
-  exists(IfStmt i, Stmt s | n.asExpr() = i.getCond() and s.getParent*() = i.getThen() and privilegedStmt(s))
+  exists(IfStmt i | guardingIf(i) and n.asExpr() = atom(i.getCond()))
 }
 
 predicate decisionStep(DataFlow::Node pred, DataFlow::Node succ) {
+  // reflect.Value accessors: v.FieldByName("Valid").Bool()
+  exists(DataFlow::MethodCallNode c |
+    c.getReceiver().getType().hasQualifiedName("reflect", "Value") and
+    c.getTarget().getName() = ["Bool", "Interface", "Int", "String"] and
+    pred = c.getReceiver() and succ = c
+  )
+  or
   exists(NotExpr e | pred.asExpr() = e.getOperand() and succ.asExpr() = e)
   or
   exists(EqualityTestExpr e | pred.asExpr() = e.getAnOperand() and succ.asExpr() = e)
@@ -70,6 +108,9 @@ module AuthorizationConfig implements DataFlow::ConfigSig {
 
   predicate isSink(DataFlow::Node n) { exitSink(n) or guardSink(n) }
 
+  // `x || authorized` does not make x conditional on authorization.
+  predicate isBarrier(DataFlow::Node n) { n.asExpr() instanceof LorExpr }
+
   predicate isAdditionalFlowStep(DataFlow::Node pred, DataFlow::Node succ) { decisionStep(pred, succ) }
 }
 
@@ -77,12 +118,30 @@ module VerificationFlow = TaintTracking::Global<VerificationConfig>;
 
 module AuthorizationFlow = TaintTracking::Global<AuthorizationConfig>;
 
+predicate unauthorizedOutcome(DataFlow::Node source, DataFlow::Node sink) {
+  // exit statuses
+  exitSink(sink) and
+  VerificationFlow::flow(source, sink) and
+  not AuthorizationFlow::flowTo(sink)
+  or
+  // a guarding condition: some operand carries verification and no operand
+  // that must hold (an `&&` conjunct, not an `||` alternative or a negation)
+  // carries the authorization decision
+  exists(IfStmt i |
+    guardingIf(i) and
+    sink.asExpr() = atom(i.getCond()) and
+    VerificationFlow::flow(source, sink) and
+    not exists(Expr c |
+      c = conjunct(i.getCond()) and c = atom(i.getCond()) and AuthorizationFlow::flowTo(DataFlow::exprNode(c))
+    )
+  )
+}
+
 from DataFlow::Node source, DataFlow::Node sink, string name
 where
-  VerificationFlow::flow(source, sink) and
+  unauthorizedOutcome(source, sink) and
   fieldRead(source, name) and
-  name = verificationField() and
-  not AuthorizationFlow::flowTo(sink)
+  name = verificationField()
 select sink,
   "Success outcome depends on verification field '" + name +
     "' ($@) without an explicit authorization decision.", source, name

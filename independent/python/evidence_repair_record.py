@@ -52,7 +52,11 @@ def verify(record, survivors, replacement, policy):
 
 
 if __name__ == "__main__":
+    from authorization_cli import split_flags, decide
+    policy, pin, diagnostic = None, None, "--diagnostic-only" in sys.argv
     try:
+        argv, pin, diagnostic = split_flags(sys.argv[1:])
+        sys.argv = [sys.argv[0], *argv]
         if len(sys.argv) != 7 or sys.argv[1] not in ("create", "verify"):
             raise ValueError("Usage: python3 independent/python/evidence_repair_record.py create <share-a.json> <share-b.json> <replacement.json> <policy.json> <new-record.json>\n       python3 independent/python/evidence_repair_record.py verify <record.json> <share-a.json> <share-b.json> <replacement.json> <policy.json>")
         if sys.argv[1] == "create":
@@ -73,5 +77,11 @@ if __name__ == "__main__":
     except (ValueError, KeyError, TypeError, OSError, OverflowError, RecursionError) as error:
         report = {"protocol": "aml-evidence-repair-record-python-report/1", "verified": False,
                   "created": False, "policy_hint_trusted": False, "reason": str(error)}
+    if len(sys.argv) > 1 and sys.argv[1] == "create":
+        # Creating a record from local inputs is not a verification decision.
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        sys.exit(0 if report.get("created") is True else 1)
+    # Directive 010: verify exits 0 only when verified AND the policy is pinned.
+    report, code = decide(report, policy, pin, diagnostic)
     print(json.dumps(report, indent=2, ensure_ascii=False))
-    sys.exit(0 if report.get("created") or report.get("verified") else 1)
+    sys.exit(code)

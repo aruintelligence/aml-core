@@ -1256,7 +1256,7 @@
   },
   {
    "file": "server/httpServer.js",
-   "line": 366,
+   "line": 387,
    "code": "official: result.valid === true && result.official === true,",
    "category": "conjunct",
    "effect": "HTTP 200 for /v1/verify-brand-authorization requires valid AND official against server-held trust roots and revocation registry; caller time and registry are refused."
@@ -1427,15 +1427,14 @@
   },
   {
    "file": "independent/python/evidence_repair_record.py",
-   "line": 77,
-   "code": "sys.exit(0 if report.get(\"created\") or report.get(\"verified\") else 1)",
+   "line": 83,
+   "code": "sys.exit(0 if report.get(\"created\") is True else 1)",
    "kind": "py-exit",
    "gate_fields": [
-    "created",
-    "verified"
+    "created"
    ],
    "category": "explicit-decision",
-   "effect": "REVIEWED_NON_AUTHORIZATION_SINKS: record creation/verification against a separate trusted policy; not an execution gate"
+   "effect": "REVIEWED_NON_AUTHORIZATION_SINKS: create mode only: writes a new record from local inputs (exclusive create); verify mode uses the Directive 010 decision (verified AND pinned policy)"
   },
   {
    "file": "independent/python/recover_evidence_shards.py",
@@ -1458,50 +1457,6 @@
    ],
    "category": "explicit-decision",
    "effect": "REVIEWED_NON_AUTHORIZATION_SINKS: data repair outcome, not an authorization"
-  },
-  {
-   "file": "independent/python/verify_evidence_archive.py",
-   "line": 171,
-   "code": "sys.exit(0 if report[\"verified\"] else 1)",
-   "kind": "py-exit",
-   "gate_fields": [
-    "verified"
-   ],
-   "category": "explicit-decision",
-   "effect": "REVIEWED_NON_AUTHORIZATION_SINKS: verified only under a separate relying-party trusted-policy argument (trusted fingerprints, accepted head); embedded policy_hint is never trusted"
-  },
-  {
-   "file": "independent/python/verify_evidence_capsule.py",
-   "line": 322,
-   "code": "sys.exit(0 if report[\"verified\"] else 1)",
-   "kind": "py-exit",
-   "gate_fields": [
-    "verified"
-   ],
-   "category": "explicit-decision",
-   "effect": "REVIEWED_NON_AUTHORIZATION_SINKS: signed receipts verified only against an external trusted receipt-key list"
-  },
-  {
-   "file": "independent/python/verify_evidence_migration.py",
-   "line": 100,
-   "code": "sys.exit(0 if report[\"verified\"] else 1)",
-   "kind": "py-exit",
-   "gate_fields": [
-    "verified"
-   ],
-   "category": "explicit-decision",
-   "effect": "REVIEWED_NON_AUTHORIZATION_SINKS: requires a separate <trusted-policy.json> argument"
-  },
-  {
-   "file": "independent/python/verify_http_exchange.py",
-   "line": 104,
-   "code": "sys.exit(0 if report[\"verified\"] else 1)",
-   "kind": "py-exit",
-   "gate_fields": [
-    "verified"
-   ],
-   "category": "explicit-decision",
-   "effect": "REVIEWED_NON_AUTHORIZATION_SINKS: requires the relying party expected request, profile snapshot and signer fingerprints"
   },
   {
    "file": "independent/python/verify_signed_quorum.py",
@@ -1616,8 +1571,28 @@
   },
   {
    "file": "scripts/check-authorization-dataflow.mjs",
-   "line": 99,
+   "line": 167,
+   "code": "process.exitCode = gate.failures.length ? 1 : 0;",
+   "kind": "exit-inverted",
+   "gate_fields": [
+    "failures"
+   ],
+   "category": "explicit-decision",
+   "effect": "success status gated on failures (exit-inverted)."
+  },
+  {
+   "file": "scripts/check-authorization-dataflow.mjs",
+   "line": 175,
    "code": "process.exitCode = failed.length ? 1 : 0;",
+   "kind": "exit-inverted",
+   "gate_fields": [],
+   "category": "explicit-decision",
+   "effect": "success status gated on a non-valid expression (exit-inverted)."
+  },
+  {
+   "file": "scripts/check-ci-bundle-pin.mjs",
+   "line": 53,
+   "code": "process.exit(failures.length ? 1 : 0);",
    "kind": "exit-inverted",
    "gate_fields": [],
    "category": "explicit-decision",
@@ -1647,19 +1622,8 @@
   },
   {
    "file": "scripts/check-evidence-archive-python.mjs",
-   "line": 51,
+   "line": 58,
    "code": "if (report.verified !== expected || result.status !== (expected ? 0 : 1) || (reason && report.reason !== reason)) {",
-   "kind": "zero-ternary",
-   "gate_fields": [
-    "expected"
-   ],
-   "category": "non-decision",
-   "effect": "expected exit status in a self-check assertion; gates nothing."
-  },
-  {
-   "file": "scripts/check-evidence-capsule-python.mjs",
-   "line": 93,
-   "code": "if (report.verified !== expected || result.status !== (expected ? 0 : 1) ||",
    "kind": "zero-ternary",
    "gate_fields": [
     "expected"
@@ -1680,7 +1644,7 @@
   },
   {
    "file": "scripts/check-evidence-migration-python.mjs",
-   "line": 37,
+   "line": 45,
    "code": "if (report.verified !== expected || result.status !== (expected ? 0 : 1) || (reason && report.reason !== reason)) {",
    "kind": "zero-ternary",
    "gate_fields": [
@@ -1713,7 +1677,7 @@
   },
   {
    "file": "scripts/check-evidence-repair-record-python.mjs",
-   "line": 17,
+   "line": 26,
    "code": "assert.equal(result.status, success ? 0 : 1, `${result.stdout} ${result.stderr}`);",
    "kind": "zero-ternary",
    "gate_fields": [
@@ -1768,7 +1732,7 @@
   },
   {
    "file": "scripts/check-valid-field-decisions.mjs",
-   "line": 734,
+   "line": 726,
    "code": "process.exitCode = failures.length ? 1 : 0;",
    "kind": "exit-inverted",
    "gate_fields": [],
@@ -1898,7 +1862,7 @@
   },
   {
    "file": "server/httpServer.js",
-   "line": 309,
+   "line": 330,
    "code": "return send(res, authorizedReceipt ? 200 : 422, { ...verification, authorized: authorizedReceipt,",
    "kind": "http",
    "gate_fields": [
@@ -1909,7 +1873,7 @@
   },
   {
    "file": "server/httpServer.js",
-   "line": 342,
+   "line": 363,
    "code": "return send(res, result.authorized === true ? 200 : 422, {",
    "kind": "http",
    "gate_fields": [
@@ -1920,7 +1884,7 @@
   },
   {
    "file": "server/httpServer.js",
-   "line": 371,
+   "line": 392,
    "code": "return send(res, authorizedBrand ? 200 : 422, { ...result, authorized: authorizedBrand, authorization: brandDecision,",
    "kind": "http",
    "gate_fields": [

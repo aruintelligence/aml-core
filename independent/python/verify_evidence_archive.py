@@ -158,14 +158,20 @@ def verify(archive, policy):
 
 
 if __name__ == "__main__":
+    from authorization_cli import split_flags, decide
+    policy, pin, diagnostic = None, None, "--diagnostic-only" in sys.argv
     try:
-        if len(sys.argv) != 3:
-            raise ValueError("Usage: python3 independent/python/verify_evidence_archive.py <archive.json> <trusted-policy.json>")
-        archive = strict_json(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-        policy = strict_json(pathlib.Path(sys.argv[2]).read_text(encoding="utf-8"))
+        argv, pin, diagnostic = split_flags(sys.argv[1:])
+        if len(argv) != 2:
+            raise ValueError("Usage: python3 independent/python/verify_evidence_archive.py <archive.json> <trusted-policy.json> [--expected-policy-sha256 HEX] [--diagnostic-only]")
+        archive = strict_json(pathlib.Path(argv[0]).read_text(encoding="utf-8"))
+        policy = strict_json(pathlib.Path(argv[1]).read_text(encoding="utf-8"))
         report = verify(archive, policy)
     except (ValueError, KeyError, TypeError, OSError, OverflowError, RecursionError) as error:
         report = {"protocol": "aml-evidence-archive-python-report/1", "verified": False,
                   "policy_hint_trusted": False, "reason": str(error)}
+    # Directive 010: exit 0 only on the authorization decision (verified AND
+    # pinned trusted policy); verified without the pin exits 3.
+    report, code = decide(report, policy, pin, diagnostic)
     print(json.dumps(report, indent=2, ensure_ascii=False))
-    sys.exit(0 if report["verified"] else 1)
+    sys.exit(code)

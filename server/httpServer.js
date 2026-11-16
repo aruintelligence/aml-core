@@ -77,6 +77,19 @@ function signDeploymentReceipt(deployment, signer) {
   if (deployment.result.report) deployment.result.report.receipt = signed;
 }
 
+// Directive 010: explicit permission for one deployment evaluation. The AML
+// policy itself must allow the intent (not shadow mode or failure_mode=open),
+// without an evaluation error, under a server-locked policy.
+function deploymentAuthorizationDecision(evaluation, serverLocked) {
+  return commandAuthorizationDecision({
+    evaluation_ok: !evaluation.evaluation_error,
+    policy_allowed: !evaluation.evaluation_error && evaluation.aml_allowed === true,
+    policy_server_locked: serverLocked === true
+  }, ["evaluation_ok", "policy_allowed", "policy_server_locked"], {
+    evaluation_ok: "AML_AUTHZ_EVALUATION_ERROR", policy_allowed: "AML_AUTHZ_POLICY_DENIED",
+    policy_server_locked: "AML_AUTHZ_POLICY_CHOSEN_BY_REQUEST" });
+}
+
 export function createAmlHttpServer(options = {}) {
   const maxBodyBytes = options.max_body_bytes ?? 1024 * 1024;
   if (!Number.isSafeInteger(maxBodyBytes) || maxBodyBytes < 1) {
@@ -202,13 +215,7 @@ export function createAmlHttpServer(options = {}) {
         // the explicit `authorized` field: the AML policy itself allowed the
         // intent (not shadow mode or failure_mode=open) under a server-locked
         // policy. A request-chosen profile/mode never authorizes.
-        const deploymentDecision = commandAuthorizationDecision({
-          evaluation_ok: !result.evaluation_error,
-          policy_allowed: !result.evaluation_error && result.aml_allowed === true,
-          policy_server_locked: Boolean(lockedPolicy)
-        }, ["evaluation_ok", "policy_allowed", "policy_server_locked"], {
-          evaluation_ok: "AML_AUTHZ_EVALUATION_ERROR", policy_allowed: "AML_AUTHZ_POLICY_DENIED",
-          policy_server_locked: "AML_AUTHZ_POLICY_CHOSEN_BY_REQUEST" });
+        const deploymentDecision = deploymentAuthorizationDecision(result, Boolean(lockedPolicy));
         return send(res, result.evaluation_error ? 422 : 200, {
           protocol: "aml-http-deployment-evaluation/1",
           authorized: deploymentDecision.authorized === true,
@@ -261,8 +268,22 @@ export function createAmlHttpServer(options = {}) {
           try { result.results.forEach(item => signDeploymentReceipt(item.evaluation, receiptSigner)); }
           catch { return send(res, 503, { error: "receipt_signing_unavailable" }, headers); }
         }
+        // Directive 010: HTTP 200 means the batch was evaluated. Each item
+        // carries its own explicit decision; the batch is authorized only when
+        // it is non-empty and every item is. `effective_allowed` (which shadow
+        // mode or failure_mode=open can set) is never permission.
+        const items = result.results.map(item => {
+          const decision = deploymentAuthorizationDecision(item, Boolean(lockedPolicy));
+          return { ...item, authorized: decision.authorized === true, authorization: decision,
+            decision_use: decision.authorized === true ? "authorization" : AML_NOT_AN_AUTHORIZATION_DECISION };
+        });
+        const batchAuthorized = items.length > 0 && items.every(item => item.authorized === true);
         return send(res, 200, {
           ...result,
+          results: items,
+          authorized: batchAuthorized,
+          authorized_count: items.filter(item => item.authorized === true).length,
+          decision_use: batchAuthorized ? "authorization" : AML_NOT_AN_AUTHORIZATION_DECISION,
           protocol: "aml-http-deployment-batch/1",
           policy_source: lockedPolicy ? "server" : "request_or_default",
           runtime_protocol: result.protocol

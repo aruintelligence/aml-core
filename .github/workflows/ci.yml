@@ -102,9 +102,25 @@ jobs:
           print(result.stdout)
           PY
       - name: Verify CLI compilation
-        run: node bin/aml.js compile examples/transmission-061.aml "${RUNNER_TEMP}/aml-dist"
+        id: compile
+        run: |
+          node bin/aml.js compile examples/transmission-061.aml "${RUNNER_TEMP}/aml-dist"
+          # Relying-party pin (Directive 010): `aml verify` exits 0 only when the
+          # manifest digest equals an out-of-band pin. The pin is the SHA-256 of
+          # the manifest this step just built, captured here as a step output
+          # before any later step can touch the file. Compilation embeds a
+          # generated_at timestamp, so no committed golden digest is possible.
+          manifest_sha256="$(sha256sum "${RUNNER_TEMP}/aml-dist/build_manifest.json" | cut -d' ' -f1)"
+          [[ "$manifest_sha256" =~ ^[0-9a-f]{64}$ ]]
+          echo "manifest_sha256=${manifest_sha256}" >> "$GITHUB_OUTPUT"
       - name: Verify compiled bundle integrity
-        run: node bin/aml.js verify "${RUNNER_TEMP}/aml-dist/build_manifest.json"
+        env:
+          AML_MANIFEST_SHA256: ${{ steps.compile.outputs.manifest_sha256 }}
+        run: node bin/aml.js verify "${RUNNER_TEMP}/aml-dist/build_manifest.json" --expected-sha256 "$AML_MANIFEST_SHA256"
+      - name: Reject unpinned, wrongly pinned and tampered bundles
+        env:
+          AML_MANIFEST_SHA256: ${{ steps.compile.outputs.manifest_sha256 }}
+        run: node scripts/check-ci-bundle-pin.mjs "${RUNNER_TEMP}/aml-dist" "$AML_MANIFEST_SHA256"
       - name: Verify in-memory validation
         run: node bin/aml.js validate examples/ai_assistant_response.aml
       - name: Verify semantic lint

@@ -23,6 +23,13 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 - New `authorizeCapabilityToken` / `createCapabilityConsumptionGuard` bind capability tokens to a pinned issuer key, audience, executor, session, intent and a single-use nonce; `verifyCapabilityToken().valid` is documented as non-authorizing.
 - New CodeQL data-flow queries (`tooling/codeql/`) and `scripts/check-authorization-dataflow.mjs` cover call arguments, containers, computed property names, multi-line expressions, imports and Go aliases; the lexical checker fails any shipped success gated only on verification fields.
 
+### Breaking (Directive 010 follow-up): pinned policy for Python evidence verifiers; batch authorization
+
+- `independent/python/verify_evidence_{archive,capsule,migration}.py`, `verify_http_exchange.py` and `evidence_repair_record.py verify` exit `0` only when the evidence verifies AND `--expected-policy-sha256` equals the SHA-256 of the canonical trusted-policy file (`python3 independent/python/authorization_cli.py policy-sha256 <policy.json>`); verified-but-unpinned exits `3`; `--diagnostic-only` exits `0` with `authorized: false`. A substituted (widened) policy file no longer verifies to exit `0`. `verify_evidence_migration.py recover` writes nothing unless authorized.
+- `POST /v1/deployment/batch` adds per-item `authorized` / `authorization` and batch-level `authorized` (true only for a non-empty batch where every item is AML-allowed under a server-locked policy), `authorized_count` and `decision_use`. `effective_allowed` (which request-chosen shadow mode can set) is never permission.
+- CodeQL data-flow queries now follow `Map` set/get, `Reflect.get`, `getattr` and Go `reflect` field reads with constant names, check conditional statuses per success branch and guard conditions per operand (authorization must be an `&&`/`and` conjunct), and credit dominating JavaScript authorization guards. New workflow `codeql-authorization-dataflow.yml` runs the seeded corpus and gates repository alerts on `audit/AML_AUTHZ_DATAFLOW_REVIEW.json` (no suppressions).
+- CI: `aml verify` of the freshly compiled bundle now passes `--expected-sha256` with the manifest digest captured by the compile step, and `scripts/check-ci-bundle-pin.mjs` proves unpinned, wrongly pinned, diagnostic and tampered bundles are not authorized.
+
 ### Repository hygiene
 
 - Added community files expected of a public reference repository: Contributor Covenant code of conduct, support guide, issue forms, Dependabot config, and editor defaults.

@@ -15,8 +15,11 @@ node scripts/evidence-archive.mjs extract archive.json trusted-policy.json recov
 An independent Python verification path checks unsigned capsules, signed v1.1 capsules, and Ed25519 renewal witnesses without importing ĀML's JavaScript implementation. Install Python 3.12+ and `cryptography>=42,<51`, then run:
 
 ```bash
-python3 independent/python/verify_evidence_archive.py archive.json trusted-policy.json
+python3 independent/python/verify_evidence_archive.py archive.json trusted-policy.json --expected-policy-sha256 "$POLICY_SHA256"
 ```
+
+Directive 010: exit 0 needs `--expected-policy-sha256 <sha256 of the canonical trusted policy>` (compute it once from your own trusted policy with `python3 independent/python/authorization_cli.py policy-sha256 trusted-policy.json`). Verified without the pin exits 3; `--diagnostic-only` exits 0 with `authorized: false` and is never permission.
+
 
 Its trust file must come from a separate, authenticated source. For a signed capsule, add `trusted_receipt_fingerprints` to that file, separately from the renewal `trusted_fingerprints`; optional `revoked_receipt_fingerprints` can withdraw receipt trust. The verifier rejects duplicate JSON keys, noncanonical component bytes, untrusted or revoked receipt signers or renewal witnesses, broken succession, and rollback against a separately remembered accepted head. It rejects legacy v1.0 receipt signatures because they do not bind signer and signed time. CI generates artifacts in JavaScript and checks success and mutation cases in Python.
 

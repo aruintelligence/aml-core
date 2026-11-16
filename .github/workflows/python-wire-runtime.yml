@@ -24,6 +24,7 @@ on:
       - "independent/python/repair_evidence_share.py"
       - "scripts/check-evidence-repair-python.mjs"
       - "independent/python/evidence_repair_record.py"
+      - "independent/python/authorization_cli.py"
       - "scripts/check-evidence-repair-record-python.mjs"
       - "independent/vectors/repair-record-v1/**"
       - "runtime/evidenceRepairRecord.js"
@@ -80,6 +81,7 @@ on:
       - "independent/python/repair_evidence_share.py"
       - "scripts/check-evidence-repair-python.mjs"
       - "independent/python/evidence_repair_record.py"
+      - "independent/python/authorization_cli.py"
       - "scripts/check-evidence-repair-record-python.mjs"
       - "independent/vectors/repair-record-v1/**"
       - "runtime/evidenceRepairRecord.js"
@@ -158,7 +160,7 @@ jobs:
       - name: Verify archives and renewal witnesses across JavaScript and Python
         run: node scripts/check-evidence-archive-python.mjs
       - name: Verify fixed archive vector with Python
-        run: python independent/python/verify_evidence_archive.py independent/vectors/archive-v1/archive.json independent/vectors/archive-v1/trusted-policy.json
+        run: python independent/python/verify_evidence_archive.py independent/vectors/archive-v1/archive.json independent/vectors/archive-v1/trusted-policy.json --diagnostic-only
       - name: Check fixed migration handoff bytes and digests
         run: node scripts/check-evidence-migration-vector.mjs
       - name: Verify migration and recovery across JavaScript and Python
