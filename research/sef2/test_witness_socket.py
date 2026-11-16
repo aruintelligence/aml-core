@@ -168,6 +168,18 @@ class WitnessSocketTests(unittest.TestCase):
         self.assertFalse(advance_via_socket(self.path, self.request))
         self.assertEqual(self.store.inspect(), (0, GENESIS))
 
+    def test_strict_startup_rejects_bridge_without_evidence_reader(self):
+        class BrokenBridge:
+            authority_id = "authority"
+            def advance(self, store):
+                return True
+            def source_is_current(self):
+                return True
+        with self.assertRaises(TypeError):
+            WitnessServer(self.path + ".broken", allowed_uid=os.getuid(),
+                          store=self.store, committed_bridge=BrokenBridge(),
+                          require_committed_evidence=True)
+
     def test_unavailable_socket_denies(self):
         self.assertFalse(advance_via_socket(self.path + ".missing", self.request))
 
