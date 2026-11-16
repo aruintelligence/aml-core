@@ -103,10 +103,15 @@ test('authorization decision fails closed on missing, unknown, non-boolean, inhe
   assert.equal(diag.output.authorized, false);
   assert.equal(diag.output.decision_use, NOT_AUTH);
   assert.equal(commandOutcome({ valid: false }, { diagnosticOnly: true, invalidCode: 1 }).exitCode, 1);
-  // Own clock only: a caller time counts only within the skew bound.
+  // Own clock only (Directive 009/010): any caller-supplied time denies,
+  // even one equal to or within 500 ms of the local clock.
   const now = Date.now();
   assert.equal(trustedCommandClock(undefined, now), true);
-  assert.equal(trustedCommandClock(new Date(now + 500).toISOString(), now), true);
+  assert.equal(trustedCommandClock(null, now), true);
+  assert.equal(trustedCommandClock(new Date(now + 500).toISOString(), now), false);
+  assert.equal(trustedCommandClock(new Date(now).toISOString(), now), false);
+  assert.equal(trustedCommandClock(now, now), false);
+  assert.equal(trustedCommandClock(undefined, NaN), false, 'no local clock reading never authorizes');
   assert.equal(trustedCommandClock(new Date(now - 60_000).toISOString(), now), false);
   assert.equal(trustedCommandClock(new Date(now + 60_000).toISOString(), now), false);
   assert.equal(trustedCommandClock('not a time', now), false);

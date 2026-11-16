@@ -28,4 +28,6 @@ runs:
   steps:
     - id: validate
       shell: bash
-      run: node "$GITHUB_ACTION_PATH/../../scripts/witness-record-gate.mjs" --diagnostic-only "${{ inputs.record-file }}"
+      env:
+        AML_RECORD_FILE: ${{ inputs.record-file }}
+      run: node "$GITHUB_ACTION_PATH/../../scripts/witness-record-gate.mjs" --diagnostic-only "$AML_RECORD_FILE"

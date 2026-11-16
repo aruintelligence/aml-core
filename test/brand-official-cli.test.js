@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { signBrandAuthorization } from "../runtime/brandAuthorization.js";
+import { createRevocationRegistry, revocationRegistryFingerprint } from "../runtime/revocationRegistry.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -71,14 +72,37 @@ test("official brand verifier accepts credential only when signer is an active t
     revoked_keys: []
   }));
 
+  // Directive 010: official without a checked, pinned revocation registry is
+  // consistent but not authorized (d35a6b1 exited 0 here).
   const result = run([credentialPath, trustPath]);
-  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(result.status, 3, result.stderr || result.stdout);
   const output = JSON.parse(result.stdout);
   assert.equal(output.valid, true);
   assert.equal(output.official, true);
+  assert.equal(output.authorized, false);
+  assert.deepEqual(output.authorization.reasons, ["AML_AUTHZ_REVOCATION_NOT_CHECKED", "AML_AUTHZ_REVOCATION_REGISTRY_NOT_PINNED"]);
   assert.equal(output.trust_root.key_id, "test-only-root");
   assert.equal(output.clock_source, "local_system");
   assert.equal(output.credential_revocation_checked, false);
+
+  const registry = createRevocationRegistry();
+  const registryPath = path.join(temp, "registry.json");
+  fs.writeFileSync(registryPath, JSON.stringify(registry));
+  const pin = { AML_TRUSTED_REVOCATION_REGISTRY_SHA256: revocationRegistryFingerprint(registry) };
+  const unpinned = run([credentialPath, trustPath, registryPath], { AML_TRUSTED_REVOCATION_REGISTRY_SHA256: "" });
+  assert.equal(unpinned.status, 3, unpinned.stdout);
+  assert.deepEqual(JSON.parse(unpinned.stdout).authorization.reasons, ["AML_AUTHZ_REVOCATION_REGISTRY_NOT_PINNED"]);
+  assert.equal(run([credentialPath, trustPath, registryPath], { AML_TRUSTED_REVOCATION_REGISTRY_SHA256: "f".repeat(64) }).status, 3, "wrong pin");
+  const pinned = run([credentialPath, trustPath, registryPath], pin);
+  assert.equal(pinned.status, 0, pinned.stdout);
+  const allowed = JSON.parse(pinned.stdout);
+  assert.equal(allowed.authorized, true);
+  assert.equal(allowed.credential_revocation_checked, true);
+  assert.deepEqual(allowed.authorization.reasons, ["AML_AUTHZ_ALLOW"]);
+  const diagnostic = run([credentialPath, trustPath, "--diagnostic-only"]);
+  assert.equal(diagnostic.status, 0);
+  assert.equal(JSON.parse(diagnostic.stdout).authorized, false);
+  assert.equal(JSON.parse(diagnostic.stdout).decision_use, "NOT AN AUTHORIZATION DECISION");
 });
 
 test("official brand CLI cannot backdate an expired credential using AML_VERIFY_AT", () => {

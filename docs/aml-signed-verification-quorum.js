@@ -579,10 +579,13 @@ export async function verifySignedVerificationQuorum(quorum, {
     if (witnessBundle !== undefined) {
       // Snapshot the local clock once for the freshness decision. The timestamp
       // describes this replay, not when a signer checked or a trusted time source.
-      const replayNow = Date.now();
+      // The bundle verifier reads its own clock; passing `now` would be a
+      // caller-supplied clock and could never authorize.
       const witness = witnessInputError
         ? { valid: false, reason: witnessInputError, checks: {} }
-        : await verifyWitnessBundle(witnessBundle, { expectedChallenge, now: replayNow });
+        : await verifyWitnessBundle(witnessBundle, { expectedChallenge });
+      const observedAt = Date.parse(witness.evaluated_at);
+      const replayNow = Number.isFinite(observedAt) ? observedAt : Date.now();
       const artifactMatches = !witnessInputError && rebuilt.artifact_type === 'aml-witness-bundle/1' &&
         rebuilt.artifact_hash === witnessBundle?.integrity?.value;
       // Keep every earlier conjunct and also require the replay's own

@@ -305,12 +305,29 @@ def main():
     negotiation.add_argument("local", type=Path)
     negotiation.add_argument("remote", type=Path)
     negotiation.add_argument("--required", action="append", default=[])
+    negotiation.add_argument("--diagnostic-only", action="store_true",
+                             help="Exit 0 for an accepted negotiation; NOT AN AUTHORIZATION DECISION")
     args = parser.parse_args()
     try:
         if args.command == "negotiate":
             result = negotiate(json.loads(args.local.read_text(encoding="utf-8")),
                                json.loads(args.remote.read_text(encoding="utf-8")), args.required)
-            accepted = result["accepted"]
+            # Directive 010: the remote capability document is unauthenticated,
+            # so `accepted` (compatible versions and capabilities) is a
+            # precondition, never permission to open a session or act.
+            accepted = result["accepted"] is True
+            result = dict(result, authorized=False, authorization={
+                "schema": "aml-authorization-decision/1", "authorized": False, "decision": "deny",
+                "reasons": (["AML_AUTHZ_DIAGNOSTIC_ONLY"] if args.diagnostic_only else []) +
+                           ["AML_AUTHZ_NO_TRUST_ROOTS"] + ([] if accepted else ["AML_AUTHZ_NEGOTIATION_NOT_ACCEPTED"]),
+                "required": ["negotiation_accepted", "relying_party_trust_roots"]},
+                decision_use="NOT AN AUTHORIZATION DECISION")
+            if args.diagnostic_only:
+                result["diagnostic_only"] = True
+            print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+            if not accepted:
+                return 1
+            return 0 if args.diagnostic_only else 3
         else:
             artifact = json.loads(args.artifact.read_text(encoding="utf-8"))
             options = {"now": args.now} if args.kind in ("envelope", "passport") else {}
@@ -333,10 +350,9 @@ def main():
                 return 0 if consistent else 1
             return 3 if consistent else 1
     except (ValueError, OSError, TypeError) as error:
-        result, accepted = failure("invalid_input", detail=str(error)), False
-        result = dict(result, authorized=False)
-    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
-    return 0 if accepted else 1
+        result = dict(failure("invalid_input", detail=str(error)), authorized=False)
+        print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        return 1
 
 
 if __name__ == "__main__":

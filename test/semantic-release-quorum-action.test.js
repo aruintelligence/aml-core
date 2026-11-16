@@ -15,7 +15,10 @@ test("semantic release quorum Action passes user paths through environment varia
 });
 
 test("semantic release quorum Action exports only verified scalar outputs with delimiter-safe encoding", () => {
-  assert.ok(action.includes("if (result.verified !== true) process.exit(1)"));
+  // Directive 010: outputs are exported only for an explicit authorization
+  // decision (verified under a pinned policy), not for `verified` alone.
+  assert.ok(action.includes("if (result.verified !== true || result.authorized !== true ||"));
+  assert.ok(action.includes("result.authorization?.authorized !== true) process.exit(1);"));
   assert.ok(action.includes("crypto.randomBytes(16)"));
   assert.ok(action.includes("<<${delimiter}"));
   assert.ok(action.includes("valid_trusted_endorsements: result.valid_trusted_endorsements"));

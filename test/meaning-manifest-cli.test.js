@@ -37,9 +37,20 @@ test("aml-meaning manifest creates a verifiable project meaning lock", () => {
   assert.deepEqual(manifest.files.map(file => file.path), ["ui/a.aml", "ui/b.aml"]);
   fs.writeFileSync(path.join(dir, "aml-meaning-lock.json"), JSON.stringify(manifest, null, 2));
 
-  const verified = run(dir, "verify-manifest", "aml-meaning-lock.json");
+  // Directive 010: a committed manifest can change with the sources, so a
+  // verified manifest authorizes only with an out-of-band root pin.
+  const unpinned = run(dir, "verify-manifest", "aml-meaning-lock.json");
+  assert.equal(unpinned.status, 3, unpinned.stderr);
+  assert.equal(JSON.parse(unpinned.stdout).verified, true);
+  assert.equal(JSON.parse(unpinned.stdout).authorized, false);
+  assert.equal(run(dir, "verify-manifest", "aml-meaning-lock.json", "--expected-root-sha256", "0".repeat(64)).status, 3);
+  const verified = run(dir, "verify-manifest", "aml-meaning-lock.json", "--expected-root-sha256", manifest.root_sha256);
   assert.equal(verified.status, 0, verified.stderr);
   assert.equal(JSON.parse(verified.stdout).verified, true);
+  assert.equal(JSON.parse(verified.stdout).authorized, true);
+  const diagnostic = run(dir, "verify-manifest", "aml-meaning-lock.json", "--diagnostic-only");
+  assert.equal(diagnostic.status, 0);
+  assert.equal(JSON.parse(diagnostic.stdout).decision_use, "NOT AN AUTHORIZATION DECISION");
 });
 
 test("aml-meaning verify-manifest exits 1 after compiled meaning drifts", () => {
@@ -53,7 +64,7 @@ test("aml-meaning verify-manifest exits 1 after compiled meaning drifts", () => 
   fs.writeFileSync(path.join(dir, "aml-meaning-lock.json"), created.stdout);
   fs.writeFileSync(path.join(dir, "ui", "a.aml"), a.replace("Explain A", "Create urgency"));
 
-  const verified = run(dir, "verify-manifest", "aml-meaning-lock.json");
+  const verified = run(dir, "verify-manifest", "aml-meaning-lock.json", "--expected-root-sha256", JSON.parse(created.stdout).root_sha256);
   assert.equal(verified.status, 1, verified.stderr);
   const report = JSON.parse(verified.stdout);
   assert.equal(report.verified, false);

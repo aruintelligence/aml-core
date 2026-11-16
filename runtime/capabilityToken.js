@@ -18,7 +18,7 @@ function validateTimes({ issued_at = null, expires_at = null } = {}) {
   return null;
 }
 
-export function signCapabilityToken({ issuer, subject = null, audience = null, capabilities = [], issued_at = null, expires_at = null, nonce = null } = {}, privateKeyPem) {
+export function signCapabilityToken({ issuer, subject = null, audience = null, capabilities = [], issued_at = null, expires_at = null, nonce = null, session_id = null, intent_sha256 = null } = {}, privateKeyPem) {
   if (!issuer) throw new Error("issuer is required");
   if (!privateKeyPem) throw new Error("private key is required");
   const timeError = validateTimes({ issued_at, expires_at });
@@ -32,7 +32,11 @@ export function signCapabilityToken({ issuer, subject = null, audience = null, c
     capabilities: [...new Set(capabilities)].sort(),
     issued_at,
     expires_at,
-    nonce
+    nonce,
+    // Optional bindings (Directive 010). Omitted when null so tokens signed
+    // without them keep byte-identical canonical bodies and signatures.
+    ...(session_id === null ? {} : { session_id }),
+    ...(intent_sha256 === null ? {} : { intent_sha256 })
   };
 
   const privateKey = crypto.createPrivateKey(privateKeyPem);
@@ -68,4 +72,76 @@ export function verifyCapabilityToken(token, { now = null, audience = null, requ
   if (requiredCapability && !token.capabilities.includes(requiredCapability)) return { valid: false, reason: "capability_missing" };
 
   return { valid: true, reason: null, issuer: token.issuer, subject: token.subject, capabilities: token.capabilities };
+}
+
+// Directive 010: `valid` above only means "well-formed and signed by the key
+// embedded in the token" - any party can mint such a token for any
+// capability. authorizeCapabilityToken is the only function in this module
+// whose result may gate an action. It is authorized only when every check
+// below is explicitly true:
+//   - signature valid (verifyCapabilityToken) and issuer key fingerprint
+//     equals a relying-party pin (signature validity != trusted identity);
+//   - expiry evaluated against the verifier's local clock only - a caller
+//     supplied time is never accepted (no `now` option exists);
+//   - audience, subject (executor), session_id and intent_sha256 each equal
+//     the value the relying party expects (evidence from another session,
+//     executor or intent does not transfer);
+//   - the required capability is granted;
+//   - the (issuer key, nonce) pair has not been consumed in the supplied
+//     replay guard; on success the returned guard records it, so a second
+//     execution with the same token is refused.
+// Residual: a stolen pinned issuer key still mints authorizing tokens, and
+// the replay guard is only as durable as the caller's storage of it.
+const PIN = /^[0-9a-f]{64}$/;
+export function createCapabilityConsumptionGuard() {
+  return { type: "aml-capability-consumption/1", consumed: {} };
+}
+
+export function authorizeCapabilityToken(token, {
+  trustedIssuerKeySha256 = null,
+  audience = null,
+  subject = null,
+  sessionId = null,
+  intentSha256 = null,
+  requiredCapability = null,
+  consumptionGuard = null
+} = {}) {
+  const reasons = [];
+  const verification = verifyCapabilityToken(token, { audience: null, requiredCapability: null });
+  const nowMs = Date.now();
+  const checks = {
+    signature_valid: verification.valid === true,
+    issuer_key_pinned: typeof trustedIssuerKeySha256 === "string" && PIN.test(trustedIssuerKeySha256)
+      && verification.valid === true && token.public_key_fingerprint === trustedIssuerKeySha256,
+    local_clock_trusted: Number.isFinite(nowMs),
+    not_expired: false,
+    audience_bound: typeof audience === "string" && audience.length > 0 && token?.audience === audience,
+    executor_bound: typeof subject === "string" && subject.length > 0 && token?.subject === subject,
+    session_bound: typeof sessionId === "string" && sessionId.length > 0 && token?.session_id === sessionId,
+    intent_bound: typeof intentSha256 === "string" && PIN.test(intentSha256) && token?.intent_sha256 === intentSha256,
+    capability_granted: typeof requiredCapability === "string" && Array.isArray(token?.capabilities)
+      && token.capabilities.includes(requiredCapability),
+    nonce_present: typeof token?.nonce === "string" && token.nonce.length > 0,
+    not_replayed: false
+  };
+  if (checks.local_clock_trusted && validTimestamp(token?.expires_at)) {
+    const issuedOk = token.issued_at === null || token.issued_at === undefined
+      || (validTimestamp(token.issued_at) && Date.parse(token.issued_at) <= nowMs);
+    checks.not_expired = issuedOk && nowMs < Date.parse(token.expires_at);
+  }
+  const guardOk = consumptionGuard?.type === "aml-capability-consumption/1" && consumptionGuard.consumed
+    && typeof consumptionGuard.consumed === "object";
+  const consumeKey = `${token?.public_key_fingerprint}:${token?.nonce}`;
+  checks.not_replayed = Boolean(guardOk && checks.nonce_present && !Object.hasOwn(consumptionGuard.consumed, consumeKey));
+  for (const [name, ok] of Object.entries(checks)) if (ok !== true) reasons.push(name);
+  const authorized = reasons.length === 0;
+  return {
+    valid: checks.signature_valid,
+    authorized,
+    reasons,
+    checks,
+    consumptionGuard: authorized
+      ? { type: consumptionGuard.type, consumed: { ...consumptionGuard.consumed, [consumeKey]: new Date(nowMs).toISOString() } }
+      : consumptionGuard
+  };
 }

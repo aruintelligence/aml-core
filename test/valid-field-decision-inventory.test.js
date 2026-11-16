@@ -209,3 +209,25 @@ test('the check fails closed when the Python data-flow pass cannot run', t => {
   assert.notEqual(run.status, 0, run.stdout);
   assert.match(run.stderr + run.stdout, /python data-flow pass failed/);
 });
+
+test('Directive 010: success gated only on verified/accepted/quorum_met/official fails whatever category it claims', () => {
+  const seeded = {
+    'bin/seeded-verified.js': 'process.exit(result.verified ? 0 : 1);',
+    'server/seeded-quorum.js': 'return send(res, result.quorum_met ? 200 : 422, result, headers);',
+    'bin/seeded-official.js': 'process.exit(result.valid && result.official ? 0 : 1);',
+    'bin/seeded-implicit.js': 'if (!result.quorum_met) process.exitCode = 2;',
+    'independent/seeded-accepted.py': 'def main():\n    return 0 if result["accepted"] else 1'
+  };
+  for (const [file, source] of Object.entries(seeded)) {
+    const sinks = scanDecisionSinks(file, source);
+    assert.ok(sinks.length > 0, `${file}: sink found`);
+    for (const category of ['explicit-decision', 'conjunct', 'non-decision']) {
+      const failures = checkDecisionSinks(sinks, { ...inventory, decision_sinks: sinks.map(s => ({ ...s, category, effect: 'seeded fixture' })) });
+      assert.ok(failures.some(f => /without an authorization decision|valid alone|non-decision used|conjunct gate/.test(f)), `${file} accepted as ${category}: ${failures}`);
+    }
+  }
+  // The explicit decision passes.
+  const ok = scanDecisionSinks('bin/seeded-ok.js', 'process.exit(result.authorized === true && result.verified ? 0 : 1);');
+  assert.deepEqual(checkDecisionSinks(ok, { ...inventory, decision_sinks: ok.map(s => ({ ...s, category: 'explicit-decision', effect: 'seeded fixture' })) })
+    .filter(f => /seeded-ok/.test(f) && !/stale/.test(f)), []);
+});

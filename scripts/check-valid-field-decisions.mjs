@@ -62,7 +62,7 @@ export const REQUIRED_DECISION_SINKS = Object.freeze([
   { file: 'runtime/commandAuthorization.js',
     pattern: 'const authorized = result?.authorized === true && result?.authorization?.authorized === true && consistent;',
     effect: 'exit 0 for every JS verifier command that uses commandOutcome' },
-  { file: 'bin/aml.js', pattern: ': result.authorized === true && result.authorization?.authorized === true ? 0',
+  { file: 'bin/aml.js', pattern: 'process.exit(result.authorized === true && result.authorization?.authorized === true ? 0',
     effect: 'exit 0 for aml verify-signed-quorum' },
   { file: 'independent/python/verify_witness.py', pattern: 'authorized = authorization["authorized"] is True and valid is True',
     effect: 'exit 0 for the Python witness verifier' },
@@ -219,8 +219,66 @@ export const REVIEWED_DIAGNOSTIC_EXITS = Object.freeze([
     guard: 'if args.diagnostic_only:', why: 'Python witness verifier --diagnostic-only (conformance harness)' },
   { file: 'independent/python/wire_runtime.py', code: 'return 0 if consistent else 1',
     guard: 'if args.diagnostic_only:', why: 'Python wire runtime verify --diagnostic-only' },
+  { file: 'bin/aml.js', code: 'process.exit(result.requested_conditions_met === true ? 0 : 2);',
+    guard: 'if (diagnosticOnly) {', why: 'aml verify-signed-quorum --diagnostic-only' },
+  { file: 'independent/python/verify_signed_quorum.py', code: 'return 0 if result["requested_conditions_met"] is True else 2',
+    guard: 'if args.diagnostic_only:', why: 'Python signed-quorum verifier --diagnostic-only' },
+  { file: 'independent/python/wire_runtime.py', code: 'return 0 if args.diagnostic_only else 3',
+    guard: 'if args.diagnostic_only:', why: 'Python wire runtime negotiate: accepted exits 3, or 0 only under --diagnostic-only' },
   { file: 'independent/go/main.go', code: 'return out, 0',
     guard: 'if diagnostic {', why: 'Go witness verifier --diagnostic-only (conformance harness)' }
+]);
+
+// Directive 010: no verification field is permission. A success sink (exit
+// 0 / HTTP 2xx) gated only on these fields fails the check in shipped code,
+// whatever category the inventory claims, unless it is listed in
+// REVIEWED_NON_AUTHORIZATION_SINKS below with the reason it is not an
+// authorization outcome (a comparison, a self-check, or a verifier whose
+// trust inputs are separate relying-party arguments). Adding one requires
+// changing this check.
+export const VERIFICATION_ONLY_FIELDS = Object.freeze(['valid', 'verified', 'accepted', 'quorum_met', 'official',
+  'claim_verified', 'consistent', 'signature_valid', 'threshold_met', 'requested_conditions_met', 'policy_met',
+  'witness_met', 'integrity_valid', 'recovered', 'ready', 'repaired', 'created', 'equivalent', 'passed', 'healthy',
+  'matchesCanonical', 'evaluated', 'ok']);
+export const AUTHORIZATION_FIELDS = Object.freeze(['authorized', 'authorizedReceipt', 'authorizedBrand', 'exitCode']);
+export const REVIEWED_NON_AUTHORIZATION_SINKS = Object.freeze([
+  { file: 'bin/aml-meaning.js', code: 'process.exit(report.equivalent ? 0 : 1);',
+    why: 'compares the meaning fingerprints of two caller files; exit 0 means equivalent, not permission (meaning-lock drift check)' },
+  { file: 'bin/aml-runtime-disagreement.js', code: 'process.exitCode = report.equivalent ? 0 : 2;',
+    why: 'cross-runtime comparison report; no artifact is trusted or executed' },
+  { file: 'independent/python/verify_evidence_archive.py', code: 'sys.exit(0 if report["verified"] else 1)',
+    why: 'verified only under a separate relying-party trusted-policy argument (trusted fingerprints, accepted head); embedded policy_hint is never trusted' },
+  { file: 'independent/python/verify_evidence_capsule.py', code: 'sys.exit(0 if report["verified"] else 1)',
+    why: 'signed receipts verified only against an external trusted receipt-key list' },
+  { file: 'independent/python/verify_evidence_migration.py', code: 'sys.exit(0 if report["verified"] else 1)',
+    why: 'requires a separate <trusted-policy.json> argument' },
+  { file: 'independent/python/verify_http_exchange.py', code: 'sys.exit(0 if report["verified"] else 1)',
+    why: 'requires the relying party expected request, profile snapshot and signer fingerprints' },
+  { file: 'independent/python/recover_evidence_shards.py', code: 'sys.exit(0 if report["recovered"] else 1)',
+    why: 'data recovery outcome (shards reassembled), not an authorization' },
+  { file: 'independent/python/repair_evidence_share.py', code: 'sys.exit(0 if report["repaired"] else 1)',
+    why: 'data repair outcome, not an authorization' },
+  { file: 'independent/python/evidence_repair_record.py', code: 'sys.exit(0 if report.get("created") or report.get("verified") else 1)',
+    why: 'record creation/verification against a separate trusted policy; not an execution gate' },
+  { file: 'independent/python/evidence_placement.py', code: 'sys.exit(0 if report["ready"] else 1)',
+    why: 'storage placement readiness report, not an authorization' },
+  { file: 'independent/python/evidence_drill.py', code: 'sys.exit(0 if report["ready"] else 1)',
+    why: 'recovery drill readiness report, not an authorization' },
+  { file: 'independent/python/wire_runtime.py', code: 'if not accepted:',
+    why: 'a rejected negotiation exits 1; an accepted one exits 3 (never authorized: unauthenticated remote) or 0 only under --diagnostic-only' },
+  { file: 'bin/aml-doctor.js', code: 'process.exit(report.healthy ? 0 : 1);',
+    why: 'local package health diagnostics; gates nothing' },
+  { file: 'bin/aml-support-bundle.js', code: 'process.exit(bundle.healthy ? 0 : 1);',
+    why: 'support bundle health diagnostics; gates nothing' },
+  { file: 'scripts/meaning-gate.js', code: 'process.exit(report.passed ? 0 : 1);',
+    why: 'policy evaluation of the relying party\'s own before/after files under policies it names; passed is that policy decision, not verification of an untrusted artifact' },
+  { file: 'scripts/evidence-repair-record.mjs', code: 'if (!result.verified) process.exitCode = 1;',
+    why: 'verified only against a separate <trusted-policy.json> argument; repair bookkeeping, not an execution gate' },
+  { file: 'scripts/evidence-drill-html.mjs', code: 'if (!report.ready) process.exitCode = 1;', why: 'drill readiness report' },
+  { file: 'scripts/evidence-drill.mjs', code: 'if (!report.ready) process.exitCode = 1;', why: 'drill readiness report' },
+  { file: 'scripts/evidence-placement.mjs', code: 'if (!report.ready) process.exitCode = 1;', why: 'placement readiness report' },
+  { file: 'pilots/enterprise-30min/run.mjs', code: 'if (!report.passed) process.exitCode = 1;', why: 'pilot self-test harness result' },
+  { file: 'pilots/enterprise-http-gate/adversarial.mjs', code: 'if (!passed) process.exitCode = 1;', why: 'adversarial pilot self-test harness result' }
 ]);
 
 export const REVIEWED_POSITIVE_IF = Object.freeze([
@@ -590,6 +648,16 @@ export function checkDecisionSinks(sinks, inventory, base = root) {
     }
     if (entry.category === 'explicit-decision' && (fields.includes('valid') || validOnly)) {
       failures.push(`${where}: explicit-decision gate reads valid`);
+    }
+    // Directive 010: verified/accepted/quorum_met/official/... alone are
+    // not permission either, in any shipped exit or HTTP success sink.
+    const successSink = sink.kind.includes('implicit') || /process\.exit|exitCode|send\s*\(|statusCode|writeHead|sys\.exit|SystemExit|os\.Exit|^return\s+0\b|return\s+0\s+if/.test(sink.code);
+    const verificationOnly = fields.length > 0 && fields.every(f => VERIFICATION_ONLY_FIELDS.includes(f)) &&
+      !fields.some(f => AUTHORIZATION_FIELDS.includes(f));
+    const shipped = !/^(test|scripts\/(check-|run-|verify-|build-))/.test(sink.file);
+    if (shipped && successSink && verificationOnly && entry.category !== 'diagnostic-exit' &&
+        !REVIEWED_NON_AUTHORIZATION_SINKS.some(r => r.file === sink.file && r.code === sink.code)) {
+      failures.push(`${where}: success gated on verification field(s) ${fields.join(', ')} without an authorization decision`);
     }
   }
   const found = new Set(sinks.map(key));

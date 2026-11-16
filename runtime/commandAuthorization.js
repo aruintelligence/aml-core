@@ -15,7 +15,8 @@ export const AML_EXIT_AUTHORIZED = 0;
 export const AML_EXIT_NOT_AUTHORIZED = 3;
 export const AML_DIAGNOSTIC_ONLY_FLAG = "--diagnostic-only";
 export const AML_NOT_AN_AUTHORIZATION_DECISION = "NOT AN AUTHORIZATION DECISION";
-export const COMMAND_AUTHORIZATION_CLOCK_SKEW_MS = 1000;
+// Kept for compatibility: no caller-supplied time is accepted for authorization.
+export const COMMAND_AUTHORIZATION_CLOCK_SKEW_MS = 0;
 
 const deny = (required, reasons) => ({
   schema: "aml-authorization-decision/1", authorized: false, decision: "deny",
@@ -47,13 +48,13 @@ export function commandAuthorizationDecision(conditions, required, denials) {
   }
 }
 
-// The verifier trusts only its own clock. A caller-supplied time (for
-// example an environment override) is trusted only within the skew bound.
+// The verifier trusts only its own clock. Any caller-supplied time (for
+// example AML_VERIFY_AT or --now) is reported but never authorizes, however
+// close it is to the local clock: a tolerance window lets the caller choose
+// the freshness outcome near an expiry boundary.
 export function trustedCommandClock(callerTime, localNowMs = Date.now()) {
   if (callerTime === null || callerTime === undefined || callerTime === "") return Number.isFinite(localNowMs);
-  const parsed = typeof callerTime === "number" ? callerTime : Date.parse(String(callerTime));
-  return Number.isFinite(parsed) && Number.isFinite(localNowMs) &&
-    Math.abs(parsed - localNowMs) <= COMMAND_AUTHORIZATION_CLOCK_SKEW_MS;
+  return false;
 }
 
 // Attach the decision to a result without changing `valid`.
@@ -65,8 +66,10 @@ export function withCommandAuthorization(result, decision, trustAssumptions = []
 // Present a result for output and choose the exit code. `invalidCode` is the
 // command's existing failure code. Exit 0 requires `authorized === true` in
 // decision mode; diagnostic mode reports authorized:false and is labelled.
-export function commandOutcome(result, { diagnosticOnly = false, invalidCode = 1 } = {}) {
-  const consistent = result?.valid === true;
+export function commandOutcome(result, { diagnosticOnly = false, invalidCode = 1, consistent: consistentOption } = {}) {
+  // `consistent` lets a command name its own verification field (for
+  // example `verified`); it is only ever a precondition, never permission.
+  const consistent = consistentOption === undefined ? result?.valid === true : consistentOption === true;
   if (diagnosticOnly) {
     const authorization = { ...(result?.authorization || {}), authorized: false, decision: "deny",
       reasons: ["AML_AUTHZ_DIAGNOSTIC_ONLY", ...((result?.authorization?.reasons) || [])
@@ -84,4 +87,37 @@ export function commandOutcome(result, { diagnosticOnly = false, invalidCode = 1
 
 export function diagnosticOnlyRequested(argv) {
   return Array.isArray(argv) && argv.includes(AML_DIAGNOSTIC_ONLY_FLAG);
+}
+
+// A pin is a 64-hex lowercase SHA-256 value the relying party obtained out of
+// band. Only an exact match against the verified artifact counts.
+export function isPin(value) {
+  return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+}
+export function pinMatches(pin, actual) {
+  return isPin(pin) && typeof actual === "string" && actual === pin;
+}
+
+// Remove `--name value` from argv. A flag without a value is a usage error.
+export function takeOption(argv, name) {
+  const rest = [];
+  let value = null;
+  for (let index = 0; index < argv.length; index += 1) {
+    if (argv[index] !== name) { rest.push(argv[index]); continue; }
+    const next = argv[index + 1];
+    if (value !== null || next === undefined || next.startsWith("--")) throw new Error(`${name} requires exactly one value`);
+    value = next;
+    index += 1;
+  }
+  return { value, rest };
+}
+
+// One step for a verifier command: build the decision from explicit
+// conditions, attach it, and pick the exit code. `consistent` is the
+// command's own verification result (a precondition only).
+export function decideCommand(verification, { consistent, conditions, required, denials, trust = [],
+  diagnosticOnly = false, invalidCode = 1 }) {
+  const result = withCommandAuthorization(verification,
+    commandAuthorizationDecision(conditions, required, denials), trust);
+  return commandOutcome(result, { diagnosticOnly, invalidCode, consistent: consistent === true });
 }

@@ -339,7 +339,7 @@ def load_json(filename):
 # authorized false, and is labelled NOT AN AUTHORIZATION DECISION.
 EXIT_NOT_AUTHORIZED = 3
 NOT_AN_AUTHORIZATION_DECISION = "NOT AN AUTHORIZATION DECISION"
-CLOCK_SKEW_SECONDS = 1.0
+CLOCK_SKEW_SECONDS = 0.0  # kept for compatibility; caller time never authorizes
 AUTHORIZATION_REQUIRED = ("bundle_valid", "verifier_held_challenge", "trusted_clock")
 AUTHORIZATION_DENIALS = {
     "bundle_valid": "AML_AUTHZ_BUNDLE_NOT_VALID",
@@ -370,16 +370,17 @@ def authorization_decision(conditions):
 
 
 def trusted_clock(now, local_now):
-    if now is None:
-        return True
-    return abs((now - local_now).total_seconds()) <= CLOCK_SKEW_SECONDS
+    # Only the verifier's own clock authorizes. A caller-supplied --now, even
+    # within a second of the local clock, could pick the freshness outcome
+    # at an expiry boundary, so it is reported but never trusted.
+    return now is None and local_now is not None
 
 
 def main():
     parser = argparse.ArgumentParser(description="Verify an aml-witness-bundle/1 artifact")
     parser.add_argument("bundle")
     parser.add_argument("--challenge", help="Separately retained verifier challenge (required for authorization)")
-    parser.add_argument("--now", help="Test-only ISO-8601 time override; untrusted beyond 1 s of the local clock")
+    parser.add_argument("--now", help="Test-only ISO-8601 time override; never authorizes")
     parser.add_argument("--diagnostic-only", action="store_true",
                         help="Exit 0 for a consistent bundle; NOT AN AUTHORIZATION DECISION")
     args = parser.parse_args()

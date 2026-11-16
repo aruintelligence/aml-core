@@ -73,10 +73,11 @@ export async function createWitnessBundle({ evidence, challenge, attestation }) 
 // Trust rule for time: the verifier trusts only its own clock. A caller may
 // pass `now` (an outer verifier that already read the same clock, or a fixed
 // test clock), and `valid`/`verified` are computed with it for compatibility,
-// but `authorized` requires that value to be a finite number within
-// WITNESS_AUTHORIZATION_CLOCK_SKEW_MS of this verifier's own reading. A stale
-// or future caller clock therefore never authorizes.
-export const WITNESS_AUTHORIZATION_CLOCK_SKEW_MS = 1000;
+// but any caller-supplied `now` denies authorization: a caller could
+// otherwise move the freshness decision inside a tolerance window (for
+// example accept a challenge that expired a moment ago). Authorization uses
+// only this verifier's own clock reading.
+export const WITNESS_AUTHORIZATION_CLOCK_SKEW_MS = 0;
 export const WITNESS_AUTHORIZATION_REQUIRED = Object.freeze([
   'bundle_valid', 'verifier_held_challenge', 'trusted_clock'
 ]);
@@ -125,9 +126,7 @@ export async function verifyWitnessBundle(bundle, options = {}) {
       ? new Date(localNow).toISOString() : null,
     freshness_clock_source: callerSuppliedClock ? 'caller_supplied' : 'local_system'
   };
-  const trustedClock = Number.isFinite(localNow) && (!callerSuppliedClock ||
-    (typeof now === 'number' && Number.isFinite(now) &&
-      Math.abs(now - localNow) <= WITNESS_AUTHORIZATION_CLOCK_SKEW_MS));
+  const trustedClock = Number.isFinite(localNow) && !callerSuppliedClock;
   const decide = (bundleValid, heldChallenge) => {
     const authorization = witnessAuthorizationDecision({
       bundle_valid: bundleValid, verifier_held_challenge: heldChallenge, trusted_clock: trustedClock

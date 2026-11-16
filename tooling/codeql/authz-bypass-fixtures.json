@@ -1,0 +1,230 @@
+{
+ "schema": "aml-authz-dataflow-fixtures/1",
+ "note": "Intentionally vulnerable snippets for the Directive 010 data-flow queries. Data only; materialized into a temporary directory by scripts/check-authorization-dataflow.mjs.",
+ "fixtures": {
+  "js-call-argument": {
+   "language": "javascript",
+   "category": "call-argument",
+   "files": {
+    "main.js": "function gate(ok) { if (ok) execute(); }\ngate(r.valid);\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "js-helper-return-verified": {
+   "language": "javascript",
+   "category": "call-argument",
+   "files": {
+    "main.js": "function fine(x) { return x.quorum_met; }\nprocess.exit(fine(r) ? 0 : 1);\n"
+   },
+   "expect_flagged": true,
+   "field": "quorum_met"
+  },
+  "py-call-argument": {
+   "language": "python",
+   "category": "call-argument",
+   "files": {
+    "main.py": "def gate(ok):\n    if ok:\n        execute()\n\ngate(r[\"valid\"])\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "py-helper-return-accepted": {
+   "language": "python",
+   "category": "call-argument",
+   "files": {
+    "main.py": "import sys\n\ndef fine(x):\n    return x[\"accepted\"]\n\nsys.exit(0 if fine(r) else 1)\n"
+   },
+   "expect_flagged": true,
+   "field": "accepted"
+  },
+  "js-array-container": {
+   "language": "javascript",
+   "category": "container",
+   "files": {
+    "main.js": "const xs = [r.valid];\nif (xs[0]) execute();\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "js-object-container-verified": {
+   "language": "javascript",
+   "category": "container",
+   "files": {
+    "main.js": "const box = { inner: { go: r.verified } };\nif (box.inner.go) execute();\n"
+   },
+   "expect_flagged": true,
+   "field": "verified"
+  },
+  "py-list-container": {
+   "language": "python",
+   "category": "container",
+   "files": {
+    "main.py": "box = [r[\"valid\"]]\nif box[0]:\n    execute()\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "py-dict-container-verified": {
+   "language": "python",
+   "category": "container",
+   "files": {
+    "main.py": "d = {\"go\": r[\"verified\"]}\nif d[\"go\"]:\n    execute()\n"
+   },
+   "expect_flagged": true,
+   "field": "verified"
+  },
+  "js-computed-property": {
+   "language": "javascript",
+   "category": "computed-property",
+   "files": {
+    "main.js": "const k = 'val' + 'id';\nif (r[k]) execute();\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "js-computed-property-module": {
+   "language": "javascript",
+   "category": "computed-property",
+   "files": {
+    "main.mjs": "export const run = r => { const key = 'quorum' + '_met'; if (r[key]) execute(); };\n"
+   },
+   "expect_flagged": true,
+   "field": "quorum_met"
+  },
+  "py-computed-key": {
+   "language": "python",
+   "category": "computed-property",
+   "files": {
+    "main.py": "k = \"ver\" + \"ified\"\nif r[k]:\n    execute()\n"
+   },
+   "expect_flagged": true,
+   "field": "verified"
+  },
+  "js-multiline-ternary": {
+   "language": "javascript",
+   "category": "multiline",
+   "files": {
+    "main.js": "process.exit(r.valid\n  ? 0\n  : 1);\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "js-multiline-status": {
+   "language": "javascript",
+   "category": "multiline",
+   "files": {
+    "main.js": "function handler(req, res, r) {\n  return send(res,\n    r\n      .accepted\n      ? 200\n      : 403);\n}\n"
+   },
+   "expect_flagged": true,
+   "field": "accepted"
+  },
+  "py-multiline-ifexp": {
+   "language": "python",
+   "category": "multiline",
+   "files": {
+    "main.py": "def main():\n    return (0\n            if r[\"valid\"]\n            else 1)\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "js-imported-value": {
+   "language": "javascript",
+   "category": "cross-file",
+   "files": {
+    "main.mjs": "import { verdict } from './lib/value.mjs';\nif (verdict) execute();\n",
+    "lib/value.mjs": "export const verdict = globalThis.r.valid;\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "js-package-import": {
+   "language": "javascript",
+   "category": "cross-file",
+   "files": {
+    "main.mjs": "import { isOk } from 'aml-fixture-helpers';\nif (isOk(r)) execute();\n",
+    "package.json": "{\"name\":\"aml-fixture-root\",\"private\":true,\"type\":\"module\"}\n",
+    "packages/aml-fixture-helpers/package.json": "{\"name\":\"aml-fixture-helpers\",\"main\":\"index.mjs\"}\n",
+    "packages/aml-fixture-helpers/index.mjs": "export function isOk(r) { return r.official; }\n"
+   },
+   "expect_flagged": true,
+   "field": "official"
+  },
+  "py-imported-helper": {
+   "language": "python",
+   "category": "cross-file",
+   "files": {
+    "main.py": "from helpers import is_ok\n\nif is_ok(r):\n    execute()\n",
+    "helpers.py": "def is_ok(r):\n    return r[\"valid\"]\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "go-alias": {
+   "language": "go",
+   "category": "go-alias-wrapper",
+   "files": {
+    "go.mod": "module fixture\n\ngo 1.21\n",
+    "main.go": "package main\n\ntype Result struct{ Valid bool; Authorized bool }\n\nfunc decide(r Result) (string, int) {\n\tok := r.Valid\n\tout := \"x\"\n\tif ok {\n\t\treturn out, 0\n\t}\n\treturn out, 1\n}\n\nfunc main() { decide(Result{}) }\n"
+   },
+   "expect_flagged": true,
+   "field": "Valid"
+  },
+  "go-wrapper-type-alias": {
+   "language": "go",
+   "category": "go-alias-wrapper",
+   "files": {
+    "go.mod": "module fixture\n\ngo 1.21\n",
+    "main.go": "package main\n\nimport \"os\"\n\ntype Result struct{ Verified bool }\ntype Res = Result\n\nfunc isOk(r Res) bool { return r.Verified }\n\nfunc main() {\n\tvar r Res\n\tif isOk(r) {\n\t\tos.Exit(0)\n\t}\n\tos.Exit(1)\n}\n"
+   },
+   "expect_flagged": true,
+   "field": "Verified"
+  },
+  "js-or-authorized": {
+   "language": "javascript",
+   "category": "authorization-alternative",
+   "files": {
+    "main.js": "if (r.valid || r.authorized) execute();\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "py-or-authorized": {
+   "language": "python",
+   "category": "authorization-alternative",
+   "files": {
+    "main.py": "if r[\"valid\"] or r[\"authorized\"]:\n    execute()\n"
+   },
+   "expect_flagged": true,
+   "field": "valid"
+  },
+  "js-control-authorized": {
+   "language": "javascript",
+   "category": "control",
+   "files": {
+    "main.js": "if (r.authorized === true && r.verified) execute();\nprocess.exit(r.authorized === true && r.valid ? 0 : 3);\n"
+   },
+   "expect_flagged": false,
+   "field": null
+  },
+  "py-control-authorized": {
+   "language": "python",
+   "category": "control",
+   "files": {
+    "main.py": "if r[\"authorized\"] is True and r[\"verified\"]:\n    execute()\n"
+   },
+   "expect_flagged": false,
+   "field": null
+  },
+  "go-control-authorized": {
+   "language": "go",
+   "category": "control",
+   "files": {
+    "go.mod": "module fixture\n\ngo 1.21\n",
+    "main.go": "package main\n\nimport \"os\"\n\ntype Result struct{ Valid bool; Authorized bool }\n\nfunc main() {\n\tvar r Result\n\tif r.Authorized && r.Valid {\n\t\tos.Exit(0)\n\t}\n\tos.Exit(3)\n}\n"
+   },
+   "expect_flagged": false,
+   "field": null
+  }
+ }
+}

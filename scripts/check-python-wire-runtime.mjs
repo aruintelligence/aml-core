@@ -27,7 +27,9 @@ function file(name, value) {
 // exits 3 (0 only under --diagnostic-only) and reports authorized:false.
 function run(args, expected) {
   const result = spawnSync("python3", [runtime, ...args], { encoding: "utf8" });
-  const verifying = args[0] === "verify";
+  // Directive 010: `negotiate` is also consistency-only (the remote document
+  // is unauthenticated): accepted exits 3, or 0 under --diagnostic-only.
+  const verifying = args[0] === "verify" || args[0] === "negotiate";
   const diagnostic = args.includes("--diagnostic-only");
   const expectedStatus = !expected ? 1 : verifying && !diagnostic ? 3 : 0;
   assert.equal(result.status, expectedStatus, result.stderr || result.stdout);
@@ -37,6 +39,10 @@ function run(args, expected) {
     assert.equal(report.authorized, false, JSON.stringify(report));
     assert.equal(report.decision_use, "NOT AN AUTHORIZATION DECISION");
     assert.ok(report.authorization.reasons.includes("AML_AUTHZ_NO_TRUST_ROOTS"));
+  }
+  if (args[0] === "negotiate") {
+    const { authorized, authorization, decision_use, diagnostic_only, ...session } = report;
+    return session;
   }
   return report;
 }
@@ -56,6 +62,7 @@ try {
   const session = run(["negotiate", "protocol/discovery.json", file("remote", remote), ...required.flatMap(value => ["--required", value])], true);
   assert.deepEqual(session, referenceSession);
   run(["negotiate", "protocol/discovery.json", file("remote", remote), "--required", "unavailable-capability"], false);
+  assert.deepEqual(run(["negotiate", "protocol/discovery.json", file("remote-diag", remote), ...required.flatMap(value => ["--required", value]), "--diagnostic-only"], true), referenceSession);
 
   const envelope = createWireEnvelope({
     kind: "policy-passport", payload: { profile: "calm_default" },

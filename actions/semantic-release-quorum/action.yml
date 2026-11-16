@@ -11,12 +11,15 @@ inputs:
     description: "Path to aml-semantic-release-quorum-policy/1 JSON"
     required: true
   policy-sha256:
-    description: "Optional expected canonical quorum-policy SHA-256"
+    description: "Expected canonical quorum-policy SHA-256, obtained out of band. Required for the step to pass (Directive 010): the policy file names the trusted keys and threshold."
     required: false
 outputs:
   verified:
-    description: "true when quorum verification succeeds"
+    description: "true when quorum verification succeeds (a precondition, not an authorization)"
     value: ${{ steps.verify.outputs.verified }}
+  authorized:
+    description: "true only when quorum verifies under the pinned policy"
+    value: ${{ steps.verify.outputs.authorized }}
   threshold:
     description: "Required distinct trusted endorsements"
     value: ${{ steps.verify.outputs.threshold }}
@@ -49,9 +52,11 @@ runs:
         const crypto = require('crypto');
         const fs = require('fs');
         const result = JSON.parse(process.argv[2]);
-        if (result.verified !== true) process.exit(1);
+        if (result.verified !== true || result.authorized !== true ||
+            result.authorization?.authorized !== true) process.exit(1);
         const values = {
           verified: 'true',
+          authorized: 'true',
           threshold: result.threshold,
           valid_trusted_endorsements: result.valid_trusted_endorsements,
           policy_sha256: result.policy_sha256

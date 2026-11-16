@@ -33,9 +33,10 @@ execution, deployment or release on a diagnostic-only exit.
 ### Clock rule
 
 Commands trust only the verifier's own clock. A caller-supplied time
-(`--now`, `AML_VERIFY_AT`) is reported but cannot authorize unless it is
-within 1 second of the local clock (JavaScript and Python witness
-verifier). The Go verifier never treats `--now` as trusted.
+(`--now`, `AML_VERIFY_AT`) is reported but never authorizes (Directive 010;
+the earlier 1-second tolerance let a caller backdate a credential that had
+just expired). A non-finite local clock also denies. The Go verifier never
+treats `--now` as trusted.
 
 ## Per-command changes
 
@@ -47,7 +48,7 @@ verifier). The Go verifier never treats `--now` as trusted.
 | `aml-governance-transcript-signature-verify` | valid, key in `--trusted-fingerprint`, and `--expected-key-id` equals the key id | 0 valid (implicit), 2 invalid, 1 error | 0 / 3 / 2 / 1 |
 | `aml-release-profile validate` | never: structure only | 0 valid, 1 invalid, 2 usage | 3 valid, 1 invalid, 2 usage |
 | `aml-release-profile verify <profile> <sha256>` | valid and the 64-hex expected value equals the profile SHA-256 | 0 valid, 1 invalid, 2 usage | 0 / 3 / 1 / 2 |
-| `aml verify-brand-authorization` | valid, issuer equals `AML_EXPECTED_BRAND_ISSUER`, key SHA-256 equals new `AML_TRUSTED_BRAND_KEY_SHA256`, a revocation registry argument is supplied, and `AML_VERIFY_AT` is unset or within 1 s | 0 valid, 1 invalid | 0 / 3 / 1 |
+| `aml verify-brand-authorization` | valid, issuer equals `AML_EXPECTED_BRAND_ISSUER`, key SHA-256 equals `AML_TRUSTED_BRAND_KEY_SHA256`, a revocation registry argument is supplied and its canonical SHA-256 equals `AML_TRUSTED_REVOCATION_REGISTRY_SHA256` (rollback protection), and `AML_VERIFY_AT` is unset | 0 valid, 1 invalid | 0 / 3 / 1 |
 | `aml verify-signed-quorum` | `authorized` (valid, threshold, requested conditions, held policy met, witness requirement met) | 0 requested conditions met, 2 unmet, 1 usage | 0 authorized, 3 met not authorized, 2 unmet, 1 usage |
 | `independent/python/verify_signed_quorum.py` | same as `aml verify-signed-quorum` | 0 met, 2 unmet, 1 usage | 0 / 3 / 2 / 1 |
 | `scripts/check-external-verifier-kit.mjs` | valid and new `--expected-root-sha256` equals the manifest root | 0 valid, 1 invalid | 0 / 3 / 1 |
@@ -57,8 +58,50 @@ verifier). The Go verifier never treats `--now` as trusted.
 | `independent/go` (`verify.sh`, `main.go`) | never: no held-challenge support | 0 valid, 1 invalid, 2 input error (`verify.sh` collapsed non-zero to 1) | 3 valid, 1 invalid, 2 input error; `verify.sh` now preserves the exit code |
 | `independent/python/wire_runtime.py verify` | never: no trust roots | 0 valid, 1 invalid | 3 consistent, 1 invalid |
 
-`wire_runtime.py negotiate` (exit on `accepted`) is unchanged; see
-"Remaining exceptions".
+### Directive 010 additions
+
+No verification field (`verified`, `accepted`, `quorum_met`, `official`,
+`claim_verified`) is permission. Each command below now reports `authorized`
+and an `aml-authorization-decision/1` object and exits 0 only when it is true.
+
+| Command | Authorized (exit 0) only when | Old exit | New exit |
+| --- | --- | --- | --- |
+| `aml verify <build_manifest.json>` | verified and `--expected-sha256` equals the manifest file SHA-256 | 0 verified, 1 | 0 / 3 / 1 |
+| `aml verify-receipt`, `aml replay-receipt` | verified (replay matches) and `--expected-sha256` equals `receipt_sha256` | 0 verified, 1 | 0 / 3 / 1 |
+| `aml verify-signed-receipt`, `aml verify-policy-pack` | verified and `--trusted-key-sha256` equals the signing key SHA-256 | 0 verified, 1 | 0 / 3 / 1 |
+| `aml verify-audit` | verified and `--expected-sha256` equals the head entry hash (a truncated stream does not match) | 0 verified, 1 | 0 / 3 / 1 |
+| `aml-meaning verify-manifest` / `verify-attestation` | `--expected-root-sha256` equals the manifest root / `--trusted-key-sha256` equals the attestation key | 0 verified, 1 | 0 / 3 / 1 |
+| `aml-release-proof <proof>` / `verify-in-toto` | verified and `--expected-sha256` equals `proof_sha256` | 0 verified, 1 | 0 / 3 / 1 |
+| `aml-release-proof trusted` | verified, the policy fingerprint is valid and the expected-policy argument equals it | 0 verified, 1 | 0 / 3 / 1 |
+| `aml-release-quorum verify` | quorum verified and `--policy-sha256` equals the policy fingerprint (a mismatch is exit 1) | 0 verified, 1 | 0 / 3 / 1 |
+| `aml-brand-verify` | official against trust roots **and** a revocation registry checked and pinned by `AML_TRUSTED_REVOCATION_REGISTRY_SHA256`; claim mode also needs `claim_verified` | 0 official, 1 | 0 / 3 / 1 |
+| `aml-governance-witness-quorum` | quorum met, `--expected-policy-sha256` equals the canonical input policy, the policy lists trusted keys, and no conflicting roots | 0 quorum met, 1/2 | 0 / 3 / 2 unmet / 1 |
+| `aml-github-attestation` | `gh` verified, the attestation layer verified, and `--authorization-profile-sha256` equals the profile fingerprint | 0 verified, 1 | 0 / 3 / 1 |
+| `scripts/semantic-release-gate.js` and `actions/semantic-release-proof` | verified and `--trusted-key-sha256` / `AML_TRUSTED_RELEASE_KEY_SHA256` / input `trusted-key-sha256` equals the release key; output `authorized` | 0 verified, 1 | 0 / 3 / 1 |
+| `actions/semantic-release-quorum` | `authorized` from `aml-release-quorum`; `policy-sha256` is required in practice | 0 verified | 0 / 3 / 1 |
+| `independent/python/wire_runtime.py negotiate` | never: the remote capability document is unauthenticated | 0 accepted, 1 | 3 accepted, 1 rejected; 0 only with `--diagnostic-only` |
+| HTTP `POST /v1/verify-receipt` | verified and body `expected_receipt_sha256` equals `receipt_sha256` | 200 verified | 200 authorized, 422 otherwise |
+| HTTP `POST /v1/verify-brand-authorization` | official and the server-held revocation registry was checked | 200 official | 200 / 422 |
+| HTTP `POST /v1/evaluate`, `/v1/deployment/evaluate` | `/v1/evaluate` never (caller-chosen profile); deployment adds an explicit decision (evaluation ok, policy allowed, server policy locked) without changing its status code | 200 | `authorized` field added |
+
+Composite Actions (`meaning-gate`, `meaning-lock`, `meaning-manifest`,
+`semantic-release-proof`, `semantic-release-quorum`, `verify-official`,
+`witness-record`) no longer interpolate `${{ inputs.* }}` into `run:` shell
+text; inputs pass through `env:` (script-injection fix).
+
+### Library: capability tokens
+
+`verifyCapabilityToken(...).valid` means only "signed by the key embedded in
+the token"; anyone can mint one. New `authorizeCapabilityToken(token, {
+trustedIssuerKeySha256, audience, subject, sessionId, intentSha256,
+requiredCapability, consumptionGuard })` returns `authorized: true` only when
+the issuer key is pinned, the token is unexpired on the local clock (no
+caller time is accepted), audience, executor (`subject`), `session_id` and
+`intent_sha256` all equal the relying party's expectations, the capability
+is granted, and the nonce is unconsumed in the supplied guard; the returned
+guard records the consumption. `signCapabilityToken` accepts optional
+`session_id` and `intent_sha256` (omitted when null, so existing signatures
+are unchanged).
 
 ## Migration
 
@@ -85,25 +128,55 @@ properties, `Object.assign`, helper and arrow-function returns, functions
 imported from relative modules; Python through an AST pass) to a `.valid`
 read. Reviewed `--diagnostic-only` exits must stay under their guard.
 
-Limits: values passed as call arguments or held in containers, computed
-property names, non-relative imports, and expressions split across lines are
-not followed; Go is matched lexically. It is a static approximation, not a
-proof.
+Directive 010 adds a rule that any shipped exit/HTTP success sink gated only
+on verification fields (`verified`, `accepted`, `quorum_met`, `official`, ...)
+fails unless an `authorized` decision gates it or it is listed in
+`REVIEWED_NON_AUTHORIZATION_SINKS` / `REVIEWED_DIAGNOSTIC_EXITS` with a reason.
+
+Limits of the lexical check: values passed as call arguments or held in
+containers, computed property names, non-relative imports, and expressions
+split across lines are not followed; Go is matched lexically.
+
+### Data-flow check (CodeQL)
+
+`tooling/codeql/{javascript,python,go}/VerificationWithoutAuthorization.ql`
+use CodeQL global taint tracking from verification-field reads (including
+computed names such as `r[k]` with a constant `k`) through calls, returns,
+containers, imports and multi-line expressions to exit/HTTP status sinks and
+to conditions guarding privileged calls, and report a sink only when no
+`authorized` read reaches it. `node scripts/check-authorization-dataflow.mjs`
+(needs `CODEQL_CLI`; fails closed with exit 2 otherwise) runs them on the
+seeded corpus `tooling/codeql/authz-bypass-fixtures.json` (19 bypasses in six
+categories plus authorized controls); `--repo` runs them on this repository.
+Known gaps: `Map`/`Set` contents, reflection (`Reflect.get`, `getattr` with a
+computed name), values that cross a process or file boundary, and
+authorization checks that are present but do not dominate the sink (the
+query accepts any `authorized` flow into the same sink, except through
+`||` / `or`, which never count as an authorization). Exit statuses that can
+never be a success (for example `3 if ok else 1`) are not sinks. It is not
+yet wired into CI.
 
 ## Remaining exceptions
 
-These commands exit 0 on a field other than `valid` (for example `verified`,
-`accepted`, `quorum_met`) without a complete `authorization` decision object.
-They are not changed here and remain open:
-`aml verify`, `verify-receipt`, `replay-receipt`, `verify-signed-receipt`,
-`verify-policy-pack`, `verify-audit` and similar `aml` subcommands;
-`aml-github-attestation`, `aml-meaning`, `aml-release-proof`,
-`aml-release-quorum`, `aml-brand-verify`, `aml-governance-witness-quorum`,
-`scripts/semantic-release-gate`; `wire_runtime.py negotiate`.
+The commands previously listed here are covered by "Directive 010
+additions". Still open: `POST /v1/deployment/batch` reports per-item results
+without an `authorized` field; Python evidence verifiers take a
+trusted-policy file whose own digest is not pinned; the reviewed
+non-authorization sinks in `scripts/check-valid-field-decisions.mjs`
+(repair, drill, doctor, support-bundle, pilots) exit 0 on consistency by
+design and must not be used as gates.
 
 ## Remaining trust assumptions
 
-Pinned roots, fingerprints, key ids and scopes are only as good as the
-channel they came from. A trusted key does not establish real-world signer
-identity. The brand revocation registry argument is not itself signed; its
-presence is checked, not its provenance. The local clock is trusted.
+Pinned roots, fingerprints, key ids, scopes and registry digests are only as
+good as the channel they came from; a compromised host that can rewrite them
+can authorize anything (see the `LIMIT:` tests in
+`test/directive010-trust-boundaries.test.js`). A trusted key does not
+establish real-world signer identity, and a stolen pinned key still
+authorizes. A registry pin prevents substitution and rollback relative to the
+pinned digest but does not prove the pinned registry is the newest one
+(freshness depends on how the relying party updates the pin). Verifier
+commands are stateless: the same pinned artifact verifies on every replay;
+single use is enforced only where a consumption guard is kept
+(`authorizeCapabilityToken`, the action-boundary grant store), and only as
+durably as that guard is stored. The local clock is trusted.

@@ -11,10 +11,12 @@ runs:
   using: "composite"
   steps:
     - shell: bash
+      env:
+        AML_BEFORE_FILE: ${{ inputs.before-file }}
+        AML_AFTER_FILE: ${{ inputs.after-file }}
       run: |
-        node "$GITHUB_ACTION_PATH/../../bin/aml-meaning.js" \
-          "${{ inputs.before-file }}" \
-          "${{ inputs.after-file }}"
+        set -euo pipefail
+        node "$GITHUB_ACTION_PATH/../../bin/aml-meaning.js" "$AML_BEFORE_FILE" "$AML_AFTER_FILE"
 branding:
   icon: "lock"
   color: "purple"

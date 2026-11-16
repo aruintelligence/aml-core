@@ -209,14 +209,29 @@ test("AML HTTP evaluate returns a verifiable receipt", async () => {
     assert.equal(evaluation.allowed, true);
     assert.ok(evaluation.receipt.receipt_sha256);
 
-    const verifyResponse = await fetch(`${base}/v1/verify-receipt`, {
+    // /v1/evaluate uses a caller-chosen profile: a report, never permission.
+    assert.equal(evaluation.authorized, false);
+    assert.equal(evaluation.decision_use, "NOT AN AUTHORIZATION DECISION");
+
+    const verifyReceipt = body => fetch(`${base}/v1/verify-receipt`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ receipt: evaluation.receipt })
+      body: JSON.stringify(body)
     });
+    // Directive 010: a hash-consistent receipt without the relying party's
+    // pin is consistent but not authorized (d35a6b1 returned 200).
+    const unpinned = await verifyReceipt({ receipt: evaluation.receipt });
+    assert.equal(unpinned.status, 422);
+    const unpinnedBody = await unpinned.json();
+    assert.equal(unpinnedBody.verified, true);
+    assert.equal(unpinnedBody.authorized, false);
+    assert.deepEqual(unpinnedBody.authorization.reasons, ["AML_AUTHZ_ARTIFACT_NOT_PINNED"]);
+    assert.equal((await verifyReceipt({ receipt: evaluation.receipt, expected_receipt_sha256: "0".repeat(64) })).status, 422);
+    const verifyResponse = await verifyReceipt({ receipt: evaluation.receipt, expected_receipt_sha256: evaluation.receipt.receipt_sha256 });
     assert.equal(verifyResponse.status, 200);
     const verification = await verifyResponse.json();
     assert.equal(verification.verified, true);
+    assert.equal(verification.authorized, true);
   });
 });
 
@@ -544,15 +559,19 @@ test("AML HTTP official brand verification succeeds only for configured trusted 
   }, privateKey.export({ type: "pkcs8", format: "pem" }), { issuer: "ĀRU Intelligence Inc." });
 
   await withServer(async (base) => {
+    // Directive 010: this server has no revocation registry configured, so
+    // an official credential is consistent but not authorized (d35a6b1: 200).
     const response = await fetch(`${base}/v1/verify-brand-authorization`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ credential })
     });
-    assert.equal(response.status, 200);
+    assert.equal(response.status, 422);
     const result = await response.json();
     assert.equal(result.valid, true);
     assert.equal(result.official, true);
+    assert.equal(result.authorized, false);
+    assert.deepEqual(result.authorization.reasons, ["AML_AUTHZ_REVOCATION_NOT_CHECKED"]);
     assert.equal(result.trust_root.key_id, "http-test-root");
     assert.equal(result.clock_source, "local_system");
     assert.equal(result.credential_revocation_checked, false);
@@ -628,6 +647,30 @@ test("AML HTTP brand verification uses a server-held credential revocation regis
   });
 });
 
+
+test("AML HTTP brand verification authorizes only after the server registry was checked (Directive 010)", async () => {
+  const { privateKey } = crypto.generateKeyPairSync("ed25519");
+  const credential = signBrandAuthorization({
+    grantee: "Example Integrator LLC", marks: ["ĀML™"]
+  }, privateKey.export({ type: "pkcs8", format: "pem" }));
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/v1/verify-brand-authorization`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ credential })
+    });
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(result.authorized, true);
+    assert.equal(result.credential_revocation_checked, true);
+    assert.deepEqual(result.authorization.reasons, ["AML_AUTHZ_ALLOW"]);
+  }, {
+    brand_trust_roots: {
+      type: "aml-brand-trust-roots/1", owner: "ĀRU Intelligence Inc.",
+      status: "active",
+      active_keys: [{ public_key_sha256: credential.public_key_sha256 }], revoked_keys: []
+    },
+    brand_revocation_registry: createRevocationRegistry()
+  });
+});
 
 test("AML HTTP returns 413 for advertised and streaming oversized bodies", async () => {
   await withServer(async (base) => {

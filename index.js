@@ -48,7 +48,7 @@ export { createCausalEvent, createCausalExecutionGraph, verifyCausalExecutionGra
 export { createTrustDelegation, createSignedTrustDelegation, verifyTrustDelegation, verifyDelegationChain } from "./runtime/trustDelegation.js";
 export { createTransparencyLog, appendTransparencyEntry, verifyTransparencyLog } from "./runtime/transparencyLog.js";
 export { createThresholdAuthorization, verifyThresholdAuthorization } from "./runtime/thresholdAuthorization.js";
-export { signCapabilityToken, verifyCapabilityToken } from "./runtime/capabilityToken.js";
+export { signCapabilityToken, verifyCapabilityToken, authorizeCapabilityToken, createCapabilityConsumptionGuard } from "./runtime/capabilityToken.js";
 export { createRevocationRegistry, revokeArtifact, verifyRevocationRegistry, isRevoked } from "./runtime/revocationRegistry.js";
 export { createProofCarryingInterface, verifyProofCarryingInterface } from "./runtime/proofCarryingInterface.js";
 export { signBrandAuthorization, verifyBrandAuthorization } from "./runtime/brandAuthorization.js";

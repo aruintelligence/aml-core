@@ -12,6 +12,17 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 - The valid-field static check now follows aliases (variables, destructuring, subscripts, properties, helper returns, relative imports; Python via AST) and implicit or inverted exits. It no longer allowlists valid-only validator exits.
 - Exit table, migration guidance and remaining exceptions: [docs/COMMAND_AUTHORIZATION.md](docs/COMMAND_AUTHORIZATION.md).
 
+### Breaking (Directive 010): no verification field is permission
+
+- `aml verify`, `verify-receipt`, `replay-receipt`, `verify-signed-receipt`, `verify-policy-pack`, `verify-audit`, `aml-meaning verify-manifest`/`verify-attestation`, `aml-release-proof`, `aml-release-quorum verify`, `aml-brand-verify`, `aml-governance-witness-quorum`, `aml-github-attestation`, `scripts/semantic-release-gate.js` now exit `0` only when the relying party pins the artifact digest, signing key, policy digest, revocation registry digest or authorization profile; a consistent but unpinned result exits `3`. `wire_runtime.py negotiate` exits `3` when accepted (0 only with `--diagnostic-only`).
+- `aml-governance-witness-quorum` no longer trusts a policy carried inside the evidence file (self-signed witnesses could meet quorum); `--expected-policy-sha256` and a trusted-key list are required.
+- Brand verification requires a checked revocation registry whose canonical digest equals `AML_TRUSTED_REVOCATION_REGISTRY_SHA256` (CLI) or a server-held registry (HTTP); a stale registry can no longer hide a revocation.
+- A caller-supplied verification time never authorizes (the 1-second tolerance is removed).
+- HTTP: `/v1/verify-receipt` returns 200 only with a matching `expected_receipt_sha256`; `/v1/verify-brand-authorization` returns 422 without a server registry; `/v1/evaluate` and `/v1/deployment/evaluate` report an explicit `authorized` field.
+- Composite Actions pass inputs through `env:` instead of interpolating `${{ inputs.* }}` into shell; `semantic-release-proof` gains `trusted-key-sha256`, `diagnostic-only` and an `authorized` output; `verify-official` gains `revocation-registry-sha256`.
+- New `authorizeCapabilityToken` / `createCapabilityConsumptionGuard` bind capability tokens to a pinned issuer key, audience, executor, session, intent and a single-use nonce; `verifyCapabilityToken().valid` is documented as non-authorizing.
+- New CodeQL data-flow queries (`tooling/codeql/`) and `scripts/check-authorization-dataflow.mjs` cover call arguments, containers, computed property names, multi-line expressions, imports and Go aliases; the lexical checker fails any shipped success gated only on verification fields.
+
 ### 2026-11-04 action-boundary pilot hardening
 
 - Prevented the local one-use grant pilot from silently recreating a missing spent-marker directory. New stores carry a version-2 state marker; existing unmarked stores require operator reconciliation and a fresh directory after grants expire.

@@ -99,7 +99,10 @@ test('witness bundle: valid=true without a retained challenge is never authorize
   assert.equal(matched.authorized, true, 'positive control: retained challenge on the verifier clock');
   assert.deepEqual(matched.authorization.reasons, ['AML_AUTHZ_ALLOW']);
   const outer = await verifyWitnessBundle(bundle, { expectedChallenge: challenge, now: Date.now() });
-  assert.equal(outer.authorized, true, 'an outer verifier passing its own just-read clock stays authorized');
+  // Directive 009: any caller-supplied clock, even one just read, denies; outer verifiers must omit `now`.
+  assert.equal(outer.verified, true);
+  assert.equal(outer.authorized, false, 'a caller-supplied clock never authorizes (no skew tolerance)');
+  assert.deepEqual(outer.authorization.reasons, ['AML_AUTHZ_CALLER_CLOCK_UNTRUSTED']);
 });
 
 test('witness bundle: a caller-supplied future or stale clock verifies but never authorizes', async () => {

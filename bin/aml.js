@@ -4,7 +4,7 @@
 // ĀML_CORE — Command-Line Interface
 
 import fs from "fs";
-import { webcrypto } from "node:crypto";
+import { createHash, webcrypto } from "node:crypto";
 import { compileAML, compileSource } from "../compiler/compiler.js";
 import { generateAMLFromIntent } from "../compiler/intentCompiler.js";
 import { simulatePolicies } from "../compiler/policySimulator.js";
@@ -27,20 +27,68 @@ import { signPolicyPack, verifySignedPolicyPack } from "../runtime/policyPack.js
 import { verifyAuditStream } from "../runtime/auditStream.js";
 import { enforceCumulativeAttentionBudget } from "../runtime/attentionLedger.js";
 import { signBrandAuthorization, verifyBrandAuthorization } from "../runtime/brandAuthorization.js";
-import { commandAuthorizationDecision, withCommandAuthorization, commandOutcome, trustedCommandClock,
-  AML_DIAGNOSTIC_ONLY_FLAG, AML_EXIT_NOT_AUTHORIZED, AML_NOT_AN_AUTHORIZATION_DECISION } from "../runtime/commandAuthorization.js";
+import { commandAuthorizationDecision, withCommandAuthorization, commandOutcome, trustedCommandClock, decideCommand,
+  pinMatches, AML_DIAGNOSTIC_ONLY_FLAG, AML_EXIT_NOT_AUTHORIZED, AML_NOT_AN_AUTHORIZATION_DECISION } from "../runtime/commandAuthorization.js";
+import { revocationRegistryFingerprint } from "../runtime/revocationRegistry.js";
 
 // verify-brand-authorization authorizes only a valid credential whose issuer
 // and signing-key fingerprint were pinned by the relying party, after a
 // revocation registry was checked, evaluated on the verifier's own clock.
-// AML_VERIFY_AT is a replay override: outside the skew bound it is untrusted
-// and the result is not authorized.
-const BRAND_REQUIRED = ["credential_valid", "issuer_pinned", "signing_key_pinned", "revocation_checked", "trusted_clock"];
+// AML_VERIFY_AT is a replay override: any caller-supplied time is untrusted
+// and the result is not authorized. The revocation registry must match the
+// relying party's pinned registry digest (AML_TRUSTED_REVOCATION_REGISTRY_SHA256);
+// an unpinned registry could be an empty or rolled-back copy.
+const BRAND_REQUIRED = ["credential_valid", "issuer_pinned", "signing_key_pinned", "revocation_checked", "revocation_registry_pinned", "trusted_clock"];
 const BRAND_DENIALS = { credential_valid: "AML_AUTHZ_CREDENTIAL_NOT_VALID", issuer_pinned: "AML_AUTHZ_ISSUER_NOT_PINNED",
   signing_key_pinned: "AML_AUTHZ_SIGNING_KEY_NOT_PINNED", revocation_checked: "AML_AUTHZ_REVOCATION_NOT_CHECKED",
+  revocation_registry_pinned: "AML_AUTHZ_REVOCATION_REGISTRY_NOT_PINNED",
   trusted_clock: "AML_AUTHZ_CALLER_CLOCK_UNTRUSTED" };
 const BRAND_TRUST = ["the pinned issuer and key fingerprint came from an independently trusted source",
-  "the supplied revocation registry is current", "the verifier host clock"];
+  "the pinned revocation registry digest is current (a pin cannot prove freshness)", "the verifier host clock",
+  "a key fingerprint binds a key, not a real-world identity"];
+
+// Verifier commands whose only check is integrity or a signature by an
+// embedded key. Each authorizes only when the relying party pinned the
+// artifact digest or the signing-key fingerprint out of band.
+const VERIFY_DENIALS = {
+  verified: "AML_AUTHZ_NOT_VERIFIED",
+  artifact_pinned: "AML_AUTHZ_ARTIFACT_NOT_PINNED",
+  signing_key_pinned: "AML_AUTHZ_SIGNING_KEY_NOT_PINNED",
+  policy_allowed: "AML_AUTHZ_POLICY_DENIED",
+  evaluation_ok: "AML_AUTHZ_EVALUATION_ERROR"
+};
+const PIN_TRUST = ["the pinned digest or key fingerprint came from an independently trusted source",
+  "a key fingerprint binds a key, not a real-world identity"];
+const PIN_FLAGS = new Set(["--expected-sha256", "--trusted-key-sha256"]);
+
+// Positional arguments without the authorization flags and their values.
+function positionalArgs() {
+  const out = [];
+  for (let index = 0; index < args.length; index += 1) {
+    if (PIN_FLAGS.has(args[index])) { index += 1; continue; }
+    if (args[index] === AML_DIAGNOSTIC_ONLY_FLAG) continue;
+    out.push(args[index]);
+  }
+  return out;
+}
+
+function finishVerification(verification, { pinKind, pinActual, extra = {}, extraRequired = [] }) {
+  const pinName = pinKind === "key" ? "signing_key_pinned" : "artifact_pinned";
+  const pin = flagValue(pinKind === "key" ? "--trusted-key-sha256" : "--expected-sha256", null);
+  const required = ["verified", pinName, ...extraRequired];
+  const { output, exitCode } = decideCommand(verification, {
+    consistent: verification?.verified === true,
+    conditions: { verified: verification?.verified === true, [pinName]: pinMatches(pin, pinActual), ...extra },
+    required, denials: VERIFY_DENIALS, trust: PIN_TRUST,
+    diagnosticOnly: hasFlag(AML_DIAGNOSTIC_ONLY_FLAG), invalidCode: 1
+  });
+  console.log(JSON.stringify(output, null, 2));
+  process.exit(exitCode);
+}
+
+function sha256Hex(bytes) {
+  return createHash("sha256").update(bytes).digest("hex");
+}
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
 import { evaluatePolicyCanary } from "../runtime/policyCanary.js";
 import { verifyWitnessBundle } from "../docs/aml-witness-bundle.js";
@@ -288,10 +336,20 @@ try {
       context,
       timestamp
     });
-    console.log(JSON.stringify(result, null, 2));
-    if (result.evaluation_error) process.exit(2);
-    if (hasFlag("--require-effective-allow") && !result.effective_allowed) process.exit(3);
-    process.exit(0);
+    // Exit 0 only when the AML policy itself allowed the intent. Shadow mode
+    // and failure_mode=open set effective_allowed for observability; neither
+    // is authorization. --require-effective-allow is now the default and kept
+    // as a no-op; --diagnostic-only exits 0 for any completed evaluation.
+    const evaluated = !result.evaluation_error;
+    const { output, exitCode } = decideCommand(result, {
+      consistent: evaluated,
+      conditions: { evaluation_ok: evaluated, policy_allowed: evaluated && result.aml_allowed === true },
+      required: ["evaluation_ok", "policy_allowed"], denials: VERIFY_DENIALS,
+      trust: ["the AML policy profile and context supplied to the evaluation are the intended ones"],
+      diagnosticOnly: hasFlag(AML_DIAGNOSTIC_ONLY_FLAG), invalidCode: 2
+    });
+    console.log(JSON.stringify(output, null, 2));
+    process.exit(exitCode);
   }
   if (command === "canary") {
     const intent = JSON.parse(readSource(inputPath));
@@ -311,9 +369,9 @@ try {
     process.exit(0);
   }
   if (command === "verify-receipt") {
-    const result = verifyExecutionReceipt(JSON.parse(readSource(inputPath)));
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    const receipt = JSON.parse(readSource(positionalArgs()[1] || inputPath));
+    const result = verifyExecutionReceipt(receipt);
+    finishVerification(result, { pinKind: "artifact", pinActual: result.verified === true ? receipt?.receipt_sha256 : null });
   }
   if (command === "verify-witness") {
     if (args.length !== 3 || !args[1] || !args[2]) {
@@ -401,14 +459,16 @@ try {
     });
     // Exit 0 only on the complete decision (`authorized`). Requested
     // conditions met without a held policy or witness requirement exits 3.
-    process.exit(diagnosticOnly ? (result.requested_conditions_met === true ? 0 : 2)
-      : result.authorized === true && result.authorization?.authorized === true ? 0
+    if (diagnosticOnly) {
+      process.exit(result.requested_conditions_met === true ? 0 : 2);
+    }
+    process.exit(result.authorized === true && result.authorization?.authorized === true ? 0
       : result.requested_conditions_met === true ? AML_EXIT_NOT_AUTHORIZED : 2);
   }
   if (command === "replay-receipt") {
-    const result = replayExecutionReceipt(JSON.parse(readSource(inputPath)));
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    const receipt = JSON.parse(readSource(positionalArgs()[1] || inputPath));
+    const result = replayExecutionReceipt(receipt);
+    finishVerification(result, { pinKind: "artifact", pinActual: result.verified === true ? receipt?.receipt_sha256 : null });
   }
   if (command === "sign-receipt") {
     const privateKeyPath = args[2];
@@ -418,9 +478,10 @@ try {
     process.exit(0);
   }
   if (command === "verify-signed-receipt") {
-    const result = verifySignedExecutionReceipt(JSON.parse(readSource(inputPath)));
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    const receipt = JSON.parse(readSource(positionalArgs()[1] || inputPath));
+    const result = verifySignedExecutionReceipt(receipt);
+    finishVerification(result, { pinKind: "key",
+      pinActual: result.verified === true && result.public_key_fingerprint_valid === true ? receipt?.signature?.public_key_sha256 : null });
   }
   if (command === "simulate") {
     const policies = (args[2] || "restorative_v1,attention_conservative_v1").split(",").map(item => item.trim()).filter(Boolean);
@@ -449,9 +510,10 @@ try {
     process.exit(0);
   }
   if (command === "verify-policy-pack") {
-    const result = verifySignedPolicyPack(JSON.parse(readSource(inputPath)));
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    const pack = JSON.parse(readSource(positionalArgs()[1] || inputPath));
+    const result = verifySignedPolicyPack(pack);
+    finishVerification(result, { pinKind: "key",
+      pinActual: result.verified === true && result.public_key_fingerprint_valid === true ? pack?.attestation?.public_key_sha256 : null });
   }
   if (command === "sign-brand-authorization") {
     const privateKeyPath = args[2];
@@ -484,6 +546,8 @@ try {
       signing_key_pinned: typeof trustedKey === "string" && /^[a-f0-9]{64}$/.test(trustedKey) &&
         credential?.public_key_sha256 === trustedKey,
       revocation_checked: verification.credential_revocation_checked === true,
+      revocation_registry_pinned: revocationRegistry !== null &&
+        pinMatches(process.env.AML_TRUSTED_REVOCATION_REGISTRY_SHA256 || null, revocationRegistryFingerprint(revocationRegistry)),
       trusted_clock: trustedCommandClock(callerTime, localNow)
     }, BRAND_REQUIRED, BRAND_DENIALS), BRAND_TRUST);
     const { output, exitCode } = commandOutcome(result, { diagnosticOnly, invalidCode: 1 });
@@ -491,9 +555,9 @@ try {
     process.exit(exitCode);
   }
   if (command === "verify-audit") {
-    const result = verifyAuditStream(JSON.parse(readSource(inputPath)));
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    // The pin is the head entry hash; an empty stream has no head and never authorizes.
+    const result = verifyAuditStream(JSON.parse(readSource(positionalArgs()[1] || inputPath)));
+    finishVerification(result, { pinKind: "artifact", pinActual: result.verified === true ? result.head_hash : null });
   }
   if (command === "attention-account") {
     const budget = Number(args[2]);
@@ -533,12 +597,25 @@ try {
     process.exit(errors.length > 0 ? 1 : 0);
   }
   if (command === "verify") {
-    const result = verifyBuildManifest(inputPath);
+    // Text report kept; authorization needs --expected-sha256 equal to the
+    // SHA-256 of the manifest file bytes (the manifest itself is untrusted).
+    const manifestPath = positionalArgs()[1] || inputPath;
+    const result = verifyBuildManifest(manifestPath);
     for (const check of result.checks) console.log(`${check.ok ? "PASS" : "FAIL"} ${check.kind}: ${check.file} — ${check.reason}`);
     console.log(`Verified: ${result.verified}`);
     console.log(`Passed: ${result.passed}`);
     console.log(`Failed: ${result.failed}`);
-    process.exit(result.verified ? 0 : 1);
+    const manifestSha256 = result.verified === true ? sha256Hex(fs.readFileSync(manifestPath)) : null;
+    const { output, exitCode } = decideCommand({ verified: result.verified, manifest_sha256: manifestSha256 }, {
+      consistent: result.verified === true,
+      conditions: { verified: result.verified === true, artifact_pinned: pinMatches(flagValue("--expected-sha256", null), manifestSha256) },
+      required: ["verified", "artifact_pinned"], denials: VERIFY_DENIALS, trust: PIN_TRUST,
+      diagnosticOnly: hasFlag(AML_DIAGNOSTIC_ONLY_FLAG), invalidCode: 1
+    });
+    console.log(`Authorized: ${output.authorized}`);
+    console.log(`Authorization reasons: ${output.authorization.reasons.join(", ")}`);
+    console.log(`Decision use: ${output.decision_use}`);
+    process.exit(exitCode);
   }
   if (command === "sign") {
     const privateKeyPath = args[2];
@@ -548,10 +625,11 @@ try {
     process.exit(0);
   }
   if (command === "verify-attestation") {
-    const attestation = JSON.parse(readSource(inputPath));
-    const result = verifyBuildAttestation(attestation, args[2] || attestation.manifest_path);
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    const positional = positionalArgs();
+    const attestation = JSON.parse(readSource(positional[1] || inputPath));
+    const result = verifyBuildAttestation(attestation, positional[2] || attestation.manifest_path);
+    finishVerification(result, { pinKind: "key",
+      pinActual: result.verified === true && result.public_key_fingerprint_valid === true ? attestation?.public_key_sha256 : null });
   }
 
   console.error(`Unknown command: ${command}`);

@@ -62,3 +62,11 @@ export function isRevoked(registry, artifact_hash) {
   const entry = [...registry.entries].reverse().find((item) => item.artifact_hash === artifact_hash) ?? null;
   return { revoked: Boolean(entry), registry_valid: true, entry };
 }
+
+// Digest a relying party pins out of band. A registry is hash-chained but not
+// signed: anyone can present an empty or truncated (rolled-back) copy, so
+// presence alone proves nothing. Matching this pin binds the exact registry
+// state the relying party accepted; it cannot prove that state is current.
+export function revocationRegistryFingerprint(registry) {
+  return sha256(canonicalJSONStringify(registry));
+}
