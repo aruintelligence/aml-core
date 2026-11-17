@@ -66,6 +66,11 @@ test("trust config: rollback to a lower version and a same-version fork are refu
   assert.equal(forked.trusted, false);
   assert.deepEqual(forked.reasons, ["no_version_fork", "state_persisted"]);
   assert.equal(readTrustState(stateDir).latest.version, 2);
+  // A never-seen lower version is refused before anything is written to state.
+  const v0 = signTrustConfig(configBody(roots, { version: 1, profile_sha256: sha("unseen") }), [roots[0].pem, roots[1].pem]);
+  fs.rmSync(path.join(stateDir, "versions", "v000000000001.json"));
+  assert.equal(evaluateTrustConfig(v0, { stateDir }).trusted, false);
+  assert.equal(fs.existsSync(path.join(stateDir, "versions", "v000000000001.json")), false, "no stale record written");
 });
 
 test("trust config: expiry, not-yet-valid and any caller-supplied time fail closed", t => {

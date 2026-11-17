@@ -6,6 +6,10 @@
 // Tests named "LIMIT:" assert behaviour that is NOT prevented and is
 // documented as residual risk (stolen pinned key, compromised host,
 // stateless verifier replay); they fail if that limit silently changes.
+// They describe the explicit-pin path, which is unchanged when no trust
+// config is enrolled. The opt-in mitigations (signed trust config with
+// revocation and rollback protection, durable single-use store) are tested in
+// test/trust-config*.test.js and test/durable-consumption.test.js.
 import test from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";

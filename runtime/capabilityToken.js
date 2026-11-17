@@ -1,5 +1,7 @@
 import crypto from "node:crypto";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
+import { trustConfigTrustsKey, trustConfigRequiresSingleUse } from "./trustConfig.js";
+import { consumptionKey, isDurableConsumptionStore } from "./consumptionStore.js";
 
 function fingerprint(publicKey) {
   return crypto.createHash("sha256").update(publicKey.export({ type: "spki", format: "der" })).digest("hex");
@@ -92,6 +94,18 @@ export function verifyCapabilityToken(token, { now = null, audience = null, requ
 //     execution with the same token is refused.
 // Residual: a stolen pinned issuer key still mints authorizing tokens, and
 // the replay guard is only as durable as the caller's storage of it.
+//
+// Trust config + durable store (opt-in, additive; never weakens a pin):
+//   - `trustConfig`: a decision from evaluateTrustConfig(All). When supplied,
+//     the issuer key must be trusted for role "capability-issuer", not
+//     revoked, and the config unexpired. If a hex pin is ALSO supplied, both
+//     must hold. A stolen key is then stopped by publishing a config version
+//     that revokes it (bounded by the config expiry for stale relying parties).
+//   - `consumptionStore`: a store from openDurableConsumptionStore(). The
+//     (issuer key, nonce) pair is consumed with an atomic exclusive create
+//     after every other check passed, so replay across process restarts and
+//     across executors sharing the store is refused. A trust config with
+//     require_single_use: true makes the durable store mandatory.
 const PIN = /^[0-9a-f]{64}$/;
 export function createCapabilityConsumptionGuard() {
   return { type: "aml-capability-consumption/1", consumed: {} };
@@ -104,15 +118,19 @@ export function authorizeCapabilityToken(token, {
   sessionId = null,
   intentSha256 = null,
   requiredCapability = null,
-  consumptionGuard = null
+  consumptionGuard = null,
+  trustConfig = null,
+  consumptionStore = null
 } = {}) {
   const reasons = [];
   const verification = verifyCapabilityToken(token, { audience: null, requiredCapability: null });
   const nowMs = Date.now();
   const checks = {
     signature_valid: verification.valid === true,
-    issuer_key_pinned: typeof trustedIssuerKeySha256 === "string" && PIN.test(trustedIssuerKeySha256)
-      && verification.valid === true && token.public_key_fingerprint === trustedIssuerKeySha256,
+    issuer_key_pinned: verification.valid === true && (trustedIssuerKeySha256 !== null || trustConfig !== null)
+      && (trustedIssuerKeySha256 === null || (typeof trustedIssuerKeySha256 === "string" && PIN.test(trustedIssuerKeySha256)
+        && token.public_key_fingerprint === trustedIssuerKeySha256))
+      && (trustConfig === null || trustConfigTrustsKey(trustConfig, token.public_key_fingerprint, "capability-issuer")),
     local_clock_trusted: Number.isFinite(nowMs),
     not_expired: false,
     audience_bound: typeof audience === "string" && audience.length > 0 && token?.audience === audience,
@@ -132,7 +150,30 @@ export function authorizeCapabilityToken(token, {
   const guardOk = consumptionGuard?.type === "aml-capability-consumption/1" && consumptionGuard.consumed
     && typeof consumptionGuard.consumed === "object";
   const consumeKey = `${token?.public_key_fingerprint}:${token?.nonce}`;
-  checks.not_replayed = Boolean(guardOk && checks.nonce_present && !Object.hasOwn(consumptionGuard.consumed, consumeKey));
+  const guardFresh = Boolean(guardOk && checks.nonce_present && !Object.hasOwn(consumptionGuard.consumed, consumeKey));
+  const durableRequired = trustConfig !== null && trustConfigRequiresSingleUse(trustConfig);
+  let replayProtection = "none";
+  if (consumptionStore !== null) {
+    // Consume last, and only when everything else already passed, so a
+    // denied attempt never burns a token. A supplied guard must also agree.
+    const othersOk = Object.entries(checks).every(([name, ok]) => name === "not_replayed" || ok === true);
+    checks.not_replayed = false;
+    if (isDurableConsumptionStore(consumptionStore) && othersOk && (consumptionGuard === null || guardFresh)) {
+      try {
+        checks.not_replayed = consumptionStore.consume(
+          consumptionKey(["capability-token", String(token.public_key_fingerprint), String(token.nonce)]),
+          { purpose: "capability-token", issuer_key_sha256: token.public_key_fingerprint, executor: subject,
+            session_id: sessionId, intent_sha256: intentSha256, audience, capability: requiredCapability,
+            token_expires_at: token.expires_at }) === true;
+        replayProtection = "durable";
+      } catch {
+        checks.not_replayed = false;
+      }
+    }
+  } else {
+    checks.not_replayed = guardFresh && !durableRequired;
+    replayProtection = guardFresh ? "in-memory" : "none";
+  }
   for (const [name, ok] of Object.entries(checks)) if (ok !== true) reasons.push(name);
   const authorized = reasons.length === 0;
   return {
@@ -140,7 +181,8 @@ export function authorizeCapabilityToken(token, {
     authorized,
     reasons,
     checks,
-    consumptionGuard: authorized
+    replay_protection: authorized ? replayProtection : "none",
+    consumptionGuard: authorized && guardOk
       ? { type: consumptionGuard.type, consumed: { ...consumptionGuard.consumed, [consumeKey]: new Date(nowMs).toISOString() } }
       : consumptionGuard
   };

@@ -663,7 +663,7 @@
   },
   {
    "file": "runtime/capabilityToken.js",
-   "line": 113,
+   "line": 129,
    "code": "signature_valid: verification.valid === true,",
    "category": "conjunct",
    "effect": "authorizeCapabilityToken: signature_valid is one condition; authorized also requires a pinned issuer key, local-clock expiry, audience/executor/session/intent bindings, the capability and an unconsumed nonce. verifyCapabilityToken.valid itself is documented as non-authorizing.",
@@ -671,15 +671,15 @@
   },
   {
    "file": "runtime/capabilityToken.js",
-   "line": 115,
-   "code": "&& verification.valid === true && token.public_key_fingerprint === trustedIssuerKeySha256,",
+   "line": 130,
+   "code": "issuer_key_pinned: verification.valid === true && (trustedIssuerKeySha256 !== null || trustConfig !== null)",
    "category": "conjunct",
-   "effect": "authorizeCapabilityToken: signature_valid is one condition; authorized also requires a pinned issuer key, local-clock expiry, audience/executor/session/intent bindings, the capability and an unconsumed nonce. verifyCapabilityToken.valid itself is documented as non-authorizing.",
+   "effect": "authorizeCapabilityToken: issuer_key_pinned requires a valid signature AND (an explicit pin match and/or a trusted, unexpired trust-config entry for role capability-issuer); authorized also requires local-clock expiry, audience/executor/session/intent bindings, the capability and an unconsumed nonce (durable store when supplied or required by the trust config).",
    "conjunct_with": "issuer_key_pinned, not_expired, audience_bound, executor_bound, session_bound, intent_bound, capability_granted, not_replayed"
   },
   {
    "file": "runtime/capabilityToken.js",
-   "line": 139,
+   "line": 180,
    "code": "valid: checks.signature_valid,",
    "category": "conjunct",
    "effect": "authorizeCapabilityToken: signature_valid is one condition; authorized also requires a pinned issuer key, local-clock expiry, audience/executor/session/intent bindings, the capability and an unconsumed nonce. verifyCapabilityToken.valid itself is documented as non-authorizing.",
