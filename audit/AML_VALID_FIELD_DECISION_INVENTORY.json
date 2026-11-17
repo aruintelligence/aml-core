@@ -77,7 +77,7 @@
   },
   {
    "file": "bin/aml.js",
-   "line": 544,
+   "line": 626,
    "code": "credential_valid: verification.valid === true,",
    "category": "conjunct",
    "effect": "verify-brand-authorization condition credential_valid; authorized also requires issuer and key pins, a revocation check and a trusted clock.",
@@ -1351,7 +1351,7 @@
   },
   {
    "file": "bin/aml.js",
-   "line": 387,
+   "line": 466,
    "code": "process.exit(result.authorized === true ? 0 : 2);",
    "kind": "exit",
    "gate_fields": [
@@ -1362,7 +1362,7 @@
   },
   {
    "file": "bin/aml.js",
-   "line": 463,
+   "line": 542,
    "code": "process.exit(result.requested_conditions_met === true ? 0 : 2);",
    "kind": "exit",
    "gate_fields": [
@@ -1373,7 +1373,7 @@
   },
   {
    "file": "bin/aml.js",
-   "line": 465,
+   "line": 544,
    "code": "process.exit(result.authorized === true && result.authorization?.authorized === true ? 0",
    "kind": "exit",
    "gate_fields": [
@@ -1385,7 +1385,7 @@
   },
   {
    "file": "bin/aml.js",
-   "line": 597,
+   "line": 702,
    "code": "process.exit(errors.length > 0 ? 1 : 0);",
    "kind": "exit-inverted",
    "gate_fields": [],
@@ -1892,6 +1892,18 @@
    ],
    "category": "explicit-decision",
    "effect": "HTTP 200 /v1/verify-brand-authorization only for the explicit decision: official AND server registry checked (Directive 010)."
+  },
+  {
+   "file": "bin/aml.js",
+   "line": 730,
+   "code": "process.exit(decision?.trusted === true && decision.reasons.length === 0 ? 0 : AML_EXIT_NOT_AUTHORIZED); // trust-verify-decision",
+   "kind": "exit",
+   "gate_fields": [
+    "reasons",
+    "trusted"
+   ],
+   "category": "explicit-decision",
+   "effect": "aml trust-verify exits 0 only when the trust-config decision is explicitly trusted (threshold, rollback, expiry, persisted) with no reasons."
   }
  ]
 }
