@@ -545,20 +545,32 @@ def trust_summary(trust):
             "expires_at": d.get("expires_at") if d else None}
 
 
+def single_use_stores(trust, options):
+    """Mirror of bin/aml.js singleUseStores(): enrolled `single-use/` stores are
+    always used with a trusted config; --single-use-store only adds one."""
+    store = options.get("--single-use-store")
+    trusted = trust is not None and isinstance(trust.get("decision"), dict) and trust["decision"].get("trusted") is True
+    config_requires = trusted and requires_single_use(trust["decision"])
+    enrolled = [os.path.join(d, "single-use") for d in trust["dirs"]] if trusted and (config_requires or store is not None) else []
+    return enrolled + ([store] if store is not None else []), config_requires
+
+
 def single_use(trust, options, conditions, command, artifact_id):
     """(name, ok) to add to the required conditions, or None. Consumes only when all else is true."""
-    store = options.get("--single-use-store")
-    config_requires = (trust is not None and trust["decision"] is not None and trust["decision"].get("trusted") is True
-                       and requires_single_use(trust["decision"]))
-    if store is None:
+    stores, config_requires = single_use_stores(trust, options)
+    if not stores:
         return ("single_use_store_present", False) if config_requires else None
     ok = False
     if all(v is True for v in conditions.values()) and is_hex64(artifact_id):
-        try:
-            ok = consume(store, consumption_key(["cli-verifier", command, artifact_id]),
-                         {"purpose": "cli-verifier", "command": command, "artifact_sha256": artifact_id})
-        except (OSError, ValueError):
-            ok = False
+        results = []
+        for store in stores:
+            try:
+                key = consumption_key(["cli-verifier", command, artifact_id])
+                results.append(consume(store, key, {"purpose": "cli-verifier", "command": command,
+                                                    "artifact_sha256": artifact_id}) is True)
+            except (OSError, ValueError):
+                results.append(False)
+        ok = bool(results) and all(results)
     return ("single_use_consumed", ok)
 
 
@@ -626,7 +638,7 @@ def gate(result, options, command, artifact_id, diagnostic, caller_time=None):
     base = (isinstance(result, dict) and result.get("authorized") is True
             and isinstance(result.get("authorization"), dict) and result["authorization"].get("authorized") is True)
     trust = load_trust(options, caller_time)
-    if trust is None and options.get("--single-use-store") is None:
+    if trust is None and not single_use_stores(trust, options)[0]:
         return result, base
     conditions = {"verifier_decision_allowed": base}
     if trust is not None:

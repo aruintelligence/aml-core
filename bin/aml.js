@@ -98,19 +98,28 @@ function trustSummary(trust) {
 
 // Single-use (opt-in with --single-use-store, mandatory when the trust config
 // sets require_single_use). Consumed only after every other condition passed.
-// An untrusted config is already denied by trust_config_trusted, so only a
-// trusted config's own require_single_use adds the store requirement here.
-function singleUse(trust, conditions, artifactId) {
+// With a trusted config, every enrolled trust state directory's `single-use/`
+// store is always used as well, so a caller cannot pick a fresh empty
+// directory to replay an artifact; --single-use-store only adds a store.
+// The artifact must be newly consumed in every store.
+function singleUseStores(trust) {
   const storeDir = flagValue("--single-use-store", null);
-  const configRequires = trust !== null && trust.decision?.trusted === true && trustConfigRequiresSingleUse(trust.decision);
-  if (storeDir === null) return configRequires ? { required: true, name: "single_use_store_present", ok: false } : { required: false };
+  const trusted = trust !== null && trust.decision?.trusted === true;
+  const configRequires = trusted && trustConfigRequiresSingleUse(trust.decision);
+  const enrolled = trusted && (configRequires || storeDir !== null) ? trust.dirs.map(dir => `${dir}/single-use`) : [];
+  return { stores: [...enrolled, ...(storeDir !== null ? [storeDir] : [])], configRequires };
+}
+function singleUse(trust, conditions, artifactId) {
+  const { stores, configRequires } = singleUseStores(trust);
+  if (stores.length === 0) return configRequires ? { required: true, name: "single_use_store_present", ok: false } : { required: false };
   let consumed = false;
   const othersOk = Object.values(conditions).every(v => v === true);
   if (othersOk && typeof artifactId === "string" && /^[a-f0-9]{64}$/.test(artifactId)) {
-    try {
-      consumed = openDurableConsumptionStore(storeDir).consume(consumptionKey(["cli-verifier", command, artifactId]),
-        { purpose: "cli-verifier", command, artifact_sha256: artifactId });
-    } catch { consumed = false; }
+    const key = consumptionKey(["cli-verifier", command, artifactId]);
+    const results = stores.map(dir => {
+      try { return openDurableConsumptionStore(dir).consume(key, { purpose: "cli-verifier", command, artifact_sha256: artifactId }) === true; } catch { return false; }
+    });
+    consumed = results.length > 0 && results.every(ok => ok === true);
   }
   return { required: true, name: "single_use_consumed", ok: consumed };
 }
@@ -154,7 +163,7 @@ function artifactSha256(value) {
 function trustGate(result, artifactId, diagnosticOnly) {
   const base = result?.authorized === true && result?.authorization?.authorized === true;
   const trust = trustMode();
-  if (trust === null && flagValue("--single-use-store", null) === null) return { result, authorized: base };
+  if (trust === null && singleUseStores(trust).stores.length === 0) return { result, authorized: base };
   const conditions = { verifier_decision_allowed: base };
   if (trust !== null) conditions.trust_config_trusted = trust.decision?.trusted === true;
   const once = diagnosticOnly ? { required: false } : singleUse(trust, conditions, artifactId);

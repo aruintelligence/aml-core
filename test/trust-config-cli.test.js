@@ -141,14 +141,21 @@ test("trust CLI X4: --single-use-store makes a pinned artifact authorize at most
   const other = w.receipt(owner, "other");
   assert.equal(aml(["verify-signed-receipt", other, "--trusted-key-sha256", "0".repeat(64), "--single-use-store", store]).status, 3);
   assert.equal(aml(["verify-signed-receipt", other, "--trusted-key-sha256", owner.sha256, "--single-use-store", store]).status, 0);
-  // A config that requires single use refuses a verifier invoked without a store.
+  // A config that requires single use always consumes in the enrolled state
+  // directory's store: the caller cannot escape it with no store or with a
+  // fresh, empty --single-use-store directory.
   const cfg = w.config({ require_single_use: true, trusted_keys: [{ keyid: owner.sha256, roles: ["receipt"] }] });
   const third = w.receipt(owner, "third");
+  assert.equal(aml(["verify-signed-receipt", third, "--trust-config", cfg], w.env).status, 0);
   const noStore = aml(["verify-signed-receipt", third, "--trust-config", cfg], w.env);
   assert.equal(noStore.status, 3);
-  assert.deepEqual(noStore.json.authorization.reasons, ["AML_AUTHZ_SINGLE_USE_STORE_REQUIRED"]);
-  assert.equal(aml(["verify-signed-receipt", third, "--trust-config", cfg, "--single-use-store", store], w.env).status, 0);
-  assert.equal(aml(["verify-signed-receipt", third, "--trust-config", cfg, "--single-use-store", store], w.env).status, 3);
+  assert.deepEqual(noStore.json.authorization.reasons, ["AML_AUTHZ_ALREADY_CONSUMED"]);
+  const fresh = aml(["verify-signed-receipt", third, "--trust-config", cfg, "--single-use-store", path.join(w.dir, "fresh-store")], w.env);
+  assert.equal(fresh.status, 3, "a fresh caller-chosen store does not reopen a consumed artifact");
+  assert.deepEqual(fresh.json.authorization.reasons, ["AML_AUTHZ_ALREADY_CONSUMED"]);
+  const fourth = w.receipt(owner, "fourth");
+  assert.equal(aml(["verify-signed-receipt", fourth, "--trust-config", cfg, "--single-use-store", store], w.env).status, 0);
+  assert.equal(aml(["verify-signed-receipt", fourth, "--trust-config", cfg], w.env).status, 3, "the enrolled store saw it too");
 });
 
 test("trust CLI: verify-receipt and replay-receipt honour trust-config mode and single use", t => {

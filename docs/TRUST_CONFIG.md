@@ -110,7 +110,11 @@ keys refused.
 ## Single use
 
 `--single-use-store <dir>` (or `require_single_use: true` in the config) makes a
-verified artifact authorize at most once per store. Library callers pass
+verified artifact authorize at most once. With a trusted config, the store in
+each enrolled trust state directory (`<state-dir>/single-use/`) is always used
+as well, so choosing a different or empty `--single-use-store` cannot reopen a
+consumed artifact; `--single-use-store` only adds a store, and the artifact
+must be newly consumed in every store. Library callers pass
 `consumptionStore: openDurableConsumptionStore(dir)` to `authorizeCapabilityToken`.
 The record is created with `O_CREAT|O_EXCL`, written and fsync'd, and the
 directory fsync'd, before authorization is reported. A crash after the create

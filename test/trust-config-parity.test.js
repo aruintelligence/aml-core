@@ -137,19 +137,22 @@ test("signed quorum (JS and Python): enrolled host needs a trusted config; singl
   assert.ok(reasonsOf(third).includes("AML_AUTHZ_ALREADY_CONSUMED"));
 });
 
-test("signed quorum: a config requiring single use denies without a store; diagnostic mode consumes nothing", t => {
-  const e = enrolled(t, { require_single_use: true });
-  const cfg = e.write("su.json", e.config());
+test("signed quorum: a config requiring single use consumes in the enrolled store (no store or a fresh store cannot replay); diagnostic consumes nothing", t => {
   for (const [label, [bin, ...args]] of quorumClis) {
-    const none = run(bin, [...args, "--trust-config", cfg, "--trust-state", e.state]);
-    assert.equal(none.status, 3, label);
-    assert.ok(reasonsOf(none).includes("AML_AUTHZ_SINGLE_USE_STORE_REQUIRED"), label);
-    const store = path.join(e.dir, `store-${label}`);
-    const diag = run(bin, [...args, "--trust-config", cfg, "--trust-state", e.state, "--single-use-store", store, "--diagnostic-only"]);
+    const e = enrolled(t, { require_single_use: true });
+    const cfg = e.write("su.json", e.config());
+    const enrolledStore = path.join(e.state, "single-use", "consumed");
+    const diag = run(bin, [...args, "--trust-config", cfg, "--trust-state", e.state, "--diagnostic-only"]);
     assert.equal(diag.json.authorized, false, label);
-    assert.equal(fs.existsSync(path.join(store, "consumed")) && fs.readdirSync(path.join(store, "consumed")).length > 0, false, `${label}: diagnostic consumed`);
-    assert.equal(run(bin, [...args, "--trust-config", cfg, "--trust-state", e.state, "--single-use-store", store]).status, 0, label);
-    assert.equal(run(bin, [...args, "--trust-config", cfg, "--trust-state", e.state, "--single-use-store", store]).status, 3, `${label}: replay`);
+    assert.equal(fs.existsSync(enrolledStore) && fs.readdirSync(enrolledStore).length > 0, false, `${label}: diagnostic consumed`);
+    const first = run(bin, [...args, "--trust-config", cfg, "--trust-state", e.state]);
+    assert.equal(first.status, 0, `${label}: ${first.stdout.slice(0, 300)}`);
+    assert.equal(fs.readdirSync(enrolledStore).length, 1, `${label}: consumed in the enrolled store`);
+    for (const extra of [[], ["--single-use-store", path.join(e.dir, `fresh-${label}`)]]) {
+      const replay = run(bin, [...args, "--trust-config", cfg, "--trust-state", e.state, ...extra]);
+      assert.equal(replay.status, 3, `${label}: replay ${extra.join(" ")}`);
+      assert.ok(reasonsOf(replay).includes("AML_AUTHZ_ALREADY_CONSUMED"), label);
+    }
   }
 });
 
