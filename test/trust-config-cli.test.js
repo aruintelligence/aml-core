@@ -1,9 +1,6 @@
-// CLI trust-config mode and single-use verifiers. Each test is the
-// regression for an exploit that succeeds on 526b2bd (see REPORT.md):
-//   X1 enrolled host, invoker rewrites the pin to its own key      -> exit 3
-//   X2 stolen signing key revoked by config v2                      -> exit 3
-//   X3 rollback to an older, validly signed config / registry       -> exit 3
-//   X4 replay of a pinned artifact with --single-use-store          -> exit 3
+// CLI trust-config mode and single-use verifiers. These cases confirm
+// that an enrolled host refuses a rewritten pin, a revoked key, an older
+// signed config, and replay when a single-use store is required.
 // Synthetic canary keys only.
 import test from "node:test";
 import assert from "node:assert/strict";

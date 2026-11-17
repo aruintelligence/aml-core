@@ -89,6 +89,8 @@ burns the authorization (at-most-once). Use a local filesystem with atomic
 
 ## What this does not solve
 
-See the residual-risk section of the local report: a stolen threshold of root
-keys, a host whose root account is compromised, and the local clock remain
+A host where an attacker has root or write access to trust state is out of
+scope for this design: no software on that host can protect its own trust
+store. Verification on a separate host, or hardware attestation, is future
+work. A stolen threshold of root keys, and the verifier host clock, remain
 trust assumptions.
