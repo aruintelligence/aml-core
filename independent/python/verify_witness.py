@@ -414,8 +414,8 @@ def main():
     options = {flag: value for flag, value in (("--trust-config", args.trust_config), ("--trust-state", args.trust_state),
                                                ("--single-use-store", args.single_use_store)) if value is not None}
     try:
-        artifact = trust_config.file_sha256(args.bundle) if valid is True else None
-    except OSError:
+        artifact = trust_config.file_artifact_sha256(args.bundle) if valid is True else None
+    except (OSError, ValueError, TypeError, RecursionError):
         artifact = None
     gated, _ = trust_config.gate({"authorized": authorization["authorized"] is True and valid is True,
                                         "authorization": authorization}, options, "verify-witness", artifact,

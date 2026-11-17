@@ -673,8 +673,11 @@ def main():
         options = {flag: value for flag, value in (("--trust-config", args.trust_config),
                                                    ("--trust-state", args.trust_state),
                                                    ("--single-use-store", args.single_use_store)) if value is not None}
-        result, gate_ok = trust_config.gate(result, options, "verify-signed-quorum",
-                                            trust_config.file_sha256(args.quorum), args.diagnostic_only)
+        try:
+            artifact = trust_config.file_artifact_sha256(args.quorum)
+        except (ValueError, TypeError, RecursionError):
+            artifact = None
+        result, gate_ok = trust_config.gate(result, options, "verify-signed-quorum", artifact, args.diagnostic_only)
         output = decision_only(result) if args.decision_only else result
     except (OSError, ValueError) as error:
         # Malformed source text and paths can surface in parser or OS errors.

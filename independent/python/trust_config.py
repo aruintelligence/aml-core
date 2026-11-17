@@ -27,6 +27,7 @@ TRUST_CONFIG_TYPE = "aml-trust-config/1"
 TRUST_ANCHOR_TYPE = "aml-trust-anchor/1"
 TRUST_STATE_RECORD_TYPE = "aml-trust-state-record/1"
 SYSTEM_TRUST_STATE_DIR = "/etc/aml/trust"
+MAX_SAFE_INTEGER = 2 ** 53 - 1
 TRUST_ROLES = ("receipt", "policy-pack", "build-attestation", "brand-authorization", "capability-issuer")
 EXIT_AUTHORIZED = 0
 EXIT_NOT_AUTHORIZED = 3
@@ -581,13 +582,42 @@ def config_trusted(trust):
     return bool(isinstance(d, dict) and d.get("trusted") is True and d.get("reasons") == [] and _still_unexpired(d))
 
 
+def _artifact_canonical(value):
+    """Canonical JSON identical to bin/aml.js artifactSha256(): sorted keys,
+    compact, safe integers only (integral floats such as 1.0 count as integers),
+    BMP-only keys. Anything else raises, so single use fails closed."""
+    if value is None or isinstance(value, bool):
+        return json.dumps(value)
+    if isinstance(value, float):
+        if not value.is_integer():
+            raise ValueError("AML_ARTIFACT_NOT_CANONICAL")
+        value = int(value)
+    if isinstance(value, int):
+        if abs(value) > MAX_SAFE_INTEGER:
+            raise ValueError("AML_ARTIFACT_NOT_CANONICAL")
+        return str(value)
+    if isinstance(value, str):
+        value.encode("utf-8")  # lone surrogates raise
+        return json.dumps(value, ensure_ascii=False)
+    if isinstance(value, list):
+        return "[" + ",".join(_artifact_canonical(v) for v in value) + "]"
+    if isinstance(value, dict):
+        if any(not isinstance(k, str) or any(ord(c) > 0xFFFF for c in k) for k in value):
+            raise ValueError("AML_ARTIFACT_NOT_CANONICAL")
+        return "{" + ",".join(json.dumps(k, ensure_ascii=False) + ":" + _artifact_canonical(value[k])
+                              for k in sorted(value)) + "}"
+    raise ValueError("AML_ARTIFACT_NOT_CANONICAL")
+
+
 def artifact_sha256(value):
-    return hashlib.sha256(canonical(value).encode("utf-8")).hexdigest()
+    """SHA-256 of the canonical JSON of a parsed artifact (re-serializing the
+    same JSON does not produce a new single-use identity)."""
+    return hashlib.sha256(_artifact_canonical(value).encode("utf-8")).hexdigest()
 
 
-def file_sha256(path):
-    with open(path, "rb") as handle:
-        return hashlib.sha256(handle.read()).hexdigest()
+def file_artifact_sha256(path):
+    with open(path, encoding="utf-8") as handle:
+        return artifact_sha256(strict_json(handle.read()))
 
 
 def gate(result, options, command, artifact_id, diagnostic, caller_time=None):

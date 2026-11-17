@@ -132,6 +132,25 @@ function withoutTrustFlags(list) {
   }
   return out;
 }
+// Single-use identity of a parsed JSON artifact: SHA-256 of sorted-key compact
+// JSON (safe integers, BMP keys only; anything else is null, so single use
+// fails closed). Matches trust_config.artifact_sha256 in Python, so
+// re-serializing a bundle does not make it a new artifact in any language.
+function artifactSha256(value) {
+  const canon = v => {
+    if (v === null || typeof v === "boolean") return JSON.stringify(v);
+    if (typeof v === "number") { if (!Number.isSafeInteger(v)) throw new Error("AML_ARTIFACT_NOT_CANONICAL"); return String(v); }
+    if (typeof v === "string") { if (!v.isWellFormed()) throw new Error("AML_ARTIFACT_NOT_CANONICAL"); return JSON.stringify(v); }
+    if (Array.isArray(v)) return `[${v.map(canon).join(",")}]`;
+    if (typeof v === "object") {
+      const keys = Object.keys(v);
+      if (keys.some(k => [...k].some(c => c.codePointAt(0) > 0xffff))) throw new Error("AML_ARTIFACT_NOT_CANONICAL");
+      return `{${keys.sort().map(k => `${JSON.stringify(k)}:${canon(v[k])}`).join(",")}}`;
+    }
+    throw new Error("AML_ARTIFACT_NOT_CANONICAL");
+  };
+  try { return sha256Hex(canon(value)); } catch { return null; }
+}
 function trustGate(result, artifactId, diagnosticOnly) {
   const base = result?.authorized === true && result?.authorization?.authorized === true;
   const trust = trustMode();
@@ -515,12 +534,12 @@ try {
     }
     // Support Node builds that do not expose Web Crypto on globalThis.
     if (!globalThis.crypto?.subtle) globalThis.crypto = webcrypto;
-    const bundleBytes = fs.readFileSync(witnessArgs[1]);
     const bundle = readUnambiguousJSON(witnessArgs[1]);
+    const bundleArtifact = artifactSha256(bundle);
     const expectedChallenge = readUnambiguousJSON(witnessArgs[2]);
     const verified = await verifyWitnessBundle(bundle, { expectedChallenge });
     // trustGate ANDs trust_config_trusted / single use into `authorized`.
-    const result = trustGate(verified, sha256Hex(bundleBytes), false).result;
+    const result = trustGate(verified, bundleArtifact, false).result;
     console.log(JSON.stringify(result, null, 2));
     // `valid` is internal consistency only; exit 0 requires the explicit decision.
     process.exit(result.authorized === true ? 0 : 2);
@@ -585,12 +604,13 @@ try {
     const expectedChallenge = options.has('--challenge') ? readUnambiguousJSON(options.get('--challenge'), parseOptions) : undefined;
     const expectedInputFingerprints = options.has('--expect-inputs')
       ? readUnambiguousJSON(options.get('--expect-inputs'), parseOptions) : undefined;
-    const quorumBytes = fs.readFileSync(quorumArgs[1]);
-    const quorumResult = await verifySignedVerificationQuorum(readUnambiguousJSON(quorumArgs[1], parseOptions), {
+    const quorum = readUnambiguousJSON(quorumArgs[1], parseOptions);
+    const quorumArtifact = artifactSha256(quorum);
+    const quorumResult = await verifySignedVerificationQuorum(quorum, {
       policy, witnessBundle, expectedChallenge, expectedInputFingerprints, portable
     });
     // trustGate ANDs trust_config_trusted / single use into `authorized`.
-    const result = trustGate(quorumResult, sha256Hex(quorumBytes), diagnosticOnly).result;
+    const result = trustGate(quorumResult, quorumArtifact, diagnosticOnly).result;
     // A saved quorum can produce more JSON than a pipe can buffer. Wait for
     // stdout to finish writing before exiting with the verification status.
     await new Promise((resolve, reject) => {

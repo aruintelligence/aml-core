@@ -217,3 +217,19 @@ test("Python evidence verifiers: config policy pin is ANDed with the flag pin; e
   assert.equal(again.status, 3);
   assert.ok(reasonsOf(again).includes("AML_AUTHZ_ALREADY_CONSUMED"));
 });
+
+test("single use: re-serializing a quorum (whitespace, key order) does not make it a new artifact in either language", t => {
+  const e = enrolled(t);
+  const good = e.write("good.json", e.config());
+  const reorder = v => Array.isArray(v) ? v.map(reorder) : v && typeof v === "object"
+    ? Object.fromEntries(Object.keys(v).reverse().map(k => [k, reorder(v[k])])) : v;
+  const respelled = e.write("quorum-respelled.json", JSON.stringify(reorder(JSON.parse(fs.readFileSync(QUORUM, "utf8"))), null, 3));
+  const flags = ["--policy", HELD, "--trust-config", good, "--trust-state", e.state, "--single-use-store", e.store];
+  const first = run(process.execPath, ["bin/aml.js", "verify-signed-quorum", QUORUM, ...flags]);
+  assert.equal(first.status, 0, first.stdout.slice(0, 300));
+  for (const [label, bin, args] of [["node", process.execPath, ["bin/aml.js", "verify-signed-quorum"]], ["python", "python3", ["independent/python/verify_signed_quorum.py"]]]) {
+    const replay = run(bin, [...args, respelled, ...flags]);
+    assert.equal(replay.status, 3, `${label}: ${replay.stdout.slice(0, 300)}`);
+    assert.ok(reasonsOf(replay).includes("AML_AUTHZ_ALREADY_CONSUMED"), label);
+  }
+});

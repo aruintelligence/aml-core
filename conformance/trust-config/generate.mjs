@@ -79,6 +79,11 @@ add("tampered_body_breaks_threshold", [step({ ...v1, signed: { ...v1.signed, tru
   { trusted: false, reasons: ["root_threshold_met", "state_persisted"] })]);
 add("rollback_refused_current_idempotent", [step(v1, ok()), step(v2, ok()), step(v2, ok()),
   step(v1, { trusted: false, reasons: ["not_rolled_back", "state_persisted"] }), step(v3, ok())]);
+// A refused rollback must not leave a record behind: a later, different v1 is
+// still only a rollback, not also a fork.
+add("refused_rollback_persists_nothing", [step(v3, ok()),
+  step(v1, { trusted: false, reasons: ["not_rolled_back", "state_persisted"] }),
+  step(sign(body({ policy_sha256: "c".repeat(64) })), { trusted: false, reasons: ["not_rolled_back", "state_persisted"] })]);
 add("same_version_fork_refused", [step(v1, ok()),
   step(sign(body({ policy_sha256: "c".repeat(64) })), { trusted: false, reasons: ["no_version_fork", "state_persisted"] })]);
 add("expired_config", [step(sign(body({ issued_at: "2025-01-01T00:00:00Z", expires_at: "2025-06-01T00:00:00Z" })),
