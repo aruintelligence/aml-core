@@ -63,7 +63,11 @@ export function keyFingerprint(publicKeyPem) {
   if (typeof publicKeyPem !== "string" || !PEM.test(publicKeyPem)) throw new Error("AML_TRUST_KEY_PEM_INVALID");
   const key = crypto.createPublicKey(publicKeyPem);
   if (key.asymmetricKeyType !== "ed25519") throw new Error("AML_TRUST_KEY_NOT_ED25519");
-  return crypto.createHash("sha256").update(key.export({ type: "spki", format: "der" })).digest("hex");
+  const der = key.export({ type: "spki", format: "der" });
+  // The armored bytes must already be the canonical 44-byte SPKI encoding.
+  const armored = Buffer.from(publicKeyPem.replace(/-----[A-Z ]+-----|\n/g, ""), "base64");
+  if (der.length !== 44 || !der.equals(armored)) throw new Error("AML_TRUST_KEY_NOT_CANONICAL");
+  return crypto.createHash("sha256").update(der).digest("hex");
 }
 export function sha256Canonical(value) {
   return crypto.createHash("sha256").update(canonicalJSONStringify(value)).digest("hex");

@@ -115,6 +115,41 @@ function singleUse(trust, conditions, artifactId) {
   return { required: true, name: "single_use_consumed", ok: consumed };
 }
 
+// verify-witness / verify-signed-quorum compute their own decision; in
+// trust-config mode (or with a single-use store) that decision is ANDed with
+// trust_config_trusted and single use. Never ORed: a false base stays false.
+const TRUST_FLAGS = new Set(["--trust-config", "--trust-state", "--single-use-store"]);
+function withoutTrustFlags(list) {
+  const out = [];
+  for (let index = 0; index < list.length; index += 1) {
+    if (TRUST_FLAGS.has(list[index])) {
+      const value = list[index + 1];
+      if (!value || value.startsWith("--")) throw new Error(`${list[index]} requires exactly one value`);
+      index += 1;
+      continue;
+    }
+    out.push(list[index]);
+  }
+  return out;
+}
+function trustGate(result, artifactId, diagnosticOnly) {
+  const base = result?.authorized === true && result?.authorization?.authorized === true;
+  const trust = trustMode();
+  if (trust === null && flagValue("--single-use-store", null) === null) return { result, authorized: base };
+  const conditions = { verifier_decision_allowed: base };
+  if (trust !== null) conditions.trust_config_trusted = trust.decision?.trusted === true;
+  const once = diagnosticOnly ? { required: false } : singleUse(trust, conditions, artifactId);
+  if (once.required) conditions[once.name] = once.ok;
+  const authorized = !diagnosticOnly && Object.values(conditions).every(v => v === true);
+  const added = Object.keys(conditions).filter(name => conditions[name] !== true && TRUST_DENIALS[name]).map(name => TRUST_DENIALS[name]);
+  const prior = Array.isArray(result?.authorization?.reasons) ? result.authorization.reasons.filter(r => r !== "AML_AUTHZ_ALLOW") : [];
+  const authorization = authorized ? result.authorization : { ...(result?.authorization ?? {}), authorized: false, decision: "deny",
+    reasons: [...new Set([...prior, ...added])],
+    required: [...new Set([...(result?.authorization?.required ?? []), ...Object.keys(conditions).filter(n => n !== "verifier_decision_allowed")])] };
+  return { result: { ...result, authorized, authorization, ...(trust ? { trust: trustSummary(trust) } : {}),
+    ...(once.required ? { single_use: { consumed: conditions[once.name] === true } } : {}) }, authorized };
+}
+
 // Positional arguments without the authorization flags and their values.
 function positionalArgs() {
   const out = [];
@@ -474,14 +509,18 @@ try {
       artifactId: receipt?.receipt_sha256 });
   }
   if (command === "verify-witness") {
-    if (args.length !== 3 || !args[1] || !args[2]) {
-      throw new Error("Usage: aml verify-witness <bundle.json> <verifier-held-challenge.json>");
+    const witnessArgs = withoutTrustFlags(args);
+    if (witnessArgs.length !== 3 || !witnessArgs[1] || !witnessArgs[2]) {
+      throw new Error("Usage: aml verify-witness <bundle.json> <verifier-held-challenge.json> [--trust-config c.json] [--trust-state dir] [--single-use-store dir]");
     }
     // Support Node builds that do not expose Web Crypto on globalThis.
     if (!globalThis.crypto?.subtle) globalThis.crypto = webcrypto;
-    const bundle = readUnambiguousJSON(args[1]);
-    const expectedChallenge = readUnambiguousJSON(args[2]);
-    const result = await verifyWitnessBundle(bundle, { expectedChallenge });
+    const bundleBytes = fs.readFileSync(witnessArgs[1]);
+    const bundle = readUnambiguousJSON(witnessArgs[1]);
+    const expectedChallenge = readUnambiguousJSON(witnessArgs[2]);
+    const verified = await verifyWitnessBundle(bundle, { expectedChallenge });
+    // trustGate ANDs trust_config_trusted / single use into `authorized`.
+    const result = trustGate(verified, sha256Hex(bundleBytes), false).result;
     console.log(JSON.stringify(result, null, 2));
     // `valid` is internal consistency only; exit 0 requires the explicit decision.
     process.exit(result.authorized === true ? 0 : 2);
@@ -506,13 +545,14 @@ try {
   }
   if (command === "verify-signed-quorum") {
     const usage = "Usage: aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json] [--portable] [--decision-only] [--diagnostic-only]";
-    if (!args[1] || args[1].startsWith('--')) throw new Error(usage);
+    const quorumArgs = withoutTrustFlags(args);
+    if (!quorumArgs[1] || quorumArgs[1].startsWith('--')) throw new Error(usage);
     const options = new Map();
     let portable = false;
     let decisionOnly = false;
     let diagnosticOnly = false;
-    for (let index = 2; index < args.length;) {
-      const flag = args[index];
+    for (let index = 2; index < quorumArgs.length;) {
+      const flag = quorumArgs[index];
       if (flag === '--portable') {
         if (portable) throw new Error(usage);
         portable = true;
@@ -531,7 +571,7 @@ try {
         index += 1;
         continue;
       }
-      const value = args[index + 1];
+      const value = quorumArgs[index + 1];
       if (!['--policy', '--bundle', '--challenge', '--expect-inputs'].includes(flag) || !value ||
           value.startsWith('--') || options.has(flag)) throw new Error(usage);
       options.set(flag, value);
@@ -545,9 +585,12 @@ try {
     const expectedChallenge = options.has('--challenge') ? readUnambiguousJSON(options.get('--challenge'), parseOptions) : undefined;
     const expectedInputFingerprints = options.has('--expect-inputs')
       ? readUnambiguousJSON(options.get('--expect-inputs'), parseOptions) : undefined;
-    const result = await verifySignedVerificationQuorum(readUnambiguousJSON(args[1], parseOptions), {
+    const quorumBytes = fs.readFileSync(quorumArgs[1]);
+    const quorumResult = await verifySignedVerificationQuorum(readUnambiguousJSON(quorumArgs[1], parseOptions), {
       policy, witnessBundle, expectedChallenge, expectedInputFingerprints, portable
     });
+    // trustGate ANDs trust_config_trusted / single use into `authorized`.
+    const result = trustGate(quorumResult, sha256Hex(quorumBytes), diagnosticOnly).result;
     // A saved quorum can produce more JSON than a pipe can buffer. Wait for
     // stdout to finish writing before exiting with the verification status.
     await new Promise((resolve, reject) => {

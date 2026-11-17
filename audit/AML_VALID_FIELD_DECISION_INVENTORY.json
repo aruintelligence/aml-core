@@ -77,7 +77,7 @@
   },
   {
    "file": "bin/aml.js",
-   "line": 647,
+   "line": 690,
    "code": "credential_valid: verification.valid === true,",
    "category": "conjunct",
    "effect": "verify-brand-authorization condition credential_valid; authorized also requires issuer and key pins, a revocation check and a trusted clock.",
@@ -1351,7 +1351,7 @@
   },
   {
    "file": "bin/aml.js",
-   "line": 487,
+   "line": 526,
    "code": "process.exit(result.authorized === true ? 0 : 2);",
    "kind": "exit",
    "gate_fields": [
@@ -1362,7 +1362,7 @@
   },
   {
    "file": "bin/aml.js",
-   "line": 563,
+   "line": 606,
    "code": "process.exit(result.requested_conditions_met === true ? 0 : 2);",
    "kind": "exit",
    "gate_fields": [
@@ -1373,7 +1373,7 @@
   },
   {
    "file": "bin/aml.js",
-   "line": 565,
+   "line": 608,
    "code": "process.exit(result.authorized === true && result.authorization?.authorized === true ? 0",
    "kind": "exit",
    "gate_fields": [
@@ -1385,7 +1385,7 @@
   },
   {
    "file": "bin/aml.js",
-   "line": 723,
+   "line": 766,
    "code": "process.exit(errors.length > 0 ? 1 : 0);",
    "kind": "exit-inverted",
    "gate_fields": [],
@@ -1394,7 +1394,7 @@
   },
   {
    "file": "independent/go/main.go",
-   "line": 72,
+   "line": 73,
    "code": "return out, 0",
    "kind": "go-return-zero",
    "gate_fields": [
@@ -1460,7 +1460,7 @@
   },
   {
    "file": "independent/python/verify_signed_quorum.py",
-   "line": 683,
+   "line": 692,
    "code": "return 0 if result[\"requested_conditions_met\"] is True else 2",
    "kind": "py-exit",
    "gate_fields": [
@@ -1471,7 +1471,7 @@
   },
   {
    "file": "independent/python/verify_witness.py",
-   "line": 417,
+   "line": 441,
    "code": "return 0 if valid is True else 1",
    "kind": "py-exit",
    "gate_fields": [
@@ -1895,7 +1895,7 @@
   },
   {
    "file": "bin/aml.js",
-   "line": 756,
+   "line": 799,
    "code": "process.exit(decision?.trusted === true && decision.reasons.length === 0 ? 0 : AML_EXIT_NOT_AUTHORIZED); // trust-verify-decision",
    "kind": "exit",
    "gate_fields": [

@@ -646,6 +646,9 @@ def main():
     parser.add_argument("--decision-only", action="store_true", help="Print a compact decision without supplied report contents")
     parser.add_argument("--diagnostic-only", action="store_true",
                         help="Exit 0 when requested conditions are met; output says NOT AN AUTHORIZATION DECISION")
+    parser.add_argument("--trust-config", help="Signed trust config (docs/TRUST_CONFIG.md); required on an enrolled host")
+    parser.add_argument("--trust-state", help="Additional trust state directory (adds to /etc/aml/trust)")
+    parser.add_argument("--single-use-store", help="Durable single-use store; consumes the quorum once")
     args = parser.parse_args()
     try:
         if bool(args.bundle) != bool(args.challenge):
@@ -666,6 +669,12 @@ def main():
         if args.expect_inputs:
             validate_input_expectations(expected_inputs, policy, bool(args.bundle))
         result = verify_quorum(quorum, policy, witness_bundle, expected_challenge, expected_inputs)
+        import trust_config
+        options = {flag: value for flag, value in (("--trust-config", args.trust_config),
+                                                   ("--trust-state", args.trust_state),
+                                                   ("--single-use-store", args.single_use_store)) if value is not None}
+        result, gate_ok = trust_config.gate(result, options, "verify-signed-quorum",
+                                            trust_config.file_sha256(args.quorum), args.diagnostic_only)
         output = decision_only(result) if args.decision_only else result
     except (OSError, ValueError) as error:
         # Malformed source text and paths can surface in parser or OS errors.
@@ -681,7 +690,7 @@ def main():
     # conditions met without it exit 3. Mirrors `aml verify-signed-quorum`.
     if args.diagnostic_only:
         return 0 if result["requested_conditions_met"] is True else 2
-    if result.get("authorized") is True and result["authorization"].get("authorized") is True:
+    if gate_ok is True and result.get("authorized") is True and result["authorization"].get("authorized") is True:
         return 0
     return EXIT_NOT_AUTHORIZED if result["requested_conditions_met"] is True else 2
 

@@ -29,6 +29,13 @@ uses that mode. `verify.sh` builds the binary and preserves its exit code
 (`go run` would report every failure as `1`). See
 [docs/COMMAND_AUTHORIZATION.md](../../docs/COMMAND_AUTHORIZATION.md).
 
+Trust config ([docs/TRUST_CONFIG.md](../../docs/TRUST_CONFIG.md)):
+`--trust-config`, `--trust-state` and `--single-use-store` are accepted. On an
+enrolled host the output carries the trust decision and, when it is not
+trusted, `AML_AUTHZ_TRUST_CONFIG_NOT_TRUSTED`; the verifier still never
+authorizes. `trust-verify` evaluates a trust config (exit 0 only when trusted)
+and `trust-conformance <vectors.json>` runs the shared conformance vectors.
+
 The implementation checks:
 
 - `sorted-json-v1` canonical JSON for the published safe domain;

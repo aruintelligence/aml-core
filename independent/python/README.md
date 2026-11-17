@@ -200,6 +200,22 @@ Nonce encoding does not attest to the quality of randomness. Custom historical
 challenges outside the generator's shape need to be regenerated for this
 reference verifier profile; the frozen schema is unchanged.
 
+## Trust config
+
+`trust_config.py` (standard library only; pure-Python RFC 8032 Ed25519) evaluates
+the signed trust config from [docs/TRUST_CONFIG.md](../../docs/TRUST_CONFIG.md)
+against the same state directory and single-use store as the JavaScript CLI:
+
+```bash
+python3 independent/python/trust_config.py trust-verify --trust-config trust.json --trust-state state/
+python3 independent/python/trust_config.py conformance conformance/trust-config/vectors.json
+```
+
+`verify_witness.py`, `verify_signed_quorum.py` and the evidence verifiers accept
+`--trust-config`, `--trust-state` and `--single-use-store`. On an enrolled host
+(`/etc/aml/trust`, `$AML_TRUST_STATE_DIR` or `--trust-state`) a missing or
+untrusted config is not authorized (exit 3).
+
 ## Deliberate separation
 
 This implementation does **not** import:

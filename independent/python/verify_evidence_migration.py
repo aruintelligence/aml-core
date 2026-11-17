@@ -80,7 +80,7 @@ def verify(migration, policy):
 
 if __name__ == "__main__":
     from authorization_cli import split_flags, decide
-    policy, pin, diagnostic = None, None, "--diagnostic-only" in sys.argv
+    policy, pin, diagnostic, gate = None, None, "--diagnostic-only" in sys.argv, None
     try:
         argv, pin, diagnostic = split_flags(sys.argv[1:])
         sys.argv = [sys.argv[0], *argv]
@@ -95,7 +95,9 @@ if __name__ == "__main__":
         if recovering:
             # Recovery writes a file: it runs only on the full authorization
             # decision, never in diagnostic mode or with an unpinned policy.
-            if diagnostic or decide(report, policy, pin, False)[0]["authorized"] is not True:
+            # The gate decision consumes (single use) before the write.
+            gate = None if diagnostic else decide(report, policy, pin, False)[0]
+            if gate is None or gate["authorized"] is not True:
                 raise ValueError("recover_requires_authorization")
             data, _ = unpack(migration["source_archive_base64"])
             with open(sys.argv[4], "xb") as output:
@@ -104,6 +106,7 @@ if __name__ == "__main__":
     except (ValueError, KeyError, TypeError, OSError, OverflowError, RecursionError) as error:
         report = {"protocol": "aml-evidence-migration-python-report/1", "verified": False,
                   "policy_hint_trusted": False, "reason": str(error)}
-    report, code = decide(report, policy, pin, diagnostic)
+    prior = gate.get("single_use", {}).get("consumed") if isinstance(gate, dict) and "single_use" in gate else None
+    report, code = decide(report, policy, pin, diagnostic, single_use_result=prior)
     print(json.dumps(report, indent=2, ensure_ascii=False))
     sys.exit(code)

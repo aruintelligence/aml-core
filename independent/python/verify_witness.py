@@ -350,23 +350,28 @@ TRUST_ASSUMPTIONS = ["the relying party retained the challenge it issued", "the 
                      "a session key does not establish identity"]
 
 
-def authorization_decision(conditions):
-    """Fail closed: each required condition must be exactly True."""
+def authorization_decision(conditions, extra=()):
+    """Fail closed: each required condition must be exactly True.
+
+    `extra` names trust-config conditions (trust_config.TRUST_DENIALS) that
+    are required in addition, never instead."""
+    required = tuple(AUTHORIZATION_REQUIRED) + tuple(extra)
     try:
+        from trust_config import TRUST_DENIALS
+        denials = dict(AUTHORIZATION_DENIALS, **TRUST_DENIALS)
         if not isinstance(conditions, dict):
             reasons = ["AML_AUTHZ_CONDITIONS_MISSING"]
         else:
-            reasons = [AUTHORIZATION_DENIALS[name] for name in AUTHORIZATION_REQUIRED
-                       if conditions.get(name) is not True]
-            if any(name not in AUTHORIZATION_REQUIRED for name in conditions):
+            reasons = [denials[name] for name in required if conditions.get(name) is not True]
+            if any(name not in required for name in conditions):
                 reasons.append("AML_AUTHZ_UNKNOWN_CONDITION")
     except Exception:  # pragma: no cover - defensive
         reasons = ["AML_AUTHZ_EVALUATION_ERROR"]
     if reasons:
         return {"schema": "aml-authorization-decision/1", "authorized": False, "decision": "deny",
-                "reasons": list(dict.fromkeys(reasons)), "required": list(AUTHORIZATION_REQUIRED)}
+                "reasons": list(dict.fromkeys(reasons)), "required": list(required)}
     return {"schema": "aml-authorization-decision/1", "authorized": True, "decision": "allow",
-            "reasons": ["AML_AUTHZ_ALLOW"], "required": list(AUTHORIZATION_REQUIRED)}
+            "reasons": ["AML_AUTHZ_ALLOW"], "required": list(required)}
 
 
 def trusted_clock(now, local_now):
@@ -383,6 +388,9 @@ def main():
     parser.add_argument("--now", help="Test-only ISO-8601 time override; never authorizes")
     parser.add_argument("--diagnostic-only", action="store_true",
                         help="Exit 0 for a consistent bundle; NOT AN AUTHORIZATION DECISION")
+    parser.add_argument("--trust-config", help="Signed trust config (docs/TRUST_CONFIG.md); required on an enrolled host")
+    parser.add_argument("--trust-state", help="Additional trust state directory (adds to /etc/aml/trust)")
+    parser.add_argument("--single-use-store", help="Durable single-use store; consumes the bundle once")
     args = parser.parse_args()
     local_now = dt.datetime.now(dt.timezone.utc)
     clock_ok = False
@@ -396,11 +404,24 @@ def main():
         valid, reason = verify_bundle(bundle, now=now, expected_challenge=expected_challenge)
     except (OSError, ValueError) as error:
         valid, reason, expected_challenge = False, str(error), None
-    authorization = authorization_decision({
+    conditions = {
         "bundle_valid": valid is True,
         "verifier_held_challenge": valid is True and expected_challenge is not None,
         "trusted_clock": clock_ok is True,
-    })
+    }
+    authorization = authorization_decision(conditions)
+    import trust_config
+    options = {flag: value for flag, value in (("--trust-config", args.trust_config), ("--trust-state", args.trust_state),
+                                               ("--single-use-store", args.single_use_store)) if value is not None}
+    try:
+        artifact = trust_config.file_sha256(args.bundle) if valid is True else None
+    except OSError:
+        artifact = None
+    gated, _ = trust_config.gate({"authorized": authorization["authorized"] is True and valid is True,
+                                        "authorization": authorization}, options, "verify-witness", artifact,
+                                       args.diagnostic_only, args.now)
+    authorization = gated["authorization"]
+    # gate() ANDs trust_config_trusted / single use into authorization["authorized"].
     authorized = authorization["authorized"] is True and valid is True
     if args.diagnostic_only:
         authorized = False
@@ -410,6 +431,9 @@ def main():
     output = {"valid": valid, "reason": reason, "authorized": authorized, "authorization": authorization,
               "remaining_trust_assumptions": TRUST_ASSUMPTIONS,
               "decision_use": "authorization" if authorized else NOT_AN_AUTHORIZATION_DECISION}
+    for key in ("trust", "single_use"):
+        if key in gated:
+            output[key] = gated[key]
     if args.diagnostic_only:
         output["diagnostic_only"] = True
     print(json.dumps(output, indent=2))

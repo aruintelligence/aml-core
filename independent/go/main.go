@@ -48,6 +48,7 @@ type report struct {
 	DecisionUse    string        `json:"decision_use"`
 	DiagnosticOnly bool          `json:"diagnostic_only,omitempty"`
 	Trust          []string      `json:"remaining_trust_assumptions"`
+	Trust_         *trustSummary `json:"trust,omitempty"`
 }
 
 func decide(r result, diagnostic bool, callerClock bool) (report, int) {
@@ -271,8 +272,18 @@ func readBundle(path string) (map[string]any, error) {
 }
 
 func main() {
+	// Trust-config subcommands (see trustconfig.go).
+	if len(os.Args) > 1 && os.Args[1] == "trust-verify" {
+		os.Exit(runTrustVerify(os.Args[2:]))
+	}
+	if len(os.Args) == 3 && os.Args[1] == "trust-conformance" {
+		os.Exit(runTrustConformance(os.Args[2]))
+	}
 	nowFlag := flag.String("now", "", "RFC3339 verification time for fixed vectors (untrusted: never authorizes)")
 	diagnostic := flag.Bool("diagnostic-only", false, "exit 0 for a consistent bundle; NOT AN AUTHORIZATION DECISION")
+	trustConfigFlag := flag.String("trust-config", "", "signed trust config; reported, never authorizes this command")
+	trustStateFlag := flag.String("trust-state", "", "enrolled trust state directory")
+	_ = flag.String("single-use-store", "", "accepted for parity; this command never authorizes, so nothing is consumed")
 	flag.Parse()
 	if flag.NArg() != 1 {
 		fmt.Fprintln(os.Stderr, "usage: go run . [--diagnostic-only] [--now RFC3339] bundle.json")
@@ -296,6 +307,22 @@ func main() {
 	}
 	valid, reason := verifyBundle(bundle, now)
 	out, code := decide(result{valid, reason}, *diagnostic, callerClock)
+	// Trust-config mode only adds denials: this verifier never authorizes.
+	caller := ""
+	if callerClock {
+		caller = *nowFlag
+	}
+	trust, err := resolveTrustMode(trustOptions{*trustConfigFlag, *trustStateFlag, ""}, caller)
+	if err != nil {
+		out.Trust_ = &trustSummary{Mode: "trust-config", Reasons: []string{"trust_config_unreadable"}}
+		out.Authorization.Reasons = append(out.Authorization.Reasons, "AML_AUTHZ_TRUST_CONFIG_NOT_TRUSTED")
+	} else if trust != nil {
+		out.Trust_ = summarize(trust)
+		if !out.Trust_.Trusted {
+			out.Authorization.Reasons = append(out.Authorization.Reasons, "AML_AUTHZ_TRUST_CONFIG_NOT_TRUSTED")
+		}
+		out.Authorization.Required = append(out.Authorization.Required, "trust_config_trusted")
+	}
 	emit(out, code)
 }
 
