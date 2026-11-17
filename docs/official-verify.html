@@ -173,6 +173,8 @@ async function verifyCredential(credential, now) {
   let key;
   try { key = await crypto.subtle.importKey("spki", der, { name:"Ed25519" }, false, ["verify"]); }
   catch (error) { return { valid:false, reason:"ed25519_not_supported_or_invalid_key", error:error.message, fingerprint }; }
+  // Canonical base64 only (atob ignores whitespace, padding and unused bits), as in the Node verifier.
+  if (typeof signature_base64 !== "string" || !/^[A-Za-z0-9+/]{85}[AQgw]==$/.test(signature_base64)) return { valid:false, reason:"signature_invalid", fingerprint };
   const signatureValid = await crypto.subtle.verify({ name:"Ed25519" }, key, b64Bytes(signature_base64), new TextEncoder().encode(canonical));
   if (!signatureValid) return { valid:false, reason:"signature_invalid", fingerprint };
   if (!validWindow(credential.issued_at, credential.expires_at)) return { valid:false, reason:"invalid_credential_time_window", fingerprint };

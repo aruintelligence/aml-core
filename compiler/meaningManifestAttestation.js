@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
+import { decodeSignatureBase64 } from "../protocol/strictBase64.js";
 import { verifyMeaningManifestIntegrity } from "./meaningManifest.js";
 
 const ATTESTATION_PROTOCOL = "aml-meaning-manifest-attestation/1";
@@ -114,8 +115,8 @@ export function verifySignedMeaningManifest(attestation, manifest) {
     if (publicKey.asymmetricKeyType !== "ed25519") return { ...base, manifest_binding_valid: bindingValid, reason: "unsupported_public_key_type" };
     const fingerprintValid = publicKeyFingerprint(publicKey) === attestation.public_key_sha256;
     const bytes = Buffer.from(canonicalJSONStringify(signedMaterial(attestation)), "utf8");
-    const signature = Buffer.from(attestation.signature_base64, "base64");
-    const signatureValid = crypto.verify(null, bytes, publicKey, signature);
+    const signature = decodeSignatureBase64(attestation.signature_base64);
+    const signatureValid = signature !== null && crypto.verify(null, bytes, publicKey, signature);
     const verified = manifestIntegrity.verified && bindingValid && fingerprintValid && signatureValid;
 
     return {

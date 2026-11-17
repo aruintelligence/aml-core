@@ -90,6 +90,10 @@ async function verifyBrandCredential(credential, trustRegistry) {
     if (fingerprint !== public_key_sha256) {
       return { valid: false, official: false, reason: 'public_key_fingerprint_mismatch' };
     }
+    // Canonical base64 only (atob ignores whitespace, padding and unused bits), as in the Node verifier.
+    if (typeof signature_base64 !== 'string' || !/^[A-Za-z0-9+/]{85}[AQgw]==$/.test(signature_base64)) {
+      return { valid: false, official: false, reason: 'signature_invalid' };
+    }
     const key = await crypto.subtle.importKey('spki', der, { name: 'Ed25519' }, false, ['verify']);
     const signatureValid = await crypto.subtle.verify(
       { name: 'Ed25519' },

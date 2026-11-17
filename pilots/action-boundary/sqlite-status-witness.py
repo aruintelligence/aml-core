@@ -73,7 +73,7 @@ def main(database, action, public_key=None):
     } or record.get("protocol") != "aml-fixture-provider-status/2" or record.get("issuer") != "fixture-provider":
         raise ValueError("invalid_witness_envelope")
     operation, challenge = record.get("operation_id"), record.get("challenge")
-    if not isinstance(operation, str) or not UUID.fullmatch(operation) or not isinstance(challenge, str) or not HEX.fullmatch(challenge) or not isinstance(record["signature"], str) or not re.fullmatch(r"[A-Za-z0-9+/]{86}==", record["signature"]):
+    if not isinstance(operation, str) or not UUID.fullmatch(operation) or not isinstance(challenge, str) or not HEX.fullmatch(challenge) or not isinstance(record["signature"], str) or not re.fullmatch(r"[A-Za-z0-9+/]{85}[AQgw]==", record["signature"]):
         raise ValueError("invalid_witness_binding")
     effect = record["record"]
     if effect is not None and (not isinstance(effect, dict) or set(effect) != {

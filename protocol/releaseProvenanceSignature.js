@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { canonicalJSONStringify } from './canonicalJson.js';
+import { requireSignatureBase64 } from './strictBase64.js';
 
 export const AML_RELEASE_PROVENANCE_EVIDENCE = 'aml-release-provenance-evidence/1';
 export const AML_SIGNED_RELEASE_PROVENANCE = 'aml-signed-release-provenance/1';
@@ -53,7 +54,7 @@ export function verifySignedReleaseProvenance(signed, options = {}) {
     if (sig.algorithm !== 'Ed25519') throw new Error('signature algorithm must be Ed25519');
     fp = fingerprint(sig.public_key_pem);
     if (fp !== sig.public_key_fingerprint_sha256) throw new Error('public key fingerprint mismatch');
-    signatureValid = crypto.verify(null, material(signed.evidence), crypto.createPublicKey(sig.public_key_pem), Buffer.from(sig.signature_base64, 'base64'));
+    signatureValid = crypto.verify(null, material(signed.evidence), crypto.createPublicKey(sig.public_key_pem), requireSignatureBase64(sig.signature_base64));
     if (!signatureValid) errors.push('Ed25519 signature verification failed');
   } catch (error) {
     errors.push(error.message || String(error));

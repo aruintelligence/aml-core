@@ -155,8 +155,18 @@ func getString(m map[string]any, key string) string {
 	return v
 }
 
+// Canonical unpadded base64url only: the Go decoder skips \r and \n and (unless
+// Strict) ignores non-zero trailing bits, so require that re-encoding the
+// bytes reproduces the input exactly (same rule as verify_witness.py).
 func decodeB64URL(s string) ([]byte, error) {
-	return base64.RawURLEncoding.DecodeString(s)
+	b, err := base64.RawURLEncoding.Strict().DecodeString(s)
+	if err != nil {
+		return nil, err
+	}
+	if len(b) == 0 || base64.RawURLEncoding.EncodeToString(b) != s {
+		return nil, errors.New("noncanonical base64url")
+	}
+	return b, nil
 }
 
 func verifyIntegrityProfile(integrity map[string]any) bool {

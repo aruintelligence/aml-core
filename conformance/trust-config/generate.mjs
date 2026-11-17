@@ -141,6 +141,23 @@ const enc = (name, mutate) => add(`strict_encoding_${name}`, [step({ ...v1, sign
 enc("signature_trailing_newline", s => ({ ...s, signature_base64: `${s.signature_base64}\n` }));
 enc("signature_unpadded", s => ({ ...s, signature_base64: s.signature_base64.replace(/==$/, "") }));
 enc("signature_urlsafe", s => ({ ...s, signature_base64: s.signature_base64.replace(/\+/g, "-").replace(/\//g, "_") }));
+// One accepted spelling per signature (protocol/strictBase64.js and the
+// Python/Go equivalents): every alternate spelling below decodes, under a
+// lenient decoder, to the same 64 signature bytes, and must still be refused.
+const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const flipUnusedBit = v => `${v.slice(0, 85)}${B64[B64.indexOf(v[85]) + 1]}==`;
+const mixOneUrlChar = v => { const i = v.search(/[+/]/); if (i < 0) throw new Error("fixture signature has no + or /"); return `${v.slice(0, i)}${v[i] === "+" ? "-" : "_"}${v.slice(i + 1)}`; };
+enc("signature_trailing_junk", s => ({ ...s, signature_base64: `${s.signature_base64}AA` }));
+enc("signature_trailing_junk_after_padding", s => ({ ...s, signature_base64: `${s.signature_base64}x` }));
+enc("signature_embedded_space", s => ({ ...s, signature_base64: `${s.signature_base64.slice(0, 44)} ${s.signature_base64.slice(44)}` }));
+enc("signature_leading_space", s => ({ ...s, signature_base64: ` ${s.signature_base64}` }));
+enc("signature_extra_padding", s => ({ ...s, signature_base64: `${s.signature_base64}=` }));
+enc("signature_single_padding", s => ({ ...s, signature_base64: s.signature_base64.replace(/==$/, "=") }));
+enc("signature_noncanonical_trailing_bits", s => ({ ...s, signature_base64: flipUnusedBit(s.signature_base64) }));
+enc("signature_mixed_base64_base64url", s => ({ ...s, signature_base64: mixOneUrlChar(s.signature_base64) }));
+enc("signature_empty", s => ({ ...s, signature_base64: "" }));
+enc("signature_oversized", s => ({ ...s, signature_base64: s.signature_base64.replace(/==$/, "").repeat(40) + "==" }));
+enc("signature_not_string", s => ({ ...s, signature_base64: 7 }));
 enc("pem_crlf", s => ({ ...s, public_key_pem: s.public_key_pem.replace(/\n/g, "\r\n") }));
 enc("pem_no_armor", s => ({ ...s, public_key_pem: s.public_key_pem.replace(/-----[A-Z ]+-----\n?/g, "") }));
 enc("pem_p256_key", s => ({ ...s, public_key_pem: P256_PEM }));

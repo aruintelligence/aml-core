@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
+import { decodeSignatureBase64 } from "../protocol/strictBase64.js";
 import { trustConfigTrustsKey, trustConfigRequiresSingleUse } from "./trustConfig.js";
 import { consumptionKey, isDurableConsumptionStore } from "./consumptionStore.js";
 
@@ -60,7 +61,9 @@ export function verifyCapabilityToken(token, { now = null, audience = null, requ
   try {
     const publicKey = crypto.createPublicKey(public_key_pem);
     if (fingerprint(publicKey) !== public_key_fingerprint) return { valid: false, reason: "fingerprint_mismatch" };
-    const signatureValid = crypto.verify(null, Buffer.from(canonicalJSONStringify(body)), publicKey, Buffer.from(signature_base64, "base64"));
+    const signature = decodeSignatureBase64(signature_base64);
+    if (signature === null) return { valid: false, reason: "signature_invalid" };
+    const signatureValid = crypto.verify(null, Buffer.from(canonicalJSONStringify(body)), publicKey, signature);
     if (!signatureValid) return { valid: false, reason: "signature_invalid" };
   } catch {
     return { valid: false, reason: "signature_invalid" };

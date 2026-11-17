@@ -90,8 +90,12 @@ async function verifierKeyMaterialFingerprint(jwk) {
       typeof jwk.x !== 'string' || typeof jwk.y !== 'string') {
     throw new Error('AML_SIGNED_QUORUM_KEY_MATERIAL_INVALID');
   }
-  const decode = value => Uint8Array.from(atob(value.replace(/-/g, '+').replace(/_/g, '/')),
-    character => character.charCodeAt(0));
+  // One spelling per coordinate: exactly 43 unpadded base64url characters whose
+  // unused trailing bits are zero (atob alone ignores them), as in Python/Go.
+  const decode = value => {
+    if (!/^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$/.test(value)) throw new Error('AML_SIGNED_QUORUM_KEY_MATERIAL_INVALID');
+    return Uint8Array.from(atob(`${value.replace(/-/g, '+').replace(/_/g, '/')}=`), character => character.charCodeAt(0));
+  };
   const x = decode(jwk.x);
   const y = decode(jwk.y);
   if (x.length !== 32 || y.length !== 32) throw new Error('AML_SIGNED_QUORUM_KEY_MATERIAL_INVALID');

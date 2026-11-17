@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
+import { decodeSignatureBase64 } from "../protocol/strictBase64.js";
 import { verifySemanticReleaseProof } from "../compiler/semanticReleaseProof.js";
 
 export const SEMANTIC_RELEASE_ENDORSEMENT_PROTOCOL = "aml-semantic-release-endorsement/1";
@@ -21,12 +22,7 @@ function validTimestamp(value) {
 }
 
 function strictBase64(value) {
-  if (typeof value !== "string" || value.length === 0 || value.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(value)) return false;
-  try {
-    return Buffer.from(value, "base64").toString("base64") === value;
-  } catch {
-    return false;
-  }
+  return decodeSignatureBase64(value) !== null;
 }
 
 function publicKeyFingerprint(publicKey) {
@@ -130,7 +126,7 @@ export function verifySemanticReleaseEndorsement(endorsement, proof) {
     const publicKey = crypto.createPublicKey(endorsement.public_key_pem);
     if (publicKey.asymmetricKeyType !== "ed25519") return { ...base, proof_binding_valid: true, hash_valid: hashValid, reason: "unsupported_public_key_type" };
     const fingerprintValid = publicKeyFingerprint(publicKey) === endorsement.public_key_sha256;
-    const signatureValid = crypto.verify(null, material, publicKey, Buffer.from(endorsement.signature_base64, "base64"));
+    const signatureValid = crypto.verify(null, material, publicKey, decodeSignatureBase64(endorsement.signature_base64));
     const verified = hashValid && fingerprintValid && signatureValid;
     return { ...base, verified, proof_binding_valid: true, hash_valid: hashValid, signature_valid: signatureValid, public_key_fingerprint_valid: fingerprintValid, signer: verified ? (endorsement.signer ?? null) : null, public_key_sha256: endorsement.public_key_sha256, reason: verified ? null : !hashValid ? "endorsement_hash_mismatch" : !fingerprintValid ? "public_key_fingerprint_mismatch" : "signature_invalid" };
   } catch {

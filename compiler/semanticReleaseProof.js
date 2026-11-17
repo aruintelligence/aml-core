@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
+import { decodeSignatureBase64 } from "../protocol/strictBase64.js";
 import { meaningFingerprint } from "./meaningFingerprint.js";
 import { semanticDiff } from "./semanticDiff.js";
 import { verifyMeaningManifestIntegrity } from "./meaningManifest.js";
@@ -309,7 +310,8 @@ export function verifySemanticReleaseProof(proof) {
     const publicKey = crypto.createPublicKey(proof.public_key_pem);
     if (publicKey.asymmetricKeyType !== "ed25519") return { ...base, nested_artifacts_valid: nestedValid, lineage_adjacency_valid: adjacencyValid, changes_valid: changes.valid, proof_hash_valid: hashValid, reason: "unsupported_public_key_type" };
     const fingerprintValid = publicKeyFingerprint(publicKey) === proof.public_key_sha256;
-    const signatureValid = crypto.verify(null, Buffer.from(material, "utf8"), publicKey, Buffer.from(proof.signature_base64, "base64"));
+    const signature = decodeSignatureBase64(proof.signature_base64);
+    const signatureValid = signature !== null && crypto.verify(null, Buffer.from(material, "utf8"), publicKey, signature);
     const verified = nestedValid && adjacencyValid && changes.valid && hashValid && fingerprintValid && signatureValid;
 
     return {

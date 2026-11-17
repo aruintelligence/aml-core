@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { canonicalJSONStringify } from "./canonicalJson.js";
+import { requireSignatureBase64 } from "./strictBase64.js";
 import { verifyDelegationChain } from "../runtime/trustDelegation.js";
 
 export const AML_GOVERNANCE_POLICY_TRANSITION = "aml-governance-policy-transition/1";
@@ -136,7 +137,7 @@ export function verifyGovernancePolicyTransitionAuthorization(authorization, pol
       if (signature.algorithm !== "Ed25519") throw new Error("signature algorithm must be Ed25519");
       fp = fingerprint(signature.public_key_pem);
       if (fp !== signature.public_key_fingerprint_sha256) throw new Error("public key fingerprint mismatch");
-      signatureValid = crypto.verify(null, material(transition), crypto.createPublicKey(signature.public_key_pem), Buffer.from(signature.signature_base64, "base64"));
+      signatureValid = crypto.verify(null, material(transition), crypto.createPublicKey(signature.public_key_pem), requireSignatureBase64(signature.signature_base64));
       if (!signatureValid) resultErrors.push("signature verification failed");
     } catch (error) {
       resultErrors.push(error.message || String(error));

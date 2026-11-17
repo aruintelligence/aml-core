@@ -92,28 +92,28 @@
   },
   {
    "file": "compiler/semanticReleaseProof.js",
-   "line": 310,
+   "line": 311,
    "code": "if (publicKey.asymmetricKeyType !== \"ed25519\") return { ...base, nested_artifacts_valid: nestedValid, lineage_adjacency_valid: adjacencyValid, changes_valid: changes.valid, proof_hash_valid: hashValid, reason: \"unsupported_public_key_type\" };",
    "category": "report-only",
    "effect": "changes_valid diagnostic field in an unsupported-key failure result."
   },
   {
    "file": "compiler/semanticReleaseProof.js",
-   "line": 313,
+   "line": 315,
    "code": "const verified = nestedValid && adjacencyValid && changes.valid && hashValid && fingerprintValid && signatureValid;",
    "category": "conjunct",
    "effect": "verified requires nested, adjacency, changes, hash, fingerprint and signature checks."
   },
   {
    "file": "compiler/semanticReleaseProof.js",
-   "line": 318,
+   "line": 320,
    "code": "reason: verified ? null : !nestedValid ? \"nested_artifact_invalid\" : !adjacencyValid ? \"lineage_adjacency_invalid\" : !changes.valid ? changes.reason : !hashValid ? \"proof_hash_mismatch\" : !fingerprintValid ? \"public_key_fingerprint_mismatch\" : \"signature_invalid\",",
    "category": "deny-guard",
    "effect": "selects the failure reason."
   },
   {
    "file": "compiler/semanticReleaseProof.js",
-   "line": 324,
+   "line": 326,
    "code": "changes_valid: changes.valid,",
    "category": "report-only",
    "effect": "changes_valid diagnostic field."
@@ -169,42 +169,42 @@
   },
   {
    "file": "docs/aml-signed-verification-quorum.js",
-   "line": 136,
+   "line": 140,
    "code": "const signed = checks.filter(({ signature }) => signature.valid);",
    "category": "signed-verdict-count",
    "effect": "counts reports with a valid signature (summary only)."
   },
   {
    "file": "docs/aml-signed-verification-quorum.js",
-   "line": 152,
+   "line": 156,
    "code": "if (typeof report.valid !== 'boolean') {",
    "category": "schema-check",
    "effect": "rejects a signed report whose verdict is not a boolean."
   },
   {
    "file": "docs/aml-signed-verification-quorum.js",
-   "line": 183,
+   "line": 187,
    "code": "if (!signature.valid) {",
    "category": "deny-guard",
    "effect": "skips unsigned or non-positive reports when counting trusted keys, dissent, required participants or claims."
   },
   {
    "file": "docs/aml-signed-verification-quorum.js",
-   "line": 189,
+   "line": 193,
    "code": "if (envelope.report.valid) {",
    "category": "signed-verdict-count",
    "effect": "counts an authenticated positive report toward threshold_met; authorized additionally requires a held policy."
   },
   {
    "file": "docs/aml-signed-verification-quorum.js",
-   "line": 207,
+   "line": 211,
    "code": "valid_signatures: checks.filter(({ signature }) => signature.valid).length,",
    "category": "signed-verdict-count",
    "effect": "counts reports with a valid signature (summary only)."
   },
   {
    "file": "docs/aml-signed-verification-quorum.js",
-   "line": 403,
+   "line": 407,
    "code": "valid: result.valid === true,",
    "category": "conjunct",
    "effect": "input to signedQuorumAuthorizationDecision; authorized also requires threshold, requested conditions, a held policy and any witness requirement.",
@@ -212,14 +212,14 @@
   },
   {
    "file": "docs/aml-signed-verification-quorum.js",
-   "line": 512,
+   "line": 516,
    "code": "if (envelope?.report?.valid !== true || !allowed.has(envelope.verifier_key_fingerprint)) continue;",
    "category": "deny-guard",
    "effect": "skips unsigned or non-positive reports when counting trusted keys, dissent, required participants or claims."
   },
   {
    "file": "docs/aml-signed-verification-quorum.js",
-   "line": 513,
+   "line": 517,
    "code": "if (signature.valid) {",
    "category": "conjunct",
    "effect": "adds key material to the held-policy trusted set; the preceding line already required a positive report from a policy-allowed key.",
@@ -227,42 +227,42 @@
   },
   {
    "file": "docs/aml-signed-verification-quorum.js",
-   "line": 538,
+   "line": 542,
    "code": "if (envelope?.report?.valid !== false || !signature.valid) continue;",
    "category": "deny-guard",
    "effect": "skips unsigned or non-positive reports when counting trusted keys, dissent, required participants or claims."
   },
   {
    "file": "docs/aml-signed-verification-quorum.js",
-   "line": 552,
+   "line": 556,
    "code": "if (!signature.valid) continue;",
    "category": "deny-guard",
    "effect": "skips unsigned or non-positive reports when counting trusted keys, dissent, required participants or claims."
   },
   {
    "file": "docs/aml-signed-verification-quorum.js",
-   "line": 593,
+   "line": 597,
    "code": "result.witness_met = valid && witness.valid === true && witness.authorized === true &&",
    "category": "conjunct",
    "effect": "witness_met: quorum valid AND replay valid AND replay authorized (retained challenge, verifier clock) AND artifact match."
   },
   {
    "file": "docs/aml-signed-verification-quorum.js",
-   "line": 598,
+   "line": 602,
    "code": "local_bundle_valid: witness.valid,",
    "category": "report-only",
    "effect": "witness_evaluation.local_bundle_valid diagnostic field."
   },
   {
    "file": "docs/aml-signed-verification-quorum.js",
-   "line": 613,
+   "line": 617,
    "code": "if (envelope?.report?.valid !== true || !signature.valid) continue;",
    "category": "deny-guard",
    "effect": "skips unsigned or non-positive reports when counting trusted keys, dissent, required participants or claims."
   },
   {
    "file": "docs/aml-signed-verification-quorum.js",
-   "line": 636,
+   "line": 640,
    "code": "if (envelope?.report?.valid !== true || !signature.valid) continue;",
    "category": "deny-guard",
    "effect": "skips unsigned or non-positive reports when counting trusted keys, dissent, required participants or claims."
@@ -354,28 +354,28 @@
   },
   {
    "file": "docs/official-verify.html",
-   "line": 185,
+   "line": 187,
    "code": "if (!verification.valid) return { trusted:false, reason:\"credential_invalid\" };",
    "category": "deny-guard",
    "effect": "trust evaluation returns trusted:false for an invalid credential."
   },
   {
    "file": "docs/official-verify.html",
-   "line": 206,
+   "line": 208,
    "code": "setState(\"integrity\", verification.valid ? \"VALID\" : \"INVALID\", verification.valid ? \"good\" : \"bad\");",
    "category": "report-only",
    "effect": "integrity row display."
   },
   {
    "file": "docs/official-verify.html",
-   "line": 209,
+   "line": 211,
    "code": "const official = verification.valid && trust.trusted && credential.issuer === (trustRegistry?.owner || \"ĀRU Intelligence Inc.\");",
    "category": "conjunct",
    "effect": "official badge requires valid AND trust.trusted AND issuer equals the trust registry owner."
   },
   {
    "file": "docs/official-verify.html",
-   "line": 212,
+   "line": 214,
    "code": "credential_valid: verification.valid,",
    "category": "report-only",
    "effect": "integrity row display."
@@ -438,21 +438,21 @@
   },
   {
    "file": "extensions/view-meaning/popup.js",
-   "line": 203,
+   "line": 207,
    "code": "receiptVerification?.valid ? 'VALID — receipt hash recomputed locally' : `INVALID — ${receiptVerification?.reason || 'verification failed'}`,",
    "category": "report-only",
    "effect": "extension popup display (labels NOT OFFICIAL when only valid)."
   },
   {
    "file": "extensions/view-meaning/popup.js",
-   "line": 204,
+   "line": 208,
    "code": "receiptVerification?.valid ? 'ok' : 'warn'",
    "category": "report-only",
    "effect": "extension popup display (labels NOT OFFICIAL when only valid)."
   },
   {
    "file": "extensions/view-meaning/popup.js",
-   "line": 218,
+   "line": 222,
    "code": "authorizationVerification?.valid ? `Cryptographically valid, NOT OFFICIAL — ${authorizationVerification.reason}` :",
    "category": "report-only",
    "effect": "extension popup display (labels NOT OFFICIAL when only valid)."
@@ -530,49 +530,49 @@
   },
   {
    "file": "protocol/governanceDisclosureSignature.js",
-   "line": 24,
+   "line": 25,
    "code": "if (!verification.valid) throw new Error(`refusing to commit invalid disclosure: ${verification.errors.join(\"; \")}`);",
    "category": "deny-guard",
    "effect": "refuses to disclose, commit or authorize from an invalid transcript/disclosure/delegation; integrity is a precondition, not the decision."
   },
   {
    "file": "protocol/governanceDisclosureSignature.js",
-   "line": 110,
+   "line": 111,
    "code": "valid: signature.valid && disclosureVerification.valid && countMatches,",
    "category": "conjunct",
    "effect": "signed disclosure valid requires signature, disclosure integrity and count match."
   },
   {
    "file": "protocol/governanceDisclosureSignature.js",
-   "line": 113,
+   "line": 114,
    "code": "disclosure_valid: disclosureVerification.valid,",
    "category": "report-only",
    "effect": "diagnostic sub-result field."
   },
   {
    "file": "protocol/governancePolicyAuthorization.js",
-   "line": 51,
+   "line": 52,
    "code": "if (!verified.valid) {",
    "category": "deny-guard",
    "effect": "refuses to disclose, commit or authorize from an invalid transcript/disclosure/delegation; integrity is a precondition, not the decision."
   },
   {
    "file": "protocol/governancePolicyAuthorization.js",
-   "line": 152,
+   "line": 153,
    "code": "const isTrusted = directlyTrusted || delegated.valid;",
    "category": "conjunct",
    "effect": "delegated authority (verified against the caller-held trusted root set) counts as trusted; eligibility also needs a valid signature, scope, unrevoked unique key, and authorized needs eligible >= threshold."
   },
   {
    "file": "protocol/governancePolicyAuthorization.js",
-   "line": 170,
+   "line": 171,
    "code": "authority_source: directlyTrusted ? \"direct\" : delegated.valid ? \"delegated\" : null,",
    "category": "report-only",
    "effect": "authority_source / delegation root diagnostic fields."
   },
   {
    "file": "protocol/governancePolicyAuthorization.js",
-   "line": 171,
+   "line": 172,
    "code": "delegation_root_fingerprint_sha256: delegated.valid ? delegated.root_fingerprint_sha256 : null,",
    "category": "report-only",
    "effect": "authority_source / delegation root diagnostic fields."
@@ -600,28 +600,28 @@
   },
   {
    "file": "protocol/governanceTranscriptSignature.js",
-   "line": 23,
+   "line": 24,
    "code": "if (!verification.valid) {",
    "category": "deny-guard",
    "effect": "refuses to disclose, commit or authorize from an invalid transcript/disclosure/delegation; integrity is a precondition, not the decision."
   },
   {
    "file": "protocol/governanceTranscriptSignature.js",
-   "line": 65,
+   "line": 66,
    "code": "if (!transcriptVerification.valid) errors.push(\"embedded governance transcript is invalid\");",
    "category": "deny-guard",
    "effect": "refuses to disclose, commit or authorize from an invalid transcript/disclosure/delegation; integrity is a precondition, not the decision."
   },
   {
    "file": "protocol/governanceTranscriptSignature.js",
-   "line": 99,
+   "line": 100,
    "code": "valid: transcriptVerification.valid && signatureValid && errors.length === 0,",
    "category": "conjunct",
    "effect": "signed transcript valid requires transcript integrity, signature and no errors."
   },
   {
    "file": "protocol/governanceTranscriptSignature.js",
-   "line": 100,
+   "line": 101,
    "code": "transcript_valid: transcriptVerification.valid,",
    "category": "report-only",
    "effect": "diagnostic sub-result field."
@@ -663,7 +663,7 @@
   },
   {
    "file": "runtime/capabilityToken.js",
-   "line": 129,
+   "line": 132,
    "code": "signature_valid: verification.valid === true,",
    "category": "conjunct",
    "effect": "authorizeCapabilityToken: signature_valid is one condition; authorized also requires a pinned issuer key, local-clock expiry, audience/executor/session/intent bindings, the capability and an unconsumed nonce. verifyCapabilityToken.valid itself is documented as non-authorizing.",
@@ -671,7 +671,7 @@
   },
   {
    "file": "runtime/capabilityToken.js",
-   "line": 130,
+   "line": 133,
    "code": "issuer_key_pinned: verification.valid === true && (trustedIssuerKeySha256 !== null || trustConfig !== null)",
    "category": "conjunct",
    "effect": "authorizeCapabilityToken: issuer_key_pinned requires a valid signature AND (an explicit pin match and/or a trusted, unexpired trust-config entry for role capability-issuer); authorized also requires local-clock expiry, audience/executor/session/intent bindings, the capability and an unconsumed nonce (durable store when supplied or required by the trust config).",
@@ -679,7 +679,7 @@
   },
   {
    "file": "runtime/capabilityToken.js",
-   "line": 180,
+   "line": 183,
    "code": "valid: checks.signature_valid,",
    "category": "conjunct",
    "effect": "authorizeCapabilityToken: signature_valid is one condition; authorized also requires a pinned issuer key, local-clock expiry, audience/executor/session/intent bindings, the capability and an unconsumed nonce. verifyCapabilityToken.valid itself is documented as non-authorizing.",
@@ -715,14 +715,14 @@
   },
   {
    "file": "runtime/trustDelegation.js",
-   "line": 149,
+   "line": 150,
    "code": "if (!result.valid) return { valid: false, reason: result.reason, index: i, authority_authenticated: false };",
    "category": "deny-guard",
    "effect": "refuses a chain containing an invalid delegation; non-integrity mode also requires authority_authenticated and the root key."
   },
   {
    "file": "runtime/trustDelegation.js",
-   "line": 164,
+   "line": 165,
    "code": "if (!result.valid) return { valid: false, reason: result.reason, index: i, authority_authenticated: false };",
    "category": "deny-guard",
    "effect": "refuses a chain containing an invalid delegation; non-integrity mode also requires authority_authenticated and the root key."
@@ -1291,14 +1291,14 @@
   },
   {
    "file": "tooling/semanticReleaseQuorum.js",
-   "line": 68,
+   "line": 64,
    "code": "if (!validation.valid) throw new TypeError(`invalid quorum policy: ${validation.reason}`);",
    "category": "deny-guard",
    "effect": "refuses an invalid policy/profile/trust configuration before release verification."
   },
   {
    "file": "tooling/semanticReleaseQuorum.js",
-   "line": 146,
+   "line": 142,
    "code": "if (!policyValidation.valid) return { ...base, semantic_proof_valid: true, reason: policyValidation.reason };",
    "category": "deny-guard",
    "effect": "refuses an invalid policy/profile/trust configuration before release verification."

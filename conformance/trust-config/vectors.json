@@ -4160,6 +4160,765 @@
    ]
   },
   {
+   "name": "strict_encoding_signature_trailing_junk",
+   "anchor": {
+    "threshold": 2,
+    "keyids": [
+     "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+     "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+     "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+    ]
+   },
+   "steps": [
+    {
+     "envelope": {
+      "signed": {
+       "type": "aml-trust-config/1",
+       "version": 1,
+       "issued_at": "2026-01-01T00:00:00Z",
+       "expires_at": "2099-01-01T00:00:00Z",
+       "root": {
+        "threshold": 2,
+        "keyids": [
+         "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+         "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+         "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+        ]
+       },
+       "trusted_keys": [
+        {
+         "keyid": "9464cba25896dd269c8afc74e081f69c4e7b1b05e1bbf348e4656aaa5e12127b",
+         "roles": [
+          "receipt"
+         ]
+        },
+        {
+         "keyid": "8d69e78c9c91009e030cce54178dbf44efcef958a0e72aaf471c58df0ce0309f",
+         "roles": [
+          "policy-pack"
+         ]
+        }
+       ],
+       "revoked_keys": [],
+       "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "registry_sha256": null,
+       "profile_sha256": null,
+       "require_single_use": false
+      },
+      "signatures": [
+       {
+        "keyid": "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAEvDfzAreb59HWapUZ67ddawEyTJAoYYjjcKwz56NyLM=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "gSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCA==AA"
+       },
+       {
+        "keyid": "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIVblLK327zYTKW0NoL8gjYum66BtGn2QcN9z55yPX0Q=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "vkHSpkx3j5awJ6ww62E7QDwfvgSscOi0eFxso2AekKP3RfEXbX4T452vV2DkGVrxOcumPxf9k0KBqFGj5E1kBw=="
+       }
+      ]
+     },
+     "expect": {
+      "trusted": false,
+      "reasons": [
+       "root_threshold_met",
+       "state_persisted"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "strict_encoding_signature_trailing_junk_after_padding",
+   "anchor": {
+    "threshold": 2,
+    "keyids": [
+     "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+     "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+     "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+    ]
+   },
+   "steps": [
+    {
+     "envelope": {
+      "signed": {
+       "type": "aml-trust-config/1",
+       "version": 1,
+       "issued_at": "2026-01-01T00:00:00Z",
+       "expires_at": "2099-01-01T00:00:00Z",
+       "root": {
+        "threshold": 2,
+        "keyids": [
+         "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+         "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+         "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+        ]
+       },
+       "trusted_keys": [
+        {
+         "keyid": "9464cba25896dd269c8afc74e081f69c4e7b1b05e1bbf348e4656aaa5e12127b",
+         "roles": [
+          "receipt"
+         ]
+        },
+        {
+         "keyid": "8d69e78c9c91009e030cce54178dbf44efcef958a0e72aaf471c58df0ce0309f",
+         "roles": [
+          "policy-pack"
+         ]
+        }
+       ],
+       "revoked_keys": [],
+       "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "registry_sha256": null,
+       "profile_sha256": null,
+       "require_single_use": false
+      },
+      "signatures": [
+       {
+        "keyid": "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAEvDfzAreb59HWapUZ67ddawEyTJAoYYjjcKwz56NyLM=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "gSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCA==x"
+       },
+       {
+        "keyid": "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIVblLK327zYTKW0NoL8gjYum66BtGn2QcN9z55yPX0Q=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "vkHSpkx3j5awJ6ww62E7QDwfvgSscOi0eFxso2AekKP3RfEXbX4T452vV2DkGVrxOcumPxf9k0KBqFGj5E1kBw=="
+       }
+      ]
+     },
+     "expect": {
+      "trusted": false,
+      "reasons": [
+       "root_threshold_met",
+       "state_persisted"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "strict_encoding_signature_embedded_space",
+   "anchor": {
+    "threshold": 2,
+    "keyids": [
+     "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+     "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+     "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+    ]
+   },
+   "steps": [
+    {
+     "envelope": {
+      "signed": {
+       "type": "aml-trust-config/1",
+       "version": 1,
+       "issued_at": "2026-01-01T00:00:00Z",
+       "expires_at": "2099-01-01T00:00:00Z",
+       "root": {
+        "threshold": 2,
+        "keyids": [
+         "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+         "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+         "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+        ]
+       },
+       "trusted_keys": [
+        {
+         "keyid": "9464cba25896dd269c8afc74e081f69c4e7b1b05e1bbf348e4656aaa5e12127b",
+         "roles": [
+          "receipt"
+         ]
+        },
+        {
+         "keyid": "8d69e78c9c91009e030cce54178dbf44efcef958a0e72aaf471c58df0ce0309f",
+         "roles": [
+          "policy-pack"
+         ]
+        }
+       ],
+       "revoked_keys": [],
+       "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "registry_sha256": null,
+       "profile_sha256": null,
+       "require_single_use": false
+      },
+      "signatures": [
+       {
+        "keyid": "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAEvDfzAreb59HWapUZ67ddawEyTJAoYYjjcKwz56NyLM=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "gSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsL AKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCA=="
+       },
+       {
+        "keyid": "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIVblLK327zYTKW0NoL8gjYum66BtGn2QcN9z55yPX0Q=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "vkHSpkx3j5awJ6ww62E7QDwfvgSscOi0eFxso2AekKP3RfEXbX4T452vV2DkGVrxOcumPxf9k0KBqFGj5E1kBw=="
+       }
+      ]
+     },
+     "expect": {
+      "trusted": false,
+      "reasons": [
+       "root_threshold_met",
+       "state_persisted"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "strict_encoding_signature_leading_space",
+   "anchor": {
+    "threshold": 2,
+    "keyids": [
+     "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+     "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+     "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+    ]
+   },
+   "steps": [
+    {
+     "envelope": {
+      "signed": {
+       "type": "aml-trust-config/1",
+       "version": 1,
+       "issued_at": "2026-01-01T00:00:00Z",
+       "expires_at": "2099-01-01T00:00:00Z",
+       "root": {
+        "threshold": 2,
+        "keyids": [
+         "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+         "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+         "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+        ]
+       },
+       "trusted_keys": [
+        {
+         "keyid": "9464cba25896dd269c8afc74e081f69c4e7b1b05e1bbf348e4656aaa5e12127b",
+         "roles": [
+          "receipt"
+         ]
+        },
+        {
+         "keyid": "8d69e78c9c91009e030cce54178dbf44efcef958a0e72aaf471c58df0ce0309f",
+         "roles": [
+          "policy-pack"
+         ]
+        }
+       ],
+       "revoked_keys": [],
+       "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "registry_sha256": null,
+       "profile_sha256": null,
+       "require_single_use": false
+      },
+      "signatures": [
+       {
+        "keyid": "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAEvDfzAreb59HWapUZ67ddawEyTJAoYYjjcKwz56NyLM=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": " gSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCA=="
+       },
+       {
+        "keyid": "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIVblLK327zYTKW0NoL8gjYum66BtGn2QcN9z55yPX0Q=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "vkHSpkx3j5awJ6ww62E7QDwfvgSscOi0eFxso2AekKP3RfEXbX4T452vV2DkGVrxOcumPxf9k0KBqFGj5E1kBw=="
+       }
+      ]
+     },
+     "expect": {
+      "trusted": false,
+      "reasons": [
+       "root_threshold_met",
+       "state_persisted"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "strict_encoding_signature_extra_padding",
+   "anchor": {
+    "threshold": 2,
+    "keyids": [
+     "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+     "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+     "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+    ]
+   },
+   "steps": [
+    {
+     "envelope": {
+      "signed": {
+       "type": "aml-trust-config/1",
+       "version": 1,
+       "issued_at": "2026-01-01T00:00:00Z",
+       "expires_at": "2099-01-01T00:00:00Z",
+       "root": {
+        "threshold": 2,
+        "keyids": [
+         "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+         "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+         "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+        ]
+       },
+       "trusted_keys": [
+        {
+         "keyid": "9464cba25896dd269c8afc74e081f69c4e7b1b05e1bbf348e4656aaa5e12127b",
+         "roles": [
+          "receipt"
+         ]
+        },
+        {
+         "keyid": "8d69e78c9c91009e030cce54178dbf44efcef958a0e72aaf471c58df0ce0309f",
+         "roles": [
+          "policy-pack"
+         ]
+        }
+       ],
+       "revoked_keys": [],
+       "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "registry_sha256": null,
+       "profile_sha256": null,
+       "require_single_use": false
+      },
+      "signatures": [
+       {
+        "keyid": "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAEvDfzAreb59HWapUZ67ddawEyTJAoYYjjcKwz56NyLM=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "gSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCA==="
+       },
+       {
+        "keyid": "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIVblLK327zYTKW0NoL8gjYum66BtGn2QcN9z55yPX0Q=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "vkHSpkx3j5awJ6ww62E7QDwfvgSscOi0eFxso2AekKP3RfEXbX4T452vV2DkGVrxOcumPxf9k0KBqFGj5E1kBw=="
+       }
+      ]
+     },
+     "expect": {
+      "trusted": false,
+      "reasons": [
+       "root_threshold_met",
+       "state_persisted"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "strict_encoding_signature_single_padding",
+   "anchor": {
+    "threshold": 2,
+    "keyids": [
+     "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+     "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+     "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+    ]
+   },
+   "steps": [
+    {
+     "envelope": {
+      "signed": {
+       "type": "aml-trust-config/1",
+       "version": 1,
+       "issued_at": "2026-01-01T00:00:00Z",
+       "expires_at": "2099-01-01T00:00:00Z",
+       "root": {
+        "threshold": 2,
+        "keyids": [
+         "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+         "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+         "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+        ]
+       },
+       "trusted_keys": [
+        {
+         "keyid": "9464cba25896dd269c8afc74e081f69c4e7b1b05e1bbf348e4656aaa5e12127b",
+         "roles": [
+          "receipt"
+         ]
+        },
+        {
+         "keyid": "8d69e78c9c91009e030cce54178dbf44efcef958a0e72aaf471c58df0ce0309f",
+         "roles": [
+          "policy-pack"
+         ]
+        }
+       ],
+       "revoked_keys": [],
+       "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "registry_sha256": null,
+       "profile_sha256": null,
+       "require_single_use": false
+      },
+      "signatures": [
+       {
+        "keyid": "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAEvDfzAreb59HWapUZ67ddawEyTJAoYYjjcKwz56NyLM=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "gSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCA="
+       },
+       {
+        "keyid": "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIVblLK327zYTKW0NoL8gjYum66BtGn2QcN9z55yPX0Q=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "vkHSpkx3j5awJ6ww62E7QDwfvgSscOi0eFxso2AekKP3RfEXbX4T452vV2DkGVrxOcumPxf9k0KBqFGj5E1kBw=="
+       }
+      ]
+     },
+     "expect": {
+      "trusted": false,
+      "reasons": [
+       "root_threshold_met",
+       "state_persisted"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "strict_encoding_signature_noncanonical_trailing_bits",
+   "anchor": {
+    "threshold": 2,
+    "keyids": [
+     "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+     "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+     "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+    ]
+   },
+   "steps": [
+    {
+     "envelope": {
+      "signed": {
+       "type": "aml-trust-config/1",
+       "version": 1,
+       "issued_at": "2026-01-01T00:00:00Z",
+       "expires_at": "2099-01-01T00:00:00Z",
+       "root": {
+        "threshold": 2,
+        "keyids": [
+         "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+         "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+         "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+        ]
+       },
+       "trusted_keys": [
+        {
+         "keyid": "9464cba25896dd269c8afc74e081f69c4e7b1b05e1bbf348e4656aaa5e12127b",
+         "roles": [
+          "receipt"
+         ]
+        },
+        {
+         "keyid": "8d69e78c9c91009e030cce54178dbf44efcef958a0e72aaf471c58df0ce0309f",
+         "roles": [
+          "policy-pack"
+         ]
+        }
+       ],
+       "revoked_keys": [],
+       "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "registry_sha256": null,
+       "profile_sha256": null,
+       "require_single_use": false
+      },
+      "signatures": [
+       {
+        "keyid": "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAEvDfzAreb59HWapUZ67ddawEyTJAoYYjjcKwz56NyLM=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "gSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCB=="
+       },
+       {
+        "keyid": "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIVblLK327zYTKW0NoL8gjYum66BtGn2QcN9z55yPX0Q=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "vkHSpkx3j5awJ6ww62E7QDwfvgSscOi0eFxso2AekKP3RfEXbX4T452vV2DkGVrxOcumPxf9k0KBqFGj5E1kBw=="
+       }
+      ]
+     },
+     "expect": {
+      "trusted": false,
+      "reasons": [
+       "root_threshold_met",
+       "state_persisted"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "strict_encoding_signature_mixed_base64_base64url",
+   "anchor": {
+    "threshold": 2,
+    "keyids": [
+     "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+     "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+     "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+    ]
+   },
+   "steps": [
+    {
+     "envelope": {
+      "signed": {
+       "type": "aml-trust-config/1",
+       "version": 1,
+       "issued_at": "2026-01-01T00:00:00Z",
+       "expires_at": "2099-01-01T00:00:00Z",
+       "root": {
+        "threshold": 2,
+        "keyids": [
+         "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+         "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+         "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+        ]
+       },
+       "trusted_keys": [
+        {
+         "keyid": "9464cba25896dd269c8afc74e081f69c4e7b1b05e1bbf348e4656aaa5e12127b",
+         "roles": [
+          "receipt"
+         ]
+        },
+        {
+         "keyid": "8d69e78c9c91009e030cce54178dbf44efcef958a0e72aaf471c58df0ce0309f",
+         "roles": [
+          "policy-pack"
+         ]
+        }
+       ],
+       "revoked_keys": [],
+       "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "registry_sha256": null,
+       "profile_sha256": null,
+       "require_single_use": false
+      },
+      "signatures": [
+       {
+        "keyid": "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAEvDfzAreb59HWapUZ67ddawEyTJAoYYjjcKwz56NyLM=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "gSg_p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCA=="
+       },
+       {
+        "keyid": "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIVblLK327zYTKW0NoL8gjYum66BtGn2QcN9z55yPX0Q=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "vkHSpkx3j5awJ6ww62E7QDwfvgSscOi0eFxso2AekKP3RfEXbX4T452vV2DkGVrxOcumPxf9k0KBqFGj5E1kBw=="
+       }
+      ]
+     },
+     "expect": {
+      "trusted": false,
+      "reasons": [
+       "root_threshold_met",
+       "state_persisted"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "strict_encoding_signature_empty",
+   "anchor": {
+    "threshold": 2,
+    "keyids": [
+     "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+     "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+     "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+    ]
+   },
+   "steps": [
+    {
+     "envelope": {
+      "signed": {
+       "type": "aml-trust-config/1",
+       "version": 1,
+       "issued_at": "2026-01-01T00:00:00Z",
+       "expires_at": "2099-01-01T00:00:00Z",
+       "root": {
+        "threshold": 2,
+        "keyids": [
+         "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+         "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+         "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+        ]
+       },
+       "trusted_keys": [
+        {
+         "keyid": "9464cba25896dd269c8afc74e081f69c4e7b1b05e1bbf348e4656aaa5e12127b",
+         "roles": [
+          "receipt"
+         ]
+        },
+        {
+         "keyid": "8d69e78c9c91009e030cce54178dbf44efcef958a0e72aaf471c58df0ce0309f",
+         "roles": [
+          "policy-pack"
+         ]
+        }
+       ],
+       "revoked_keys": [],
+       "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "registry_sha256": null,
+       "profile_sha256": null,
+       "require_single_use": false
+      },
+      "signatures": [
+       {
+        "keyid": "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAEvDfzAreb59HWapUZ67ddawEyTJAoYYjjcKwz56NyLM=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": ""
+       },
+       {
+        "keyid": "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIVblLK327zYTKW0NoL8gjYum66BtGn2QcN9z55yPX0Q=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "vkHSpkx3j5awJ6ww62E7QDwfvgSscOi0eFxso2AekKP3RfEXbX4T452vV2DkGVrxOcumPxf9k0KBqFGj5E1kBw=="
+       }
+      ]
+     },
+     "expect": {
+      "trusted": false,
+      "reasons": [
+       "root_threshold_met",
+       "state_persisted"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "strict_encoding_signature_oversized",
+   "anchor": {
+    "threshold": 2,
+    "keyids": [
+     "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+     "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+     "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+    ]
+   },
+   "steps": [
+    {
+     "envelope": {
+      "signed": {
+       "type": "aml-trust-config/1",
+       "version": 1,
+       "issued_at": "2026-01-01T00:00:00Z",
+       "expires_at": "2099-01-01T00:00:00Z",
+       "root": {
+        "threshold": 2,
+        "keyids": [
+         "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+         "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+         "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+        ]
+       },
+       "trusted_keys": [
+        {
+         "keyid": "9464cba25896dd269c8afc74e081f69c4e7b1b05e1bbf348e4656aaa5e12127b",
+         "roles": [
+          "receipt"
+         ]
+        },
+        {
+         "keyid": "8d69e78c9c91009e030cce54178dbf44efcef958a0e72aaf471c58df0ce0309f",
+         "roles": [
+          "policy-pack"
+         ]
+        }
+       ],
+       "revoked_keys": [],
+       "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "registry_sha256": null,
+       "profile_sha256": null,
+       "require_single_use": false
+      },
+      "signatures": [
+       {
+        "keyid": "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAEvDfzAreb59HWapUZ67ddawEyTJAoYYjjcKwz56NyLM=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "gSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCAgSg/p3RoVicf4VuuX578WBCxgXEViQ15QdbpetlUPvsLAKJUT5IWr23s/v4jq3LgPkQv4O85ULRG6erjpoRaCA=="
+       },
+       {
+        "keyid": "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIVblLK327zYTKW0NoL8gjYum66BtGn2QcN9z55yPX0Q=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "vkHSpkx3j5awJ6ww62E7QDwfvgSscOi0eFxso2AekKP3RfEXbX4T452vV2DkGVrxOcumPxf9k0KBqFGj5E1kBw=="
+       }
+      ]
+     },
+     "expect": {
+      "trusted": false,
+      "reasons": [
+       "root_threshold_met",
+       "state_persisted"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "strict_encoding_signature_not_string",
+   "anchor": {
+    "threshold": 2,
+    "keyids": [
+     "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+     "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+     "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+    ]
+   },
+   "steps": [
+    {
+     "envelope": {
+      "signed": {
+       "type": "aml-trust-config/1",
+       "version": 1,
+       "issued_at": "2026-01-01T00:00:00Z",
+       "expires_at": "2099-01-01T00:00:00Z",
+       "root": {
+        "threshold": 2,
+        "keyids": [
+         "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+         "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+         "ea064707ab8962800fc9420a6d2179837b86f3fb4c32fe45c3e4e7e1434eb5b1"
+        ]
+       },
+       "trusted_keys": [
+        {
+         "keyid": "9464cba25896dd269c8afc74e081f69c4e7b1b05e1bbf348e4656aaa5e12127b",
+         "roles": [
+          "receipt"
+         ]
+        },
+        {
+         "keyid": "8d69e78c9c91009e030cce54178dbf44efcef958a0e72aaf471c58df0ce0309f",
+         "roles": [
+          "policy-pack"
+         ]
+        }
+       ],
+       "revoked_keys": [],
+       "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "registry_sha256": null,
+       "profile_sha256": null,
+       "require_single_use": false
+      },
+      "signatures": [
+       {
+        "keyid": "41a1345a226b61a2e5c1e64478d8955f30dc12022e7f9c3853e653b7bc80d655",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAEvDfzAreb59HWapUZ67ddawEyTJAoYYjjcKwz56NyLM=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": 7
+       },
+       {
+        "keyid": "a2261e02e600bcb33e9e81a91e80293b2baef697b6d14970acbf3fadd8c2f44e",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIVblLK327zYTKW0NoL8gjYum66BtGn2QcN9z55yPX0Q=\n-----END PUBLIC KEY-----\n",
+        "signature_base64": "vkHSpkx3j5awJ6ww62E7QDwfvgSscOi0eFxso2AekKP3RfEXbX4T452vV2DkGVrxOcumPxf9k0KBqFGj5E1kBw=="
+       }
+      ]
+     },
+     "expect": {
+      "trusted": false,
+      "reasons": [
+       "root_threshold_met",
+       "state_persisted"
+      ]
+     }
+    }
+   ]
+  },
+  {
    "name": "strict_encoding_pem_crlf",
    "anchor": {
     "threshold": 2,

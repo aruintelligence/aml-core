@@ -27,6 +27,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
+import { ED25519_SIGNATURE_BASE64 } from "../protocol/strictBase64.js";
 
 export const TRUST_CONFIG_TYPE = "aml-trust-config/1";
 export const TRUST_ANCHOR_TYPE = "aml-trust-anchor/1";
@@ -58,7 +59,7 @@ export function isIssuedTrustDecision(decision) { return Boolean(decision) && ty
 // conformance/trust-config/). PEM: canonical SPKI armor, 64-column base64.
 // Signature: canonical 64-byte Ed25519 base64. Keys: Ed25519 only.
 const PEM = /^-----BEGIN PUBLIC KEY-----\n(?:[A-Za-z0-9+/]{64}\n)*[A-Za-z0-9+/]{1,63}={0,2}\n-----END PUBLIC KEY-----\n?$/;
-const SIG_B64 = /^[A-Za-z0-9+/]{85}[AQgw]==$/;
+const SIG_B64 = ED25519_SIGNATURE_BASE64;
 export function keyFingerprint(publicKeyPem) {
   if (typeof publicKeyPem !== "string" || !PEM.test(publicKeyPem)) throw new Error("AML_TRUST_KEY_PEM_INVALID");
   const key = crypto.createPublicKey(publicKeyPem);

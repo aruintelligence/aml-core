@@ -2,6 +2,7 @@
 // ĀML v1.3 — signed, data-only policy packs.
 
 import crypto from "node:crypto";
+import { requireSignatureBase64 } from "../protocol/strictBase64.js";
 import { resolvePolicy } from "./policyEngine.js";
 
 function stableStringify(value) {
@@ -106,7 +107,7 @@ export function verifySignedPolicyPack(signedPack) {
     const expectedFingerprint = current ? sha256Bytes(publicDer) : sha256(publicDer);
     const publicKeyFingerprintValid = expectedFingerprint === attestation.public_key_sha256;
     const payload = current ? Buffer.from(stableStringify(policyPackAttestationMaterial(expectedPackHash, attestation)), "utf8") : Buffer.from(stableStringify(normalized), "utf8");
-    const signatureValid = crypto.verify(null, payload, publicKey, Buffer.from(attestation.signature_base64, "base64"));
+    const signatureValid = crypto.verify(null, payload, publicKey, requireSignatureBase64(attestation.signature_base64));
     const verified = signatureValid && publicKeyFingerprintValid && hashValid;
     return {
       verified,

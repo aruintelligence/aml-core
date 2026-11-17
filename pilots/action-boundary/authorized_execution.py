@@ -83,7 +83,8 @@ def _verify_signature(public_key_bytes, statement, signature):
         signature_bytes = base64.b64decode(signature, validate=True)
     except (ValueError, TypeError) as error:
         raise ValueError("invalid_authorization_signature") from error
-    if len(signature_bytes) != 64:
+    # Canonical base64 only: validate=True still accepts non-zero unused bits.
+    if len(signature_bytes) != 64 or base64.b64encode(signature_bytes).decode("ascii") != signature:
         raise ValueError("invalid_authorization_signature")
     with tempfile.TemporaryDirectory() as directory:
         message = Path(directory) / "message"

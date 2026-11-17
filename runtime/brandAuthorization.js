@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
+import { decodeSignatureBase64 } from "../protocol/strictBase64.js";
 import { isRevoked } from "./revocationRegistry.js";
 import { parseBrandTime } from "./brandTime.js";
 
@@ -89,7 +90,9 @@ export function verifyBrandAuthorization(credential, { now = null, revocation_re
     const publicKey = crypto.createPublicKey(public_key_pem);
     const fingerprint = sha256(publicKey.export({ type: "spki", format: "der" }));
     if (fingerprint !== public_key_sha256) return { valid: false, reason: "public_key_fingerprint_mismatch" };
-    const signatureValid = crypto.verify(null, Buffer.from(canonical), publicKey, Buffer.from(signature_base64, "base64"));
+    const signature = decodeSignatureBase64(signature_base64);
+    if (signature === null) return { valid: false, reason: "signature_invalid" };
+    const signatureValid = crypto.verify(null, Buffer.from(canonical), publicKey, signature);
     if (!signatureValid) return { valid: false, reason: "signature_invalid" };
   } catch {
     return { valid: false, reason: "invalid_key_or_signature" };

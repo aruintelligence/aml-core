@@ -27,6 +27,13 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 - `independent/python/trust_config.py` and `independent/go/trustconfig.go` use the standard library only. `conformance/trust-config/vectors.json` and `test/trust-config-parity.test.js` require identical JS/Python/Go results for every case, including denials.
 - A deterministic concurrent-update test (via an injected `onBeforePersist` seam) covers a newer version landing between the checks and the persist step.
 
+### Breaking: one accepted spelling for every signature
+
+- Every JavaScript signature verifier now decodes signatures through one shared strict decoder (`protocol/strictBase64.js`): canonical, padded, standard-alphabet base64 only, the exact output of `Buffer.toString("base64")`. Covers capability tokens, threshold authorizations, trust configs, policy packs, brand authorizations, trust delegations, audit checkpoints, governance transcripts, disclosures and policy transitions, release provenance, build and meaning-manifest attestations, semantic release proofs and endorsements, the external witness tool, and the browser brand and quorum verifiers.
+- The Python pilot verifiers and the Go witness verifier apply the same rule (re-encoding the decoded bytes must reproduce the input), so JavaScript, Python and Go accept the same strings.
+- Signatures produced by ĀML signers are already canonical and keep verifying; every signature committed in this repository was checked. A signature written by another producer with whitespace, line breaks, missing or extra padding, base64url characters or non-zero unused bits is now refused: re-encode the decoded bytes with a standard base64 encoder (no re-signing needed).
+- `conformance/trust-config/vectors.json` adds shared denial cases for these encodings.
+
 ### Breaking: verifier commands exit 0 only on an explicit authorization decision
 
 - A successful verification command no longer implies authorization from `valid` alone. Verifier and validator commands now exit `0` only when `authorized === true` and the `aml-authorization-decision/1` object agrees; a consistent but unauthorized result exits `3`. Other non-zero codes keep their meaning. Reports include `valid`, `authorized`, `authorization.reasons` and `remaining_trust_assumptions`.

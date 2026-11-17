@@ -103,7 +103,8 @@ check. `test/trust-config-parity.test.js` requires JavaScript, Python and Go to
 produce identical results for every step.
 
 Encodings are strict in every language: Ed25519 keys only, in canonical 44-byte
-SPKI PEM armor; signatures in canonical padded base64; calendar-exact UTC
+SPKI PEM armor; signatures in canonical padded base64 (one accepted spelling,
+the same rule as every other ĀML signature verifier: `protocol/strictBase64.js`); calendar-exact UTC
 timestamps (`YYYY-MM-DDTHH:MM:SS[.sss]Z`, year 1970 or later); duplicate JSON
 keys refused.
 

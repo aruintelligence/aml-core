@@ -21,7 +21,7 @@ export function verifyProviderStatus(envelope, { publicKey, operationId, request
         envelope.operation_id !== operationId || !DIGEST.test(requestSha256) ||
         typeof destination !== "string" || !destination ||
         typeof envelope.signature !== "string" ||
-        !/^[A-Za-z0-9+/]{86}==$/.test(envelope.signature)) return "REJECTED";
+        !/^[A-Za-z0-9+/]{85}[AQgw]==$/.test(envelope.signature)) return "REJECTED";
     const statement = { protocol: envelope.protocol, issuer: envelope.issuer,
       operation_id: envelope.operation_id,
       ...(version === 2 ? { challenge: envelope.challenge } : {}), record: envelope.record };
