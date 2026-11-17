@@ -1,0 +1,30 @@
+name: AML Python Public Verifier Key Usage
+
+on:
+  pull_request:
+    paths:
+      - "independent/python/verify_witness.py"
+      - "independent/python/verify_signed_quorum.py"
+      - "test/test_public_verifier_key_usage.py"
+      - ".github/workflows/python-public-key-usage.yml"
+  push:
+    branches: [main]
+    paths:
+      - "independent/python/verify_witness.py"
+      - "independent/python/verify_signed_quorum.py"
+      - "test/test_public_verifier_key_usage.py"
+      - ".github/workflows/python-public-key-usage.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  public-key-usage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Reject signing-capable public verification keys
+        run: python -m unittest discover -s test -p 'test_public_verifier_key_usage.py' -v
