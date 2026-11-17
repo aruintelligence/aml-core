@@ -29,6 +29,7 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 - `POST /v1/deployment/batch` adds per-item `authorized` / `authorization` and batch-level `authorized` (true only for a non-empty batch where every item is AML-allowed under a server-locked policy), `authorized_count` and `decision_use`. `effective_allowed` (which request-chosen shadow mode can set) is never permission.
 - CodeQL data-flow queries now follow `Map` set/get, `Reflect.get`, `getattr` and Go `reflect` field reads with constant names, check conditional statuses per success branch and guard conditions per operand (authorization must be an `&&`/`and` conjunct), and credit dominating JavaScript authorization guards. New workflow `codeql-authorization-dataflow.yml` runs the seeded corpus and gates repository alerts on `audit/AML_AUTHZ_DATAFLOW_REVIEW.json` (no suppressions).
 - CI: `aml verify` of the freshly compiled bundle now passes `--expected-sha256` with the manifest digest captured by the compile step, and `scripts/check-ci-bundle-pin.mjs` proves unpinned, wrongly pinned, diagnostic and tampered bundles are not authorized.
+- Python evidence verifiers import `cryptography` only when checking Ed25519 signatures, so `authorization_cli.py policy-sha256` works without that package. A missing `cryptography` package on a signature path fails closed (non-zero, not authorized) with a clear error. Pilot 003 CI installs `cryptography>=42,<51`, matching the Python wire-runtime workflow.
 
 ### Repository hygiene
 

@@ -14,16 +14,34 @@ import re
 import sys
 from decimal import Decimal
 
-from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
-
 BOUNDARY = "Project-authored declared inputs. Integrity is not authenticity, independent validation, or proof of human impact."
 FIELDS = {"protocol", "canonicalization", "claim_boundary", "summary", "receipt", "digests"}
 SIGNATURE_FIELDS = {"protocol", "version", "algorithm", "signer", "signed_at", "public_key_pem", "public_key_sha256", "signature_base64"}
 FINGERPRINT = re.compile(r"[a-f0-9]{64}\Z")
 UTC = re.compile(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z\Z")
 MAX_SAFE_INTEGER = 2**53 - 1
+
+
+class CryptographyUnavailable(ValueError):
+    """Ed25519 verification was required, but the cryptography package is not installed."""
+
+
+def load_ed25519():
+    """Import cryptography only when a signature has to be checked.
+
+    policy-sha256 and other canonical-JSON helpers must work without this
+    package. Signature paths raise CryptographyUnavailable rather than
+    treating a missing library as a failed (or successful) signature.
+    """
+    try:
+        from cryptography.exceptions import InvalidSignature
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+    except ImportError as error:
+        raise CryptographyUnavailable(
+            "cryptography package is required to verify Ed25519 signatures; install 'cryptography>=42,<51'"
+        ) from error
+    return InvalidSignature, serialization, Ed25519PublicKey
 
 
 def unique_pairs(pairs):
@@ -177,6 +195,7 @@ def verify_signature(receipt, policy):
         (signature.get("signer") is not None and not isinstance(signature["signer"], str)) or
         not isinstance(signature.get("signed_at"), str) or not UTC.fullmatch(signature["signed_at"])):
         return False
+    InvalidSignature, serialization, Ed25519PublicKey = load_ed25519()
     try:
         key = serialization.load_pem_public_key(signature["public_key_pem"].encode("utf-8"))
         if not isinstance(key, Ed25519PublicKey):
@@ -319,7 +338,7 @@ if __name__ == "__main__":
         policy = json.loads(pathlib.Path(argv[1]).read_text(encoding="utf-8"),
                             object_pairs_hook=unique_pairs, parse_constant=reject_constant, parse_int=parse_js_int) if len(argv) == 2 else None
         report = verify(capsule, policy)
-    except (ValueError, KeyError, TypeError, OSError, OverflowError, RecursionError) as error:
+    except (CryptographyUnavailable, ValueError, KeyError, TypeError, OSError, OverflowError, RecursionError) as error:
         report = {"protocol": "aml-evidence-capsule-python-report/1", "verified": False, "reason": str(error)}
     # Directive 010: without a trusted policy whose digest is pinned, a
     # verified capsule is consistent but never authorized (exit 3).
