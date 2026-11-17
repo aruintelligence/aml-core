@@ -22,7 +22,7 @@ import { explainCompilation } from "../compiler/explain.js";
 import { verifyBuildManifest } from "../compiler/verifyBuild.js";
 import { signBuildManifest, verifyBuildAttestation } from "../compiler/signature.js";
 import { listPolicies } from "../runtime/policyEngine.js";
-import { listPolicyProfiles } from "../runtime/policyProfiles.js";
+import { listPolicyProfiles, policyProfileSha256 } from "../runtime/policyProfiles.js";
 import { signPolicyPack, verifySignedPolicyPack } from "../runtime/policyPack.js";
 import { verifyAuditStream } from "../runtime/auditStream.js";
 import { enforceCumulativeAttentionBudget } from "../runtime/attentionLedger.js";
@@ -67,7 +67,9 @@ const TRUST_DENIALS = {
   trust_config_trusted: "AML_AUTHZ_TRUST_CONFIG_NOT_TRUSTED",
   single_use_consumed: "AML_AUTHZ_ALREADY_CONSUMED",
   single_use_store_present: "AML_AUTHZ_SINGLE_USE_STORE_REQUIRED",
-  policy_pinned: "AML_AUTHZ_POLICY_NOT_PINNED"
+  policy_pinned: "AML_AUTHZ_POLICY_NOT_PINNED",
+  profile_pinned: "AML_AUTHZ_PROFILE_NOT_PINNED",
+  caller_timestamp_absent: "AML_AUTHZ_CALLER_CLOCK_UNTRUSTED"
 };
 const TRUST_CONFIG_TRUST = ["a threshold of root keys was not stolen and the trust anchor on this host was not replaced",
   "the local clock is not earlier than it should be (it is checked against the persisted time floor, not an external source)"];
@@ -207,6 +209,7 @@ Usage:
   aml trust-init <state-dir> --threshold N --root-key-sha256 <k1,k2,k3>
   aml trust-sign <config-body.json> <root1.pem,root2.pem> [envelope.json]
   aml trust-verify --trust-config <envelope.json> [--trust-state <dir>]
+  aml profile-sha256 <profile>    digest for a trust config's profile_sha256 (enforced by deploy in trust-config mode)
 
   Verifier options (verify, verify-receipt, replay-receipt, verify-signed-receipt, verify-policy-pack,
   verify-attestation, verify-audit, verify-brand-authorization):
@@ -419,11 +422,29 @@ try {
     // is authorization. --require-effective-allow is now the default and kept
     // as a no-op; --diagnostic-only exits 0 for any completed evaluation.
     const evaluated = !result.evaluation_error;
-    const { output, exitCode } = decideCommand(result, {
+    const deployConditions = { evaluation_ok: evaluated, policy_allowed: evaluated && result.aml_allowed === true };
+    const deployRequired = ["evaluation_ok", "policy_allowed"];
+    const trust = trustMode();
+    if (trust !== null) {
+      // In trust-config mode the profile is not the invoker's choice: its
+      // digest must equal the config's profile_sha256 (a null pin denies),
+      // and a caller-chosen evaluation time is refused.
+      let profileDigest = null;
+      try { profileDigest = policyProfileSha256(profile); } catch { profileDigest = null; }
+      deployConditions.trust_config_trusted = trust.decision?.trusted === true;
+      deployConditions.profile_pinned = trustConfigPinMatches(trust.decision, "profile_sha256", profileDigest);
+      deployConditions.caller_timestamp_absent = timestamp === undefined || timestamp === null;
+      deployRequired.push("trust_config_trusted", "profile_pinned", "caller_timestamp_absent");
+    }
+    const deployArtifact = createHash("sha256").update(JSON.stringify({ intent, profile, mode, failureMode, context })).digest("hex");
+    const deployOnce = singleUse(trust, deployConditions, deployArtifact);
+    if (deployOnce.required) { deployConditions[deployOnce.name] = deployOnce.ok; deployRequired.push(deployOnce.name); }
+    const { output, exitCode } = decideCommand(trust ? { ...result, trust: trustSummary(trust) } : result, {
       consistent: evaluated,
-      conditions: { evaluation_ok: evaluated, policy_allowed: evaluated && result.aml_allowed === true },
-      required: ["evaluation_ok", "policy_allowed"], denials: VERIFY_DENIALS,
-      trust: ["the AML policy profile and context supplied to the evaluation are the intended ones"],
+      conditions: deployConditions,
+      required: deployRequired, denials: { ...VERIFY_DENIALS, ...TRUST_DENIALS },
+      trust: ["the AML policy profile and context supplied to the evaluation are the intended ones",
+        ...(trust ? TRUST_CONFIG_TRUST : [])],
       diagnosticOnly: hasFlag(AML_DIAGNOSTIC_ONLY_FLAG), invalidCode: 2
     });
     console.log(JSON.stringify(output, null, 2));
@@ -700,6 +721,11 @@ try {
     console.log(`Errors: ${errors.length}`);
     console.log(`Warnings: ${warnings.length}`);
     process.exit(errors.length > 0 ? 1 : 0);
+  }
+  if (command === "profile-sha256") {
+    // Digest to place in a trust config's profile_sha256.
+    console.log(policyProfileSha256(args[1] || "human_first"));
+    process.exit(0);
   }
   if (command === "trust-init") {
     // Enroll a trust state directory with the out-of-band root anchor.

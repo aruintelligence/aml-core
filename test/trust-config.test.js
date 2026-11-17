@@ -209,3 +209,32 @@ test("trust config: concurrent acceptance of v2 and v3 by separate processes nev
   assert.equal(late.trusted, false);
   assert.ok(late.reasons.includes("not_rolled_back"));
 });
+
+test("trust config: a newer version landing between the pre-checks and the write makes the older one untrusted (deterministic race)", t => {
+  const { roots, stateDir } = setup(t);
+  const v2 = signTrustConfig(configBody(roots, { version: 2 }), [roots[0].pem, roots[1].pem]);
+  const v3 = signTrustConfig(configBody(roots, { version: 3 }), [roots[0].pem, roots[1].pem]);
+  let raced = null;
+  const d = evaluateTrustConfig(v2, { stateDir, onBeforePersist: () => { raced = evaluateTrustConfig(v3, { stateDir }); } });
+  assert.equal(raced.trusted, true, "the concurrent writer's newer version is accepted");
+  assert.equal(d.trusted, false, "the older version must not report trusted after a newer one landed");
+  assert.ok(d.reasons.includes("not_rolled_back"));
+  assert.equal(readTrustState(stateDir).latest.version, 3);
+  // Same race on an already-recorded version (re-presentation path).
+  const again = evaluateTrustConfig(v3, { stateDir, onBeforePersist: () => {
+    evaluateTrustConfig(signTrustConfig(configBody(roots, { version: 4 }), [roots[0].pem, roots[1].pem]), { stateDir }); } });
+  assert.equal(again.trusted, false);
+  assert.ok(again.reasons.includes("not_rolled_back"));
+});
+
+test("trust config: strict encodings (calendar-exact times, canonical signature base64, Ed25519 PEM only)", t => {
+  const { roots, stateDir } = setup(t);
+  assert.equal(validateTrustConfigBody(configBody(roots, { issued_at: "2026-02-30T00:00:00Z" })), "time_window");
+  assert.equal(validateTrustConfigBody(configBody(roots, { issued_at: "2026-01-01T24:00:00Z" })), "time_window");
+  const env = signTrustConfig(configBody(roots), [roots[0].pem, roots[1].pem]);
+  const padded = { ...env, signatures: env.signatures.map(s => ({ ...s, signature_base64: `${s.signature_base64}\n` })) };
+  assert.equal(evaluateTrustConfig(padded, { stateDir }).checks.root_threshold_met, false);
+  const crlf = { ...env, signatures: env.signatures.map(s => ({ ...s, public_key_pem: s.public_key_pem.replace(/\n/g, "\r\n") })) };
+  assert.equal(evaluateTrustConfig(crlf, { stateDir }).checks.root_threshold_met, false);
+  assert.equal(evaluateTrustConfig(env, { stateDir }).trusted, true);
+});

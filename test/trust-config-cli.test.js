@@ -187,3 +187,33 @@ test("trust CLI: verify-policy-pack needs the policy-pack role and, when set, th
   assert.equal(roleMismatch.status, 3);
   assert.ok(roleMismatch.json.authorization.reasons.includes("AML_AUTHZ_SIGNING_KEY_NOT_PINNED"));
 });
+
+test("trust CLI: deploy in trust-config mode requires the config's profile_sha256 and refuses a caller timestamp", t => {
+  const w = world(t);
+  const pinned = aml(["profile-sha256", "human_first"]).stdout.trim();
+  assert.match(pinned, /^[a-f0-9]{64}$/);
+  const intent = path.resolve(ROOT, "examples/intent-checkout.json");
+  // Not enrolled: unchanged behaviour.
+  assert.equal(aml(["deploy", intent, "--mode", "enforce"]).status, 0);
+  // Enrolled, no config: denied.
+  assert.equal(aml(["deploy", intent, "--mode", "enforce"], w.env).status, 3);
+  const cfg = w.config({ version: 1, profile_sha256: pinned });
+  const ok = aml(["deploy", intent, "--mode", "enforce", "--profile", "human_first", "--trust-config", cfg], w.env);
+  assert.equal(ok.status, 0, ok.stdout);
+  assert.equal(ok.json.authorized, true);
+  // The invoker picks a different (weaker) profile: not the pinned one.
+  const other = aml(["deploy", intent, "--mode", "enforce", "--profile", "calm_default", "--trust-config", cfg], w.env);
+  assert.equal(other.status, 3);
+  assert.deepEqual(other.json.authorization.reasons, ["AML_AUTHZ_PROFILE_NOT_PINNED"]);
+  const ts = aml(["deploy", intent, "--mode", "enforce", "--trust-config", cfg, "--timestamp", iso(0)], w.env);
+  assert.equal(ts.status, 3);
+  assert.deepEqual(ts.json.authorization.reasons, ["AML_AUTHZ_CALLER_CLOCK_UNTRUSTED"]);
+  // A config without a profile pin denies deploy (null pins nothing, so nothing is pinned).
+  const noPin = w.config({ version: 2 });
+  assert.deepEqual(aml(["deploy", intent, "--mode", "enforce", "--trust-config", noPin], w.env).json.authorization.reasons, ["AML_AUTHZ_PROFILE_NOT_PINNED"]);
+  // Single use: the same deploy decision authorizes once per store.
+  const cfg3 = w.config({ version: 3, profile_sha256: pinned });
+  const store = path.join(w.dir, "deploy-store");
+  assert.equal(aml(["deploy", intent, "--mode", "enforce", "--trust-config", cfg3, "--single-use-store", store], w.env).status, 0);
+  assert.equal(aml(["deploy", intent, "--mode", "enforce", "--trust-config", cfg3, "--single-use-store", store], w.env).status, 3);
+});

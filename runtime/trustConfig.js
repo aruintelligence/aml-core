@@ -53,14 +53,29 @@ const issue = decision => {
 const stillUnexpired = decision => typeof decision.expires_at === "string" && Date.now() < Date.parse(decision.expires_at);
 export function isIssuedTrustDecision(decision) { return Boolean(decision) && typeof decision === "object" && ISSUED.has(decision); }
 
+// Strict encodings shared with the Python and Go verifiers so every
+// implementation accepts exactly the same bytes (conformance vectors in
+// conformance/trust-config/). PEM: canonical SPKI armor, 64-column base64.
+// Signature: canonical 64-byte Ed25519 base64. Keys: Ed25519 only.
+const PEM = /^-----BEGIN PUBLIC KEY-----\n(?:[A-Za-z0-9+/]{64}\n)*[A-Za-z0-9+/]{1,63}={0,2}\n-----END PUBLIC KEY-----\n?$/;
+const SIG_B64 = /^[A-Za-z0-9+/]{85}[AQgw]==$/;
 export function keyFingerprint(publicKeyPem) {
+  if (typeof publicKeyPem !== "string" || !PEM.test(publicKeyPem)) throw new Error("AML_TRUST_KEY_PEM_INVALID");
   const key = crypto.createPublicKey(publicKeyPem);
+  if (key.asymmetricKeyType !== "ed25519") throw new Error("AML_TRUST_KEY_NOT_ED25519");
   return crypto.createHash("sha256").update(key.export({ type: "spki", format: "der" })).digest("hex");
 }
 export function sha256Canonical(value) {
   return crypto.createHash("sha256").update(canonicalJSONStringify(value)).digest("hex");
 }
-const isIso = v => typeof v === "string" && ISO.test(v) && Number.isFinite(Date.parse(v));
+// Calendar-exact: Date.parse accepts 2026-02-30 and 24:00; these do not.
+const isIso = v => {
+  if (typeof v !== "string" || !ISO.test(v)) return false;
+  const [y, mo, d, h, mi, se] = [v.slice(0, 4), v.slice(5, 7), v.slice(8, 10), v.slice(11, 13), v.slice(14, 16), v.slice(17, 19)].map(Number);
+  const date = new Date(Date.UTC(y, mo - 1, d, h, mi, se));
+  return y >= 1970 && date.getUTCFullYear() === y && date.getUTCMonth() === mo - 1 && date.getUTCDate() === d
+    && date.getUTCHours() === h && date.getUTCMinutes() === mi && date.getUTCSeconds() === se;
+};
 const uniqueHexList = (v, { min = 0 } = {}) => Array.isArray(v) && v.length >= min && v.length <= MAX_KEYS
   && v.every(x => typeof x === "string" && HEX64.test(x)) && new Set(v).size === v.length;
 const optionalDigest = v => v === null || (typeof v === "string" && HEX64.test(v));
@@ -118,7 +133,8 @@ function countThreshold(envelope, root) {
   const good = new Set();
   for (const sig of envelope.signatures) {
     try {
-      if (!sig || typeof sig !== "object" || typeof sig.public_key_pem !== "string" || typeof sig.signature_base64 !== "string") continue;
+      if (!sig || typeof sig !== "object" || typeof sig.public_key_pem !== "string" || typeof sig.signature_base64 !== "string"
+        || !SIG_B64.test(sig.signature_base64)) continue;
       const id = keyFingerprint(sig.public_key_pem);
       if (id !== sig.keyid || !root.keyids.includes(id) || good.has(id)) continue;
       if (crypto.verify(null, message, crypto.createPublicKey(sig.public_key_pem), Buffer.from(sig.signature_base64, "base64"))) good.add(id);
@@ -198,7 +214,11 @@ const CHECKS = ["anchor_present", "state_readable", "envelope_well_formed", "roo
 // when every check passes, persist it (append-only) as the newest version.
 // `callerTime` is whatever time the caller tried to supply (env/flag); its
 // mere presence denies. There is deliberately no option to supply "now".
-export function evaluateTrustConfig(envelope, { stateDir, callerTime = null } = {}) {
+// `onBeforePersist` is a test seam: it runs after every pre-check passed and
+// before the record is written, so a test can deterministically land a newer
+// version in between. It cannot make a decision trusted: the post-write
+// re-read of the state on disk decides.
+export function evaluateTrustConfig(envelope, { stateDir, callerTime = null, onBeforePersist = null } = {}) {
   const checks = Object.fromEntries(CHECKS.map(name => [name, false]));
   const result = (extra = {}) => {
     const reasons = CHECKS.filter(name => checks[name] !== true);
@@ -230,6 +250,7 @@ export function evaluateTrustConfig(envelope, { stateDir, callerTime = null } = 
   // Persist before reporting trusted. Exclusive create: concurrent writers
   // can only add versions, never replace one.
   try {
+    if (typeof onBeforePersist === "function") onBeforePersist();
     if (!existing) {
       const revoked = [...new Set([...state.revoked, ...body.revoked_keys])].sort();
       const record = { type: TRUST_STATE_RECORD_TYPE, version: body.version, config_sha256: configSha256, root: body.root,
