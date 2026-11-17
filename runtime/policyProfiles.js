@@ -1,5 +1,7 @@
 // runtime/policyProfiles.js
 // ĀML v1.3 — user-owned and organization-owned policy profiles.
+import { createHash } from "node:crypto";
+import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 
 export const BUILTIN_POLICY_PROFILES = Object.freeze({
   calm_default: {
@@ -60,6 +62,13 @@ export function resolvePolicyProfile(profile = "calm_default") {
   }
 
   throw new Error("Invalid ĀML policy profile.");
+}
+
+// Digest a trust config pins as profile_sha256: the enforcement content of a
+// resolved profile (its id and ordered policy list), not its description.
+export function policyProfileSha256(profile) {
+  const resolved = resolvePolicyProfile(profile);
+  return createHash("sha256").update(canonicalJSONStringify({ id: resolved.id, policies: resolved.policies })).digest("hex");
 }
 
 export function listPolicyProfiles() {

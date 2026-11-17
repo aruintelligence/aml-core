@@ -1,0 +1,9 @@
+{
+  "protocol": "aml-security-baseline-verification/1",
+  "valid": true,
+  "package": "aml-core",
+  "runtime_dependency_count": 0,
+  "codeql_required": true,
+  "security_policy_required": true,
+  "claim_boundary": "Project-controlled security baseline verification; not an external audit, certification, or vulnerability-free claim."
+}

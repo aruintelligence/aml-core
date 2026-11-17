@@ -11,8 +11,11 @@ node scripts/evidence-repair-record.mjs verify new-repair-record.json new-share-
 node scripts/evidence-migration.mjs recover recovered-handoff.json trusted-policy.json recovered-v1.json
 python3 independent/python/recover_evidence_shards.py new-share-directory/share-0.json new-share-directory/share-2.json trusted-policy.json recovered-handoff-python.json
 python3 independent/python/repair_evidence_share.py new-share-directory/share-0.json new-share-directory/share-2.json trusted-policy.json replacement-share-1-python.json
-python3 independent/python/evidence_repair_record.py verify new-repair-record.json new-share-directory/share-0.json new-share-directory/share-2.json replacement-share-1.json trusted-policy.json
+python3 independent/python/evidence_repair_record.py verify new-repair-record.json new-share-directory/share-0.json new-share-directory/share-2.json replacement-share-1.json trusted-policy.json --expected-policy-sha256 "$POLICY_SHA256"
 ```
+
+Directive 010: exit 0 needs `--expected-policy-sha256 <sha256 of the canonical trusted policy>` (compute it once from your own trusted policy with `python3 independent/python/authorization_cli.py policy-sha256 trusted-policy.json`). Verified without the pin exits 3; `--diagnostic-only` exits 0 with `authorized: false` and is never permission.
+
 
 The create command refuses an existing directory. Recovery accepts two or three share paths and writes only to a new destination. It tries all valid distinct pairs when three are supplied, so one damaged file can be ignored. If no pair reconstructs a handoff that verifies under the caller's trust policy, recovery fails. Preserve the original v1 archive, the handoff, and external trust material as well as the shares.
 

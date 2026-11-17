@@ -10,6 +10,13 @@ import { createEvidenceCapsule } from "../runtime/evidenceCapsule.js";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 import { resolvePolicyProfile } from "../runtime/policyProfiles.js";
 
+// Directive 010: the relying party pins the digest of its own trusted policy.
+const policyPinOf = file => {
+  const out = spawnSync("python3", [path.resolve("independent/python/authorization_cli.py"), "policy-sha256", file], { encoding: "utf8" });
+  if (out.status !== 0) throw new Error(`policy pin: ${out.stderr}`);
+  return out.stdout.trim();
+};
+
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-locked-http-python-"));
 const captureDir = path.join(directory, "capture");
 const verifier = path.resolve("independent/python/verify_http_exchange.py");
@@ -47,10 +54,20 @@ try {
     mutate(sample, policy);
     const inputs = [sample.exchange, sample.capsule, sample.expected, policy]
       .map((value, index) => save(`${name}-${index}.json`, value));
-    const result = spawnSync("python3", [verifier, ...inputs], { encoding: "utf8", env: pythonEnv });
+    const result = spawnSync("python3", [verifier, ...inputs, "--expected-policy-sha256", policyPinOf(inputs[3])], { encoding: "utf8", env: pythonEnv });
     if (result.error) throw result.error;
     const report = JSON.parse(result.stdout);
     assert.equal(result.status, status === "blocked" ? 1 : 0, `${name}: ${result.stderr} ${result.stdout}`);
+    assert.equal(report.authorized, status !== "blocked", name);
+    // Directive 010: the same verified exchange without the policy pin exits 3.
+    if (status !== "blocked") {
+      const unpinned = spawnSync("python3", [verifier, ...inputs], { encoding: "utf8", env: pythonEnv });
+      assert.equal(unpinned.status, 3, `${name} unpinned: ${unpinned.stdout}`);
+      assert.equal(JSON.parse(unpinned.stdout).authorized, false, name);
+      const diagnostic = spawnSync("python3", [verifier, ...inputs, "--diagnostic-only"], { encoding: "utf8", env: pythonEnv });
+      assert.equal(diagnostic.status, 0, name);
+      assert.equal(JSON.parse(diagnostic.stdout).decision_use, "NOT AN AUTHORIZATION DECISION", name);
+    }
     assert.equal(report.status, status, name);
     assert.equal(report.reason, reason, name);
     assert.equal(report.verified, status !== "blocked", name);

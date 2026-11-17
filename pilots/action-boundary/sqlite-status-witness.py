@@ -5,6 +5,7 @@ import base64
 import json
 import re
 import sqlite3
+from sqlite_path import sqlite_file_uri
 import subprocess
 import sys
 import tempfile
@@ -26,7 +27,7 @@ def unique_pairs(pairs):
 def main(database, action, public_key=None):
     if action == "read":
         operation = sys.stdin.read().strip()
-        con = sqlite3.connect("file:" + database + "?mode=ro", uri=True)
+        con = sqlite3.connect(sqlite_file_uri(database, "ro"), uri=True)
         try:
             rows = con.execute("SELECT envelope FROM snapshots WHERE operation_id=? ORDER BY sequence",
                                (operation,)).fetchall()

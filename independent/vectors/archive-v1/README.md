@@ -6,9 +6,13 @@ The Ed25519 seeds are deliberately public test data (`0x11`, `0x22`, and `0x33`,
 
 ```bash
 node scripts/check-evidence-archive-vector.mjs
+POLICY_SHA256="$(python3 independent/python/authorization_cli.py policy-sha256 independent/vectors/archive-v1/trusted-policy.json)"
 python3 independent/python/verify_evidence_archive.py \
   independent/vectors/archive-v1/archive.json \
-  independent/vectors/archive-v1/trusted-policy.json
+  independent/vectors/archive-v1/trusted-policy.json \
+  --expected-policy-sha256 "$POLICY_SHA256"
 ```
+
+> Directive 010: exit 0 requires `--expected-policy-sha256` equal to the canonical digest of the trusted policy, obtained out of band (shown here computed from the local copy for the vector); without it a verified result exits 3.
 
 To regenerate intentionally after a reviewed protocol or implementation change, run `node scripts/check-evidence-archive-vector.mjs --write` and review the byte diff and digest changes. The normal command fails on any drift. `archive_file_sha256` covers the complete UTF-8 `archive.json` file including its final newline. The archive root covers the canonical archive payload without its `root_sha3_512` field. Future formats should add a new vector directory instead of rewriting the v1 contract silently.

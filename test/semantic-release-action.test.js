@@ -26,7 +26,14 @@ test("Semantic Release Gate invokes the canonical release-proof verifier", () =>
   assert.match(action, /proof-file:/);
   assert.match(action, /scripts\/semantic-release-gate\.js/);
   assert.match(runner, /verifySemanticReleaseProof/);
-  assert.match(runner, /process\.exit\(result\.verified \? 0 : 1\)/);
+  // Directive 010: exit status comes from the explicit decision, never from
+  // `verified` alone, and the action passes inputs through env (no ${{ }} in run).
+  assert.doesNotMatch(runner, /process\.exit\(result\.verified \? 0 : 1\)/);
+  assert.match(runner, /process\.exit\(decision\.exitCode\)/);
+  assert.match(runner, /signing_key_pinned: verified && result\.public_key_fingerprint_valid === true &&/);
+  assert.match(action, /AML_TRUSTED_RELEASE_KEY_SHA256: \$\{\{ inputs\.trusted-key-sha256 \}\}/);
+  const runBody = action.slice(action.indexOf("      run: |"));
+  assert.equal(runBody.includes("${{"), false);
 });
 
 test("Semantic Release Gate exposes every documented trusted output through one verification step", () => {

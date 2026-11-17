@@ -27,7 +27,7 @@
     worker.addEventListener('message', (event) => {
       const report = event.data?.report;
       result.textContent = JSON.stringify(report, null, 2);
-      result.className = report?.valid ? 'ok' : 'bad';
+      result.className = event.data?.authorized === true ? 'ok' : 'bad';
     });
 
     document.getElementById('file').addEventListener('change', async (event) => {

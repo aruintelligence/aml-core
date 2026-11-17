@@ -6,14 +6,19 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
 jobs:
   verify-public-registry-binding:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "20"
           registry-url: https://registry.npmjs.org
@@ -22,7 +27,7 @@ jobs:
       - name: Verify public npm registry integrity and shasum against bound artifact
         run: node scripts/verify-public-npm-binding.mjs "${RUNNER_TEMP}/aml-artifact-provenance-binding.json"
       - name: Upload verified binding
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: aml-public-npm-binding
           path: ${{ runner.temp }}/aml-artifact-provenance-binding.json

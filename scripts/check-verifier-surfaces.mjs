@@ -29,7 +29,7 @@ const required = [
   ['independent/go/go.mod', ['module aml-independent-go-verifier']],
   ['independent/go/main.go', ['AML_GO_WITNESS_BUNDLE_VALID', 'ecdsa.Verify', 'sorted-json-v1']],
   ['independent/go/README.md', ['Go witness verifier', 'does not count as an independent external witness']],
-  ['independent/go/verify.sh', ['go run .']],
+  ['independent/go/verify.sh', ['go build -o "$BIN_DIR/aml-go-verifier" .', 'exit "$status"']],
   ['protocol/verifiers/go-reference.json', ['aru-aml-go-reference', 'Go standard library']],
   ['protocol/verifiers/go-reference-claim.json', ['aml-verifier-implementation-claim/1', 'external_to_aml_core']],
   ['protocol/verifiers/python-reference-claim.json', ['aml-verifier-implementation-claim/1', 'external_to_aml_core']],

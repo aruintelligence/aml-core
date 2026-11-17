@@ -34,8 +34,11 @@ Require a separately trusted key fingerprint:
 ```bash
 aml-governance-transcript-signature-verify signed-transcript.json \
   --trusted-fingerprint <sha256-fingerprint> \
-  --require-trusted-key
+  --require-trusted-key \
+  --expected-key-id <key-id>
 ```
+
+Exit `0` requires `authorized: true`: valid, a key in `--trusted-fingerprint`, and `--expected-key-id` equal to the signed key id. A valid result missing any of these exits `3`; an invalid one exits `2`. See [Command exit status and authorization](../docs/COMMAND_AUTHORIZATION.md).
 
 ## What this creates
 

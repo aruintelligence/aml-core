@@ -24,6 +24,7 @@ on:
       - "independent/python/repair_evidence_share.py"
       - "scripts/check-evidence-repair-python.mjs"
       - "independent/python/evidence_repair_record.py"
+      - "independent/python/authorization_cli.py"
       - "scripts/check-evidence-repair-record-python.mjs"
       - "independent/vectors/repair-record-v1/**"
       - "runtime/evidenceRepairRecord.js"
@@ -80,6 +81,7 @@ on:
       - "independent/python/repair_evidence_share.py"
       - "scripts/check-evidence-repair-python.mjs"
       - "independent/python/evidence_repair_record.py"
+      - "independent/python/authorization_cli.py"
       - "scripts/check-evidence-repair-record-python.mjs"
       - "independent/vectors/repair-record-v1/**"
       - "runtime/evidenceRepairRecord.js"
@@ -117,21 +119,26 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   cross-runtime:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "24"
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: "3.12"
       - name: Verify reference-produced artifacts with standalone Python
         run: node scripts/check-python-wire-runtime.mjs > "${RUNNER_TEMP}/aml-wire-envelope-cross-runtime.json"
       - name: Upload wire envelope comparison
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: aml-wire-envelope-cross-runtime-${{ github.sha }}
           path: ${{ runner.temp }}/aml-wire-envelope-cross-runtime.json
@@ -142,7 +149,7 @@ jobs:
       - name: Verify evidence capsules across JavaScript and Python
         run: node scripts/check-evidence-capsule-python.mjs > "${RUNNER_TEMP}/aml-capsule-cross-runtime.json"
       - name: Upload capsule comparison
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: aml-capsule-cross-runtime-${{ github.sha }}
           path: ${{ runner.temp }}/aml-capsule-cross-runtime.json
@@ -153,7 +160,7 @@ jobs:
       - name: Verify archives and renewal witnesses across JavaScript and Python
         run: node scripts/check-evidence-archive-python.mjs
       - name: Verify fixed archive vector with Python
-        run: python independent/python/verify_evidence_archive.py independent/vectors/archive-v1/archive.json independent/vectors/archive-v1/trusted-policy.json
+        run: python independent/python/verify_evidence_archive.py independent/vectors/archive-v1/archive.json independent/vectors/archive-v1/trusted-policy.json --diagnostic-only
       - name: Check fixed migration handoff bytes and digests
         run: node scripts/check-evidence-migration-vector.mjs
       - name: Verify migration and recovery across JavaScript and Python

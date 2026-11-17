@@ -5,14 +5,24 @@ inputs:
     description: "Path to the committed AML Meaning Manifest JSON"
     required: false
     default: "aml-meaning-lock.json"
+  expected-root-sha256:
+    description: "Optional manifest root SHA-256 obtained out of band. When set, the step passes only on an authorization decision; when empty, the step is a drift check (--diagnostic-only, NOT AN AUTHORIZATION DECISION), because a committed manifest can be changed in the same pull request as the sources (Directive 010)."
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
     - shell: bash
+      env:
+        AML_MANIFEST_FILE: ${{ inputs.manifest-file }}
+        AML_EXPECTED_ROOT: ${{ inputs.expected-root-sha256 }}
       run: |
-        node "$GITHUB_ACTION_PATH/../../bin/aml-meaning.js" \
-          verify-manifest \
-          "${{ inputs.manifest-file }}"
+        set -euo pipefail
+        if [ -n "$AML_EXPECTED_ROOT" ]; then
+          node "$GITHUB_ACTION_PATH/../../bin/aml-meaning.js" verify-manifest "$AML_MANIFEST_FILE" --expected-root-sha256 "$AML_EXPECTED_ROOT"
+        else
+          node "$GITHUB_ACTION_PATH/../../bin/aml-meaning.js" verify-manifest "$AML_MANIFEST_FILE" --diagnostic-only
+        fi
 branding:
   icon: "layers"
   color: "purple"

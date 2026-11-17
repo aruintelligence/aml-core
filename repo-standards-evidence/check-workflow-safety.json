@@ -1,0 +1,554 @@
+{
+  "valid": true,
+  "workflows": 53,
+  "inspected": [
+    {
+      "workflow": ".github/workflows/action-boundary-challenge.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/action-boundary-expanded.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/action-boundary-reproduction.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/action-boundary-vectors.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/action-browser-observation.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/action-contract-pilot-003.yml",
+      "triggers": [
+        "pull_request",
+        "push"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/action-five-runtime.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/action-receipt-adapters.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/action-receipt-registry.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/action-site-pilots.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/api-evolution.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/checkpoint-witness.yml",
+      "triggers": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/ci.yml",
+      "triggers": [
+        "push",
+        "pull_request",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/cli-contract.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/codeql.yml",
+      "triggers": [
+        "push",
+        "pull_request",
+        "schedule"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/conformance.yml",
+      "triggers": [
+        "push",
+        "pull_request",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/consumer-compatibility.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/deterministic-fuzz.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/enterprise-readiness.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/external-verifier-kit.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/external-witness-kit.yml",
+      "triggers": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/field-contact-continuity.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/lts-roundtrip-memory.yml",
+      "triggers": [
+        "pull_request",
+        "push"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/mail-target-manifest.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/multi-witness-consistency.yml",
+      "triggers": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/nextjs-example.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/operational-guardrails.yml",
+      "triggers": [
+        "pull_request",
+        "push"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/package-artifact.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/package-reproducibility.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/package-surface.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/project-contract.yml",
+      "triggers": [
+        "push",
+        "pull_request",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/provenance-state-protocols.yml",
+      "triggers": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/publication-cutover.yml",
+      "triggers": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/publication-receipt.yml",
+      "triggers": [
+        "pull_request",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/publish-baseline-release.yml",
+      "triggers": [
+        "workflow_dispatch"
+      ],
+      "writeCapable": true,
+      "writeScopes": [
+        "contents"
+      ],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/publish-npm-package.yml",
+      "triggers": [
+        "workflow_dispatch"
+      ],
+      "writeCapable": true,
+      "writeScopes": [
+        "id-token"
+      ],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/python-wire-runtime.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/real-screen-pilot.yml",
+      "triggers": [
+        "pull_request",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/release-channel-rollback.yml",
+      "triggers": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/release-coherence.yml",
+      "triggers": [
+        "push",
+        "pull_request",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/release-integrity-monitor.yml",
+      "triggers": [
+        "pull_request",
+        "push",
+        "workflow_dispatch",
+        "schedule"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/release-key-transparency.yml",
+      "triggers": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/release-quorum-artifact-binding.yml",
+      "triggers": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/release-readiness-bundle.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/security-baseline.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/signed-provenance-migrations.yml",
+      "triggers": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/stable-package-rehearsal.yml",
+      "triggers": [
+        "pull_request",
+        "push"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/starter-artifact.yml",
+      "triggers": [
+        "push",
+        "pull_request",
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/support-bundle.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/target-binding.yml",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/verify-npm-install.yml",
+      "triggers": [
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/verify-public-npm-binding.yml",
+      "triggers": [
+        "workflow_dispatch"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    },
+    {
+      "workflow": ".github/workflows/witness-evolution.yml",
+      "triggers": [
+        "pull_request",
+        "push"
+      ],
+      "writeCapable": false,
+      "writeScopes": [],
+      "writeAll": false
+    }
+  ],
+  "failures": []
+}

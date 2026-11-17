@@ -2,6 +2,8 @@
 
 ĀML is currently stewarded by ĀRU Intelligence Inc. and remains a research prototype. Governance exists to move ĀML toward an independently implementable, testable standard rather than a single-vendor codebase.
 
+Community participation is covered by the [Code of Conduct](CODE_OF_CONDUCT.md), [CONTRIBUTING.md](CONTRIBUTING.md), and [SUPPORT.md](SUPPORT.md). Security issues follow [SECURITY.md](SECURITY.md).
+
 ## Principles
 
 1. **Specification and implementation are separate.** `aml-core` is the reference implementation, not the definition of correctness by itself.

@@ -68,6 +68,15 @@ test("transcript generator CLI emits a verifiable artifact", () => {
     input: JSON.stringify(transcript),
     encoding: "utf8"
   });
-  assert.equal(verify.status, 0, verify.stderr);
+  // An unsigned transcript is consistent but never an authorization: exit 3.
+  assert.equal(verify.status, 3, verify.stderr);
   assert.equal(JSON.parse(verify.stdout).valid, true);
+  assert.equal(JSON.parse(verify.stdout).authorized, false);
+  assert.deepEqual(JSON.parse(verify.stdout).authorization.reasons, ["AML_AUTHZ_TRANSCRIPT_UNAUTHENTICATED"]);
+  const diagnostic = spawnSync(process.execPath, ["bin/aml-governance-transcript-verify.js", "--diagnostic-only"], {
+    input: JSON.stringify(transcript), encoding: "utf8"
+  });
+  assert.equal(diagnostic.status, 0, diagnostic.stderr);
+  assert.equal(JSON.parse(diagnostic.stdout).decision_use, "NOT AN AUTHORIZATION DECISION");
+  assert.equal(JSON.parse(diagnostic.stdout).authorized, false);
 });

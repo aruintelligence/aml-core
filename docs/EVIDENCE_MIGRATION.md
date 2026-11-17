@@ -6,9 +6,12 @@
 node scripts/evidence-migration.mjs create archive-v1.json trusted-policy.json > handoff.json
 node scripts/evidence-migration.mjs verify handoff.json trusted-policy.json
 node scripts/evidence-migration.mjs recover handoff.json trusted-policy.json recovered-v1.json
-python3 independent/python/verify_evidence_migration.py handoff.json trusted-policy.json
-python3 independent/python/verify_evidence_migration.py recover handoff.json trusted-policy.json recovered-v1-python.json
+python3 independent/python/verify_evidence_migration.py handoff.json trusted-policy.json --expected-policy-sha256 "$POLICY_SHA256"
+python3 independent/python/verify_evidence_migration.py recover handoff.json trusted-policy.json recovered-v1-python.json --expected-policy-sha256 "$POLICY_SHA256"
 ```
+
+Directive 010: exit 0 needs `--expected-policy-sha256 <sha256 of the canonical trusted policy>` (compute it once from your own trusted policy with `python3 independent/python/authorization_cli.py policy-sha256 trusted-policy.json`). Verified without the pin exits 3; `--diagnostic-only` exits 0 with `authorized: false` and is never permission.
+
 
 `recover` verifies first, then writes canonical v1 archive bytes with a final newline to a **new** file. It refuses to overwrite a destination. The recovery drill using the frozen archive v1 vector produces a file that compares byte-for-byte with that vector.
 

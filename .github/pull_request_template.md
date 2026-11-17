@@ -1,3 +1,11 @@
+## Checklist
+
+- [ ] Tests or a documented reason that tests are not applicable.
+- [ ] `npm test` and, if docs changed, `npm run check:links` were considered.
+- [ ] No secrets, private keys, or unreleased credentials are included.
+- [ ] Public claims stay within the evidence already in this repository.
+- [ ] I agree to the [Contributor Covenant](../CODE_OF_CONDUCT.md) and the [contribution license terms](../CONTRIBUTING.md).
+
 ## What changes
 
 Describe the smallest durable change in this PR.

@@ -172,21 +172,44 @@ test("replay-receipt CLI exits nonzero for a hash-consistent invented output", (
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-replay-receipt-"));
   const receiptPath = path.join(directory, "receipt.json");
   const cli = fileURLToPath(new URL("../bin/aml.js", import.meta.url));
-  const invoke = command => spawnSync(process.execPath, [cli, command, receiptPath], { encoding: "utf8" });
+  const invoke = (command, ...extra) => spawnSync(process.execPath, [cli, command, receiptPath, ...extra], { encoding: "utf8" });
   try {
     const receipt = freshReceipt();
     fs.writeFileSync(receiptPath, JSON.stringify(receipt));
-    assert.equal(invoke("replay-receipt").status, 0);
+    // Directive 009/010: a consistent receipt is not permission. Exit 0 needs
+    // the relying party's out-of-band pin of the exact receipt digest.
+    const pin = receipt.receipt_sha256;
+    assert.match(pin, /^[a-f0-9]{64}$/);
+    const unpinned = invoke("replay-receipt");
+    assert.equal(unpinned.status, 3, unpinned.stderr);
+    assert.equal(JSON.parse(unpinned.stdout).authorized, false);
+    assert.ok(JSON.parse(unpinned.stdout).authorization.reasons.includes("AML_AUTHZ_ARTIFACT_NOT_PINNED"));
+    const pinned = invoke("replay-receipt", "--expected-sha256", pin);
+    assert.equal(pinned.status, 0, pinned.stdout + pinned.stderr);
+    assert.equal(JSON.parse(pinned.stdout).authorized, true);
+    assert.equal(invoke("replay-receipt", "--expected-sha256", "0".repeat(64)).status, 3, "wrong pin");
+    assert.equal(invoke("replay-receipt", "--expected-sha256", pin.toUpperCase()).status, 3, "non-canonical pin");
+    const diagnostic = invoke("replay-receipt", "--diagnostic-only");
+    assert.equal(diagnostic.status, 0);
+    assert.equal(JSON.parse(diagnostic.stdout).authorized, false);
+    assert.equal(JSON.parse(diagnostic.stdout).decision_use, "NOT AN AUTHORIZATION DECISION");
 
     receipt.selected_render.html += "<aside>Unreviewed output</aside>";
     receipt.output_sha256 = sha256(receipt.selected_render.html);
     receipt.runtime_audit_stream.entries[4].payload.output_sha256 = receipt.output_sha256;
     refreshAuditAndReceiptHashes(receipt);
     fs.writeFileSync(receiptPath, JSON.stringify(receipt));
-    assert.equal(invoke("verify-receipt").status, 0);
+    // The invented output is still hash-consistent (d35a6b1: verify-receipt
+    // exited 0 here). It is now consistent but not authorized, with or
+    // without the pin of the original receipt.
+    const consistent = invoke("verify-receipt");
+    assert.equal(consistent.status, 3, consistent.stdout);
+    assert.equal(JSON.parse(consistent.stdout).verified, true);
+    assert.equal(invoke("verify-receipt", "--expected-sha256", pin).status, 3, "original pin rejects invented receipt");
     const replay = invoke("replay-receipt");
     assert.equal(replay.status, 1, replay.stderr);
     assert.equal(JSON.parse(replay.stdout).reason, "replay_mismatch");
+    assert.equal(invoke("replay-receipt", "--expected-sha256", receipt.receipt_sha256).status, 1, "a pin never rescues a replay mismatch");
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }

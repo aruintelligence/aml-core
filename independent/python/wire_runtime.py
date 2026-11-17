@@ -299,27 +299,60 @@ def main():
     verification.add_argument("artifact", type=Path)
     verification.add_argument("--now")
     verification.add_argument("--allowed-kind", action="append", default=[])
+    verification.add_argument("--diagnostic-only", action="store_true",
+                              help="Exit 0 for a consistent artifact; NOT AN AUTHORIZATION DECISION")
     negotiation = commands.add_parser("negotiate")
     negotiation.add_argument("local", type=Path)
     negotiation.add_argument("remote", type=Path)
     negotiation.add_argument("--required", action="append", default=[])
+    negotiation.add_argument("--diagnostic-only", action="store_true",
+                             help="Exit 0 for an accepted negotiation; NOT AN AUTHORIZATION DECISION")
     args = parser.parse_args()
     try:
         if args.command == "negotiate":
             result = negotiate(json.loads(args.local.read_text(encoding="utf-8")),
                                json.loads(args.remote.read_text(encoding="utf-8")), args.required)
-            accepted = result["accepted"]
+            # Directive 010: the remote capability document is unauthenticated,
+            # so `accepted` (compatible versions and capabilities) is a
+            # precondition, never permission to open a session or act.
+            accepted = result["accepted"] is True
+            result = dict(result, authorized=False, authorization={
+                "schema": "aml-authorization-decision/1", "authorized": False, "decision": "deny",
+                "reasons": (["AML_AUTHZ_DIAGNOSTIC_ONLY"] if args.diagnostic_only else []) +
+                           ["AML_AUTHZ_NO_TRUST_ROOTS"] + ([] if accepted else ["AML_AUTHZ_NEGOTIATION_NOT_ACCEPTED"]),
+                "required": ["negotiation_accepted", "relying_party_trust_roots"]},
+                decision_use="NOT AN AUTHORIZATION DECISION")
+            if args.diagnostic_only:
+                result["diagnostic_only"] = True
+            print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+            if not accepted:
+                return 1
+            return 0 if args.diagnostic_only else 3
         else:
             artifact = json.loads(args.artifact.read_text(encoding="utf-8"))
             options = {"now": args.now} if args.kind in ("envelope", "passport") else {}
             if args.kind == "envelope":
                 options["allowed_kinds"] = args.allowed_kind
             result = VERIFIERS[args.kind](artifact, **options)
-            accepted = result["valid"]
+            # Verification has no relying-party trust roots or held policy,
+            # so it is consistency-only and never authorizes execution.
+            consistent = result.get("valid") is True
+            result = dict(result, authorized=False, authorization={
+                "schema": "aml-authorization-decision/1", "authorized": False, "decision": "deny",
+                "reasons": (["AML_AUTHZ_DIAGNOSTIC_ONLY"] if args.diagnostic_only else []) +
+                           ["AML_AUTHZ_NO_TRUST_ROOTS"] + ([] if consistent else ["AML_AUTHZ_ARTIFACT_NOT_VALID"]),
+                "required": ["artifact_valid", "relying_party_trust_roots"]},
+                decision_use="NOT AN AUTHORIZATION DECISION")
+            if args.diagnostic_only:
+                result["diagnostic_only"] = True
+            print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+            if args.diagnostic_only:
+                return 0 if consistent else 1
+            return 3 if consistent else 1
     except (ValueError, OSError, TypeError) as error:
-        result, accepted = failure("invalid_input", detail=str(error)), False
-    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
-    return 0 if accepted else 1
+        result = dict(failure("invalid_input", detail=str(error)), authorized=False)
+        print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        return 1
 
 
 if __name__ == "__main__":

@@ -7,9 +7,24 @@ import {
   verifyGitHubSemanticAttestationEvidence
 } from "../tooling/githubSemanticAttestation.js";
 import { resolveReleaseAuthorizationProfile } from "../tooling/releaseAuthorizationProfile.js";
+import { decideCommand, diagnosticOnlyRequested, pinMatches, AML_DIAGNOSTIC_ONLY_FLAG } from "../runtime/commandAuthorization.js";
+
+// Directive 010: `verified` is a precondition, never permission. Exit 0
+// requires the GitHub attestation and AML evidence to verify AND a release
+// authorization profile pinned by --authorization-profile-sha256. Ad-hoc
+// flags (--repo ...) can still verify but never authorize (exit 3): no single
+// pinned object states which layers the relying party requires.
+const REQUIRED = ["verified", "github_attestation_verified", "authorization_profile_pinned"];
+const DENIALS = { verified: "AML_AUTHZ_NOT_VERIFIED", github_attestation_verified: "AML_AUTHZ_GITHUB_ATTESTATION_NOT_VERIFIED",
+  authorization_profile_pinned: "AML_AUTHZ_AUTHORIZATION_PROFILE_NOT_PINNED" };
+const TRUST = ["the --authorization-profile-sha256 value came from an independently trusted source",
+  "GitHub's attestation service, Sigstore roots and the gh CLI on PATH",
+  "the CI runner and repository workflow permissions",
+  "a key or workflow identity binds a signer, not a real-world person"];
+const diagnosticOnly = diagnosticOnlyRequested(process.argv);
 
 function usage() {
-  console.error("Usage: aml-github-attestation <proof.json> (--repo OWNER/REPO [ad-hoc trust flags] | --authorization-profile profile.json [--authorization-profile-sha256 HASH] [evidence files])");
+  console.error("Usage: aml-github-attestation <proof.json> (--repo OWNER/REPO [ad-hoc trust flags] | --authorization-profile profile.json [--authorization-profile-sha256 HASH] [evidence files]) [--diagnostic-only]\nExit: 0 authorized (pinned profile only), 3 verified but not authorized, 1 not verified, 2 usage/error.");
 }
 
 function parseArgs(argv) {
@@ -60,7 +75,7 @@ function parseArgs(argv) {
 }
 
 try {
-  const options = parseArgs(process.argv.slice(2));
+  const options = parseArgs(process.argv.slice(2).filter(arg => arg !== AML_DIAGNOSTIC_ONLY_FLAG));
   let authorizationProfile = null;
   let authorizationProfileSha256 = null;
 
@@ -117,13 +132,22 @@ try {
     quorumPolicy,
     expectedQuorumPolicySha256: options.expectedQuorumPolicySha256 ?? null
   });
-  console.log(JSON.stringify({
+  const report = {
     ...result,
     authorization_profile_required: authorizationProfile !== null,
     authorization_profile_id: authorizationProfile?.profile_id ?? null,
     authorization_profile_sha256: authorizationProfileSha256
-  }, null, 2));
-  process.exit(result.verified ? 0 : 1);
+  };
+  const verified = result.verified === true;
+  const { output, exitCode } = decideCommand(report, {
+    consistent: verified,
+    conditions: { verified, github_attestation_verified: verified && result.github_attestation_verified === true,
+      authorization_profile_pinned: authorizationProfile !== null &&
+        pinMatches(options.expectedAuthorizationProfileSha256 ?? null, authorizationProfileSha256) },
+    required: REQUIRED, denials: DENIALS, trust: TRUST, diagnosticOnly, invalidCode: 1
+  });
+  console.log(JSON.stringify(output, null, 2));
+  process.exit(exitCode);
 } catch (error) {
   usage();
   console.error(error instanceof Error ? error.message : String(error));

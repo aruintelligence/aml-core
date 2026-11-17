@@ -4,6 +4,7 @@
 import crypto from "node:crypto";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 
 import { tokenize } from "./lexer.js";
 import { parse } from "./parser.js";
@@ -100,7 +101,8 @@ export function compileAML(inputPath, outputDir = "dist", options = {}) {
   };
 }
 
-const isDirectRun = process.argv[1] && process.argv[1].endsWith("compiler.js");
+const isDirectRun = process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (isDirectRun) {
   const inputPath = process.argv[2] || "examples/transmission-061.aml";

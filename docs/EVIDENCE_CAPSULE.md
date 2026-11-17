@@ -19,8 +19,11 @@ A separate project-authored Python verifier checks capsules on the JSON subset f
 
 ```bash
 python3 independent/python/verify_evidence_capsule.py capsule.json
-python3 independent/python/verify_evidence_capsule.py signed-capsule.json trusted-policy.json
+python3 independent/python/verify_evidence_capsule.py signed-capsule.json trusted-policy.json --expected-policy-sha256 "$POLICY_SHA256"
 ```
+
+Directive 010: exit 0 needs `--expected-policy-sha256 <sha256 of the canonical trusted policy>` (compute it once from your own trusted policy with `python3 independent/python/authorization_cli.py policy-sha256 trusted-policy.json`). Verified without the pin exits 3; `--diagnostic-only` exits 0 with `authorized: false` and is never permission.
+
 
 Unsigned capsules need one argument. Signed v1.1 capsules require a second JSON file with `trusted_receipt_fingerprints` (an array of SHA-256 SPKI DER fingerprints) and optional `revoked_receipt_fingerprints`. The embedded key is not a trust source. Legacy v1.0 signatures are unsupported in Python because their signer and signed time were not bound. The two implementations and their mutation cases are exercised with `node scripts/check-evidence-capsule-python.mjs` on CI, which publishes a JSON result artifact. Signed receipts with small and large exponents, boundary integers, the maximum finite JavaScript number, array-index-like keys, UTF-16-ordered keys, and escaped lone surrogates are checked there. A locally assembled, JavaScript-valid signed ledger also checks that three charges totaling beyond the safe-integer boundary use binary64 arithmetic. Boolean and negative-zero balance mutations must fail, while a negative-zero sequence spelling that JavaScript accepts must verify. Receipts with a missing audit stream, missing ledger, non-array audit entries, a stale intent event, or an audit event contradicting the ledger must fail even when a test signer recalculates the receipt signature and capsule digests. RSA and EC signatures mislabeled as Ed25519, noncanonical signature base64, changed numerical values, escaped duplicate keys, and non-finite numbers must fail. This is cross-runtime engineering evidence maintained by the project, not an independent external witness.
 

@@ -4,7 +4,18 @@ inputs:
   proof-file:
     description: "Path to an aml-semantic-release-proof/1 JSON artifact"
     required: true
+  trusted-key-sha256:
+    description: "SHA-256 of the release signing key, obtained out of band. Required for the step to pass: a proof alone is signed by whatever key it embeds (Directive 010)."
+    required: false
+    default: ""
+  diagnostic-only:
+    description: "\"true\" to pass on a verified proof without authorizing (NOT AN AUTHORIZATION DECISION)"
+    required: false
+    default: "false"
 outputs:
+  authorized:
+    description: "true only when the proof verifies AND its signing key equals trusted-key-sha256"
+    value: ${{ steps.verify.outputs.authorized }}
   verified:
     description: "true only when the full Semantic Release Proof verifies"
     value: ${{ steps.verify.outputs.verified }}
@@ -49,7 +60,15 @@ runs:
   steps:
     - id: verify
       shell: bash
-      run: node "$GITHUB_ACTION_PATH/../../scripts/semantic-release-gate.js" "${{ inputs.proof-file }}"
+      env:
+        AML_PROOF_FILE: ${{ inputs.proof-file }}
+        AML_TRUSTED_RELEASE_KEY_SHA256: ${{ inputs.trusted-key-sha256 }}
+        AML_DIAGNOSTIC_ONLY: ${{ inputs.diagnostic-only }}
+      run: |
+        set -euo pipefail
+        ARGS=("$AML_PROOF_FILE")
+        if [[ "$AML_DIAGNOSTIC_ONLY" == "true" ]]; then ARGS+=(--diagnostic-only); fi
+        node "$GITHUB_ACTION_PATH/../../scripts/semantic-release-gate.js" "${ARGS[@]}"
 branding:
   icon: "shield"
   color: "purple"

@@ -6,6 +6,16 @@ import {
   fingerprintSemanticReleaseQuorumPolicy,
   verifySemanticReleaseQuorum
 } from "../tooling/semanticReleaseQuorum.js";
+import { decideCommand, diagnosticOnlyRequested, pinMatches, AML_DIAGNOSTIC_ONLY_FLAG } from "../runtime/commandAuthorization.js";
+
+// Directive 010: `verified` (quorum reached under the supplied policy) is a
+// precondition, never permission. The policy file names the trusted keys and
+// threshold, so exit 0 also requires --policy-sha256 to pin it.
+const DENIALS = { verified: "AML_AUTHZ_QUORUM_NOT_VERIFIED", policy_pinned: "AML_AUTHZ_POLICY_NOT_PINNED" };
+const TRUST = ["the --policy-sha256 value came from an independently trusted source",
+  "holders of the trusted release keys are distinct and uncompromised",
+  "a key fingerprint binds a key, not a real-world identity"];
+const diagnosticOnly = diagnosticOnlyRequested(process.argv);
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
@@ -14,7 +24,8 @@ function readJson(file) {
 function usage() {
   console.error(`Usage:
   aml-release-quorum endorse <proof.json> <private-key.pem> [--signer NAME] [--timestamp RFC3339]
-  aml-release-quorum verify <proof.json> <endorsements.json> <policy.json> [--policy-sha256 HEX]
+  aml-release-quorum verify <proof.json> <endorsements.json> <policy.json> [--policy-sha256 HEX] [--diagnostic-only]
+    exit 0 authorized (verified and policy pinned), 3 verified but not authorized, 1 not verified, 2 usage/error
   aml-release-quorum hash-policy <policy.json>`);
 }
 
@@ -32,7 +43,7 @@ function parseOptions(args) {
 }
 
 try {
-  const [command, ...args] = process.argv.slice(2);
+  const [command, ...args] = process.argv.slice(2).filter(arg => arg !== AML_DIAGNOSTIC_ONLY_FLAG);
 
   if (command === "endorse" && args.length >= 2) {
     const [proofFile, keyFile, ...rest] = args;
@@ -56,8 +67,15 @@ try {
     const result = verifySemanticReleaseQuorum(proof, endorsements, policy, {
       expectedPolicySha256: options["policy-sha256"] ?? null
     });
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    const verified = result.verified === true;
+    const { output, exitCode } = decideCommand(result, {
+      consistent: verified,
+      conditions: { verified, policy_pinned: verified && result.policy_sha256_valid === true &&
+        pinMatches(options["policy-sha256"] ?? null, result.policy_sha256) },
+      required: ["verified", "policy_pinned"], denials: DENIALS, trust: TRUST, diagnosticOnly, invalidCode: 1
+    });
+    console.log(JSON.stringify(output, null, 2));
+    process.exit(exitCode);
   }
 
   if (command === "hash-policy" && args.length === 1) {

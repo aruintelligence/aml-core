@@ -23,21 +23,17 @@ runs:
   using: "composite"
   steps:
     - shell: bash
+      env:
+        AML_BEFORE_FILE: ${{ inputs.before-file }}
+        AML_AFTER_FILE: ${{ inputs.after-file }}
+        AML_BEFORE_POLICY: ${{ inputs.before-policy }}
+        AML_AFTER_POLICY: ${{ inputs.after-policy }}
+        AML_CONTEXT_FILE: ${{ inputs.context-file }}
       run: |
-        if [ -n "${{ inputs.context-file }}" ]; then
-          node "$GITHUB_ACTION_PATH/../../scripts/meaning-gate.js" \
-            "${{ inputs.before-file }}" \
-            "${{ inputs.after-file }}" \
-            "${{ inputs.before-policy }}" \
-            "${{ inputs.after-policy }}" \
-            "${{ inputs.context-file }}"
-        else
-          node "$GITHUB_ACTION_PATH/../../scripts/meaning-gate.js" \
-            "${{ inputs.before-file }}" \
-            "${{ inputs.after-file }}" \
-            "${{ inputs.before-policy }}" \
-            "${{ inputs.after-policy }}"
-        fi
+        set -euo pipefail
+        ARGS=("$AML_BEFORE_FILE" "$AML_AFTER_FILE" "$AML_BEFORE_POLICY" "$AML_AFTER_POLICY")
+        if [ -n "$AML_CONTEXT_FILE" ]; then ARGS+=("$AML_CONTEXT_FILE"); fi
+        node "$GITHUB_ACTION_PATH/../../scripts/meaning-gate.js" "${ARGS[@]}"
 branding:
   icon: "shield"
   color: "blue"

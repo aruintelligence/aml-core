@@ -9,29 +9,31 @@ inputs:
     required: false
     default: ""
   revocation-file:
-    description: "Optional AML revocation-registry JSON path"
+    description: "AML revocation-registry JSON path. Required for the step to pass (Directive 010)."
+    required: false
+    default: ""
+  revocation-registry-sha256:
+    description: "Canonical SHA-256 of the revocation registry the relying party accepted, obtained out of band. Required for the step to pass: an unpinned registry may be empty or rolled back."
     required: false
     default: ""
 runs:
   using: "composite"
   steps:
     - shell: bash
+      env:
+        AML_CREDENTIAL_FILE: ${{ inputs.credential-file }}
+        AML_TRUST_ROOTS_FILE: ${{ inputs.trust-roots-file }}
+        AML_REVOCATION_FILE: ${{ inputs.revocation-file }}
+        AML_TRUSTED_REVOCATION_REGISTRY_SHA256: ${{ inputs.revocation-registry-sha256 }}
       run: |
-        TRUST_ROOTS="${{ inputs.trust-roots-file }}"
+        set -euo pipefail
+        TRUST_ROOTS="$AML_TRUST_ROOTS_FILE"
         if [ -z "$TRUST_ROOTS" ]; then
           TRUST_ROOTS="$GITHUB_ACTION_PATH/../../BRAND_TRUST_ROOTS.json"
         fi
-
-        if [ -n "${{ inputs.revocation-file }}" ]; then
-          node "$GITHUB_ACTION_PATH/../../bin/aml-brand-verify.js" \
-            "${{ inputs.credential-file }}" \
-            "$TRUST_ROOTS" \
-            "${{ inputs.revocation-file }}"
-        else
-          node "$GITHUB_ACTION_PATH/../../bin/aml-brand-verify.js" \
-            "${{ inputs.credential-file }}" \
-            "$TRUST_ROOTS"
-        fi
+        ARGS=("$AML_CREDENTIAL_FILE" "$TRUST_ROOTS")
+        if [ -n "$AML_REVOCATION_FILE" ]; then ARGS+=("$AML_REVOCATION_FILE"); fi
+        node "$GITHUB_ACTION_PATH/../../bin/aml-brand-verify.js" "${ARGS[@]}"
 branding:
   icon: "shield"
   color: "green"

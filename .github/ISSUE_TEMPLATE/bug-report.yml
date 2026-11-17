@@ -1,0 +1,50 @@
+name: Bug report
+description: Report a reproducible defect in the reference implementation, CLI, docs, or CI.
+title: "[Bug]: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please include enough detail for someone else to reproduce it.
+        **Do not include secrets, private keys, or exploit details that would create immediate harm.** Security issues go to [SECURITY.md](../SECURITY.md).
+  - type: input
+    id: commit
+    attributes:
+      label: Commit or tag
+      description: Exact git commit SHA or release tag where you saw the problem.
+      placeholder: v1.3.0 or a full 40-character SHA
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Node.js, Python, and/or Go versions, plus operating system.
+      placeholder: Node.js 20.19.5 on Ubuntu 24.04
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Expected behavior, actual behavior, and the shortest commands or fixtures that reproduce it.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or output
+      description: Relevant command output, with secrets removed.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: This is not a security report (those go through SECURITY.md).
+          required: true
+        - label: I will follow the Code of Conduct.
+          required: true

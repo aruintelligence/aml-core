@@ -24,7 +24,7 @@ test("permitted generic content is escaped while denied content stays out of HTM
     [true, false, true]);
   assert.match(result.html, /<p>&lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt; &amp; clear<\/p>/);
   assert.match(result.html, /<p>0<\/p>/);
-  assert.doesNotMatch(result.html, /<script>|SECRET_MESSAGE_6291|data-aml-identifier="denied"/);
+  assert.doesNotMatch(result.html, /<script\b|SECRET_MESSAGE_6291|data-aml-identifier="denied"/i);
   assert.equal((result.html.match(/data-aml-suppressed="true"/g) || []).length, 1);
 });
 
@@ -42,4 +42,9 @@ test("generic content survives execution receipt verification and replay", () =>
   assert.equal(receipt.selected_render.suppressed, 1);
   assert.equal(verifyExecutionReceipt(receipt).verified, true);
   assert.equal(replayExecutionReceipt(receipt).verified, true);
+});
+
+test("mixed-case attributed script content is escaped by the canonical renderer", () => {
+  const result = compileSource(`transmission "uppercase" { message "allowed" { content: "<ScRiPt src='https://example.invalid/x'>bad</ScRiPt>" attention_cost: 0 restoration_value: 1 } }`, { timestamp });
+  assert.doesNotMatch(result.html, /<script\b/i); assert.match(result.html, /&lt;ScRiPt/);
 });

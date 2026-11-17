@@ -1,0 +1,37 @@
+name: Feature request
+description: Propose a focused improvement to the reference implementation or documentation.
+title: "[Feature]: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please describe a concrete problem and the smallest change that would help. ĀML is a research prototype; proposals should avoid unsupported certification, compliance, or production-readiness claims.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What can a user or integrator not do today, or what is unnecessarily hard?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: The smallest durable change you would like to see, and any alternatives you considered.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and compatibility
+      description: How could the change be tested? Does it affect schemas, CLI exit codes, or public contracts?
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: I will follow the Code of Conduct.
+          required: true
