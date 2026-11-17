@@ -121,7 +121,7 @@ def verify_p256_raw_signature(public_jwk, message_bytes, signature_b64url):
             (operations is not None and (
                 not isinstance(operations, list) or
                 any(not isinstance(operation, str) for operation in operations) or
-                len(set(operations)) != len(operations) or "verify" not in operations
+                len(set(operations)) != len(operations) or set(operations) != {"verify"}
             )) or
             ("ext" in public_jwk and type(public_jwk["ext"]) is not bool) or
             public_jwk.get("use", "sig") != "sig" or

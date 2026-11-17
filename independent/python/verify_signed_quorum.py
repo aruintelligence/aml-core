@@ -82,7 +82,7 @@ def public_point(jwk):
     if "d" in jwk or (operations is not None and (
         not isinstance(operations, list) or
         any(not isinstance(operation, str) for operation in operations) or
-        len(set(operations)) != len(operations) or "verify" not in operations
+        len(set(operations)) != len(operations) or set(operations) != {"verify"}
     )):
         raise ValueError("invalid_key_usage")
     if "ext" in jwk and type(jwk["ext"]) is not bool:
