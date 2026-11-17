@@ -4,6 +4,29 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 
 ## [Unreleased]
 
+### Breaking: signed trust config, durable single use, and JS/Python/Go parity
+
+- New signed, versioned trust config (`aml trust-init`, `trust-sign`, `trust-verify`; [docs/TRUST_CONFIG.md](docs/TRUST_CONFIG.md)):
+  - k-of-n Ed25519 root signatures;
+  - rotation that needs the current and the new root;
+  - rollback and fork protection persisted append-only;
+  - expiry on the host clock with a persisted floor;
+  - sticky revocation and role-scoped keys;
+  - policy, registry and profile digests.
+- The verifiers accept `--trust-config`, `--trust-state` and `--single-use-store`. That covers `verify*`, `replay-receipt`, `verify-witness` and `verify-signed-quorum`, plus `independent/python/verify_witness.py`, `verify_signed_quorum.py` and the evidence verifiers.
+- On an enrolled host (`/etc/aml/trust`, `$AML_TRUST_STATE_DIR`, `--trust-state`), a missing or untrusted config exits `3`. Flag pins are ANDed with the config, never ORed.
+- The Go witness verifier reports the trust decision and still never authorizes.
+- Durable single use: `--single-use-store <dir>` or `require_single_use: true`. With a trusted config, the enrolled `<state-dir>/single-use/` store is always used too, so a fresh store cannot reopen a consumed artifact. Each record is created with `O_CREAT|O_EXCL` and fsync'd before authorization. The store is shared by the JavaScript and Python verifiers. Witness and quorum artifacts are identified by canonical JSON, so re-serializing an artifact does not make it new.
+- `deploy` in trust-config mode requires `profile_sha256` to match the selected profile (`aml profile-sha256 <profile>`). It also refuses a caller `--timestamp`.
+- Strict shared encodings:
+  - Ed25519 keys in canonical SPKI PEM;
+  - canonical padded base64 signatures;
+  - calendar-exact UTC timestamps;
+  - duplicate JSON keys refused.
+- Configs that relied on lenient parsing are refused.
+- `independent/python/trust_config.py` and `independent/go/trustconfig.go` use the standard library only. `conformance/trust-config/vectors.json` and `test/trust-config-parity.test.js` require identical JS/Python/Go results for every case, including denials.
+- A deterministic concurrent-update test (via an injected `onBeforePersist` seam) covers a newer version landing between the checks and the persist step.
+
 ### Breaking: verifier commands exit 0 only on an explicit authorization decision
 
 - A successful verification command no longer implies authorization from `valid` alone. Verifier and validator commands now exit `0` only when `authorized === true` and the `aml-authorization-decision/1` object agrees; a consistent but unauthorized result exits `3`. Other non-zero codes keep their meaning. Reports include `valid`, `authorized`, `authorization.reasons` and `remaining_trust_assumptions`.
