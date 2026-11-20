@@ -913,3 +913,31 @@ export const AML_GOVERNANCE_WITNESS_QUORUM: string;
 export const AML_RUNTIME_DISAGREEMENT_REPORT: string;
 export const AML_GOVERNANCE_DISCLOSURE: string;
 export const AML_GOVERNANCE_POLICY_TRANSITION: string;
+
+export interface DurableConsumptionStore {
+  readonly type: "aml-durable-consumption-store/1";
+  readonly dir: string;
+  consume(key: string, record?: Record<string, unknown>): boolean;
+  has(key: string): boolean;
+}
+
+export function openDurableConsumptionStore(dir: string): DurableConsumptionStore;
+
+export function createDurableCapabilityAuthorizer(options: {
+  trustedIssuerKeySha256: string;
+  audience: string;
+  consumptionStore: DurableConsumptionStore;
+  trustConfig?: object | null;
+}): (token: unknown, expected: {
+  subject: string;
+  sessionId: string;
+  intentSha256: string;
+  requiredCapability: string;
+}) => {
+  valid: boolean;
+  authorized: boolean;
+  reasons: string[];
+  checks: Record<string, boolean>;
+  replay_protection: "durable" | "none";
+  consumptionGuard: null;
+};

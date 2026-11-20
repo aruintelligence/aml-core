@@ -287,7 +287,10 @@ Supports multi-parent lineage across prior agents, policies, receipts, or system
 - `createThresholdAuthorization(input, signers, options?)`
 - `verifyThresholdAuthorization(authorization)`
 
-Supports M-of-N authorization by distinct Ed25519 signers.
+Checks that distinct embedded Ed25519 signers meet the threshold bound by the
+signed payload. Treat the returned validity as signature evidence. Before an
+effect, the host must independently enforce its signer set and threshold,
+bind the exact action, and apply its replay policy.
 
 ### Bounded capability tokens
 
@@ -295,6 +298,10 @@ Supports M-of-N authorization by distinct Ed25519 signers.
 - `verifyCapabilityToken(token, options?)`
 
 Capability tokens can bind issuer, subject, audience, scope, expiration, and nonce.
+
+Use `createDurableCapabilityAuthorizer(options)` to configure one host-owned
+durable store, issuer pin and audience before authorizing sensitive actions.
+See the [local payment-request example](examples/consumer/DURABLE_AUTHORIZATION.md).
 
 ### Revocation
 

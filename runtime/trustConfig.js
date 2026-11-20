@@ -147,17 +147,27 @@ function countThreshold(envelope, root) {
   return good.size;
 }
 
-function fsyncDir(dir) {
-  let fd = null;
-  try { fd = fs.openSync(dir, "r"); fs.fsyncSync(fd); } catch { /* some platforms cannot fsync a directory */ } finally { if (fd !== null) fs.closeSync(fd); }
+function syncPath(file) {
+  const fd = fs.openSync(file, "r");
+  try { fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+}
+
+function syncDirectoryChain(dir) {
+  let current = fs.realpathSync(dir);
+  for (;;) {
+    syncPath(current);
+    const parent = path.dirname(current);
+    if (parent === current) return;
+    current = parent;
+  }
 }
 
 // Create a file exclusively and durably. Returns false if it already exists.
 export function createExclusiveDurable(file, contents) {
   let fd;
   try { fd = fs.openSync(file, "wx", 0o600); } catch (error) { if (error.code === "EEXIST") return false; throw error; }
-  try { fs.writeSync(fd, contents); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
-  fsyncDir(path.dirname(file));
+  try { fs.writeFileSync(fd, contents); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+  syncDirectoryChain(path.dirname(file));
   return true;
 }
 
@@ -255,15 +265,21 @@ export function evaluateTrustConfig(envelope, { stateDir, callerTime = null, onB
   // can only add versions, never replace one.
   try {
     if (typeof onBeforePersist === "function") onBeforePersist();
+    const recordPath = path.join(stateDir, "versions", recordName(body.version));
+    let created = false;
     if (!existing) {
       const revoked = [...new Set([...state.revoked, ...body.revoked_keys])].sort();
       const record = { type: TRUST_STATE_RECORD_TYPE, version: body.version, config_sha256: configSha256, root: body.root,
         revoked_keys: revoked, issued_at: body.issued_at, accepted_at: new Date(nowMs).toISOString() };
-      const created = createExclusiveDurable(path.join(stateDir, "versions", recordName(body.version)), `${JSON.stringify(record)}\n`);
+      created = createExclusiveDurable(recordPath, `${JSON.stringify(record)}\n`);
       if (!created) {
-        const raced = readJSONFile(path.join(stateDir, "versions", recordName(body.version)));
+        const raced = readJSONFile(recordPath);
         if (raced.config_sha256 !== configSha256) { checks.no_version_fork = false; return result({ config_sha256: configSha256 }); }
       }
+    }
+    if (!created) {
+      syncPath(recordPath);
+      syncDirectoryChain(path.dirname(recordPath));
     }
     // A newer version accepted concurrently makes this one a rollback.
     const after = readTrustState(stateDir);

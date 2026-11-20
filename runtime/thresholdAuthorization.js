@@ -92,7 +92,10 @@ export function verifyThresholdAuthorization(authorization) {
       const publicKey = crypto.createPublicKey(item.public_key_pem);
       const fp = fingerprint(publicKey);
       if (fp !== item.key_fingerprint || seen.has(fp)) continue;
-      const ok = crypto.verify(null, message, publicKey, Buffer.from(item.signature_base64, "base64"));
+      if (typeof item.signature_base64 !== "string") continue;
+      const signature = Buffer.from(item.signature_base64, "base64");
+      const ok = signature.toString("base64") === item.signature_base64
+        && crypto.verify(null, message, publicKey, signature);
       if (ok) {
         seen.add(fp);
         valid += 1;

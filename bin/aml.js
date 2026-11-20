@@ -165,7 +165,13 @@ function trustGate(result, artifactId, diagnosticOnly) {
   const trust = trustMode();
   if (trust === null && singleUseStores(trust).stores.length === 0) return { result, authorized: base };
   const conditions = { verifier_decision_allowed: base };
-  if (trust !== null) conditions.trust_config_trusted = trust.decision?.trusted === true;
+  if (trust !== null) {
+    conditions.trust_config_trusted = trust.decision?.trusted === true;
+    if (command === "verify-signed-quorum" && conditions.trust_config_trusted
+        && trust.decision.effective.policy_sha256 !== null) {
+      conditions.policy_pinned = trustConfigPinMatches(trust.decision, "policy_sha256", result?.input_fingerprints?.policy_sha256);
+    }
+  }
   const once = diagnosticOnly ? { required: false } : singleUse(trust, conditions, artifactId);
   if (once.required) conditions[once.name] = once.ok;
   const authorized = !diagnosticOnly && Object.values(conditions).every(v => v === true);

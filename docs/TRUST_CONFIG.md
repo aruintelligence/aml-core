@@ -68,8 +68,12 @@ read-only to the account that runs verifiers.
   `pack_sha256 == policy_sha256` when the config sets it.
 
 `verify-witness` and `verify-signed-quorum` accept the same three flags. Their
-own decision is ANDed with `trust_config_trusted` (and single use); the single
-use artifact is the SHA-256 of the bundle or quorum file bytes, so a bundle
+own decision is ANDed with `trust_config_trusted` and any required single use.
+For `verify-signed-quorum`, a configured `policy_sha256` must match the
+canonical JSON digest reported as `input_fingerprints.policy_sha256` by the
+verifier. An absent fingerprint fails this check. A null pin retains the
+relying-party-held policy requirement. The single-use identity is the SHA-256
+of the parsed bundle or quorum's canonical JSON, so an artifact
 consumed by one language's verifier is refused by the others sharing the store.
 
 `deploy` in trust-config mode also requires the policy profile digest to equal
@@ -135,6 +139,13 @@ burns the authorization (at-most-once). Use a local filesystem with atomic
 - Trust configs signed with non-Ed25519 keys, non-canonical PEM or base64,
   or timestamps such as `2026-02-30` or `24:00` are refused.
 - `deploy` in trust-config mode requires a pinned `profile_sha256`.
+
+Durable state requires a local filesystem with exclusive creation and working
+file and directory synchronization. Directory ancestors must be readable by
+the verifier and storage paths must be controlled by the operator. A sync
+error prevents a successful authorization. An uncertain consumption remains
+reserved if its record is visible. A later trust-config check re-synchronizes
+a matching version record before accepting it.
 
 ## What this does not solve
 

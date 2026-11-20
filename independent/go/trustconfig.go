@@ -398,10 +398,37 @@ func countThreshold(sigs []any, message []byte, root trustRoot) int64 {
 }
 
 // ---------- durable state ----------
-func fsyncDir(dir string) {
-	if f, err := os.Open(dir); err == nil {
-		_ = f.Sync()
-		_ = f.Close()
+func syncPath(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	syncErr := f.Sync()
+	closeErr := f.Close()
+	if syncErr != nil {
+		return syncErr
+	}
+	return closeErr
+}
+
+func syncDirectoryChain(dir string) error {
+	current, err := filepath.Abs(dir)
+	if err != nil {
+		return err
+	}
+	current, err = filepath.EvalSymlinks(current)
+	if err != nil {
+		return err
+	}
+	for {
+		if err := syncPath(current); err != nil {
+			return err
+		}
+		parent := filepath.Dir(current)
+		if parent == current {
+			return nil
+		}
+		current = parent
 	}
 }
 
@@ -424,7 +451,9 @@ func createExclusiveDurable(path string, contents []byte) (bool, error) {
 	if err := f.Close(); err != nil {
 		return true, err
 	}
-	fsyncDir(filepath.Dir(path))
+	if err := syncDirectoryChain(filepath.Dir(path)); err != nil {
+		return false, err
+	}
 	return true, nil
 }
 
@@ -644,6 +673,8 @@ func evaluateTrustConfig(envelope any, dir string, callerTime string, beforePers
 		if beforePersist != nil {
 			beforePersist()
 		}
+		path := filepath.Join(dir, "versions", fmt.Sprintf("v%012d.json", body.version))
+		created := false
 		if existing == nil {
 			set := map[string]bool{}
 			for k := range st.revoked {
@@ -659,8 +690,8 @@ func evaluateTrustConfig(envelope any, dir string, callerTime string, beforePers
 			sort.Strings(rev)
 			rec := stateRecord{trustStateRecordType, body.version, configSha, body.root, rev, body.raw["issued_at"].(string), isoFromMs(now)}
 			data, _ := json.Marshal(rec)
-			path := filepath.Join(dir, "versions", fmt.Sprintf("v%012d.json", body.version))
-			created, err := createExclusiveDurable(path, append(data, '\n'))
+			var err error
+			created, err = createExclusiveDurable(path, append(data, '\n'))
 			if err != nil {
 				return err
 			}
@@ -673,6 +704,14 @@ func evaluateTrustConfig(envelope any, dir string, callerTime string, beforePers
 					checks["no_version_fork"] = false
 					return errors.New("fork")
 				}
+			}
+		}
+		if !created {
+			if err := syncPath(path); err != nil {
+				return err
+			}
+			if err := syncDirectoryChain(filepath.Dir(path)); err != nil {
+				return err
 			}
 		}
 		after, err := readState(dir)

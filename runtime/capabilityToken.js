@@ -60,7 +60,10 @@ export function verifyCapabilityToken(token, { now = null, audience = null, requ
   try {
     const publicKey = crypto.createPublicKey(public_key_pem);
     if (fingerprint(publicKey) !== public_key_fingerprint) return { valid: false, reason: "fingerprint_mismatch" };
-    const signatureValid = crypto.verify(null, Buffer.from(canonicalJSONStringify(body)), publicKey, Buffer.from(signature_base64, "base64"));
+    if (typeof signature_base64 !== "string") return { valid: false, reason: "signature_invalid" };
+    const signature = Buffer.from(signature_base64, "base64");
+    const signatureValid = signature.toString("base64") === signature_base64
+      && crypto.verify(null, Buffer.from(canonicalJSONStringify(body)), publicKey, signature);
     if (!signatureValid) return { valid: false, reason: "signature_invalid" };
   } catch {
     return { valid: false, reason: "signature_invalid" };
@@ -185,5 +188,31 @@ export function authorizeCapabilityToken(token, {
     consumptionGuard: authorized && guardOk
       ? { type: consumptionGuard.type, consumed: { ...consumptionGuard.consumed, [consumeKey]: new Date(nowMs).toISOString() } }
       : consumptionGuard
+  };
+}
+
+// Construct at host startup. Each invocation supplies only host-resolved
+// action bindings. The issuer, audience and single durable store are fixed
+// for the life of the authorizer.
+export function createDurableCapabilityAuthorizer({
+  trustedIssuerKeySha256,
+  audience,
+  consumptionStore,
+  trustConfig = null
+} = {}) {
+  if (typeof trustedIssuerKeySha256 !== "string" || !PIN.test(trustedIssuerKeySha256)) {
+    throw new Error("AML_CAPABILITY_ISSUER_PIN_REQUIRED");
+  }
+  if (typeof audience !== "string" || audience.length === 0) {
+    throw new Error("AML_CAPABILITY_AUDIENCE_REQUIRED");
+  }
+  if (!isDurableConsumptionStore(consumptionStore)) {
+    throw new Error("AML_CAPABILITY_DURABLE_STORE_REQUIRED");
+  }
+  return (token, { subject, sessionId, intentSha256, requiredCapability } = {}) => {
+    return authorizeCapabilityToken(token, {
+      trustedIssuerKeySha256, audience, consumptionStore, trustConfig,
+      subject, sessionId, intentSha256, requiredCapability
+    });
   };
 }

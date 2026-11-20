@@ -208,3 +208,24 @@ test("capability token + trust config: require_single_use makes the durable stor
   assert.equal(ok.replay_protection, "durable");
   assert.equal(authorizeCapabilityToken(token, { ...base, consumptionStore: store }).authorized, false);
 });
+
+test("host authorizer binds a single durable store and preserves consumption on reopen", async t => {
+  const { createDurableCapabilityAuthorizer } = await import("../index.js");
+  const issuer = canaryKey();
+  const token = mint(issuer);
+  const dir = tempDir(t);
+  const bindings = expect(issuer);
+  const configure = () => createDurableCapabilityAuthorizer({
+    ...bindings, consumptionStore: openDurableConsumptionStore(dir)
+  });
+
+  assert.throws(() => createDurableCapabilityAuthorizer(bindings), /DURABLE_STORE_REQUIRED/);
+  const authorize = configure();
+  const denied = authorize(token, { ...bindings, intentSha256: sha("unapproved effect") });
+  assert.equal(denied.authorized, false);
+  assert.ok(denied.reasons.includes("intent_bound"));
+  const allowed = authorize(token, bindings);
+  assert.equal(allowed.authorized, true);
+  assert.equal(allowed.replay_protection, "durable");
+  assert.equal(configure()(token, bindings).authorized, false);
+});

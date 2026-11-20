@@ -279,17 +279,22 @@ def count_threshold(envelope, body, root):
 
 
 # ---------- durable state ----------
-def _fsync_dir(path):
-    try:
-        fd = os.open(path, os.O_RDONLY)
-    except OSError:
-        return
+def _sync_path(path):
+    fd = os.open(path, os.O_RDONLY)
     try:
         os.fsync(fd)
-    except OSError:
-        pass
     finally:
         os.close(fd)
+
+
+def _sync_directory_chain(path):
+    current = os.path.realpath(path, strict=True)
+    while True:
+        _sync_path(current)
+        parent = os.path.dirname(current)
+        if parent == current:
+            return
+        current = parent
 
 
 def create_exclusive_durable(path, contents):
@@ -298,12 +303,11 @@ def create_exclusive_durable(path, contents):
         fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     except FileExistsError:
         return False
-    try:
-        os.write(fd, contents.encode("utf-8"))
-        os.fsync(fd)
-    finally:
-        os.close(fd)
-    _fsync_dir(os.path.dirname(path))
+    with os.fdopen(fd, "wb") as handle:
+        handle.write(contents.encode("utf-8"))
+        handle.flush()
+        os.fsync(handle.fileno())
+    _sync_directory_chain(os.path.dirname(path))
     return True
 
 
@@ -407,16 +411,21 @@ def evaluate(envelope, state_dir, caller_time=None, on_before_persist=None):
     try:
         if on_before_persist is not None:
             on_before_persist()
+        path = os.path.join(state_dir, "versions", "v%012d.json" % body["version"])
+        created = False
         if existing is None:
             record = {"type": TRUST_STATE_RECORD_TYPE, "version": body["version"], "config_sha256": config_sha,
                       "root": body["root"], "revoked_keys": sorted(state["revoked"] | set(body["revoked_keys"])),
                       "issued_at": body["issued_at"], "accepted_at": iso_from_ms(now)}
-            path = os.path.join(state_dir, "versions", "v%012d.json" % body["version"])
-            if not create_exclusive_durable(path, json.dumps(record, separators=(",", ":")) + "\n"):
+            created = create_exclusive_durable(path, json.dumps(record, separators=(",", ":")) + "\n")
+            if not created:
                 with open(path, encoding="utf-8") as handle:
                     if json.load(handle).get("config_sha256") != config_sha:
                         checks["no_version_fork"] = False
                         return _result(checks, config_sha256=config_sha)
+        if not created:
+            _sync_path(path)
+            _sync_directory_chain(os.path.dirname(path))
         after = read_state(state_dir)
         checks["not_rolled_back"] = after["latest"]["version"] == body["version"]
         state = after
@@ -643,6 +652,10 @@ def gate(result, options, command, artifact_id, diagnostic, caller_time=None):
     conditions = {"verifier_decision_allowed": base}
     if trust is not None:
         conditions["trust_config_trusted"] = config_trusted(trust)
+        if (command == "verify-signed-quorum" and conditions["trust_config_trusted"]
+                and trust["decision"]["effective"]["policy_sha256"] is not None):
+            conditions["policy_pinned"] = pin_matches(
+                trust["decision"], "policy_sha256", result.get("input_fingerprints", {}).get("policy_sha256"))
     once = None if diagnostic else single_use(trust, options, conditions, command, artifact_id)
     if once is not None:
         conditions[once[0]] = once[1] is True
@@ -652,6 +665,8 @@ def gate(result, options, command, artifact_id, diagnostic, caller_time=None):
         prior = result.get("authorization", {}) if isinstance(result.get("authorization"), dict) else {}
         reasons = [r for r in prior.get("reasons", []) if r != "AML_AUTHZ_ALLOW"]
         reasons += [TRUST_DENIALS[n] for n in conditions if conditions[n] is not True and n in TRUST_DENIALS]
+        if conditions.get("policy_pinned") is False:
+            reasons.append("AML_AUTHZ_POLICY_NOT_PINNED")
         required = list(prior.get("required", [])) + [n for n in conditions if n != "verifier_decision_allowed"]
         out["authorization"] = dict(prior, authorized=False, decision="deny", reasons=list(dict.fromkeys(reasons)),
                                     required=list(dict.fromkeys(required)))

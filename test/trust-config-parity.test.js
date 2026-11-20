@@ -112,6 +112,23 @@ const quorumClis = [["node", [process.execPath, "bin/aml.js", "verify-signed-quo
   ["python", ["python3", "independent/python/verify_signed_quorum.py", QUORUM, "--policy", HELD]]];
 const reasonsOf = r => r.json?.authorization?.reasons ?? [];
 
+test("signed quorum accepts a matching host-pinned policy in JS and Python", t => {
+  const e = enrolled(t, { require_single_use: false });
+  const [bin, ...args] = quorumClis[0][1];
+  const baseline = run(bin, args);
+  assert.equal(baseline.status, 0, baseline.stderr);
+  const policyDigest = baseline.json.input_fingerprints.policy_sha256;
+  assert.match(policyDigest, /^[a-f0-9]{64}$/);
+  const config = e.write("pinned-policy.json", e.config({ policy_sha256: policyDigest }));
+
+  for (const [label, [verifier, ...flags]] of quorumClis) {
+    const result = run(verifier, [...flags, "--trust-config", config, "--trust-state", e.state]);
+    assert.equal(result.status, 0, label + ": " + result.stdout + result.stderr);
+    assert.equal(result.json.authorized, true, label);
+    assert.equal(result.json.input_fingerprints.policy_sha256, policyDigest, label);
+  }
+});
+
 test("signed quorum (JS and Python): enrolled host needs a trusted config; single use is shared across languages", t => {
   const e = enrolled(t);
   const good = e.write("good.json", e.config());
