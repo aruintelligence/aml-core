@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { createHash, generateKeyPairSync, randomUUID, verify } from "node:crypto";
+import { createHash, generateKeyPairSync, randomUUID } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import {
   createDurableCapabilityAuthorizer, openDurableConsumptionStore, signCapabilityToken
 } from "../../index.js";
-import { canonicalJSONStringify } from "../../protocol/canonicalJson.js";
+import { verifyPaymentReceipt } from "./verify-payment-receipt.mjs";
 
 const destinationScript = fileURLToPath(new URL("./payment-request-destination.py", import.meta.url));
 const sha256 = bytes => createHash("sha256").update(bytes).digest("hex");
@@ -62,17 +62,11 @@ try {
   }
 
   function recover() {
-    const { statement, signature_hex } = readStatus(operation_id);
-    assert.deepEqual(statement, {
-      profile: "aml-sandbox-payment-status/1", destination: audience, operation_id,
-      request_sha256: intentSha256, outcome: "recorded"
-    });
-    assert.match(signature_hex, /^[a-f0-9]{128}$/);
-    const signedBytes = Buffer.from(canonicalJSONStringify(statement));
-    const signature = Buffer.from(signature_hex, "hex");
-    assert.equal(verify(null, signedBytes, destination.publicKey, signature), true);
-    assert.equal(verify(null, signedBytes, issuer.publicKey, signature), false);
-    return { statement, signature_hex };
+    const receipt = readStatus(operation_id);
+    const expected = { operationId: operation_id, requestBytes: request, destinationKey: destination.publicKey };
+    assert.equal(verifyPaymentReceipt(receipt, expected), true);
+    assert.equal(verifyPaymentReceipt(receipt, { ...expected, destinationKey: issuer.publicKey }), false);
+    return receipt;
   }
 
   const receipt = recover();
@@ -95,6 +89,14 @@ try {
   assert.equal(authorize(interruptedPermit, interruptedBindings).authorized, false);
   assert.deepEqual(recover(), receipt);
 
+  // Optional export uses a fresh directory inside the operator-selected parent.
+  if (process.argv.length === 3) {
+    const evidence = mkdtempSync(join(process.argv[2], "aml-receipt-"));
+    writeFileSync(join(evidence, "receipt.json"), JSON.stringify(receipt));
+    writeFileSync(join(evidence, "request.json"), request);
+    writeFileSync(join(evidence, "destination-public.pem"), destination.publicKey.export({ type: "spki", format: "pem" }));
+    console.error(evidence);
+  }
   console.log(JSON.stringify({
     sandbox: true, acknowledgment: "none", permit_replay: "denied",
     before_commit: { signal: "SIGKILL", outcome: "unresolved", receipt: null },

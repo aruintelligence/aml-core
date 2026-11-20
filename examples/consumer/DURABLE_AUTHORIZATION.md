@@ -80,3 +80,17 @@ key. This sandbox records a payment request only. A valid receipt attests to
 the destination's claim that the request was recorded. These checks cover abrupt process termination at two SQLite transaction
 boundaries. Network partitions, power failure, rollback, and production key
 custody need separate validation.
+
+To check a receipt offline, pass an existing directory to the recovery example.
+It writes a fresh subdirectory with the receipt, exact request bytes, and
+sandbox public key. Use the operation ID printed in the receipt for this demo.
+
+```bash
+node examples/consumer/recover-payment-request.mjs /tmp
+node examples/consumer/verify-payment-receipt.mjs RECEIPT REQUEST OPERATION_ID DESTINATION_PUBLIC_PEM
+```
+
+For an external audit, supply the expected operation ID and exact request
+bytes from your operation record. Obtain the destination public key from
+your trusted configuration. The command verifies destination evidence
+without querying the destination and reports no execution authority.
