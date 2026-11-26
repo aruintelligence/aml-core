@@ -121,8 +121,12 @@ still fail this additional condition with exit `2`. Invalid expectations or
 a pin for an absent input produce usage exit `1`. The Python verifier uses its
 documented narrower portable JSON subset.
 
-Exit `0` requires internal validity, the saved threshold, and every held
-condition supplied. Exit `2` means a verification condition failed; exit `1`
+Exit `0` requires the complete authorization decision (`authorized: true`):
+internal validity, the saved threshold, every held condition supplied, and a
+held policy. Exit `3` means the requested conditions were met without
+authorization (for example no `--policy`); `--diagnostic-only` exits `0` in
+that case and labels the output `NOT AN AUTHORIZATION DECISION`. Exit `2`
+means a verification condition failed; exit `1`
 means unreadable JSON, missing paired inputs, or invalid held configuration. Run
 `node scripts/check-signed-quorum-python.mjs` to compare its results against
 JavaScript on signed fixtures, including dissent, tampering, key metadata
@@ -195,6 +199,22 @@ padding, or whitespace cannot be accepted by one implementation alone.
 Nonce encoding does not attest to the quality of randomness. Custom historical
 challenges outside the generator's shape need to be regenerated for this
 reference verifier profile; the frozen schema is unchanged.
+
+## Trust config
+
+`trust_config.py` (standard library only; pure-Python RFC 8032 Ed25519) evaluates
+the signed trust config from [docs/TRUST_CONFIG.md](../../docs/TRUST_CONFIG.md)
+against the same state directory and single-use store as the JavaScript CLI:
+
+```bash
+python3 independent/python/trust_config.py trust-verify --trust-config trust.json --trust-state state/
+python3 independent/python/trust_config.py conformance conformance/trust-config/vectors.json
+```
+
+`verify_witness.py`, `verify_signed_quorum.py` and the evidence verifiers accept
+`--trust-config`, `--trust-state` and `--single-use-store`. On an enrolled host
+(`/etc/aml/trust`, `$AML_TRUST_STATE_DIR` or `--trust-state`) a missing or
+untrusted config is not authorized (exit 3).
 
 ## Deliberate separation
 

@@ -1,16 +1,18 @@
 import http from "node:http";
-import { createPrivateKey, randomUUID } from "node:crypto";
+import { createHash, createPrivateKey, randomUUID } from "node:crypto";
 import { readJson } from "./readJson.js";
 import { createLockedHttpPolicy } from "./lockedPolicy.js";
 import { createRequestAuthenticator } from "./requestAuth.js";
 import { createInflightLimit } from "./inflightLimit.js";
 import { executeAccountableIntent, signExecutionReceipt, verifyExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { verifyOfficialBrandAuthorization } from "../runtime/brandTrust.js";
+import { commandAuthorizationDecision, pinMatches, AML_NOT_AN_AUTHORIZATION_DECISION } from "../runtime/commandAuthorization.js";
 import { parseJsonWithoutDuplicateKeys } from "../runtime/strictJson.js";
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
 import { evaluateInterfaceBatch } from "../runtime/batchInterfaceFirewall.js";
 import { evaluatePolicyCanary } from "../runtime/policyCanary.js";
 import { verifyWitnessBundle } from "../docs/aml-witness-bundle.js";
+import { canonicalJSONStringifyBrowser } from "../docs/aml-browser-integrity.js";
 import fs from "node:fs";
 
 function send(res, status, body, headers = {}) {
@@ -73,6 +75,19 @@ function signDeploymentReceipt(deployment, signer) {
   const signed = signer(receipt);
   deployment.result.receipt = signed;
   if (deployment.result.report) deployment.result.report.receipt = signed;
+}
+
+// Directive 010: explicit permission for one deployment evaluation. The AML
+// policy itself must allow the intent (not shadow mode or failure_mode=open),
+// without an evaluation error, under a server-locked policy.
+function deploymentAuthorizationDecision(evaluation, serverLocked) {
+  return commandAuthorizationDecision({
+    evaluation_ok: !evaluation.evaluation_error,
+    policy_allowed: !evaluation.evaluation_error && evaluation.aml_allowed === true,
+    policy_server_locked: serverLocked === true
+  }, ["evaluation_ok", "policy_allowed", "policy_server_locked"], {
+    evaluation_ok: "AML_AUTHZ_EVALUATION_ERROR", policy_allowed: "AML_AUTHZ_POLICY_DENIED",
+    policy_server_locked: "AML_AUTHZ_POLICY_CHOSEN_BY_REQUEST" });
 }
 
 export function createAmlHttpServer(options = {}) {
@@ -155,8 +170,12 @@ export function createAmlHttpServer(options = {}) {
           timestamp: body.timestamp,
           stream_id: body.stream_id
         });
+        // Directive 010: the caller chose the profile and context, so this is
+        // an evaluation report, never an authorization (HTTP 200 = evaluated).
         return send(res, 200, {
           protocol: "aml-http-evaluation/1",
+          authorized: false,
+          decision_use: AML_NOT_AN_AUTHORIZATION_DECISION,
           allowed: receipt.selected_render.suppressed === 0,
           selected_render: receipt.selected_render,
           receipt
@@ -192,8 +211,16 @@ export function createAmlHttpServer(options = {}) {
           try { signDeploymentReceipt(result, receiptSigner); }
           catch { return send(res, 503, { error: "receipt_signing_unavailable" }, headers); }
         }
+        // Directive 010: HTTP 200 means the evaluation completed. Permission is
+        // the explicit `authorized` field: the AML policy itself allowed the
+        // intent (not shadow mode or failure_mode=open) under a server-locked
+        // policy. A request-chosen profile/mode never authorizes.
+        const deploymentDecision = deploymentAuthorizationDecision(result, Boolean(lockedPolicy));
         return send(res, result.evaluation_error ? 422 : 200, {
           protocol: "aml-http-deployment-evaluation/1",
+          authorized: deploymentDecision.authorized === true,
+          authorization: deploymentDecision,
+          decision_use: deploymentDecision.authorized === true ? "authorization" : AML_NOT_AN_AUTHORIZATION_DECISION,
           policy_source: lockedPolicy ? "server" : "request_or_default",
           mode: result.mode,
           failure_mode: result.failure_mode,
@@ -241,8 +268,22 @@ export function createAmlHttpServer(options = {}) {
           try { result.results.forEach(item => signDeploymentReceipt(item.evaluation, receiptSigner)); }
           catch { return send(res, 503, { error: "receipt_signing_unavailable" }, headers); }
         }
+        // Directive 010: HTTP 200 means the batch was evaluated. Each item
+        // carries its own explicit decision; the batch is authorized only when
+        // it is non-empty and every item is. `effective_allowed` (which shadow
+        // mode or failure_mode=open can set) is never permission.
+        const items = result.results.map(item => {
+          const decision = deploymentAuthorizationDecision(item, Boolean(lockedPolicy));
+          return { ...item, authorized: decision.authorized === true, authorization: decision,
+            decision_use: decision.authorized === true ? "authorization" : AML_NOT_AN_AUTHORIZATION_DECISION };
+        });
+        const batchAuthorized = items.length > 0 && items.every(item => item.authorized === true);
         return send(res, 200, {
           ...result,
+          results: items,
+          authorized: batchAuthorized,
+          authorized_count: items.filter(item => item.authorized === true).length,
+          decision_use: batchAuthorized ? "authorization" : AML_NOT_AN_AUTHORIZATION_DECISION,
           protocol: "aml-http-deployment-batch/1",
           policy_source: lockedPolicy ? "server" : "request_or_default",
           runtime_protocol: result.protocol
@@ -276,8 +317,19 @@ export function createAmlHttpServer(options = {}) {
       try {
         const body = await readJson(req, maxBodyBytes, bodyTimeoutMs);
         if (!body.receipt) return send(res, 400, { error: "receipt_required" }, headers);
+        // Directive 010: a hash-consistent receipt is not permission. 200
+        // requires `expected_receipt_sha256`, the relying party's
+        // out-of-band pin of the exact receipt digest.
         const verification = verifyExecutionReceipt(body.receipt);
-        return send(res, verification.verified ? 200 : 422, verification, headers);
+        const receiptDecision = commandAuthorizationDecision({
+          verified: verification.verified === true,
+          artifact_pinned: verification.verified === true &&
+            pinMatches(body.expected_receipt_sha256 ?? null, body.receipt?.receipt_sha256)
+        }, ["verified", "artifact_pinned"], { verified: "AML_AUTHZ_NOT_VERIFIED", artifact_pinned: "AML_AUTHZ_ARTIFACT_NOT_PINNED" });
+        const authorizedReceipt = receiptDecision.authorized === true;
+        return send(res, authorizedReceipt ? 200 : 422, { ...verification, authorized: authorizedReceipt,
+          authorization: receiptDecision,
+          decision_use: authorizedReceipt ? "authorization" : AML_NOT_AN_AUTHORIZATION_DECISION }, headers);
       } catch (error) {
         return send(res, error.statusCode ?? 400, { error: error.message || "verification_failed" }, headers);
       }
@@ -287,14 +339,32 @@ export function createAmlHttpServer(options = {}) {
       try {
         const body = await readJson(req, maxBodyBytes, bodyTimeoutMs);
         if (!body.bundle) return send(res, 400, { error: "bundle_required" }, headers);
-        const now = body.now == null
-          ? Date.now()
-          : (typeof body.now === "number" ? body.now : Date.parse(body.now));
-        if (!Number.isFinite(now)) return send(res, 400, { error: "invalid_now" }, headers);
-        const result = await verifyWitnessBundle(body.bundle, { now });
-        return send(res, result.valid ? 200 : 422, {
+        // A bundle is self-consistent around whatever challenge it carries, so
+        // a 200 must mean it matched the challenge the caller retained. The
+        // caller is the relying party; a relayed response is bound to that
+        // challenge only through held_challenge_sha256. 200 requires the
+        // explicit `authorized` decision: `valid` is consistency only, and a
+        // caller-supplied `now` outside the library's clock-skew bound is
+        // reported (verified may be true) but never authorizes.
+        if (body.expected_challenge == null || typeof body.expected_challenge !== "object" ||
+            Array.isArray(body.expected_challenge)) {
+          return send(res, 400, { error: "expected_challenge_required" }, headers);
+        }
+        // Directive 009: the library authorizes only on its own clock, so the
+        // server must not inject a clock it read itself. A caller `now` is
+        // still forwarded for replay diagnostics and can never authorize.
+        const options = { expectedChallenge: body.expected_challenge };
+        if (body.now != null) {
+          const now = typeof body.now === "number" ? body.now : Date.parse(body.now);
+          if (!Number.isFinite(now)) return send(res, 400, { error: "invalid_now" }, headers);
+          options.now = now;
+        }
+        const result = await verifyWitnessBundle(body.bundle, options);
+        return send(res, result.authorized === true ? 200 : 422, {
           protocol: "aml-http-witness-verification/1",
-          ...result
+          ...result,
+          held_challenge_sha256: createHash("sha256")
+            .update(canonicalJSONStringifyBrowser(body.expected_challenge)).digest("hex")
         }, headers);
       } catch (error) {
         return send(res, error.statusCode ?? 400, { error: error.message || "witness_verification_failed" }, headers);
@@ -310,7 +380,17 @@ export function createAmlHttpServer(options = {}) {
         const result = verifyOfficialBrandAuthorization(body.credential, trustRoots, {
           revocation_registry: brandRevocationRegistry
         });
-        return send(res, result.valid && result.official ? 200 : 422, result, headers);
+        // Directive 010: official (trusted-root key) is a precondition. 200
+        // also requires the server's revocation registry to have been checked;
+        // a server started without one cannot authorize.
+        const brandDecision = commandAuthorizationDecision({
+          official: result.valid === true && result.official === true,
+          revocation_checked: brandRevocationRegistry !== null && result.credential_revocation_checked === true
+        }, ["official", "revocation_checked"], { official: "AML_AUTHZ_NOT_OFFICIAL",
+          revocation_checked: "AML_AUTHZ_REVOCATION_NOT_CHECKED" });
+        const authorizedBrand = brandDecision.authorized === true;
+        return send(res, authorizedBrand ? 200 : 422, { ...result, authorized: authorizedBrand, authorization: brandDecision,
+          decision_use: authorizedBrand ? "authorization" : AML_NOT_AN_AUTHORIZATION_DECISION }, headers);
       } catch (error) {
         return send(res, error.statusCode ?? 400, { error: error.message || "brand_verification_failed" }, headers);
       }

@@ -119,9 +119,16 @@ From a checkout or installed preview package, the offline command is:
 aml verify-signed-quorum saved-quorum.json
 ```
 
-It prints the verification result as JSON. Exit `0` requires both a consistent
-quorum and a met threshold; exit `2` means rejection or an unmet threshold;
-exit `1` means usage or unreadable/malformed JSON. This command is in the
+It prints the verification result as JSON. Exit `0` requires the complete
+authorization decision (`authorized: true`): a consistent quorum, a met
+threshold, every requested condition, and a held policy (plus the witness
+requirement when the policy needs one). Exit `3` means the requested
+conditions were met but the result is not authorized, for example because no
+held policy was supplied; exit `2` means rejection or an unmet condition;
+exit `1` means usage or unreadable/malformed JSON. `--diagnostic-only` exits
+`0` when the requested conditions are met and labels the output
+`NOT AN AUTHORIZATION DECISION`. See
+[Command exit status and authorization](COMMAND_AUTHORIZATION.md). This command is in the
 current preview checkout, not the pinned `v1.3.0` stable package. The saved
 signed quorum counts distinct valid endorser **keys**, and accepts at most 64
 supplied reports.
@@ -167,7 +174,7 @@ aml verify-signed-quorum saved-quorum.json --policy held-policy.json \
   --expect-inputs held-inputs.json --decision-only
 ```
 
-Exit `0`, `1`, and `2` keep their normal meanings. For example, a compact
+Exit `0`, `1`, `2`, and `3` keep their normal meanings. For example, a compact
 result may say `valid: true` and `threshold_met: true` while `policy_met` or
 `inputs_met` is false and the exit status is `2`. A malformed quorum may not
 have input fingerprints. File reads, JSON parsing, and held-input validation
@@ -261,6 +268,24 @@ own threshold using only allowlisted keys with valid signatures and positive
 reports. With a policy, exit `0` requires all three. Exit `2` means a quorum
 or policy condition failed; malformed verifier-held policy is a usage error
 (exit `1`). The policy must be kept separately from the untrusted quorum.
+
+Both the JavaScript and Python verifier results also include `authorized`
+and `authorization` (`decision`, `required`, fixed `reasons`). `valid` means
+only that the saved quorum is internally consistent: anyone can mint keys and
+sign agreeing reports, and a substituted witness bundle leaves `valid` true.
+Never act on `valid` alone. `authorized` is the field that grants permission:
+it requires `valid`, `threshold_met`, every requested condition, a
+relying-party-held policy with `policy_met`, and, when a witness bundle is
+supplied or the policy requires one, `witness_met` and
+`replayable_claims_consistent` (the witness replay must itself be authorized
+against your retained challenge on the verifier's clock). Missing, unknown, or
+non-boolean conditions deny (`AML_AUTHZ_QUORUM_NOT_VALID`,
+`AML_AUTHZ_THRESHOLD_NOT_MET`, `AML_AUTHZ_REQUESTED_CONDITIONS_UNMET`,
+`AML_AUTHZ_HELD_POLICY_REQUIRED_AND_MET`,
+`AML_AUTHZ_WITNESS_REQUIREMENT_UNMET`, `AML_AUTHZ_UNKNOWN_CONDITION`). For
+compatibility, the CLI exit status and `--decision-only` output are unchanged:
+exit `0` still means `requested_conditions_met`, which without a held policy
+does not imply authorization.
 
 Both the JavaScript and Python verifier results include
 `requested_conditions_met`, the exact exit `0` gate for the options supplied.

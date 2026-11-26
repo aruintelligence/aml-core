@@ -79,7 +79,11 @@ def verify(migration, policy):
 
 
 if __name__ == "__main__":
+    from authorization_cli import split_flags, decide
+    policy, pin, diagnostic, gate = None, None, "--diagnostic-only" in sys.argv, None
     try:
+        argv, pin, diagnostic = split_flags(sys.argv[1:])
+        sys.argv = [sys.argv[0], *argv]
         if len(sys.argv) not in (3, 5) or (len(sys.argv) == 5 and sys.argv[1] != "recover"):
             raise ValueError("Usage: python3 independent/python/verify_evidence_migration.py <handoff.json> <trusted-policy.json>\n"
                              "       python3 independent/python/verify_evidence_migration.py recover <handoff.json> <trusted-policy.json> <new-v1.json>")
@@ -89,6 +93,12 @@ if __name__ == "__main__":
         policy = strict_json(pathlib.Path(policy_path).read_text(encoding="utf-8"))
         report = verify(migration, policy)
         if recovering:
+            # Recovery writes a file: it runs only on the full authorization
+            # decision, never in diagnostic mode or with an unpinned policy.
+            # The gate decision consumes (single use) before the write.
+            gate = None if diagnostic else decide(report, policy, pin, False)[0]
+            if gate is None or gate["authorized"] is not True:
+                raise ValueError("recover_requires_authorization")
             data, _ = unpack(migration["source_archive_base64"])
             with open(sys.argv[4], "xb") as output:
                 output.write(data + b"\n")
@@ -96,5 +106,7 @@ if __name__ == "__main__":
     except (ValueError, KeyError, TypeError, OSError, OverflowError, RecursionError) as error:
         report = {"protocol": "aml-evidence-migration-python-report/1", "verified": False,
                   "policy_hint_trusted": False, "reason": str(error)}
+    prior = gate.get("single_use", {}).get("consumed") if isinstance(gate, dict) and "single_use" in gate else None
+    report, code = decide(report, policy, pin, diagnostic, single_use_result=prior)
     print(json.dumps(report, indent=2, ensure_ascii=False))
-    sys.exit(0 if report["verified"] else 1)
+    sys.exit(code)

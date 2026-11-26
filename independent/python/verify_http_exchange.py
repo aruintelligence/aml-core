@@ -93,12 +93,23 @@ def check_exchange(exchange, capsule, expected, policy):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
-        report = failure("usage: verify_http_exchange.py <exchange.json> <capsule.json> <host-expected.json> <trusted-policy.json>")
+    from authorization_cli import split_flags, decide
+    policy, pin, diagnostic = None, None, "--diagnostic-only" in sys.argv
+    try:
+        argv, pin, diagnostic = split_flags(sys.argv[1:])
+    except ValueError:
+        argv = None
+    if argv is None or len(argv) != 4:
+        report = failure("usage: verify_http_exchange.py <exchange.json> <capsule.json> <host-expected.json> <trusted-policy.json> [--expected-policy-sha256 HEX] [--diagnostic-only]")
     else:
         try:
-            report = check_exchange(*(read_json(name) for name in sys.argv[1:]))
+            inputs = [read_json(name) for name in argv]
+            policy = inputs[3]
+            report = check_exchange(*inputs)
         except (OSError, ValueError, UnicodeError, TypeError, KeyError, IndexError, RecursionError, OverflowError):
             report = failure("invalid_input")
+    # Directive 010: verified evidence is a precondition; exit 0 needs the
+    # pinned trusted policy as well (verified without it exits 3).
+    report, code = decide(report, policy, pin, diagnostic)
     print(json.dumps(report, indent=2, ensure_ascii=False))
-    sys.exit(0 if report["verified"] else 1)
+    sys.exit(code)

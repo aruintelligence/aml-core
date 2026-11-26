@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { canonicalJSONStringify } from "./canonicalJson.js";
+import { requireSignatureBase64 } from "./strictBase64.js";
 import { verifyGovernanceDisclosure, AML_GOVERNANCE_DISCLOSURE } from "./governanceDisclosure.js";
 
 export const AML_GOVERNANCE_DISCLOSURE_COMMITMENT = "aml-governance-disclosure-commitment/1";
@@ -68,7 +69,7 @@ export function verifySignedGovernanceDisclosureCommitment(signed, options = {})
     if (signature.algorithm !== "Ed25519") throw new Error("signature algorithm must be Ed25519");
     fingerprint = publicKeyFingerprint(signature.public_key_pem);
     if (fingerprint !== signature.public_key_fingerprint_sha256) throw new Error("public key fingerprint mismatch");
-    signatureValid = crypto.verify(null, material(commitment), crypto.createPublicKey(signature.public_key_pem), Buffer.from(signature.signature_base64, "base64"));
+    signatureValid = crypto.verify(null, material(commitment), crypto.createPublicKey(signature.public_key_pem), requireSignatureBase64(signature.signature_base64));
     if (!signatureValid) errors.push("Ed25519 signature verification failed");
   } catch (error) {
     errors.push(error.message || String(error));

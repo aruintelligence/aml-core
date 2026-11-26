@@ -4,6 +4,69 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 
 ## [Unreleased]
 
+### Breaking: signed trust config, durable single use, and JS/Python/Go parity
+
+- New signed, versioned trust config (`aml trust-init`, `trust-sign`, `trust-verify`; [docs/TRUST_CONFIG.md](docs/TRUST_CONFIG.md)):
+  - k-of-n Ed25519 root signatures;
+  - rotation that needs the current and the new root;
+  - rollback and fork protection persisted append-only;
+  - expiry on the host clock with a persisted floor;
+  - sticky revocation and role-scoped keys;
+  - policy, registry and profile digests.
+- The verifiers accept `--trust-config`, `--trust-state` and `--single-use-store`. That covers `verify*`, `replay-receipt`, `verify-witness` and `verify-signed-quorum`, plus `independent/python/verify_witness.py`, `verify_signed_quorum.py` and the evidence verifiers.
+- On an enrolled host (`/etc/aml/trust`, `$AML_TRUST_STATE_DIR`, `--trust-state`), a missing or untrusted config exits `3`. Flag pins are ANDed with the config, never ORed.
+- The Go witness verifier reports the trust decision and still never authorizes.
+- Durable single use: `--single-use-store <dir>` or `require_single_use: true`. With a trusted config, the enrolled `<state-dir>/single-use/` store is always used too, so a fresh store cannot reopen a consumed artifact. Each record is created with `O_CREAT|O_EXCL` and fsync'd before authorization. The store is shared by the JavaScript and Python verifiers. Witness and quorum artifacts are identified by canonical JSON, so re-serializing an artifact does not make it new.
+- `deploy` in trust-config mode requires `profile_sha256` to match the selected profile (`aml profile-sha256 <profile>`). It also refuses a caller `--timestamp`.
+- Strict shared encodings:
+  - Ed25519 keys in canonical SPKI PEM;
+  - canonical padded base64 signatures;
+  - calendar-exact UTC timestamps;
+  - duplicate JSON keys refused.
+- Configs that relied on lenient parsing are refused.
+- `independent/python/trust_config.py` and `independent/go/trustconfig.go` use the standard library only. `conformance/trust-config/vectors.json` and `test/trust-config-parity.test.js` require identical JS/Python/Go results for every case, including denials.
+- A deterministic concurrent-update test (via an injected `onBeforePersist` seam) covers a newer version landing between the checks and the persist step.
+
+### Breaking: stricter signature, key and quorum validation
+
+- Signatures: every JavaScript, Python and Go verifier now accepts exactly one encoding of each signature (canonical, padded, standard-alphabet base64, as produced by ĀML signers). Signatures produced by ĀML signers keep verifying. A signature from another producer that is not in canonical form is refused; re-encode the decoded bytes with a standard base64 encoder (no re-signing needed).
+- Keys: capability tokens and threshold authorizations accept Ed25519 keys only, with or without a trust config. Signing with another key type throws `AML_KEY_TYPE_NOT_ED25519`; verification refuses it with reason `key_type_not_ed25519` (a threshold authorization is refused as a whole if any signer uses another key type). Re-issue affected artifacts with Ed25519 keys.
+- Quorum configuration: a k-of-n witness quorum must tolerate at least one faulty witness (`2k - n - 1 >= 1`; for example 3-of-4 and 5-of-7 pass, 2-of-3 and 4-of-7 do not). `aml-governance-witness-quorum` refuses a pinned policy that does not meet this with `AML_AUTHZ_QUORUM_CONFIG_UNSAFE`, and an explicit threshold that is not a positive integer is a policy error rather than a default of 1 (also for governance policy-transition authorization).
+- JavaScript, Python and Go share conformance vectors for all three rules (`conformance/trust-config/`, `conformance/key-policy/`, `conformance/quorum-safety/`).
+
+### Breaking: verifier commands exit 0 only on an explicit authorization decision
+
+- A successful verification command no longer implies authorization from `valid` alone. Verifier and validator commands now exit `0` only when `authorized === true` and the `aml-authorization-decision/1` object agrees; a consistent but unauthorized result exits `3`. Other non-zero codes keep their meaning. Reports include `valid`, `authorized`, `authorization.reasons` and `remaining_trust_assumptions`.
+- Affected: `aml-governance-disclosure-verify`, `aml-governance-disclosure-signed-verify`, `aml-governance-transcript-verify`, `aml-governance-transcript-signature-verify`, `aml-release-profile validate|verify`, `aml verify-brand-authorization` (new `AML_TRUSTED_BRAND_KEY_SHA256`; caller time authorizes only within 1 s of the local clock), `aml verify-signed-quorum`, `independent/python/verify_signed_quorum.py`, `scripts/check-external-verifier-kit.mjs` (new `--expected-root-sha256`), `scripts/validate-witness-record.mjs`, `scripts/witness-record-gate.mjs` and `actions/witness-record`, `independent/python/verify_witness.py`, `independent/go` (`verify.sh` now preserves exit codes), and `independent/python/wire_runtime.py verify`.
+- New `--diagnostic-only` keeps exit `0` for a consistent result; its output reports `authorized: false` and `NOT AN AUTHORIZATION DECISION`. CI conformance runs, the external verifier kit workflow and the witness-record Action use it. The locked external verifier contract is unchanged.
+- The valid-field static check now follows aliases (variables, destructuring, subscripts, properties, helper returns, relative imports; Python via AST) and implicit or inverted exits. It no longer allowlists valid-only validator exits.
+- Exit table, migration guidance and remaining exceptions: [docs/COMMAND_AUTHORIZATION.md](docs/COMMAND_AUTHORIZATION.md).
+
+### Breaking (Directive 010): no verification field is permission
+
+- `aml verify`, `verify-receipt`, `replay-receipt`, `verify-signed-receipt`, `verify-policy-pack`, `verify-audit`, `aml-meaning verify-manifest`/`verify-attestation`, `aml-release-proof`, `aml-release-quorum verify`, `aml-brand-verify`, `aml-governance-witness-quorum`, `aml-github-attestation`, `scripts/semantic-release-gate.js` now exit `0` only when the relying party pins the artifact digest, signing key, policy digest, revocation registry digest or authorization profile; a consistent but unpinned result exits `3`. `wire_runtime.py negotiate` exits `3` when accepted (0 only with `--diagnostic-only`).
+- `aml-governance-witness-quorum` no longer trusts a policy carried inside the evidence file; `--expected-policy-sha256` and a trusted-key list are required.
+- Brand verification requires a checked revocation registry whose canonical digest equals `AML_TRUSTED_REVOCATION_REGISTRY_SHA256` (CLI) or a server-held registry (HTTP); a stale registry can no longer hide a revocation.
+- A caller-supplied verification time never authorizes (the 1-second tolerance is removed).
+- HTTP: `/v1/verify-receipt` returns 200 only with a matching `expected_receipt_sha256`; `/v1/verify-brand-authorization` returns 422 without a server registry; `/v1/evaluate` and `/v1/deployment/evaluate` report an explicit `authorized` field.
+- Composite Actions pass inputs through `env:` instead of interpolating `${{ inputs.* }}` into shell; `semantic-release-proof` gains `trusted-key-sha256`, `diagnostic-only` and an `authorized` output; `verify-official` gains `revocation-registry-sha256`.
+- New `authorizeCapabilityToken` / `createCapabilityConsumptionGuard` bind capability tokens to a pinned issuer key, audience, executor, session, intent and a single-use nonce; `verifyCapabilityToken().valid` is documented as non-authorizing.
+- New CodeQL data-flow queries (`tooling/codeql/`) and `scripts/check-authorization-dataflow.mjs` cover call arguments, containers, computed property names, multi-line expressions, imports and Go aliases; the lexical checker fails any shipped success gated only on verification fields.
+
+### Breaking (Directive 010 follow-up): pinned policy for Python evidence verifiers; batch authorization
+
+- `independent/python/verify_evidence_{archive,capsule,migration}.py`, `verify_http_exchange.py` and `evidence_repair_record.py verify` exit `0` only when the evidence verifies AND `--expected-policy-sha256` equals the SHA-256 of the canonical trusted-policy file (`python3 independent/python/authorization_cli.py policy-sha256 <policy.json>`); verified-but-unpinned exits `3`; `--diagnostic-only` exits `0` with `authorized: false`. A substituted (widened) policy file no longer verifies to exit `0`. `verify_evidence_migration.py recover` writes nothing unless authorized.
+- `POST /v1/deployment/batch` adds per-item `authorized` / `authorization` and batch-level `authorized` (true only for a non-empty batch where every item is AML-allowed under a server-locked policy), `authorized_count` and `decision_use`. `effective_allowed` (which request-chosen shadow mode can set) is never permission.
+- CodeQL data-flow queries now follow `Map` set/get, `Reflect.get`, `getattr` and Go `reflect` field reads with constant names, check conditional statuses per success branch and guard conditions per operand (authorization must be an `&&`/`and` conjunct), and credit dominating JavaScript authorization guards. New workflow `codeql-authorization-dataflow.yml` runs the seeded corpus and gates repository alerts on `audit/AML_AUTHZ_DATAFLOW_REVIEW.json` (no suppressions).
+- CI: `aml verify` of the freshly compiled bundle now passes `--expected-sha256` with the manifest digest captured by the compile step, and `scripts/check-ci-bundle-pin.mjs` proves unpinned, wrongly pinned, diagnostic and tampered bundles are not authorized.
+- Python evidence verifiers import `cryptography` only when checking Ed25519 signatures, so `authorization_cli.py policy-sha256` works without that package. A missing `cryptography` package on a signature path fails closed (non-zero, not authorized) with a clear error. Pilot 003 CI installs `cryptography>=42,<51`, matching the Python wire-runtime workflow.
+
+### Repository hygiene
+
+- Added community files expected of a public reference repository: Contributor Covenant code of conduct, support guide, issue forms, Dependabot config, and editor defaults.
+- Hardened GitHub Actions workflows: pin official actions to full commit SHAs, declare top-level least-privilege permissions, add concurrency groups, and set job timeouts. CI now runs the test suite on Node.js 20 and 24.
+- Rewrote the root README for an honest status and security-model summary. No change to product code or tests in this hygiene work.
+
 ### 2026-11-04 action-boundary pilot hardening
 
 - Prevented the local one-use grant pilot from silently recreating a missing spent-marker directory. New stores carry a version-2 state marker; existing unmarked stores require operator reconciliation and a fresh directory after grants expire.

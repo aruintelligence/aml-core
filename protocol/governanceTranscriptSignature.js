@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { canonicalJSONStringify } from "./canonicalJson.js";
+import { requireSignatureBase64 } from "./strictBase64.js";
 import { verifyGovernanceStreamTranscript, AML_GOVERNANCE_TRANSCRIPT } from "./governanceTranscript.js";
 
 export const AML_SIGNED_GOVERNANCE_TRANSCRIPT = "aml-signed-governance-stream-transcript/1";
@@ -77,7 +78,7 @@ export function verifySignedGovernanceStreamTranscript(signed, options = {}) {
       null,
       transcriptMaterial(signed.transcript),
       crypto.createPublicKey(signature.public_key_pem),
-      Buffer.from(signature.signature_base64, "base64")
+      requireSignatureBase64(signature.signature_base64)
     );
     if (!signatureValid) errors.push("Ed25519 signature verification failed");
   } catch (error) {

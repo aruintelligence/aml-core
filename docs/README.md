@@ -2,6 +2,18 @@
 
 ĀML™ — ĀRU Meaning Language™ — is a working research prototype for meaning-native, accountable interfaces. This directory collects the public research notes, explainers, tooling, and supporting material around the compiler and EthicalRenderGate™.
 
+The software is MIT-licensed reference material, not a ratified standard and not a certified or generally production-ready product. Project-authored labs and tests are engineering evidence, not independent validation.
+
+## Community and security
+
+- [Project README](../README.md)
+- [Contributing](../CONTRIBUTING.md)
+- [Code of Conduct](../CODE_OF_CONDUCT.md)
+- [Support](../SUPPORT.md)
+- [Security policy](../SECURITY.md)
+- [Governance](../GOVERNANCE.md)
+- [Changelog](../CHANGELOG.md)
+
 ## Start with one decision
 
 - [First Contact](https://aruintelligence.github.io/aml-core/first-run.html) — change an agent destination or a declared render value, inspect the browser calculation, then follow the source. The action path checks a published project vector and dispatches no tool; the interface path observes the project `<aml-gate>` event and actual visibility.
@@ -31,7 +43,7 @@ The homepage now runs the project action planner and browser gate in its first-s
 - [EthicalRenderGate™ Explained](ETHICAL_RENDER_GATE_EXPLAINED.md)
 - [Open Research Program](RESEARCH_PROGRAM.md)
 
-## Mainstream adoption
+## Adoption tooling
 
 - [AI Interface Firewall](AI_INTERFACE_FIREWALL.md)
 - React-compatible `AccountableUI` adapter at [`adapters/react.js`](../adapters/react.js)

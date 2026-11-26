@@ -10,6 +10,13 @@ import { createEvidenceRenewal, attestEvidenceRenewal } from "../runtime/evidenc
 import { executeAccountableIntent, signExecutionReceipt } from "../compiler/accountablePipeline.js";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 
+// Directive 010: the relying party pins the digest of its own trusted policy.
+const policyPinOf = file => {
+  const out = spawnSync("python3", [path.resolve("independent/python/authorization_cli.py"), "policy-sha256", file], { encoding: "utf8" });
+  if (out.status !== 0) throw new Error(`policy pin: ${out.stderr}`);
+  return out.stdout.trim();
+};
+
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-migration-python-"));
 const verifier = path.resolve("independent/python/verify_evidence_migration.py");
 const v1 = path.resolve("independent/vectors/archive-v1");
@@ -30,7 +37,8 @@ function check(name, handoff, trusted, expected, reason = null, action = null) {
   const destination = path.join(directory, `${name}-recovered.json`);
   fs.writeFileSync(handoffPath, typeof handoff === "string" ? handoff : JSON.stringify(handoff));
   fs.writeFileSync(trustPath, JSON.stringify(trusted));
-  const args = action === "recover" ? [verifier, "recover", handoffPath, trustPath, destination] : [verifier, handoffPath, trustPath];
+  const pin = ["--expected-policy-sha256", policyPinOf(trustPath)];
+  const args = action === "recover" ? [verifier, "recover", handoffPath, trustPath, destination, ...pin] : [verifier, handoffPath, trustPath, ...pin];
   const result = spawnSync("python3", args, { encoding: "utf8" });
   if (result.error) throw result.error;
   const report = JSON.parse(result.stdout);
@@ -53,6 +61,24 @@ try {
   const second = spawnSync("python3", recovered.args, { encoding: "utf8" });
   if (second.status !== 1 || JSON.parse(second.stdout).verified) throw new Error("Python recovery overwrote an existing file");
   results.push({ name: "recover-without-overwrite", verified: true });
+  {
+    // Directive 010: recovery writes a file, so it needs the pinned policy;
+    // unpinned or diagnostic recovery refuses and writes nothing.
+    const trustPath = path.join(directory, "authz-trust.json");
+    const handoffPath = path.join(directory, "authz-handoff.json");
+    fs.writeFileSync(trustPath, JSON.stringify(policy));
+    fs.writeFileSync(handoffPath, JSON.stringify(frozen));
+    for (const extra of [[], ["--diagnostic-only"], ["--expected-policy-sha256", "0".repeat(64)]]) {
+      const target = path.join(directory, `authz-recover-${extra.length}-${extra[1] ?? ""}.json`);
+      const out = spawnSync("python3", [verifier, "recover", handoffPath, trustPath, target, ...extra], { encoding: "utf8" });
+      if (out.status !== 1 || fs.existsSync(target) || JSON.parse(out.stdout).reason !== "recover_requires_authorization") {
+        throw new Error(`unauthorized recovery ${extra.join(" ")}: ${out.status} ${out.stdout}`);
+      }
+    }
+    const plain = spawnSync("python3", [verifier, handoffPath, trustPath], { encoding: "utf8" });
+    if (plain.status !== 3 || JSON.parse(plain.stdout).authorized !== false) throw new Error(`unpinned verify: ${plain.stdout}`);
+    results.push({ name: "recover-requires-authorization", verified: true });
+  }
 
   results.push({ name: "untrusted-witness", reason: check("untrusted-witness", frozen,
     { ...policy, trusted_fingerprints: ["f".repeat(64)], trusted_fingerprints_by_sequence: null }, false, "quorum_not_met").report.reason });

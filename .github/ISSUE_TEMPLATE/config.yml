@@ -1,0 +1,12 @@
+# Issue template chooser
+blank_issues_enabled: true
+contact_links:
+  - name: Security report
+    url: https://github.com/aruintelligence/aml-core/security/advisories/new
+    about: Do not file a public issue for a potentially exploitable vulnerability. Prefer private reporting, or email Office@aruintelligence.com as described in SECURITY.md.
+  - name: Documentation
+    url: https://aruintelligence.github.io/aml-core/
+    about: Project documentation and hosted labs.
+  - name: Support guide
+    url: https://github.com/aruintelligence/aml-core/blob/main/SUPPORT.md
+    about: How to ask for help, and what this repository does not promise.

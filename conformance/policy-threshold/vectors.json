@@ -1,0 +1,174 @@
+{
+ "type": "aml-policy-threshold-vectors/1",
+ "rule": "threshold omitted -> 1; positive safe integer -> itself; anything else -> invalid_threshold (threshold null), never 1",
+ "cases": [
+  {
+   "name": "omitted",
+   "policy_json": "{}",
+   "expect": {
+    "threshold": 1,
+    "error": null
+   }
+  },
+  {
+   "name": "omitted_with_other_fields",
+   "policy_json": "{\"trusted_fingerprints\":[]}",
+   "expect": {
+    "threshold": 1,
+    "error": null
+   }
+  },
+  {
+   "name": "one",
+   "policy_json": "{\"threshold\":1}",
+   "expect": {
+    "threshold": 1,
+    "error": null
+   }
+  },
+  {
+   "name": "two",
+   "policy_json": "{\"threshold\":2}",
+   "expect": {
+    "threshold": 2,
+    "error": null
+   }
+  },
+  {
+   "name": "sixty_four",
+   "policy_json": "{\"threshold\":64}",
+   "expect": {
+    "threshold": 64,
+    "error": null
+   }
+  },
+  {
+   "name": "integer_valued_float_text",
+   "policy_json": "{\"threshold\":2.0}",
+   "expect": {
+    "threshold": 2,
+    "error": null
+   }
+  },
+  {
+   "name": "exponent_integer",
+   "policy_json": "{\"threshold\":3e0}",
+   "expect": {
+    "threshold": 3,
+    "error": null
+   }
+  },
+  {
+   "name": "max_safe_integer",
+   "policy_json": "{\"threshold\":9007199254740991}",
+   "expect": {
+    "threshold": 9007199254740991,
+    "error": null
+   }
+  },
+  {
+   "name": "zero",
+   "policy_json": "{\"threshold\":0}",
+   "expect": {
+    "threshold": null,
+    "error": "invalid_threshold"
+   }
+  },
+  {
+   "name": "negative_zero",
+   "policy_json": "{\"threshold\":-0}",
+   "expect": {
+    "threshold": null,
+    "error": "invalid_threshold"
+   }
+  },
+  {
+   "name": "negative",
+   "policy_json": "{\"threshold\":-1}",
+   "expect": {
+    "threshold": null,
+    "error": "invalid_threshold"
+   }
+  },
+  {
+   "name": "fraction",
+   "policy_json": "{\"threshold\":1.5}",
+   "expect": {
+    "threshold": null,
+    "error": "invalid_threshold"
+   }
+  },
+  {
+   "name": "unsafe_integer",
+   "policy_json": "{\"threshold\":9007199254740992}",
+   "expect": {
+    "threshold": null,
+    "error": "invalid_threshold"
+   }
+  },
+  {
+   "name": "huge",
+   "policy_json": "{\"threshold\":1e300}",
+   "expect": {
+    "threshold": null,
+    "error": "invalid_threshold"
+   }
+  },
+  {
+   "name": "string_number",
+   "policy_json": "{\"threshold\":\"2\"}",
+   "expect": {
+    "threshold": null,
+    "error": "invalid_threshold"
+   }
+  },
+  {
+   "name": "empty_string",
+   "policy_json": "{\"threshold\":\"\"}",
+   "expect": {
+    "threshold": null,
+    "error": "invalid_threshold"
+   }
+  },
+  {
+   "name": "boolean_true",
+   "policy_json": "{\"threshold\":true}",
+   "expect": {
+    "threshold": null,
+    "error": "invalid_threshold"
+   }
+  },
+  {
+   "name": "boolean_false",
+   "policy_json": "{\"threshold\":false}",
+   "expect": {
+    "threshold": null,
+    "error": "invalid_threshold"
+   }
+  },
+  {
+   "name": "null",
+   "policy_json": "{\"threshold\":null}",
+   "expect": {
+    "threshold": null,
+    "error": "invalid_threshold"
+   }
+  },
+  {
+   "name": "array",
+   "policy_json": "{\"threshold\":[2]}",
+   "expect": {
+    "threshold": null,
+    "error": "invalid_threshold"
+   }
+  },
+  {
+   "name": "object",
+   "policy_json": "{\"threshold\":{\"k\":2}}",
+   "expect": {
+    "threshold": null,
+    "error": "invalid_threshold"
+   }
+  }
+ ]
+}

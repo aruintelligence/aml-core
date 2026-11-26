@@ -1,0 +1,190 @@
+{
+ "schema": "aml-authz-dataflow-review/1",
+ "note": "Reviewed alerts of tooling/codeql/*/VerificationWithoutAuthorization.ql on this repository. Not a suppression: every alert is still produced and printed; the gate fails on any alert not listed here and on any entry that no longer matches an alert. Entries are per sink line.",
+ "entries": [
+  {
+   "language": "javascript",
+   "file": "bin/aml.js",
+   "code": "process.exit(result.requested_conditions_met === true ? 0 : 2);",
+   "line_at_review": 463,
+   "class": "diagnostic-non-authorizing",
+   "why": "--diagnostic-only branch of verify-signed-quorum: exit 0 on requested conditions met, output authorized:false and NOT AN AUTHORIZATION DECISION; the non-diagnostic exit uses result.authorized."
+  },
+  {
+   "language": "javascript",
+   "file": "compiler/accountablePipeline.js",
+   "code": "if (!integrity.verified) {",
+   "line_at_review": 243,
+   "class": "precondition-deny-guard",
+   "why": "Verification failure denies before a privileged step (signing a receipt, trusting a release key, loading an authorization profile); verification is a precondition here, and the authorization decision is made by the caller (decideCommand / releaseKeyTrust authorized)."
+  },
+  {
+   "language": "javascript",
+   "file": "compiler/accountablePipeline.js",
+   "code": "if (!integrity.verified) throw new Error(\"Cannot sign a mutated or invalid ĀML execution receipt.\");",
+   "line_at_review": 276,
+   "class": "precondition-deny-guard",
+   "why": "Verification failure denies before a privileged step (signing a receipt, trusting a release key, loading an authorization profile); verification is a precondition here, and the authorization decision is made by the caller (decideCommand / releaseKeyTrust authorized)."
+  },
+  {
+   "language": "javascript",
+   "file": "scripts/check-evidence-archive-python.mjs",
+   "code": "if (!verifyEvidenceArchive(archive, policy).verified) throw new Error(\"JavaScript baseline failed\");",
+   "line_at_review": 66,
+   "class": "self-check-script",
+   "why": "Cross-runtime conformance script: throws when the JavaScript reference accepts a forged fixture or rejects a valid one; the guarded calls are further test steps, not an execution gate."
+  },
+  {
+   "language": "javascript",
+   "file": "scripts/check-evidence-capsule-python.mjs",
+   "code": "if (verifyEvidenceCapsule(changedIntent).verified) throw new Error(\"JavaScript accepted a signed receipt with a stale audit intent\");",
+   "line_at_review": 139,
+   "class": "self-check-script",
+   "why": "Cross-runtime conformance script: throws when the JavaScript reference accepts a forged fixture or rejects a valid one; the guarded calls are further test steps, not an execution gate."
+  },
+  {
+   "language": "javascript",
+   "file": "scripts/check-evidence-capsule-python.mjs",
+   "code": "if (verifyEvidenceCapsule(changedAudit).verified) throw new Error(\"JavaScript accepted a signed receipt with a conflicting audit event\");",
+   "line_at_review": 149,
+   "class": "self-check-script",
+   "why": "Cross-runtime conformance script: throws when the JavaScript reference accepts a forged fixture or rejects a valid one; the guarded calls are further test steps, not an execution gate."
+  },
+  {
+   "language": "javascript",
+   "file": "scripts/check-evidence-capsule-python.mjs",
+   "code": "if (verifyEvidenceCapsule(nonArrayAudit).verified) throw new Error(\"JavaScript accepted non-array audit entries\");",
+   "line_at_review": 167,
+   "class": "self-check-script",
+   "why": "Cross-runtime conformance script: throws when the JavaScript reference accepts a forged fixture or rejects a valid one; the guarded calls are further test steps, not an execution gate."
+  },
+  {
+   "language": "javascript",
+   "file": "scripts/check-evidence-capsule-python.mjs",
+   "code": "if (verifyEvidenceCapsule(alteredEncoding).verified) throw new Error(\"JavaScript accepted a noncanonical signature\");",
+   "line_at_review": 173,
+   "class": "self-check-script",
+   "why": "Cross-runtime conformance script: throws when the JavaScript reference accepts a forged fixture or rejects a valid one; the guarded calls are further test steps, not an execution gate."
+  },
+  {
+   "language": "javascript",
+   "file": "scripts/check-evidence-capsule-python.mjs",
+   "code": "if (!verifyExecutionReceipt(roundingReceipt).verified) throw new Error(\"JavaScript rejected the rounding fixture\");",
+   "line_at_review": 243,
+   "class": "self-check-script",
+   "why": "Cross-runtime conformance script: throws when the JavaScript reference accepts a forged fixture or rejects a valid one; the guarded calls are further test steps, not an execution gate."
+  },
+  {
+   "language": "javascript",
+   "file": "scripts/check-evidence-capsule-python.mjs",
+   "code": "if (verifyExecutionReceipt(forgedBalance.receipt).verified) throw new Error(\"JavaScript accepted a boolean balance\");",
+   "line_at_review": 264,
+   "class": "self-check-script",
+   "why": "Cross-runtime conformance script: throws when the JavaScript reference accepts a forged fixture or rejects a valid one; the guarded calls are further test steps, not an execution gate."
+  },
+  {
+   "language": "javascript",
+   "file": "tooling/releaseAuthorizationProfile.js",
+   "code": "if (!validation.valid) return { valid: false, reason: validation.reason, profile_sha256: null, profile: null };",
+   "line_at_review": 83,
+   "class": "precondition-deny-guard",
+   "why": "Verification failure denies before a privileged step (signing a receipt, trusting a release key, loading an authorization profile); verification is a precondition here, and the authorization decision is made by the caller (decideCommand / releaseKeyTrust authorized)."
+  },
+  {
+   "language": "javascript",
+   "file": "tooling/releaseKeyTrust.js",
+   "code": "if (!semantic.verified) return { ...base, reason: \"invalid_semantic_release_proof\" };",
+   "line_at_review": 81,
+   "class": "precondition-deny-guard",
+   "why": "Verification failure denies before a privileged step (signing a receipt, trusting a release key, loading an authorization profile); verification is a precondition here, and the authorization decision is made by the caller (decideCommand / releaseKeyTrust authorized)."
+  },
+  {
+   "language": "javascript",
+   "file": "tooling/releaseKeyTrust.js",
+   "code": "if (!trust.valid) {",
+   "line_at_review": 84,
+   "class": "precondition-deny-guard",
+   "why": "Verification failure denies before a privileged step (signing a receipt, trusting a release key, loading an authorization profile); verification is a precondition here, and the authorization decision is made by the caller (decideCommand / releaseKeyTrust authorized)."
+  },
+  {
+   "language": "python",
+   "file": "independent/python/evidence_repair_record.py",
+   "code": "sys.exit(code)",
+   "line_at_review": 87,
+   "class": "diagnostic-non-authorizing",
+   "why": "Exit code from authorization_cli.decide(): 0 only when authorized (verified AND pinned policy) or under --diagnostic-only (authorized:false, NOT AN AUTHORIZATION DECISION). The query cannot see the control dependence on `authorized` through the returned tuple; covered by test/directive010-closure.test.js."
+  },
+  {
+   "language": "python",
+   "file": "independent/python/verify_evidence_archive.py",
+   "code": "sys.exit(code)",
+   "line_at_review": 177,
+   "class": "diagnostic-non-authorizing",
+   "why": "Exit code from authorization_cli.decide(): 0 only when authorized (verified AND pinned policy) or under --diagnostic-only (authorized:false, NOT AN AUTHORIZATION DECISION). The query cannot see the control dependence on `authorized` through the returned tuple; covered by test/directive010-closure.test.js."
+  },
+  {
+   "language": "python",
+   "file": "independent/python/verify_evidence_capsule.py",
+   "code": "sys.exit(code)",
+   "line_at_review": 328,
+   "class": "diagnostic-non-authorizing",
+   "why": "Exit code from authorization_cli.decide(): 0 only when authorized (verified AND pinned policy) or under --diagnostic-only (authorized:false, NOT AN AUTHORIZATION DECISION). The query cannot see the control dependence on `authorized` through the returned tuple; covered by test/directive010-closure.test.js."
+  },
+  {
+   "language": "python",
+   "file": "independent/python/verify_evidence_migration.py",
+   "code": "sys.exit(code)",
+   "line_at_review": 109,
+   "class": "diagnostic-non-authorizing",
+   "why": "Exit code from authorization_cli.decide(): 0 only when authorized (verified AND pinned policy) or under --diagnostic-only (authorized:false, NOT AN AUTHORIZATION DECISION). The query cannot see the control dependence on `authorized` through the returned tuple; covered by test/directive010-closure.test.js."
+  },
+  {
+   "language": "python",
+   "file": "independent/python/verify_http_exchange.py",
+   "code": "sys.exit(code)",
+   "line_at_review": 115,
+   "class": "diagnostic-non-authorizing",
+   "why": "Exit code from authorization_cli.decide(): 0 only when authorized (verified AND pinned policy) or under --diagnostic-only (authorized:false, NOT AN AUTHORIZATION DECISION). The query cannot see the control dependence on `authorized` through the returned tuple; covered by test/directive010-closure.test.js."
+  },
+  {
+   "language": "python",
+   "file": "independent/python/verify_signed_quorum.py",
+   "code": "return 0 if result[\"requested_conditions_met\"] is True else 2",
+   "line_at_review": 683,
+   "class": "diagnostic-non-authorizing",
+   "why": "--diagnostic-only exit (0 on consistency, output authorized:false and NOT AN AUTHORIZATION DECISION); the non-diagnostic path exits 0 only on result.authorized; sys.exit(main()) / raise SystemExit(main()) re-report the same return."
+  },
+  {
+   "language": "python",
+   "file": "independent/python/verify_signed_quorum.py",
+   "code": "sys.exit(main())",
+   "line_at_review": 690,
+   "class": "diagnostic-non-authorizing",
+   "why": "--diagnostic-only exit (0 on consistency, output authorized:false and NOT AN AUTHORIZATION DECISION); the non-diagnostic path exits 0 only on result.authorized; sys.exit(main()) / raise SystemExit(main()) re-report the same return."
+  },
+  {
+   "language": "python",
+   "file": "independent/python/wire_runtime.py",
+   "code": "return 0 if consistent else 1",
+   "line_at_review": 350,
+   "class": "diagnostic-non-authorizing",
+   "why": "--diagnostic-only exit (0 on consistency, output authorized:false and NOT AN AUTHORIZATION DECISION); the non-diagnostic path exits 0 only on result.authorized; sys.exit(main()) / raise SystemExit(main()) re-report the same return."
+  },
+  {
+   "language": "python",
+   "file": "independent/python/wire_runtime.py",
+   "code": "raise SystemExit(main())",
+   "line_at_review": 359,
+   "class": "diagnostic-non-authorizing",
+   "why": "--diagnostic-only exit (0 on consistency, output authorized:false and NOT AN AUTHORIZATION DECISION); the non-diagnostic path exits 0 only on result.authorized; sys.exit(main()) / raise SystemExit(main()) re-report the same return."
+  },
+  {
+   "language": "go",
+   "file": "independent/go/main.go",
+   "code": "if r.Valid {",
+   "line_at_review": 71,
+   "class": "diagnostic-non-authorizing",
+   "why": "Go verifier --diagnostic-only branch: exit 0 on a valid bundle with Authorized:false and DecisionUse NOT AN AUTHORIZATION DECISION; the Go verifier never authorizes (no verifier-held challenge support)."
+  }
+ ]
+}

@@ -35,4 +35,6 @@ const result = evaluateGovernanceWitnessQuorum(signedTranscripts, {
 });
 ```
 
+Quorum configuration safety: `aml-governance-witness-quorum` authorizes only when the pinned policy's `threshold` (k) and declared `trusted_fingerprints` (n) satisfy `2k - n - 1 >= 1`, so two conflicting transcript roots cannot both reach quorum while one witness is faulty. For example 3-of-4, 4-of-5 and 5-of-7 pass; 1-of-1, 2-of-3, 2-of-4 and 4-of-7 are refused with `AML_AUTHZ_QUORUM_CONFIG_UNSAFE`. The evaluation result reports `quorum_safety` (including `liveness_fault_tolerance = n - k`, which this rule does not enforce: n-of-n passes but halts if any witness is unavailable). An explicit threshold that is not a positive integer is a policy error (`policy_errors: ["invalid_threshold"]`), never silently replaced by 1. The same rule is implemented in `protocol/quorumSafety.js`, `independent/python/quorum_safety.py` and `independent/go/quorumsafety.go` with shared vectors in `conformance/quorum-safety/`.
+
 A valid quorum is evidence that the configured threshold of eligible keys signed replay-valid transcripts with the same transcript root. It is not proof that the signers are independent organizations, that their identities are verified, or that the underlying policy is correct.

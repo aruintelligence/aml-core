@@ -5,6 +5,7 @@ import base64
 import json
 import re
 import sqlite3
+from sqlite_path import sqlite_file_uri
 import subprocess
 import sys
 import tempfile
@@ -26,7 +27,7 @@ def unique_pairs(pairs):
 def main(database, action, public_key=None):
     if action == "read":
         operation = sys.stdin.read().strip()
-        con = sqlite3.connect("file:" + database + "?mode=ro", uri=True)
+        con = sqlite3.connect(sqlite_file_uri(database, "ro"), uri=True)
         try:
             rows = con.execute("SELECT envelope FROM snapshots WHERE operation_id=? ORDER BY sequence",
                                (operation,)).fetchall()
@@ -72,7 +73,7 @@ def main(database, action, public_key=None):
     } or record.get("protocol") != "aml-fixture-provider-status/2" or record.get("issuer") != "fixture-provider":
         raise ValueError("invalid_witness_envelope")
     operation, challenge = record.get("operation_id"), record.get("challenge")
-    if not isinstance(operation, str) or not UUID.fullmatch(operation) or not isinstance(challenge, str) or not HEX.fullmatch(challenge) or not isinstance(record["signature"], str) or not re.fullmatch(r"[A-Za-z0-9+/]{86}==", record["signature"]):
+    if not isinstance(operation, str) or not UUID.fullmatch(operation) or not isinstance(challenge, str) or not HEX.fullmatch(challenge) or not isinstance(record["signature"], str) or not re.fullmatch(r"[A-Za-z0-9+/]{85}[AQgw]==", record["signature"]):
         raise ValueError("invalid_witness_binding")
     effect = record["record"]
     if effect is not None and (not isinstance(effect, dict) or set(effect) != {

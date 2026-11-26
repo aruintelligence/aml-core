@@ -10,7 +10,7 @@ python3 independent/python/wire_runtime.py negotiate protocol/discovery.json pro
 python3 independent/python/wire_runtime.py verify passport path/to/passport.json --now 2030-01-01T12:00:00Z
 ```
 
-The first command creates artifacts with the JavaScript runtime, compares 19 selected envelope cases against Python, checks five other artifact classes and mutations, prints a compact JSON report, and removes temporary vectors. CI uploads that report as `aml-wire-envelope-cross-runtime-<commit>`. The Python module itself is standalone. Its CLI exits 0 for a valid artifact or accepted session and 1 for an invalid artifact or rejected session, with a JSON report on stdout.
+The first command creates artifacts with the JavaScript runtime, compares 19 selected envelope cases against Python, checks five other artifact classes and mutations, prints a compact JSON report, and removes temporary vectors. CI uploads that report as `aml-wire-envelope-cross-runtime-<commit>`. The Python module itself is standalone. Its CLI prints a JSON report on stdout. `verify` has no trust roots and never authorizes: it exits 3 for a consistent artifact (`authorized: false`, reason `AML_AUTHZ_NO_TRUST_ROOTS`) and 1 for an invalid one; `--diagnostic-only` exits 0 for a consistent artifact and labels the output `NOT AN AUTHORIZATION DECISION`. `negotiate` exits 0 for an accepted session and 1 for a rejected one. See [docs/COMMAND_AUTHORIZATION.md](../../docs/COMMAND_AUTHORIZATION.md).
 
 ## Interoperability boundaries found
 

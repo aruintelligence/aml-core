@@ -37,6 +37,8 @@ An authorization can contain multiple Ed25519 signatures. The verifier policy ca
 - a required signer scope;
 - distinct signing keys.
 
+If `threshold` is omitted it defaults to 1. An explicit `threshold` that is not a positive integer (for example `0`, `"2"`, `1.5` or `null`) is a policy error: the result reports `policy_errors: ["invalid_threshold"]`, `threshold: null` and `authorized: false`, and a protected stream rejects the update. It is never silently treated as 1. The same rule (`protocol/policyThreshold.js`) applies to governance witness quorums and is implemented in `independent/python/policy_threshold.py` and `independent/go/policythreshold.go` with shared vectors in `conformance/policy-threshold/`.
+
 A protected stream is opened with a `policy_authorization` policy. When `required: true`, a policy-update message without an eligible authorization is rejected before state mutation.
 
 ## Trust boundary

@@ -4,7 +4,7 @@
 // ĀML_CORE — Command-Line Interface
 
 import fs from "fs";
-import { webcrypto } from "node:crypto";
+import { createHash, webcrypto } from "node:crypto";
 import { compileAML, compileSource } from "../compiler/compiler.js";
 import { generateAMLFromIntent } from "../compiler/intentCompiler.js";
 import { simulatePolicies } from "../compiler/policySimulator.js";
@@ -22,11 +22,207 @@ import { explainCompilation } from "../compiler/explain.js";
 import { verifyBuildManifest } from "../compiler/verifyBuild.js";
 import { signBuildManifest, verifyBuildAttestation } from "../compiler/signature.js";
 import { listPolicies } from "../runtime/policyEngine.js";
-import { listPolicyProfiles } from "../runtime/policyProfiles.js";
+import { listPolicyProfiles, policyProfileSha256 } from "../runtime/policyProfiles.js";
 import { signPolicyPack, verifySignedPolicyPack } from "../runtime/policyPack.js";
 import { verifyAuditStream } from "../runtime/auditStream.js";
 import { enforceCumulativeAttentionBudget } from "../runtime/attentionLedger.js";
 import { signBrandAuthorization, verifyBrandAuthorization } from "../runtime/brandAuthorization.js";
+import { commandAuthorizationDecision, withCommandAuthorization, commandOutcome, trustedCommandClock, decideCommand,
+  pinMatches, AML_DIAGNOSTIC_ONLY_FLAG, AML_EXIT_NOT_AUTHORIZED, AML_NOT_AN_AUTHORIZATION_DECISION } from "../runtime/commandAuthorization.js";
+import { revocationRegistryFingerprint } from "../runtime/revocationRegistry.js";
+import { evaluateTrustConfigAll, enrolledTrustStateDirs, trustConfigTrustsKey, trustConfigPinMatches,
+  trustConfigRequiresSingleUse, initTrustState, signTrustConfig } from "../runtime/trustConfig.js";
+import { openDurableConsumptionStore, consumptionKey } from "../runtime/consumptionStore.js";
+
+// verify-brand-authorization authorizes only a valid credential whose issuer
+// and signing-key fingerprint were pinned by the relying party, after a
+// revocation registry was checked, evaluated on the verifier's own clock.
+// AML_VERIFY_AT is a replay override: any caller-supplied time is untrusted
+// and the result is not authorized. The revocation registry must match the
+// relying party's pinned registry digest (AML_TRUSTED_REVOCATION_REGISTRY_SHA256);
+// an unpinned registry could be an empty or rolled-back copy.
+const BRAND_REQUIRED = ["credential_valid", "issuer_pinned", "signing_key_pinned", "revocation_checked", "revocation_registry_pinned", "trusted_clock"];
+const BRAND_DENIALS = { credential_valid: "AML_AUTHZ_CREDENTIAL_NOT_VALID", issuer_pinned: "AML_AUTHZ_ISSUER_NOT_PINNED",
+  signing_key_pinned: "AML_AUTHZ_SIGNING_KEY_NOT_PINNED", revocation_checked: "AML_AUTHZ_REVOCATION_NOT_CHECKED",
+  revocation_registry_pinned: "AML_AUTHZ_REVOCATION_REGISTRY_NOT_PINNED",
+  trusted_clock: "AML_AUTHZ_CALLER_CLOCK_UNTRUSTED" };
+const BRAND_TRUST = ["the pinned issuer and key fingerprint came from an independently trusted source",
+  "the pinned revocation registry digest is current (a pin cannot prove freshness)", "the verifier host clock",
+  "a key fingerprint binds a key, not a real-world identity"];
+
+// Verifier commands whose only check is integrity or a signature by an
+// embedded key. Each authorizes only when the relying party pinned the
+// artifact digest or the signing-key fingerprint out of band.
+const VERIFY_DENIALS = {
+  verified: "AML_AUTHZ_NOT_VERIFIED",
+  artifact_pinned: "AML_AUTHZ_ARTIFACT_NOT_PINNED",
+  signing_key_pinned: "AML_AUTHZ_SIGNING_KEY_NOT_PINNED",
+  policy_allowed: "AML_AUTHZ_POLICY_DENIED",
+  evaluation_ok: "AML_AUTHZ_EVALUATION_ERROR"
+};
+const PIN_TRUST = ["the pinned digest or key fingerprint came from an independently trusted source",
+  "a key fingerprint binds a key, not a real-world identity"];
+const PIN_FLAGS = new Set(["--expected-sha256", "--trusted-key-sha256", "--trust-config", "--trust-state", "--single-use-store"]);
+const TRUST_DENIALS = {
+  trust_config_trusted: "AML_AUTHZ_TRUST_CONFIG_NOT_TRUSTED",
+  single_use_consumed: "AML_AUTHZ_ALREADY_CONSUMED",
+  single_use_store_present: "AML_AUTHZ_SINGLE_USE_STORE_REQUIRED",
+  policy_pinned: "AML_AUTHZ_POLICY_NOT_PINNED",
+  profile_pinned: "AML_AUTHZ_PROFILE_NOT_PINNED",
+  caller_timestamp_absent: "AML_AUTHZ_CALLER_CLOCK_UNTRUSTED"
+};
+const TRUST_CONFIG_TRUST = ["a threshold of root keys was not stolen and the trust anchor on this host was not replaced",
+  "the local clock is not earlier than it should be (it is checked against the persisted time floor, not an external source)"];
+
+// Trust-config mode (see runtime/trustConfig.js). Active when --trust-config
+// is given or any trust state directory is enrolled: the root-owned system
+// directory, $AML_TRUST_STATE_DIR, or --trust-state. On an enrolled host a
+// command without --trust-config is not authorized; environment and flags can
+// add an enrolled directory but cannot remove the system one.
+function trustMode() {
+  const configPath = flagValue("--trust-config", null);
+  const dirs = enrolledTrustStateDirs([flagValue("--trust-state", null), process.env.AML_TRUST_STATE_DIR || null]);
+  if (configPath === null && dirs.length === 0) return null;
+  if (configPath === null) return { decision: null, dirs };
+  const envelope = parseJsonWithoutDuplicateKeys(readSource(configPath));
+  const callerTime = process.env.AML_VERIFY_AT || (hasFlag("--now") ? "caller" : null);
+  return { decision: evaluateTrustConfigAll(envelope, { stateDirs: dirs, callerTime }), dirs };
+}
+
+function trustSummary(trust) {
+  if (!trust) return { mode: "explicit-pins" };
+  const d = trust.decision;
+  return { mode: "trust-config", trusted: d?.trusted === true, reasons: d ? [...d.reasons] : ["trust_config_missing"],
+    version: d?.version ?? null, config_sha256: d?.config_sha256 ?? null, expires_at: d?.expires_at ?? null };
+}
+
+// Single-use (opt-in with --single-use-store, mandatory when the trust config
+// sets require_single_use). Consumed only after every other condition passed.
+// With a trusted config, every enrolled trust state directory's `single-use/`
+// store is always used as well, so a caller cannot pick a fresh empty
+// directory to replay an artifact; --single-use-store only adds a store.
+// The artifact must be newly consumed in every store.
+function singleUseStores(trust) {
+  const storeDir = flagValue("--single-use-store", null);
+  const trusted = trust !== null && trust.decision?.trusted === true;
+  const configRequires = trusted && trustConfigRequiresSingleUse(trust.decision);
+  const enrolled = trusted && (configRequires || storeDir !== null) ? trust.dirs.map(dir => `${dir}/single-use`) : [];
+  return { stores: [...enrolled, ...(storeDir !== null ? [storeDir] : [])], configRequires };
+}
+function singleUse(trust, conditions, artifactId) {
+  const { stores, configRequires } = singleUseStores(trust);
+  if (stores.length === 0) return configRequires ? { required: true, name: "single_use_store_present", ok: false } : { required: false };
+  let consumed = false;
+  const othersOk = Object.values(conditions).every(v => v === true);
+  if (othersOk && typeof artifactId === "string" && /^[a-f0-9]{64}$/.test(artifactId)) {
+    const key = consumptionKey(["cli-verifier", command, artifactId]);
+    const results = stores.map(dir => {
+      try { return openDurableConsumptionStore(dir).consume(key, { purpose: "cli-verifier", command, artifact_sha256: artifactId }) === true; } catch { return false; }
+    });
+    consumed = results.length > 0 && results.every(ok => ok === true);
+  }
+  return { required: true, name: "single_use_consumed", ok: consumed };
+}
+
+// verify-witness / verify-signed-quorum compute their own decision; in
+// trust-config mode (or with a single-use store) that decision is ANDed with
+// trust_config_trusted and single use. Never ORed: a false base stays false.
+const TRUST_FLAGS = new Set(["--trust-config", "--trust-state", "--single-use-store"]);
+function withoutTrustFlags(list) {
+  const out = [];
+  for (let index = 0; index < list.length; index += 1) {
+    if (TRUST_FLAGS.has(list[index])) {
+      const value = list[index + 1];
+      if (!value || value.startsWith("--")) throw new Error(`${list[index]} requires exactly one value`);
+      index += 1;
+      continue;
+    }
+    out.push(list[index]);
+  }
+  return out;
+}
+// Single-use identity of a parsed JSON artifact: SHA-256 of sorted-key compact
+// JSON (safe integers, BMP keys only; anything else is null, so single use
+// fails closed). Matches trust_config.artifact_sha256 in Python, so
+// re-serializing a bundle does not make it a new artifact in any language.
+function artifactSha256(value) {
+  const canon = v => {
+    if (v === null || typeof v === "boolean") return JSON.stringify(v);
+    if (typeof v === "number") { if (!Number.isSafeInteger(v)) throw new Error("AML_ARTIFACT_NOT_CANONICAL"); return String(v); }
+    if (typeof v === "string") { if (!v.isWellFormed()) throw new Error("AML_ARTIFACT_NOT_CANONICAL"); return JSON.stringify(v); }
+    if (Array.isArray(v)) return `[${v.map(canon).join(",")}]`;
+    if (typeof v === "object") {
+      const keys = Object.keys(v);
+      if (keys.some(k => [...k].some(c => c.codePointAt(0) > 0xffff))) throw new Error("AML_ARTIFACT_NOT_CANONICAL");
+      return `{${keys.sort().map(k => `${JSON.stringify(k)}:${canon(v[k])}`).join(",")}}`;
+    }
+    throw new Error("AML_ARTIFACT_NOT_CANONICAL");
+  };
+  try { return sha256Hex(canon(value)); } catch { return null; }
+}
+function trustGate(result, artifactId, diagnosticOnly) {
+  const base = result?.authorized === true && result?.authorization?.authorized === true;
+  const trust = trustMode();
+  if (trust === null && singleUseStores(trust).stores.length === 0) return { result, authorized: base };
+  const conditions = { verifier_decision_allowed: base };
+  if (trust !== null) conditions.trust_config_trusted = trust.decision?.trusted === true;
+  const once = diagnosticOnly ? { required: false } : singleUse(trust, conditions, artifactId);
+  if (once.required) conditions[once.name] = once.ok;
+  const authorized = !diagnosticOnly && Object.values(conditions).every(v => v === true);
+  const added = Object.keys(conditions).filter(name => conditions[name] !== true && TRUST_DENIALS[name]).map(name => TRUST_DENIALS[name]);
+  const prior = Array.isArray(result?.authorization?.reasons) ? result.authorization.reasons.filter(r => r !== "AML_AUTHZ_ALLOW") : [];
+  const authorization = authorized ? result.authorization : { ...(result?.authorization ?? {}), authorized: false, decision: "deny",
+    reasons: [...new Set([...prior, ...added])],
+    required: [...new Set([...(result?.authorization?.required ?? []), ...Object.keys(conditions).filter(n => n !== "verifier_decision_allowed")])] };
+  return { result: { ...result, authorized, authorization, ...(trust ? { trust: trustSummary(trust) } : {}),
+    ...(once.required ? { single_use: { consumed: conditions[once.name] === true } } : {}) }, authorized };
+}
+
+// Positional arguments without the authorization flags and their values.
+function positionalArgs() {
+  const out = [];
+  for (let index = 0; index < args.length; index += 1) {
+    if (PIN_FLAGS.has(args[index])) { index += 1; continue; }
+    if (args[index] === AML_DIAGNOSTIC_ONLY_FLAG) continue;
+    out.push(args[index]);
+  }
+  return out;
+}
+
+function finishVerification(verification, { pinKind, pinActual, extra = {}, extraRequired = [], role = null, artifactId = null }) {
+  const pinName = pinKind === "key" ? "signing_key_pinned" : "artifact_pinned";
+  const pin = flagValue(pinKind === "key" ? "--trusted-key-sha256" : "--expected-sha256", null);
+  const required = ["verified", pinName, ...extraRequired];
+  const trust = trustMode();
+  let pinOk = pinMatches(pin, pinActual);
+  const conditions = { verified: verification?.verified === true, ...extra };
+  if (trust !== null) {
+    // In trust-config mode a key must be trusted by the config for this
+    // command's role; an explicit flag pin, if also given, must match too.
+    if (pinKind === "key") pinOk = (pin === null || pinOk) && trustConfigTrustsKey(trust.decision, pinActual, role);
+    conditions.trust_config_trusted = trust.decision?.trusted === true;
+    required.push("trust_config_trusted");
+    if (role === "policy-pack" && trust.decision?.trusted === true && trust.decision.effective.policy_sha256 !== null) {
+      conditions.policy_pinned = trustConfigPinMatches(trust.decision, "policy_sha256", verification?.pack_sha256);
+      required.push("policy_pinned");
+    }
+  }
+  conditions[pinName] = pinOk;
+  const once = singleUse(trust, conditions, verification?.verified === true ? artifactId : null);
+  if (once.required) { conditions[once.name] = once.ok; required.push(once.name); }
+  const { output, exitCode } = decideCommand(trust ? { ...verification, trust: trustSummary(trust) } : verification, {
+    consistent: verification?.verified === true,
+    conditions,
+    required, denials: { ...VERIFY_DENIALS, ...TRUST_DENIALS }, trust: trust ? [...PIN_TRUST, ...TRUST_CONFIG_TRUST] : PIN_TRUST,
+    diagnosticOnly: hasFlag(AML_DIAGNOSTIC_ONLY_FLAG), invalidCode: 1
+  });
+  console.log(JSON.stringify(output, null, 2));
+  process.exit(exitCode);
+}
+
+function sha256Hex(bytes) {
+  return createHash("sha256").update(bytes).digest("hex");
+}
 import { createDeploymentFirewall } from "../runtime/deploymentFirewall.js";
 import { evaluatePolicyCanary } from "../runtime/policyCanary.js";
 import { verifyWitnessBundle } from "../docs/aml-witness-bundle.js";
@@ -53,7 +249,7 @@ Usage:
   aml verify-witness <bundle.json> <verifier-held-challenge.json>
   aml fingerprint-verifier-key <public-jwk.json>
   aml fingerprint-json <input.json>
-  aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json] [--portable] [--decision-only]
+  aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json] [--portable] [--decision-only] [--diagnostic-only]
   aml replay-receipt <receipt.json>
   aml sign-receipt <receipt.json> <private-key.pem> [signed-receipt.json]
   aml verify-signed-receipt <signed-receipt.json>
@@ -63,7 +259,7 @@ Usage:
   aml sign-policy-pack <pack.json> <private-key.pem> [signed-pack.json]
   aml verify-policy-pack <signed-pack.json>
   aml sign-brand-authorization <authorization.json> <private-key.pem> [credential.json]
-  aml verify-brand-authorization <credential.json> [revocation-registry.json]
+  aml verify-brand-authorization <credential.json> [revocation-registry.json] [--diagnostic-only]
   aml verify-audit <audit-stream.json>
   aml attention-account <file.aml> <budget> [policy]
   aml policies
@@ -73,6 +269,16 @@ Usage:
   aml validate <file.aml>
   aml lint <file.aml>
   aml verify <build_manifest.json>
+  aml trust-init <state-dir> --threshold N --root-key-sha256 <k1,k2,k3>
+  aml trust-sign <config-body.json> <root1.pem,root2.pem> [envelope.json]
+  aml trust-verify --trust-config <envelope.json> [--trust-state <dir>]
+  aml profile-sha256 <profile>    digest for a trust config's profile_sha256 (enforced by deploy in trust-config mode)
+
+  Verifier options (verify, verify-receipt, replay-receipt, verify-signed-receipt, verify-policy-pack,
+  verify-attestation, verify-audit, verify-brand-authorization):
+    --trust-config <envelope.json>  signed, versioned trust config (threshold root keys, rollback + expiry)
+    --trust-state <dir>             enrolled trust state dir (also $AML_TRUST_STATE_DIR, /etc/aml/trust)
+    --single-use-store <dir>        durable single-use store; the same artifact authorizes at most once
   aml sign <build_manifest.json> <private-key.pem> [attestation.json]
   aml verify-attestation <attestation.json> [build_manifest.json]
   aml help
@@ -88,7 +294,7 @@ Commands:
   verify-witness              Verify a browser witness bundle against your retained challenge
   fingerprint-verifier-key    Derive full-JWK and P-256 material fingerprints from a public key
   fingerprint-json            Hash a strict JSON input under sorted-json-v1
-  verify-signed-quorum        Recheck a signed quorum; --decision-only omits supplied report contents
+  verify-signed-quorum        Recheck a signed quorum; exit 0 only when authorized; --decision-only omits supplied report contents
   replay-receipt              Re-execute declared receipt inputs with the installed engine
   sign-receipt                Add an Ed25519 attestation to a valid execution receipt
   verify-signed-receipt       Verify receipt integrity, signature, and public-key fingerprint
@@ -98,7 +304,7 @@ Commands:
   sign-policy-pack            Sign a data-only policy pack with Ed25519
   verify-policy-pack          Verify policy-pack hash, signature, and key fingerprint
   sign-brand-authorization    Sign a scoped official-brand authorization credential with Ed25519
-  verify-brand-authorization  Verify brand credential integrity, expiry, and optional revocation status
+  verify-brand-authorization  Verify brand credential; exit 0 only when authorized (pinned issuer/key, revocation, own clock)
   verify-audit                Verify a SHA-256 hash-chained runtime audit stream
   attention-account           Apply cumulative session attention accounting to render decisions
   policies                    List built-in policy engines
@@ -163,7 +369,11 @@ function signedQuorumDecisionOnly(result) {
     schema: 'aml-signed-quorum-decision/1', prototype: true,
     ...Object.fromEntries(checked.map(name => [name, result[name]])),
     requested_conditions_met: unmet.length === 0,
-    requested_conditions: { checked, unmet }
+    requested_conditions: { checked, unmet },
+    // The complete decision; requested_conditions_met alone is not permission.
+    authorized: result.authorized === true && result.authorization?.authorized === true,
+    authorization_reasons: Array.isArray(result.authorization?.reasons)
+      ? result.authorization.reasons.filter(reason => /^AML_AUTHZ_[A-Z_]+$/.test(reason)) : ['AML_AUTHZ_EVALUATION_ERROR']
   };
   if (result.input_fingerprints) {
     const input = result.input_fingerprints;
@@ -270,10 +480,38 @@ try {
       context,
       timestamp
     });
-    console.log(JSON.stringify(result, null, 2));
-    if (result.evaluation_error) process.exit(2);
-    if (hasFlag("--require-effective-allow") && !result.effective_allowed) process.exit(3);
-    process.exit(0);
+    // Exit 0 only when the AML policy itself allowed the intent. Shadow mode
+    // and failure_mode=open set effective_allowed for observability; neither
+    // is authorization. --require-effective-allow is now the default and kept
+    // as a no-op; --diagnostic-only exits 0 for any completed evaluation.
+    const evaluated = !result.evaluation_error;
+    const deployConditions = { evaluation_ok: evaluated, policy_allowed: evaluated && result.aml_allowed === true };
+    const deployRequired = ["evaluation_ok", "policy_allowed"];
+    const trust = trustMode();
+    if (trust !== null) {
+      // In trust-config mode the profile is not the invoker's choice: its
+      // digest must equal the config's profile_sha256 (a null pin denies),
+      // and a caller-chosen evaluation time is refused.
+      let profileDigest = null;
+      try { profileDigest = policyProfileSha256(profile); } catch { profileDigest = null; }
+      deployConditions.trust_config_trusted = trust.decision?.trusted === true;
+      deployConditions.profile_pinned = trustConfigPinMatches(trust.decision, "profile_sha256", profileDigest);
+      deployConditions.caller_timestamp_absent = timestamp === undefined || timestamp === null;
+      deployRequired.push("trust_config_trusted", "profile_pinned", "caller_timestamp_absent");
+    }
+    const deployArtifact = createHash("sha256").update(JSON.stringify({ intent, profile, mode, failureMode, context })).digest("hex");
+    const deployOnce = singleUse(trust, deployConditions, deployArtifact);
+    if (deployOnce.required) { deployConditions[deployOnce.name] = deployOnce.ok; deployRequired.push(deployOnce.name); }
+    const { output, exitCode } = decideCommand(trust ? { ...result, trust: trustSummary(trust) } : result, {
+      consistent: evaluated,
+      conditions: deployConditions,
+      required: deployRequired, denials: { ...VERIFY_DENIALS, ...TRUST_DENIALS },
+      trust: ["the AML policy profile and context supplied to the evaluation are the intended ones",
+        ...(trust ? TRUST_CONFIG_TRUST : [])],
+      diagnosticOnly: hasFlag(AML_DIAGNOSTIC_ONLY_FLAG), invalidCode: 2
+    });
+    console.log(JSON.stringify(output, null, 2));
+    process.exit(exitCode);
   }
   if (command === "canary") {
     const intent = JSON.parse(readSource(inputPath));
@@ -293,21 +531,27 @@ try {
     process.exit(0);
   }
   if (command === "verify-receipt") {
-    const result = verifyExecutionReceipt(JSON.parse(readSource(inputPath)));
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    const receipt = JSON.parse(readSource(positionalArgs()[1] || inputPath));
+    const result = verifyExecutionReceipt(receipt);
+    finishVerification(result, { pinKind: "artifact", pinActual: result.verified === true ? receipt?.receipt_sha256 : null,
+      artifactId: receipt?.receipt_sha256 });
   }
   if (command === "verify-witness") {
-    if (args.length !== 3 || !args[1] || !args[2]) {
-      throw new Error("Usage: aml verify-witness <bundle.json> <verifier-held-challenge.json>");
+    const witnessArgs = withoutTrustFlags(args);
+    if (witnessArgs.length !== 3 || !witnessArgs[1] || !witnessArgs[2]) {
+      throw new Error("Usage: aml verify-witness <bundle.json> <verifier-held-challenge.json> [--trust-config c.json] [--trust-state dir] [--single-use-store dir]");
     }
     // Support Node builds that do not expose Web Crypto on globalThis.
     if (!globalThis.crypto?.subtle) globalThis.crypto = webcrypto;
-    const bundle = readUnambiguousJSON(args[1]);
-    const expectedChallenge = readUnambiguousJSON(args[2]);
-    const result = await verifyWitnessBundle(bundle, { expectedChallenge });
+    const bundle = readUnambiguousJSON(witnessArgs[1]);
+    const bundleArtifact = artifactSha256(bundle);
+    const expectedChallenge = readUnambiguousJSON(witnessArgs[2]);
+    const verified = await verifyWitnessBundle(bundle, { expectedChallenge });
+    // trustGate ANDs trust_config_trusted / single use into `authorized`.
+    const result = trustGate(verified, bundleArtifact, false).result;
     console.log(JSON.stringify(result, null, 2));
-    process.exit(result.valid ? 0 : 2);
+    // `valid` is internal consistency only; exit 0 requires the explicit decision.
+    process.exit(result.authorized === true ? 0 : 2);
   }
   if (command === "fingerprint-verifier-key") {
     if (args.length !== 2 || !args[1]) {
@@ -328,16 +572,24 @@ try {
     process.exit(0);
   }
   if (command === "verify-signed-quorum") {
-    const usage = "Usage: aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json] [--portable] [--decision-only]";
-    if (!args[1] || args[1].startsWith('--')) throw new Error(usage);
+    const usage = "Usage: aml verify-signed-quorum <quorum.json> [--policy held-policy.json] [--bundle witness.json --challenge held-challenge.json] [--expect-inputs held-inputs.json] [--portable] [--decision-only] [--diagnostic-only]";
+    const quorumArgs = withoutTrustFlags(args);
+    if (!quorumArgs[1] || quorumArgs[1].startsWith('--')) throw new Error(usage);
     const options = new Map();
     let portable = false;
     let decisionOnly = false;
-    for (let index = 2; index < args.length;) {
-      const flag = args[index];
+    let diagnosticOnly = false;
+    for (let index = 2; index < quorumArgs.length;) {
+      const flag = quorumArgs[index];
       if (flag === '--portable') {
         if (portable) throw new Error(usage);
         portable = true;
+        index += 1;
+        continue;
+      }
+      if (flag === AML_DIAGNOSTIC_ONLY_FLAG) {
+        if (diagnosticOnly) throw new Error(usage);
+        diagnosticOnly = true;
         index += 1;
         continue;
       }
@@ -347,7 +599,7 @@ try {
         index += 1;
         continue;
       }
-      const value = args[index + 1];
+      const value = quorumArgs[index + 1];
       if (!['--policy', '--bundle', '--challenge', '--expect-inputs'].includes(flag) || !value ||
           value.startsWith('--') || options.has(flag)) throw new Error(usage);
       options.set(flag, value);
@@ -361,21 +613,35 @@ try {
     const expectedChallenge = options.has('--challenge') ? readUnambiguousJSON(options.get('--challenge'), parseOptions) : undefined;
     const expectedInputFingerprints = options.has('--expect-inputs')
       ? readUnambiguousJSON(options.get('--expect-inputs'), parseOptions) : undefined;
-    const result = await verifySignedVerificationQuorum(readUnambiguousJSON(args[1], parseOptions), {
+    const quorum = readUnambiguousJSON(quorumArgs[1], parseOptions);
+    const quorumArtifact = artifactSha256(quorum);
+    const quorumResult = await verifySignedVerificationQuorum(quorum, {
       policy, witnessBundle, expectedChallenge, expectedInputFingerprints, portable
     });
+    // trustGate ANDs trust_config_trusted / single use into `authorized`.
+    const result = trustGate(quorumResult, quorumArtifact, diagnosticOnly).result;
     // A saved quorum can produce more JSON than a pipe can buffer. Wait for
     // stdout to finish writing before exiting with the verification status.
     await new Promise((resolve, reject) => {
-      process.stdout.write(`${JSON.stringify(decisionOnly ? signedQuorumDecisionOnly(result) : result, null, 2)}\n`, error =>
+      const projected = decisionOnly ? signedQuorumDecisionOnly(result) : result;
+      const printed = diagnosticOnly ? { ...projected, authorized: false, diagnostic_only: true,
+        decision_use: AML_NOT_AN_AUTHORIZATION_DECISION } : projected;
+      process.stdout.write(`${JSON.stringify(printed, null, 2)}\n`, error =>
         error ? reject(error) : resolve());
     });
-    process.exit(result.requested_conditions_met ? 0 : 2);
+    // Exit 0 only on the complete decision (`authorized`). Requested
+    // conditions met without a held policy or witness requirement exits 3.
+    if (diagnosticOnly) {
+      process.exit(result.requested_conditions_met === true ? 0 : 2);
+    }
+    process.exit(result.authorized === true && result.authorization?.authorized === true ? 0
+      : result.requested_conditions_met === true ? AML_EXIT_NOT_AUTHORIZED : 2);
   }
   if (command === "replay-receipt") {
-    const result = replayExecutionReceipt(JSON.parse(readSource(inputPath)));
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    const receipt = JSON.parse(readSource(positionalArgs()[1] || inputPath));
+    const result = replayExecutionReceipt(receipt);
+    finishVerification(result, { pinKind: "artifact", pinActual: result.verified === true ? receipt?.receipt_sha256 : null,
+      artifactId: receipt?.receipt_sha256 });
   }
   if (command === "sign-receipt") {
     const privateKeyPath = args[2];
@@ -385,9 +651,11 @@ try {
     process.exit(0);
   }
   if (command === "verify-signed-receipt") {
-    const result = verifySignedExecutionReceipt(JSON.parse(readSource(inputPath)));
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    const receipt = JSON.parse(readSource(positionalArgs()[1] || inputPath));
+    const result = verifySignedExecutionReceipt(receipt);
+    finishVerification(result, { pinKind: "key",
+      pinActual: result.verified === true && result.public_key_fingerprint_valid === true ? receipt?.signature?.public_key_sha256 : null,
+      role: "receipt", artifactId: receipt?.receipt_sha256 });
   }
   if (command === "simulate") {
     const policies = (args[2] || "restorative_v1,attention_conservative_v1").split(",").map(item => item.trim()).filter(Boolean);
@@ -416,9 +684,11 @@ try {
     process.exit(0);
   }
   if (command === "verify-policy-pack") {
-    const result = verifySignedPolicyPack(JSON.parse(readSource(inputPath)));
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    const pack = JSON.parse(readSource(positionalArgs()[1] || inputPath));
+    const result = verifySignedPolicyPack(pack);
+    finishVerification(result, { pinKind: "key",
+      pinActual: result.verified === true && result.public_key_fingerprint_valid === true ? pack?.attestation?.public_key_sha256 : null,
+      role: "policy-pack", artifactId: result.pack_sha256 });
   }
   if (command === "sign-brand-authorization") {
     const privateKeyPath = args[2];
@@ -432,20 +702,60 @@ try {
     process.exit(0);
   }
   if (command === "verify-brand-authorization") {
-    const credential = JSON.parse(readSource(inputPath));
-    const revocationRegistry = args[2] ? JSON.parse(readSource(args[2])) : null;
-    const result = verifyBrandAuthorization(credential, {
-      now: process.env.AML_VERIFY_AT || null,
+    const positional = positionalArgs().slice(1);
+    const diagnosticOnly = args.includes(AML_DIAGNOSTIC_ONLY_FLAG);
+    const credential = JSON.parse(readSource(positional[0] || inputPath));
+    const revocationRegistry = positional[1] ? JSON.parse(readSource(positional[1])) : null;
+    const callerTime = process.env.AML_VERIFY_AT || null;
+    const localNow = Date.now();
+    const expectedIssuer = process.env.AML_EXPECTED_BRAND_ISSUER || null;
+    const trustedKey = process.env.AML_TRUSTED_BRAND_KEY_SHA256 || null;
+    const verification = verifyBrandAuthorization(credential, {
+      now: callerTime,
       revocation_registry: revocationRegistry,
-      expected_issuer: process.env.AML_EXPECTED_BRAND_ISSUER || null
+      expected_issuer: expectedIssuer
     });
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.valid ? 0 : 1);
+    const brandConditions = {
+      credential_valid: verification.valid === true,
+      issuer_pinned: typeof expectedIssuer === "string" && verification.issuer === expectedIssuer,
+      signing_key_pinned: typeof trustedKey === "string" && /^[a-f0-9]{64}$/.test(trustedKey) &&
+        credential?.public_key_sha256 === trustedKey,
+      revocation_checked: verification.credential_revocation_checked === true,
+      revocation_registry_pinned: revocationRegistry !== null &&
+        pinMatches(process.env.AML_TRUSTED_REVOCATION_REGISTRY_SHA256 || null, revocationRegistryFingerprint(revocationRegistry)),
+      trusted_clock: trustedCommandClock(callerTime, localNow)
+    };
+    const brandRequired = [...BRAND_REQUIRED];
+    const trust = trustMode();
+    if (trust !== null) {
+      // The signed config supplies the key and registry pins; env pins, when
+      // also present, must match as well (AND, never OR).
+      const registryDigest = revocationRegistry !== null ? revocationRegistryFingerprint(revocationRegistry) : null;
+      const envKey = process.env.AML_TRUSTED_BRAND_KEY_SHA256 || null;
+      const envRegistry = process.env.AML_TRUSTED_REVOCATION_REGISTRY_SHA256 || null;
+      brandConditions.signing_key_pinned = (envKey === null || brandConditions.signing_key_pinned)
+        && trustConfigTrustsKey(trust.decision, credential?.public_key_sha256, "brand-authorization");
+      brandConditions.revocation_registry_pinned = revocationRegistry !== null
+        && (envRegistry === null || pinMatches(envRegistry, registryDigest))
+        && trustConfigPinMatches(trust.decision, "registry_sha256", registryDigest);
+      brandConditions.trust_config_trusted = trust.decision?.trusted === true;
+      brandRequired.push("trust_config_trusted");
+    }
+    // singleUse consumes only when every brand condition (credential_valid included) is true.
+    const once = singleUse(trust, brandConditions, credential?.credential_hash);
+    if (once.required) { brandConditions[once.name] = once.ok; brandRequired.push(once.name); }
+    const result = withCommandAuthorization(trust ? { ...verification, trust: trustSummary(trust) } : verification,
+      commandAuthorizationDecision(brandConditions, brandRequired, { ...BRAND_DENIALS, ...TRUST_DENIALS }),
+      trust ? [...BRAND_TRUST, ...TRUST_CONFIG_TRUST] : BRAND_TRUST);
+    const { output, exitCode } = commandOutcome(result, { diagnosticOnly, invalidCode: 1 });
+    console.log(JSON.stringify(output, null, 2));
+    process.exit(exitCode);
   }
   if (command === "verify-audit") {
-    const result = verifyAuditStream(JSON.parse(readSource(inputPath)));
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    // The pin is the head entry hash; an empty stream has no head and never authorizes.
+    const result = verifyAuditStream(JSON.parse(readSource(positionalArgs()[1] || inputPath)));
+    finishVerification(result, { pinKind: "artifact", pinActual: result.verified === true ? result.head_hash : null,
+      artifactId: result.head_hash });
   }
   if (command === "attention-account") {
     const budget = Number(args[2]);
@@ -484,13 +794,66 @@ try {
     console.log(`Warnings: ${warnings.length}`);
     process.exit(errors.length > 0 ? 1 : 0);
   }
+  if (command === "profile-sha256") {
+    // Digest to place in a trust config's profile_sha256.
+    console.log(policyProfileSha256(args[1] || "human_first"));
+    process.exit(0);
+  }
+  if (command === "trust-init") {
+    // Enroll a trust state directory with the out-of-band root anchor.
+    const dir = args[1];
+    const threshold = Number(flagValue("--threshold", null));
+    const keyids = (flagValue("--root-key-sha256", "") || "").split(",").map(v => v.trim()).filter(Boolean);
+    if (!dir || dir.startsWith("--")) throw new Error("Usage: aml trust-init <state-dir> --threshold N --root-key-sha256 a,b,c");
+    const anchor = initTrustState(dir, { threshold, rootKeyids: keyids });
+    console.log(JSON.stringify({ enrolled: true, state_dir: dir, root: anchor.root }, null, 2));
+    process.exit(0);
+  }
+  if (command === "trust-sign") {
+    // aml trust-sign <config-body.json> <root-key.pem>[,<root-key.pem>...] [envelope.json]
+    const body = parseJsonWithoutDuplicateKeys(readSource(args[1]));
+    const pems = String(args[2] || "").split(",").filter(Boolean).map(file => readSource(file));
+    if (pems.length === 0) throw new Error("At least one root private key PEM path is required.");
+    writeOrPrint(signTrustConfig(body, pems), args[3], "SIGNED TRUST CONFIG");
+    process.exit(0);
+  }
+  if (command === "trust-verify") {
+    // Exit 0 only when the config is trusted by every enrolled state dir
+    // (threshold, rollback, expiry on the local clock, persisted).
+    const trust = trustMode();
+    const decision = trust?.decision || null;
+    const trusted = decision?.trusted === true;
+    console.log(JSON.stringify({ ...trustSummary(trust), effective: trusted ? decision.effective : null,
+      authorized: trusted, decision_use: trusted ? "trust-config" : AML_NOT_AN_AUTHORIZATION_DECISION }, null, 2));
+    process.exit(decision?.trusted === true && decision.reasons.length === 0 ? 0 : AML_EXIT_NOT_AUTHORIZED); // trust-verify-decision
+  }
   if (command === "verify") {
-    const result = verifyBuildManifest(inputPath);
+    // Text report kept; authorization needs --expected-sha256 equal to the
+    // SHA-256 of the manifest file bytes (the manifest itself is untrusted).
+    const manifestPath = positionalArgs()[1] || inputPath;
+    const result = verifyBuildManifest(manifestPath);
     for (const check of result.checks) console.log(`${check.ok ? "PASS" : "FAIL"} ${check.kind}: ${check.file} — ${check.reason}`);
     console.log(`Verified: ${result.verified}`);
     console.log(`Passed: ${result.passed}`);
     console.log(`Failed: ${result.failed}`);
-    process.exit(result.verified ? 0 : 1);
+    const manifestSha256 = result.verified === true ? sha256Hex(fs.readFileSync(manifestPath)) : null;
+    const verifyConditions = { verified: result.verified === true, artifact_pinned: pinMatches(flagValue("--expected-sha256", null), manifestSha256) };
+    const verifyRequired = ["verified", "artifact_pinned"];
+    const trust = trustMode();
+    if (trust !== null) { verifyConditions.trust_config_trusted = trust.decision?.trusted === true; verifyRequired.push("trust_config_trusted"); }
+    const once = singleUse(trust, verifyConditions, manifestSha256);
+    if (once.required) { verifyConditions[once.name] = once.ok; verifyRequired.push(once.name); }
+    const verifyBase = { verified: result.verified, manifest_sha256: manifestSha256 };
+    const { output, exitCode } = decideCommand(trust ? { ...verifyBase, trust: trustSummary(trust) } : verifyBase, {
+      consistent: result.verified === true,
+      conditions: verifyConditions,
+      required: verifyRequired, denials: { ...VERIFY_DENIALS, ...TRUST_DENIALS }, trust: trust ? [...PIN_TRUST, ...TRUST_CONFIG_TRUST] : PIN_TRUST,
+      diagnosticOnly: hasFlag(AML_DIAGNOSTIC_ONLY_FLAG), invalidCode: 1
+    });
+    console.log(`Authorized: ${output.authorized}`);
+    console.log(`Authorization reasons: ${output.authorization.reasons.join(", ")}`);
+    console.log(`Decision use: ${output.decision_use}`);
+    process.exit(exitCode);
   }
   if (command === "sign") {
     const privateKeyPath = args[2];
@@ -500,10 +863,12 @@ try {
     process.exit(0);
   }
   if (command === "verify-attestation") {
-    const attestation = JSON.parse(readSource(inputPath));
-    const result = verifyBuildAttestation(attestation, args[2] || attestation.manifest_path);
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.verified ? 0 : 1);
+    const positional = positionalArgs();
+    const attestation = JSON.parse(readSource(positional[1] || inputPath));
+    const result = verifyBuildAttestation(attestation, positional[2] || attestation.manifest_path);
+    finishVerification(result, { pinKind: "key",
+      pinActual: result.verified === true && result.public_key_fingerprint_valid === true ? attestation?.public_key_sha256 : null,
+      role: "build-attestation", artifactId: result.manifest_sha256 });
   }
 
   console.error(`Unknown command: ${command}`);

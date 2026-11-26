@@ -1,0 +1,3198 @@
+{
+ "type": "aml-quorum-safety-vectors/1",
+ "rule": "integers 1 <= k <= n <= 64 and safety_fault_tolerance = 2k - n - 1 >= 1",
+ "cases": [
+  {
+   "threshold": 1,
+   "witness_count": 1,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 1,
+   "witness_count": 2,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 1
+   }
+  },
+  {
+   "threshold": 2,
+   "witness_count": 2,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 1,
+   "witness_count": 3,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -1,
+    "safety_fault_tolerance": -2,
+    "liveness_fault_tolerance": 2
+   }
+  },
+  {
+   "threshold": 2,
+   "witness_count": 3,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 1
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 3,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 1,
+   "witness_count": 4,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -2,
+    "safety_fault_tolerance": -3,
+    "liveness_fault_tolerance": 3
+   }
+  },
+  {
+   "threshold": 2,
+   "witness_count": 4,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 2
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 4,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 1
+   }
+  },
+  {
+   "threshold": 4,
+   "witness_count": 4,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 4,
+    "safety_fault_tolerance": 3,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 1,
+   "witness_count": 5,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -3,
+    "safety_fault_tolerance": -4,
+    "liveness_fault_tolerance": 4
+   }
+  },
+  {
+   "threshold": 2,
+   "witness_count": 5,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -1,
+    "safety_fault_tolerance": -2,
+    "liveness_fault_tolerance": 3
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 5,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 2
+   }
+  },
+  {
+   "threshold": 4,
+   "witness_count": 5,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 1
+   }
+  },
+  {
+   "threshold": 5,
+   "witness_count": 5,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 5,
+    "safety_fault_tolerance": 4,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 1,
+   "witness_count": 6,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -4,
+    "safety_fault_tolerance": -5,
+    "liveness_fault_tolerance": 5
+   }
+  },
+  {
+   "threshold": 2,
+   "witness_count": 6,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -2,
+    "safety_fault_tolerance": -3,
+    "liveness_fault_tolerance": 4
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 6,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 3
+   }
+  },
+  {
+   "threshold": 4,
+   "witness_count": 6,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 2
+   }
+  },
+  {
+   "threshold": 5,
+   "witness_count": 6,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 4,
+    "safety_fault_tolerance": 3,
+    "liveness_fault_tolerance": 1
+   }
+  },
+  {
+   "threshold": 6,
+   "witness_count": 6,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 6,
+    "safety_fault_tolerance": 5,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 1,
+   "witness_count": 7,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -5,
+    "safety_fault_tolerance": -6,
+    "liveness_fault_tolerance": 6
+   }
+  },
+  {
+   "threshold": 2,
+   "witness_count": 7,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -3,
+    "safety_fault_tolerance": -4,
+    "liveness_fault_tolerance": 5
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 7,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -1,
+    "safety_fault_tolerance": -2,
+    "liveness_fault_tolerance": 4
+   }
+  },
+  {
+   "threshold": 4,
+   "witness_count": 7,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 3
+   }
+  },
+  {
+   "threshold": 5,
+   "witness_count": 7,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 2
+   }
+  },
+  {
+   "threshold": 6,
+   "witness_count": 7,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 5,
+    "safety_fault_tolerance": 4,
+    "liveness_fault_tolerance": 1
+   }
+  },
+  {
+   "threshold": 7,
+   "witness_count": 7,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 7,
+    "safety_fault_tolerance": 6,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 1,
+   "witness_count": 8,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -6,
+    "safety_fault_tolerance": -7,
+    "liveness_fault_tolerance": 7
+   }
+  },
+  {
+   "threshold": 2,
+   "witness_count": 8,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -4,
+    "safety_fault_tolerance": -5,
+    "liveness_fault_tolerance": 6
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 8,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -2,
+    "safety_fault_tolerance": -3,
+    "liveness_fault_tolerance": 5
+   }
+  },
+  {
+   "threshold": 4,
+   "witness_count": 8,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 4
+   }
+  },
+  {
+   "threshold": 5,
+   "witness_count": 8,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 3
+   }
+  },
+  {
+   "threshold": 6,
+   "witness_count": 8,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 4,
+    "safety_fault_tolerance": 3,
+    "liveness_fault_tolerance": 2
+   }
+  },
+  {
+   "threshold": 7,
+   "witness_count": 8,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 6,
+    "safety_fault_tolerance": 5,
+    "liveness_fault_tolerance": 1
+   }
+  },
+  {
+   "threshold": 8,
+   "witness_count": 8,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 8,
+    "safety_fault_tolerance": 7,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 1,
+   "witness_count": 9,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -7,
+    "safety_fault_tolerance": -8,
+    "liveness_fault_tolerance": 8
+   }
+  },
+  {
+   "threshold": 2,
+   "witness_count": 9,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -5,
+    "safety_fault_tolerance": -6,
+    "liveness_fault_tolerance": 7
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 9,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -3,
+    "safety_fault_tolerance": -4,
+    "liveness_fault_tolerance": 6
+   }
+  },
+  {
+   "threshold": 4,
+   "witness_count": 9,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -1,
+    "safety_fault_tolerance": -2,
+    "liveness_fault_tolerance": 5
+   }
+  },
+  {
+   "threshold": 5,
+   "witness_count": 9,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 4
+   }
+  },
+  {
+   "threshold": 6,
+   "witness_count": 9,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 3
+   }
+  },
+  {
+   "threshold": 7,
+   "witness_count": 9,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 5,
+    "safety_fault_tolerance": 4,
+    "liveness_fault_tolerance": 2
+   }
+  },
+  {
+   "threshold": 8,
+   "witness_count": 9,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 7,
+    "safety_fault_tolerance": 6,
+    "liveness_fault_tolerance": 1
+   }
+  },
+  {
+   "threshold": 9,
+   "witness_count": 9,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 9,
+    "safety_fault_tolerance": 8,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 1,
+   "witness_count": 10,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -8,
+    "safety_fault_tolerance": -9,
+    "liveness_fault_tolerance": 9
+   }
+  },
+  {
+   "threshold": 2,
+   "witness_count": 10,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -6,
+    "safety_fault_tolerance": -7,
+    "liveness_fault_tolerance": 8
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 10,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -4,
+    "safety_fault_tolerance": -5,
+    "liveness_fault_tolerance": 7
+   }
+  },
+  {
+   "threshold": 4,
+   "witness_count": 10,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -2,
+    "safety_fault_tolerance": -3,
+    "liveness_fault_tolerance": 6
+   }
+  },
+  {
+   "threshold": 5,
+   "witness_count": 10,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 5
+   }
+  },
+  {
+   "threshold": 6,
+   "witness_count": 10,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 4
+   }
+  },
+  {
+   "threshold": 7,
+   "witness_count": 10,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 4,
+    "safety_fault_tolerance": 3,
+    "liveness_fault_tolerance": 3
+   }
+  },
+  {
+   "threshold": 8,
+   "witness_count": 10,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 6,
+    "safety_fault_tolerance": 5,
+    "liveness_fault_tolerance": 2
+   }
+  },
+  {
+   "threshold": 9,
+   "witness_count": 10,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 8,
+    "safety_fault_tolerance": 7,
+    "liveness_fault_tolerance": 1
+   }
+  },
+  {
+   "threshold": 10,
+   "witness_count": 10,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 10,
+    "safety_fault_tolerance": 9,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 1,
+   "witness_count": 11,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -9,
+    "safety_fault_tolerance": -10,
+    "liveness_fault_tolerance": 10
+   }
+  },
+  {
+   "threshold": 2,
+   "witness_count": 11,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -7,
+    "safety_fault_tolerance": -8,
+    "liveness_fault_tolerance": 9
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 11,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -5,
+    "safety_fault_tolerance": -6,
+    "liveness_fault_tolerance": 8
+   }
+  },
+  {
+   "threshold": 4,
+   "witness_count": 11,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -3,
+    "safety_fault_tolerance": -4,
+    "liveness_fault_tolerance": 7
+   }
+  },
+  {
+   "threshold": 5,
+   "witness_count": 11,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -1,
+    "safety_fault_tolerance": -2,
+    "liveness_fault_tolerance": 6
+   }
+  },
+  {
+   "threshold": 6,
+   "witness_count": 11,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 5
+   }
+  },
+  {
+   "threshold": 7,
+   "witness_count": 11,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 4
+   }
+  },
+  {
+   "threshold": 8,
+   "witness_count": 11,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 5,
+    "safety_fault_tolerance": 4,
+    "liveness_fault_tolerance": 3
+   }
+  },
+  {
+   "threshold": 9,
+   "witness_count": 11,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 7,
+    "safety_fault_tolerance": 6,
+    "liveness_fault_tolerance": 2
+   }
+  },
+  {
+   "threshold": 10,
+   "witness_count": 11,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 9,
+    "safety_fault_tolerance": 8,
+    "liveness_fault_tolerance": 1
+   }
+  },
+  {
+   "threshold": 11,
+   "witness_count": 11,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 11,
+    "safety_fault_tolerance": 10,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 1,
+   "witness_count": 12,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -10,
+    "safety_fault_tolerance": -11,
+    "liveness_fault_tolerance": 11
+   }
+  },
+  {
+   "threshold": 2,
+   "witness_count": 12,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -8,
+    "safety_fault_tolerance": -9,
+    "liveness_fault_tolerance": 10
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 12,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -6,
+    "safety_fault_tolerance": -7,
+    "liveness_fault_tolerance": 9
+   }
+  },
+  {
+   "threshold": 4,
+   "witness_count": 12,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -4,
+    "safety_fault_tolerance": -5,
+    "liveness_fault_tolerance": 8
+   }
+  },
+  {
+   "threshold": 5,
+   "witness_count": 12,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -2,
+    "safety_fault_tolerance": -3,
+    "liveness_fault_tolerance": 7
+   }
+  },
+  {
+   "threshold": 6,
+   "witness_count": 12,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 6
+   }
+  },
+  {
+   "threshold": 7,
+   "witness_count": 12,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 5
+   }
+  },
+  {
+   "threshold": 8,
+   "witness_count": 12,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 4,
+    "safety_fault_tolerance": 3,
+    "liveness_fault_tolerance": 4
+   }
+  },
+  {
+   "threshold": 9,
+   "witness_count": 12,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 6,
+    "safety_fault_tolerance": 5,
+    "liveness_fault_tolerance": 3
+   }
+  },
+  {
+   "threshold": 10,
+   "witness_count": 12,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 8,
+    "safety_fault_tolerance": 7,
+    "liveness_fault_tolerance": 2
+   }
+  },
+  {
+   "threshold": 11,
+   "witness_count": 12,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 10,
+    "safety_fault_tolerance": 9,
+    "liveness_fault_tolerance": 1
+   }
+  },
+  {
+   "threshold": 12,
+   "witness_count": 12,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 12,
+    "safety_fault_tolerance": 11,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 1,
+   "witness_count": 13,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -11,
+    "safety_fault_tolerance": -12,
+    "liveness_fault_tolerance": 12
+   }
+  },
+  {
+   "threshold": 2,
+   "witness_count": 13,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -9,
+    "safety_fault_tolerance": -10,
+    "liveness_fault_tolerance": 11
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 13,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -7,
+    "safety_fault_tolerance": -8,
+    "liveness_fault_tolerance": 10
+   }
+  },
+  {
+   "threshold": 4,
+   "witness_count": 13,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -5,
+    "safety_fault_tolerance": -6,
+    "liveness_fault_tolerance": 9
+   }
+  },
+  {
+   "threshold": 5,
+   "witness_count": 13,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -3,
+    "safety_fault_tolerance": -4,
+    "liveness_fault_tolerance": 8
+   }
+  },
+  {
+   "threshold": 6,
+   "witness_count": 13,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -1,
+    "safety_fault_tolerance": -2,
+    "liveness_fault_tolerance": 7
+   }
+  },
+  {
+   "threshold": 7,
+   "witness_count": 13,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 6
+   }
+  },
+  {
+   "threshold": 8,
+   "witness_count": 13,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 5
+   }
+  },
+  {
+   "threshold": 9,
+   "witness_count": 13,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 5,
+    "safety_fault_tolerance": 4,
+    "liveness_fault_tolerance": 4
+   }
+  },
+  {
+   "threshold": 10,
+   "witness_count": 13,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 7,
+    "safety_fault_tolerance": 6,
+    "liveness_fault_tolerance": 3
+   }
+  },
+  {
+   "threshold": 11,
+   "witness_count": 13,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 9,
+    "safety_fault_tolerance": 8,
+    "liveness_fault_tolerance": 2
+   }
+  },
+  {
+   "threshold": 12,
+   "witness_count": 13,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 11,
+    "safety_fault_tolerance": 10,
+    "liveness_fault_tolerance": 1
+   }
+  },
+  {
+   "threshold": 13,
+   "witness_count": 13,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 13,
+    "safety_fault_tolerance": 12,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 1,
+   "witness_count": 14,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -12,
+    "safety_fault_tolerance": -13,
+    "liveness_fault_tolerance": 13
+   }
+  },
+  {
+   "threshold": 2,
+   "witness_count": 14,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -10,
+    "safety_fault_tolerance": -11,
+    "liveness_fault_tolerance": 12
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 14,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -8,
+    "safety_fault_tolerance": -9,
+    "liveness_fault_tolerance": 11
+   }
+  },
+  {
+   "threshold": 4,
+   "witness_count": 14,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -6,
+    "safety_fault_tolerance": -7,
+    "liveness_fault_tolerance": 10
+   }
+  },
+  {
+   "threshold": 5,
+   "witness_count": 14,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -4,
+    "safety_fault_tolerance": -5,
+    "liveness_fault_tolerance": 9
+   }
+  },
+  {
+   "threshold": 6,
+   "witness_count": 14,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -2,
+    "safety_fault_tolerance": -3,
+    "liveness_fault_tolerance": 8
+   }
+  },
+  {
+   "threshold": 7,
+   "witness_count": 14,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 7
+   }
+  },
+  {
+   "threshold": 8,
+   "witness_count": 14,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 6
+   }
+  },
+  {
+   "threshold": 9,
+   "witness_count": 14,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 4,
+    "safety_fault_tolerance": 3,
+    "liveness_fault_tolerance": 5
+   }
+  },
+  {
+   "threshold": 10,
+   "witness_count": 14,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 6,
+    "safety_fault_tolerance": 5,
+    "liveness_fault_tolerance": 4
+   }
+  },
+  {
+   "threshold": 11,
+   "witness_count": 14,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 8,
+    "safety_fault_tolerance": 7,
+    "liveness_fault_tolerance": 3
+   }
+  },
+  {
+   "threshold": 12,
+   "witness_count": 14,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 10,
+    "safety_fault_tolerance": 9,
+    "liveness_fault_tolerance": 2
+   }
+  },
+  {
+   "threshold": 13,
+   "witness_count": 14,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 12,
+    "safety_fault_tolerance": 11,
+    "liveness_fault_tolerance": 1
+   }
+  },
+  {
+   "threshold": 14,
+   "witness_count": 14,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 14,
+    "safety_fault_tolerance": 13,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 1,
+   "witness_count": 15,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -13,
+    "safety_fault_tolerance": -14,
+    "liveness_fault_tolerance": 14
+   }
+  },
+  {
+   "threshold": 2,
+   "witness_count": 15,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -11,
+    "safety_fault_tolerance": -12,
+    "liveness_fault_tolerance": 13
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 15,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -9,
+    "safety_fault_tolerance": -10,
+    "liveness_fault_tolerance": 12
+   }
+  },
+  {
+   "threshold": 4,
+   "witness_count": 15,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -7,
+    "safety_fault_tolerance": -8,
+    "liveness_fault_tolerance": 11
+   }
+  },
+  {
+   "threshold": 5,
+   "witness_count": 15,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -5,
+    "safety_fault_tolerance": -6,
+    "liveness_fault_tolerance": 10
+   }
+  },
+  {
+   "threshold": 6,
+   "witness_count": 15,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -3,
+    "safety_fault_tolerance": -4,
+    "liveness_fault_tolerance": 9
+   }
+  },
+  {
+   "threshold": 7,
+   "witness_count": 15,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -1,
+    "safety_fault_tolerance": -2,
+    "liveness_fault_tolerance": 8
+   }
+  },
+  {
+   "threshold": 8,
+   "witness_count": 15,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 7
+   }
+  },
+  {
+   "threshold": 9,
+   "witness_count": 15,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 6
+   }
+  },
+  {
+   "threshold": 10,
+   "witness_count": 15,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 5,
+    "safety_fault_tolerance": 4,
+    "liveness_fault_tolerance": 5
+   }
+  },
+  {
+   "threshold": 11,
+   "witness_count": 15,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 7,
+    "safety_fault_tolerance": 6,
+    "liveness_fault_tolerance": 4
+   }
+  },
+  {
+   "threshold": 12,
+   "witness_count": 15,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 9,
+    "safety_fault_tolerance": 8,
+    "liveness_fault_tolerance": 3
+   }
+  },
+  {
+   "threshold": 13,
+   "witness_count": 15,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 11,
+    "safety_fault_tolerance": 10,
+    "liveness_fault_tolerance": 2
+   }
+  },
+  {
+   "threshold": 14,
+   "witness_count": 15,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 13,
+    "safety_fault_tolerance": 12,
+    "liveness_fault_tolerance": 1
+   }
+  },
+  {
+   "threshold": 15,
+   "witness_count": 15,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 15,
+    "safety_fault_tolerance": 14,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 1,
+   "witness_count": 16,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -14,
+    "safety_fault_tolerance": -15,
+    "liveness_fault_tolerance": 15
+   }
+  },
+  {
+   "threshold": 2,
+   "witness_count": 16,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -12,
+    "safety_fault_tolerance": -13,
+    "liveness_fault_tolerance": 14
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 16,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -10,
+    "safety_fault_tolerance": -11,
+    "liveness_fault_tolerance": 13
+   }
+  },
+  {
+   "threshold": 4,
+   "witness_count": 16,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -8,
+    "safety_fault_tolerance": -9,
+    "liveness_fault_tolerance": 12
+   }
+  },
+  {
+   "threshold": 5,
+   "witness_count": 16,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -6,
+    "safety_fault_tolerance": -7,
+    "liveness_fault_tolerance": 11
+   }
+  },
+  {
+   "threshold": 6,
+   "witness_count": 16,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -4,
+    "safety_fault_tolerance": -5,
+    "liveness_fault_tolerance": 10
+   }
+  },
+  {
+   "threshold": 7,
+   "witness_count": 16,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": -2,
+    "safety_fault_tolerance": -3,
+    "liveness_fault_tolerance": 9
+   }
+  },
+  {
+   "threshold": 8,
+   "witness_count": 16,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 8
+   }
+  },
+  {
+   "threshold": 9,
+   "witness_count": 16,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 7
+   }
+  },
+  {
+   "threshold": 10,
+   "witness_count": 16,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 4,
+    "safety_fault_tolerance": 3,
+    "liveness_fault_tolerance": 6
+   }
+  },
+  {
+   "threshold": 11,
+   "witness_count": 16,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 6,
+    "safety_fault_tolerance": 5,
+    "liveness_fault_tolerance": 5
+   }
+  },
+  {
+   "threshold": 12,
+   "witness_count": 16,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 8,
+    "safety_fault_tolerance": 7,
+    "liveness_fault_tolerance": 4
+   }
+  },
+  {
+   "threshold": 13,
+   "witness_count": 16,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 10,
+    "safety_fault_tolerance": 9,
+    "liveness_fault_tolerance": 3
+   }
+  },
+  {
+   "threshold": 14,
+   "witness_count": 16,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 12,
+    "safety_fault_tolerance": 11,
+    "liveness_fault_tolerance": 2
+   }
+  },
+  {
+   "threshold": 15,
+   "witness_count": 16,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 14,
+    "safety_fault_tolerance": 13,
+    "liveness_fault_tolerance": 1
+   }
+  },
+  {
+   "threshold": 16,
+   "witness_count": 16,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 16,
+    "safety_fault_tolerance": 15,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 9,
+   "witness_count": 17,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 8
+   }
+  },
+  {
+   "threshold": 10,
+   "witness_count": 17,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 7
+   }
+  },
+  {
+   "threshold": 17,
+   "witness_count": 17,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 17,
+    "safety_fault_tolerance": 16,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 9,
+   "witness_count": 18,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 9
+   }
+  },
+  {
+   "threshold": 10,
+   "witness_count": 18,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 8
+   }
+  },
+  {
+   "threshold": 18,
+   "witness_count": 18,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 18,
+    "safety_fault_tolerance": 17,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 10,
+   "witness_count": 19,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 9
+   }
+  },
+  {
+   "threshold": 11,
+   "witness_count": 19,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 8
+   }
+  },
+  {
+   "threshold": 19,
+   "witness_count": 19,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 19,
+    "safety_fault_tolerance": 18,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 10,
+   "witness_count": 20,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 10
+   }
+  },
+  {
+   "threshold": 11,
+   "witness_count": 20,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 9
+   }
+  },
+  {
+   "threshold": 20,
+   "witness_count": 20,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 20,
+    "safety_fault_tolerance": 19,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 11,
+   "witness_count": 21,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 10
+   }
+  },
+  {
+   "threshold": 12,
+   "witness_count": 21,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 9
+   }
+  },
+  {
+   "threshold": 21,
+   "witness_count": 21,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 21,
+    "safety_fault_tolerance": 20,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 11,
+   "witness_count": 22,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 11
+   }
+  },
+  {
+   "threshold": 12,
+   "witness_count": 22,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 10
+   }
+  },
+  {
+   "threshold": 22,
+   "witness_count": 22,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 22,
+    "safety_fault_tolerance": 21,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 12,
+   "witness_count": 23,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 11
+   }
+  },
+  {
+   "threshold": 13,
+   "witness_count": 23,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 10
+   }
+  },
+  {
+   "threshold": 23,
+   "witness_count": 23,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 23,
+    "safety_fault_tolerance": 22,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 12,
+   "witness_count": 24,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 12
+   }
+  },
+  {
+   "threshold": 13,
+   "witness_count": 24,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 11
+   }
+  },
+  {
+   "threshold": 24,
+   "witness_count": 24,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 24,
+    "safety_fault_tolerance": 23,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 13,
+   "witness_count": 25,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 12
+   }
+  },
+  {
+   "threshold": 14,
+   "witness_count": 25,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 11
+   }
+  },
+  {
+   "threshold": 25,
+   "witness_count": 25,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 25,
+    "safety_fault_tolerance": 24,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 13,
+   "witness_count": 26,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 13
+   }
+  },
+  {
+   "threshold": 14,
+   "witness_count": 26,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 12
+   }
+  },
+  {
+   "threshold": 26,
+   "witness_count": 26,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 26,
+    "safety_fault_tolerance": 25,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 14,
+   "witness_count": 27,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 13
+   }
+  },
+  {
+   "threshold": 15,
+   "witness_count": 27,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 12
+   }
+  },
+  {
+   "threshold": 27,
+   "witness_count": 27,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 27,
+    "safety_fault_tolerance": 26,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 14,
+   "witness_count": 28,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 14
+   }
+  },
+  {
+   "threshold": 15,
+   "witness_count": 28,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 13
+   }
+  },
+  {
+   "threshold": 28,
+   "witness_count": 28,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 28,
+    "safety_fault_tolerance": 27,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 15,
+   "witness_count": 29,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 14
+   }
+  },
+  {
+   "threshold": 16,
+   "witness_count": 29,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 13
+   }
+  },
+  {
+   "threshold": 29,
+   "witness_count": 29,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 29,
+    "safety_fault_tolerance": 28,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 15,
+   "witness_count": 30,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 15
+   }
+  },
+  {
+   "threshold": 16,
+   "witness_count": 30,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 14
+   }
+  },
+  {
+   "threshold": 30,
+   "witness_count": 30,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 30,
+    "safety_fault_tolerance": 29,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 16,
+   "witness_count": 31,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 15
+   }
+  },
+  {
+   "threshold": 17,
+   "witness_count": 31,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 14
+   }
+  },
+  {
+   "threshold": 31,
+   "witness_count": 31,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 31,
+    "safety_fault_tolerance": 30,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 16,
+   "witness_count": 32,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 16
+   }
+  },
+  {
+   "threshold": 17,
+   "witness_count": 32,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 15
+   }
+  },
+  {
+   "threshold": 32,
+   "witness_count": 32,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 32,
+    "safety_fault_tolerance": 31,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 17,
+   "witness_count": 33,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 16
+   }
+  },
+  {
+   "threshold": 18,
+   "witness_count": 33,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 15
+   }
+  },
+  {
+   "threshold": 33,
+   "witness_count": 33,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 33,
+    "safety_fault_tolerance": 32,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 17,
+   "witness_count": 34,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 17
+   }
+  },
+  {
+   "threshold": 18,
+   "witness_count": 34,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 16
+   }
+  },
+  {
+   "threshold": 34,
+   "witness_count": 34,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 34,
+    "safety_fault_tolerance": 33,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 18,
+   "witness_count": 35,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 17
+   }
+  },
+  {
+   "threshold": 19,
+   "witness_count": 35,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 16
+   }
+  },
+  {
+   "threshold": 35,
+   "witness_count": 35,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 35,
+    "safety_fault_tolerance": 34,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 18,
+   "witness_count": 36,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 18
+   }
+  },
+  {
+   "threshold": 19,
+   "witness_count": 36,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 17
+   }
+  },
+  {
+   "threshold": 36,
+   "witness_count": 36,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 36,
+    "safety_fault_tolerance": 35,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 19,
+   "witness_count": 37,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 18
+   }
+  },
+  {
+   "threshold": 20,
+   "witness_count": 37,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 17
+   }
+  },
+  {
+   "threshold": 37,
+   "witness_count": 37,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 37,
+    "safety_fault_tolerance": 36,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 19,
+   "witness_count": 38,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 19
+   }
+  },
+  {
+   "threshold": 20,
+   "witness_count": 38,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 18
+   }
+  },
+  {
+   "threshold": 38,
+   "witness_count": 38,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 38,
+    "safety_fault_tolerance": 37,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 20,
+   "witness_count": 39,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 19
+   }
+  },
+  {
+   "threshold": 21,
+   "witness_count": 39,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 18
+   }
+  },
+  {
+   "threshold": 39,
+   "witness_count": 39,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 39,
+    "safety_fault_tolerance": 38,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 20,
+   "witness_count": 40,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 20
+   }
+  },
+  {
+   "threshold": 21,
+   "witness_count": 40,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 19
+   }
+  },
+  {
+   "threshold": 40,
+   "witness_count": 40,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 40,
+    "safety_fault_tolerance": 39,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 21,
+   "witness_count": 41,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 20
+   }
+  },
+  {
+   "threshold": 22,
+   "witness_count": 41,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 19
+   }
+  },
+  {
+   "threshold": 41,
+   "witness_count": 41,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 41,
+    "safety_fault_tolerance": 40,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 21,
+   "witness_count": 42,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 21
+   }
+  },
+  {
+   "threshold": 22,
+   "witness_count": 42,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 20
+   }
+  },
+  {
+   "threshold": 42,
+   "witness_count": 42,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 42,
+    "safety_fault_tolerance": 41,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 22,
+   "witness_count": 43,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 21
+   }
+  },
+  {
+   "threshold": 23,
+   "witness_count": 43,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 20
+   }
+  },
+  {
+   "threshold": 43,
+   "witness_count": 43,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 43,
+    "safety_fault_tolerance": 42,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 22,
+   "witness_count": 44,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 22
+   }
+  },
+  {
+   "threshold": 23,
+   "witness_count": 44,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 21
+   }
+  },
+  {
+   "threshold": 44,
+   "witness_count": 44,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 44,
+    "safety_fault_tolerance": 43,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 23,
+   "witness_count": 45,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 22
+   }
+  },
+  {
+   "threshold": 24,
+   "witness_count": 45,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 21
+   }
+  },
+  {
+   "threshold": 45,
+   "witness_count": 45,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 45,
+    "safety_fault_tolerance": 44,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 23,
+   "witness_count": 46,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 23
+   }
+  },
+  {
+   "threshold": 24,
+   "witness_count": 46,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 22
+   }
+  },
+  {
+   "threshold": 46,
+   "witness_count": 46,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 46,
+    "safety_fault_tolerance": 45,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 24,
+   "witness_count": 47,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 23
+   }
+  },
+  {
+   "threshold": 25,
+   "witness_count": 47,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 22
+   }
+  },
+  {
+   "threshold": 47,
+   "witness_count": 47,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 47,
+    "safety_fault_tolerance": 46,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 24,
+   "witness_count": 48,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 24
+   }
+  },
+  {
+   "threshold": 25,
+   "witness_count": 48,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 23
+   }
+  },
+  {
+   "threshold": 48,
+   "witness_count": 48,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 48,
+    "safety_fault_tolerance": 47,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 25,
+   "witness_count": 49,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 24
+   }
+  },
+  {
+   "threshold": 26,
+   "witness_count": 49,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 23
+   }
+  },
+  {
+   "threshold": 49,
+   "witness_count": 49,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 49,
+    "safety_fault_tolerance": 48,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 25,
+   "witness_count": 50,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 25
+   }
+  },
+  {
+   "threshold": 26,
+   "witness_count": 50,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 24
+   }
+  },
+  {
+   "threshold": 50,
+   "witness_count": 50,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 50,
+    "safety_fault_tolerance": 49,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 26,
+   "witness_count": 51,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 25
+   }
+  },
+  {
+   "threshold": 27,
+   "witness_count": 51,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 24
+   }
+  },
+  {
+   "threshold": 51,
+   "witness_count": 51,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 51,
+    "safety_fault_tolerance": 50,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 26,
+   "witness_count": 52,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 26
+   }
+  },
+  {
+   "threshold": 27,
+   "witness_count": 52,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 25
+   }
+  },
+  {
+   "threshold": 52,
+   "witness_count": 52,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 52,
+    "safety_fault_tolerance": 51,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 27,
+   "witness_count": 53,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 26
+   }
+  },
+  {
+   "threshold": 28,
+   "witness_count": 53,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 25
+   }
+  },
+  {
+   "threshold": 53,
+   "witness_count": 53,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 53,
+    "safety_fault_tolerance": 52,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 27,
+   "witness_count": 54,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 27
+   }
+  },
+  {
+   "threshold": 28,
+   "witness_count": 54,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 26
+   }
+  },
+  {
+   "threshold": 54,
+   "witness_count": 54,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 54,
+    "safety_fault_tolerance": 53,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 28,
+   "witness_count": 55,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 27
+   }
+  },
+  {
+   "threshold": 29,
+   "witness_count": 55,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 26
+   }
+  },
+  {
+   "threshold": 55,
+   "witness_count": 55,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 55,
+    "safety_fault_tolerance": 54,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 28,
+   "witness_count": 56,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 28
+   }
+  },
+  {
+   "threshold": 29,
+   "witness_count": 56,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 27
+   }
+  },
+  {
+   "threshold": 56,
+   "witness_count": 56,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 56,
+    "safety_fault_tolerance": 55,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 29,
+   "witness_count": 57,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 28
+   }
+  },
+  {
+   "threshold": 30,
+   "witness_count": 57,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 27
+   }
+  },
+  {
+   "threshold": 57,
+   "witness_count": 57,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 57,
+    "safety_fault_tolerance": 56,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 29,
+   "witness_count": 58,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 29
+   }
+  },
+  {
+   "threshold": 30,
+   "witness_count": 58,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 28
+   }
+  },
+  {
+   "threshold": 58,
+   "witness_count": 58,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 58,
+    "safety_fault_tolerance": 57,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 30,
+   "witness_count": 59,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 29
+   }
+  },
+  {
+   "threshold": 31,
+   "witness_count": 59,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 28
+   }
+  },
+  {
+   "threshold": 59,
+   "witness_count": 59,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 59,
+    "safety_fault_tolerance": 58,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 30,
+   "witness_count": 60,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 30
+   }
+  },
+  {
+   "threshold": 31,
+   "witness_count": 60,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 29
+   }
+  },
+  {
+   "threshold": 60,
+   "witness_count": 60,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 60,
+    "safety_fault_tolerance": 59,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 31,
+   "witness_count": 61,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 30
+   }
+  },
+  {
+   "threshold": 32,
+   "witness_count": 61,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 29
+   }
+  },
+  {
+   "threshold": 61,
+   "witness_count": 61,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 61,
+    "safety_fault_tolerance": 60,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 31,
+   "witness_count": 62,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 31
+   }
+  },
+  {
+   "threshold": 32,
+   "witness_count": 62,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 30
+   }
+  },
+  {
+   "threshold": 62,
+   "witness_count": 62,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 62,
+    "safety_fault_tolerance": 61,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 32,
+   "witness_count": 63,
+   "expect": {
+    "valid": false,
+    "reason": "zero_fault_tolerance",
+    "quorum_intersection": 1,
+    "safety_fault_tolerance": 0,
+    "liveness_fault_tolerance": 31
+   }
+  },
+  {
+   "threshold": 33,
+   "witness_count": 63,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 3,
+    "safety_fault_tolerance": 2,
+    "liveness_fault_tolerance": 30
+   }
+  },
+  {
+   "threshold": 63,
+   "witness_count": 63,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 63,
+    "safety_fault_tolerance": 62,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 32,
+   "witness_count": 64,
+   "expect": {
+    "valid": false,
+    "reason": "quorums_may_not_intersect",
+    "quorum_intersection": 0,
+    "safety_fault_tolerance": -1,
+    "liveness_fault_tolerance": 32
+   }
+  },
+  {
+   "threshold": 33,
+   "witness_count": 64,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 2,
+    "safety_fault_tolerance": 1,
+    "liveness_fault_tolerance": 31
+   }
+  },
+  {
+   "threshold": 64,
+   "witness_count": 64,
+   "expect": {
+    "valid": true,
+    "reason": null,
+    "quorum_intersection": 64,
+    "safety_fault_tolerance": 63,
+    "liveness_fault_tolerance": 0
+   }
+  },
+  {
+   "threshold": 0,
+   "witness_count": 4,
+   "expect": {
+    "valid": false,
+    "reason": "threshold_out_of_range"
+   }
+  },
+  {
+   "threshold": -1,
+   "witness_count": 4,
+   "expect": {
+    "valid": false,
+    "reason": "threshold_out_of_range"
+   }
+  },
+  {
+   "threshold": 5,
+   "witness_count": 4,
+   "expect": {
+    "valid": false,
+    "reason": "threshold_out_of_range"
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 0,
+   "expect": {
+    "valid": false,
+    "reason": "witness_count_out_of_range"
+   }
+  },
+  {
+   "threshold": 33,
+   "witness_count": 65,
+   "expect": {
+    "valid": false,
+    "reason": "witness_count_out_of_range"
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": -4,
+   "expect": {
+    "valid": false,
+    "reason": "witness_count_out_of_range"
+   }
+  },
+  {
+   "threshold": 2.5,
+   "witness_count": 4,
+   "expect": {
+    "valid": false,
+    "reason": "threshold_not_integer"
+   }
+  },
+  {
+   "threshold": "3",
+   "witness_count": 4,
+   "expect": {
+    "valid": false,
+    "reason": "threshold_not_integer"
+   }
+  },
+  {
+   "threshold": true,
+   "witness_count": 4,
+   "expect": {
+    "valid": false,
+    "reason": "threshold_not_integer"
+   }
+  },
+  {
+   "threshold": null,
+   "witness_count": 4,
+   "expect": {
+    "valid": false,
+    "reason": "threshold_not_integer"
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": 4.5,
+   "expect": {
+    "valid": false,
+    "reason": "witness_count_not_integer"
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": "4",
+   "expect": {
+    "valid": false,
+    "reason": "witness_count_not_integer"
+   }
+  },
+  {
+   "threshold": 3,
+   "witness_count": null,
+   "expect": {
+    "valid": false,
+    "reason": "witness_count_not_integer"
+   }
+  },
+  {
+   "threshold": 1e+300,
+   "witness_count": 4,
+   "expect": {
+    "valid": false,
+    "reason": "threshold_not_integer"
+   }
+  }
+ ]
+}

@@ -21,6 +21,8 @@ Verify it:
 aml-governance-transcript-verify transcript.json
 ```
 
+An unsigned transcript has no authenticated source, so this command never authorizes: a valid transcript exits `3`, an invalid one `2`. `--diagnostic-only` exits `0` for a valid transcript with `NOT AN AUTHORIZATION DECISION`. See [Command exit status and authorization](../docs/COMMAND_AUTHORIZATION.md).
+
 The transcript contract is:
 
 ```text

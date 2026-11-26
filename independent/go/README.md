@@ -11,14 +11,30 @@ cd independent/go
 go run . --now 2030-01-01T00:05:00Z ../python/witness-vector.json
 ```
 
-Expected result:
+Expected result (abridged), exit status `3`:
 
 ```json
 {
   "valid": true,
-  "reason": "AML_GO_WITNESS_BUNDLE_VALID"
+  "reason": "AML_GO_WITNESS_BUNDLE_VALID",
+  "authorized": false
 }
 ```
+
+This verifier has no held-challenge input and does not trust a caller
+`--now`, so it never authorizes: a valid bundle exits `3`, an invalid one `1`,
+an input error `2`. `--diagnostic-only` exits `0` for a valid bundle and
+reports `NOT AN AUTHORIZATION DECISION`; the black-box conformance harness
+uses that mode. `verify.sh` builds the binary and preserves its exit code
+(`go run` would report every failure as `1`). See
+[docs/COMMAND_AUTHORIZATION.md](../../docs/COMMAND_AUTHORIZATION.md).
+
+Trust config ([docs/TRUST_CONFIG.md](../../docs/TRUST_CONFIG.md)):
+`--trust-config`, `--trust-state` and `--single-use-store` are accepted. On an
+enrolled host the output carries the trust decision and, when it is not
+trusted, `AML_AUTHZ_TRUST_CONFIG_NOT_TRUSTED`; the verifier still never
+authorizes. `trust-verify` evaluates a trust config (exit 0 only when trusted)
+and `trust-conformance <vectors.json>` runs the shared conformance vectors.
 
 The implementation checks:
 

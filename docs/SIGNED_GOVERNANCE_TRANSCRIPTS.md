@@ -47,8 +47,11 @@ To require a supplied fingerprint:
 ```bash
 aml-governance-transcript-signature-verify signed-transcript.json \
   --trusted-fingerprint <64-hex-sha256-fingerprint> \
-  --require-trusted-key
+  --require-trusted-key \
+  --expected-key-id <key-id>
 ```
+
+Exit `0` requires `authorized: true`: valid, a key in `--trusted-fingerprint`, and `--expected-key-id` equal to the signed key id. A valid result missing any of these exits `3`; an invalid one exits `2`. See [Command exit status and authorization](COMMAND_AUTHORIZATION.md).
 
 Multiple `--trusted-fingerprint` arguments may be supplied.
 

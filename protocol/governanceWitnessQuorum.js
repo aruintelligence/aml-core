@@ -1,10 +1,15 @@
 import { verifySignedGovernanceStreamTranscript } from "./governanceTranscriptSignature.js";
+import { evaluateQuorumSafety } from "./quorumSafety.js";
+import { resolvePolicyThreshold } from "./policyThreshold.js";
 
 export const AML_GOVERNANCE_WITNESS_QUORUM = "aml-governance-witness-quorum/1";
 export const AML_GOVERNANCE_WITNESS_QUORUM_VERIFICATION = "aml-governance-witness-quorum-verification/1";
 
 function normalizePolicy(policy = {}) {
-  const threshold = Number.isInteger(policy.threshold) && policy.threshold > 0 ? policy.threshold : 1;
+  // protocol/policyThreshold.js: omitted -> default 1; an explicit threshold
+  // that is not a positive integer is a policy error (threshold null), never
+  // silently replaced by 1 (that would lower the quorum the author wrote).
+  const { threshold } = resolvePolicyThreshold(policy);
   return {
     threshold,
     trusted_fingerprints: Array.isArray(policy.trusted_fingerprints) ? [...new Set(policy.trusted_fingerprints)] : [],
@@ -25,6 +30,11 @@ export function evaluateGovernanceWitnessQuorum(signedTranscripts, policy = {}) 
   }
 
   const normalized = normalizePolicy(policy);
+  const policyErrors = normalized.threshold === null ? ["invalid_threshold"] : [];
+  // k-of-n safety of the declared witness set (protocol/quorumSafety.js).
+  // Reported here; aml-governance-witness-quorum refuses to authorize unless
+  // it is valid. With no trusted list the witness set is unbounded (n = 0).
+  const quorumSafety = evaluateQuorumSafety(normalized.threshold, normalized.trusted_fingerprints.length);
   const revoked = new Set(normalized.revoked_fingerprints);
   const trusted = new Set(normalized.trusted_fingerprints);
   const seenKeys = new Set();
@@ -82,7 +92,7 @@ export function evaluateGovernanceWitnessQuorum(signedTranscripts, policy = {}) 
     .map(([root_sha256, indexes]) => ({ root_sha256, witness_indexes: indexes, count: indexes.length }))
     .sort((a, b) => b.count - a.count || a.root_sha256.localeCompare(b.root_sha256));
   const winning = groups[0] || null;
-  const quorumMet = Boolean(winning && winning.count >= normalized.threshold);
+  const quorumMet = policyErrors.length === 0 && Boolean(winning && winning.count >= normalized.threshold);
   const conflictingEligibleRoots = groups.length > 1;
 
   return {
@@ -90,6 +100,8 @@ export function evaluateGovernanceWitnessQuorum(signedTranscripts, policy = {}) 
     policy: normalized,
     quorum_met: quorumMet,
     threshold: normalized.threshold,
+    policy_errors: policyErrors,
+    quorum_safety: quorumSafety,
     winning_transcript_root_sha256: quorumMet ? winning.root_sha256 : null,
     winning_witness_count: winning?.count || 0,
     eligible_witness_count: witnessResults.filter((item) => item.eligible).length,

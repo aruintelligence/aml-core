@@ -2,6 +2,7 @@
 // Detached Ed25519 attestations for ĀML build manifests.
 
 import crypto from "node:crypto";
+import { decodeSignatureBase64 } from "../protocol/strictBase64.js";
 import fs from "node:fs";
 
 function sha256(content) {
@@ -121,8 +122,8 @@ export function verifyBuildAttestation(attestation, manifestPath = attestation?.
     const publicKeyFingerprint = sha256(publicKey.export({ type: "spki", format: "der" }));
     const fingerprintValid = publicKeyFingerprint === attestation.public_key_sha256;
     const signedBytes = current ? currentSignedBytes(attestation, manifest) : manifest;
-    const signature = Buffer.from(attestation.signature_base64, "base64");
-    const signatureValid = crypto.verify(null, signedBytes, publicKey, signature);
+    const signature = decodeSignatureBase64(attestation.signature_base64);
+    const signatureValid = signature !== null && crypto.verify(null, signedBytes, publicKey, signature);
     const verified = hashValid && signatureValid && fingerprintValid;
 
     return {

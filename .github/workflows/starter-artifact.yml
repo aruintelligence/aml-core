@@ -10,14 +10,19 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   starter-artifact:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "20"
       - name: Build exact starter artifact
@@ -31,7 +36,7 @@ jobs:
           grep -F 'aml-gate.js' dist/ai-interface-firewall-starter/index.html
           grep -F 'aml-ai-interface-firewall-starter/1' dist/ai-interface-firewall-starter/manifest.json
       - name: Upload audited starter
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: aml-ai-interface-firewall-starter-${{ github.sha }}
           path: dist/ai-interface-firewall-starter/

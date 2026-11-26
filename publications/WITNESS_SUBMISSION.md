@@ -72,6 +72,8 @@ Or:
 node scripts/validate-witness-record.mjs witness-record.json
 ```
 
+A well-formed record exits `3`, not `0`: validation is not acceptance, and a witness record still requires human/public-evidence review. Add `--diagnostic-only` for exit `0` on a well-formed record; that output says `NOT AN AUTHORIZATION DECISION`. Invalid records exit `1`. The Action runs the gate in diagnostic-only mode and exposes `authorized=false` and `decision-use` outputs.
+
 The canonical registry guard uses the same validator.
 
 ## 4. Submit the evidence

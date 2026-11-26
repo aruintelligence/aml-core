@@ -56,32 +56,40 @@ The project also supplies a separate Python verifier for saved, parsed responses
 
 ```bash
 node pilots/enterprise-http-gate/capture.mjs --out /tmp/aml-http-capture-example
+POLICY_SHA256="$(python3 independent/python/authorization_cli.py policy-sha256 /tmp/aml-http-capture-example/trusted-policy.json)"
 python3 independent/python/verify_http_exchange.py \
   /tmp/aml-http-capture-example/exchange-allow.json \
   /tmp/aml-http-capture-example/capsule-allow.json \
   /tmp/aml-http-capture-example/host-expected-allow.json \
-  /tmp/aml-http-capture-example/trusted-policy.json
+  /tmp/aml-http-capture-example/trusted-policy.json \
+  --expected-policy-sha256 "$POLICY_SHA256"
 python3 independent/python/verify_http_exchange.py \
   /tmp/aml-http-capture-example/exchange-suppress.json \
   /tmp/aml-http-capture-example/capsule-suppress.json \
   /tmp/aml-http-capture-example/host-expected-suppress.json \
-  /tmp/aml-http-capture-example/trusted-policy.json
+  /tmp/aml-http-capture-example/trusted-policy.json \
+  --expected-policy-sha256 "$POLICY_SHA256"
 python3 independent/python/verify_http_exchange.py \
   /tmp/aml-http-capture-example/exchange-numeric.json \
   /tmp/aml-http-capture-example/capsule-numeric.json \
   /tmp/aml-http-capture-example/host-expected-numeric.json \
-  /tmp/aml-http-capture-example/trusted-policy.json
+  /tmp/aml-http-capture-example/trusted-policy.json \
+  --expected-policy-sha256 "$POLICY_SHA256"
 python3 independent/python/verify_http_exchange.py \
   /tmp/aml-http-capture-example/exchange-keys.json \
   /tmp/aml-http-capture-example/capsule-keys.json \
   /tmp/aml-http-capture-example/host-expected-keys.json \
-  /tmp/aml-http-capture-example/trusted-policy.json
+  /tmp/aml-http-capture-example/trusted-policy.json \
+  --expected-policy-sha256 "$POLICY_SHA256"
 python3 independent/python/verify_http_exchange.py \
   /tmp/aml-http-capture-example/exchange-large.json \
   /tmp/aml-http-capture-example/capsule-large.json \
   /tmp/aml-http-capture-example/host-expected-large.json \
-  /tmp/aml-http-capture-example/trusted-policy.json
+  /tmp/aml-http-capture-example/trusted-policy.json \
+  --expected-policy-sha256 "$POLICY_SHA256"
 ```
+
+> Directive 010: exit 0 requires `--expected-policy-sha256` equal to the canonical digest of the trusted policy, obtained out of band (shown here computed from the local copy for the vector); without it a verified result exits 3.
 
 The first, third, fourth, and fifth reports have `verified: true`, `status: "declared_allow"`, `render_eligible: false`, and `execution_replayed: false`. The second has `verified: true`, `status: "declared_suppressed"`, and `render_eligible: false`. The third intent carries `1e-7` through a real signed HTTP response and the Python verifier. The fourth carries array-index and Unicode keys plus an escaped lone surrogate. The fifth carries `2**53` and `1e100`.
 

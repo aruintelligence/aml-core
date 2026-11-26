@@ -56,7 +56,8 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   assert.match(privateKeyRun.stderr, /AML_SIGNED_QUORUM_PUBLIC_KEY_INVALID/);
   const quorum = await createSignedVerificationQuorum([a, b], { threshold: 2 });
   const valid = run(write('quorum.json', quorum));
-  assert.equal(valid.status, 0, valid.stderr);
+  assert.equal(valid.status, 3, valid.stderr);
+  assert.equal(JSON.parse(valid.stdout).authorized, false, 'requested conditions met without the complete decision is not authorization');
   assert.equal(JSON.parse(valid.stdout).threshold_met, true);
   assert.equal(JSON.parse(valid.stdout).requested_conditions_met, true);
   assert.deepEqual(JSON.parse(valid.stdout).input_fingerprints, {
@@ -75,7 +76,8 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
   ], { threshold: 1 });
   const largePath = write('large-quorum.json', largeQuorum);
   const large = run(largePath);
-  assert.equal(large.status, 0, large.stderr);
+  assert.equal(large.status, 3, large.stderr);
+  assert.equal(JSON.parse(large.stdout).authorized, false, 'requested conditions met without the complete decision is not authorization');
   assert.ok(large.stdout.length > 128 * 1024);
   assert.equal(JSON.parse(large.stdout).input_fingerprints.quorum_sha256, inputHash(largeQuorum));
   const small = run(largePath, '--decision-only');
@@ -86,6 +88,7 @@ test('offline CLI verifies a saved signed quorum and gates on its threshold', as
     schema: 'aml-signed-quorum-decision/1', prototype: true,
     valid: true, threshold_met: true, requested_conditions_met: true,
     requested_conditions: { checked: ['valid', 'threshold_met'], unmet: [] },
+    authorized: false, authorization_reasons: ['AML_AUTHZ_HELD_POLICY_REQUIRED_AND_MET'],
     input_fingerprints: { canonicalization: 'sorted-json-v1',
       quorum_sha256: inputHash(largeQuorum) }
   });
@@ -322,7 +325,8 @@ test('portable quorum gate rejects JSON that the Python verifier cannot reproduc
   const signed = await signVerificationReport(report('portable'), await createVerifierKeyPair());
   const quorum = await createSignedVerificationQuorum([signed], { threshold: 1 });
   const portable = run(write('portable.json', quorum), '--portable');
-  assert.equal(portable.status, 0, portable.stderr);
+  assert.equal(portable.status, 3, portable.stderr);
+  assert.equal(JSON.parse(portable.stdout).authorized, false, 'requested conditions met without the complete decision is not authorization');
   assert.equal(JSON.parse(portable.stdout).portable_met, true);
   assert.deepEqual(JSON.parse(portable.stdout).requested_conditions.checked,
     ['valid', 'threshold_met', 'portable_met']);
@@ -439,7 +443,8 @@ test('signed quorum rechecks the named witness against a separately held challen
   assert.deepEqual(stableReplay.input_fingerprints, replayed.input_fingerprints);
 
   const accepted = run(quorumPath, '--bundle', bundlePath, '--challenge', challengePath);
-  assert.equal(accepted.status, 0, accepted.stderr);
+  assert.equal(accepted.status, 3, accepted.stderr);
+  assert.equal(JSON.parse(accepted.stdout).authorized, false, 'requested conditions met without the complete decision is not authorization');
   assert.equal(JSON.parse(accepted.stdout).witness_met, true);
   assert.equal(JSON.parse(accepted.stdout).replayable_claims_consistent, true);
   assert.equal(JSON.parse(accepted.stdout).witness_evaluation.clock_source, 'local_system');

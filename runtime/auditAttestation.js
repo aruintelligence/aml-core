@@ -2,6 +2,7 @@
 // ĀML v1.3 — Ed25519 attestations for runtime audit-stream heads.
 
 import crypto from "node:crypto";
+import { decodeSignatureBase64 } from "../protocol/strictBase64.js";
 import { verifyAuditStream } from "./auditStream.js";
 
 function sha256(value) {
@@ -127,8 +128,8 @@ export function verifyAuditCheckpoint(stream, signedCheckpoint) {
     const payload = current
       ? Buffer.from(JSON.stringify(currentAttestationMaterial(checkpoint, attestation)))
       : Buffer.from(JSON.stringify(checkpoint));
-    const signature = Buffer.from(attestation.signature_base64, "base64");
-    const signatureValid = crypto.verify(null, payload, publicKey, signature);
+    const signature = decodeSignatureBase64(attestation.signature_base64);
+    const signatureValid = signature !== null && crypto.verify(null, payload, publicKey, signature);
     const fingerprintValid = sha256(publicDer) === attestation.public_key_sha256;
     const verified = signatureValid && fingerprintValid && streamMatch;
 

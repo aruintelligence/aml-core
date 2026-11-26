@@ -1,16 +1,30 @@
 # ĀML™ Security Policy
 
-ĀML is a working research prototype with compiler, policy, receipt, interoperability, trust, and official-authorization surfaces. Security review is encouraged.
+ĀML is a working research prototype with compiler, policy, receipt, interoperability, trust, and official-authorization surfaces. Security review is encouraged. This policy describes how to report a vulnerability. It is not a certification, a vulnerability-free claim, or a promise that the reference implementation is suitable for every production environment.
 
 ## Reporting vulnerabilities
 
-For a potentially exploitable security issue, please use a private channel first.
+Please use a **private channel first** for any potentially exploitable issue.
 
-**Contact:** Office@aruintelligence.com
+1. **Preferred:** GitHub private vulnerability reporting, via **Security → Report a vulnerability** on [aruintelligence/aml-core](https://github.com/aruintelligence/aml-core/security/advisories/new), when that feature is enabled for the repository.
+2. **Current reliable path:** email **Office@aruintelligence.com** with the subject line `ĀML security report`.
 
-Please do not post active private keys, confidential customer information, exploit details that create immediate harm, or unreleased credential material in a public issue.
+Please do not post active private keys, confidential customer information, exploit details that create immediate harm, or unreleased credential material in a public issue, pull request, or discussion.
 
 This repository does not currently promise a bug bounty or payment for reports unless a separate written program explicitly says otherwise.
+
+We aim to acknowledge a clearly described report within a few business days. That is a stewardship goal, not a contractual service-level agreement.
+
+## Supported versions
+
+| Version | Security updates |
+|---|---|
+| This repository's default branch and current development snapshots | Investigated as they stand |
+| `v1.4.0-rc.2` prerelease snapshot | Investigated; the preview channel may change |
+| `v1.3.0` stable package/CLI/capability contract | Investigated for the published contract |
+| Older tags and experimental branches | Best-effort, as resources allow |
+
+Name the exact commit or tag in your report whenever possible.
 
 ## Security scope
 
@@ -128,6 +142,8 @@ Security claims should distinguish among:
 - trust-root membership
 - institutional authorization
 - human-outcome claims
+
+Further reading: [SECURITY_THREAT_MODEL.md](SECURITY_THREAT_MODEL.md) and [docs/SECURITY_EVALUATION_CHECKLIST.md](docs/SECURITY_EVALUATION_CHECKLIST.md).
 
 ## Stewardship
 

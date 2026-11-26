@@ -48,7 +48,11 @@ export { createCausalEvent, createCausalExecutionGraph, verifyCausalExecutionGra
 export { createTrustDelegation, createSignedTrustDelegation, verifyTrustDelegation, verifyDelegationChain } from "./runtime/trustDelegation.js";
 export { createTransparencyLog, appendTransparencyEntry, verifyTransparencyLog } from "./runtime/transparencyLog.js";
 export { createThresholdAuthorization, verifyThresholdAuthorization } from "./runtime/thresholdAuthorization.js";
-export { signCapabilityToken, verifyCapabilityToken } from "./runtime/capabilityToken.js";
+export { signCapabilityToken, verifyCapabilityToken, authorizeCapabilityToken, createCapabilityConsumptionGuard } from "./runtime/capabilityToken.js";
+export { signTrustConfig, evaluateTrustConfig, evaluateTrustConfigAll, initTrustState, readTrustState, trustStateEnrolled,
+  enrolledTrustStateDirs, trustConfigTrustsKey, trustConfigPinMatches, trustConfigRequiresSingleUse, validateTrustConfigBody,
+  isIssuedTrustDecision, keyFingerprint as trustKeyFingerprint, TRUST_CONFIG_TYPE, TRUST_ROLES, AML_SYSTEM_TRUST_STATE_DIR } from "./runtime/trustConfig.js";
+export { openDurableConsumptionStore, isDurableConsumptionStore, consumptionKey, DURABLE_CONSUMPTION_STORE_TYPE } from "./runtime/consumptionStore.js";
 export { createRevocationRegistry, revokeArtifact, verifyRevocationRegistry, isRevoked } from "./runtime/revocationRegistry.js";
 export { createProofCarryingInterface, verifyProofCarryingInterface } from "./runtime/proofCarryingInterface.js";
 export { signBrandAuthorization, verifyBrandAuthorization } from "./runtime/brandAuthorization.js";

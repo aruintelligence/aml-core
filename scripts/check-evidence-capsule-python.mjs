@@ -8,6 +8,13 @@ import { createAttentionLedger, consumeAttention } from "../runtime/attentionLed
 import { createEvidenceCapsule, verifyEvidenceCapsule } from "../runtime/evidenceCapsule.js";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 
+// Directive 010: the relying party pins the digest of its own trusted policy.
+const policyPinOf = file => {
+  const out = spawnSync("python3", [path.resolve("independent/python/authorization_cli.py"), "policy-sha256", file], { encoding: "utf8" });
+  if (out.status !== 0) throw new Error(`policy pin: ${out.stderr}`);
+  return out.stdout.trim();
+};
+
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aml-capsule-python-"));
 const verifier = path.resolve("independent/python/verify_evidence_capsule.py");
 const intent = JSON.parse(fs.readFileSync("pilots/enterprise-30min/intent-allowed.json", "utf8"));
@@ -85,12 +92,15 @@ function check(name, content, expected, policy = null, reasonIncludes = null, ex
   if (policy) {
     const policyFile = path.join(directory, `${name}-policy.json`);
     fs.writeFileSync(policyFile, JSON.stringify(policy));
-    args.push(policyFile);
+    args.push(policyFile, "--expected-policy-sha256", policyPinOf(policyFile));
   }
+  // Directive 010: without a pinned trusted policy a verified capsule exits 3.
+  const unpinnedExit = expected ? 3 : 1;
   const result = spawnSync("python3", args, { encoding: "utf8" });
   if (result.error) throw result.error;
   const report = JSON.parse(result.stdout);
-  if (report.verified !== expected || result.status !== (expected ? 0 : 1) ||
+  if (report.verified !== expected || result.status !== (expected ? (policy ? 0 : unpinnedExit) : 1) ||
+      report.authorized !== (expected && Boolean(policy)) ||
       (reasonIncludes && !report.reason?.includes(reasonIncludes)) ||
       (expectedChecks && Object.entries(expectedChecks).some(([key, value]) => report.checks?.[key] !== value)) ||
       (expected && policy && report.attribution_bound !== true)) {

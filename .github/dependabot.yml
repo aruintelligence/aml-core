@@ -1,0 +1,43 @@
+# Dependency update PRs. This file only requests GitHub Dependabot
+# configuration; enabling alerts and security updates is a repository
+# setting and is listed in SETTINGS_CHANGE_PLAN.md for founder approval.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+    commit-message:
+      prefix: chore
+      include: scope
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+    commit-message:
+      prefix: chore
+      include: scope
+    # The published package currently has zero runtime dependencies.
+    # A lockfile is not yet in the repository; Dependabot npm PRs may be
+    # limited until one is added with explicit review.
+
+  - package-ecosystem: gomod
+    directory: /independent/go
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    commit-message:
+      prefix: chore
+      include: scope

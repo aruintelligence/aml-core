@@ -138,13 +138,27 @@ test("aml-release-proof CLI exports and verifies the in-toto statement", () => {
   try {
     const proofPath = path.join(root, "proof.json");
     const statementPath = path.join(root, "statement.json");
-    fs.writeFileSync(proofPath, `${JSON.stringify(fixture().proof, null, 2)}\n`);
+    const proof = fixture().proof;
+    fs.writeFileSync(proofPath, `${JSON.stringify(proof, null, 2)}\n`);
     const exported = execFileSync(process.execPath, ["bin/aml-release-proof.js", "in-toto", proofPath], { encoding: "utf8" });
     const statement = JSON.parse(exported);
     fs.writeFileSync(statementPath, `${JSON.stringify(statement, null, 2)}\n`);
-    const verified = spawnSync(process.execPath, ["bin/aml-release-proof.js", "verify-in-toto", statementPath], { encoding: "utf8" });
+    const verifyStatement = (...extra) => spawnSync(process.execPath, ["bin/aml-release-proof.js", "verify-in-toto", statementPath, ...extra], { encoding: "utf8" });
+    // Directive 010: verified without a pin is consistent, not authorized.
+    const unpinned = verifyStatement();
+    assert.equal(unpinned.status, 3, unpinned.stderr || unpinned.stdout);
+    assert.equal(JSON.parse(unpinned.stdout).verified, true);
+    assert.equal(JSON.parse(unpinned.stdout).authorized, false);
+    assert.equal(verifyStatement("--expected-sha256", "0".repeat(64)).status, 3, "wrong pin");
+    const verified = verifyStatement("--expected-sha256", proof.proof_sha256);
     assert.equal(verified.status, 0, verified.stderr || verified.stdout);
     assert.equal(JSON.parse(verified.stdout).verified, true);
+    assert.equal(JSON.parse(verified.stdout).authorized, true);
+    const plain = (...extra) => spawnSync(process.execPath, ["bin/aml-release-proof.js", proofPath, ...extra], { encoding: "utf8" });
+    assert.equal(plain().status, 3);
+    assert.equal(plain("--expected-sha256", proof.proof_sha256).status, 0);
+    assert.equal(plain("--diagnostic-only").status, 0);
+    assert.equal(JSON.parse(plain("--diagnostic-only").stdout).authorized, false);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

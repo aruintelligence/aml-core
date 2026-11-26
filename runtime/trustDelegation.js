@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
+import { requireSignatureBase64 } from "../protocol/strictBase64.js";
 
 function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
@@ -113,7 +114,7 @@ export function verifyTrustDelegation(delegation, { now = null, requiredCapabili
       null,
       Buffer.from(canonical),
       issuerPublicKey,
-      Buffer.from(signature_base64, "base64")
+      requireSignatureBase64(signature_base64)
     );
     if (!signatureValid) return { valid: false, reason: "signature_invalid", authority_authenticated: false };
   } catch {

@@ -287,18 +287,27 @@ paths:
       description: >-
         Recomputes receipt, browser-evidence, and witness-bundle SHA-256 integrity; checks verifier
         challenge freshness and equality; verifies the ephemeral P-256 public-key fingerprint and
-        ECDSA/SHA-256 signature. A successful result does not prove identity, official authorization,
-        truthful declared intent, policy quality, or regulatory compliance.
+        ECDSA/SHA-256 signature. `valid` means only that the bundle is internally consistent;
+        `verified` adds that the caller's retained `expected_challenge` matched. The endpoint returns
+        200 only when `authorized` is true: verified, and evaluated on the server clock. A
+        caller-supplied `now` more than one second from the server clock is reported
+        (`freshness_clock_source: caller_supplied`, `authorization.reasons` includes
+        `AML_AUTHZ_CALLER_CLOCK_UNTRUSTED`) and returns 422. A successful result does not prove
+        identity, official authorization, truthful declared intent, policy quality, or regulatory
+        compliance.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [bundle]
+              required: [bundle, expected_challenge]
               properties:
                 bundle:
                   type: object
+                expected_challenge:
+                  type: object
+                  description: The challenge the caller generated and retained.
                 now:
                   oneOf:
                     - type: string
@@ -306,21 +315,31 @@ paths:
                     - type: number
       responses:
         '200':
-          description: Witness bundle passed the project-defined prototype verification checks
+          description: Witness bundle is authorized (consistent, retained challenge matched, server clock)
           content:
             application/json:
               schema:
                 type: object
-                required: [protocol, valid, reason]
+                required: [protocol, valid, verified, authorized, authorization, reason, held_challenge_sha256]
                 properties:
                   protocol:
                     const: aml-http-witness-verification/1
                   valid:
                     const: true
+                  verified:
+                    const: true
+                  authorized:
+                    const: true
+                  authorization:
+                    type: object
                   reason:
                     type: string
+                  held_challenge_sha256:
+                    type: string
         '422':
-          description: Bundle was supplied but failed integrity, challenge, or signature verification
+          description: >-
+            Not authorized: integrity, challenge, or signature verification failed, the retained
+            challenge did not match, or the caller-supplied clock was not trusted. `valid` may be true.
         '400':
           description: Invalid request
         '408':

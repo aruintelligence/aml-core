@@ -43,6 +43,8 @@ function verifySigned(envelope) {
   const fingerprint = sha256(Buffer.from(pem));
   if (fingerprint !== envelope.witness_key_fingerprint_sha256) fail('Witness key fingerprint mismatch');
   const bytes = Buffer.from(canonical(envelope.submission));
+  // Canonical base64 only (same rule as protocol/strictBase64.js): one spelling per signature.
+  if (typeof envelope.signature_base64 !== 'string' || !/^[A-Za-z0-9+/]{85}[AQgw]==$/.test(envelope.signature_base64)) fail('Witness signature is not canonical base64');
   if (!crypto.verify(null, bytes, publicKey, Buffer.from(envelope.signature_base64, 'base64'))) fail('Witness signature verification failed');
   return fingerprint;
 }
