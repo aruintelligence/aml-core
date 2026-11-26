@@ -1,0 +1,676 @@
+{
+  "type": "aml-key-policy-vectors/1",
+  "rule": "capability tokens and threshold authorizations accept Ed25519 keys only, with or without a trust config",
+  "synthetic_canary_keys_only": true,
+  "note": "Ed25519 vectors are byte-reproducible; non-Ed25519 artifacts were signed with throwaway keys (randomized signatures), and --check re-verifies their decisions",
+  "cases": [
+    {
+      "name": "token_ed25519_valid",
+      "kind": "capability-token",
+      "artifact": {
+        "type": "aml-capability-token/1",
+        "issuer": "synthetic-canary-issuer",
+        "subject": "synthetic-executor",
+        "audience": "synthetic-audience",
+        "capabilities": [
+          "canary.read"
+        ],
+        "issued_at": "2026-01-01T00:00:00.000Z",
+        "expires_at": "2099-01-01T00:00:00.000Z",
+        "nonce": "canary-nonce-0001",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAMJsf+oLjf40FbG8oOFC7SrbVWZOXBEvwwTgBp9BoyYo=\n-----END PUBLIC KEY-----\n",
+        "public_key_fingerprint": "5954c7c5b3f1953ffb86e52aca21f2587623a475fd49ebc3266a6cbb18d6b83a",
+        "signature_base64": "6xqOQp/FDG+jn4Rx6rZ5g8ot2+mYdllb2TrbmnRSGsL3G3uj/RFE2uzR3fms1mpvjNDzrZU4MIjV3Qgv6/nEAA=="
+      },
+      "expect": {
+        "valid": true,
+        "reason": null
+      }
+    },
+    {
+      "name": "token_ed25519_tampered_body",
+      "kind": "capability-token",
+      "artifact": {
+        "type": "aml-capability-token/1",
+        "issuer": "synthetic-canary-issuer",
+        "subject": "synthetic-executor",
+        "audience": "synthetic-audience",
+        "capabilities": [
+          "canary.admin"
+        ],
+        "issued_at": "2026-01-01T00:00:00.000Z",
+        "expires_at": "2099-01-01T00:00:00.000Z",
+        "nonce": "canary-nonce-0001",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAMJsf+oLjf40FbG8oOFC7SrbVWZOXBEvwwTgBp9BoyYo=\n-----END PUBLIC KEY-----\n",
+        "public_key_fingerprint": "5954c7c5b3f1953ffb86e52aca21f2587623a475fd49ebc3266a6cbb18d6b83a",
+        "signature_base64": "6xqOQp/FDG+jn4Rx6rZ5g8ot2+mYdllb2TrbmnRSGsL3G3uj/RFE2uzR3fms1mpvjNDzrZU4MIjV3Qgv6/nEAA=="
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signature_invalid"
+      }
+    },
+    {
+      "name": "token_ed25519_fingerprint_mismatch",
+      "kind": "capability-token",
+      "artifact": {
+        "type": "aml-capability-token/1",
+        "issuer": "synthetic-canary-issuer",
+        "subject": "synthetic-executor",
+        "audience": "synthetic-audience",
+        "capabilities": [
+          "canary.read"
+        ],
+        "issued_at": "2026-01-01T00:00:00.000Z",
+        "expires_at": "2099-01-01T00:00:00.000Z",
+        "nonce": "canary-nonce-0001",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAMJsf+oLjf40FbG8oOFC7SrbVWZOXBEvwwTgBp9BoyYo=\n-----END PUBLIC KEY-----\n",
+        "public_key_fingerprint": "c1e0d10ce8ed4d1e8fbdb7ee5bd6bfb7ffe1075061dbf13af872238cb0ff4509",
+        "signature_base64": "6xqOQp/FDG+jn4Rx6rZ5g8ot2+mYdllb2TrbmnRSGsL3G3uj/RFE2uzR3fms1mpvjNDzrZU4MIjV3Qgv6/nEAA=="
+      },
+      "expect": {
+        "valid": false,
+        "reason": "fingerprint_mismatch"
+      }
+    },
+    {
+      "name": "token_wrong_type",
+      "kind": "capability-token",
+      "artifact": {
+        "type": "aml-capability-token/0",
+        "issuer": "synthetic-canary-issuer",
+        "subject": "synthetic-executor",
+        "audience": "synthetic-audience",
+        "capabilities": [
+          "canary.read"
+        ],
+        "issued_at": "2026-01-01T00:00:00.000Z",
+        "expires_at": "2099-01-01T00:00:00.000Z",
+        "nonce": "canary-nonce-0001",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAMJsf+oLjf40FbG8oOFC7SrbVWZOXBEvwwTgBp9BoyYo=\n-----END PUBLIC KEY-----\n",
+        "public_key_fingerprint": "5954c7c5b3f1953ffb86e52aca21f2587623a475fd49ebc3266a6cbb18d6b83a",
+        "signature_base64": "6xqOQp/FDG+jn4Rx6rZ5g8ot2+mYdllb2TrbmnRSGsL3G3uj/RFE2uzR3fms1mpvjNDzrZU4MIjV3Qgv6/nEAA=="
+      },
+      "expect": {
+        "valid": false,
+        "reason": "invalid_type"
+      }
+    },
+    {
+      "name": "token_unparseable_key",
+      "kind": "capability-token",
+      "artifact": {
+        "type": "aml-capability-token/1",
+        "issuer": "synthetic-canary-issuer",
+        "subject": "synthetic-executor",
+        "audience": "synthetic-audience",
+        "capabilities": [
+          "canary.read"
+        ],
+        "issued_at": "2026-01-01T00:00:00.000Z",
+        "expires_at": "2099-01-01T00:00:00.000Z",
+        "nonce": "canary-nonce-0001",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nAAAA\n-----END PUBLIC KEY-----\n",
+        "public_key_fingerprint": "5954c7c5b3f1953ffb86e52aca21f2587623a475fd49ebc3266a6cbb18d6b83a",
+        "signature_base64": "6xqOQp/FDG+jn4Rx6rZ5g8ot2+mYdllb2TrbmnRSGsL3G3uj/RFE2uzR3fms1mpvjNDzrZU4MIjV3Qgv6/nEAA=="
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signature_invalid"
+      }
+    },
+    {
+      "name": "threshold_ed25519_2_of_3_valid",
+      "kind": "threshold-authorization",
+      "artifact": {
+        "type": "aml-threshold-authorization/1",
+        "version": "1.1",
+        "threshold": 2,
+        "payload": {
+          "action": "canary-publish",
+          "policy_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "signatures": [
+          {
+            "key_fingerprint": "5954c7c5b3f1953ffb86e52aca21f2587623a475fd49ebc3266a6cbb18d6b83a",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAMJsf+oLjf40FbG8oOFC7SrbVWZOXBEvwwTgBp9BoyYo=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "yEAJVdoQPw9sRz4vLqYrTi1Wxw7uP4/U7gx0iHKiMxGjVWFcySClOFy/tutTkf/bHQMIoP1l6Bj++9QGUQUjCA=="
+          },
+          {
+            "key_fingerprint": "c1e0d10ce8ed4d1e8fbdb7ee5bd6bfb7ffe1075061dbf13af872238cb0ff4509",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIzRth8CaKYs/NmlxUieNjtkqsxZtZ/c3IJVCGtKlGBc=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "U4LmL5CLQ1tpsgICKDdXSd6k+HUkD63MnWLk0r1B7oQ89NblyenMq7gZDjxs6ZX/M2LjtBUpsWwNOMs0gMIvAQ=="
+          },
+          {
+            "key_fingerprint": "0513f96b8d2aac2504c16f68aee0e8fd34ce8b3f88e72d902d57a6e424817ee6",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA1EZb3u6P4lsY87woqySFc6d3d5nKIArDgdxtoSITvcc=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "DxK+mKkiuul7fFW6YUKCQ3zCMWCriXL5AvCJHTCM3d+pfVWF5YwFFkl+UvfIDFLEWMRpKFjEbVEvgs3cXUwLBw=="
+          }
+        ]
+      },
+      "expect": {
+        "valid": true,
+        "reason": null,
+        "valid_signatures": 3,
+        "rejected_key_types": []
+      }
+    },
+    {
+      "name": "threshold_ed25519_lowered_threshold",
+      "kind": "threshold-authorization",
+      "artifact": {
+        "type": "aml-threshold-authorization/1",
+        "version": "1.1",
+        "threshold": 1,
+        "payload": {
+          "action": "canary-publish",
+          "policy_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "signatures": [
+          {
+            "key_fingerprint": "5954c7c5b3f1953ffb86e52aca21f2587623a475fd49ebc3266a6cbb18d6b83a",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAMJsf+oLjf40FbG8oOFC7SrbVWZOXBEvwwTgBp9BoyYo=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "yEAJVdoQPw9sRz4vLqYrTi1Wxw7uP4/U7gx0iHKiMxGjVWFcySClOFy/tutTkf/bHQMIoP1l6Bj++9QGUQUjCA=="
+          },
+          {
+            "key_fingerprint": "c1e0d10ce8ed4d1e8fbdb7ee5bd6bfb7ffe1075061dbf13af872238cb0ff4509",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIzRth8CaKYs/NmlxUieNjtkqsxZtZ/c3IJVCGtKlGBc=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "U4LmL5CLQ1tpsgICKDdXSd6k+HUkD63MnWLk0r1B7oQ89NblyenMq7gZDjxs6ZX/M2LjtBUpsWwNOMs0gMIvAQ=="
+          },
+          {
+            "key_fingerprint": "0513f96b8d2aac2504c16f68aee0e8fd34ce8b3f88e72d902d57a6e424817ee6",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA1EZb3u6P4lsY87woqySFc6d3d5nKIArDgdxtoSITvcc=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "DxK+mKkiuul7fFW6YUKCQ3zCMWCriXL5AvCJHTCM3d+pfVWF5YwFFkl+UvfIDFLEWMRpKFjEbVEvgs3cXUwLBw=="
+          }
+        ]
+      },
+      "expect": {
+        "valid": false,
+        "reason": "threshold_not_met",
+        "valid_signatures": 0,
+        "rejected_key_types": []
+      }
+    },
+    {
+      "name": "threshold_legacy_unversioned",
+      "kind": "threshold-authorization",
+      "artifact": {
+        "type": "aml-threshold-authorization/1",
+        "threshold": 2,
+        "payload": {
+          "action": "canary-publish",
+          "policy_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "signatures": [
+          {
+            "key_fingerprint": "5954c7c5b3f1953ffb86e52aca21f2587623a475fd49ebc3266a6cbb18d6b83a",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAMJsf+oLjf40FbG8oOFC7SrbVWZOXBEvwwTgBp9BoyYo=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "yEAJVdoQPw9sRz4vLqYrTi1Wxw7uP4/U7gx0iHKiMxGjVWFcySClOFy/tutTkf/bHQMIoP1l6Bj++9QGUQUjCA=="
+          },
+          {
+            "key_fingerprint": "c1e0d10ce8ed4d1e8fbdb7ee5bd6bfb7ffe1075061dbf13af872238cb0ff4509",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIzRth8CaKYs/NmlxUieNjtkqsxZtZ/c3IJVCGtKlGBc=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "U4LmL5CLQ1tpsgICKDdXSd6k+HUkD63MnWLk0r1B7oQ89NblyenMq7gZDjxs6ZX/M2LjtBUpsWwNOMs0gMIvAQ=="
+          },
+          {
+            "key_fingerprint": "0513f96b8d2aac2504c16f68aee0e8fd34ce8b3f88e72d902d57a6e424817ee6",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA1EZb3u6P4lsY87woqySFc6d3d5nKIArDgdxtoSITvcc=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "DxK+mKkiuul7fFW6YUKCQ3zCMWCriXL5AvCJHTCM3d+pfVWF5YwFFkl+UvfIDFLEWMRpKFjEbVEvgs3cXUwLBw=="
+          }
+        ]
+      },
+      "expect": {
+        "valid": false,
+        "reason": "legacy_threshold_unbound",
+        "valid_signatures": 0,
+        "rejected_key_types": []
+      }
+    },
+    {
+      "name": "threshold_invalid_threshold",
+      "kind": "threshold-authorization",
+      "artifact": {
+        "type": "aml-threshold-authorization/1",
+        "version": "1.1",
+        "threshold": 0,
+        "payload": {
+          "action": "canary-publish",
+          "policy_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "signatures": [
+          {
+            "key_fingerprint": "5954c7c5b3f1953ffb86e52aca21f2587623a475fd49ebc3266a6cbb18d6b83a",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAMJsf+oLjf40FbG8oOFC7SrbVWZOXBEvwwTgBp9BoyYo=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "yEAJVdoQPw9sRz4vLqYrTi1Wxw7uP4/U7gx0iHKiMxGjVWFcySClOFy/tutTkf/bHQMIoP1l6Bj++9QGUQUjCA=="
+          },
+          {
+            "key_fingerprint": "c1e0d10ce8ed4d1e8fbdb7ee5bd6bfb7ffe1075061dbf13af872238cb0ff4509",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIzRth8CaKYs/NmlxUieNjtkqsxZtZ/c3IJVCGtKlGBc=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "U4LmL5CLQ1tpsgICKDdXSd6k+HUkD63MnWLk0r1B7oQ89NblyenMq7gZDjxs6ZX/M2LjtBUpsWwNOMs0gMIvAQ=="
+          },
+          {
+            "key_fingerprint": "0513f96b8d2aac2504c16f68aee0e8fd34ce8b3f88e72d902d57a6e424817ee6",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA1EZb3u6P4lsY87woqySFc6d3d5nKIArDgdxtoSITvcc=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "DxK+mKkiuul7fFW6YUKCQ3zCMWCriXL5AvCJHTCM3d+pfVWF5YwFFkl+UvfIDFLEWMRpKFjEbVEvgs3cXUwLBw=="
+          }
+        ]
+      },
+      "expect": {
+        "valid": false,
+        "reason": "invalid_threshold",
+        "valid_signatures": 0,
+        "rejected_key_types": []
+      }
+    },
+    {
+      "name": "threshold_signatures_not_array",
+      "kind": "threshold-authorization",
+      "artifact": {
+        "type": "aml-threshold-authorization/1",
+        "version": "1.1",
+        "threshold": 2,
+        "payload": {
+          "action": "canary-publish",
+          "policy_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "signatures": {
+          "a": 1
+        }
+      },
+      "expect": {
+        "valid": false,
+        "reason": "invalid_signatures",
+        "valid_signatures": 0,
+        "rejected_key_types": []
+      }
+    },
+    {
+      "name": "threshold_unparseable_key_entry_is_a_failed_signer",
+      "kind": "threshold-authorization",
+      "artifact": {
+        "type": "aml-threshold-authorization/1",
+        "version": "1.1",
+        "threshold": 2,
+        "payload": {
+          "action": "canary-publish",
+          "policy_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "signatures": [
+          {
+            "key_fingerprint": "5954c7c5b3f1953ffb86e52aca21f2587623a475fd49ebc3266a6cbb18d6b83a",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAMJsf+oLjf40FbG8oOFC7SrbVWZOXBEvwwTgBp9BoyYo=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "yEAJVdoQPw9sRz4vLqYrTi1Wxw7uP4/U7gx0iHKiMxGjVWFcySClOFy/tutTkf/bHQMIoP1l6Bj++9QGUQUjCA=="
+          },
+          {
+            "key_fingerprint": "c1e0d10ce8ed4d1e8fbdb7ee5bd6bfb7ffe1075061dbf13af872238cb0ff4509",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIzRth8CaKYs/NmlxUieNjtkqsxZtZ/c3IJVCGtKlGBc=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "U4LmL5CLQ1tpsgICKDdXSd6k+HUkD63MnWLk0r1B7oQ89NblyenMq7gZDjxs6ZX/M2LjtBUpsWwNOMs0gMIvAQ=="
+          },
+          {
+            "key_fingerprint": "0513f96b8d2aac2504c16f68aee0e8fd34ce8b3f88e72d902d57a6e424817ee6",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA1EZb3u6P4lsY87woqySFc6d3d5nKIArDgdxtoSITvcc=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "DxK+mKkiuul7fFW6YUKCQ3zCMWCriXL5AvCJHTCM3d+pfVWF5YwFFkl+UvfIDFLEWMRpKFjEbVEvgs3cXUwLBw=="
+          },
+          {
+            "key_fingerprint": "0000000000000000000000000000000000000000000000000000000000000000",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nnot-a-key\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "AAAA"
+          }
+        ]
+      },
+      "expect": {
+        "valid": true,
+        "reason": null,
+        "valid_signatures": 3,
+        "rejected_key_types": []
+      }
+    },
+    {
+      "name": "threshold_duplicate_signer_counted_once",
+      "kind": "threshold-authorization",
+      "artifact": {
+        "type": "aml-threshold-authorization/1",
+        "version": "1.1",
+        "threshold": 2,
+        "payload": {
+          "action": "canary-publish",
+          "policy_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "signatures": [
+          {
+            "key_fingerprint": "5954c7c5b3f1953ffb86e52aca21f2587623a475fd49ebc3266a6cbb18d6b83a",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAMJsf+oLjf40FbG8oOFC7SrbVWZOXBEvwwTgBp9BoyYo=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "yEAJVdoQPw9sRz4vLqYrTi1Wxw7uP4/U7gx0iHKiMxGjVWFcySClOFy/tutTkf/bHQMIoP1l6Bj++9QGUQUjCA=="
+          },
+          {
+            "key_fingerprint": "5954c7c5b3f1953ffb86e52aca21f2587623a475fd49ebc3266a6cbb18d6b83a",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAMJsf+oLjf40FbG8oOFC7SrbVWZOXBEvwwTgBp9BoyYo=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "yEAJVdoQPw9sRz4vLqYrTi1Wxw7uP4/U7gx0iHKiMxGjVWFcySClOFy/tutTkf/bHQMIoP1l6Bj++9QGUQUjCA=="
+          }
+        ]
+      },
+      "expect": {
+        "valid": false,
+        "reason": "threshold_not_met",
+        "valid_signatures": 1,
+        "rejected_key_types": []
+      }
+    },
+    {
+      "name": "token_ecdsa-p256_signature_valid_but_refused",
+      "kind": "capability-token",
+      "artifact": {
+        "type": "aml-capability-token/1",
+        "issuer": "synthetic-canary-issuer",
+        "subject": "synthetic-executor",
+        "audience": "synthetic-audience",
+        "capabilities": [
+          "canary.read"
+        ],
+        "issued_at": "2026-01-01T00:00:00.000Z",
+        "expires_at": "2099-01-01T00:00:00.000Z",
+        "nonce": "canary-nonce-0001",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEPIjpFbgPbbkyKZwoIlxPeEEtO0IY\nQAMQXsgBt3imBfdyTyjWYGX2g2jHvMafnTus5PJo5t9e+TBKngRAUoZcog==\n-----END PUBLIC KEY-----\n",
+        "public_key_fingerprint": "58fe4b744f6638bee7c62dd72756e058482584ddd615ea0449920f48f96e9a6a",
+        "signature_base64": "MEYCIQCv80LmpnXbjOmFO7qtW1WY+zpWvfijCFSU+Wyr35LIJQIhAIjsaZxCrwR14OLZrSdXSe40UunQy3Ay1K7wPA50jN4n"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "key_type_not_ed25519"
+      }
+    },
+    {
+      "name": "threshold_ecdsa-p256_only_refused",
+      "kind": "threshold-authorization",
+      "artifact": {
+        "type": "aml-threshold-authorization/1",
+        "version": "1.1",
+        "threshold": 1,
+        "payload": {
+          "action": "canary-publish",
+          "policy_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "signatures": [
+          {
+            "key_fingerprint": "58fe4b744f6638bee7c62dd72756e058482584ddd615ea0449920f48f96e9a6a",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEPIjpFbgPbbkyKZwoIlxPeEEtO0IY\nQAMQXsgBt3imBfdyTyjWYGX2g2jHvMafnTus5PJo5t9e+TBKngRAUoZcog==\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "MEUCIQD9b2gceeiFVlK/9i1c57ZhULJ8SjUnTX1o9yJN/YiAGgIgBaI1x9azLTzS6mEvrnEHn8szKaScFZKI45Gq0W9hrh4="
+          }
+        ]
+      },
+      "expect": {
+        "valid": false,
+        "reason": "key_type_not_ed25519",
+        "valid_signatures": 0,
+        "rejected_key_types": [
+          "ec"
+        ]
+      }
+    },
+    {
+      "name": "token_ecdsa_p256_malleated_high_s_refused",
+      "kind": "capability-token",
+      "artifact": {
+        "type": "aml-capability-token/1",
+        "issuer": "synthetic-canary-issuer",
+        "subject": "synthetic-executor",
+        "audience": "synthetic-audience",
+        "capabilities": [
+          "canary.read"
+        ],
+        "issued_at": "2026-01-01T00:00:00.000Z",
+        "expires_at": "2099-01-01T00:00:00.000Z",
+        "nonce": "canary-nonce-0001",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEPIjpFbgPbbkyKZwoIlxPeEEtO0IY\nQAMQXsgBt3imBfdyTyjWYGX2g2jHvMafnTus5PJo5t9e+TBKngRAUoZcog==\n-----END PUBLIC KEY-----\n",
+        "public_key_fingerprint": "58fe4b744f6638bee7c62dd72756e058482584ddd615ea0449920f48f96e9a6a",
+        "signature_base64": "MEUCIQCv80LmpnXbjOmFO7qtW1WY+zpWvfijCFSU+Wyr35LIJQIgdxOWYr1Q+4sfHSZS2Ki2EYiUENzbp2uwRMmOtIfWRyo="
+      },
+      "expect": {
+        "valid": false,
+        "reason": "key_type_not_ed25519"
+      }
+    },
+    {
+      "name": "threshold_mixed_ed25519_quorum_plus_ecdsa_refused",
+      "kind": "threshold-authorization",
+      "artifact": {
+        "type": "aml-threshold-authorization/1",
+        "version": "1.1",
+        "threshold": 2,
+        "payload": {
+          "action": "canary-publish",
+          "policy_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "signatures": [
+          {
+            "key_fingerprint": "5954c7c5b3f1953ffb86e52aca21f2587623a475fd49ebc3266a6cbb18d6b83a",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAMJsf+oLjf40FbG8oOFC7SrbVWZOXBEvwwTgBp9BoyYo=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "yEAJVdoQPw9sRz4vLqYrTi1Wxw7uP4/U7gx0iHKiMxGjVWFcySClOFy/tutTkf/bHQMIoP1l6Bj++9QGUQUjCA=="
+          },
+          {
+            "key_fingerprint": "c1e0d10ce8ed4d1e8fbdb7ee5bd6bfb7ffe1075061dbf13af872238cb0ff4509",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAIzRth8CaKYs/NmlxUieNjtkqsxZtZ/c3IJVCGtKlGBc=\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "U4LmL5CLQ1tpsgICKDdXSd6k+HUkD63MnWLk0r1B7oQ89NblyenMq7gZDjxs6ZX/M2LjtBUpsWwNOMs0gMIvAQ=="
+          },
+          {
+            "key_fingerprint": "58fe4b744f6638bee7c62dd72756e058482584ddd615ea0449920f48f96e9a6a",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEPIjpFbgPbbkyKZwoIlxPeEEtO0IY\nQAMQXsgBt3imBfdyTyjWYGX2g2jHvMafnTus5PJo5t9e+TBKngRAUoZcog==\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "MEQCIFyli1gvsz8JeDJGHTTkEwEIzBvQTmzMRwyC4mUZub6cAiAc2f6JWKfhoDpMWdAjCALx66WI53wATgz9Oz/xGdT5Iw=="
+          }
+        ]
+      },
+      "expect": {
+        "valid": false,
+        "reason": "key_type_not_ed25519",
+        "valid_signatures": 0,
+        "rejected_key_types": [
+          "ec"
+        ]
+      }
+    },
+    {
+      "name": "token_ecdsa-p384_signature_valid_but_refused",
+      "kind": "capability-token",
+      "artifact": {
+        "type": "aml-capability-token/1",
+        "issuer": "synthetic-canary-issuer",
+        "subject": "synthetic-executor",
+        "audience": "synthetic-audience",
+        "capabilities": [
+          "canary.read"
+        ],
+        "issued_at": "2026-01-01T00:00:00.000Z",
+        "expires_at": "2099-01-01T00:00:00.000Z",
+        "nonce": "canary-nonce-0001",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEFrmRVLZ4RjtPH4zRxw2hpPlinJ1J/zMt\nke+R6B0FNWCrvD8ae8YZvAdn/klYLX+sCpJaMA8Tox/gPWyPUo0574UTmjHp1etr\nV7PvxVWUe/d+F8V2M1ey3nGHOjW5yXLZ\n-----END PUBLIC KEY-----\n",
+        "public_key_fingerprint": "f25285522f8ceaac10cab4f7e4f9fe2c346db0ff4ebf4543663d6d82e04e5cd0",
+        "signature_base64": "MGUCMG9RH6FEmHjbi2TJE0eudKXDwaU1H0pTVBeOxcAq88rjvkHz4XJdzc4MJLUg25gH0AIxAKVvI1lCpuJNUh50JWPbQoYNh4g759Sal8keXtADYQDuHdaAM7E2xpDdsp3rZlYasQ=="
+      },
+      "expect": {
+        "valid": false,
+        "reason": "key_type_not_ed25519"
+      }
+    },
+    {
+      "name": "threshold_ecdsa-p384_only_refused",
+      "kind": "threshold-authorization",
+      "artifact": {
+        "type": "aml-threshold-authorization/1",
+        "version": "1.1",
+        "threshold": 1,
+        "payload": {
+          "action": "canary-publish",
+          "policy_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "signatures": [
+          {
+            "key_fingerprint": "f25285522f8ceaac10cab4f7e4f9fe2c346db0ff4ebf4543663d6d82e04e5cd0",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEFrmRVLZ4RjtPH4zRxw2hpPlinJ1J/zMt\nke+R6B0FNWCrvD8ae8YZvAdn/klYLX+sCpJaMA8Tox/gPWyPUo0574UTmjHp1etr\nV7PvxVWUe/d+F8V2M1ey3nGHOjW5yXLZ\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "MGYCMQCSTddgqF5FTW8fAxdjc8ZhKeCVL8Y3oxvnEVXDYSJaiOKZCSNBLSG2bhWrc7MLk/cCMQCZ4eHksXkm/Cpyx6SimSMkxp6qBcrzaKKV64nSE3rzsKwcMhBIsdD/gK1pALh7fM8="
+          }
+        ]
+      },
+      "expect": {
+        "valid": false,
+        "reason": "key_type_not_ed25519",
+        "valid_signatures": 0,
+        "rejected_key_types": [
+          "ec"
+        ]
+      }
+    },
+    {
+      "name": "token_rsa-2048_signature_valid_but_refused",
+      "kind": "capability-token",
+      "artifact": {
+        "type": "aml-capability-token/1",
+        "issuer": "synthetic-canary-issuer",
+        "subject": "synthetic-executor",
+        "audience": "synthetic-audience",
+        "capabilities": [
+          "canary.read"
+        ],
+        "issued_at": "2026-01-01T00:00:00.000Z",
+        "expires_at": "2099-01-01T00:00:00.000Z",
+        "nonce": "canary-nonce-0001",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6x1erz2cZyswNWgQZ6Kb\niPG3q2U9O22ODC/tl09i8WlVRKPQatudeDlsVvE3LErYW2iCzM20e5bQ3bp3fluG\nGm7/4BL9F7XKSZKgnIe74tJ+yQFb/TdnHYSerb3M6q5a7P7B+pmQ6DbKSryvIrra\n79eVgj5XGjJHTUJmrLfE4ercieLaydhH56dxyOglTpTuQfE6U4ONlH/XZjSOjI8g\nX9vqlDF7U4gtSqylzVt8g92c/u5PwjC7AJ9DX8CFo734/j66Eniq/BNZaEOFyLxW\neRPlDFbfWe1ENacLUGcpFDXH8RiGfsCTZ0KZRVDLFeMe8DBRVy5umkGS0oKJ9DiP\njwIDAQAB\n-----END PUBLIC KEY-----\n",
+        "public_key_fingerprint": "6a4ea335eea3aa11a01064142937cf2462e7f822887336f4ece9cdf60ed6c6f6",
+        "signature_base64": "lms6HhmV8vCwp+iXpnAL7qpyBOVjJWopbxu0AZc7XdDizzcjOpAGYEbTVHA1RIuv6L2EIKYhQyB+PT06otxI3jG5KvPbQoyFkbkor8oYxhsum/4RtnWJMYOWYrdM/zCPzUdr82KdPyJ7Xd94xIPjFkGgwo/TlRMyRsVWzfFA52wrOovlFBjBaEvQz2tYyKYUcHtHj225xrsu2ohVQhwAhoLW1T0Bv8b23kXsVzrXfRwef1aLXmlQ5R00m3aUGfV9I0RgsYOrw0jjaKFjx2f3udyTHf/dQ5Vp0KbcG9wPT+MgmHUCcFtX9NsepREwu12YC06rGDmpjFgNCpamv9KaEA=="
+      },
+      "expect": {
+        "valid": false,
+        "reason": "key_type_not_ed25519"
+      }
+    },
+    {
+      "name": "threshold_rsa-2048_only_refused",
+      "kind": "threshold-authorization",
+      "artifact": {
+        "type": "aml-threshold-authorization/1",
+        "version": "1.1",
+        "threshold": 1,
+        "payload": {
+          "action": "canary-publish",
+          "policy_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "signatures": [
+          {
+            "key_fingerprint": "6a4ea335eea3aa11a01064142937cf2462e7f822887336f4ece9cdf60ed6c6f6",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6x1erz2cZyswNWgQZ6Kb\niPG3q2U9O22ODC/tl09i8WlVRKPQatudeDlsVvE3LErYW2iCzM20e5bQ3bp3fluG\nGm7/4BL9F7XKSZKgnIe74tJ+yQFb/TdnHYSerb3M6q5a7P7B+pmQ6DbKSryvIrra\n79eVgj5XGjJHTUJmrLfE4ercieLaydhH56dxyOglTpTuQfE6U4ONlH/XZjSOjI8g\nX9vqlDF7U4gtSqylzVt8g92c/u5PwjC7AJ9DX8CFo734/j66Eniq/BNZaEOFyLxW\neRPlDFbfWe1ENacLUGcpFDXH8RiGfsCTZ0KZRVDLFeMe8DBRVy5umkGS0oKJ9DiP\njwIDAQAB\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "WQFIMnoyNBWZQy7DSwHp0d1B0Yk0vNGejtwzyoe6aezDoVIgXNz3KjjmTiqbVUtCQPBMK7lwaUfA2QwosvNogcMpvrfcrG0YSfNQECjXKfSOAUn9yQge4+KE22+ThWVPxiLEAQuMIxStKUa0Y0VP2GUrV1xvZaF6WfCWO9PwtIc3VnSODokRFdn6+ORSbL4/g0QRmSaim8ge/696JbU/BA5/QxHc6Qny6cOcTZyG0QyvYTM8dLjINy/D4SDfvSAf75pjaBCBO9C16Zsvenu1Pkds5al7qUgVzRqXZfzogO4fEo8ijiBgcaPanzKdaT1EUgSHdWnC4i6EoX36CBStlA=="
+          }
+        ]
+      },
+      "expect": {
+        "valid": false,
+        "reason": "key_type_not_ed25519",
+        "valid_signatures": 0,
+        "rejected_key_types": [
+          "rsa"
+        ]
+      }
+    },
+    {
+      "name": "token_rsa-pss-2048_signature_valid_but_refused",
+      "kind": "capability-token",
+      "artifact": {
+        "type": "aml-capability-token/1",
+        "issuer": "synthetic-canary-issuer",
+        "subject": "synthetic-executor",
+        "audience": "synthetic-audience",
+        "capabilities": [
+          "canary.read"
+        ],
+        "issued_at": "2026-01-01T00:00:00.000Z",
+        "expires_at": "2099-01-01T00:00:00.000Z",
+        "nonce": "canary-nonce-0001",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBIDALBgkqhkiG9w0BAQoDggEPADCCAQoCggEBANHROf8jAcOFeTiiS8vMOhuu\n4GKubzuAUD5l6xDo/agBk6crM7b6LoX6ZUTgBP5Lhqjmp6PnVj0XXr6JhZNtuD+w\ngByZx/k2mpZ7C0rhAxEJqq0LQrJLHl5KpmRCMFvvgVSiTGNh8A0DHVNY4+qrdgWj\no6cFINXHeibcMcDmAuSKXszEpw/ZmVdFEkStEjU4UMmYBqBcosMJeDxEP/P1zuAa\n/qHm3ewEzYq8K0jlc2GfL0tdUVPqXcm5wrtMewj61Jo3q83vsC65Uorph/6LU4zh\n/biwil7raYYaNcxVCWrMW2MKXb3nCSqBUbWAqSADnWi5iPMLaRt8FhM4vguG1GUC\nAwEAAQ==\n-----END PUBLIC KEY-----\n",
+        "public_key_fingerprint": "7f10f85926a8dd82b610c80296a7ed028b1bd7096744ebfda7f5f54dc16921b9",
+        "signature_base64": "wPhEELh0t8HaX/vMDTbDDrg2iOql4H58Pm2027KULDsx4bXDUa164jf2+ao+CrMeE39ph2FyY+xCOCRqPq8JzUiDwJOOQHE5XhW9V2IHHzhedg5BNsnVywj+7TaaHsqw9erAjHbkgumvmQzBwXTFgYSX4Clv1iM2SgnS+ciqX8KDLLSeEFTXUlLWUNC678oo6LahljnhNbxUCnUjBKmoLEqmUK3yQkz+YzVFxBO7NpQ8S44KZdrgcwZjorR40TExd02I7EUdBhxdCCSU2AHSN+4mHuhrkV8PkhhbcsYJ+qKrH64+24u5/pgB+vcZER8YD7lDeTULRvMrNqzm0AjVMA=="
+      },
+      "expect": {
+        "valid": false,
+        "reason": "key_type_not_ed25519"
+      }
+    },
+    {
+      "name": "threshold_rsa-pss-2048_only_refused",
+      "kind": "threshold-authorization",
+      "artifact": {
+        "type": "aml-threshold-authorization/1",
+        "version": "1.1",
+        "threshold": 1,
+        "payload": {
+          "action": "canary-publish",
+          "policy_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "signatures": [
+          {
+            "key_fingerprint": "7f10f85926a8dd82b610c80296a7ed028b1bd7096744ebfda7f5f54dc16921b9",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBIDALBgkqhkiG9w0BAQoDggEPADCCAQoCggEBANHROf8jAcOFeTiiS8vMOhuu\n4GKubzuAUD5l6xDo/agBk6crM7b6LoX6ZUTgBP5Lhqjmp6PnVj0XXr6JhZNtuD+w\ngByZx/k2mpZ7C0rhAxEJqq0LQrJLHl5KpmRCMFvvgVSiTGNh8A0DHVNY4+qrdgWj\no6cFINXHeibcMcDmAuSKXszEpw/ZmVdFEkStEjU4UMmYBqBcosMJeDxEP/P1zuAa\n/qHm3ewEzYq8K0jlc2GfL0tdUVPqXcm5wrtMewj61Jo3q83vsC65Uorph/6LU4zh\n/biwil7raYYaNcxVCWrMW2MKXb3nCSqBUbWAqSADnWi5iPMLaRt8FhM4vguG1GUC\nAwEAAQ==\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "jteUDSU/yVHhPVndeQyBeCSz4w7HfaYNFHF1Jte7efZrgOynyoUIstBj18lB7aiv8dTlAxo/CYsdRdSOzR0tALyjVO2Pb+dSDvSPu1I2750LP9yhWy/RR5MMBOTUZ9/XAW6Wqu9oMlD5KA+vbFJdy+wJHTRIJSCljqFMx//LS7KEJdCTZprbZvXgGKpRkL4v2Dr4XlU9//Qle6K0RFSP+TYNGWujsi63Yn64Jm3PaetRjs2O1BueHnV4j97Pu10Kvku/SzC/Ne6rxfH/+ZrHB/Dm4hMxkcT8PHl8K43/WWwUKL4aocd05V+RiUt8un6FZulnPdaylSnNUEUoPVwDCw=="
+          }
+        ]
+      },
+      "expect": {
+        "valid": false,
+        "reason": "key_type_not_ed25519",
+        "valid_signatures": 0,
+        "rejected_key_types": [
+          "rsa-pss"
+        ]
+      }
+    },
+    {
+      "name": "token_ed448_signature_valid_but_refused",
+      "kind": "capability-token",
+      "artifact": {
+        "type": "aml-capability-token/1",
+        "issuer": "synthetic-canary-issuer",
+        "subject": "synthetic-executor",
+        "audience": "synthetic-audience",
+        "capabilities": [
+          "canary.read"
+        ],
+        "issued_at": "2026-01-01T00:00:00.000Z",
+        "expires_at": "2099-01-01T00:00:00.000Z",
+        "nonce": "canary-nonce-0001",
+        "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMEMwBQYDK2VxAzoA154NXSawt2Vd9lHm3fC04l0wx95ZkW5sIgEWq4HVZeRqBp8i\n965BmidqGg2PnHFR+RRiuZHAp3eA\n-----END PUBLIC KEY-----\n",
+        "public_key_fingerprint": "fb5df8f3142f0a28c11de4422fcbdb41bcf02053fbe317a0a0650158599ffba1",
+        "signature_base64": "jADWXf70uH9CRrmtLVa5vAUj8dNxCIaXqwY3sbdqXdIgRfbehv4WOqOMldjPWAEmXtmdHEZanDGAbqa0vUhUaXZ068QXJTl3c4g8KdIa6LCERR2Gx+SxRN/CmcFfro+TiP138yWq2CXWLSSMW7vpDwAA"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "key_type_not_ed25519"
+      }
+    },
+    {
+      "name": "threshold_ed448_only_refused",
+      "kind": "threshold-authorization",
+      "artifact": {
+        "type": "aml-threshold-authorization/1",
+        "version": "1.1",
+        "threshold": 1,
+        "payload": {
+          "action": "canary-publish",
+          "policy_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "signatures": [
+          {
+            "key_fingerprint": "fb5df8f3142f0a28c11de4422fcbdb41bcf02053fbe317a0a0650158599ffba1",
+            "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMEMwBQYDK2VxAzoA154NXSawt2Vd9lHm3fC04l0wx95ZkW5sIgEWq4HVZeRqBp8i\n965BmidqGg2PnHFR+RRiuZHAp3eA\n-----END PUBLIC KEY-----\n",
+            "signature_base64": "jRGofonph+jNiNsd130nE0u6qKQD9yif1MwUMaR8AsMJuPkTzLvhqi9tEJsQR8UG3D+7ZeSGPn8AGJhHlnMMtXyPzcbG33xW+x2ThWsHjHNJX0oq+O6CVipohyrw9WISqYI1OeEwpVmkM0mUmJhysS8A"
+          }
+        ]
+      },
+      "expect": {
+        "valid": false,
+        "reason": "key_type_not_ed25519",
+        "valid_signatures": 0,
+        "rejected_key_types": [
+          "ed448"
+        ]
+      }
+    }
+  ]
+}

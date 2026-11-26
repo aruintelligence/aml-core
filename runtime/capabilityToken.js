@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 import { decodeSignatureBase64 } from "../protocol/strictBase64.js";
+import { isEd25519KeyObject, requireEd25519PrivateKey } from "../protocol/keyPolicy.js";
 import { trustConfigTrustsKey, trustConfigRequiresSingleUse } from "./trustConfig.js";
 import { consumptionKey, isDurableConsumptionStore } from "./consumptionStore.js";
 
@@ -42,7 +43,8 @@ export function signCapabilityToken({ issuer, subject = null, audience = null, c
     ...(intent_sha256 === null ? {} : { intent_sha256 })
   };
 
-  const privateKey = crypto.createPrivateKey(privateKeyPem);
+  // Ed25519 only (protocol/keyPolicy.js): throws AML_KEY_TYPE_NOT_ED25519.
+  const privateKey = requireEd25519PrivateKey(privateKeyPem);
   const publicKey = crypto.createPublicKey(privateKey);
   const message = Buffer.from(canonicalJSONStringify(body));
 
@@ -60,6 +62,8 @@ export function verifyCapabilityToken(token, { now = null, audience = null, requ
 
   try {
     const publicKey = crypto.createPublicKey(public_key_pem);
+    // Refused before any other check, with or without a trust config.
+    if (!isEd25519KeyObject(publicKey)) return { valid: false, reason: "key_type_not_ed25519" };
     if (fingerprint(publicKey) !== public_key_fingerprint) return { valid: false, reason: "fingerprint_mismatch" };
     const signature = decodeSignatureBase64(signature_base64);
     if (signature === null) return { valid: false, reason: "signature_invalid" };
@@ -183,6 +187,8 @@ export function authorizeCapabilityToken(token, {
     valid: checks.signature_valid,
     authorized,
     reasons,
+    // Why signature_valid is false (for example "key_type_not_ed25519"); null when valid.
+    verification_reason: verification.valid === true ? null : verification.reason,
     checks,
     replay_protection: authorized ? replayProtection : "none",
     consumptionGuard: authorized && guardOk

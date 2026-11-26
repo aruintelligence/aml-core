@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { canonicalJSONStringify } from "../protocol/canonicalJson.js";
 import { decodeSignatureBase64 } from "../protocol/strictBase64.js";
+import { isEd25519KeyObject, requireEd25519PrivateKey } from "../protocol/keyPolicy.js";
 
 const THRESHOLD_AUTHORIZATION_VERSION = "1.1";
 
@@ -29,7 +30,8 @@ export function createThresholdAuthorization(payload, privateKeys, { threshold, 
   };
   const message = authorizationMessage(body);
   const signatures = privateKeys.map((pem) => {
-    const privateKey = crypto.createPrivateKey(pem);
+    // Ed25519 only (protocol/keyPolicy.js): throws AML_KEY_TYPE_NOT_ED25519.
+    const privateKey = requireEd25519PrivateKey(pem);
     const publicKey = crypto.createPublicKey(privateKey);
     return {
       key_fingerprint: fingerprint(publicKey),
@@ -81,6 +83,33 @@ export function verifyThresholdAuthorization(authorization) {
       valid_signatures: 0,
       threshold: authorization.threshold,
       threshold_bound: true
+    };
+  }
+
+  // Ed25519 only, with or without a trust config: if ANY entry carries a
+  // parseable non-Ed25519 public key the whole artifact is refused with an
+  // explicit reason (fail closed), instead of quietly not counting that signer.
+  const rejectedKeyTypes = [];
+  for (const item of authorization.signatures) {
+    let keyType = null;
+    try {
+      if (item && typeof item === "object") {
+        const key = crypto.createPublicKey(item.public_key_pem);
+        if (!isEd25519KeyObject(key)) keyType = String(key.asymmetricKeyType);
+      }
+    } catch {
+      // Unparseable key material is counted as a failed signer below.
+    }
+    if (keyType !== null) rejectedKeyTypes.push(keyType);
+  }
+  if (rejectedKeyTypes.length > 0) {
+    return {
+      valid: false,
+      reason: "key_type_not_ed25519",
+      valid_signatures: 0,
+      threshold: authorization.threshold,
+      threshold_bound: true,
+      rejected_key_types: [...new Set(rejectedKeyTypes)].sort()
     };
   }
 

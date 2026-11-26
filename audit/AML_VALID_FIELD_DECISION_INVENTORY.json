@@ -663,7 +663,7 @@
   },
   {
    "file": "runtime/capabilityToken.js",
-   "line": 132,
+   "line": 136,
    "code": "signature_valid: verification.valid === true,",
    "category": "conjunct",
    "effect": "authorizeCapabilityToken: signature_valid is one condition; authorized also requires a pinned issuer key, local-clock expiry, audience/executor/session/intent bindings, the capability and an unconsumed nonce. verifyCapabilityToken.valid itself is documented as non-authorizing.",
@@ -671,7 +671,7 @@
   },
   {
    "file": "runtime/capabilityToken.js",
-   "line": 133,
+   "line": 137,
    "code": "issuer_key_pinned: verification.valid === true && (trustedIssuerKeySha256 !== null || trustConfig !== null)",
    "category": "conjunct",
    "effect": "authorizeCapabilityToken: issuer_key_pinned requires a valid signature AND (an explicit pin match and/or a trusted, unexpired trust-config entry for role capability-issuer); authorized also requires local-clock expiry, audience/executor/session/intent bindings, the capability and an unconsumed nonce (durable store when supplied or required by the trust config).",
@@ -679,7 +679,7 @@
   },
   {
    "file": "runtime/capabilityToken.js",
-   "line": 183,
+   "line": 187,
    "code": "valid: checks.signature_valid,",
    "category": "conjunct",
    "effect": "authorizeCapabilityToken: signature_valid is one condition; authorized also requires a pinned issuer key, local-clock expiry, audience/executor/session/intent bindings, the capability and an unconsumed nonce. verifyCapabilityToken.valid itself is documented as non-authorizing.",
@@ -1302,6 +1302,27 @@
    "code": "if (!policyValidation.valid) return { ...base, semantic_proof_valid: true, reason: policyValidation.reason };",
    "category": "deny-guard",
    "effect": "refuses an invalid policy/profile/trust configuration before release verification."
+  },
+  {
+   "file": "conformance/key-policy/run-js.mjs",
+   "line": 8,
+   "code": "return { valid: r.valid === true, reason: r.reason ?? null };",
+   "category": "report-only",
+   "effect": "Conformance harness: copies verifyCapabilityToken's signature-layer verdict into the key-policy vector result compared with Python and Go. Gates nothing; verifyCapabilityToken.valid is documented as non-authorizing."
+  },
+  {
+   "file": "conformance/key-policy/run-js.mjs",
+   "line": 12,
+   "code": "return { valid: r.valid === true, reason: r.reason ?? null, valid_signatures: r.valid_signatures,",
+   "category": "report-only",
+   "effect": "Conformance harness: copies verifyThresholdAuthorization's verdict into the key-policy vector result compared with Python and Go. Gates nothing."
+  },
+  {
+   "file": "runtime/capabilityToken.js",
+   "line": 191,
+   "code": "verification_reason: verification.valid === true ? null : verification.reason,",
+   "category": "report-only",
+   "effect": "authorizeCapabilityToken: reports why signature_valid is false (for example key_type_not_ed25519) in the returned decision. It selects only a diagnostic string; authorized is computed from the checks above and is unaffected."
   }
  ],
  "decision_sinks": [
