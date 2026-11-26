@@ -27,12 +27,12 @@ All notable changes to ĀML™ — ĀRU Meaning Language™ — are documented h
 - `independent/python/trust_config.py` and `independent/go/trustconfig.go` use the standard library only. `conformance/trust-config/vectors.json` and `test/trust-config-parity.test.js` require identical JS/Python/Go results for every case, including denials.
 - A deterministic concurrent-update test (via an injected `onBeforePersist` seam) covers a newer version landing between the checks and the persist step.
 
-### Breaking: one accepted spelling for every signature
+### Breaking: stricter signature, key and quorum validation
 
-- Every JavaScript signature verifier now decodes signatures through one shared strict decoder (`protocol/strictBase64.js`): canonical, padded, standard-alphabet base64 only, the exact output of `Buffer.toString("base64")`. Covers capability tokens, threshold authorizations, trust configs, policy packs, brand authorizations, trust delegations, audit checkpoints, governance transcripts, disclosures and policy transitions, release provenance, build and meaning-manifest attestations, semantic release proofs and endorsements, the external witness tool, and the browser brand and quorum verifiers.
-- The Python pilot verifiers and the Go witness verifier apply the same rule (re-encoding the decoded bytes must reproduce the input), so JavaScript, Python and Go accept the same strings.
-- Signatures produced by ĀML signers are already canonical and keep verifying; every signature committed in this repository was checked. A signature written by another producer with whitespace, line breaks, missing or extra padding, base64url characters or non-zero unused bits is now refused: re-encode the decoded bytes with a standard base64 encoder (no re-signing needed).
-- `conformance/trust-config/vectors.json` adds shared denial cases for these encodings.
+- Signatures: every JavaScript, Python and Go verifier now accepts exactly one encoding of each signature (canonical, padded, standard-alphabet base64, as produced by ĀML signers). Signatures produced by ĀML signers keep verifying. A signature from another producer that is not in canonical form is refused; re-encode the decoded bytes with a standard base64 encoder (no re-signing needed).
+- Keys: capability tokens and threshold authorizations accept Ed25519 keys only, with or without a trust config. Signing with another key type throws `AML_KEY_TYPE_NOT_ED25519`; verification refuses it with reason `key_type_not_ed25519` (a threshold authorization is refused as a whole if any signer uses another key type). Re-issue affected artifacts with Ed25519 keys.
+- Quorum configuration: a k-of-n witness quorum must tolerate at least one faulty witness (`2k - n - 1 >= 1`; for example 3-of-4 and 5-of-7 pass, 2-of-3 and 4-of-7 do not). `aml-governance-witness-quorum` refuses a pinned policy that does not meet this with `AML_AUTHZ_QUORUM_CONFIG_UNSAFE`, and an explicit threshold that is not a positive integer is a policy error rather than a default of 1.
+- JavaScript, Python and Go share conformance vectors for all three rules (`conformance/trust-config/`, `conformance/key-policy/`, `conformance/quorum-safety/`).
 
 ### Breaking: verifier commands exit 0 only on an explicit authorization decision
 
