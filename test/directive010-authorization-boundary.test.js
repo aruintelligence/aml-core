@@ -134,11 +134,12 @@ test("aml-governance-witness-quorum: a self-chosen policy with self-signed witne
   const exploit = run([forgedFile]);
   assert.equal(exploit.status, 3, exploit.stdout);
   assert.equal(exploit.json.quorum_met, true);
-  assert.deepEqual(exploit.json.authorization.reasons, ["AML_AUTHZ_POLICY_NOT_PINNED", "AML_AUTHZ_POLICY_TRUSTS_ANY_KEY"]);
+  assert.deepEqual(exploit.json.authorization.reasons, ["AML_AUTHZ_POLICY_NOT_PINNED", "AML_AUTHZ_POLICY_TRUSTS_ANY_KEY",
+    "AML_AUTHZ_QUORUM_CONFIG_UNSAFE"]);
   // Even when the relying party pins that permissive policy, it trusts any key.
   const pinnedPermissive = run([forgedFile, "--expected-policy-sha256", policySha(forged.policy)]);
   assert.equal(pinnedPermissive.status, 3);
-  assert.deepEqual(pinnedPermissive.json.authorization.reasons, ["AML_AUTHZ_POLICY_TRUSTS_ANY_KEY"]);
+  assert.deepEqual(pinnedPermissive.json.authorization.reasons, ["AML_AUTHZ_POLICY_TRUSTS_ANY_KEY", "AML_AUTHZ_QUORUM_CONFIG_UNSAFE"]);
 
   const a = keyPair(); const b = keyPair();
   const policy = { threshold: 2, trusted_fingerprints: [], required_scope: "governance-witness" };

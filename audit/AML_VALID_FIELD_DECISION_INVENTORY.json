@@ -1323,6 +1323,21 @@
    "code": "verification_reason: verification.valid === true ? null : verification.reason,",
    "category": "report-only",
    "effect": "authorizeCapabilityToken: reports why signature_valid is false (for example key_type_not_ed25519) in the returned decision. It selects only a diagnostic string; authorized is computed from the checks above and is unaffected."
+  },
+  {
+   "file": "bin/aml-governance-witness-quorum.js",
+   "line": 63,
+   "code": "quorum_config_safe: result.quorum_safety?.valid === true",
+   "category": "conjunct",
+   "effect": "aml-governance-witness-quorum: quorum_config_safe (2k - n - 1 >= 1 over the declared trusted keys) is one more REQUIRED condition; it can only add a denial (AML_AUTHZ_QUORUM_CONFIG_UNSAFE). Exit 0 still also requires quorum_met, the relying-party policy pin, a non-empty trusted key list and no conflicting roots.",
+   "conjunct_with": "quorum_met, policy_pinned, trusted_keys_required, no_conflicting_roots"
+  },
+  {
+   "file": "conformance/quorum-safety/generate.mjs",
+   "line": 60,
+   "code": "console.log(JSON.stringify({ wrote: OUT, cases: cases.length, accepted: cases.filter(c => c.expect.valid).length }));",
+   "category": "report-only",
+   "effect": "Vector generator: counts accepted k-of-n configurations for a log line. Gates nothing."
   }
  ],
  "decision_sinks": [

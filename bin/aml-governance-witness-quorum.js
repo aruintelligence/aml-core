@@ -12,10 +12,15 @@ import { decideCommand, diagnosticOnlyRequested, pinMatches, takeOption,
 // threshold and (with an empty trusted_fingerprints list) can self-sign every
 // witness. Exit 0 requires: quorum met, the policy's canonical SHA-256 equal
 // to the relying party's --expected-policy-sha256, a non-empty trusted key
-// list in that policy, and no conflicting eligible transcript roots.
-const REQUIRED = ["quorum_met", "policy_pinned", "trusted_keys_required", "no_conflicting_roots"];
+// list in that policy, no conflicting eligible transcript roots, and a k-of-n
+// configuration that tolerates at least one faulty witness
+// (protocol/quorumSafety.js: 2k - n - 1 >= 1 over the declared trusted keys).
+// A pinned policy with an unsafe k-of-n (for example 2-of-3 or 4-of-7) is
+// refused, not accepted with a weaker guarantee.
+const REQUIRED = ["quorum_met", "policy_pinned", "trusted_keys_required", "no_conflicting_roots", "quorum_config_safe"];
 const DENIALS = { quorum_met: "AML_AUTHZ_QUORUM_NOT_MET", policy_pinned: "AML_AUTHZ_POLICY_NOT_PINNED",
-  trusted_keys_required: "AML_AUTHZ_POLICY_TRUSTS_ANY_KEY", no_conflicting_roots: "AML_AUTHZ_CONFLICTING_ROOTS" };
+  trusted_keys_required: "AML_AUTHZ_POLICY_TRUSTS_ANY_KEY", no_conflicting_roots: "AML_AUTHZ_CONFLICTING_ROOTS",
+  quorum_config_safe: "AML_AUTHZ_QUORUM_CONFIG_UNSAFE" };
 const TRUST = ["the expected policy SHA-256 came from an independently trusted source",
   "holders of the trusted witness keys are distinct and uncompromised",
   "a key fingerprint binds a key, not a real-world identity"];
@@ -54,7 +59,8 @@ try {
       quorum_met: met,
       policy_pinned: pinMatches(expectedPolicySha256, policySha256),
       trusted_keys_required: Array.isArray(result.policy?.trusted_fingerprints) && result.policy.trusted_fingerprints.length > 0,
-      no_conflicting_roots: result.conflicting_eligible_roots === false
+      no_conflicting_roots: result.conflicting_eligible_roots === false,
+      quorum_config_safe: result.quorum_safety?.valid === true
     },
     required: REQUIRED, denials: DENIALS, trust: TRUST, diagnosticOnly, invalidCode: 2
   });

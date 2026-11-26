@@ -292,6 +292,9 @@ func main() {
 	if len(os.Args) == 3 && os.Args[1] == "key-policy-conformance" {
 		os.Exit(runKeyPolicyConformance(os.Args[2]))
 	}
+	if len(os.Args) == 3 && os.Args[1] == "quorum-safety-conformance" {
+		os.Exit(runQuorumSafetyConformance(os.Args[2]))
+	}
 	nowFlag := flag.String("now", "", "RFC3339 verification time for fixed vectors (untrusted: never authorizes)")
 	diagnostic := flag.Bool("diagnostic-only", false, "exit 0 for a consistent bundle; NOT AN AUTHORIZATION DECISION")
 	trustConfigFlag := flag.String("trust-config", "", "signed trust config; reported, never authorizes this command")
