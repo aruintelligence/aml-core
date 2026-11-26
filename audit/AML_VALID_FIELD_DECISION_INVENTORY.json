@@ -551,28 +551,28 @@
   },
   {
    "file": "protocol/governancePolicyAuthorization.js",
-   "line": 52,
+   "line": 53,
    "code": "if (!verified.valid) {",
    "category": "deny-guard",
    "effect": "refuses to disclose, commit or authorize from an invalid transcript/disclosure/delegation; integrity is a precondition, not the decision."
   },
   {
    "file": "protocol/governancePolicyAuthorization.js",
-   "line": 153,
+   "line": 159,
    "code": "const isTrusted = directlyTrusted || delegated.valid;",
    "category": "conjunct",
    "effect": "delegated authority (verified against the caller-held trusted root set) counts as trusted; eligibility also needs a valid signature, scope, unrevoked unique key, and authorized needs eligible >= threshold."
   },
   {
    "file": "protocol/governancePolicyAuthorization.js",
-   "line": 171,
+   "line": 177,
    "code": "authority_source: directlyTrusted ? \"direct\" : delegated.valid ? \"delegated\" : null,",
    "category": "report-only",
    "effect": "authority_source / delegation root diagnostic fields."
   },
   {
    "file": "protocol/governancePolicyAuthorization.js",
-   "line": 172,
+   "line": 178,
    "code": "delegation_root_fingerprint_sha256: delegated.valid ? delegated.root_fingerprint_sha256 : null,",
    "category": "report-only",
    "effect": "authority_source / delegation root diagnostic fields."

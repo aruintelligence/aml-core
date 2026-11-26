@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { canonicalJSONStringify } from "./canonicalJson.js";
 import { requireSignatureBase64 } from "./strictBase64.js";
 import { verifyDelegationChain } from "../runtime/trustDelegation.js";
+import { resolvePolicyThreshold } from "./policyThreshold.js";
 
 export const AML_GOVERNANCE_POLICY_TRANSITION = "aml-governance-policy-transition/1";
 export const AML_GOVERNANCE_POLICY_TRANSITION_AUTHORIZATION = "aml-governance-policy-transition-authorization/1";
@@ -119,7 +120,12 @@ export function verifyGovernancePolicyTransitionAuthorization(authorization, pol
   const transition = authorization.transition;
   if (!transition || transition.protocol !== AML_GOVERNANCE_POLICY_TRANSITION) errors.push("invalid transition protocol");
 
-  const threshold = Number.isInteger(policy.threshold) && policy.threshold > 0 ? policy.threshold : 1;
+  // Omitted threshold: default 1. An explicit invalid threshold is a policy
+  // error (never silently 1); the authorization then fails closed.
+  const resolvedThreshold = resolvePolicyThreshold(policy);
+  const threshold = resolvedThreshold.threshold;
+  const policy_errors = resolvedThreshold.error ? [resolvedThreshold.error] : [];
+  if (resolvedThreshold.error) errors.push("invalid policy threshold: must be a positive integer");
   const trusted = new Set(policy.trusted_fingerprints || []);
   const revoked = new Set(policy.revoked_fingerprints || []);
   const requiredScope = policy.required_scope || "governance-policy-transition";
@@ -175,13 +181,14 @@ export function verifyGovernancePolicyTransitionAuthorization(authorization, pol
     });
   }
 
-  const authorized = errors.length === 0 && eligible.length >= threshold;
-  if (!authorized) errors.push(`eligible signature threshold not met: ${eligible.length}/${threshold}`);
+  const authorized = errors.length === 0 && threshold !== null && eligible.length >= threshold;
+  if (!authorized && threshold !== null) errors.push(`eligible signature threshold not met: ${eligible.length}/${threshold}`);
   return {
     protocol: AML_GOVERNANCE_POLICY_TRANSITION_AUTHORIZATION_VERIFICATION,
     valid: authorized && errors.length === 0,
     authorized,
     threshold,
+    policy_errors,
     eligible_signatures: eligible.length,
     distinct_eligible_fingerprints: eligible,
     transition,

@@ -1,15 +1,15 @@
 import { verifySignedGovernanceStreamTranscript } from "./governanceTranscriptSignature.js";
 import { evaluateQuorumSafety } from "./quorumSafety.js";
+import { resolvePolicyThreshold } from "./policyThreshold.js";
 
 export const AML_GOVERNANCE_WITNESS_QUORUM = "aml-governance-witness-quorum/1";
 export const AML_GOVERNANCE_WITNESS_QUORUM_VERIFICATION = "aml-governance-witness-quorum-verification/1";
 
 function normalizePolicy(policy = {}) {
-  // An omitted threshold keeps the documented default of 1. An explicit
-  // threshold that is not a positive integer is a policy error: it is never
+  // protocol/policyThreshold.js: omitted -> default 1; an explicit threshold
+  // that is not a positive integer is a policy error (threshold null), never
   // silently replaced by 1 (that would lower the quorum the author wrote).
-  const omitted = policy.threshold === undefined;
-  const threshold = omitted ? 1 : (Number.isSafeInteger(policy.threshold) && policy.threshold > 0 ? policy.threshold : null);
+  const { threshold } = resolvePolicyThreshold(policy);
   return {
     threshold,
     trusted_fingerprints: Array.isArray(policy.trusted_fingerprints) ? [...new Set(policy.trusted_fingerprints)] : [],
